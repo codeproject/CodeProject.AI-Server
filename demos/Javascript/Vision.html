@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>CodeProject SenseAI Demos</title>
+    <style>
+        html {
+            font-family: sans-serif;
+            font-size: 1rem;
+        }
+        table {
+            margin-top: 1rem;
+        }
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 0.5rem;
+        }
+        th {
+            font-weight: bold;
+            background-color: lightgrey;
+        }
+    </style>
+</head>
+<body>
+
+    <script type="text/javascript">
+
+        function adjustCanvas() {
+            annotations.height = this.height;
+            annotations.width  = this.width;
+            return true;
+        }
+
+        function previewImage() {
+
+            if (fileInput.files) {
+                img.onload = adjustCanvas;
+                img.src = URL.createObjectURL(fileInput.files[0]);
+            }
+        }
+
+        function clearCanvas() {
+            var context = annotations.getContext("2d");
+            context.clearRect(0, 0, annotations.width, annotations.height);
+        }
+
+        function drawRectangles(predictions) {
+
+            if (!img.width || !img.height)
+                return;
+
+            if (!(predictions && predictions.length > 0))
+                return;
+
+            var xRatio = img.width * 1.0 / img.naturalWidth;
+            var yRatio = img.height * 1.0 / img.naturalHeight;
+
+            var context = annotations.getContext("2d");
+            context.clearRect(0, 0, annotations.width, annotations.height);
+            context.lineWidth = "1";
+
+            for (var i = 0; i < predictions.length; i++) {
+                var rect   = predictions[i];
+                var left   = Math.min(rect.x_min, rect.x_max) * xRatio;
+                var top    = Math.min(rect.y_min, rect.y_max) * yRatio;
+                var width  = Math.abs(rect.x_min - rect.x_max) * xRatio;
+                var height = Math.abs(rect.y_min - rect.y_max) * yRatio;
+
+                context.strokeStyle = "red";
+                context.strokeRect(left, top, width, height);
+                context.strokeStyle = "yellow";
+                context.strokeText(i + " " + (rect.label || ""), left, top);
+            }
+        }
+
+        function displayResults(predictions) {
+            if (!(predictions && predictions.length > 0))
+                return;
+            var html = "<table><tr><th>#</th><th>Label</th><th>Confidence</th></tr>";
+            for (var i = 0; i < predictions.length; i++) {
+                var pred = predictions[i];
+                html += "<tr><td>" + i + "</td><td>" + (pred.label || "Face")
+                      + "</td><td>" + (pred.confidence || '') + "</td></tr>";
+            }
+            html += "</table>";
+            result.innerHTML = html;
+        }
+
+        async function submitRequest(apiName, doneFunc) {
+            var formData = new FormData();
+
+            // Check file selected or not
+            if (fileInput.files.length > 0) {
+
+                file = fileInput.files[0];
+                formData.append('image', file);
+                var url = 'http://localhost:5000/v1/vision/' + apiName;
+
+                try {
+                    const timeout = 10 /*sec*/ * 1000; // in milliseconds
+
+                    const controller = new AbortController();
+                    const timerId = setTimeout(() => controller.abort(), timeout);
+
+                    const response = await fetch(url, {
+                        method: "POST",
+                        cache: 'no-cache',
+                        body: formData,
+                        signal: controller.signal
+                    });
+                    clearTimeout(timerId);
+
+                    var data = response.json();
+                    doneFunc(data)
+                }
+                catch (error) {
+                    if (error.name === "AbortError")
+                        alert("The call to the API server timed out");
+                    else
+                        alert(error.message);
+                }
+            }
+        }
+
+        function onDetectScene() {
+
+           clearCanvas();
+           submitRequest('scene', function (data) {
+                if (data) {
+                    result.innerHTML = "<table>" +
+                                       "<tr><th>Confidence</th>" +
+                                       "    <th>Label</th></tr><tr>" +
+                                       "<tr><td>" + Math.round(data.confidence, 3) + "</td>" +
+                                       "     <td> " + data.label + "</td></tr>" +
+                                       "<table>";
+                }
+            });
+        }
+
+        function onDetectFaces() {
+            submitRequest('face', function (data,) {
+
+                if (data && data.predictions && data.predictions.length > 0) {
+                    drawRectangles(data.predictions);
+                    displayResults(data.predictions)
+                }
+                else
+                    result.innerText = "No faces detected";
+            });
+        }
+
+        function onDetectThings() {
+
+            submitRequest('detection', function (data) {
+                if (data && data.predictions && data.predictions.length > 0) {
+                    drawRectangles(data.predictions);
+                    displayResults(data.predictions)
+                }
+                else
+                    result.innerText = "No objects detected";
+            });
+        }
+
+   </script>
+
+    <form method="post" action="" enctype="multipart/form-data" id="myform">
+        <div style="position:relative">
+            <canvas id="annotations"
+                    style="position:absolute;left:0;top:0;pointer-events:none;z-index:10">
+            </canvas>
+            <img src="" id="img" style="width:300px;height:auto">
+        </div>
+        <input id="fileInput" type="file" onchange="return previewImage()" />
+        <br/>
+        <input type="button" value="Detect Scene"  id="scene" onclick="onDetectScene()" />
+        <input type="button" value="Detect Face"   id="face" onclick="onDetectFaces()" />
+        <input type="button" value="Detect Things" id="things" onclick="onDetectThings()" />
+
+    </form>
+    <div id="result"></div>
+
+</body>
+</html>

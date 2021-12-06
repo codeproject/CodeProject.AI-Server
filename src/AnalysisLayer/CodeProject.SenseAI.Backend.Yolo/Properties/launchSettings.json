@@ -1,0 +1,11 @@
+﻿{
+  "profiles": {
+    "CodeProject.AI.Backend.Yolo": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

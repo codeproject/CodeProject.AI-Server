@@ -1,0 +1,146 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "watch",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "watch",
+                "run",
+                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "prepare-server",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build",
+                "start-analysis"
+            ]
+        },
+
+        {
+            "label": "launch-server",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build",
+                "start-analysis",
+                "start-api"
+            ]
+        },
+
+        {
+            "label": "launch-playground",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build",
+                "start-analysis",
+                "start-api",
+                "start-playground"
+            ]
+        },
+
+        {
+            "label": "start-analysis",
+            "type": "process",
+            "isBackground": true,
+            "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.bat",
+            "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
+
+            // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
+            // to give VSCode enough to be satisfied and just let it run
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".",
+                        "endsPattern": ".",
+                    }
+                }
+            ]
+        }, 
+        {
+            "label": "start-api",
+            "windows": {
+                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.exe"
+            },
+            "osx": {
+                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
+            },
+            "isBackground": true,
+            "type": "process",
+            "args": [],
+
+            // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
+            // to give VSCode enough to be satisfied and just let it run
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".",
+                        "endsPattern": ".",
+                    }
+                }
+            ]
+        },
+        {
+            "label": "start-playground",
+            "windows": {
+                // Windows form apps only work in Windows
+                "command": "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground/bin/Debug/net5.0-windows/",
+            },
+            "type": "process",
+            "args": []            
+        }        
+    ]
+}

@@ -1,0 +1,86 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>25750bf1-1502-4f65-8d69-cea8c87d6446</ProjectGuid>
+    <ProjectHome>
+    </ProjectHome>
+    <StartupFile>registeration.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>Python</Name>
+    <RootNamespace>PythonDemos</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="detected\" />
+    <Folder Include="images\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="images\adele.jpg" />
+    <Content Include="images\blank.png" />
+    <Content Include="images\cruise.jpg" />
+    <Content Include="images\elba.jpg" />
+    <Content Include="images\face.jpg" />
+    <Content Include="images\family.jpg" />
+    <Content Include="images\image0.jpg" />
+    <Content Include="images\image0_person.jpg" />
+    <Content Include="images\image0_truck.jpg" />
+    <Content Include="images\image1.jpg" />
+    <Content Include="images\image1_car.jpg" />
+    <Content Include="images\image1_truck.jpg" />
+    <Content Include="images\image2.jpg" />
+    <Content Include="images\image2_boat.jpg" />
+    <Content Include="images\image2_person.jpg" />
+    <Content Include="images\image3.jpg" />
+    <Content Include="images\image3_person.jpgx" />
+    <Content Include="images\image3_traffic light.jpg" />
+    <Content Include="images\image4_bus.jpg" />
+    <Content Include="images\image5_person.jpg" />
+    <Content Include="images\image6_person.jpg" />
+    <Content Include="images\image7_bus.jpg" />
+    <Content Include="images\night.jpg" />
+    <Content Include="images\perri.jpg" />
+    <Content Include="images\road.jpg" />
+    <Content Include="images\test-image.jpg" />
+    <Content Include="images\test-image2.jpg" />
+    <Content Include="images\test-image3.jpg" />
+    <Content Include="images\test-image3.png" />
+    <Content Include="images\test-image5.jpg" />
+    <Content Include="images\test-image6 %281%29.jpg" />
+    <Content Include="images\test-image6.jpg" />
+    <Content Include="images\test-image7.jpg" />
+    <Content Include="images\test-image8.jpg" />
+    <Content Include="requirements.txt" />
+    <Content Include="start.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="benchmark.py" />
+    <Compile Include="demoConfig.py" />
+    <Compile Include="detect.py" />
+    <Compile Include="face.py" />
+    <Compile Include="facevideo.py" />
+    <Compile Include="match.py" />
+    <Compile Include="recognition.py" />
+    <Compile Include="registeration.py" />
+    <Compile Include="scene.py" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>

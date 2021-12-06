@@ -1,0 +1,62 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "CodeProject.SenseAI Analysis Layer",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "start-analysis",
+            "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.bat",
+            "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
+            "cwd": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/",
+            "stopAtEntry": false
+        },
+
+        {
+            "name": "Launch CodeProject.SenseAI",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "prepare-server",
+            "windows": {
+                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.exe"
+            },
+            "osx": {
+                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
+            },
+            "linux": {
+                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
+            },            
+            "cwd": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/",
+            "stopAtEntry": false,
+ 
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "http://localhost:%s/swagger"
+            },
+ 
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+
+        {
+            "name": "CodeProject.SenseAI Playground",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "launch-server",
+            "windows": {
+                "program": "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground/bin/Debug/net5.0-windows/CodeProject.SenseAI.Demo.Playground.exe",
+            },
+            "args": [ ],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        }
+    ]
+}
