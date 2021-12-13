@@ -23,7 +23,6 @@ import torchvision.transforms as transforms
 from PIL import Image, UnidentifiedImageError
 from process import YOLODetector
 from recognition import FaceRecognitionModel
-# from redis import RedisError, StrictRedis
 import traceback
 
 databaseFilePath = os.path.join(SharedOptions.DATA_DIR,"faceembedding.db")
@@ -69,18 +68,6 @@ def load_faces():
 
     master_face_map["tensors"] = embedding_arr
     facemap = repr(master_face_map)
-
-    # Store map in Redis
-    # SharedOptions.db.set("facemap", facemap)
-
-    # ...or Store map in SQLite
-    # cursor.execute("DELETE FROM TB_FACEMAP")
-    # ADD_MAP = "INSERT INTO TB_FACEMAP(map) VALUES(?)"
-    # map_rep = json.dumps(facemap)
-    # cursor.execute(ADD_MAP, (map_rep,))
-    # conn.commit()
-    # conn.close()
-
 
 def face(thread_name, delay):
 
@@ -368,19 +355,6 @@ def face(thread_name, delay):
                 elif task_type == "recognize":
 
                     try:
-
-                        # Get map from redis
-                        # stored_master_face_map = SharedOptions.db.get("facemap")
-                        # master_face_map = ast.literal_eval(stored_master_face_map)
-
-                        # ... Or get map from SQLite
-                        # conn = sqlite3.connect(SharedOptions.DATA_DIR + "/faceembedding.db")
-                        # cursor = conn.cursor()
-                        # SELECT_MAP = "SELECT top 1 * FROM TB_FACEMAP"
-                        # maps = cursor.execute(SELECT_MAP)
-                        # map_rep = maps[0]
-                        # master_face_map = json.loads(map_rep)
-
 
                         facemap    = master_face_map ["map"]
                         face_array = master_face_map ["tensors"]

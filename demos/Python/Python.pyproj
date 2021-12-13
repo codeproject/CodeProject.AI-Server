@@ -23,45 +23,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="detected\" />
-    <Folder Include="images\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="images\adele.jpg" />
-    <Content Include="images\blank.png" />
-    <Content Include="images\cruise.jpg" />
-    <Content Include="images\elba.jpg" />
-    <Content Include="images\face.jpg" />
-    <Content Include="images\family.jpg" />
-    <Content Include="images\image0.jpg" />
-    <Content Include="images\image0_person.jpg" />
-    <Content Include="images\image0_truck.jpg" />
-    <Content Include="images\image1.jpg" />
-    <Content Include="images\image1_car.jpg" />
-    <Content Include="images\image1_truck.jpg" />
-    <Content Include="images\image2.jpg" />
-    <Content Include="images\image2_boat.jpg" />
-    <Content Include="images\image2_person.jpg" />
-    <Content Include="images\image3.jpg" />
-    <Content Include="images\image3_person.jpgx" />
-    <Content Include="images\image3_traffic light.jpg" />
-    <Content Include="images\image4_bus.jpg" />
-    <Content Include="images\image5_person.jpg" />
-    <Content Include="images\image6_person.jpg" />
-    <Content Include="images\image7_bus.jpg" />
-    <Content Include="images\night.jpg" />
-    <Content Include="images\perri.jpg" />
-    <Content Include="images\road.jpg" />
-    <Content Include="images\test-image.jpg" />
-    <Content Include="images\test-image2.jpg" />
-    <Content Include="images\test-image3.jpg" />
-    <Content Include="images\test-image3.png" />
-    <Content Include="images\test-image5.jpg" />
-    <Content Include="images\test-image6 %281%29.jpg" />
-    <Content Include="images\test-image6.jpg" />
-    <Content Include="images\test-image7.jpg" />
-    <Content Include="images\test-image8.jpg" />
     <Content Include="requirements.txt" />
-    <Content Include="start.bat" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="benchmark.py" />

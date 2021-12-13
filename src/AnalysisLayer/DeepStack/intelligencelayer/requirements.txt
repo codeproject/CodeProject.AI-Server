@@ -1,13 +1,13 @@
 ONNXRuntime
-Redis
-OpenCV-Python
-Cython
+## OpenCV-Python
+## Cython
 Pillow
 SciPy
-TDQM
-Tensorboard
+## TDQM 
+## Tensorboard
 PyYAML
-Matplotlib
+## wMatplotlib
+requests
 
 ## these were missing in models/*.py but aren't used everywhere.
 THOP
@@ -18,7 +18,7 @@ CoreMLTools
 
 ## These were missing, but we might need directml versions
 --find-links https://download.pytorch.org/whl/torch_stable.html
-Torch==1.6.0
+Torch==1.6.0+cpu
 --find-links https://download.pytorch.org/whl/torch_stable.html
-TorchVision==v0.7.0
+TorchVision==v0.7.0+cpu
 

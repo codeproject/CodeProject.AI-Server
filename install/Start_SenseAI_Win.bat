@@ -1,49 +1,58 @@
-:: CodeProject SenseAI Analysis services (DeepStack module) startup script for Windows
-::
-:: Usage:
-::   start.bat
-::
-:: We assume we're in the AnalysisLayer/DeepStack directory
+:: CodeProject SenseAI Server startup script
+:: We assume we're in the CodeProject SenseAI installed directory.
 
 @echo off
 cls
 SETLOCAL EnableDelayedExpansion
 
-set techniColor=true
-set envVariablesFile=..\..\..\set_environment.bat
-
-:: Before we start, set the current directory if necessary
-if "%1" == "--no-color" set techniColor=false
-if not "%2" == "" cd %2
-
-:: ===============================================================================================
-:: 0. Basic settings
+:: Basic Settings
 
 :: verbosity can be: quiet | info | loud
 set verbosity=quiet
 
-if not "%verbosity%" == "quiet" call :WriteLine Yellow "Current Directory: %cd%"
+:: The name of the CodeProject Sense App Executable file
+set appExe=CodeProject.SenseAI.Server.exe
+
+:: Can be Debug or Releaes
+set config=Debug
+
+:: The target platform
+set platform=net5.0
+
+:: The name of the Environment variable setup file
+set envVariablesFile=set_environment.bat
+
+:: Show output in wild, crazy colours
+set techniColor=true
+
+:: -------------------------------------------------------------
+:: Set Flags
+
+set dotnetFlags=q
+if "%verbosity%"=="info" set dotnetFlags=m
+if "%verbosity%"=="loud" set dotnetFlags=n
+
 if /i "%techniColor%" == "true" call :setESC
 
+call :WriteLine Yellow "Preparing CodeProject.SenseAI Server" 
+
 :: ===============================================================================================
-:: 1. Load environment variables
+:: 1. Load Installation settings
 
 call :Write White "Loading installation settings..."
 call !envVariablesFile!
 call :WriteLine Green "Done"
 
-set VENV_PATH=!APPDIR!\..\venv
-
 if "%verbosity%" == "info" (
-    call :WriteLine Yellow "APPDIR    = !APPDIR!"
-    call :WriteLine Yellow "PROFILE   = !PROFILE!"
-    call :WriteLine Yellow "CUDA_MODE = !CUDA_MODE!"
-    call :WriteLine Yellow "DATA_DIR  = !DATA_DIR!"
-    call :WriteLine Yellow "TEMP_PATH = !TEMP_PATH!"
-    call :WriteLine Yellow "PORT      = !PORT!"
-    call :WriteLine Yellow "VISION_FACE      = !VISION_FACE!"
-    call :WriteLine Yellow "VISION_DETECTION = !VISION_DETECTION!"
-    call :WriteLine Yellow "VISION_SCENE     = !VISION_SCENE!"
+    echo   APPDIR    = "!APPDIR!"
+    echo   PROFILE   = "!PROFILE!"
+    echo   CUDA_MODE = "!CUDA_MODE!"
+    echo   DATA_DIR  = "!DATA_DIR!"
+    echo   TEMP_PATH = "!TEMP_PATH!"
+    echo   PORT      = "!PORT!"
+    echo   VISION_FACE      = "!VISION_FACE!"
+    echo   VISION_DETECTION = "!VISION_DETECTION!"
+    echo   VISION_SCENE     = "!VISION_SCENE!"
 )
 
 :: ===============================================================================================
@@ -51,9 +60,12 @@ if "%verbosity%" == "info" (
 
 call :Write White "Enabling our Virtual Environment..."
 
-set VIRTUAL_ENV=!VENV_PATH!\Scripts
+cd !APPDIR!\..
+set VIRTUAL_ENV=%cd%\venv\Scripts
+
 if not defined PROMPT set PROMPT=$P$G
 set PROMPT=(venv) !PROMPT!
+
 set PYTHONHOME=
 set PATH=!VIRTUAL_ENV!;%PATH%
 
@@ -66,28 +78,55 @@ python --version | find "3.7" > NUL
 if errorlevel 1 goto errorNoPython
 call :WriteLine Green "present"
 
-if "%verbosity%"=="loud" where Python
-
+if "%verbosity%"=="loud" where Python.exe
 
 :: ===============================================================================================
-:: 3. Start back end analysis
+:: 3. Start front end server
 
+:: a. Startup the backend Analysis services
 call :Write White "Starting Analysis Services..."
 if /i "!VISION_DETECTION!"   == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\%deepstackModule%\detection.py
+    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\detection.py
 )
 if /i "!VISION_FACE!" == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\%deepstackModule%\face.py
+    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\face.py
 )
 if /i "!VISION_SCENE!"  == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\%deepstackModule%\scene.py
+    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\scene.py
 )
 :: To start them all in one fell swoop...
-:: START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\%deepstackModule%\runAll.py
+:: START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\runAll.py
 call :WriteLine Green "Done"
 
-:: Wait forever. We need these processes to stay alive
-pause > NUL
+:: b. Build and startup the API server
+
+set featureFlags=
+if /i "!VISION_FACE!"      == "true" set featureFlags=!featureFlags! --VISION_FACE true
+if /i "!VISION_DETECTION!" == "true" set featureFlags=!featureFlags! --VISION-DETECTION true
+if /i "!VISION_SCENE!"     == "true" set featureFlags=!featureFlags! --VISION-SCENE true
+
+:: In an installed, Production version of SenseAI, the server sits directly in the Server/Frontend
+:: folder. For the development environment the server code is in /src/Server/Frontend. For Dev
+:: we'll build the API server but leave it inside the :: /bin/Debug/... folder. Hence we need to
+:: update the location of the main executable.
+
+if /i "!CPSENSEAI_PRODUCTION!" == "true" (
+   set CPSENSEAI_BUILDSERVER=False
+   Set CPSENSEAI_COMFIG=Release
+
+   cd %CPSENSEAI_ROOTDIR%\%CPSENSEAI_APIDIR%\Server\FrontEnd
+) else (
+    if /i "!CPSENSEAI_BUILDSERVER!" == "true" (
+        cd %CPSENSEAI_ROOTDIR%\%CPSENSEAI_APPDIR%\%CPSENSEAI_APIDIR%\Server\FrontEnd
+        dotnet build --configuration !CPSENSEAI_COMFIG! --nologo --verbosity !dotnetFlags!
+        REM TODO Sort out the path issues with the build
+        set appExe=bin\!platform!\!CPSENSEAI_COMFIG!\!platform!\!appExe!
+    )
+)
+
+call :WriteLine Yellow "Launching CodeProject.SenseAI Server" 
+
+!appExe! !featureFlags! --urls http://*:%port%
 
 :: and we're done.
 goto:eof
@@ -164,6 +203,9 @@ goto:eof
     exit /b 0
 
 :Write
+
+    if "%~2" == "" exit /b 0
+
     SetLocal EnableDelayedExpansion
     set resetColor=!ESC![0m
 
@@ -176,8 +218,16 @@ goto:eof
     )
     exit /b 0
 
+:: Jump ooints
 
-:: Jump points
+:errorNoSettingsFile
+call :WriteLine White ""
+call :WriteLine White ""
+call :WriteLine White "---------------------------------------------------------------------------"
+call :WriteLine Red "Error: %settingsFile% settings file not found"
+call :WriteLine ORange "Ensure you have run setup_dev_env_win.bat before running this script"
+goto:eof
+
 
 :errorNoPython
 call :WriteLine White ""

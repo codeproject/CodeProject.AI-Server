@@ -4,30 +4,116 @@
 <head>
     <meta charset="utf-8" />
     <title>CodeProject SenseAI Demos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="https://www.codeproject.com/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://www.codeproject.com/favicon/favicon-16x16.png">
     <style>
         html {
             font-family: sans-serif;
-            font-size: 1rem;
+            font-size: 0.8rem;
         }
+
+        .site-header {
+            background-image: url(https://www.codeproject.com/App_Themes/CodeProject/Img/logo135-bg.gif);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+            .site-header .main-content {
+                position: relative;
+                overflow: hidden;
+                white-space: nowrap;
+            }
+
+            .site-header.fixed .main-content {
+                margin: auto;
+                max-width: 1056px;
+            }
+
+            .site-header .logo {
+                display: inline-block;
+            }
+
         table {
             margin-top: 1rem;
         }
         table, th, td {
-            border: 1px solid black;
+            border: 1px solid #eee;
             border-collapse: collapse;
         }
         th, td {
-            padding: 0.5rem;
+            padding: 0.5rem 0.75rem;
         }
         th {
             font-weight: bold;
-            background-color: lightgrey;
+            background-color: #eee;
+            text-align:left;
         }
+        fieldset {
+            border: 1px #ddd solid;
+            padding: .7rem;
+            margin-block: 1rem;
+        }
+            fieldset legend {
+                font-size: 1.25rem;
+            }
+            fieldset label {
+                width: 8rem;
+                display: inline-block;
+                text-align: right;
+                margin-right:.5rem;
+            }
+
+        input[type=button],
+        input[type=file]::-webkit-file-upload-button,
+        input[type=file]::file-selector-button {
+            border: 1px solid #cacaca;
+            padding: .2rem .4rem;
+            border-radius: .2rem;
+            background-color: #ffdf8d;
+            cursor: pointer;
+            color: #2e2e2e;
+            transition: .2s;
+        }
+
+        input[type=button]:hover, 
+        input[type=file]::-webkit-file-upload-button:hover,
+        input[type=file]::file-selector-button:hover
+        {
+            background-color: #ffb13d;
+            border: 1px solid #c2c2c2;
+            color:white
+        }
+
+        #faces::file-selector-button { width:10rem; }
+
+        input[type=button].styleA { background-color: #a5fff3; }
+        input[type=button].styleB { background-color: #9efb9e }
+        input[type=button].styleC { background-color: #cdcdfe; }
+        input[type=button].styleD { background-color: #fd9292; }
+
+        input[type=button].styleA:hover { background-color: #00c9ae; }
+        input[type=button].styleB:hover { background-color: #38de38 }
+        input[type=button].styleC:hover { background-color: #acacfd; }
+        input[type=button].styleD:hover { background-color: #ff4848; }
+
+        .row {
+            white-space: nowrap;
+            margin: .5rem auto;
+        }
+
     </style>
-</head>
-<body>
 
     <script type="text/javascript">
+
+        const pingFrequency = 2000; // milliseconds
+        const apiPortNumber = 5000;
+        var serverOnline = false;
+
+        window.addEventListener('DOMContentLoaded', function (event) {
+            port.value = apiPortNumber.toString();
+            setStatus("Searching for API Server...", "orange");
+            setInterval(ping, pingFrequency);
+        });
 
         function adjustCanvas() {
             annotations.height = this.height;
@@ -35,17 +121,26 @@
             return true;
         }
 
-        function previewImage() {
+        function previewImage(fileChooser) {
 
-            if (fileInput.files) {
+            if (fileChooser.files) {
                 img.onload = adjustCanvas;
-                img.src = URL.createObjectURL(fileInput.files[0]);
+                img.src = URL.createObjectURL(fileChooser.files[0]);
+                img.style.height = "auto";
+                img.style.visibility = "visible";
             }
         }
 
         function clearCanvas() {
             var context = annotations.getContext("2d");
             context.clearRect(0, 0, annotations.width, annotations.height);
+        }
+
+        function setStatus(text, color) {
+            if (color)
+                document.getElementById("status").innerHTML = "<span style='color:" + color + "'>" + text + "</span>";
+            else
+                document.getElementById("status").innerHTML = "<span>" + text + "</span>";
         }
 
         function drawRectangles(predictions) {
@@ -77,9 +172,13 @@
             }
         }
 
-        function displayResults(predictions) {
-            if (!(predictions && predictions.length > 0))
+        function displayPredictionResults(predictions) {
+
+            if (!(predictions && predictions.length > 0)) {
+                result.innerHTML = "No predictions returned";
                 return;
+            }
+
             var html = "<table><tr><th>#</th><th>Label</th><th>Confidence</th></tr>";
             for (var i = 0; i < predictions.length; i++) {
                 var pred = predictions[i];
@@ -90,98 +189,389 @@
             result.innerHTML = html;
         }
 
-        async function submitRequest(apiName, doneFunc) {
+        function displayRecognitionResults(recognitions) {
+
+            if (!(recognitions && recognitions.length > 0)) {
+                result.innerHTML = "No recognitions returned";
+                return;
+            }
+
+            var html = "<table><tr><th>#</th><th>Name</th><th>Confidence</th></tr>";
+            for (var i = 0; i < recognitions.length; i++) {
+                var recog = recognitions[i];
+                html += "<tr><td>" + i + "</td><td>" + (recog.userid || "Face")
+                      + "</td><td>" + (recog.confidence || '') + "</td></tr>";
+            }
+            html += "</table>";
+            result.innerHTML = html;
+        }
+
+        function displayMatchResults(match) {
+            if (!match) {
+                result.innerHTML = "No matches returned";
+                return;
+            }
+
+            var html = "Match: " + match.similarity.toFixed(4);
+            result.innerHTML = html;
+        }
+
+        function displayBaseResults(base) {
+
+            if (!base) {
+                result.innerHTML = "No results returned";
+                return;
+            }
+
+            var html = base.success ? "Operation successful" : "Operation failed";
+            result.innerHTML = html;
+        }
+
+        function displayRegisteredFaces(data) {
+
+            if (!data || data.faces == null || data.faces.length <= 0) {
+                result.innerHTML = "No faces registered";
+                return;
+            }
+
+            var html = "";
+            for (var name of data.faces)
+                html += name + "<br>";
+            result.innerHTML = html;
+        }
+
+        async function ping() {
+
+            var portNumber = parseInt(port.value);
+            var url = 'http://localhost:' + portNumber + '/v1/status/ping';
+
+            await fetch(url, { method: "GET" })
+                .then(response => {
+                    if (!response.ok)
+                        setStatus('Error contacting API server', "red");
+                    else
+                        response.json().then(data => {
+                            if (serverOnline == data.success)
+                                return;
+
+                            serverOnline = data.success;
+                            if (serverOnline)
+                                setStatus('API server is online', "green");
+                            else
+                                setStatus('Unable to contact API server', "red");
+                        })
+                        .catch(error => setStatus('Unable to contact API server', "red"));
+                  })
+                  .catch(error => {
+                      setStatus(/*error.message*/ "Unable to contact AI Server", "red");
+                  });
+        }
+
+        function submitRequest(apiName, images, data, doneFunc) {
+
+            setStatus("Sending request to AI server", "blue");
+
             var formData = new FormData();
 
             // Check file selected or not
-            if (fileInput.files.length > 0) {
-
-                file = fileInput.files[0];
-                formData.append('image', file);
-                var url = 'http://localhost:5000/v1/vision/' + apiName;
-
-                try {
-                    const timeout = 10 /*sec*/ * 1000; // in milliseconds
-
-                    const controller = new AbortController();
-                    const timerId = setTimeout(() => controller.abort(), timeout);
-
-                    const response = await fetch(url, {
-                        method: "POST",
-                        cache: 'no-cache',
-                        body: formData,
-                        signal: controller.signal
-                    });
-                    clearTimeout(timerId);
-
-                    var data = response.json();
-                    doneFunc(data)
+            if (images && images.length > 0) {
+                if (images.length == 1) {
+                    file = images[0];
+                    formData.append('image', file);
                 }
-                catch (error) {
-                    if (error.name === "AbortError")
-                        alert("The call to the API server timed out");
-                    else
-                        alert(error.message);
+                else {
+                    for (var i = 0; i < images.length; i++) {
+                        file = images[i];
+                        formData.append('image' + (i + 1), file);
+                    }
                 }
             }
+
+            if (data && data.length > 0) {
+                for (var i = 0; i < data.length; i++) {
+                    keypair = data[i];
+                    formData.append(keypair[0], keypair[1]);
+                }
+            }
+
+            var portNumber = parseInt(port.value);
+            var url = 'http://localhost:' + portNumber + '/v1/vision/' + apiName;
+
+            result.innerHTML = "";
+
+            fetch(url, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok)
+                    setStatus('Error contacting API server', "red");
+                else {
+                    response.json().then(data => {
+                        if (data) {
+                            doneFunc(data)
+                            setStatus("Call to " + apiName + " complete", "green");
+                        } else
+                            setStatus('No data was returned', "red");
+                    })
+                    .catch(error => setStatus(error, "red"));
+                }})
+            .catch(error => setStatus(error, "red"));
         }
 
-        function onDetectScene() {
+        function onDetectScene(fileChooser) {
 
-           clearCanvas();
-           submitRequest('scene', function (data) {
-                if (data) {
-                    result.innerHTML = "<table>" +
-                                       "<tr><th>Confidence</th>" +
-                                       "    <th>Label</th></tr><tr>" +
-                                       "<tr><td>" + Math.round(data.confidence, 3) + "</td>" +
-                                       "     <td> " + data.label + "</td></tr>" +
-                                       "<table>";
-                }
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for scene detection");
+                return;
+            }
+
+            var images = [fileChooser.files[0]];
+
+            submitRequest('scene', images, null, function (data) {
+                result.innerHTML = "<table>" +
+                                    "<tr><th>Confidence</th>" +
+                                    "    <th>Label</th></tr><tr>" +
+                                    "<tr><td>" + Math.round(data.confidence, 3) + "</td>" +
+                                    "     <td> " + data.label + "</td></tr>" +
+                                    "<table>";
             });
         }
 
-        function onDetectFaces() {
-            submitRequest('face', function (data,) {
+        function onDetectFaces(fileChooser) {
 
-                if (data && data.predictions && data.predictions.length > 0) {
-                    drawRectangles(data.predictions);
-                    displayResults(data.predictions)
-                }
-                else
-                    result.innerText = "No faces detected";
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for scene detection");
+                return;
+            }
+
+            var images = [fileChooser.files[0]];
+
+            submitRequest('face', images, null, function (data) {
+                drawRectangles(data.predictions);
+                displayPredictionResults(data.predictions)
             });
         }
 
-        function onDetectThings() {
+        function onDetectThings(fileChooser) {
 
-            submitRequest('detection', function (data) {
-                if (data && data.predictions && data.predictions.length > 0) {
-                    drawRectangles(data.predictions);
-                    displayResults(data.predictions)
-                }
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for scene detection");
+                return;
+            }
+
+            var images = [fileChooser.files[0]];
+
+            submitRequest('detection', images, null, function (data) {
+                drawRectangles(data.predictions);
+                displayPredictionResults(data.predictions)
+            });
+        }
+
+        function onCompareFaces(face1Ctrl, face2Ctrl) {
+            clearCanvas();
+
+            if (face1Ctrl.files.length == 0 || face2Ctrl.files.length == 0) {
+                alert("No file was selected for scene detection");
+                return;
+            }
+
+            var images = [face1Ctrl.files[0], face2Ctrl.files[0]];
+
+            submitRequest('face/match', images, null, function (data) {
+                displayMatchResults(data);
+            });
+        }
+
+        function onRegisterFaces(userId, faceCtrl) {
+            clearCanvas();
+
+            if (faceCtrl.files.length == 0) {
+                alert("No files were selected for face registration");
+                return;
+            }
+
+            if (!userId) {
+                alert("No name supplied");
+                return;
+            }
+
+            var images = [];
+            for (var i = 0; i < faceCtrl.files.length; i++)
+                images.push(faceCtrl.files[1]);
+
+            submitRequest('face/register', images, [["userid", userId]], function (data) {
+                if (data)
+                    displayBaseResults(data);
                 else
-                    result.innerText = "No objects detected";
+                    result.innerText = "Unable to register faces";
+            });
+        }
+
+        function onListRegisteredFaces() {
+
+            clearCanvas();
+
+            submitRequest('face/list', null, null, function (data) {
+                displayRegisteredFaces(data)
+            });
+        }
+
+        function onDeleteFace(userId) {
+
+            clearCanvas();
+
+            submitRequest('face/delete', null, [["userid", userId]], function (data) {
+            });
+        }
+
+        function onRecogniseFace(fileChooser, minimumConfidence) {
+
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for scene detection");
+                return;
+            }
+
+            var images = [fileChooser.files[0]];
+
+            var minConfidence = parseInt(minimumConfidence);
+
+            submitRequest('face/recognize', images,  [["minimumConfidence", minConfidence]], function (data) {
+                drawRectangles(data.predictions);
+                displayRecognitionResults(data.predictions)
             });
         }
 
    </script>
 
-    <form method="post" action="" enctype="multipart/form-data" id="myform">
-        <div style="position:relative">
-            <canvas id="annotations"
-                    style="position:absolute;left:0;top:0;pointer-events:none;z-index:10">
-            </canvas>
-            <img src="" id="img" style="width:300px;height:auto">
+</head>
+
+<body>
+
+    <div style="max-width:866px;margin:0 auto;">
+
+    <div id="ctl00_SH" class="site-header fixed">
+		<div class="main-content">
+			<div class="logo"><a href="/"><img tabindex="1" title="CodeProject" src="https://www.codeproject.com/App_Themes/CodeProject/Img/logo250x135.gif" alt="Home" style="height:135px;width:250px;border-width:0px;"></a></div>
+			<div class="promo"></div>
         </div>
-        <input id="fileInput" type="file" onchange="return previewImage()" />
-        <br/>
-        <input type="button" value="Detect Scene"  id="scene" onclick="onDetectScene()" />
-        <input type="button" value="Detect Face"   id="face" onclick="onDetectFaces()" />
-        <input type="button" value="Detect Things" id="things" onclick="onDetectThings()" />
+	</div>
+
+    <h2>The CodeProject SenseAI Playground</h2>
+    <form method="post" action="" enctype="multipart/form-data" id="myform">
+
+        <div style="display:flex">
+            <div style="width:450px">
+
+                <div class="row" style="text-align:right; margin-top: -.9rem;">
+                    <span style="font-size:90%">Port:</span>
+                    <input type="number" id="port" style="width:4rem;font-size:90%" value="5000" />
+                </div>
+
+                <fieldset>
+                    <legend>Object Detection</legend>
+                    <div class="row">
+                        <label>Image</label>
+                        <input id="image" type="file" onchange="return previewImage(this)" />
+                    </div>
+                    <div class="row">
+                        <label>Operation</label>
+                        <input type="button" value="Detect Scene"  id="scene"  class="styleA" onclick="onDetectScene(image)" />
+                        <input type="button" value="Detect Face"   id="face"   class="styleB" onclick="onDetectFaces(image)" />
+                        <input type="button" value="Detect Things" id="things" class="styleC" onclick="onDetectThings(image)" />
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Face Comparison</legend>
+                    <div style="display:flex">
+                        <div>
+                            <div class="row">
+                                <label>Image 1</label>
+                                <input style="width:17rem" id="face1" type="file" onchange="return previewImage(this)" />
+                            </div>
+                            <div class="row">
+                                <label>Image 2</label>
+                                <input style="width:17rem" id="face2" type="file" onchange="return previewImage(this)" />
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;">
+                            <input type="button" value="Compare" class="styleB" onclick="onCompareFaces(face1, face2)" />
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Face registration</legend>
+                    <div style="display:flex">
+                        <div style="width:20rem">
+                            <div class="row">
+                                <label>1. Person's name</label>
+                                <input style="width:9.5rem" id="userId" type="text" />
+                            </div>
+                            <div class="row">
+                                <label>2. Select images</label>
+                                <input style="width:10rem" id="faces" multiple="multiple" type="file" class="styleA"/>
+                            </div>
+                            <div class="row">
+                                <label>3. Final step</label>
+                                <input style="width:10rem;" id="register" type="button" class="styleB" 
+                                    value="Register Faces" onclick="onRegisterFaces(userId.value, faces)" />
+                            </div>
+                        </div>
+                        <div style="margin-left:1rem;display:flex;align-items:center;flex-direction: column;justify-content: space-around;">
+                            <input style="width:12rem" id="listfaces"   type="button" value="List Registered Faces"
+                                onclick="onListRegisteredFaces()" />
+                            <input style="width:12rem;" class="styleD" id="deleteFaces" type="button"
+                                   value="Delete Person's Images" onclick="onDeleteFace(userId.value)" />
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Face Recognition</legend>
+                    <div class="row">
+                        <label>Image</label>
+                        <input id="faceInput" type="file" style="width:17rem"
+                            onchange="return previewImage(this)" />
+                        <input type="button" value="Recognise" id="recognise" class="styleB"
+                            onclick="onRecogniseFace(faceInput, minRecogConfidence.value)" />
+                    </div>
+                    <div class="row">
+                        <span>Minimum Recognition Confidence</span>
+                        <input value="0.6" id="minRecogConfidence" type="text" style="width:3rem"/>
+                    </div>
+                </fieldset>
+
+            </div>
+
+            <div style="width:400px;margin-left: 1rem;margin-top:-8px">
+
+                <div id="status" 
+                     style="width:100%;height:32px; display:block;background-color:white;margin-bottom:.5rem;font-weight:bold"></div>
+                
+                <div id="result" 
+                    style="width:100%;height:195px;margin-bottom:10px;background-color:white;border:#ccc 1px solid;overflow-y: auto;"></div>
+
+                <div style="position:relative;border:1px #ccc solid;">
+                    <canvas id="annotations" 
+                        style="position:absolute;left:0;top:0;pointer-events:none;z-index:10"></canvas>
+                    <img src="" id="img" style="width:400px;height:250px;visibility:hidden">
+                </div>
+
+            </div>
+        </div>
 
     </form>
-    <div id="result"></div>
 
+</div>
 </body>
 </html>

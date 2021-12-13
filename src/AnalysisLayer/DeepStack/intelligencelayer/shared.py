@@ -38,16 +38,14 @@ class Settings:
 
 class SharedOptions:
 
-    APPDIR    = getEnvVariable("APPDIR", "C:\\CodeProject.SenseAI\\AnalysisLayer\\DeepStack")
+    APPDIR    = getEnvVariable("APPDIR", os.path.join(os.getcwd(), ".."))
     PROFILE   = getEnvVariable("PROFILE", "desktop_cpu")
     if PROFILE == "windows_native":
         sys.path.append(os.path.join(APPDIR,"python_packages"))
 
-    # from redis import RedisError, StrictRedis
-
     CUDA_MODE       = getEnvVariable("CUDA_MODE", "False")
     TEMP_PATH       = getEnvVariable("TEMP_PATH", "")
-    DATA_DIR        = getEnvVariable("DATA_DIR", "/datastore")
+    DATA_DIR        = getEnvVariable("DATA_DIR", f"{APPDIR}\datastore")
     MODELS_DIR      = getEnvVariable("MODELS_DIR", "assets")
     PORT            = getEnvVariable("PORT", "5000")
 
@@ -57,10 +55,6 @@ class SharedOptions:
     SHARED_APP_DIR  = os.path.join(APPDIR, MODELS_DIR)
     GPU_APP_DIR     = os.path.join(APPDIR, "gpufiles")
     CPU_APP_DIR     = os.path.join(APPDIR, "cpufiles")
-
-    # print("APPDIR: " + APPDIR)
-    # print("DATA_DIR: " + DATA_DIR)
-    # print("TEMP_PATH: " + DATA_DIR)
 
     if CUDA_MODE == "True":
         APP_DIR   = GPU_APP_DIR
@@ -75,10 +69,6 @@ class SharedOptions:
         MODE = os.environ["MODE"]
 
     BaseUrl = f"http://localhost:{PORT}/v1/queue/"
-    # This will be going
-    # db = StrictRedis(host="localhost", db=0, decode_responses=True)
-
-    # TB_EMBEDDINGS = "TB_EMBEDDINGS"
 
     PROFILE_SETTINGS = {
         "desktop_cpu": Settings(
