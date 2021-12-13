@@ -70,7 +70,7 @@ rem set storageUrl=https://storage.googleapis.com/codeproject-senseai/
 :: b. From AWS
 set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/
 :: c. Use a local directory rather than from online. Handy for debugging.
-set storageUrl=C:\Dev\CodeProject\CodeProject.AI\install\cached_downloads\
+:: set storageUrl=C:\Dev\CodeProject\CodeProject.SenseAI\install\cached_downloads\
 
 :: The name of the source directory
 set srcDir=src
