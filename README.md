@@ -1,3 +1,5 @@
+[![Open in Visual Studio Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/codeproject/CodeProject.SenseAI) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/license-SSPL-green)](https://github.com/codeproject/CodeProject.SenseAI/blob/main/LICENSE) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+
 # CodeProject SenseAI Server
 
 Standalone, self-hosted, fast, free and Open Source Artificial Intelligence microserver for any platform, any language.
@@ -56,9 +58,9 @@ This is an Alpha release and so support is constrained solely to Windows 10+ usi
 
 To **install CodeProject.SenseAI** as a standalone service ready for integration with applications such as HomeAssist or BlueIris, download the [installation package](https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/CodeProject.SenseAI.Package.zip).
 
-Unzip the download and double click the <Code>windows_start.bat</code> script. This will start the API server and the backend analysis services. Rerun that script whenever you want to launch the service.
+Unzip the download and double click the <code>Start_SenseAI_Win.bat</code> script. This will start the API server and the backend analysis services. Rerun that script whenever you want to launch the service.
 
-To **explore CodeProject.SenseAI** open the <code>/demos/dotNET/CodeProject.SenseAI.Playground</code> folder and double click on the <code>CodeProject.SenseAI.Playground.exe</code> application. The server will, of course, need to be running for this test application to function. Sample images can be found in the <code>TestData</code> folder under the <code>demos</code> folder
+To **explore CodeProject.SenseAI** open the <code>/demos/Javascript/</code> folder and double click on the <code>Vision.html</code> page. The server will, of course, need to be running for this test application to function. Sample images can be found in the <code>TestData</code> folder under the <code>demos</code> folder
 
 ### Setting up the development environment
 
@@ -78,11 +80,13 @@ You'll need the following extensions
 To build and run:
 
 1. Clone the [CodeProject.SenseAI repository](https://github.com/codeproject/CodeProject.SenseAI.git) from GitHub
-2. Open the main application folder in VSCode
-3. Click the "Run and Debug" button on the left hand tab bar (the arrow)
-4. From the dropdown at the top of the window, select CodeProject.SenseAI Playground
+2. run /install/setup_dev_env_win.bat. This will download required assets, setup the Python
+   virtual environment and set environment variables.
+3. Open the main application folder in VSCode
+4. Click the "Run and Debug" button on the left hand tab bar (the arrow)
+5. From the dropdown at the top of the window, select CodeProject.SenseAI Playground  
 ![Choosing a launch profile](docs/images/Choose-launch.png "Choosing a launch profile")
-5. CLick the green arrow next to the dropdown
+6. CLick the green arrow next to the dropdown
 
 The Demo application (CodeProject.SenseAI Playground) should launch after the code has built and the Python backed fully installed.
 
@@ -91,10 +95,20 @@ The Demo application (CodeProject.SenseAI Playground) should launch after the co
 
 1. Clone the [CodeProject.SenseAI repository](https://github.com/codeproject/CodeProject.SenseAI.git) from GitHub
 2. Ensure you have the Python workflow enabled in Visual Studio. While not critical, it does help with debugging.
-3. Open the solution in Visual Studio and build the entire solution
-4. In Solution Explorer, open demos / .NET and right-click on CodeProject.SenseAI.Playground and choose Debug -> Start new instance.
-5. In Solution Explorer, open src / API  and right-click on FrontEnd and choose Debug -> Start new instance. **Matthew: what's the better way of doing this?**
-6. In Solution Explorer, open src / AnalysisLayer. Right click on DeepStack and choose <code>Open Folder in File Explorer</code>. Double click on the start.bat script
+3. run /install/setup_dev_env_win.bat. This will download required assets, setup the Python virtual environment and set environment variables. **This will take several minutes, so please be patient.**
+4. Open the solution in Visual Studio and build the entire solution
+5. To run the Server and the demo application in DEBUG you can either
+    1. Start both the projects in debug mode by 
+        1. In Solution Explorer, open demos / .NET and right-click on CodeProject.SenseAI.Playground and choose Debug -> Start new instance.
+        2. In Solution Explorer, open src / API / Server and right-click on FrontEnd and choose Debug -> Start new instance. 
+    2. Configure Visual Studio to start multiple projects by
+        1. In Solution Explorer, right-click on the solution and select **Set Startup Projects...** and configure Multiple startup projects as shown below.
+          ![Set Startup Projects](docs/images/Set-Startup_Projects.png)
+    3. Now when you start with or without debugging, both the Server and demo projects with start.  Also, this will be  shown on the toolbar as shown below.  
+       ![Mutliple Project Toolbar](docs/images/Mulitple-Project-Toolbar.png)
+
+6. In Solution Explorer, open src / AnalysisLayer. Right click on DeepStack and choose <code>Open Folder in File Explorer</code>. Double click on the start.bat script.  This script will ensure that the Python virtual environment is enabled and environment variables set.  
+
 
 At this point the Playground application should be indicting it has a connection to the API server, and the servwe should be dispatching requests to the backend Analysis layer.
 
