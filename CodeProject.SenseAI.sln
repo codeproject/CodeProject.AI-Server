@@ -15,21 +15,22 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{2379A486-0D2
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3BF27572-9D3A-497C-8375-29110EBBD3D1}"
 	ProjectSection(SolutionItems) = preProject
+		LICENCE.md = LICENCE.md
 		README.md = README.md
+		docs\Welcome.html = docs\Welcome.html
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AnalysisLayer", "AnalysisLayer", "{156BFEDA-D477-43B2-92DA-FCC9BAF1F893}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "install", "install", "{D885EE64-C1BD-44D6-84D8-1E46806298D9}"
 	ProjectSection(SolutionItems) = preProject
-		install\build_download.bat = install\build_download.bat
-		install\windows_install.bat = install\windows_install.bat
-		install\windows_start.bat = install\windows_start.bat
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{027671E2-C9F9-425A-98E5-4E7801686642}"
-	ProjectSection(SolutionItems) = preProject
-		install\scripts\download.ps1 = install\scripts\download.ps1
+		install\create_installer_win.bat = install\create_installer_win.bat
+		install\load_environment.bat = install\load_environment.bat
+		install\save_environment.bat = install\save_environment.bat
+		install\set_environment.sh = install\set_environment.sh
+		install\setup_dev_env_win.bat = install\setup_dev_env_win.bat
+		install\Setup_SenseAI_Win.bat = install\Setup_SenseAI_Win.bat
+		install\Start_SenseAI_Win.bat = install\Start_SenseAI_Win.bat
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "downloads", "downloads", "{7250A438-7B43-4FED-BB2B-9FB1FB2F69AF}"
@@ -45,17 +46,41 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".NET", ".NET", "{1912618E-7
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestData", "TestData", "{B10B59B5-9F63-41C2-BFBB-6C7311DC4E99}"
 	ProjectSection(SolutionItems) = preProject
-		demos\TestData\adele1.jpg = demos\TestData\adele1.jpg
-		demos\TestData\adele2.jpg = demos\TestData\adele2.jpg
+		demos\TestData\adele.jpg = demos\TestData\adele.jpg
 		demos\TestData\bradley.jpg = demos\TestData\bradley.jpg
-		demos\TestData\detection.jpg = demos\TestData\detection.jpg
-		demos\TestData\face_detection.jpg = demos\TestData\face_detection.jpg
-		demos\TestData\mask.pt = demos\TestData\mask.pt
-		demos\TestData\RobertDowneyJr1.jpg = demos\TestData\RobertDowneyJr1.jpg
-		demos\TestData\RobertDowneyJr2.jpg = demos\TestData\RobertDowneyJr2.jpg
-		demos\TestData\RobertDowneyJr3.jpg = demos\TestData\RobertDowneyJr3.jpg
-		demos\TestData\RobertDowneyJr4.jpg = demos\TestData\RobertDowneyJr4.jpg
-		demos\TestData\scene.jpg = demos\TestData\scene.jpg
+		demos\TestData\cruise.jpg = demos\TestData\cruise.jpg
+		demos\TestData\elba.jpg = demos\TestData\elba.jpg
+		demos\TestData\perri.jpg = demos\TestData\perri.jpg
+		demos\TestData\pexels-antonio-sokic-3839427.jpg = demos\TestData\pexels-antonio-sokic-3839427.jpg
+		demos\TestData\pexels-asad-photo-maldives-1591373.jpg = demos\TestData\pexels-asad-photo-maldives-1591373.jpg
+		demos\TestData\pexels-cottonbro-7523256.jpg = demos\TestData\pexels-cottonbro-7523256.jpg
+		demos\TestData\pexels-cottonbro-8467934.jpg = demos\TestData\pexels-cottonbro-8467934.jpg
+		demos\TestData\pexels-cottonbro-8683441.jpg = demos\TestData\pexels-cottonbro-8683441.jpg
+		demos\TestData\pexels-fox-1595385.jpg = demos\TestData\pexels-fox-1595385.jpg
+		demos\TestData\pexels-freestocksorg-839462.jpg = demos\TestData\pexels-freestocksorg-839462.jpg
+		demos\TestData\pexels-huseyn-kamaladdin-667838.jpg = demos\TestData\pexels-huseyn-kamaladdin-667838.jpg
+		demos\TestData\pexels-jacob-colvin-1757363.jpg = demos\TestData\pexels-jacob-colvin-1757363.jpg
+		demos\TestData\pexels-jaime-reimer-2662116.jpg = demos\TestData\pexels-jaime-reimer-2662116.jpg
+		demos\TestData\pexels-jean-van-der-meulen-1599791.jpg = demos\TestData\pexels-jean-van-der-meulen-1599791.jpg
+		demos\TestData\pexels-jimmy-chan-3159622 (1).jpg = demos\TestData\pexels-jimmy-chan-3159622 (1).jpg
+		demos\TestData\pexels-jonathan-borba-2917382.jpg = demos\TestData\pexels-jonathan-borba-2917382.jpg
+		demos\TestData\pexels-maria-orlova-4947381.jpg = demos\TestData\pexels-maria-orlova-4947381.jpg
+		demos\TestData\pexels-ngrh-mei-5975635.jpg = demos\TestData\pexels-ngrh-mei-5975635.jpg
+		demos\TestData\pexels-pixabay-210186.jpg = demos\TestData\pexels-pixabay-210186.jpg
+		demos\TestData\pexels-pixabay-273935.jpg = demos\TestData\pexels-pixabay-273935.jpg
+		demos\TestData\pexels-polina-tankilevitch-5848781.jpg = demos\TestData\pexels-polina-tankilevitch-5848781.jpg
+		demos\TestData\pexels-roberto-nickson-2559941.jpg = demos\TestData\pexels-roberto-nickson-2559941.jpg
+		demos\TestData\pexels-thirdman-7268587 (1).jpg = demos\TestData\pexels-thirdman-7268587 (1).jpg
+		demos\TestData\pexels-thirdman-7652055.jpg = demos\TestData\pexels-thirdman-7652055.jpg
+		demos\TestData\pexels-tiger-lily-4480988.jpg = demos\TestData\pexels-tiger-lily-4480988.jpg
+		demos\TestData\pexels-tiger-lily-4481324.jpg = demos\TestData\pexels-tiger-lily-4481324.jpg
+		demos\TestData\pexels-tima-miroshnichenko-6694964.jpg = demos\TestData\pexels-tima-miroshnichenko-6694964.jpg
+		demos\TestData\pexels-victoria-borodinova-1648396.jpg = demos\TestData\pexels-victoria-borodinova-1648396.jpg
+		demos\TestData\Robert1.PNG = demos\TestData\Robert1.PNG
+		demos\TestData\Robert2.PNG = demos\TestData\Robert2.PNG
+		demos\TestData\Robert3.PNG = demos\TestData\Robert3.PNG
+		demos\TestData\Robert4.PNG = demos\TestData\Robert4.PNG
+		demos\TestData\Robert5.PNG = demos\TestData\Robert5.PNG
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.Playground", "demos\dotNet\CodeProject.SenseAI.Playground\CodeProject.SenseAI.Playground.csproj", "{C33D90E7-7570-46FB-9EB9-ED6B40A93A9B}"
@@ -70,11 +95,22 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend", "src\API\Server\B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.API.Server.Backend.Tests", "tests\QueueServiceTests\CodeProject.SenseAI.API.Server.Backend.Tests.csproj", "{F9430C77-589D-4C56-8458-2DF7E344C0FC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.Analysis.Yolo", "src\AnalysisLayer\CodeProject.SenseAI.Backend.Yolo\CodeProject.SenseAI.Analysis.Yolo.csproj", "{ED911007-D9E3-4F99-9611-FBCA889419C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.Analysis.Yolo", "src\AnalysisLayer\CodeProject.AI.Backend.Yolo\CodeProject.SenseAI.Analysis.Yolo.csproj", "{ED911007-D9E3-4F99-9611-FBCA889419C2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{8C92DCAE-EDE7-4DEC-A5CB-BB2388905064}"
 	ProjectSection(SolutionItems) = preProject
 		docs\images\Choose-launch.png = docs\images\Choose-launch.png
+		docs\images\Mulitple-Project-Toolbar.png = docs\images\Mulitple-Project-Toolbar.png
+		docs\images\Set-Startup_Projects.png = docs\images\Set-Startup_Projects.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB5B-DB85-4A59-A3AE-FA55A35D05B0}"
+	ProjectSection(SolutionItems) = preProject
+		demos\Javascript\assets\favicon-16x16.png = demos\Javascript\assets\favicon-16x16.png
+		demos\Javascript\assets\favicon-32x32.png = demos\Javascript\assets\favicon-32x32.png
+		demos\Javascript\assets\logo135-bg.gif = demos\Javascript\assets\logo135-bg.gif
+		demos\Javascript\assets\logo250x135.gif = demos\Javascript\assets\logo250x135.gif
+		demos\Javascript\assets\styles.css = demos\Javascript\assets\styles.css
 	EndProjectSection
 EndProject
 Global
@@ -119,7 +155,6 @@ Global
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
 		{2379A486-0D28-4CAD-BB13-E77FBA538E0D} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
 		{156BFEDA-D477-43B2-92DA-FCC9BAF1F893} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
-		{027671E2-C9F9-425A-98E5-4E7801686642} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{7250A438-7B43-4FED-BB2B-9FB1FB2F69AF} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{E5D27495-EE4F-4AAF-8749-A6BA848111E2} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{3A860CDD-94B9-4002-BA08-87E8822DDE50} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
@@ -133,6 +168,7 @@ Global
 		{F9430C77-589D-4C56-8458-2DF7E344C0FC} = {D982BD8C-2257-413B-8513-8043AB3035F3}
 		{ED911007-D9E3-4F99-9611-FBCA889419C2} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{8C92DCAE-EDE7-4DEC-A5CB-BB2388905064} = {3BF27572-9D3A-497C-8375-29110EBBD3D1}
+		{CB26AB5B-DB85-4A59-A3AE-FA55A35D05B0} = {3A860CDD-94B9-4002-BA08-87E8822DDE50}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

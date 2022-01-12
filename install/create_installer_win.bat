@@ -40,7 +40,7 @@ set compressInstallation=true
 set removeInstallationFolder=false
 
 :: verbosity can be: quiet | info | loud
-set verbosity=quiet
+set verbosity=info
 
 :: Show output in wild, crazy colours
 set techniColor=true
@@ -213,13 +213,15 @@ call :WriteLine Green "Done"
 call :WriteLine White "Building API Server [%config%]..."
 set serverPath=%rootPath%\%srcDir%\%senseAPIDir%\Server\FrontEnd
 pushd "%serverPath%"
+
 REM Note: The carrot character means "line continuation"
+REM For .NET 6 add the "-p:PublishSingleFile=true" parameter to make the output a single file
 if /i "%verbosity%"=="quiet" (
     dotnet publish --configuration %config% -r win-x64 --self-contained ^
-                   -p:PublishSingleFile=true -o "%buildOutputDir%" --nologo --verbosity !dotnetFlags! > nul
+                   -o "%buildOutputDir%" --nologo --verbosity !dotnetFlags! > nul
 ) else (
     dotnet publish --configuration %config% -r win-x64 --self-contained ^
-                   -p:PublishSingleFile=true -o "%buildOutputDir%" --nologo --verbosity !dotnetFlags!
+                   -o "%buildOutputDir%" --nologo --verbosity !dotnetFlags!
 )
 popd
 
