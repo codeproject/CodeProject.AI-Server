@@ -1,4 +1,6 @@
 ﻿
+using CodeProject.SenseAI.API.Common;
+
 using Microsoft.Extensions.Options;
 
 using System;
@@ -48,8 +50,8 @@ namespace CodeProject.SenseAI.API.Server.Backend
             // the backend process will return a json string as a response.
             var completion = new TaskCompletionSource<string?>();
 
-            // when the request is dequed will have to check that the pending response exists and that
-            // the task is not completed.
+            // when the request is dequeued will have to check that the pending response exists and
+            // that the task is not completed.
             if (!_pendingResponses.TryAdd(request.reqid, completion))
             {
                 return new BackendErrorResponse(-3, $"Unable to add pending response id = {request.reqid}.");
@@ -69,7 +71,10 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
                 try
                 {
-                    await queue.Writer.WriteAsync(request, theToken);
+                    await queue.Writer.WriteAsync(request, theToken).ConfigureAwait(false);
+
+                    if (request != null)
+                        Logger.Log($"Queued: '{request.reqtype}' request, id {request.reqid}");
                 }
                 catch (OperationCanceledException)
                 {
@@ -178,14 +183,16 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
                 try
                 {
-                    request = await queue.Reader.ReadAsync(theToken);
+                    request = await queue.Reader.ReadAsync(theToken).ConfigureAwait(false);
+                    if (request != null)
+                        Logger.Log($"Dequeued: '{request.reqtype}' request, id {request.reqid}");
                 }
                 catch
                 {
                     return null;
                 }
             }
-            while (!ValidateRequest(request));  
+            while (request == null || !ValidateRequest(request));  
 
             return request;
         }

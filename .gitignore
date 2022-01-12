@@ -3,6 +3,24 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+/demos/Python/detected
+
+/install/downloads/models
+/install/downloads/assets
+/install/downloads/python37
+/install/cached_downloads
+/install/downloads/python_packages_cpu
+/install/downloads/python_packages_gpu
+
+/src/CodeProject.SenseAI.config
+/src/set_environment.bat
+/src/Start_SenseAI_Win.bat
+
+/src/AnalysisLayer/DeepStack/venv
+/src/AnalysisLayer/DeepStack/datastore
+/src/AnalysisLayer/DeepStack/tempstore
+/src/AnalysisLayer/DeepStack/assets
+
 # User-specific files
 *.rsuser
 *.suo
@@ -359,16 +377,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/install/downloads/models
-/install/downloads/venv/venv
-/src/AnalysisLayer/DeepStack/env
-/demos/Python/detected
-/src/AnalysisLayer/DeepStack/intelligencelayer/env
-/src/AnalysisLayer/DeepStack/intelligencelayer/env3.7
-/install/downloads/python37/Python37
-/install/downloads/python_packages_cpu/windows_packages_cpu
-/src/AnalysisLayer/DeepStack/intelligencelayer/venv
-/install/downloads/assets
-/install/downloads_saved/venv
-/src/AnalysisLayer/DeepStack/intelligencelayer/data
-/src/AnalysisLayer/DeepStack/venv
+/src/AnalysisLayer/DeepStack/python37
+/Start_SenseAI_Win.bat
+/set_environment.bat
+/CodeProject.SenseAI.config
+/CodeProject.SenseAI.json

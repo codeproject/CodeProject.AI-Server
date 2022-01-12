@@ -9,9 +9,13 @@ import time
 import warnings
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-from shared import SharedOptions, getCommand, sendResponse
-if SharedOptions.PROFILE == "windows_native":
-    sys.path.append(os.path.join(SharedOptions.APP_DIR,"python_packages"))
+from shared import SharedOptions, FrontendClient
+
+# TODO: Currently doesn't exist. The Python venv is setup at install time for a single platform in
+# order to reduce downloads. Having the ability to switch profiles at runtime will be added, but
+# will increase downloads. Lazy loading will help, somewhat, and the infrastructure is already in
+# place, though it needs to be adjusted.
+sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
 
 import numpy as np
 import torch
@@ -22,6 +26,8 @@ import traceback
 
 import torchvision.transforms as transforms
 from torchvision.models import resnet50
+
+frontendClient = FrontendClient()
 
 class SceneModel(object):
     def __init__(self, model_path, cuda=False):
@@ -65,10 +71,10 @@ def scenerecognition(thread_name, delay):
     )
 
     while True:
-        queue = getCommand(IMAGE_QUEUE);
+        queue = frontendClient.getCommand(IMAGE_QUEUE);
 
         if len(queue) > 0:
-
+            timer = frontendClient.startTimer("Scene Classification")
             for req_data in queue:
                 req_data = json.JSONDecoder().decode(req_data)
                 img_id = req_data["imgid"]
@@ -103,7 +109,7 @@ def scenerecognition(thread_name, delay):
 
                 except UnidentifiedImageError:
                     err_trace = traceback.format_exc()
-                    print(err_trace, file=sys.stderr, flush=True)
+                    frontendClient.log(err_trace, is_error=True)
 
                     output = {
                         "success": False,
@@ -114,12 +120,13 @@ def scenerecognition(thread_name, delay):
                 except Exception:
 
                     err_trace = traceback.format_exc()
-                    print(err_trace, file=sys.stderr, flush=True)
+                    frontendClient.log(err_trace, is_error=True)
 
                     output = {"success": False, "error": "invalid image", "code": 500}
 
                 finally:
-                    sendResponse(req_id, json.dumps(output))
+                    frontendClient.endTimer(timer)
+                    frontendClient.sendResponse(req_id, json.dumps(output))
                     if os.path.exists(img_path):
                         os.remove(img_path)
 
@@ -127,5 +134,6 @@ def scenerecognition(thread_name, delay):
 
 
 if __name__ == "__main__":
-    print("Starting scene.py")
+    frontendClient.log("Scene Detection module started.")
     scenerecognition("", SharedOptions.SLEEP_TIME)
+    # TODO: Send back a "I'm alive" message to the backend of the API server so it can report to the user

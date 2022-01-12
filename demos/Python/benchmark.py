@@ -1,7 +1,7 @@
 """
-Script to time how long it takes deepstack to process a set of images. 
-The purpose is to allow comparison of speed on different hosts. 
-We also count the total number of predictions as a quality check.
+Script to time how long it takes the DeepStack modules to process a set of images. 
+The purpose is to allow comparison of speed on different hosts. We also count the
+total number of predictions as a quality check.
 
 Example run: python3 benchmark.py --images_folder /Users/my/images
 """
@@ -14,24 +14,24 @@ import demoConfig as cfg
 
 # deepstack credentials
 DEFAULT_IP_ADDRESS = cfg.serverHost
-DEFAULT_PORT = cfg.serverPort
-DEFAULT_API_KEY = ""
+DEFAULT_PORT       = cfg.serverPort
+DEFAULT_API_KEY    = ""
 DEFAULT_IMAGES_FOLDER = cfg.imageDir
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Perform benchmarking of Deepstack")
+    parser = argparse.ArgumentParser(description="Perform benchmarking of DeepStack modules in CodeProject.SenseAI")
     parser.add_argument(
         "--ip",
         default=DEFAULT_IP_ADDRESS,
         type=str,
-        help="Deepstack IP",
+        help="CodeProject Sense Server IP address",
     )
     parser.add_argument(
         "--port",
         default=DEFAULT_PORT,
         type=int,
-        help="Deepstack port",
+        help="CodeProject Sense Server Port",
     )
     parser.add_argument(
         "--api_key", default=DEFAULT_API_KEY, type=str, help="Deepstack API key"
@@ -40,7 +40,7 @@ def main():
         "--images_folder",
         default=DEFAULT_IMAGES_FOLDER,
         type=str,
-        help="The folder of jpg images",
+        help="The folder of images to test (only jpg will be tested)",
     )
     args = parser.parse_args()
 

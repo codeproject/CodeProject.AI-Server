@@ -10,8 +10,7 @@ using CodeProject.SenseAI.API.Server.Backend;
 namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 {
     /// <summary>
-    /// Handles pulling requests from the Command Queue and
-    /// returning reponses to the calling method.
+    /// Handles pulling requests from the Command Queue and returning reponses to the calling method.
     /// </summary>
     [Route("v1/queue")]
     [ApiController]
@@ -40,7 +39,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<OkObjectResult> GetQueue(string name, CancellationToken token)
         {
-            var response = await _queueService.DequeueRequestAsync(name, token);
+            BackendRequestBase? response = await _queueService.DequeueRequestAsync(name, token);
             return new OkObjectResult(response);
         }
 

@@ -12,7 +12,7 @@ namespace CodeProject.SenseAI.Demo.Playground
 {
     /// <summary>
     /// This is an example of a .NET client to call CodeProject SenseAI API Server.
-    /// TODO: move under an SDKs directory and called CodeProject.AI.Sdk.Net.
+    /// TODO: move under an SDKs directory called CodeProject.AI.Sdk.Net.
     /// </summary>
     public class ApiClient
     {
@@ -58,9 +58,9 @@ namespace CodeProject.SenseAI.Demo.Playground
         }
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the ApiClient class.
         /// </summary>
-        /// <param name="port"></param>
+        /// <param name="port">The oort for the HTTP calls</param>
         public ApiClient(int port)
         {
             Port = port;
@@ -101,7 +101,7 @@ namespace CodeProject.SenseAI.Demo.Playground
 
             var fileInfo = new FileInfo(image_path);
             if (!fileInfo.Exists)
-                return new ErrorResponse("Image does not exist" );
+                return new ErrorResponse("Image does not exist");
 
             var request = new MultipartFormDataContent();
 

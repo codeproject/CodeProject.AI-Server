@@ -1,0 +1,150 @@
+﻿html {
+    font-family: Arial,sans-serif;
+    font-size: .9rem;
+}
+
+.site-header {
+    background-image: url(https://www.codeproject.com/App_Themes/CodeProject/Img/logo135-bg.gif);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+    .site-header .main-content {
+        position: relative;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .site-header.fixed .main-content {
+        margin: auto;
+        max-width: 1056px;
+    }
+
+    .site-header .logo {
+        display: inline-block;
+    }
+
+table {
+    margin-top: 1rem;
+}
+
+table, th, td {
+    border: 1px solid #eee;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 0.5rem 0.75rem;
+}
+
+th {
+    font-weight: bold;
+    background-color: #eee;
+    text-align: left;
+}
+
+fieldset {
+    border: 1px #ddd solid;
+    padding: .7rem;
+    margin-block: 1rem;
+}
+
+    fieldset legend {
+        font-size: 1.25rem;
+    }
+
+    fieldset label {
+        width: 8rem;
+        display: inline-block;
+        text-align: right;
+        margin-right: .5rem;
+    }
+
+input[type=button],
+input[type=file]::-webkit-file-upload-button,
+input[type=file]::file-selector-button {
+    border: 1px solid #cacaca;
+    padding: .2rem .4rem;
+    border-radius: .2rem;
+    background-color: #ffdf8d;
+    cursor: pointer;
+    color: #2e2e2e;
+    transition: .2s;
+}
+
+    input[type=button]:hover,
+    input[type=file]::-webkit-file-upload-button:hover,
+    input[type=file]::file-selector-button:hover {
+        background-color: #ffb13d;
+        border: 1px solid #c2c2c2;
+        color: white
+    }
+
+
+    input[type=button].styleA {
+        background-color: #a5fff3;
+    }
+
+    input[type=button].styleB {
+        background-color: #9efb9e
+    }
+
+    input[type=button].styleC {
+        background-color: #cdcdfe;
+    }
+
+    input[type=button].styleD {
+        background-color: #fd9292;
+    }
+
+    input[type=button].styleA:hover {
+        background-color: #00c9ae;
+    }
+
+    input[type=button].styleB:hover {
+        background-color: #38de38
+    }
+
+    input[type=button].styleC:hover {
+        background-color: #acacfd;
+    }
+
+    input[type=button].styleD:hover {
+        background-color: #ff4848;
+    }
+
+
+p, li {
+    margin: 5px 0 3px 0;
+    line-height: 1.3;
+}
+
+.row {
+    white-space: nowrap;
+    margin: .5rem auto;
+}
+
+.status-cell {
+    height: 100px;
+    vertical-align: middle;
+    text-align: center;
+}
+
+    .status-cell.active {
+        background-color: #8aff56;
+    }
+
+    .status-cell.inactive {
+        background-color: #ffa5a5;
+    }
+
+.logs {
+    font-family: Consolas, monospace;
+    white-space: pre;
+    word-break: break-word;
+    border: 1px #ccc solid;
+    padding: 10px;
+    margin-top: 15px;
+    color: #333;
+    overflow: auto;
+}

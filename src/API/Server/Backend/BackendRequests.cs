@@ -15,6 +15,12 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// </summary>
         [JsonInclude]
         public string reqid { get; private set; } = Guid.NewGuid().ToString();
+
+        /// <summary>
+        /// The request type
+        /// </summary>
+        [JsonInclude]
+        public string? reqtype { get; protected set; }
     }
 
     /// <summary>
@@ -33,22 +39,17 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public float? minconfidence { get; set; }
 
         /// <summary>
-        /// The request type
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; private set; } = "detection";
-
-        /// <summary>
         /// Constructor
         /// </summary>
         public BackendObjectDetectionRequest()
         {
+            reqtype = "detection";
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public BackendObjectDetectionRequest(string? imageId, float? minimumConfidence)
+        public BackendObjectDetectionRequest(string? imageId, float? minimumConfidence) : this()
         {
             imgid         = imageId;
             minconfidence = minimumConfidence;
@@ -71,22 +72,17 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public float? minconfidence { get; set; }
 
         /// <summary>
-        /// The request type
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; private set; } = "detect";
-
-        /// <summary>
         /// Constructor
         /// </summary>
         public BackendFaceDetectionRequest()
         {
+            reqtype = "detect";
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public BackendFaceDetectionRequest(string? imageId, float? minimumConfidence)
+        public BackendFaceDetectionRequest(string? imageId, float? minimumConfidence) : this()
         {
             imgid         = imageId;
             minconfidence = minimumConfidence;
@@ -98,26 +94,22 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public string[]? images { get; set; }
 
         /// <summary>
-        /// The request type
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; private set; } = "match";
-
-        /// <summary>
         /// Constructor
         /// </summary>
         public BackendFaceMatchRequest()
         {
+            reqtype = "match";
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public BackendFaceMatchRequest(string image1Id, string image2Id)
+        public BackendFaceMatchRequest(string image1Id, string image2Id) : this()
         {
             images = new string[] { image1Id, image2Id };
         }
     }
+
     public class BackendSceneDetectionRequest : BackendRequestBase
     {
         /// <summary>
@@ -126,22 +118,17 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public string? imgid { get; set; }
 
         /// <summary>
-        /// The request type
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; private set; } = "detection";
-
-        /// <summary>
         /// Constructor
         /// </summary>
         public BackendSceneDetectionRequest()
         {
+            reqtype = "detection";
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public BackendSceneDetectionRequest(string? imageId)
+        public BackendSceneDetectionRequest(string? imageId) : this()
         {
             imgid = imageId;
         }
@@ -160,22 +147,17 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public string[]? images { get; set; }
 
         /// <summary>
-        /// The request type
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; private set; } = "register";
-
-        /// <summary>
         /// Constructor
         /// </summary>
         public BackendFaceRegisterRequest()
         {
+            reqtype = "register";
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public BackendFaceRegisterRequest(string userid, string[] imageids)
+        public BackendFaceRegisterRequest(string userid, string[] imageids) : this()
         {
             this.userid = userid;
             this.images = imageids;
@@ -185,18 +167,14 @@ namespace CodeProject.SenseAI.API.Server.Backend
     public class BackendFaceListRequest : BackendRequestBase
     {
         /// <summary>
-        /// The request type
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; private set; } = "list";
-
-        /// <summary>
         /// Constructor
         /// </summary>
         public BackendFaceListRequest()
         {
+            reqtype = "list";
         }
     }
+
     public class BackendFaceDeleteRequest : BackendRequestBase
     {
         /// <summary>
@@ -205,22 +183,17 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public string? userid { get; set; }
 
         /// <summary>
-        /// The request type
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; private set; } = "delete";
-
-        /// <summary>
         /// Constructor
         /// </summary>
         public BackendFaceDeleteRequest()
         {
+            reqtype = "delete";
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public BackendFaceDeleteRequest(string userid)
+        public BackendFaceDeleteRequest(string userid) : this()
         {
             this.userid = userid;
         }
@@ -242,22 +215,17 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public float? minconfidence { get; set; }
 
         /// <summary>
-        /// The request type
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; private set; } = "recognize";
-
-        /// <summary>
         /// Constructor
         /// </summary>
         public BackendFaceRecognitionRequest()
         {
+            reqtype = "recognize";
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public BackendFaceRecognitionRequest(string? imageId, float? minimumConfidence)
+        public BackendFaceRecognitionRequest(string? imageId, float? minimumConfidence) : this()
         {
             imgid         = imageId;
             minconfidence = minimumConfidence;

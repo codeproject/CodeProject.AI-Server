@@ -1,16 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>   
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>CodeProject.SenseAI.Server</AssemblyName>
-    <RootNamespace>CodeProject.SenseAI.Server.Frontend</RootNamespace>
+    <RootNamespace>CodeProject.SenseAI.API.Server.Frontend</RootNamespace>
     <UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <DockerfileContext>..\..\..</DockerfileContext>
     <ApplicationIcon>favicon.ico</ApplicationIcon>
+    <DeleteExistingFiles>true</DeleteExistingFiles>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -34,6 +35,15 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.csproj" />
     <ProjectReference Include="..\Backend\Backend.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\assets\favicon-16x16.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\Index.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <!--

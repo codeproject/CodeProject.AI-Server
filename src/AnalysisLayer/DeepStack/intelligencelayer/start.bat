@@ -1,14 +1,21 @@
-:: CodeProject SenseAI Server startup script
-:: We assume we're in the CodeProject SenseAI installed directory.
+:: CodeProject SenseAI Analysis services (DeepStack module) startup script for Windows
+::
+:: Usage:
+::   start.bat
+::
+:: We assume we're in the AnalysisLayer/DeepStack directory
 
 @echo off
 cls
 SETLOCAL EnableDelayedExpansion
 
-:: Before we start, set the current directory if necessary
-if "%1" == "--no-color" set NO_COLOR=true
-if not "%2" == "" cd %2
+set CPSENSEAI_ROOTDIR=%cd%\..\..\..\..\
+set envVariablesFile=!CPSENSEAI_ROOTDIR!\set_environment.bat
+set techniColor=true
 
+:: Before we start, set the current directory if necessary
+if "%1" == "--no-color" set techniColor=false
+if not "%2" == "" cd %2
 
 :: ===============================================================================================
 :: 0. Basic settings
@@ -16,86 +23,38 @@ if not "%2" == "" cd %2
 :: verbosity can be: quiet | info | loud
 set verbosity=quiet
 
-REM The location of large packages that need to be downloaded
-set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/
-
-
-:: ===============================================================================================
-:: 1. Set environment variables
-
-set APPDIR=.\
-set PORT=5000
-set PROFILE=windows_native
-set CUDA_MODE=False
-set DATA_DIR=..\data
-set TEMP_PATH=..\temp
-
-set VENV_PATH=venv
-set INSTALL_DIR=..\..\..\..\install
-set DOWNLOADS_PATH=%INSTALL_DIR%\downloads
-set MODELS_DIRNAME=assets
-set MODELS_DIR=%DOWNLOADS_PATH%\%MODELS_DIRNAME%
-
-set VISION_FACE=True
-set VISION_DETECTION=True
-set VISION_SCENE=True
-
-if "%verbosity%" == "info" (
-    echo   APPDIR    = "!APPDIR!"
-    echo   PROFILE   = "!PROFILE!"
-    echo   CUDA_MODE = "!CUDA_MODE!"
-    echo   DATA_DIR  = "!DATA_DIR!"
-    echo   TEMP_PATH = "!TEMP_PATH!"
-    echo   PORT      = "!PORT!"
-    echo   VISION_FACE      = "!VISION_FACE!"
-    echo   VISION_DETECTION = "!VISION_DETECTION!"
-    echo   VISION_SCENE     = "!VISION_SCENE!"
-)
+if not "%verbosity%" == "quiet" call :WriteLine Yellow "Current Directory: %cd%"
+if /i "%techniColor%" == "true" call :setESC
 
 :: ===============================================================================================
-:: 1. Ensure directories are created and download required assets
+:: 1. Load environment variables
 
-if not "%verbosity%" == "quiet" echo Current Directory: %cd%
-
-:: Create some directories
-call :Write White "Creating Directories..."
-if not exist %DOWNLOADS_PATH%  mkdir %DOWNLOADS_PATH%
-if not exist %DATA_DIR%        mkdir %DATA_DIR%
-if not exist %TEMP_PATH%       mkdir %TEMP_PATH%
+call :Write White "Loading installation settings..."
+call "!envVariablesFile!"
 call :WriteLine Green "Done"
 
-:: Download, unzip, and move into place the Utilities and known Python version
-call :WriteLine White "Download utilities and models..."
+set VENV_PATH=!APPDIR!\..\venv
 
-REM Download whatever packages are missing 
-if not exist %DOWNLOADS_PATH%\%MODELS_DIRNAME% (
-    PowerShell -NoProfile -ExecutionPolicy Bypass -Command "%INSTALL_DIR%\scripts\download.ps1 %storageUrl% %DOWNLOADS_PATH%\ models.zip %MODELS_DIRNAME%"
-    if /i "%verbosity%" == "quiet" call :Write White "Downloading models Done"
+if "%verbosity%" == "info" (
+    call :WriteLine Yellow "APPDIR    = !APPDIR!"
+    call :WriteLine Yellow "PROFILE   = !PROFILE!"
+    call :WriteLine Yellow "CUDA_MODE = !CUDA_MODE!"
+    call :WriteLine Yellow "DATA_DIR  = !DATA_DIR!"
+    call :WriteLine Yellow "TEMP_PATH = !TEMP_PATH!"
+    call :WriteLine Yellow "PORT      = !PORT!"
+    call :WriteLine Yellow "VISION_FACE      = !VISION_FACE!"
+    call :WriteLine Yellow "VISION_DETECTION = !VISION_DETECTION!"
+    call :WriteLine Yellow "VISION_SCENE     = !VISION_SCENE!"
 )
-if not exist %DOWNLOADS_PATH%\python37 (
-    PowerShell -NoProfile -ExecutionPolicy Bypass -Command "%INSTALL_DIR%\scripts\download.ps1 %storageUrl% %DOWNLOADS_PATH%\ python37.zip python37"
-    if /i "%verbosity%" == "quiet" call :Write White "Downloading Python interpreter Done"
-)
-
 
 :: ===============================================================================================
-:: 2. Create & Activate Virtual Environment from scratch (instead of the above download/unpack/copy)
-
-if not exist %VENV_PATH% (
-    call :Write White "Creating Virtual Environment..."
-    %DOWNLOADS_PATH%\python37\python37\python.exe -m venv %VENV_PATH%
-    call :WriteLine Green "Done"
-) else (
-    call :WriteLine Gray "Virtual Environment exists"
-)
+:: 2. Activate Virtual Environment
 
 call :Write White "Enabling our Virtual Environment..."
 
 set VIRTUAL_ENV=!VENV_PATH!\Scripts
-
 if not defined PROMPT set PROMPT=$P$G
 set PROMPT=(venv) !PROMPT!
-
 set PYTHONHOME=
 set PATH=!VIRTUAL_ENV!;%PATH%
 
@@ -112,99 +71,118 @@ if "%verbosity%"=="loud" where Python
 
 
 :: ===============================================================================================
-:: 3. Install PIP packages
-
-:: ASSUMPTION: If venv/Lib/site-packages/pip exists then no need to do this
-
-call :Write White "Checking for required packages..."
-
-if not exist %VENV_PATH%\Lib\site-packages\pip (
-
-    call :WriteLine Yellow "Installing"
-
-    :: Set Flags
-    set pipFlags=-q -q
-    if "%verbosity%"=="info" set pipFlags=-q
-    if "%verbosity%"=="loud" set pipFlags=
-
-    call :Write White "Installing Python package manager..."
-    python -m pip install --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host pypi.org --upgrade pip !pipFlags!
-    call :WriteLine Green "Done"
-
-    REM call :Write White "Installing Packages into Virtual Environment..."
-    REM pip install -r %backendDir%\%deepstackModule%\requirements.txt !pipFlags!
-    REM call :WriteLine Green "Success"
-
-    REM We'll do this the long way so we can see some progress
-    set currentOption=
-    for /f "tokens=*" %%x in (requirements.txt) do (
-
-        set line=%%x
-
-        if "!line!" == "" (
-            set currentOption=
-        ) else if "!line:~0,2!" == "##" (
-            set currentOption=
-        ) else if "!line:~0,12!" == "--find-links" (
-            set currentOption=!line!
-        ) else (
-            call :Write White "    PIP: Installing !line!..."
-            REM echo python.exe -m pip install !line! !currentOption! !pipFlags!
-            python.exe -m pip install !line! !currentOption! !pipFlags!
-            call :WriteLine Green "Done"
-
-            set currentOption=
-        )
-    )
-) else (
-    call :WriteLine Green "present."
-)
-
-:: ===============================================================================================
 :: 3. Start back end analysis
 
 call :Write White "Starting Analysis Services..."
 if /i "!VISION_DETECTION!"   == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\%deepstackModule%\detection.py
+    START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\detection.py"
 )
 if /i "!VISION_FACE!" == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\%deepstackModule%\face.py
+    START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\face.py"
 )
 if /i "!VISION_SCENE!"  == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\%deepstackModule%\scene.py
+    START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\scene.py"
 )
 :: To start them all in one fell swoop...
-:: START "CodeProject SenseAI Analysis Services" /B python !APPDIR!\%deepstackModule%\runAll.py
+:: START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\runAll.py"
 call :WriteLine Green "Done"
 
 :: Wait forever. We need these processes to stay alive
 pause > NUL
 
 :: and we're done.
-goto eof
+goto:eof
 
 
 :: sub-routines
 
+:setESC
+    for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
+      set ESC=%%b
+      exit /B 0
+    )
+    exit /B 0
+
+:setColor
+    REM echo %ESC%[4m - Underline
+    REM echo %ESC%[7m - Inverse
+
+    if /i "%2" == "foreground" (
+        REM Foreground Colours
+        if /i "%1" == "Black"       set currentColor=!ESC![30m
+        if /i "%1" == "DarkRed"     set currentColor=!ESC![31m
+        if /i "%1" == "DarkGreen"   set currentColor=!ESC![32m
+        if /i "%1" == "DarkYellow"  set currentColor=!ESC![33m
+        if /i "%1" == "DarkBlue"    set currentColor=!ESC![34m
+        if /i "%1" == "DarkMagenta" set currentColor=!ESC![35m
+        if /i "%1" == "DarkCyan"    set currentColor=!ESC![36m
+        if /i "%1" == "Gray"        set currentColor=!ESC![37m
+        if /i "%1" == "DarkGray"    set currentColor=!ESC![90m
+        if /i "%1" == "Red"         set currentColor=!ESC![91m
+        if /i "%1" == "Green"       set currentColor=!ESC![92m
+        if /i "%1" == "Yellow"      set currentColor=!ESC![93m
+        if /i "%1" == "Blue"        set currentColor=!ESC![94m
+        if /i "%1" == "Magenta"     set currentColor=!ESC![95m
+        if /i "%1" == "Cyan"        set currentColor=!ESC![96m
+        if /i "%1" == "White"       set currentColor=!ESC![97m
+    ) else (
+        REM Background Colours
+        if /i "%1" == "Black"       set currentColor=!ESC![40m
+        if /i "%1" == "DarkRed"     set currentColor=!ESC![41m
+        if /i "%1" == "DarkGreen"   set currentColor=!ESC![42m
+        if /i "%1" == "DarkYellow"  set currentColor=!ESC![43m
+        if /i "%1" == "DarkBlue"    set currentColor=!ESC![44m
+        if /i "%1" == "DarkMagenta" set currentColor=!ESC![45m
+        if /i "%1" == "DarkCyan"    set currentColor=!ESC![46m
+        if /i "%1" == "Gray"        set currentColor=!ESC![47m
+        if /i "%1" == "DarkGray"    set currentColor=!ESC![100m
+        if /i "%1" == "Red"         set currentColor=!ESC![101m
+        if /i "%1" == "Green"       set currentColor=!ESC![102m
+        if /i "%1" == "Yellow"      set currentColor=!ESC![103m
+        if /i "%1" == "Blue"        set currentColor=!ESC![104m
+        if /i "%1" == "Magenta"     set currentColor=!ESC![105m
+        if /i "%1" == "Cyan"        set currentColor=!ESC![106m
+        if /i "%1" == "White"       set currentColor=!ESC![107m
+    )
+    exit /B 0
+
 :WriteLine
-SetLocal EnableDelayedExpansion
-if /i "!NO_COLOR!" == "true" (
-    REM Echo %~2
-) else (
-    powershell write-host -foregroundcolor %1 %~2
-    REM powershell write-host -foregroundcolor White -NoNewline
-)
-exit /b
+    SetLocal EnableDelayedExpansion
+    set resetColor=!ESC![0m
+
+    set str=%~2
+
+    if "!str!" == "" (
+        Echo:
+        exit /b 0
+    )
+
+    if /i "%techniColor%" == "true" (
+        REM powershell write-host -foregroundcolor %1 !str!
+        call :setColor %1 foreground
+        echo !currentColor!!str!!resetColor!
+    ) else (
+        Echo !str!
+    )
+    exit /b 0
 
 :Write
-SetLocal EnableDelayedExpansion
-if /i "!NO_COLOR!" == "true" (
-    Echo %~2
-) else (
-    powershell write-host -foregroundcolor %1 -NoNewline %~2
-    REM powershell write-host -foregroundcolor White -NoNewline
-)
-exit /b
+
+    set str=%~2
+
+    if "!str!" == "" exit /b 0
+
+    SetLocal EnableDelayedExpansion
+    set resetColor=!ESC![0m
+
+    if /i "%techniColor%" == "true" (
+        REM powershell write-host -foregroundcolor %1 -NoNewline !str!
+        call :setColor %1 foreground
+        <NUL set /p =!currentColor!!str!!resetColor!
+    ) else (
+        <NUL set /p =!str!
+    )
+    exit /b 0
 
 
 :: Jump points
@@ -224,5 +202,3 @@ call :WriteLine White "---------------------------------------------------------
 call :WriteLine Red "Error: Python Virtual Environment activation failed"
 call :WriteLine Red "Go to https://www.python.org/downloads/ for the latest version"
 goto:eof
-
-:eof

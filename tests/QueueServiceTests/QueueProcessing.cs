@@ -57,11 +57,11 @@ namespace QueueServiceTests
         }
 
         [Fact]
-        public void CanPullRequestFromQueue()
+        public async Task CanPullRequestFromQueue()
         {
             var request                = new TestQueuedRequest { image_name = "Bob.jpg" };
             var requestTask            = _queueServices.SendRequestAsync<TestQueuedResponse>(QueueName, request);
-            BackendRequestBase? result = _queueServices.DequeueRequest(QueueName);
+            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName);
 
             Assert.NotNull(result);
             Assert.IsType<TestQueuedRequest>(result);

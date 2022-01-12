@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>CodeProject.SenseAI Server</title>
+
+    <link rel="stylesheet" type="text/css" href="assets/styles.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+
+    <script type="text/javascript">
+
+        const apiServiceUrl   = "http://localhost";
+        const pingFrequency   = 2000; // milliseconds
+        const logFrequency    =  500; // milliseconds
+        const statusFrequency = 3000; // milliseconds
+
+        var lastLogId      = 0;
+        var serverIsOnline = false;
+
+        window.addEventListener('DOMContentLoaded', function (event) {
+
+            serviceUrl.value = apiServiceUrl + ":" + window.location.port;
+
+            setStatus("Searching for API Server...", "orange");
+
+            getVersion();
+
+            setInterval(ping, pingFrequency);
+            setInterval(getLogs, logFrequency);
+            setInterval(getAnalysisStatus, statusFrequency);
+        });
+
+        function setStatus(text, color) {
+            if (color)
+                document.getElementById("status").innerHTML = "<span style='color:" + color + "'>" + text + "</span>";
+            else
+                document.getElementById("status").innerHTML = "<span>" + text + "</span>";
+        }
+
+        async function callStatus(method, callback) {
+            
+            var url = serviceUrl.value.trim() + '/v1/status/' + method;
+
+            await fetch(url, { method: "GET" })
+                .then(response => {
+                    if (!response.ok)
+                        setStatus('Error contacting API server', "red");
+                    else
+                        response.json()
+                                .then(data => callback(data))
+                                .catch(error => setStatus('Unable to contact API server', "red"));
+                  })
+                  .catch(error => {
+                      setStatus(/*error.message*/ "Unable to contact AI Server", "red");
+                  });
+        }
+
+        async function ping() {
+
+            await callStatus('ping', function (data) {
+                if (serverIsOnline == data.success)
+                    return;
+
+                serverIsOnline = data.success;
+                if (serverIsOnline)
+                    setStatus('API server is online', "green");
+                else
+                    setStatus('Unable to contact API server', "red");
+            });
+        }
+
+        async function getVersion() {
+
+            await callStatus('version', function (data) {
+                version.innerHTML = data.message;
+            });
+        }
+
+        /**
+         * TODO: This will query the server for a list of services that are 
+         * installed, and their status. The results of this will be used to
+         * pppulate the serviceStatus table
+         */
+        async function getAnalysisStatus() {
+
+            // In the future we will ask for "logs since log ID 'x'" so we have
+            // a full history. For now, a simple "last 10".
+            var url = serviceUrl.value.trim() + '/v1/status/analysis/list';
+
+            fetch(url, {
+                method: "GET"
+            })
+            .then(response => {
+
+                if (response.ok) {
+                    response.json().then(data => {
+
+                        if (data && data.statuses) {
+                            var results = "<table id='serviceStatus' style='margin-top:30px;width:100%'><tr>"
+                            for (let i = 0; i < data.statuses.length; i++) {
+                                var status = data.statuses[i].value ? "active" : "inactive";
+                                results += "<td class='status-cell " + status + "'>"
+                                        +  "<b>" + data.statuses[i].key.toUpperCase() + "</b><br>"
+                                        +  status + "</td>";
+                            }
+                            results += "</tr></table>";
+
+                            serviceStatus.outerHTML = results;
+                        }
+                    })
+                }})
+        }
+
+        /**
+         * The backend hasn't implemented this yet. This is merely an example of what will be put
+         * in place.
+         */
+        async function getLogs() {
+
+            var url = serviceUrl.value.trim() + '/v1/log/list?count=10&last_id=' + lastLogId;
+
+            fetch(url, {
+                method: "GET"
+            })
+            .then(response => {
+
+                if (response.ok) {
+                    response.json().then(data => {
+                        if (data && data.entries) {
+
+                            var newLogs = "";
+                            for (let i = 0; i < data.entries.length; i++) {
+                                var logEntry = data.entries[i];
+                                var date = new Date(logEntry.timestamp).toLocaleTimeString();
+                                newLogs = date + ": " + logEntry.entry + "\n" + newLogs;
+                                lastLogId = logEntry.id;
+                            }
+
+                            if (newLogs) {
+                                var log = newLogs + logs.innerHTML;
+                                if (log.length > 10000)
+                                    log = log.substring(0, 10000);
+                                logs.innerHTML = log;
+                            }
+                        }
+                    })
+                }})
+        }
+    </script>
+
+</head>
+<body>
+
+<div style="max-width:750px;margin:0 auto;">
+
+    <div id="ctl00_SH" class="site-header fixed">
+		<div class="main-content">
+			<div class="logo"><a href="https://www.codeproject.com">
+                <img tabindex="1" title="CodeProject" src="assets/logo250x135.gif" 
+                     alt="Home" style="height:135px;width:250px;border-width:0px;"></a>
+            </div>
+			<div class="promo"></div>
+        </div>
+	</div>
+
+    <h1>CodeProject SenseAI Server Monitor</h1>
+
+    <div id="version" style="margin: -17px 0 20px 0;"></div>
+
+    <p>CodeProject SenseAI is a self contained server that allows other applications to easily
+        include AI processing as part of their service. CodeProject SenseAI is a simple HTTP based 
+        REST service that is fully self contained, installed locally, and requires no off-device 
+        processing.</p>
+    
+    <div style="padding:15px 0">
+        <span>Service API Url:</span>
+        <input type="text" id="serviceUrl" style="width:10rem;font-size:90%" />
+        <span id="status" style="font-weight:bold;margin-left:1rem;"></span>
+    </div>
+
+    <div id="logs" style="width:100%;height:150px;" class="logs"></div>
+    
+    <table id="serviceStatus" style="margin-top:30px;width:100%">
+        <tr><td>Initializing...</td></tr>
+    </table>
+
+    <h4>Explore</h4>
+    <ul style="margin-left:-1rem">
+        <li>Open the <b><a href="Vision.html" target="_blank">CodeProject SenseAI Playground</a></b> to 
+        explore the capabilities.</li>
+        <!--<li>Explore the API using our <a href="http://localhost:5000/swagger/index.html">SwaggerUI</a></li>-->
+        <li> <a href="https://github.com/codeproject/CodeProject.SenseAI">Explore the code</a> 
+    and extend the work.</li>
+    </ul>
+
+
+
+</div>
+</body>
+</html>

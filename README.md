@@ -1,4 +1,4 @@
-[![Open in Visual Studio Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/codeproject/CodeProject.SenseAI) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/license-SSPL-green)](https://github.com/codeproject/CodeProject.SenseAI/blob/main/LICENSE) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+[![Open in Visual Studio Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/codeproject/CodeProject.SenseAI) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/license-SSPL-green)](https://www.mongodb.com/licensing/server-side-public-license) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
 # CodeProject SenseAI Server
 
@@ -7,6 +7,35 @@ Standalone, self-hosted, fast, free and Open Source Artificial Intelligence micr
 ## What is CodeProject SenseAI Server?
 
 CodeProject SenseAI is a self contained server that allows other applications to easily include AI processing as part of their service. CodeProject SenseAI is a simple HTTP based REST service that is fully self contained, installed locally, and requires no off-device processing.
+
+Here's a sample of the Scene Detection API
+
+```html
+<html>
+<body>
+Detect the scene in this file: <input id="image" type="file" />
+<input type="button" value="Detect Scene" onclick="detectScene(image)" />
+
+<script>
+function detectScene(fileChooser) {
+    var formData = new FormData();
+    formData.append('image', fileChooser.files[0]);
+
+    fetch('http://localhost:5000/v1/vision/detect/scene', {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) response.json().then(data => {
+            console.log(`Scene is ${data.label}, ${data.confidence} confidence`)
+        });
+    });
+}
+</script>
+</body>
+</html>
+```
+
 
 ## What does it include?
 
@@ -114,16 +143,24 @@ At this point the Playground application should be indicting it has a connection
 
 #### Common Errors
 
+**Server startup failed**
+
+```
+System.ComponentModel.Win32Exception (2): The system cannot find the file specified.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo startInfo)
+```
+
+Did you run the set_dev_env_win_ script? Was it successful? If not, debug the issues (or start with
+a clean install) and try again.
+
+**Port already in use**
+
 If you see:
 ```
 Unable to start Kestrel.
 System.IO.IOException: Failed to bind to address http://127.0.0.1:5000: address already in use.
 ```
 Either you have CodeProject.SenseAI already running, or another application is using port 5000. Either shut down any application using port 5000, or change the port CodeProject.SenseAI uses. You can change the external port that CodeProject.SenseAI uses by editing the <code>set_environment.bat</code> file changing the value of the <code>PORT</code> variable. In the demo app there is a Port setting you will need to edit to match the new port.
-
-#### Other demos
-
-There are other demos in the /demos folder you may wish to explore.
 
 ## Roadmap
 

@@ -15,7 +15,8 @@ def register_face(img_path, user_id):
     print(response)
 
 
-register_face("cruise.jpg", "Tom Cruise")
 register_face("adele.jpg", "Adele")
+register_face("bradley.jpg", "Bradley Cooper")
+register_face("cruise.jpg", "Tom Cruise")
 register_face("elba.jpg", "Idris Elba")
 register_face("perri.jpg", "Christina Perri")

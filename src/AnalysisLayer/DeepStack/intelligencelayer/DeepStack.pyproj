@@ -20,7 +20,9 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="noop.bat" />
     <Content Include="requirements.txt" />
+    <Content Include="start.sh" />
     <Content Include="start.bat" />
   </ItemGroup>
   <ItemGroup>
@@ -39,8 +41,6 @@
     <Compile Include="recognition\__init__.py" />
     <Compile Include="runAll.py" />
     <Compile Include="scene.py" />
-    <Compile Include="scene\process.py" />
-    <Compile Include="scene\__init__.py" />
     <Compile Include="shared.py" />
     <Compile Include="utils\activations.py" />
     <Compile Include="utils\datasets.py" />
@@ -54,7 +54,6 @@
     <Folder Include="commons" />
     <Folder Include="models" />
     <Folder Include="recognition" />
-    <Folder Include="scene" />
     <Folder Include="utils" />
   </ItemGroup>
   <ItemGroup>

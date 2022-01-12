@@ -513,8 +513,6 @@ namespace CodeProject.SenseAI.Demo.Playground
         private void OnApiPortChanged(object sender, EventArgs e)
         {
             if (int.TryParse(textApiPort.Text, out int port))
-                // REVIEW: [Chris] the ApiClient handles disposing and recreating
-                // the HttpClient.
                _AIService.Port = port;
         }
 

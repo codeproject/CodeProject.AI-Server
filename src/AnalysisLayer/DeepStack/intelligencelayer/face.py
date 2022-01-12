@@ -10,9 +10,13 @@ import warnings
 from multiprocessing import Process
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-from shared import SharedOptions, getCommand, sendResponse
-if SharedOptions.PROFILE == "windows_native":
-    sys.path.append(os.path.join(SharedOptions.APP_DIR,"python_packages"))
+from shared import SharedOptions, FrontendClient
+
+# TODO: Currently doesn't exist. The Python venv is setup at install time for a single platform in
+# order to reduce downloads. Having the ability to switch profiles at runtime will be added, but
+# will increase downloads. Lazy loading will help, somewhat, and the infrastructure is already in
+# place, though it needs to be adjusted.
+sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
 
 import numpy as np
 import torch
@@ -23,7 +27,6 @@ import torchvision.transforms as transforms
 from PIL import Image, UnidentifiedImageError
 from process import YOLODetector
 from recognition import FaceRecognitionModel
-# from redis import RedisError, StrictRedis
 import traceback
 
 databaseFilePath = os.path.join(SharedOptions.DATA_DIR,"faceembedding.db")
@@ -45,6 +48,8 @@ def init_db():
 
 master_face_map = {"map": {}}
 facemap         = {}
+
+frontendClient = FrontendClient()
 
 def load_faces():
 
@@ -69,18 +74,6 @@ def load_faces():
 
     master_face_map["tensors"] = embedding_arr
     facemap = repr(master_face_map)
-
-    # Store map in Redis
-    # SharedOptions.db.set("facemap", facemap)
-
-    # ...or Store map in SQLite
-    # cursor.execute("DELETE FROM TB_FACEMAP")
-    # ADD_MAP = "INSERT INTO TB_FACEMAP(map) VALUES(?)"
-    # map_rep = json.dumps(facemap)
-    # cursor.execute(ADD_MAP, (map_rep,))
-    # conn.commit()
-    # conn.close()
-
 
 def face(thread_name, delay):
 
@@ -128,7 +121,7 @@ def face(thread_name, delay):
 
     while True:
 
-        queue = getCommand(IMAGE_QUEUE);
+        queue = frontendClient.getCommand(IMAGE_QUEUE);
 
         if len(queue) > 0:
 
@@ -140,6 +133,7 @@ def face(thread_name, delay):
                 req_id    = req_data["reqid"]
 
                 if task_type == "detect":
+                    timer = frontendClient.startTimer("Face Detection")
                     img_id = req_data["imgid"]
  #                   img_path = os.path.join(SharedOptions.TEMP_PATH, img_id)
                     img_path = img_id
@@ -173,7 +167,7 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "invalid image",
@@ -182,7 +176,7 @@ def face(thread_name, delay):
 
                     except Exception:
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "error occured on the server",
@@ -190,11 +184,13 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        sendResponse(req_id, json.dumps(output))
+                        frontendClient.endTimer(timer)
+                        frontendClient.sendResponse(req_id, json.dumps(output))
                         if os.path.exists(img_path):
                             os.remove(img_path)
 
                 elif task_type == "register":
+                    timer = frontendClient.startTimer("Face Register")
 
                     try:
 
@@ -242,7 +238,7 @@ def face(thread_name, delay):
                                 "error": "no face detected",
                                 "code": 400,
                             }
-                            sendResponse(req_id, json.dumps(output))
+                            frontendClient.sendResponse(req_id, json.dumps(output))
                             continue
 
                         img_embeddings = faceclassifier.predict(batch).cpu()
@@ -277,7 +273,7 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "invalid image",
@@ -287,7 +283,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -296,12 +292,14 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        sendResponse(req_id, json.dumps(output))
+                        frontendClient.endTimer(timer)
+                        frontendClient.sendResponse(req_id, json.dumps(output))
                         for img_id in user_images:
                             if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , img_id)):
                                 os.remove(os.path.join(SharedOptions.TEMP_PATH , img_id))
 
                 elif task_type == "list":
+                    timer = frontendClient.startTimer("Face List Registrations")
 
                     try:                        
                         conn = sqlite3.connect(databaseFilePath)
@@ -322,7 +320,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -331,11 +329,13 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        sendResponse(req_id, json.dumps(output))
+                        frontendClient.endTimer(timer)
+                        frontendClient.sendResponse(req_id, json.dumps(output))
 
                 elif task_type == "delete":
 
                     try:
+                        timer = frontendClient.startTimer("Face Registration Delete")
 
                         user_id = req_data["userid"]
                         
@@ -354,7 +354,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -363,24 +363,13 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        sendResponse(req_id, json.dumps(output))
+                        frontendClient.endTimer(timer)
+                        frontendClient.sendResponse(req_id, json.dumps(output))
 
                 elif task_type == "recognize":
+                    timer = frontendClient.startTimer("Face Recognise")
 
                     try:
-
-                        # Get map from redis
-                        # stored_master_face_map = SharedOptions.db.get("facemap")
-                        # master_face_map = ast.literal_eval(stored_master_face_map)
-
-                        # ... Or get map from SQLite
-                        # conn = sqlite3.connect(SharedOptions.DATA_DIR + "/faceembedding.db")
-                        # cursor = conn.cursor()
-                        # SELECT_MAP = "SELECT top 1 * FROM TB_FACEMAP"
-                        # maps = cursor.execute(SELECT_MAP)
-                        # map_rep = maps[0]
-                        # master_face_map = json.loads(map_rep)
-
 
                         facemap    = master_face_map ["map"]
                         face_array = master_face_map ["tensors"]
@@ -402,7 +391,7 @@ def face(thread_name, delay):
 
                         pil_image = Image.open(img).convert("RGB")
 
-                        det = detector.predict(img, 0.55)
+                        det = detector.predict(img, threshold)
 
                         os.remove(img)
 
@@ -432,7 +421,6 @@ def face(thread_name, delay):
                         if found_face == False:
 
                             output = {"success": True, "predictions": []}
-                            sendResponse(req_id, json.dumps(output))
 
                         elif len(facemap) == 0:
 
@@ -465,7 +453,6 @@ def face(thread_name, delay):
                                 predictions.append(user_data)
 
                             output = {"success": True, "predictions": predictions}
-                            sendResponse(req_id, json.dumps(output))
 
                         else:
 
@@ -529,7 +516,7 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -540,7 +527,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -549,12 +536,14 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        sendResponse(req_id, json.dumps(output))
+                        frontendClient.endTimer(timer)
+                        frontendClient.sendResponse(req_id, json.dumps(output))
 
                         if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , img_id)):
                             os.remove(os.path.join(SharedOptions.TEMP_PATH , img_id))
 
                 elif task_type == "match":
+                    timer = frontendClient.startTimer("Face Match")
 
                     try:
 
@@ -575,7 +564,7 @@ def face(thread_name, delay):
                         if len(det1) == 0 or len(det2) == 0:
 
                             output = {"success": False, "error": "no face found"}
-                            sendResponse(req_id, json.dumps(output))
+                            frontendClient.sendResponse(req_id, json.dumps(output))
                             continue
 
                         for *xyxy, conf, cls in reversed(det1):
@@ -619,7 +608,7 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -630,7 +619,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        print(err_trace, file=sys.stderr, flush=True)
+                        frontendClient.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -639,8 +628,9 @@ def face(thread_name, delay):
                         }
 
                     finally:
+                        frontendClient.endTimer(timer)
+                        frontendClient.sendResponse(req_id, json.dumps(output))
 
-                        sendResponse(req_id, json.dumps(output))
                         if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , user_images[0])):
                             os.remove(os.path.join(SharedOptions.TEMP_PATH , user_images[0]))
 
@@ -659,8 +649,10 @@ def update_faces(thread_name, delay):
         time.sleep(delay)
 
 if __name__ == "__main__":
+    init_db()
     p1 = Process(target=update_faces, args=("", 1))
     p1.start()
 
-    print("Starting face.py")
+    frontendClient.log("Face Detection module started.")
     face("", SharedOptions.SLEEP_TIME)
+    # TODO: Send back a "I'm alive" message to the backend of the API server so it can report to the user

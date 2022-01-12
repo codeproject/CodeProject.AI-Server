@@ -1,4 +1,6 @@
-﻿namespace CodeProject.SenseAI.API.Common
+﻿using System.Collections.Generic;
+
+namespace CodeProject.SenseAI.API.Common
 {
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -11,6 +13,11 @@
         /// Gets or sets a value indicating that the request was successfully executed.
         /// </summary>
         public bool success { get; set; }
+
+        /// <summary>
+        /// Gets or sets the response message.
+        /// </summary>
+        public string? message { get; set; }
     }
 
     public class SuccessResponse : ResponseBase
@@ -19,11 +26,16 @@
         {
             success = true;
         }
+
+        public SuccessResponse(string? message)
+        {
+            this.success = true;
+            this.message = message;
+        }
     }
 
     public class ErrorResponse : ResponseBase
     { 
-
         /// <summary>
         /// Gets or sets the error message, if any.  May be null if no error.
         /// </summary>
@@ -48,6 +60,22 @@
     }
 
     /// <summary>
+    /// The Response when requesting the list of log entries
+    /// </summary>
+    public class LogListResponse : SuccessResponse
+    {
+        public LogEntry[]? entries { get; set; }
+    }
+
+    /// <summary>
+    /// The Response when requesting the status of the backend analysis services
+    /// </summary>
+    public class AnalysisServicesStatusResponse : SuccessResponse
+    {
+        public KeyValuePair<string, bool>[]? statuses { get; set; }
+    }
+
+    /// <summary>
     /// The Response for a Face Detection Request.
     /// </summary>
     public class DetectFacesResponse : SuccessResponse
@@ -56,37 +84,6 @@
         /// Gets or sets the array of Detected faces.  May be null or empty.
         /// </summary>
         public DetectedFace[]? predictions { get; set; }
-    }
-
-    /// <summary>
-    /// The structure for the detected face information.
-    /// </summary>
-    public class DetectedFace
-    {
-        /// <summary>
-        /// Gets or sets the confidence level of the face detection from 0 to 1.
-        /// </summary>
-        public float confidence { get; set; }
-
-        /// <summary>
-        /// Gets or sets the top of the bounding rectangle.
-        /// </summary>
-        public int y_min { get; set; }
-
-        /// <summary>
-        /// Gets or sets the left of the bounding rectangle.
-        /// </summary>
-        public int x_min { get; set; }
-
-        /// <summary>
-        /// Gets or sets the bottom of the bounding rectangle.
-        /// </summary>
-        public int y_max { get; set; }
-
-        /// <summary>
-        /// Gets or sets the right of the bounding rectangle.
-        /// </summary>
-        public int x_max { get; set; }
     }
 
     /// <summary>
@@ -127,59 +124,8 @@
         public DetectedObject[]? predictions { get; set; }
     }
 
-    /// <summary>
-    /// The structure for the detected object information.
-    /// </summary>
-    public class DetectedObject
-    {
-        /// <summary>
-        /// Gets or sets the confidence level of the face detection from 0 to 1.
-        /// </summary>
-        public float confidence { get; set; }
-
-        /// <summary>
-        /// Gets or sets the top of the bounding rectangle.
-        /// </summary>
-        public int y_min { get; set; }
-
-        /// <summary>
-        /// Gets or sets the left of the bounding rectangle.
-        /// </summary>
-        public int x_min { get; set; }
-
-        /// <summary>
-        /// Gets or sets the bottom of the bounding rectangle.
-        /// </summary>
-        public int y_max { get; set; }
-
-        /// <summary>
-        /// Gets or sets the right of the bounding rectangle.
-        /// </summary>
-        public int x_max { get; set; }
-
-        /// <summary>
-        /// Gets or sets the label for the detected object.
-        /// </summary>
-        public string? label { get; set; }
-    }
-
     public class RegisterFaceResponse : SuccessResponse
     {
-        /// <summary>
-        /// Gets or sets the response message.
-        /// </summary>
-        public string? message { get; set; }
-    }
-
-    public class RecognizedFace
-    {
-        public string? userid { get; set; }
-        public float confidence { get; set; }
-        public int y_min { get; set; }
-        public int x_min { get; set; }
-        public int y_max { get; set; }
-        public int x_max { get; set; }
-
     }
 
     public class RecognizeFacesResponse : SuccessResponse

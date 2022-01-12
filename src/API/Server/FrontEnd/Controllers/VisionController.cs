@@ -59,6 +59,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 
             return HandleErrorResponse(backendResponse);
         }
+
         private ErrorResponse HandleErrorResponse(BackendResponseBase backendResponse)
         {
             if (backendResponse is BackendErrorResponse errorResponse)
@@ -187,13 +188,14 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 
         /// <summary>
         /// Register Face for Recognition.
-        /// REVIEW: [Matthew] Should be PUT not POST
         /// </summary>
         /// <param name="userid">The if of the user for whom to register the images.</param>
         /// <param name="token">The injected request aborted cancellation token.</param>
         /// <returns>A list of object names, positions, and confidence levels.</returns>
         /// <response code="200">Success message.</response>
         /// <response code="400">If the image in the Form data is null.</response>            
+        /// <remarks>This method should be a PUT, not a POST operation. We've left it as POST in
+        /// order to maintain compatibility with the original DeepStack code.</remarks>
         [HttpPost("face/register", Name = "RegisterFace")]
         [Consumes("multipart/form-data")]
         [Produces("application/json")]
@@ -265,12 +267,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 
         /// <summary>
         /// List Faces registered for recognition.
-        /// REVIEW: [Matthew] This should be GET, not POST
         /// </summary>
         /// <param name="token">The injected request aborted cancellation token.</param>
         /// <returns>A list of object names, positions, and confidence levels.</returns>
         /// <response code="200">Array of predictions.</response>
         /// <response code="400">If the image in the Form data is null.</response>            
+        /// <remarks>This method should be a GET, not a POST operation. We've left it as POST in
+        /// order to maintain compatibility with the original DeepStack code.</remarks>
         [HttpPost("face/list", Name = "ListFaces")]
         [Consumes("multipart/form-data")]
         [Produces("application/json")]
@@ -294,13 +297,14 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 
         /// <summary>
         /// Delete a registered face.
-        /// REVIEW: [Matthew] Should be DELETE not POST
         /// </summary>
         /// <param name="userid">The ID of the user whose face info should be deleted</param>
         /// <param name="token">The injected request aborted cancellation token.</param>
         /// <returns>Success indication.</returns>
         /// <response code="200">Array of predictions.</response>
-        /// <response code="400">If the image in the Form data is null.</response>            
+        /// <response code="400">If the image in the Form data is null.</response>
+        /// <remarks>This method should be a DELETE, not a POST operation. We've left it as POST in
+        /// order to maintain compatibility with the original DeepStack code.</remarks>
         [HttpPost("face/delete", Name = "DeleteFaces")]
         [Consumes("multipart/form-data")]
         [Produces("application/json")]

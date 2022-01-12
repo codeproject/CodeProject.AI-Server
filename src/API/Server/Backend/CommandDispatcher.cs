@@ -32,13 +32,6 @@ namespace CodeProject.SenseAI.API.Server.Backend
             _settings      = options.Value;
         }
 
-        public void CreateKnownQueues()
-        {
-            _queueServices.EnsureQueueExists(SceneQueueName);
-            _queueServices.EnsureQueueExists(DetectionQueueName);
-            _queueServices.EnsureQueueExists(FaceQueueName);
-        }
-
         /// <summary>
         /// Saves a Form File to the temp directory.
         /// </summary>
@@ -62,7 +55,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
             {
                 using var imageStream = image.OpenReadStream();
                 using var tempFile    = fileInfo.OpenWrite();
-                await imageStream.CopyToAsync(tempFile);
+                await imageStream.CopyToAsync(tempFile).ConfigureAwait(false);
             }
             catch
             {
@@ -82,15 +75,15 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public async Task<BackendResponseBase> DetectObjects(IFormFile image, float? minConfidence, 
                                                              CancellationToken token = default)
         {
-            var filename = await SaveFileToTempAsync(image);
+            var filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
             if (filename == null)
                 return new BackendErrorResponse(-1, "Unable to save file");
 
             try
             {
                 var response = await _queueServices.SendRequestAsync<BackendObjectDetectionResponse>(DetectionQueueName,
-                                                    new BackendObjectDetectionRequest(filename, minConfidence ?? 0.4F)
-                                                    , token);
+                                                    new BackendObjectDetectionRequest(filename, minConfidence ?? 0.45F)
+                                                    , token).ConfigureAwait(false);
                 return response;
             }
             finally
@@ -109,14 +102,14 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public async Task<BackendResponseBase> DetectScene(IFormFile image,
                                                            CancellationToken token = default)
         {
-            var filename = await SaveFileToTempAsync(image);
+            var filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
             if (filename == null)
                 return new BackendErrorResponse(-1, "Unable to save file");
 
             try
             {
                 var response = await _queueServices.SendRequestAsync<BackendSceneDetectResponse>(SceneQueueName,
-                                                    new BackendSceneDetectionRequest(filename), token);
+                                                    new BackendSceneDetectionRequest(filename), token).ConfigureAwait(false);
                 return response;
             }
             finally
@@ -137,7 +130,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public async Task<BackendResponseBase> DetectFaces(IFormFile image, float? minConfidence,
                                                            CancellationToken token = default)
         {
-            var filename = await SaveFileToTempAsync(image);
+            var filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
             if (filename == null)
                 return new BackendErrorResponse(-1, "Unable to save file");
 
@@ -145,7 +138,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
             {
                 var response = await _queueServices.SendRequestAsync<BackendFaceDetectionResponse>(FaceQueueName,
                                                     new BackendFaceDetectionRequest(filename, minConfidence ?? 0.4F)
-                                                    , token);
+                                                    , token).ConfigureAwait(false);
                 return response;
             }
             finally
@@ -165,7 +158,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public async Task<BackendResponseBase> MatchFaces(IFormFile image1, IFormFile image2,
                                                           CancellationToken token = default)
         {
-            var filename1 = await SaveFileToTempAsync(image1);
+            var filename1 = await SaveFileToTempAsync(image1).ConfigureAwait(false);
             if (filename1 == null)
                 return new BackendErrorResponse(-1, "Unable to save file1");
 
@@ -177,7 +170,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
             {
                 var response = await _queueServices.SendRequestAsync<BackendFaceMatchResponse>(FaceQueueName,
                                                     new BackendFaceMatchRequest(filename1, filename2)
-                                                    , token);
+                                                    , token).ConfigureAwait(false);
                 return response;
             }
             finally
@@ -207,7 +200,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
                 if (image == null)
                     continue;
 
-                var filename = await SaveFileToTempAsync(image);
+                var filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
                 if (filename == null)
                     return new BackendErrorResponse(-1, $"Unable to save {image.FileName}");
 
@@ -218,7 +211,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
             {
                 var response = await _queueServices.SendRequestAsync<BackendFaceRegisterResponse>(FaceQueueName,
                                                     new BackendFaceRegisterRequest(userId, filenames.ToArray()),
-                                                    token);
+                                                    token).ConfigureAwait(false);
                 return response;
             }
             finally
@@ -242,15 +235,15 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public async Task<BackendResponseBase> RecognizeFaces(IFormFile image, float? minConfidence,
                                                               CancellationToken token = default)
         {
-            var filename = await SaveFileToTempAsync(image);
+            var filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
             if (filename == null)
                 return new BackendErrorResponse(-1, "Unable to save file");
 
             try
             {
                 var response = await _queueServices.SendRequestAsync<BackendFaceRecognitionResponse>(FaceQueueName,
-                                                    new BackendFaceRecognitionRequest(filename, minConfidence ?? 0.4F)
-                                                    , token);
+                                                    new BackendFaceRecognitionRequest(filename, minConfidence ?? 0.67f)
+                                                    , token).ConfigureAwait(false);
                 return response;
             }
             finally
@@ -270,7 +263,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
             try
             {
                 var response = await _queueServices.SendRequestAsync<BackendListRegisteredFacesResponse>(FaceQueueName,
-                                                    new BackendFaceListRequest(), token);
+                                                    new BackendFaceListRequest(), token).ConfigureAwait(false);
                 return response;
             }
             finally
@@ -290,7 +283,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
             try
             {
                 var response = await _queueServices.SendRequestAsync<BackendFaceDeleteResponse>(FaceQueueName,
-                                                    new BackendFaceDeleteRequest(userid), token);
+                                                    new BackendFaceDeleteRequest(userid), token).ConfigureAwait(false);
                 return response;
             }
             finally

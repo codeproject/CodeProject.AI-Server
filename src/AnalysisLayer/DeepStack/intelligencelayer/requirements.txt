@@ -1,24 +1,27 @@
-ONNXRuntime
-Redis
-OpenCV-Python
-Cython
-Pillow
-SciPy
-TDQM
-Tensorboard
-PyYAML
-Matplotlib
+## Needed, but not used everywhere.
+THOP # Installing THOP (PyTorch-OpCounter) for measuring performance
+ONNX # Installing ONNX, the Open Neural Network Exchange library
+Pandas # Installing Pandas, a data analysis / data manipulation tool
+Seaborn # Installing Seaborn, A library for making statistical graphics
+CoreMLTools # Installing CoreMLTools, for working with .mlmodel format models
 
-## these were missing in models/*.py but aren't used everywhere.
-THOP
-ONNX
-Pandas
-Seaborn
-CoreMLTools
+## General libraries
+ONNXRuntime # Installing ONNX runtime, the scoring engine for ONNX models
+SciPy # Installing SciPy, a library for mathematics, science, and engineering
+requests # Installing Requests, the HTTP library
+Pillow # Installing Pillow, a Python Image Library
+PyYAML # Installing PyYAML, a library for reading configuration files
 
-## These were missing, but we might need directml versions
+## Specific versions that match the models we're using. To be made generic in
+## future releases. We may need directML versions
 --find-links https://download.pytorch.org/whl/torch_stable.html
-Torch==1.6.0
+Torch==1.6.0+cpu # Installing Torch, for Tensor computation and Deep neural networks
 --find-links https://download.pytorch.org/whl/torch_stable.html
-TorchVision==v0.7.0
+TorchVision==v0.7.0+cpu # Installing TorchVision, for Computer Vision based AI
 
+## No longer needed
+## wMatplotlib
+## OpenCV-Python
+## Cython
+## TDQM 
+## Tensorboard

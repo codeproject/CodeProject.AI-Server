@@ -2,12 +2,25 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build-all",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
                 "${workspaceFolder}",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "build-server",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/API/Server/FrontEnd",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -45,8 +58,8 @@
             "label": "prepare-server",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "build",
-                "start-analysis"
+                "build-server",
+                // "start-analysis"
             ]
         },
 
@@ -54,20 +67,19 @@
             "label": "launch-server",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "build",
-                "start-analysis",
+                "build-server",
+                // "start-analysis",
                 "start-api"
             ]
         },
 
         {
-            "label": "launch-playground",
+            "label": "prepare-playground",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "build",
-                "start-analysis",
+                "build-all",
+                // "start-analysis",
                 "start-api",
-                "start-playground"
             ]
         },
 
@@ -75,9 +87,18 @@
             "label": "start-analysis",
             "type": "process",
             "isBackground": true,
-            "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.bat",
-            "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
-
+            "windows": {
+                "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.bat",
+                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
+            },
+            "linux": {
+                "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.sh",
+                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
+            },
+            "osx": {
+                "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.sh",
+                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
+            },
             // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
             // to give VSCode enough to be satisfied and just let it run
             "problemMatcher": [
@@ -133,14 +154,25 @@
                 }
             ]
         },
+
         {
             "label": "start-playground",
             "windows": {
                 // Windows form apps only work in Windows
                 "command": "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground/bin/Debug/net5.0-windows/",
+                "args": []            
+            },
+            "linux": {
+                // Windows form apps only work in Windows
+                "command": "echo",
+                "args": [ "Windows Forms apps are not available in Linux"] 
+            },
+            "osx": {
+                // Windows form apps only work in Windows
+                "command": "echo",
+                "args": [ "Windows Forms apps are not available in Linux"] 
             },
             "type": "process",
-            "args": []            
         }        
     ]
 }
