@@ -40,7 +40,7 @@ set compressInstallation=true
 set removeInstallationFolder=false
 
 :: verbosity can be: quiet | info | loud
-set verbosity=info
+set verbosity=quiet
 
 :: Show output in wild, crazy colours
 set techniColor=true
