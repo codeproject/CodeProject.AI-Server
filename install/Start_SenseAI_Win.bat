@@ -33,7 +33,7 @@ set config=Release
 set platform=net5.0
 
 :: The name of the Environment variable setup file
-set envVariablesFile=set_environment.bat
+set settingsFile=CodeProject.SenseAI.json
 
 :: Show output in wild, crazy colours
 set techniColor=true
@@ -56,18 +56,49 @@ call :WriteLine Yellow "Preparing CodeProject.SenseAI Server"
 
 
 :: Before we start, let's set the root directory.
-set CPSENSEAI_ROOTDIR=%cd%
+:: Also setup the required environment variables.
+:: Doing the path calculations here so app will run if install directory 
+:: renamed or moved in addition to running from a non-default directory.
 
 :: ============================================================================
 :: 1. Load Installation settings
 
 call :Write White "Loading installation settings..."
-call "!envVariablesFile!"
+(
+    for /f "tokens=*" %%x in (' more ^< "%settingsFile%" ') do (
+        set line=%%x
+        rem remove quotes, change " : " to "=", remove spaces
+        set line=!line:"=!
+        set line=!line: : ==!
+        set line=!line: =!
+	    if not "!line:~0,1!" == "{" (
+    	    if not "!line:~0,1!" == "}" (
+                if "!line:~-1!" == "," set line=!line:~0,-1!
+                echo set !line!
+            )
+        )
+
+    )
+) > "!settingsFile!.bat"
+call !settingsFile!.bat
+del !settingsFile!.bat
 call :WriteLine Green "Done"
+
+:: In case the installation has been moved to a different directory after installation
+:: CodeProject SenseAI API Server
+set CPSENSEAI_ROOTDIR=%cd%
+:: Modules: Deepstack specific
+set APPDIR=!CPSENSEAI_ROOTDIR!\!CPSENSEAI_APPDIR!\!CPSENSEAI_ANALYSISDIR!\DeepStack\intelligencelayer
+set DATA_DIR=!CPSENSEAI_ROOTDIR!\!CPSENSEAI_APPDIR!\!CPSENSEAI_ANALYSISDIR!\DeepStack\datastore
+set TEMP_PATH=!CPSENSEAI_ROOTDIR!\!CPSENSEAI_APPDIR!\!CPSENSEAI_ANALYSISDIR!\DeepStack\tempstore
+set MODELS_DIR=!CPSENSEAI_ROOTDIR!\!CPSENSEAI_APPDIR!\!CPSENSEAI_ANALYSISDIR!\DeepStack\assets
+:: Modules: CodeProject YOLO
+:: ...
+
 
 if "%verbosity%" NEQ "quiet" (
     call :WriteLine Yellow "Environment variable summary"
-    call :WriteLine Yellow ""
+    call :WriteLine Yellow "CodeProject SenseAI"
     call :WriteLine DarkGreen "  CPSENSEAI_ROOTDIR     = !CPSENSEAI_ROOTDIR!
     call :WriteLine DarkGreen "  CPSENSEAI_APPDIR      = !CPSENSEAI_APPDIR!
     call :WriteLine DarkGreen "  CPSENSEAI_APIDIR      = !CPSENSEAI_APIDIR!
@@ -78,7 +109,7 @@ if "%verbosity%" NEQ "quiet" (
     call :WriteLine DarkGreen "  CPSENSEAI_PRODUCTION  = !CPSENSEAI_PRODUCTION!
     call :WriteLine DarkGreen "  CPSENSEAI_CONFIG      = !CPSENSEAI_CONFIG!
     call :WriteLine DarkGreen "  CPSENSEAI_BUILDSERVER = !CPSENSEAI_BUILDSERVER!
-    call :WriteLine Yellow ""
+    call :WriteLine Yellow "Module: DeepStack"
     call :WriteLine DarkGreen "  APPDIR                = !APPDIR!"
     call :WriteLine DarkGreen "  PROFILE               = !PROFILE!"
     call :WriteLine DarkGreen "  CUDA_MODE             = !CUDA_MODE!"
@@ -88,7 +119,8 @@ if "%verbosity%" NEQ "quiet" (
     call :WriteLine DarkGreen "  VISION_FACE           = !VISION_FACE!"
     call :WriteLine DarkGreen "  VISION_DETECTION      = !VISION_DETECTION!"
     call :WriteLine DarkGreen "  VISION_SCENE          = !VISION_SCENE!"
-    call :WriteLine Yellow ""
+    REM call :WriteLine Yellow "Module: CodeProject YOLO"
+    REM call :WriteLine DarkGreen ...
 )
 
 :: ============================================================================

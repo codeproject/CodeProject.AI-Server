@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CodeProject.SenseAI.API.Common
 {
@@ -12,12 +14,9 @@ namespace CodeProject.SenseAI.API.Common
         /// <summary>
         /// Gets or sets a value indicating that the request was successfully executed.
         /// </summary>
-        public bool success { get; set; }
+        [JsonPropertyOrder(-5)]
+        public bool success { get; set; } = false;
 
-        /// <summary>
-        /// Gets or sets the response message.
-        /// </summary>
-        public string? message { get; set; }
     }
 
     public class SuccessResponse : ResponseBase
@@ -26,16 +25,21 @@ namespace CodeProject.SenseAI.API.Common
         {
             success = true;
         }
+    }
 
-        public SuccessResponse(string? message)
-        {
-            this.success = true;
-            this.message = message;
-        }
+    public class VersionResponse : SuccessResponse
+    {
+        public string? message { get; set; }
+        public VersionInfo? version { get; set; }
+    }
+
+    public class VersionUpdateResponse : VersionResponse
+    {
+        public bool? updateAvailable { get; set; }
     }
 
     public class ErrorResponse : ResponseBase
-    { 
+    {
         /// <summary>
         /// Gets or sets the error message, if any.  May be null if no error.
         /// </summary>
@@ -122,10 +126,13 @@ namespace CodeProject.SenseAI.API.Common
         /// Gets or sets the list of detected object predictions.
         /// </summary>
         public DetectedObject[]? predictions { get; set; }
+
+        public int duration { get; set; } = 0;
     }
 
     public class RegisterFaceResponse : SuccessResponse
     {
+        public string? message { get; set; }
     }
 
     public class RecognizeFacesResponse : SuccessResponse

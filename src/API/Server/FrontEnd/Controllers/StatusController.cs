@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using CodeProject.SenseAI.API.Common;
+using System.Threading.Tasks;
 
 namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 {
@@ -18,15 +19,18 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
     [ApiController]
     public class StatusController : ControllerBase
     {
-        private readonly IOptions<VersionInfo> _options;
+        /// <summary>
+        /// Gets the version service instance.
+        /// </summary>
+        public VersionService VersionService { get; }
 
         /// <summary>
         /// Initializes a new instance of the StatusController class.
         /// </summary>
-        /// <param name="options">The Options instance.</param>
-        public StatusController(IOptions<VersionInfo> options)
+        /// <param name="versionService">The Version instance.</param>
+        public StatusController(VersionService versionService)
         {
-            _options = options;
+            VersionService = versionService;
         }
 
         /// <summary>
@@ -57,13 +61,50 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public ResponseBase GetVersion()
         {
-            var response = new ResponseBase
+            var response = new VersionResponse
             {
-                message = _options.Value.Version,
-                success = true,
+                message = VersionService.VersionInfo.Version,
+                version = VersionService.VersionInfo,
+                success = true
             };
 
             return response;
+        }
+
+        /// <summary>
+        /// Allows for a client to retrieve whether an update for this API server is available.
+        /// </summary>
+        /// <returns>A ResponseBase object.</returns>
+        [HttpGet("updateavailable", Name = "UpdateAvailable")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ResponseBase> GetUpdateAvailable()
+        {
+            VersionInfo? latest = await VersionService.GetLatestVersion();
+            if (latest is null)
+            {
+                return new VersionUpdateResponse
+                {
+                    message = "Unable to retrieve latest version",
+                    success = false
+                };
+            }
+            else
+            {
+                bool updateAvailable = VersionInfo.Compare(VersionService.VersionInfo, latest) < 0;
+                string message = updateAvailable
+                               ? $"An update to version {latest.Version} is available"
+                               : "This is the current version";
+
+                return new VersionUpdateResponse
+                {
+                    success         = true,
+                    message         = message,
+                    version         = latest,
+                    updateAvailable = updateAvailable
+                };
+            }
         }
 
         /// <summary>
@@ -84,23 +125,11 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
             if (backend is null)
                 return new ErrorResponse("Unable to locate backend services");
 
-            // Get the list of processes that could be run
-            var startupProcesses = backend.StartupProcesses;
-
             // List them out and return the status
-            var response = new AnalysisServicesStatusResponse();
-            List<KeyValuePair<string, bool>> statuses = new();
-
-            if (startupProcesses is not null)
+            var response = new AnalysisServicesStatusResponse
             {
-                foreach (var cmd in startupProcesses)
-                {
-                    statuses.Add(new KeyValuePair<string, bool>(cmd.Name ?? "Unknown", 
-                                                                cmd.Running ?? false));
-                }
-
-                response.statuses = statuses.ToArray();
-            }
+                statuses = backend.ProcessStatuses.ToArray()
+            };
 
             return response;
         }

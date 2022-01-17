@@ -15,6 +15,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
     /// </summary>
     [Route("v1/vision")]
     [ApiController]
+    [DisableResponseChunking]
     public class VisionController : ControllerBase
     {
         private readonly CommandDispatcher _dispatcher;

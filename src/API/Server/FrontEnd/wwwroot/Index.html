@@ -10,13 +10,15 @@
 
     <script type="text/javascript">
 
-        const apiServiceUrl   = "http://localhost";
-        const pingFrequency   = 2000; // milliseconds
-        const logFrequency    =  500; // milliseconds
-        const statusFrequency = 3000; // milliseconds
+        const apiServiceUrl    = "http://localhost";
+        const pingFrequency    = 2000; // milliseconds
+        const logFrequency     =  500; // milliseconds
+        const statusFrequency  = 3000; // milliseconds
+        const updatePause      = 5000; // milliseconds
 
-        var lastLogId      = 0;
-        var serverIsOnline = false;
+        var _lastLogId      = 0;
+        var _serverIsOnline = false;
+        var _version        = null;
 
         window.addEventListener('DOMContentLoaded', function (event) {
 
@@ -29,6 +31,8 @@
             setInterval(ping, pingFrequency);
             setInterval(getLogs, logFrequency);
             setInterval(getAnalysisStatus, statusFrequency);
+
+            setTimeout(checkForUpdates(update), updatePause);
         });
 
         function setStatus(text, color) {
@@ -59,11 +63,11 @@
         async function ping() {
 
             await callStatus('ping', function (data) {
-                if (serverIsOnline == data.success)
+                if (_serverIsOnline == data.success)
                     return;
 
-                serverIsOnline = data.success;
-                if (serverIsOnline)
+                _serverIsOnline = data.success;
+                if (_serverIsOnline)
                     setStatus('API server is online', "green");
                 else
                     setStatus('Unable to contact API server', "red");
@@ -73,7 +77,27 @@
         async function getVersion() {
 
             await callStatus('version', function (data) {
+                _version = data.version;
                 version.innerHTML = data.message;
+            });
+        }
+
+        async function checkForUpdates(target) {
+            await callStatus('updateavailable', function (data) {
+
+                target.innerHTML = "Checking for updates";
+
+                if (!data || !data.version) {
+                    target.innerHTML = "Unable to check for updates";
+                }
+                else {
+                    if (data.updateAvailable) {
+                        target.innerHTML = data.message
+                                         + " <a href='" + data.version.file + "'>Download<a>";
+                    }
+                    else
+                        target.innerHTML = data.message;
+                }
             });
         }
 
@@ -118,7 +142,7 @@
          */
         async function getLogs() {
 
-            var url = serviceUrl.value.trim() + '/v1/log/list?count=10&last_id=' + lastLogId;
+            var url = serviceUrl.value.trim() + '/v1/log/list?count=10&last_id=' + _lastLogId;
 
             fetch(url, {
                 method: "GET"
@@ -134,7 +158,7 @@
                                 var logEntry = data.entries[i];
                                 var date = new Date(logEntry.timestamp).toLocaleTimeString();
                                 newLogs = date + ": " + logEntry.entry + "\n" + newLogs;
-                                lastLogId = logEntry.id;
+                                _lastLogId = logEntry.id;
                             }
 
                             if (newLogs) {
@@ -166,7 +190,13 @@
 
     <h1>CodeProject SenseAI Server Monitor</h1>
 
-    <div id="version" style="margin: -17px 0 20px 0;"></div>
+    <div style="margin: -17px 0 20px 0;">
+        <span id="version"></span>
+
+        <span class="btn" style="margin-left: 2rem;" onclick="checkForUpdates(update)">Check for
+            Updates</span>
+        <span id="update" style="color:#808080"></span>
+    </div>
 
     <p>CodeProject SenseAI is a self contained server that allows other applications to easily
         include AI processing as part of their service. CodeProject SenseAI is a simple HTTP based 

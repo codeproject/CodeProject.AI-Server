@@ -22,12 +22,17 @@ setlocal enabledelayedexpansion
 :: The location of the installation directory that will be created
 set installationDir=c:\CodeProject.SenseAI.Package
 
-:: The location of the installation package that will be created
-set installationPackage=c:\CodeProject.SenseAI.Package.zip
+:: The location of the installation package that will be created. The convention is:
+::   CodeProject.SenseAI.<major>.<minor><patch>.zip
+set installationPackage=c:\CodeProject.SenseAI.0.0106.zip
 
 :: The location of the solution root directory relative to this script
 cd ..
 set rootPath=%cd%
+
+:: The location of the API Frontend Server within the source tree itself. Note that the location of
+:: the API server in the installation 
+set serverPath=%rootPath%\src\API\Server\FrontEnd
 
 :: Whether or not to remove any existing installation directory
 set cleanInstall=true
@@ -37,7 +42,7 @@ set cleanInstall=true
 set compressInstallation=true
 
 :: Whether or not to remove the installation directory after it's been compressed
-set removeInstallationFolder=false
+set removeInstallationFolder=true
 
 :: verbosity can be: quiet | info | loud
 set verbosity=quiet
@@ -47,7 +52,7 @@ set techniColor=true
 
 :: SenseAI specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-:: The name of the dir holding the frontend API server
+:: The name of the installation dir holding the frontend API server
 set senseAPIDir=API
 
 :: The name of the startup settings file
@@ -76,9 +81,6 @@ set datastoreDir=datastore
 :: The name of the dir containing temporary DeepStack data
 set tempstoreDir=tempstore
 
-:: The name of the Environment variable setup file
-set envVariablesFile=set_environment.bat
-
 :: Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 :: The name of the dir, within the current directory, where install assets will
@@ -88,7 +90,7 @@ set downloadDir=downloads
 :: The name of the dir containing the Python interpreter
 set pythonDir=python37
 
-:: The name of the source directory
+:: The name of the installation source directory
 set srcDir=src
 
 :: The name of the dir holding the backend analysis services
@@ -210,20 +212,20 @@ call :WriteLine Green "Done"
 :: For CodeProject.SenseAI
 
 :: Build server
-call :WriteLine White "Building API Server [%config%]..."
-set serverPath=%rootPath%\%srcDir%\%senseAPIDir%\Server\FrontEnd
-pushd "%serverPath%"
+call :Write White "Building API Server [%config%]..."
 
+pushd "%serverPath%"
 REM Note: The carrot character means "line continuation"
 REM For .NET 6 add the "-p:PublishSingleFile=true" parameter to make the output a single file
 if /i "%verbosity%"=="quiet" (
-    dotnet publish --configuration %config% -r win-x64 --self-contained ^
+    dotnet publish --configuration %config% -p:PublishProfile=WinInstallPackage ^
                    -o "%buildOutputDir%" --nologo --verbosity !dotnetFlags! > nul
 ) else (
-    dotnet publish --configuration %config% -r win-x64 --self-contained ^
+    dotnet publish --configuration %config% -p:PublishProfile=WinInstallPackage ^
                    -o "%buildOutputDir%" --nologo --verbosity !dotnetFlags!
 )
 popd
+call :WriteLine Green "Done."
 
 :: Copy over
 call :Write White "Moving API Server to installation folder..."
@@ -266,7 +268,23 @@ popd
 call :WriteLine Green "Done."
 
 call :Write White "Reloading base installation settings..."
-call "!rootPath!\!envVariablesFile!"
+(
+    for /f "tokens=*" %%x in (' more ^< "!rootPath!\%settingsFile%" ') do (
+        set line=%%x
+        rem remove quotes, change " : " to "=", remove spaces
+        set line=!line:"=!
+        set line=!line: : ==!
+        set line=!line: =!
+	    if not "!line:~0,1!" == "{" (
+    	    if not "!line:~0,1!" == "}" (
+                if "!line:~-1!" == "," set line=!line:~0,-1!
+                echo set !line!
+            )
+        )
+    )
+) > "!rootPath!\!settingsFile!.bat"
+call !rootPath!\!settingsFile!.bat
+del !rootPath!\!settingsFile!.bat
 call :WriteLine Green "Done"
 
 call :Write White "Updating installation Environment variables..."
@@ -281,16 +299,16 @@ set CPSENSEAI_BUILDSERVER=False
 set CPSENSEAI_PRODUCTION=True
 
 :: For DeepStack
-set APPDIR=%%CPSENSEAI_ROOTDIR%%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%intelligenceDir%
-set MODELS_DIR=%%CPSENSEAI_ROOTDIR%%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%modelsDir%
-set DATA_DIR=%%CPSENSEAI_ROOTDIR%%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%datastoreDir%
-set TEMP_PATH=%%CPSENSEAI_ROOTDIR%%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%tempstoreDir%
+set APPDIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%intelligenceDir%
+set MODELS_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%modelsDir%
+set DATA_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%datastoreDir%
+set TEMP_PATH=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%tempstoreDir%
 set PORT=5000
 set VISION_FACE=True
 set VISION_DETECTION=True
 set VISION_SCENE=True
 pushd install
-call save_environment !installationDir!\!envVariablesFile! !installationDir!\!settingsFile!
+call save_environment !installationDir!\!settingsFile!
 popd
 call :WriteLine Green "Done."
 

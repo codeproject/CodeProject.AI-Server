@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,22 +22,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
     public class BackendProcessRunner : BackgroundService
     {
         // marker for path substitution
-        const string RootDirMarker         = "%ROOT_DIR%";
-        const string AppRootMarker         = "%APP_ROOT%";
-        const string PythonDirMarker       = "%PYTHON_DIR%";
-
-        const string FaceEnableEnvVar      = "VISION-FACE";
-        const string DetectionEnableEnvVar = "VISION-DETECTION";
-        const string SceneEnableEnvVar     = "VISION-SCENE";
-        const string AllEnableEnvVar       = "VISION-ALL";
-
-        // the list of environment variables to pass to the backend processes.
-        private readonly string[] BackendEnvironmentVarNames =
-        {
-            "APPDIR", "DATA_DIR", "TEMP_PATH", "MODELS_DIR", "PROFILE", "CUDA_MODE",
-            FaceEnableEnvVar, DetectionEnableEnvVar, SceneEnableEnvVar,
-            AllEnableEnvVar, "PORT"
-        };
+        const string RootDirMarker    = "%ROOT_DIR%";
+        const string ModulesDirMarker = "%MODULES_DIR%";
 
         private readonly FrontendOptions               _options;
         private readonly IConfiguration                _config;
@@ -54,6 +41,28 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         }
 
         /// <summary>
+        /// Gets a list of the processes names and statuses.
+        /// </summary>
+        public Dictionary<string, bool> ProcessStatuses
+        {
+            get {
+                return StartupProcesses.ToDictionary(cmd => cmd.Name ?? "Unknown",
+                                                     cmd => cmd.Running ?? false);
+            }
+        }
+
+        /// <summary>
+        /// Gets the backend process status for a queue.
+        /// </summary>
+        /// <param name="queueName">The Queue Name.</param>
+        /// <returns>The status for the backend process, or false if the queue is invalid.</returns>
+        public bool GetStatusForQueue(string queueName)
+        {
+            return StartupProcesses.FirstOrDefault(cmd => string.Compare(cmd.Queue, queueName, true) == 0)
+                ?.Running ?? false;
+        }
+
+        /// <summary>
         /// Initialises a new instance of the BackendProcessRunner.
         /// </summary>
         /// <param name="options">The FrontendOptions</param>
@@ -65,9 +74,9 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                                     QueueServices queueServices,
                                     ILogger<BackendProcessRunner> logger)
         {
-            _options = options.Value;
-            _config = config;
-            _logger = logger;
+            _options       = options.Value;
+            _config        = config;
+            _logger        = logger;
             _queueServices = queueServices;
 
             ExpandOptions();
@@ -154,14 +163,15 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             if (_options is null)
                 return;
 
-            // These first three options need to be expanded first.
-            // var rootDir = Path.Combine(AppContext.BaseDirectory, _options.ROOT_DIR ?? "");
-            // _options.ROOT_DIR = new DirectoryInfo(rootDir).FullName;
+            // These first three options need to be expanded first. It's assumed that this
+            // application will be under the /working-dir/src/API/FrontEnd directory, and will 
+            // either be in the FrontEnd folder directly (Production) or buried deeeep in the
+            // /bin/Debug/net/ etc etc bowels of the folder system. Dig up to the surface.
 
             DirectoryInfo currentDir = new DirectoryInfo(AppContext.BaseDirectory);
             if (_options.API_DIRNAME != null)
             {
-                // Find the API dir
+                // Grab a shovel and dig up towards the API directory
                 while (currentDir.Parent != null && currentDir.Name.ToLower() != _options.API_DIRNAME.ToLower())
                     currentDir = currentDir.Parent;
 
@@ -175,11 +185,9 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             }
 
             _options.ROOT_DIR = currentDir?.FullName ?? string.Empty;
+            _options.MODULES_DIR = ExpandOption(_options.MODULES_DIR);
 
             // _logger.LogError($"_options.ROOT_DIR: {_options.ROOT_DIR}");
-
-            _options.APP_ROOT   = ExpandOption(_options.APP_ROOT);
-            _options.PYTHON_DIR = ExpandOption(_options.PYTHON_DIR);
 
             if (_options.StartupProcesses is not null)
             {
@@ -201,9 +209,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             if (value is null)
                 return null;
 
-            value = value.Replace(PythonDirMarker, _options.PYTHON_DIR);
-            value = value.Replace(AppRootMarker,   _options.APP_ROOT);
-            value = value.Replace(RootDirMarker,   _options.ROOT_DIR);
+            value = value.Replace(ModulesDirMarker, _options.MODULES_DIR);
+            value = value.Replace(RootDirMarker,    _options.ROOT_DIR);
 
             return value;
         }
@@ -213,10 +220,10 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// </summary>
         private void BuildBackendEnvironmentVar()
         {
-            foreach (var varName in BackendEnvironmentVarNames)
+            if (_options.BackendEnvironmentVariables != null)
             {
-                var value = _config[varName];
-               _backendEnvironmentVars.Add(varName, ExpandOption(value));
+                foreach (var entry in _options.BackendEnvironmentVariables)
+                    _backendEnvironmentVars.Add(entry.Key, ExpandOption(entry.Value.ToString()));
             }
         }
     }

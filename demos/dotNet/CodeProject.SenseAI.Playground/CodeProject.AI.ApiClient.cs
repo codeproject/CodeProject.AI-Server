@@ -227,6 +227,8 @@ namespace CodeProject.SenseAI.Demo.Playground
                 httpResponse.EnsureSuccessStatusCode();
 
                 response = await httpResponse.Content.ReadFromJsonAsync<DetectObjectsResponse>();
+                //var json = await httpResponse.Content.ReadAsStringAsync();
+                //response = System.Text.Json.JsonSerializer.Deserialize<DetectObjectsResponse>(json);
                 response ??= new ErrorResponse("No response from the server");
             }
             catch (Exception ex)
@@ -274,7 +276,9 @@ namespace CodeProject.SenseAI.Demo.Playground
                 using var httpResponse = await Client.PostAsync("vision/face/register", request);
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<RegisterFaceResponse>();
+                // response = await httpResponse.Content.ReadFromJsonAsync<RegisterFaceResponse>();
+                var json = await httpResponse.Content.ReadAsStringAsync();
+                response = System.Text.Json.JsonSerializer.Deserialize<RegisterFaceResponse>(json);
                 response ??= new ErrorResponse("No response from the server");
             }
             catch (Exception ex)

@@ -7,10 +7,17 @@
 :: WELCOME TO CODEPROJECT SENSEAI!
 :: 
 :: Please ensure this script is run before you start exploring and integrating
-:: CodeProject.SenseAI. This script will download the required pieces, move
-:: them into place, run the setup commands and get you on your way.
+:: CodeProject.SenseAI. This script assumes the front end API server is already
+:: in place, and will finish up the setup by performing any tasks required by
+:: the various backend analysis services.
 ::
 :: Grab a coffee because it could take a while. But it'll be worth it.
+::
+:: Current backend analysis services installed:
+::
+::  - Face Detection & recognition
+::  - Object Detection
+::  - Scene Detection
 ::
 :: ============================================================================
 
@@ -20,30 +27,10 @@ cls
 SETLOCAL EnableDelayedExpansion
 
 :: ----------------------------------------------------------------------------
-:: 0. Script settings.
+:: Script settings.
 
-:: The location of large packages that need to be downloaded
-::  a. From AWS
-set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/
-::  b. From contrary GCP
-rem    set storageUrl=https://storage.googleapis.com/codeproject-senseai/
-::  c. Use a local directory rather than from online. Handy for debugging.
-rem    set storageUrl=C:\Dev\CodeProject\CodeProject.AI\install\cached_downloads\
-
-:: The name of the source directory
+:: The name of the source directory containing the Frontend API and backend analysis services
 set srcDir=src
-
-:: The name of the dir holding the backend analysis services
-set analysisLayerDir=AnalysisLayer
-
-:: The name of the dir holding the DeepStack analysis services
-set deepstackDir=DeepStack
-
-:: The name of the dir containing the Python interpreter
-set pythonDir=python37
-
-:: The name of the dir containing the AI models themselves
-set modelsDir=assets
 
 :: Show output in wild, crazy colours
 set techniColor=true
@@ -51,16 +38,11 @@ set techniColor=true
 :: verbosity can be: quiet | info | loud
 set verbosity=quiet
 
-:: Set the noise level when installing Python packages
-set pipFlags=-q
+:: The name of the dir holding the backend analysis services (within the src dir)
+set analysisLayerDir=AnalysisLayer
 
-:: ...and some misc stuff
-if /i "%verbosity%"   == "info" set pipFlags=
 if /i "%techniColor%" == "true" call :setESC
 
-
-:: ----------------------------------------------------------------------------
-:: 1. Download assets
 
 :: move down 8 lines so the download/unzip progress doesn't hide the output.'
 call :WriteLine Yellow "Setting up CodeProject.SenseAI" 
@@ -72,7 +54,42 @@ call :WriteLine White ""
 call :WriteLine White "========================================================================"
 call :WriteLine White ""
 
+
+
+:: ----------------------------------------------------------------------------
+:: MODULES (from DeepStack)
+::  - Face Detection & recognition
+::  - Object Detection
+::  - Scene Detection
+
+:: The location of large packages that need to be downloaded
+::  a. From AWS
+set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/
+::  b. From contrary GCP
+rem    set storageUrl=https://storage.googleapis.com/codeproject-senseai/
+::  c. Use a local directory rather than from online. Handy for debugging.
+rem    set storageUrl=C:\Dev\CodeProject\CodeProject.AI\install\cached_downloads\
+
+:: The name of the dir holding the DeepStack modules (within the analysis services dir)
+set deepstackDir=DeepStack
+
+:: The name of the dir containing the Python interpreter (within the deepstack dir)
+set pythonDir=python37
+
+:: The name of the dir containing the AI models themselves (within the deepstack dir)
+set modelsDir=assets
+
+:: Set the noise level when installing Python packages
+set pipFlags=-q
+if /i "%verbosity%"   == "info" set pipFlags=
+
+:: ----------------------------------------------------------------------------
+:: Download assets
+
+:: Setup backend analysis modules
 set analysisPath=%srcDir%\%analysisLayerDir%
+
+:: Module 1: Deepstack
 set deepStackPath=%cd%\%analysisPath%\DeepStack
 
 :: Warn the user about potential download size
@@ -101,9 +118,8 @@ if exist "%deepStackPath%\%modelsDir%" (
          "Downloading AI Models..."
 )
 
-
 :: ----------------------------------------------------------------------------
-:: 2. Setup Python environment
+:: Setup Python environment for this module (Requires Python 3.7)
 
 call :Write White "Creating a Python virtual environment..."
 
@@ -186,8 +202,11 @@ if not exist "%deepStackPath%\venv\Lib\site-packages\torch" (
     call :WriteLine Green "Python packages already present."
 )
 
+:: END OF MODULES
+
+
 :: ----------------------------------------------------------------------------
-:: 3. All done!
+:: All done!
 
 call :WriteLine Green ""
 call :WriteLine Green ""

@@ -67,7 +67,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
                     CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken).Token;
 
                 // setup the timeout callback.
-                theToken.Register(() => { completion.SetCanceled(); });
+                theToken.Register(() => { completion.TrySetCanceled(); });
 
                 try
                 {

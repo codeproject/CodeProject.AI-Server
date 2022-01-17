@@ -1,6 +1,6 @@
 :: ===============================================================================================
 ::
-:: CodeProject SenseAI Server script to load environment variables from store
+:: CodeProject SenseAI Server script to loasaved environment variables to a config file
 ::
 :: Copyright CodeProject 2021
 ::
@@ -10,13 +10,8 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-:: The name of the Environment variable setup file
-set envVariablesFile=set_environment.bat
-if not "%1" == "" set envVariablesFile=%1
-set envVariablesFile=!envVariablesFile:"=!
-
 set envConfigFile=CodeProject.SenseAI.json
-if not "%2" == "" set envConfigFile=%2
+if not "%1" == "" set envConfigFile=%1
 set envConfigFile=!envConfigFile:"=!
 
 (
@@ -46,31 +41,3 @@ echo    "VISION_DETECTION"   : "!VISION_DETECTION!",
 echo    "VISION_SCENE"       : "!VISION_SCENE!"
 echo  }
 ) > "!envConfigFile!"
-
-:: Also create a .BAT file for easy Starting
-
-(
-echo REM SenseAI Application values
-echo if "%%CPSENSEAI_ROOTDIR%%" == "" set CPSENSEAI_ROOTDIR=!CPSENSEAI_ROOTDIR!
-echo set CPSENSEAI_APPDIR=!CPSENSEAI_APPDIR!
-echo set CPSENSEAI_APIDIR=!CPSENSEAI_APIDIR!
-echo set CPSENSEAI_ANALYSISDIR=!CPSENSEAI_ANALYSISDIR!
-echo set CPSENSEAI_PORT=!PORT!
-echo set CPSENSEAI_PROFILE=!PROFILE!
-echo set CPSENSEAI_MODULES=!CPSENSEAI_MODULES!
-echo set CPSENSEAI_PRODUCTION=!CPSENSEAI_PRODUCTION!
-echo set CPSENSEAI_CONFIG=!CPSENSEAI_CONFIG!
-echo set CPSENSEAI_BUILDSERVER=!CPSENSEAI_BUILDSERVER!
-
-echo REM DeepStack compatible values
-echo set APPDIR=!APPDIR!
-echo set PROFILE=!PROFILE!
-echo set CUDA_MODE=!CUDA_MODE!
-echo set DATA_DIR=!DATA_DIR!
-echo set TEMP_PATH=!TEMP_PATH!
-echo set MODELS_DIR=!MODELS_DIR!
-echo set PORT=!PORT!
-echo set VISION_FACE=!VISION_FACE!
-echo set VISION_DETECTION=!VISION_DETECTION!
-echo set VISION_SCENE=!VISION_SCENE!
-) > "!envVariablesFile!"

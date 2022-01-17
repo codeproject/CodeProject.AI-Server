@@ -44,6 +44,11 @@
         public float confidence { get; set; }
 
         /// <summary>
+        /// Gets or sets the label for the detected object.
+        /// </summary>
+        public string? label { get; set; }
+
+        /// <summary>
         /// Gets or sets the top of the bounding rectangle.
         /// </summary>
         public int y_min { get; set; }
@@ -62,11 +67,6 @@
         /// Gets or sets the right of the bounding rectangle.
         /// </summary>
         public int x_max { get; set; }
-
-        /// <summary>
-        /// Gets or sets the label for the detected object.
-        /// </summary>
-        public string? label { get; set; }
     }
 
     public class RecognizedFace

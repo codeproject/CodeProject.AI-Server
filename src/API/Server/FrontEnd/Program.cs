@@ -61,8 +61,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
             return Host.CreateDefaultBuilder(args)
 
-                        // configure for running as a Windows Service or LinuxSystemmd in addition as
-                        // an executable in either OS.
+                        // configure for running as a Windows Service or LinuxSystemmd in addition
+                        // as an executable in either OS.
                        .UseWindowsService()
                        .UseSystemd()
 
@@ -72,7 +72,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                                        {
                                            _port = GetServerPort(hostbuilderContext);
                                            serverOptions.Listen(IPAddress.Any, _port);
-                                                                                       // Add a self-signed certificate to enable HTTPS locally
+                                           
+                                           // Add a self-signed certificate to enable HTTPS locally
                                            // serverOptions.Listen(IPAddress.Loopback, _sPort,
                                            //    listenOptions => {
                                            //    {
@@ -98,6 +99,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 {
                     if (!int.TryParse(urls.Split(':').Last().Trim('/'), out port))
                         port = _port;
+
                     config["PORT"] = port.ToString();
                 }
             }

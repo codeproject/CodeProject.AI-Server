@@ -6,8 +6,7 @@ Standalone, self-hosted, fast, free and Open Source Artificial Intelligence micr
 
 ## What is CodeProject SenseAI Server?
 
-CodeProject SenseAI is a self contained server that allows other applications to easily include AI processing as part of their service. CodeProject SenseAI is a simple HTTP based REST service that is fully self contained, installed locally, and requires no off-device processing.
-
+CodeProject SenseAI is an AI server that allows other applications to easily include Artificial Intelligence processing as part of their service. The service is a simple REST API based on HTTP that is fully self contained, can be installed locally, and requires no off-device processing.
 Here's a sample of the Scene Detection API
 
 ```html

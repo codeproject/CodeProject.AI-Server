@@ -10,7 +10,7 @@ cls
 SETLOCAL EnableDelayedExpansion
 
 set CPSENSEAI_ROOTDIR=%cd%\..\..\..\..\
-set envVariablesFile=!CPSENSEAI_ROOTDIR!\set_environment.bat
+set settingsFile=!CPSENSEAI_ROOTDIR!\CodeProject.SenseAI.json
 set techniColor=true
 
 :: Before we start, set the current directory if necessary
@@ -30,8 +30,23 @@ if /i "%techniColor%" == "true" call :setESC
 :: 1. Load environment variables
 
 call :Write White "Loading installation settings..."
-call "!envVariablesFile!"
-call :WriteLine Green "Done"
+(
+    for /f "tokens=*" %%x in (' more ^< "%settingsFile%" ') do (
+        set line=%%x
+        rem remove quotes, change " : " to "=", remove spaces
+        set line=!line:"=!
+        set line=!line: : ==!
+        set line=!line: =!
+	    if not "!line:~0,1!" == "{" (
+    	    if not "!line:~0,1!" == "}" (
+                if "!line:~-1!" == "," set line=!line:~0,-1!
+                echo set !line!
+            )
+        )
+    )
+) > "!settingsFile!.bat"
+call !settingsFile!.bat
+del !settingsFile!.batcall :WriteLine Green "Done"
 
 set VENV_PATH=!APPDIR!\..\venv
 

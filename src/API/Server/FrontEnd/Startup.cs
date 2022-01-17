@@ -1,17 +1,18 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using System.IO;
+using System.Reflection;
+
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
-using System;
-using System.IO;
-using System.Reflection;
-
+using CodeProject.SenseAI.API.Common;
 using CodeProject.SenseAI.API.Server.Backend;
-using Microsoft.Extensions.Options;
 
 namespace CodeProject.SenseAI.API.Server.Frontend
 {
@@ -87,6 +88,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             services.Configure<VersionInfo>(Configuration.GetSection(nameof(VersionInfo)));
 
             services.AddBackendProcessRunner(Configuration);
+
+            services.AddScoped<VersionService, VersionService>();
         }
 
         /// <summary>
@@ -113,8 +116,6 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject SenseAI API v1"));
             }
 
-            CheckForUpdates(version.Value);
-
             bool forceHttps = Configuration.GetValue<bool>(nameof(forceHttps));
             if (forceHttps)
                 app.UseHttpsRedirection();
@@ -132,17 +133,6 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             {
                 endpoints.MapControllers();
             });
-        }
-
-        /// <summary>
-        /// Checks for updates to the system
-        /// </summary>
-        public void CheckForUpdates(VersionInfo version)
-        {
-            // Phone home to the update server to get the latest version available and compare
-            // that with the version of this app. If there's a newer version then prompt and start
-            // download / update process.
-            Common.Logger.Log($"Current version is {version.Version}");
         }
     }
 }

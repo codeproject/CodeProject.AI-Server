@@ -371,9 +371,12 @@
 
             var images = [fileChooser.files[0]];
 
+            var params = []
             var minConfidence = parseFloat(minimumConfidence);
+            if (!isNaN(minConfidence))
+                params = [["min_confidence", minConfidence]]
 
-            submitRequest('face/recognize', images, [["min_confidence", minConfidence]], function (data) {
+            submitRequest('face/recognize', images, params, function (data) {
                 drawRectangles(data.predictions);
                 displayRecognitionResults(data.predictions)
             });

@@ -78,16 +78,16 @@
     <div class="callout">
         This is a developer preview full of sharp edges and exciting ledges, but that's part of what
         makes this fun. <a href="https://github.com/codeproject/CodeProject.SenseAI">Explore the code</a>
-        and try out the playground. We're looking for help, ideas, and anyone willing to dig in
-        make this amazing.
-    </div>
+        and try out the playground. We're looking for help, ideas, and feedback. If you know any 
+        good AI modules we should include then please send in your suggestions.
+        </div>
 
     <h2>What is CodeProject SenseAI Server?</h2>
 
-    <p>CodeProject SenseAI is a self contained server that allows other applications to easily i
-        nclude AI processing as part of their service. CodeProject SenseAI is a simple HTTP based 
-        REST service that is fully self contained, installed locally, and requires no off-device 
-        processing.</p>
+    <p>CodeProject SenseAI is a self contained server that allows other applications to easily
+        include AI processing as part of their service. The service is a simple REST API based
+        on HTTP that is fully self contained, can be installed locally, and requires no 
+        off-device processing.</p>
 
     <h2>What does it include?</h2>
 
@@ -110,44 +110,47 @@
         <li>Detect objects in images</li>
         <li>Detect faces in images</li>
         <li>Detect the type of scene represented in an image</li>
-        <li>Recognise faces that have been registered with the service</li>
+        <li>Recognize faces that have been registered with the service</li>
     </ul>
     <p>We will be constantly expanding the feature list.</p>
 
     <h2>Why CodeProject SenseAI</h2>
 
-    <p>Because adding AI capabilities to your apps is annoying hard.</p>
+    <p>Because adding AI capabilities to your apps is annoyingly hard.</p>
     <p>We want AI development to be something every developer can access, and we want integrating 
         AI into applications to be straightforward.</p>
-    <p>AI development involves multiple formats, training techniques, large amounts of data,
-        inscrutible choices and often expensive cloud services. We don't want that. The AI that we
-        include in our applications should be</p>
+    <p>AI development involves a lot of digging into details that often lead to more questions than
+        answers We don't want that. It often involves expensive cloud services, the requirement for
+        your data to leave your network, and a certain level of lock-in to a given vendor. We feel
+        that an AI library should should be</p>
     <ul>
-        <li><b>Completely self contained</b>. No sign-in, no reliance on Cloud servers, nothing to
-            download at runtime. Everything you need already in place</li>
+        <li><b>Completely self contained</b>. No sign-in, no reliance on Cloud servers (though
+            having the option is nice), nothing to download at runtime. Everything you need already
+            in place. </li>
         <li><b>Safe and secure</b>. Data processed as part of the application logic should never
-            leave the local environment. It should not be parsed, read, inspected or stored 
-            by anyone else other than you.</li>
-        <li><b>Always open</b>. CodeProject is based on Open Source development and so 
-            CodeProject SenseAI will also be Open Source.</li>
+            leave the local environment unless you expressly allow it. Sending data to a cloud
+            service solves a bunch of problems, but sometimes your data simply must stay in your
+            own home or organisation. This is critical.</li>
+        <li><b>Always open</b>. CodeProject is built on the concept of Open Source development and 
+            CodeProject SenseAI is no different.</li>
         <li><b>Cross Platform</b> We don't often have the luxury of picking a single platform 
-            anymore. There needs to be support for Windows, Linux, macOS, and Rasperry Pi to 
+            anymore. There needs to be support for Windows, Linux, macOS, and Raspberry Pi to 
             name a few.</li>
         <li><b>Cross Architecture CPU and GPU support</b>, of course</li>
-        <li><b>Fast and lightweight</b> Necessary for a self-contained distributable system</li>
+        <li><b>Fast and lightweight</b> Necessary for a self-contained distributable system, but
+        if you have the power and space then we'll have options for you too.</li>
         <li><b>Extendable</b>. AI is expanding so rapidly, and there are so many wonderful 
-            solutions popping up daaily. Adding new capabilities must be as simple as dropping 
+            solutions popping up daily. Adding new capabilities must be as simple as dropping 
             in the code and registering the new capabilities with the front end server.</li>
     </ul>
 
     <h2>Our Goals</h2>
     <ul>
         <li>To promote AI development and inspire the AI developer community to dive in and have a
-            go. AI is here, it's in demand, and it's a huge paradigm change in the industry. 
-            Whether you like AI or not, developers owe it to themselves to experiment in and 
-            familiarise themselves with the technology. This is CodeProject SenseAI: a 
-            demonstration, a playground, a learning tool, and a library and service that can be 
-            used out of the box.</li>
+            go. Artificial Intelligence is a huge paradigm change in the industry and all developers
+            owe it to themselves to experiment in and familiarize themselves with the technology. 
+            CodeProject SenseAI was built as a learning tool, a demonstration, and a library and 
+            service that can be used out of the box.</li>
         <li>To make AI development easy. It's not that AI development is that hard. It's that
             there are so, so many options. Our architecture is designed to allow any AI 
             implementation to find a home in our system, and for our service to be callable from 

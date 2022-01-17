@@ -95,8 +95,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend", "src\API\Server\B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.API.Server.Backend.Tests", "tests\QueueServiceTests\CodeProject.SenseAI.API.Server.Backend.Tests.csproj", "{F9430C77-589D-4C56-8458-2DF7E344C0FC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.Analysis.Yolo", "src\AnalysisLayer\CodeProject.AI.Backend.Yolo\CodeProject.SenseAI.Analysis.Yolo.csproj", "{ED911007-D9E3-4F99-9611-FBCA889419C2}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{8C92DCAE-EDE7-4DEC-A5CB-BB2388905064}"
 	ProjectSection(SolutionItems) = preProject
 		docs\images\Choose-launch.png = docs\images\Choose-launch.png
@@ -112,6 +110,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB
 		demos\Javascript\assets\logo250x135.gif = demos\Javascript\assets\logo250x135.gif
 		demos\Javascript\assets\styles.css = demos\Javascript\assets\styles.css
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{460DB5C8-46F3-4407-A2DF-D9063D14493A}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.Analysis.Yolo", "src\AnalysisLayer\CodeProject.SenseAI.Backend.Yolo\CodeProject.SenseAI.Analysis.Yolo.csproj", "{D9FF21D8-A953-405B-84D7-41D7F1EDA96D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -143,10 +148,10 @@ Global
 		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ED911007-D9E3-4F99-9611-FBCA889419C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ED911007-D9E3-4F99-9611-FBCA889419C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ED911007-D9E3-4F99-9611-FBCA889419C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ED911007-D9E3-4F99-9611-FBCA889419C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9FF21D8-A953-405B-84D7-41D7F1EDA96D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9FF21D8-A953-405B-84D7-41D7F1EDA96D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9FF21D8-A953-405B-84D7-41D7F1EDA96D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9FF21D8-A953-405B-84D7-41D7F1EDA96D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -166,9 +171,9 @@ Global
 		{A0CF3BEE-8EE3-4B23-BEB8-9D258C0510A3} = {93A23681-E9E8-4381-9EB5-8D178A0EE785}
 		{C93C22D7-4EB2-4EC0-A7F0-FBCFB9F6F72D} = {93A23681-E9E8-4381-9EB5-8D178A0EE785}
 		{F9430C77-589D-4C56-8458-2DF7E344C0FC} = {D982BD8C-2257-413B-8513-8043AB3035F3}
-		{ED911007-D9E3-4F99-9611-FBCA889419C2} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{8C92DCAE-EDE7-4DEC-A5CB-BB2388905064} = {3BF27572-9D3A-497C-8375-29110EBBD3D1}
 		{CB26AB5B-DB85-4A59-A3AE-FA55A35D05B0} = {3A860CDD-94B9-4002-BA08-87E8822DDE50}
+		{D9FF21D8-A953-405B-84D7-41D7F1EDA96D} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

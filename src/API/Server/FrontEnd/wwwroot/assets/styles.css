@@ -60,6 +60,7 @@ fieldset {
         margin-right: .5rem;
     }
 
+.btn,
 input[type=button],
 input[type=file]::-webkit-file-upload-button,
 input[type=file]::file-selector-button {
@@ -71,7 +72,7 @@ input[type=file]::file-selector-button {
     color: #2e2e2e;
     transition: .2s;
 }
-
+    .btn:hover,
     input[type=button]:hover,
     input[type=file]::-webkit-file-upload-button:hover,
     input[type=file]::file-selector-button:hover {

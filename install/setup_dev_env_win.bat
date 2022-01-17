@@ -59,9 +59,6 @@ set datastoreDir=datastore
 :: The name of the dir containing temporary DeepStack data
 set tempstoreDir=tempstore
 
-:: The name of the Environment variable setup file
-set envVariablesFile=set_environment.bat
-
 :: Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 :: The location of large packages that need to be downloaded
@@ -301,15 +298,15 @@ set CPSENSEAI_BUILDSERVER=True
 
 :: For DeepStack
 
-set APPDIR=%%CPSENSEAI_ROOTDIR%%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%intelligenceDir%
-set MODELS_DIR=%%CPSENSEAI_ROOTDIR%%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%modelsDir%
-set DATA_DIR=%%CPSENSEAI_ROOTDIR%%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%datastoreDir%
-set TEMP_PATH=%%CPSENSEAI_ROOTDIR%%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%tempstoreDir%
+set APPDIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%intelligenceDir%
+set MODELS_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%modelsDir%
+set DATA_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%datastoreDir%
+set TEMP_PATH=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%tempstoreDir%
 set VISION_FACE=%enableFaceDetection%
 set VISION_DETECTION=%enableObjectDetection%
 set VISION_SCENE=%enableSceneDetection%
 
-call save_environment "!absoluteRootDir!\!envVariablesFile!" "!absoluteRootDir!\!settingsFile!"
+call save_environment  "!absoluteRootDir!\!settingsFile!"
 call :WriteLine White "Done."
 
 :: and we're done.
