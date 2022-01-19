@@ -43,12 +43,15 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public ResponseBase GetPing()
         {
+            /* This is a simple and sensible response. But let's do better
             var response = new ResponseBase
             {
                 success = true,
             };
-
             return response;
+            */
+
+            return GetVersion();
         }
 
         /// <summary>

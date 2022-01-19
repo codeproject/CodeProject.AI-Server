@@ -27,6 +27,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="installconfig.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\..\..\..\demos\Javascript\Vision.html" Link="wwwroot\Vision.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

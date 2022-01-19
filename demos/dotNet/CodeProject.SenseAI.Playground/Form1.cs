@@ -18,13 +18,13 @@ namespace CodeProject.SenseAI.Demo.Playground
         const int _pingFrequency = 2;    // seconds
         const int _apiServerPort = 5000; // be default
 
-        private ApiClient    _AIService              = new ApiClient(_apiServerPort);
-        private bool         _serverLive             = false;    
-        private string       _imageFileName          = string.Empty;
-        private string       _faceImageFileName1     = string.Empty;
-        private string       _faceImageFileName2     = string.Empty;
-        private string       _recognizeImageFileName = string.Empty;
-        private List<string> _registerFileNames      = new();
+        private readonly ApiClient    _AIService              = new(_apiServerPort);
+        private bool                  _serverLive             = false;    
+        private string                _imageFileName          = string.Empty;
+        private string                _faceImageFileName1     = string.Empty;
+        private string                _faceImageFileName2     = string.Empty;
+        private string                _recognizeImageFileName = string.Empty;
+        private readonly List<string> _registerFileNames      = new();
 
         public Form1()
         {
@@ -162,9 +162,9 @@ namespace CodeProject.SenseAI.Demo.Playground
                 }
 
                 Graphics canvas  = Graphics.FromImage(image);
-                Pen pen          = new Pen(Color.Yellow, 2);
+                Pen pen          = new(Color.Yellow, 2);
                 SolidBrush brush = new(Color.White);
-                Font drawFont    = new Font("Arial", 10);
+                Font drawFont    = new("Arial", 10);
 
                 List<string> lines = new();
 
@@ -287,9 +287,9 @@ namespace CodeProject.SenseAI.Demo.Playground
                     }
 
                     Graphics canvas  = Graphics.FromImage(image);
-                    Pen pen          = new Pen(Color.Yellow, 2);
+                    Pen pen          = new(Color.Yellow, 2);
                     SolidBrush brush = new(Color.White);
-                    Font drawFont    = new Font("Arial", 10);
+                    Font drawFont    = new("Arial", 10);
 
                     if (detectedObjects.predictions is not null)
                     {
@@ -370,9 +370,9 @@ namespace CodeProject.SenseAI.Demo.Playground
                     }
 
                     Graphics canvas  = Graphics.FromImage(image);
-                    Pen pen          = new Pen(Color.Yellow, 2);
+                    Pen pen          = new(Color.Yellow, 2);
                     SolidBrush brush = new(Color.White);
-                    Font drawFont    = new Font("Arial", 10);
+                    Font drawFont    = new("Arial", 10);
 
                     List<string> lines = new();
                     if (recognizeFace.predictions is not null)

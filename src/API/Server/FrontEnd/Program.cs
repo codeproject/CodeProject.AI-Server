@@ -27,7 +27,12 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <param name="args">The command line args.</param>
         public static async Task Main(string[] args)
         {
-            var host = CreateHostBuilder(args).Build();
+            var host = CreateHostBuilder(args)
+                       .ConfigureAppConfiguration((hostingContext, config) =>
+                       {
+                           config.AddJsonFile(InstallConfig.InstallCfgFilename, reloadOnChange: true, optional: true);
+                       })
+                       .Build();
             var hostTask = host.RunAsync();
 
             OpenBrowser($"http://localhost:{_port}/");
@@ -50,7 +55,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             // the /FrontEnd directory. When launched from within the dev environment, the exe is
             // buried deep down the labyrinth. Grab a torch and hunt.
 
-            DirectoryInfo currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+            DirectoryInfo currentDir = new(AppContext.BaseDirectory);
             while (currentDir != null && currentDir.Name.ToLower() != "frontend")
             {
                 if (currentDir.Parent == null)
@@ -65,7 +70,6 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                         // as an executable in either OS.
                        .UseWindowsService()
                        .UseSystemd()
-
                        .ConfigureWebHostDefaults(webBuilder =>
                        {
                            webBuilder.ConfigureKestrel((hostbuilderContext, serverOptions) =>

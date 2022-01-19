@@ -61,7 +61,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
             return HandleErrorResponse(backendResponse);
         }
 
-        private ErrorResponse HandleErrorResponse(BackendResponseBase backendResponse)
+        private static ErrorResponse HandleErrorResponse(BackendResponseBase backendResponse)
         {
             if (backendResponse is BackendErrorResponse errorResponse)
                 return new ErrorResponse(errorResponse.error, errorResponse.code);

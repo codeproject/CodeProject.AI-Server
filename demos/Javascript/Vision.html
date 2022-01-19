@@ -382,6 +382,37 @@
             });
         }
 
+        var isBenchmarkCancelled;
+        function onBenchmark(fileChooser, resultElm) {
+
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for benchmarking");
+                return;
+            }
+
+            var images = [fileChooser.files[0]];
+            let startMilliseconds = performance.now();
+            
+            isBenchmarkCancelled = false;
+
+            for (let i = 0; i < 50 && !isBenchmarkCancelled; i++) {
+
+                // Funny thing about the cancellation bit. These requests are sent to the API
+                // server which queues them up for processing. Sending is fast. Processing takes
+                // longer. By the time you've cancelled the benchmark loop all requests have
+                // already been queued and what you're seeing are the result of the requests coming
+                // back. So not much point having a cancellation feature here. But the guts are 
+                // included for grins.
+                submitRequest('detection', images, null, function (data) {
+                    let currentMilliseconds = performance.now();
+                    let opsPerSecond = (i * 1000) / (currentMilliseconds - startMilliseconds);
+                    resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second";
+                });
+            }
+        }
+
    </script>
 
 </head>
@@ -481,6 +512,25 @@
                     <div class="row">
                         <span>Minimum Recognition Confidence</span>
                         <input value="0.6" id="minRecogConfidence" type="text" style="width:3rem"/>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Benchmark</legend>
+                    <div class="row">
+                        <label>Image</label>
+                        <input id="benchmarkInput" type="file" style="width:17rem"
+                            onchange="return previewImage(this)" />
+                        <input type="button" value="Go" id="benchmark" class="styleB"
+                            onclick="onBenchmark(benchmarkInput, benchmarkResult)" />
+
+                        <!-- See note above on how this button isn't currently that useful
+                        <input type="button" value="Stop" class="styleD" style="margin-left:1em"
+                            onclick="isBenchmarkCancelled = true;" />
+                        -->
+                    </div>
+                    <div class="row">
+                        <span id="benchmarkResult"></span>
                     </div>
                 </fieldset>
 

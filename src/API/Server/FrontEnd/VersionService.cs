@@ -19,12 +19,16 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <summary>
         /// Initializs a new instance of the Startup class.
         /// </summary>
-        /// <param name="options">The Options instance.</param>
+        /// <param name="versionOptions">The version Options instance.</param>
+        /// <param name="installOptions">The install Options instance.</param>
         /// <param name="configuration">The Configuration instance</param>
-        public VersionService(IOptions<VersionInfo> options, IConfiguration configuration)
+        public VersionService(IOptions<VersionInfo> versionOptions,
+                              IOptions<InstallConfig> installOptions,
+                              IConfiguration configuration)
         {
             Configuration = configuration;
-            VersionInfo   = options.Value;
+            VersionInfo   = versionOptions.Value;
+            InstallConfig = installOptions.Value;
         }
 
         /// <summary>
@@ -38,6 +42,11 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         public VersionInfo VersionInfo { get; }
 
         /// <summary>
+        /// Gets the install config for the current instance.
+        /// </summary>
+        public InstallConfig InstallConfig { get; }
+
+        /// <summary>
         /// Gets the latest version available for download
         /// </summary>
         public async Task<VersionInfo?> GetLatestVersion()
@@ -45,7 +54,15 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             VersionInfo? version = null;
 
             if (_client is null)
+            {
                 _client = new HttpClient { Timeout = new TimeSpan(0, 0, 30) };
+                // Sending this allows us to store some state on the server's side between status
+                // calls. Not used at the moment, but will be in the future. 
+                // SECURITY: Always ensure that InstallConfig.Id does not contain personally
+                //           identifiable information. It should just be a random GUID that can be
+                //           wiped or replaced on the installation side without issue.
+                _client.DefaultRequestHeaders.Add("X-CPSense-Install", InstallConfig.Id.ToString());
+            }
 
             string updateCheckUrl = Configuration.GetValue<string>("UpdateCheckUrl");
 

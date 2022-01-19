@@ -103,8 +103,10 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     {
                         // _logger.LogError($"Starting {cmdInfo.Command}");
 
-                        var procStartInfo = new ProcessStartInfo(cmdInfo.Command, cmdInfo.Args ?? "");
-                        procStartInfo.UseShellExecute = false;
+                        ProcessStartInfo? procStartInfo = new(cmdInfo.Command, cmdInfo.Args ?? "")
+                        {
+                            UseShellExecute = false
+                        };
 
                         // setup the environment
                         foreach (var kv in _backendEnvironmentVars)
@@ -168,7 +170,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             // either be in the FrontEnd folder directly (Production) or buried deeeep in the
             // /bin/Debug/net/ etc etc bowels of the folder system. Dig up to the surface.
 
-            DirectoryInfo currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+            DirectoryInfo currentDir = new(AppContext.BaseDirectory);
             if (_options.API_DIRNAME != null)
             {
                 // Grab a shovel and dig up towards the API directory

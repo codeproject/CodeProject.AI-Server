@@ -337,8 +337,10 @@ namespace CodeProject.SenseAI.Demo.Playground
 
             try
             {
-                var request = new MultipartFormDataContent();
-                request.Add(new StringContent(userId), "userid");
+                var request = new MultipartFormDataContent
+                {
+                    { new StringContent(userId), "userid" }
+                };
 
                 using var httpResponse = await Client.PostAsync("vision/face/delete", request);
                 httpResponse.EnsureSuccessStatusCode();

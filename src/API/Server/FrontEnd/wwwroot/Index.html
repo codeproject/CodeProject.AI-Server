@@ -11,10 +11,11 @@
     <script type="text/javascript">
 
         const apiServiceUrl    = "http://localhost";
-        const pingFrequency    = 2000; // milliseconds
-        const logFrequency     =  500; // milliseconds
-        const statusFrequency  = 3000; // milliseconds
-        const updatePause      = 5000; // milliseconds
+        const pingFrequency    = 2000;    // milliseconds
+        const logFrequency     =  500;    // milliseconds
+        const statusFrequency  = 3000;    // milliseconds
+        const updatePause      = 5000;    // milliseconds
+        const updateFrequency  = 3600000; // milliseconds
 
         var _lastLogId      = 0;
         var _serverIsOnline = false;
@@ -33,6 +34,7 @@
             setInterval(getAnalysisStatus, statusFrequency);
 
             setTimeout(checkForUpdates(update), updatePause);
+            setInterval(checkForUpdates(update), updateFrequency);
         });
 
         function setStatus(text, color) {
@@ -190,7 +192,7 @@
 
     <h1>CodeProject SenseAI Server Monitor</h1>
 
-    <div style="margin: -17px 0 20px 0;">
+    <div style="margin: -12px 0 20px 0;">
         <span id="version"></span>
 
         <span class="btn" style="margin-left: 2rem;" onclick="checkForUpdates(update)">Check for

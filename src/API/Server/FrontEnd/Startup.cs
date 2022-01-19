@@ -87,6 +87,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
             services.Configure<VersionInfo>(Configuration.GetSection(nameof(VersionInfo)));
 
+            services.Configure<InstallConfig>(Configuration.GetSection(InstallConfig.InstallCfgSection));
+
             services.AddBackendProcessRunner(Configuration);
 
             services.AddScoped<VersionService, VersionService>();
@@ -97,17 +99,15 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// </summary>
         /// <param name="app">The Application Builder.</param>
         /// <param name="env">The Hosting Evironment.</param>
-        /// <param name="version">The version info</param>
         /// <param name="logger">The logger</param>
-        /// <param name="commandDispatcher">The Command Dispatcher.  Used to create the known queues.</param>
+        /// <param name="installConfig">The installation instance config values.</param>
         /// <remarks>
         ///   This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         /// </remarks>
-        public void Configure(IApplicationBuilder app, 
+        public void Configure(IApplicationBuilder app,
                               IWebHostEnvironment env,
-                              IOptions<VersionInfo> version,
                               ILogger<Startup> logger,
-                              CommandDispatcher commandDispatcher)
+                              IOptions<InstallConfig> installConfig)
         {
             if (env.IsDevelopment())
             {
@@ -115,6 +115,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject SenseAI API v1"));
             }
+
+            InitializeIntallConfig(installConfig.Value, logger);
 
             bool forceHttps = Configuration.GetValue<bool>(nameof(forceHttps));
             if (forceHttps)
@@ -133,6 +135,27 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             {
                 endpoints.MapControllers();
             });
+        }
+
+        private static void InitializeIntallConfig(InstallConfig installConfig, ILogger<Startup> logger)
+        {
+
+            if (installConfig is null || installConfig.Id == Guid.Empty)
+            {
+                try
+                {
+                    installConfig  ??= new InstallConfig();
+                    installConfig.Id = Guid.NewGuid();
+                    var configValues = new { install = installConfig };
+                    var filePath     = InstallConfig.InstallCfgFilename;
+                    File.WriteAllText(filePath, System.Text.Json.JsonSerializer.Serialize(configValues, 
+                        new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, $"Exception updating {InstallConfig.InstallCfgFilename}");
+                }
+            }
         }
     }
 }

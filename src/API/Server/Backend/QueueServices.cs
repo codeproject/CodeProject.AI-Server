@@ -20,9 +20,9 @@ namespace CodeProject.SenseAI.API.Server.Backend
         private readonly BackendOptions _settings;
 
         // Keeping track of the queues being used.  Will be created as needed.
-        private ConcurrentDictionary<string, Channel<BackendRequestBase>> _queues =
+        private readonly ConcurrentDictionary<string, Channel<BackendRequestBase>> _queues =
                             new ConcurrentDictionary<string, Channel<BackendRequestBase>>();
-        private ConcurrentDictionary<string, TaskCompletionSource<string?>> _pendingResponses =
+        private readonly ConcurrentDictionary<string, TaskCompletionSource<string?>> _pendingResponses =
                             new ConcurrentDictionary<string, TaskCompletionSource<string?>>();
         public QueueServices(IOptions<BackendOptions> options)
         {

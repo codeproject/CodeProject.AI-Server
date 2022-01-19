@@ -24,7 +24,7 @@ set installationDir=c:\CodeProject.SenseAI.Package
 
 :: The location of the installation package that will be created. The convention is:
 ::   CodeProject.SenseAI.<major>.<minor><patch>.zip
-set installationPackage=c:\CodeProject.SenseAI.0.0106.zip
+set installationPackage=c:\CodeProject.SenseAI.0.0107.zip
 
 :: The location of the solution root directory relative to this script
 cd ..
@@ -322,7 +322,7 @@ set includeDotnetDemo=false
 if /i "%includeDotnetDemo%" == "true" (
     REM Build .NET demo
     call :Write White "Building .NET demo [%config%] ..."
-    cd "%rootPath%\%demoDir%\dotNET\CodeProject.SenseAI.Playground"
+    pushd "%rootPath%\%demoDir%\dotNET\CodeProject.SenseAI.Playground"
 
     if /i "%verbosity%"=="quiet" (
         dotnet publish --configuration %config% -o "%buildOutputDir%" ^
@@ -331,6 +331,7 @@ if /i "%includeDotnetDemo%" == "true" (
         dotnet publish --configuration %config% -o "%buildOutputDir%" ^
                        -p:PublishSingleFile=true --nologo !dotnetFlags!
     )
+    popd
     call :WriteLine Green "Done."
 )
 
@@ -339,7 +340,7 @@ if /i "%includeDotnetDemo%" == "true" (
 call :Write White "Coping demos to installation..."
 
 if not exist "%installationDir%\%demoDir%" mkdir "%installationDir%\%demoDir%" > nul
-cd "%installationDir%\%demoDir%"
+pushd "%installationDir%\%demoDir%"
 
 if /i "%includeDotnetDemo%" == "true" (
     if not exist Playground mkdir Playground
@@ -359,8 +360,10 @@ call :Write White "Coping test data to installation..."
 if not exist TestData mkdir TestData
 robocopy /e "%rootPath%\%demoDir%\TestData" ^
             "%installationDir%\%demoDir%\TestData" !roboCopyFlags! > nul
+
 call :WriteLine Green "Done."
 
+popd
 
 :: ============================================================================
 :: 7. Compress the final package if required
