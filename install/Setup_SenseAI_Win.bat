@@ -68,7 +68,7 @@ set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/instal
 ::  b. From contrary GCP
 rem    set storageUrl=https://storage.googleapis.com/codeproject-senseai/
 ::  c. Use a local directory rather than from online. Handy for debugging.
-rem    set storageUrl=C:\Dev\CodeProject\CodeProject.AI\install\cached_downloads\
+rem    set storageUrl=C:\Dev\CodeProject\CodeProject.SenseAI\install\cached_downloads\
 
 :: The name of the dir holding the DeepStack modules (within the analysis services dir)
 set deepstackDir=DeepStack

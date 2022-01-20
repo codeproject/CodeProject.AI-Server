@@ -12,7 +12,7 @@ namespace CodeProject.SenseAI.Demo.Playground
 {
     /// <summary>
     /// This is an example of a .NET client to call CodeProject SenseAI API Server.
-    /// TODO: move under an SDKs directory called CodeProject.AI.Sdk.Net.
+    /// TODO: move under an SDKs directory called CodeProject.SenseAI.Sdk.Net.
     /// </summary>
     public class ApiClient
     {

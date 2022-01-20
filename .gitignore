@@ -382,3 +382,4 @@ FodyWeavers.xsd
 /set_environment.bat
 /CodeProject.SenseAI.config
 /CodeProject.SenseAI.json
+/src/API/Server/FrontEnd/installconfig.json
