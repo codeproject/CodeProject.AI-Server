@@ -85,7 +85,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestData", "TestData", "{B1
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.Playground", "demos\dotNet\CodeProject.SenseAI.Playground\CodeProject.SenseAI.Playground.csproj", "{C33D90E7-7570-46FB-9EB9-ED6B40A93A9B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "src\API\Common\Common.csproj", "{CEECDD90-4400-436D-A369-DB216B21FD93}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common","src\API\Common\Common.csproj", "{CEECDD90-4400-436D-A369-DB216B21FD93}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{93A23681-E9E8-4381-9EB5-8D178A0EE785}"
 EndProject
