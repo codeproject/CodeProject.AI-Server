@@ -24,7 +24,7 @@ function detectScene(fileChooser) {
         method: "POST",
         body: formData
     })
-    .then(response => { 
+    .then(response => {
         if (response.ok) response.json().then(data => {
             console.log(`Scene is ${data.label}, ${data.confidence} confidence`)
         });

@@ -24,7 +24,7 @@ set installationDir=c:\CodeProject.SenseAI.Package
 
 :: The location of the installation package that will be created. The convention is:
 ::   CodeProject.SenseAI.<major>.<minor><patch>.zip
-set installationPackage=c:\CodeProject.SenseAI.0.0107.zip
+set installationPackage=c:\CodeProject.SenseAI.0.0108.zip
 
 :: The location of the solution root directory relative to this script
 cd ..

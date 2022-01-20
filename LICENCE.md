@@ -6,7 +6,7 @@ Copyright © 2018 MongoDB, Inc.
 
 Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
 
-### TERMS AND CONDITIONS 
+### TERMS AND CONDITIONS
 
 <ol start="0">
 
