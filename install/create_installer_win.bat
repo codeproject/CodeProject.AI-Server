@@ -240,21 +240,33 @@ if /i "%verbosity%"=="quiet" (
 )
 call :WriteLine Green "Done."
 
-:: For DeepStack
-set analysisPath=%rootPath%\%srcDir%\%analysisLayerDir%\
-
 call :Write White "Moving Analysis services to installation folder..."
+
+:: For DeepStack
 
 :: Note that Python and the models will be downloaded by the Setup script, and
 :: venv will be generated dynamically by the same script
+set analysisPath=%rootPath%\%srcDir%\%analysisLayerDir%\DeepStack\
 REM Note the space before the closing "  https://stackoverflow.com/a/30244061
 if /i "%verbosity%"=="quiet" (
-    robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir% " ^
+    robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir%\DeepStack " ^
              /XD venv "%modelsDir%" "%pythonDir%" /XF faceembedding.db /E !roboCopyFlags! > nul
 ) else (
-    robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir% " ^
-             /XD venv "%modelsDir%" "%pythonDir%" s/XF faceembedding.db /E !roboCopyFlags!
+    robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir%\DeepStack " ^
+             /XD venv "%modelsDir%" "%pythonDir%" /XF faceembedding.db /E !roboCopyFlags!
 )
+
+:: For YOLO
+
+REM set analysisPath=%rootPath%\%srcDir%\%analysisLayerDir%\\CodeProject.SenseAI.Backend.Yolo
+REM if /i "%verbosity%"=="quiet" (
+REM     robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir%\CodeProject.SenseAI.Backend.Yolo " ^
+REM              /XD obj bin "/E !roboCopyFlags! > nul
+REM ) else (
+REM     robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir%\CodeProject.SenseAI.Backend.Yolo " ^
+REM              /XD obj bin /E !roboCopyFlags!
+REM )
+
 call :WriteLine Green "Done."
 
 :: Copy over the setup and startup scripts
