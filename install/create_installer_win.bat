@@ -24,7 +24,7 @@ set installationDir=c:\CodeProject.SenseAI.Package
 
 :: The location of the installation package that will be created. The convention is:
 ::   CodeProject.SenseAI.<major>.<minor><patch>.zip
-set installationPackage=c:\CodeProject.SenseAI.0.0108.zip
+set installationPackage=c:\CodeProject.SenseAI.0.0109.zip
 
 :: The location of the solution root directory relative to this script
 cd ..
@@ -57,6 +57,10 @@ set senseAPIDir=API
 
 :: The name of the startup settings file
 set settingsFile=CodeProject.SenseAI.json
+
+:: The name of the version file for the SenseAI system. Stored in the API Server dir.
+:: TODO: Read this file to set the value of %installationPackage%
+set versionFile=version.json
 
 :: .NET build configuration: [Debug | Release]
 set config=Release
@@ -250,10 +254,10 @@ set analysisPath=%rootPath%\%srcDir%\%analysisLayerDir%\DeepStack\
 REM Note the space before the closing "  https://stackoverflow.com/a/30244061
 if /i "%verbosity%"=="quiet" (
     robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir%\DeepStack " ^
-             /XD venv "%modelsDir%" "%pythonDir%" /XF faceembedding.db /E !roboCopyFlags! > nul
+             /XD venv __pycache__ "%modelsDir%" "%pythonDir%" /XF faceembedding.db /E !roboCopyFlags! > nul
 ) else (
     robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir%\DeepStack " ^
-             /XD venv "%modelsDir%" "%pythonDir%" /XF faceembedding.db /E !roboCopyFlags!
+             /XD venv __pycache__ "%modelsDir%" "%pythonDir%" /XF faceembedding.db /E !roboCopyFlags!
 )
 
 :: For YOLO

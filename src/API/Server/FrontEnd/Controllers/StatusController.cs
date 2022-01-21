@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 
 using CodeProject.SenseAI.API.Common;
 using System.Threading.Tasks;
@@ -66,8 +64,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
         {
             var response = new VersionResponse
             {
-                message = VersionService.VersionInfo.Version,
-                version = VersionService.VersionInfo,
+                message = VersionService.VersionConfig.VersionInfo?.Version ?? string.Empty,
+                version = VersionService.VersionConfig.VersionInfo,
                 success = true
             };
 
@@ -95,7 +93,17 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
             }
             else
             {
-                bool updateAvailable = VersionInfo.Compare(VersionService.VersionInfo, latest) < 0;
+                VersionInfo? current = VersionService.VersionConfig.VersionInfo;
+                if (current == null)
+                {
+                    return new VersionUpdateResponse
+                    {
+                        message = "Unable to retrieve current version",
+                        success = false
+                    };
+                }
+
+                bool updateAvailable = VersionInfo.Compare(current, latest) < 0;
                 string message = updateAvailable
                                ? $"An update to version {latest.Version} is available"
                                : "This is the current version";

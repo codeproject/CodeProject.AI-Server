@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
-using CodeProject.SenseAI.API.Common;
 using CodeProject.SenseAI.API.Server.Backend;
 
 namespace CodeProject.SenseAI.API.Server.Frontend
@@ -85,9 +84,11 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             services.Configure<BackendOptions>(Configuration.GetSection(nameof(BackendOptions)))
                     .AddQueueProcessing();
 
-            services.Configure<VersionInfo>(Configuration.GetSection(nameof(VersionInfo)));
+            // Moved into its own file
+            // services.Configure<VersionInfo>(Configuration.GetSection(nameof(VersionInfo)));
 
             services.Configure<InstallConfig>(Configuration.GetSection(InstallConfig.InstallCfgSection));
+            services.Configure<VersionConfig>(Configuration.GetSection(VersionConfig.VersionCfgSection));
 
             services.AddBackendProcessRunner(Configuration);
 
@@ -116,7 +117,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject SenseAI API v1"));
             }
 
-            InitializeIntallConfig(installConfig.Value, logger);
+            InitializeInstallConfig(installConfig.Value, logger);
 
             bool forceHttps = Configuration.GetValue<bool>(nameof(forceHttps));
             if (forceHttps)
@@ -137,7 +138,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             });
         }
 
-        private static void InitializeIntallConfig(InstallConfig installConfig, ILogger<Startup> logger)
+        private static void InitializeInstallConfig(InstallConfig installConfig, ILogger<Startup> logger)
         {
 
             if (installConfig is null || installConfig.Id == Guid.Empty)
@@ -148,6 +149,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     installConfig.Id = Guid.NewGuid();
                     var configValues = new { install = installConfig };
                     var filePath     = InstallConfig.InstallCfgFilename;
+
                     File.WriteAllText(filePath, System.Text.Json.JsonSerializer.Serialize(configValues, 
                         new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                 }

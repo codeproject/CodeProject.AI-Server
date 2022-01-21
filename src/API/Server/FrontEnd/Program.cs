@@ -31,6 +31,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                        .ConfigureAppConfiguration((hostingContext, config) =>
                        {
                            config.AddJsonFile(InstallConfig.InstallCfgFilename, reloadOnChange: true, optional: true);
+                           config.AddJsonFile(VersionConfig.VersionCfgFilename, reloadOnChange: true, optional: true);
                        })
                        .Build();
             var hostTask = host.RunAsync();

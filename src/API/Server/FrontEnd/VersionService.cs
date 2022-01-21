@@ -22,12 +22,12 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <param name="versionOptions">The version Options instance.</param>
         /// <param name="installOptions">The install Options instance.</param>
         /// <param name="configuration">The Configuration instance</param>
-        public VersionService(IOptions<VersionInfo> versionOptions,
+        public VersionService(IOptions<VersionConfig> versionOptions,
                               IOptions<InstallConfig> installOptions,
                               IConfiguration configuration)
         {
             Configuration = configuration;
-            VersionInfo   = versionOptions.Value;
+            VersionConfig = versionOptions.Value;
             InstallConfig = installOptions.Value;
         }
 
@@ -39,7 +39,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <summary>
         /// Gets the version info for the current instance.
         /// </summary>
-        public VersionInfo VersionInfo { get; }
+        public VersionConfig VersionConfig { get; }
 
         /// <summary>
         /// Gets the install config for the current instance.
@@ -79,14 +79,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     if (version is not null)
                     {
                         // A small adjustment. The version info contains the file *name* not a file
-                        // URL, and that name is relative to the official download location. We
-                        // return just the name as a naive protection against man in the middle
-                        // attacks. The URL we send the user to will come from the local config
-                        // settings.
+                        // URL. We return just the name as a naive protection against man in the
+                        // middle attacks. The actual URL we send the user to will come from the
+                        // local config settings.
                         if (!string.IsNullOrWhiteSpace(version.File))
                         {
                             string updateDownloadUrl = Configuration.GetValue<string>("UpdateDownloadUrl");
-                            version.File = updateDownloadUrl + version.File;
+                            version.File = updateDownloadUrl;
                         }
 
                         Common.Logger.Log($"Latest version available is {version.Version}");
