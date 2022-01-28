@@ -24,7 +24,7 @@ set installationDir=c:\CodeProject.SenseAI.Package
 
 :: The location of the installation package that will be created. The convention is:
 ::   CodeProject.SenseAI.<major>.<minor><patch>.zip
-set installationPackage=c:\CodeProject.SenseAI.0.0109.zip
+set installationPackage=c:\CodeProject.SenseAI.0.0201.zip
 
 :: The location of the solution root directory relative to this script
 cd ..
@@ -32,7 +32,7 @@ set rootPath=%cd%
 
 :: The location of the API Frontend Server within the source tree itself. Note that the location of
 :: the API server in the installation 
-set serverPath=%rootPath%\src\API\Server\FrontEnd
+set serverSrcPath=%rootPath%\src\API\Server\FrontEnd
 
 :: Whether or not to remove any existing installation directory
 set cleanInstall=true
@@ -84,6 +84,12 @@ set datastoreDir=datastore
 
 :: The name of the dir containing temporary DeepStack data
 set tempstoreDir=tempstore
+
+:: Yolo.Net specific
+:: The location of the Yolo.Net Module within the source tree itself.
+set yoloNetSrcPath=%rootPath%\src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo
+set yoloNetDir=CodeProject.SenseAI.AnalysisLayer.Yolo
+set yoloModelsDir=assets\weights
 
 :: Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -169,6 +175,14 @@ if /i "%attemptRestart%" == "true" (
 :hasCorrectPermissions
 call :WriteLine Green "Success"
 
+:: ============================================================================
+:: We've hit the point where we need to consider the .NET version installed
+
+call :Write White "Checking version of .NET..."
+dotnet --info | find "Version: 6" > NUL
+if errorlevel 1 goto errorNoNET6
+call :WriteLine Green "NET 6 present"
+
 
 :: ============================================================================
 :: 2. Do the heavy lifting of ensuring the dev environment is setup so we can 
@@ -218,7 +232,7 @@ call :WriteLine Green "Done"
 :: Build server
 call :Write White "Building API Server [%config%]..."
 
-pushd "%serverPath%"
+pushd "%serverSrcPath%"
 REM Note: The carrot character means "line continuation"
 REM For .NET 6 add the "-p:PublishSingleFile=true" parameter to make the output a single file
 if /i "%verbosity%"=="quiet" (
@@ -234,11 +248,11 @@ call :WriteLine Green "Done."
 :: Copy over
 call :Write White "Moving API Server to installation folder..."
 if /i "%verbosity%"=="quiet" (
-    robocopy /E "%serverPath%\%buildOutputDir% " ^
+    robocopy /E "%serverSrcPath%\%buildOutputDir% " ^
              "%installationDir%\%srcDir%\%senseAPIDir%\Server\FrontEnd " ^
              /XF *.pdb !roboCopyFlags! > nul
 ) else (
-    robocopy /E "%serverPath%\%buildOutputDir% " ^
+    robocopy /E "%serverSrcPath%\%buildOutputDir% " ^
              "%installationDir%\%srcDir%\%senseAPIDir%\Server\FrontEnd " ^
              /XF *.pdb !roboCopyFlags!
 )
@@ -260,17 +274,37 @@ if /i "%verbosity%"=="quiet" (
              /XD venv __pycache__ "%modelsDir%" "%pythonDir%" /XF faceembedding.db /E !roboCopyFlags!
 )
 
+call :WriteLine Green "Done."
+
 :: For YOLO
+call :Write White "Building Yolo.Net module [%config%]..."
 
-REM set analysisPath=%rootPath%\%srcDir%\%analysisLayerDir%\\CodeProject.SenseAI.Backend.Yolo
-REM if /i "%verbosity%"=="quiet" (
-REM     robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir%\CodeProject.SenseAI.Backend.Yolo " ^
-REM              /XD obj bin "/E !roboCopyFlags! > nul
-REM ) else (
-REM     robocopy "%analysisPath% " "%installationDir%\%srcDir%\%analysisLayerDir%\CodeProject.SenseAI.Backend.Yolo " ^
-REM              /XD obj bin /E !roboCopyFlags!
-REM )
+pushd "%yoloNetSrcPath%"
+REM Note: The carrot character means "line continuation"
+REM For .NET 6 add the "-p:PublishSingleFile=true" parameter to make the output a single file
+if /i "%verbosity%"=="quiet" (
+    dotnet publish --configuration %config% -p:PublishProfile=WinInstaller ^
+                   -o "%buildOutputDir%" --nologo --verbosity !dotnetFlags! > nul
+) else (
+    dotnet publish --configuration %config% -p:PublishProfile=WinInstaller ^
+                   -o "%buildOutputDir%" --nologo --verbosity !dotnetFlags!
+)
+popd
+call :WriteLine Green "Done."
 
+:: Copy over
+call :Write White "Moving Yolo.Net module to installation folder..."
+REM there is a bug in NuGet that make .pdb files in native code manditory.  
+REM looking for a fix.  In the mean time have to include the .pdb files
+if /i "%verbosity%"=="quiet" (
+    robocopy /E "%yoloNetSrcPath%\%buildOutputDir% " ^
+             "%installationDir%\%srcDir%\%analysisLayerDir%\%yoloNetDir% " ^
+             !roboCopyFlags! > nul
+) else (
+    robocopy /E "%yoloNetSrcPath%\%buildOutputDir% " ^
+             "%installationDir%\%srcDir%\%analysisLayerDir%\%yoloNetDir% " ^
+             !roboCopyFlags!
+)
 call :WriteLine Green "Done."
 
 :: Copy over the setup and startup scripts
@@ -279,6 +313,7 @@ call :Write White "Copying over startup files..."
 pushd "%rootPath%\install"
 copy /Y "Setup_SenseAI_Win.bat" "!installationDir!" >nul 2>nul
 copy /Y "Start_SenseAI_Win.bat" "!installationDir!" >nul 2>nul
+copy /Y "Start_With_SenseAI_Detection.bat" "!installationDir!" >nul 2>nul
 copy /Y "..\docs\Welcome.html"  "!installationDir!" >nul 2>nul
 popd
 call :WriteLine Green "Done."
@@ -320,9 +355,7 @@ set MODELS_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%m
 set DATA_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%datastoreDir%
 set TEMP_PATH=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%tempstoreDir%
 set PORT=5000
-set VISION_FACE=True
-set VISION_DETECTION=True
-set VISION_SCENE=True
+
 pushd install
 call save_environment !installationDir!\!settingsFile!
 popd
@@ -515,3 +548,11 @@ goto:eof
         <NUL set /p =%~2
     )
     exit /b 0
+
+:errorNoNET6
+call :WriteLine White ""
+call :WriteLine White ""
+call :WriteLine White "------------------------------------------------------------------------------------"
+call :WriteLine Red   "CodeProject SenseAI needs the .NET 6 SDK  installed in order to create an installer.
+call :WriteLine Red   "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.101-windows-x64-installer"
+goto:eof

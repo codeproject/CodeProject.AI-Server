@@ -77,7 +77,13 @@ set deepstackDir=DeepStack
 set pythonDir=python37
 
 :: The name of the dir containing the AI models themselves (within the deepstack dir)
-set modelsDir=assets
+set deepStackModelsDir=assets
+
+:: The name of the dir holding the DeepStack modules (within the analysis services dir)
+set yoloNetDir=CodeProject.SenseAI.AnalysisLayer.Yolo
+
+:: The name of the dir containing the AI models themselves (within the yolo.net dir)
+set yoloNetModelsDir=assets
 
 :: Set the noise level when installing Python packages
 set pipFlags=-q
@@ -90,12 +96,16 @@ if /i "%verbosity%"   == "info" set pipFlags=
 set analysisPath=%srcDir%\%analysisLayerDir%
 
 :: Module 1: Deepstack
-set deepStackPath=%cd%\%analysisPath%\DeepStack
+set deepStackPath=%cd%\%analysisPath%\%deepstackDir%
+
+:: Module 2: Yolo.net
+set yoloNetPath=%cd%\%analysisPath%\%yoloNetDir%
 
 :: Warn the user about potential download size
 set /a downloadSize=0
 if not exist "%deepStackPath%\%pythonDir%" set /a downloadSize=downloadSize+25
-if not exist "%deepStackPath%\%modelsDir%" set /a downloadSize=downloadSize+550
+if not exist "%deepStackPath%\%deepStackModelsDir%" set /a downloadSize=downloadSize+550
+if not exist "%yoloNetPath%\%yoloNetModelsDir%" set /a downloadSize=downloadSize+98
 
 if !downloadSize! gtr 0 (
 	choice /M "To continue I need to download !downloadSize!Mb of files. Is this OK"
@@ -110,12 +120,19 @@ if exist "%deepStackPath%\%pythonDir%" (
     call :Download "%storageUrl%" "%deepStackPath%\" python37.zip "%pythonDir%"  ^
          "Downloading Python interpreter..."
 )
-if exist "%deepStackPath%\%modelsDir%" (
-    call :Write White "Checking AI Models..."
+if exist "%deepStackPath%\%deepStackModelsDir%" (
+    call :Write White "Checking Module 1 AI Models..."
     call :WriteLine Green "Present"
 ) else (
-    call :Download "%storageUrl%" "%deepStackPath%\" models.zip "%modelsDir%" ^
-         "Downloading AI Models..."
+    call :Download "%storageUrl%" "%deepStackPath%\" models.zip "%deepStackModelsDir%" ^
+         "Downloading Module 1 AI Models..."
+)
+if exist "%yoloNetPath%\%yoloNetModelsDir%" (
+    call :Write White "Checking Module 2 AI Models..."
+    call :WriteLine Green "Present"
+) else (
+    call :Download "%storageUrl%" "%yoloNetPath%\" yolonet-models.zip "%yoloNetModelsDir%" ^
+         "Downloading Module 2 AI Models..."
 )
 
 :: ----------------------------------------------------------------------------

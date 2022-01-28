@@ -57,9 +57,6 @@ if "%verbosity%" == "info" (
     call :WriteLine Yellow "DATA_DIR  = !DATA_DIR!"
     call :WriteLine Yellow "TEMP_PATH = !TEMP_PATH!"
     call :WriteLine Yellow "PORT      = !PORT!"
-    call :WriteLine Yellow "VISION_FACE      = !VISION_FACE!"
-    call :WriteLine Yellow "VISION_DETECTION = !VISION_DETECTION!"
-    call :WriteLine Yellow "VISION_SCENE     = !VISION_SCENE!"
 )
 
 :: ===============================================================================================
@@ -89,15 +86,11 @@ if "%verbosity%"=="loud" where Python
 :: 3. Start back end analysis
 
 call :Write White "Starting Analysis Services..."
-if /i "!VISION_DETECTION!"   == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\detection.py"
-)
-if /i "!VISION_FACE!" == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\face.py"
-)
-if /i "!VISION_SCENE!"  == "true" (
-    START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\scene.py"
-)
+
+START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\detection.py"
+START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\face.py"
+START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\scene.py"
+
 :: To start them all in one fell swoop...
 :: START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\%deepstackModule%\runAll.py"
 call :WriteLine Green "Done"

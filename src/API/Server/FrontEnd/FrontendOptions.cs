@@ -55,6 +55,12 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         public string? EnableFlag { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether this procoess should be activated on startup if
+        /// no instruction to the contrary is seen. A default "Start me up" flag.
+        /// </summary>
+        public bool? Activate { get; set; }
+
+        /// <summary>
         /// Gets or sets the name of the Queue used by this process.
         /// </summary>
         public string? Queue { get; set; }

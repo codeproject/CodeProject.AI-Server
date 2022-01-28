@@ -23,7 +23,6 @@ echo    "CPSENSEAI_APIDIR"      : "!CPSENSEAI_APIDIR!",
 echo    "CPSENSEAI_ANALYSISDIR" : "!CPSENSEAI_ANALYSISDIR!",
 echo    "CPSENSEAI_PORT"        : "!PORT!",
 echo    "CPSENSEAI_PROFILE"     : "!PROFILE!",
-echo    "CPSENSEAI_MODULES"     : "!CPSENSEAI_MODULES!",
 echo    "CPSENSEAI_PRODUCTION"  : "!CPSENSEAI_PRODUCTION!",
 echo    "CPSENSEAI_CONFIG"      : "!CPSENSEAI_CONFIG!",
 echo    "CPSENSEAI_BUILDSERVER" : "!CPSENSEAI_BUILDSERVER!",
@@ -36,8 +35,5 @@ echo    "DATA_DIR"           : "!DATA_DIR!",
 echo    "TEMP_PATH"          : "!TEMP_PATH!",
 echo    "MODELS_DIR"         : "!MODELS_DIR!",
 echo    "PORT"               : "!PORT!",
-echo    "VISION_FACE"        : "!VISION_FACE!",
-echo    "VISION_DETECTION"   : "!VISION_DETECTION!",
-echo    "VISION_SCENE"       : "!VISION_SCENE!"
 echo  }
 ) > "!envConfigFile!"

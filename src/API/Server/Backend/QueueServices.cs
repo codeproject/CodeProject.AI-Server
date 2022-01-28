@@ -136,6 +136,8 @@ namespace CodeProject.SenseAI.API.Server.Backend
                 return false;
 
             completion.SetResult(responseString);
+            Logger.Log($"Response received: id {req_id}");
+
             return true;
         }
 

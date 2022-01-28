@@ -20,10 +20,6 @@ set techniColor=true
 
 :: Basic App Features
 
-set enableFaceDetection=True
-set enableObjectDetection=True
-set enableSceneDetection=True
-
 set PROFILE=windows_native
 set CUDA_MODE=False
 set PORT=5000
@@ -58,6 +54,10 @@ set datastoreDir=datastore
 
 :: The name of the dir containing temporary DeepStack data
 set tempstoreDir=tempstore
+
+:: Yolo.Net specific
+set yoloNetDir=CodeProject.SenseAI.AnalysisLayer.Yolo
+set yoloModelsDir=yoloModels
 
 :: Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -133,6 +133,9 @@ set deepStackPath=%analysisLayerPath%\%deepstackDir%
 if not exist "%deepStackPath%\%tempstoreDir%\" mkdir "%deepStackPath%\%tempstoreDir%"
 if not exist "%deepStackPath%\%datastoreDir%\" mkdir "%deepStackPath%\%datastoreDir%"
 
+:: For Yolo.NET
+set yoloNetPath=%analysisLayerPath%\%yoloNetDir%
+
 call :WriteLine Green "Done"
 
 call :Write White "Downloading utilities and models: "
@@ -141,6 +144,7 @@ call :WriteLine Gray "Starting"
 :: Clean up directories to force a re-download if necessary
 if /i "%forceOverwrite%" == "true" (
     if exist "%downloadDir%\%modelsDir%" rmdir /s "%rmdirFlags% %downloadDir%\%modelsDir%"
+    if exist "%downloadDir%\%yoloModelsDir%" rmdir /s "%rmdirFlags% %downloadDir%\%yoloModelsDir%"
     if exist "%downloadDir%\%pythonDir%" rmdir /s "%rmdirFlags% %downloadDir%\%pythonDir%"
 )
 
@@ -153,6 +157,10 @@ if not exist "%downloadDir%\python37" (
     call :Download "%storageUrl%" "%downloadDir%\" "python37.zip" "%pythonDir%" ^
                    "Downloading Python interpreter..."
 )
+if not exist "%downloadDir%\%yoloModelsDir%" (
+    call :Download "%storageUrl%" "%downloadDir%\" "yolonet-models.zip" "%yoloModelsDir%" ^
+                   "Downloading Yolo.Net models..."
+)
 
 :: Move downloads into place
 call :Write White "Moving downloads into place..."
@@ -161,6 +169,9 @@ robocopy /e "%downloadDir%\%modelsDir% " "%deepStackPath%\%modelsDir% " !roboCop
 
 if exist %downloadDir%\%pythonDir% ^
 robocopy /e "%downloadDir%\%pythonDir% " "%deepStackPath%\%pythonDir% " !roboCopyFlags! > NUL
+
+if exist %downloadDir%\%yoloModelsDir% ^
+robocopy /e "%downloadDir%\%yoloModelsDir% " "%yoloNetPath%\%modelsDir% " !roboCopyFlags! > NUL
 call :WriteLine Green "Done"
 
 :: Copy over the startup script
@@ -281,16 +292,9 @@ call :Write White "Saving Environment variables..."
 
 :: For CodeProject.SenseAI
 
-set modulesEnabled=,
-if /i "%enableFaceDetection%"   == "true" set modulesEnabled=!modulesEnabled!VISION_FACE,
-if /i "%enableObjectDetection%" == "true" set modulesEnabled=!modulesEnabled!VISION_DETECTION,
-if /i "%enableSceneDetection%"  == "true" set modulesEnabled=!modulesEnabled!VISION_SCENE,
-set modulesEnabled=!modulesEnabled:~1,-1!
-
 set CPSENSEAI_ROOTDIR=!absoluteRootDir!
 set CPSENSEAI_APPDIR=!srcDir!
 set CPSENSEAI_APIDIR=!senseAPIDir!
-set CPSENSEAI_MODULES=!modulesEnabled!
 set CPSENSEAI_ANALYSISDIR=!analysisLayerDir!
 set CPSENSEAI_CONFIG=Debug
 set CPSENSEAI_PRODUCTION=False
@@ -302,9 +306,6 @@ set APPDIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%intel
 set MODELS_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%modelsDir%
 set DATA_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%datastoreDir%
 set TEMP_PATH=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%tempstoreDir%
-set VISION_FACE=%enableFaceDetection%
-set VISION_DETECTION=%enableObjectDetection%
-set VISION_SCENE=%enableSceneDetection%
 
 call save_environment  "!absoluteRootDir!\!settingsFile!"
 call :WriteLine White "Done."

@@ -1,13 +1,23 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#eeeeee" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+
     <title>CodeProject.SenseAI Server</title>
 
-    <link rel="stylesheet" type="text/css" href="assets/styles.css">
+    <link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
+
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
-
+    <style>
+        .header {
+            background: rgb(255,153,0);
+            background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, rgb(255 181 0) 78%, rgba(255,208,0,1) 100%);
+        }
+    </style>
     <script type="text/javascript">
 
         const apiServiceUrl    = "http://localhost";
@@ -25,7 +35,7 @@
 
             serviceUrl.value = apiServiceUrl + ":" + window.location.port;
 
-            setStatus("Searching for API Server...", "orange");
+            setStatus("Searching for API Server...", "warning");
 
             getVersion();
 
@@ -33,13 +43,13 @@
             setInterval(getLogs, logFrequency);
             setInterval(getAnalysisStatus, statusFrequency);
 
-            setTimeout(checkForUpdates(update), updatePause);
-            setInterval(checkForUpdates(update), updateFrequency);
+            setTimeout(function() { checkForUpdates() }, updatePause);
+            setInterval(checkForUpdates(), updateFrequency);
         });
 
-        function setStatus(text, color) {
-            if (color)
-                document.getElementById("status").innerHTML = "<span style='color:" + color + "'>" + text + "</span>";
+        function setStatus(text, variant) {
+            if (variant)
+                document.getElementById("status").innerHTML = "<span class=' p-1 bg-" + variant + "'>" + text + "</span>";
             else
                 document.getElementById("status").innerHTML = "<span>" + text + "</span>";
         }
@@ -51,14 +61,14 @@
             await fetch(url, { method: "GET" })
                 .then(response => {
                     if (!response.ok)
-                        setStatus('Error contacting API server', "red");
+                        setStatus('Error contacting API server', "danger");
                     else
                         response.json()
                                 .then(data => callback(data))
-                                .catch(error => setStatus('Unable to contact API server', "red"));
+                                .catch(error => setStatus('Unable to contact API server', "warning"));
                   })
                   .catch(error => {
-                      setStatus(/*error.message*/ "Unable to contact AI Server", "red");
+                      setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
                   });
         }
 
@@ -70,9 +80,9 @@
 
                 _serverIsOnline = data.success;
                 if (_serverIsOnline)
-                    setStatus('API server is online', "green");
+                    setStatus('API server is online', "success");
                 else
-                    setStatus('Unable to contact API server', "red");
+                    setStatus('Unable to contact API server', "warning");
             });
         }
 
@@ -84,21 +94,36 @@
             });
         }
 
-        async function checkForUpdates(target) {
+        async function checkForUpdates(showResult) {
+
+            update.innerHTML = "Checking for updates";
+
             await callStatus('updateavailable', function (data) {
 
-                target.innerHTML = "Checking for updates";
+                if (data && data.version) {
 
-                if (!data || !data.version) {
-                    target.innerHTML = "Unable to check for updates";
+                    if (data.updateAvailable) {
+
+                        let update = document.getElementById("update");
+                        update.style.display = '';
+
+                        update.innerHTML = data.message
+                                         + " <a href='" + data.version.file + "'>Download<a>";
+                        update.styles.display = '';
+                    }
+                    else if (showResult) {
+
+                        update.styles.display = '';
+                        update.innerHTML = "You have the latest version of SenseAI";
+                    }
+
                 }
                 else {
-                    if (data.updateAvailable) {
-                        target.innerHTML = data.message
-                                         + " <a href='" + data.version.file + "'>Download<a>";
-                    }
-                    else
-                        target.innerHTML = data.message;
+
+                    updateError.innerHTML = "Unable to check for updates";
+                    var element = document.getElementById("updateToast");
+                    var toastPopup = new bootstrap.Toast(element);
+                    toastPopup.show();
                 }
             });
         }
@@ -123,14 +148,19 @@
                     response.json().then(data => {
 
                         if (data && data.statuses) {
-                            var results = "<table id='serviceStatus' style='margin-top:30px;width:100%'><tr>"
+
+                            var results = "<div id='serviceStatus' class='d-flex w-100 mt-3 justify-content-between'>";
+
                             for (let i = 0; i < data.statuses.length; i++) {
-                                var status = data.statuses[i].value ? "active" : "inactive";
-                                results += "<td class='status-cell " + status + "'>"
+                                let className = data.statuses[i].value ? "success" : "warning";
+                                let status    = data.statuses[i].value ? "Enabled" : "Disabled";
+
+                                results += "<div class='alert alert-" + className + "'>"
                                         +  "<b>" + data.statuses[i].key.toUpperCase() + "</b><br>"
-                                        +  status + "</td>";
+                                        +  status
+                                        + "</div>";
                             }
-                            results += "</tr></table>";
+                            results += "</div>";
 
                             serviceStatus.outerHTML = results;
                         }
@@ -176,58 +206,89 @@
     </script>
 
 </head>
-<body>
+<body class="dark-mode">
 
-<div style="max-width:750px;margin:0 auto;">
+<div>
+    <div class="bg-dark mx-auto p-3" style="max-width:750px;">
 
-    <div id="ctl00_SH" class="site-header fixed">
-		<div class="main-content">
-			<div class="logo"><a href="https://www.codeproject.com">
-                <img tabindex="1" title="CodeProject" src="assets/logo250x135.gif" 
-                     alt="Home" style="height:135px;width:250px;border-width:0px;"></a>
+        <div class="position-fixed top-3 end-0 p-3" style="z-index: 11">
+          <div id="updateToast" class="toast hide text-white bg-warning" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+              <strong class="me-auto">Update Error</strong>
+              <small>Just now</small>
+              <button type="button" class="btn-close text-white" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
-			<div class="promo"></div>
+            <div class="toast-body">
+              <div id="updateError"></div>
+            </div>
+          </div>
         </div>
-	</div>
 
-    <h1>CodeProject SenseAI Server Monitor</h1>
+	    <div class="w-100 header d-flex">
+            <a href="https://www.codeproject.com">
+            <img tabindex="1" title="CodeProject" src="assets/codeproject60x60.png" 
+                alt="Home" style="width:60px;height:60px;border-width:0px;"></a>
+            <span class="fs-2 mt-2 d-inline-block">CODE<b>PROJECT</b> SenseAI Server</span>
+        </div>
 
-    <div style="margin: -12px 0 20px 0;">
-        <span id="version"></span>
+        <div class="my-3 d-flex justify-content-between w-100">
+            <div id="version" class="mt-1"></div>
+            <div><button class="btn btn-info small" onclick="checkForUpdates()">Check for Updates</button></div>
+        </div>
 
-        <span class="btn" style="margin-left: 2rem;" onclick="checkForUpdates(update)">Check for
-            Updates</span>
-        <span id="update" style="color:#808080"></span>
+        <div class="alert alert-info" id="update" style="display:none"></div>
+
+        <div class="card mt-3">
+        <div class="card-body bg-secondary">CodeProject SenseAI is a self contained server that allows other
+            applications to easily include AI processing as part of their service. CodeProject
+            SenseAI is a simple HTTP based REST service that is fully self contained, installed
+            locally, and requires no off-device processing.
+        </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body bg-secondary">
+                <div>
+                <span>Service API Url</span>
+                <input type="text" id="serviceUrl" class="ms-2" style="width:14rem;font-size:90%" />
+                <span id="status" class="font-weight-bold ms-2"></span>
+                </div>
+
+                <div class="mt-3 overflow-scroll font-monospace text-break border border-1 border-light" id="logs"
+                     style="white-space:pre; width:100%;height:150px;overflow-x:hidden !important"></div>
+            </div>
+        </div>
+
+
+        <div class="card mt-3">
+            <div class="card-body bg-secondary">
+                <div id="serviceStatus" class="mt-5 w-100">Initializing...</div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h4>Explore SenseAI</h4>
+            </div>
+
+            <div class="card-body bg-secondary">
+                <ul style="margin-left:-1rem">
+                    <li>Join the discussion and ask questions on the 
+                    <b><a href="https://www.codeproject.com/Feature/SenseAI-Discussions.aspx" 
+                          target="_blank">SenseAI forum</a></b>.</li>
+                    <li>Open the <b><a href="Vision.html" target="_blank">CodeProject SenseAI 
+                        Playground</a></b> to explore the capabilities.</li>
+                <!--<li>Explore the API using our <a href="http://localhost:5000/swagger/index.html">SwaggerUI</a></li>-->
+                    <li> <a href="https://github.com/codeproject/CodeProject.SenseAI">Explore the 
+                        code</a> and extend the work.</li>
+                </ul>
+            </div>
+        </div>
+
     </div>
-
-    <p>CodeProject SenseAI is a self contained server that allows other applications to easily
-        include AI processing as part of their service. CodeProject SenseAI is a simple HTTP based 
-        REST service that is fully self contained, installed locally, and requires no off-device 
-        processing.</p>
-    
-    <div style="padding:15px 0">
-        <span>Service API Url:</span>
-        <input type="text" id="serviceUrl" style="width:10rem;font-size:90%" />
-        <span id="status" style="font-weight:bold;margin-left:1rem;"></span>
-    </div>
-
-    <div id="logs" style="width:100%;height:150px;" class="logs"></div>
-    
-    <table id="serviceStatus" style="margin-top:30px;width:100%">
-        <tr><td>Initializing...</td></tr>
-    </table>
-
-    <h4>Explore</h4>
-    <ul style="margin-left:-1rem">
-        <li>Open the <b><a href="Vision.html" target="_blank">CodeProject SenseAI Playground</a></b> to 
-        explore the capabilities.</li>
-        <!--<li>Explore the API using our <a href="http://localhost:5000/swagger/index.html">SwaggerUI</a></li>-->
-        <li> <a href="https://github.com/codeproject/CodeProject.SenseAI">Explore the code</a> 
-    and extend the work.</li>
-    </ul>
-
-
-
 </div>
+
+<script src="assets/bootstrap.bundle.min.js" type="text/javascript"></script>
+
 </body>
 </html>

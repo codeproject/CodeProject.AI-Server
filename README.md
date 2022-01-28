@@ -96,7 +96,7 @@ If you wish to debug or make enhancements to the code then you should install:
 
  1. **Visual Studio Code** or **Visual Studio 2019+**. [VS Code](https://code.visualstudio.com/download) is available on Windows, macOS and Linux. Visual Studio is available on Windows and macOS. We've tested against both, but not against other IDEs at this point
  2. **Python**. Either via the Visual Studio Installer, or [download python directly](https://www.python.org/downloads/)
- 3. **.NET 5** Download [.NET 5 here](https://dotnet.microsoft.com/download/dotnet/5.0).
+ 3. **.NET 6 SDK** Download the [.NET SDK 6 here](https://dotnet.microsoft.com/download/dotnet/6.0). (**Note** You on;y need .NET 6 when creating an installer. [.NET 5](https://dotnet.microsoft.com/download/dotnet/5.0) is fine for setting up and running an installed version, and for developing and debugging the code)
 
 #### If you are using VS Code
 

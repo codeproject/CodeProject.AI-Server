@@ -97,7 +97,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     if (stoppingToken.IsCancellationRequested)
                         break;
 
-                    var enabled = _config.GetValue<bool>(cmdInfo.EnableFlag);
+                    bool activate = cmdInfo.Activate.HasValue && cmdInfo.Activate.Value;
+                    bool enabled   = activate || _config.GetValue<bool>(cmdInfo.EnableFlag);
 
                     if (enabled && !string.IsNullOrEmpty(cmdInfo.Command))
                     {

@@ -19,7 +19,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
         /// Manages requests to log or retrieve logs. A PUT request.
         /// </summary>
         /// <returns>A Response Object.</returns>
-        [HttpPut("", Name = "Add Log Entry")]
+        [HttpPost("", Name = "Add Log Entry")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

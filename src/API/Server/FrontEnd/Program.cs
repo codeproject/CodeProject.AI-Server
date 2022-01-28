@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -34,11 +35,22 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                            config.AddJsonFile(VersionConfig.VersionCfgFilename, reloadOnChange: true, optional: true);
                        })
                        .Build();
-            var hostTask = host.RunAsync();
+
+            Task? hostTask;
+            hostTask = host.RunAsync();
 
             OpenBrowser($"http://localhost:{_port}/");
 
-            await hostTask;
+            try
+            {
+                await hostTask;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n\nUnable to start the server due to {ex.Message}.\nCheck that another instance is not running on the same port.");
+                Console.Write("Press Enter to close.");
+                Console.ReadLine();
+            }
         }
 
         /// <summary>

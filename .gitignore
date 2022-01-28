@@ -383,3 +383,8 @@ FodyWeavers.xsd
 /CodeProject.SenseAI.config
 /CodeProject.SenseAI.json
 /src/API/Server/FrontEnd/installconfig.json
+/install/downloads/yoloModels
+/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/weights
+/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5s.onnx
+/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5n.onnx
+/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5m.onnx

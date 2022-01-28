@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Product>Yolov5Net</Product>
+        <AssemblyVersion>1.0.9.0</AssemblyVersion>
+        <FileVersion>1.0.9.0</FileVersion>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageId>Yolov5Net</PackageId>
+        <Description>YOLOv5 object detection with C#, ML.NET, ONNX.</Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageTags>c-sharp machine-learning object-detection yolo yolov5 ml-net onnx</PackageTags>
+        <RepositoryUrl>https://github.com/mentalstack/yolov5-net</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/mentalstack/yolov5-net</PackageProjectUrl>
+        <NeutralLanguage>en</NeutralLanguage>
+        <Copyright>© Mentalstack 2016-2021</Copyright>
+        <Authors>Mentalstack</Authors>
+        <Version>1.0.9</Version>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Optimize>false</Optimize>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.10.0" />
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    </ItemGroup>
+
+</Project>

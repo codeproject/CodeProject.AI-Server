@@ -73,12 +73,13 @@ def scenerecognition(thread_name, delay):
     while True:
         queue = frontendClient.getCommand(IMAGE_QUEUE);
 
-        if len(queue) > 0:
+        if len(queue) > 0:           
             timer = frontendClient.startTimer("Scene Classification")
+
             for req_data in queue:
                 req_data = json.JSONDecoder().decode(req_data)
-                img_id = req_data["imgid"]
-                req_id = req_data["reqid"]
+                img_id   = req_data["imgid"]
+                req_id   = req_data["reqid"]
                 req_type = req_data["reqtype"]
                 img_path = os.path.join(SharedOptions.TEMP_PATH,img_id)
                 try:
@@ -95,6 +96,7 @@ def scenerecognition(thread_name, delay):
                             ),
                         ]
                     )
+
                     img = trans(img).unsqueeze(0)
                     
                     os.remove(img_path)
@@ -117,16 +119,20 @@ def scenerecognition(thread_name, delay):
                         "code": 400,
                     }
 
-                except Exception:
+                    frontendClient.errLog("scenerecognition", "scene.py", err_trace, "UnidentifiedImageError")
 
+                except Exception:
                     err_trace = traceback.format_exc()
                     frontendClient.log(err_trace, is_error=True)
 
                     output = {"success": False, "error": "invalid image", "code": 500}
 
+                    frontendClient.errLog("scenerecognition", "scene.py", err_trace, "Exception")
+
                 finally:
                     frontendClient.endTimer(timer)
                     frontendClient.sendResponse(req_id, json.dumps(output))
+
                     if os.path.exists(img_path):
                         os.remove(img_path)
 

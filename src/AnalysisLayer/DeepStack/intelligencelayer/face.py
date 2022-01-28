@@ -75,6 +75,8 @@ def load_faces():
     master_face_map["tensors"] = embedding_arr
     facemap = repr(master_face_map)
 
+    conn.close()
+
 def face(thread_name, delay):
 
     if SharedOptions.MODE == "High":

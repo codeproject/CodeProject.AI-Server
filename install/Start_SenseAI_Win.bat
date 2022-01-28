@@ -105,7 +105,6 @@ if "%verbosity%" NEQ "quiet" (
     call :WriteLine DarkGreen "  CPSENSEAI_ANALYSISDIR = !CPSENSEAI_ANALYSISDIR!
     call :WriteLine DarkGreen "  CPSENSEAI_PORT        = !PORT!
     call :WriteLine DarkGreen "  CPSENSEAI_PROFILE     = !PROFILE!
-    call :WriteLine DarkGreen "  CPSENSEAI_MODULES     = !CPSENSEAI_MODULES!
     call :WriteLine DarkGreen "  CPSENSEAI_PRODUCTION  = !CPSENSEAI_PRODUCTION!
     call :WriteLine DarkGreen "  CPSENSEAI_CONFIG      = !CPSENSEAI_CONFIG!
     call :WriteLine DarkGreen "  CPSENSEAI_BUILDSERVER = !CPSENSEAI_BUILDSERVER!
@@ -116,9 +115,6 @@ if "%verbosity%" NEQ "quiet" (
     call :WriteLine DarkGreen "  DATA_DIR              = !DATA_DIR!"
     call :WriteLine DarkGreen "  TEMP_PATH             = !TEMP_PATH!"
     call :WriteLine DarkGreen "  PORT                  = !PORT!"
-    call :WriteLine DarkGreen "  VISION_FACE           = !VISION_FACE!"
-    call :WriteLine DarkGreen "  VISION_DETECTION      = !VISION_DETECTION!"
-    call :WriteLine DarkGreen "  VISION_SCENE          = !VISION_SCENE!"
     REM call :WriteLine Yellow "Module: CodeProject YOLO"
     REM call :WriteLine DarkGreen ...
 )
@@ -162,35 +158,6 @@ if "%verbosity%"=="loud" where Python.exe
 :: ============================================================================
 :: 3. Start front end server
 
-:: a. Startup the backend Analysis services
-
-:: The API now starts up all dependent services itself. No need to manually
-:: start up the python modules anymore.
-set startPythonDirectly=false
-
-if "%startPythonDirectly%" == "true" (
-    call :Write White "Starting Analysis Services..."
-    if /i "!VISION_DETECTION!"   == "true" (
-        START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\detection.py"
-    )
-    if /i "!VISION_FACE!" == "true" (
-        START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\face.py"
-    )
-    if /i "!VISION_SCENE!"  == "true" (
-        START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\scene.py"
-    )
-    REM To start them all in one fell swoop...
-    REM START "CodeProject SenseAI Analysis Services" /B python "!APPDIR!\runAll.py"
-    call :WriteLine Green "Done"
-)
-
-:: b. Build and startup the API server
-
-set featureFlags=
-if /i "!VISION_FACE!"      == "true" set featureFlags=!featureFlags! --VISION-FACE true
-if /i "!VISION_DETECTION!" == "true" set featureFlags=!featureFlags! --VISION-DETECTION true
-if /i "!VISION_SCENE!"     == "true" set featureFlags=!featureFlags! --VISION-SCENE true
-
 :: In an installed, Production version of SenseAI, the server exe sits directly
 :: in the /src/Server/Frontend folder. For the development environment the
 :: server exe is in /src/Server/Frontend/bin/Debug/... folder. Hence we need to
@@ -222,7 +189,7 @@ if /i "!CPSENSEAI_PRODUCTION!" == "true" (
 
 call :WriteLine Yellow "Launching CodeProject.SenseAI Server" 
 
-"!appExe!" !featureFlags! --urls http://*:%port%
+"!appExe!" --urls http://*:%port%
 
 :: Pause and let backend services catch up (to be controlled via messages soon)
 if "%startPythonDirectly %" == "true" Timeout /T 5 /NOBREAK >nul 2>nul

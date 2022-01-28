@@ -11,7 +11,8 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <DockerfileContext>..\..\..</DockerfileContext>
     <ApplicationIcon>favicon.ico</ApplicationIcon>
-    <DeleteExistingFiles>true</DeleteExistingFiles>
+	<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+	<DeleteExistingFiles>true</DeleteExistingFiles>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

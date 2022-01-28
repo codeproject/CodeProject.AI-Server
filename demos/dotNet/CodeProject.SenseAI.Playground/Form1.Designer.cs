@@ -116,7 +116,7 @@
             this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.pictureBox1.Location = new System.Drawing.Point(432, 217);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(330, 224);
+            this.pictureBox1.Size = new System.Drawing.Size(517, 453);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox1.TabIndex = 3;
             this.pictureBox1.TabStop = false;
@@ -129,7 +129,7 @@
             this.detectionResult.Name = "detectionResult";
             this.detectionResult.ReadOnly = true;
             this.detectionResult.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.detectionResult.Size = new System.Drawing.Size(331, 178);
+            this.detectionResult.Size = new System.Drawing.Size(517, 178);
             this.detectionResult.TabIndex = 4;
             // 
             // DetectFaceBtn
@@ -511,7 +511,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(766, 443);
+            this.ClientSize = new System.Drawing.Size(961, 682);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
