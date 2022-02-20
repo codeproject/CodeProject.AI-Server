@@ -20,12 +20,12 @@
     </style>
     <script type="text/javascript">
 
-        const apiServiceUrl    = "http://localhost";
-        const pingFrequency    = 2000;    // milliseconds
-        const logFrequency     =  500;    // milliseconds
-        const statusFrequency  = 3000;    // milliseconds
-        const updatePause      = 5000;    // milliseconds
-        const updateFrequency  = 3600000; // milliseconds
+        const apiServiceUrl        = "http://localhost";
+
+        const pingFrequency        = 2000;    // milliseconds
+        const logFrequency         =  500;    // milliseconds
+        const statusFrequency      = 3000;    // milliseconds
+        const checkUpdateFrequency = 24 * 3600 * 1000; // 24hr in milliseconds
 
         var _lastLogId      = 0;
         var _serverIsOnline = false;
@@ -42,9 +42,7 @@
             setInterval(ping, pingFrequency);
             setInterval(getLogs, logFrequency);
             setInterval(getAnalysisStatus, statusFrequency);
-
-            setTimeout(function() { checkForUpdates() }, updatePause);
-            setInterval(checkForUpdates(), updateFrequency);
+            setInterval(checkForUpdates, checkUpdateFrequency);
         });
 
         function setStatus(text, variant) {
@@ -153,7 +151,7 @@
 
                             for (let i = 0; i < data.statuses.length; i++) {
                                 let className = data.statuses[i].value ? "success" : "warning";
-                                let status    = data.statuses[i].value ? "Enabled" : "Disabled";
+                                let status    = data.statuses[i].value ? "Enabled" : "Not Running";
 
                                 results += "<div class='alert alert-" + className + "'>"
                                         +  "<b>" + data.statuses[i].key.toUpperCase() + "</b><br>"
@@ -174,7 +172,7 @@
          */
         async function getLogs() {
 
-            var url = serviceUrl.value.trim() + '/v1/log/list?count=10&last_id=' + _lastLogId;
+            var url = serviceUrl.value.trim() + '/v1/log/list?count=20&last_id=' + _lastLogId;
 
             fetch(url, {
                 method: "GET"

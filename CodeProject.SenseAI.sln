@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.31911.196
+VisualStudioVersion = 16.0.32126.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A8B76501-496A-4011-9C37-8308A1EBDFA7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D982BD8C-2257-413B-8513-8043AB3035F3}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{7F18EB64-C857-49C4-9380-70D3CCE6242B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demos", "demos", "{7F18EB64-C857-49C4-9380-70D3CCE6242B}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Python", "demos\Python\Python.pyproj", "{25750BF1-1502-4F65-8D69-CEA8C87D6446}"
 EndProject
@@ -17,21 +17,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3BF27572-9
 	ProjectSection(SolutionItems) = preProject
 		LICENCE.md = LICENCE.md
 		README.md = README.md
+		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
 		docs\Welcome.html = docs\Welcome.html
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AnalysisLayer", "AnalysisLayer", "{156BFEDA-D477-43B2-92DA-FCC9BAF1F893}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "install", "install", "{D885EE64-C1BD-44D6-84D8-1E46806298D9}"
-	ProjectSection(SolutionItems) = preProject
-		install\create_installer_win.bat = install\create_installer_win.bat
-		install\load_environment.bat = install\load_environment.bat
-		install\save_environment.bat = install\save_environment.bat
-		install\set_environment.sh = install\set_environment.sh
-		install\setup_dev_env_win.bat = install\setup_dev_env_win.bat
-		install\Setup_SenseAI_Win.bat = install\Setup_SenseAI_Win.bat
-		install\Start_SenseAI_Win.bat = install\Start_SenseAI_Win.bat
-	EndProjectSection
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{D885EE64-C1BD-44D6-84D8-1E46806298D9}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DeepStack", "src\AnalysisLayer\DeepStack\intelligencelayer\DeepStack.pyproj", "{E5D27495-EE4F-4AAF-8749-A6BA848111E2}"
 EndProject
@@ -99,6 +91,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{8C92DCAE-EDE7-4DEC-A5CB-BB2388905064}"
 	ProjectSection(SolutionItems) = preProject
 		docs\images\Choose-launch.png = docs\images\Choose-launch.png
+		docs\images\example-detect.png = docs\images\example-detect.png
 		docs\images\Mulitple-Project-Toolbar.png = docs\images\Mulitple-Project-Toolbar.png
 		docs\images\Set-Startup_Projects.png = docs\images\Set-Startup_Projects.png
 	EndProjectSection
@@ -126,6 +119,65 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Yolov5Net.Scorer", "Yolov5Net.Scorer", "{7E981C51-DADD-4047-AF5B-21B0E3442B99}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yolov5Net.Scorer", "src\AnalysisLayer\SDK\ModelRunners\Yolov5Net.Scorer\Yolov5Net.Scorer.csproj", "{7DC0A312-39AD-41B0-BB53-72ACACC76959}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Windows", "Windows", "{83C828B9-2B1E-4982-B4B7-69D173DFBB27}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "YoloNet.Installer", "Installers\Windows\YoloNet.Installer\YoloNet.Installer.wixproj", "{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{5F1052CB-8586-49CB-8F46-427A5F6901C2}"
+	ProjectSection(SolutionItems) = preProject
+		Installers\Windows\favicon.ico = Installers\Windows\favicon.ico
+		Installers\Windows\license.rtf = Installers\Windows\license.rtf
+		Installers\Windows\logo.png = Installers\Windows\logo.png
+		Installers\Windows\logoSide.png = Installers\Windows\logoSide.png
+		Installers\Windows\Sense-install-BG.png = Installers\Windows\Sense-install-BG.png
+		Installers\Windows\Sense-install-sidebar.png = Installers\Windows\Sense-install-sidebar.png
+		Installers\Windows\Sense-install-topbanner.png = Installers\Windows\Sense-install-topbanner.png
+		Installers\Windows\SharedConfiguration.wxi = Installers\Windows\SharedConfiguration.wxi
+		Installers\Windows\SharedDirectories.wxi = Installers\Windows\SharedDirectories.wxi
+		Installers\Windows\SharedUIConfiguration.wxi = Installers\Windows\SharedUIConfiguration.wxi
+	EndProjectSection
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "SenseAI.BootStrapper", "Installers\Windows\SenseAI.BootStrapper\SenseAI.BootStrapper.wixproj", "{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79}"
+	ProjectSection(ProjectDependencies) = postProject
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B} = {ED492608-6013-4552-A29B-A7E14F4BEB0B}
+		{D0B74BE9-8195-4907-AEEE-45631E37251F} = {D0B74BE9-8195-4907-AEEE-45631E37251F}
+		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06} = {3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Old School Scripts", "Old School Scripts", "{FDB25B74-D0CD-4665-9152-DE968A1028D8}"
+	ProjectSection(SolutionItems) = preProject
+		Installers\Old School\create_installer_win.bat = Installers\Old School\create_installer_win.bat
+		Installers\Old School\load_environment.bat = Installers\Old School\load_environment.bat
+		Installers\Old School\save_environment.bat = Installers\Old School\save_environment.bat
+		Installers\Old School\set_environment.sh = Installers\Old School\set_environment.sh
+		Installers\Old School\setup_dev_env_win.bat = Installers\Old School\setup_dev_env_win.bat
+		Installers\Old School\Setup_SenseAI_Win.bat = Installers\Old School\Setup_SenseAI_Win.bat
+		Installers\Old School\Start_SenseAI_Win.bat = Installers\Old School\Start_SenseAI_Win.bat
+	EndProjectSection
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DeepStack.Installer", "Installers\Windows\DeepStack.Installer\DeepStack.Installer.wixproj", "{ED492608-6013-4552-A29B-A7E14F4BEB0B}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DeepStackModels.Installer", "Installers\Windows\DeepStackModels.Installer\DeepStackModels.Installer.wixproj", "{D0B74BE9-8195-4907-AEEE-45631E37251F}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Python37.Installer", "Installers\Windows\Python37.Installer\Python37.Installer.wixproj", "{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "SenseAI.Server.Installer", "Installers\Windows\SenseAI.Server.Installer\SenseAI.Server.Installer.wixproj", "{A1AFA75C-324E-4B79-BE13-5557E495FBBE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WipInstallers", "WipInstallers", "{888C04E1-6F50-4800-93FE-F128B78AE645}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SenseAI.Server.Installer", "Installers\WipInstallers\SenseAI.Server.Installer\SenseAI.Server.Installer.vdproj", "{18603392-CD64-4C1C-B892-381E99995451}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dev", "Dev", "{00BBF52C-217D-421F-BEAF-918C167D4C20}"
+	ProjectSection(SolutionItems) = preProject
+		Installers\Dev\setup_dev_env_linux.sh = Installers\Dev\setup_dev_env_linux.sh
+		Installers\Dev\setup_dev_env_win.bat = Installers\Dev\setup_dev_env_win.bat
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".NET 3.5.1", ".NET 3.5.1", "{8A423F72-C92C-4C8E-87D8-02849FD079E2}"
+	ProjectSection(SolutionItems) = preProject
+		Installers\Windows\.NET 3.5.1\Download .NET Framework 3.5 SP1.url = Installers\Windows\.NET 3.5.1\Download .NET Framework 3.5 SP1.url
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -199,6 +251,46 @@ Global
 		{7DC0A312-39AD-41B0-BB53-72ACACC76959}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7DC0A312-39AD-41B0-BB53-72ACACC76959}.Release|x86.ActiveCfg = Release|Any CPU
 		{7DC0A312-39AD-41B0-BB53-72ACACC76959}.Release|x86.Build.0 = Release|Any CPU
+		{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9}.Debug|x86.ActiveCfg = Debug|x86
+		{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9}.Debug|x86.Build.0 = Debug|x86
+		{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9}.Release|Any CPU.ActiveCfg = Release|x86
+		{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9}.Release|x86.ActiveCfg = Release|x86
+		{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9}.Release|x86.Build.0 = Release|x86
+		{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79}.Debug|x86.ActiveCfg = Debug|x86
+		{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79}.Debug|x86.Build.0 = Debug|x86
+		{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79}.Release|Any CPU.ActiveCfg = Release|x86
+		{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79}.Release|x86.ActiveCfg = Release|x86
+		{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79}.Release|x86.Build.0 = Release|x86
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B}.Debug|x86.ActiveCfg = Debug|x86
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B}.Debug|x86.Build.0 = Debug|x86
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B}.Release|Any CPU.ActiveCfg = Release|x86
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B}.Release|x86.ActiveCfg = Release|x86
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B}.Release|x86.Build.0 = Release|x86
+		{D0B74BE9-8195-4907-AEEE-45631E37251F}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{D0B74BE9-8195-4907-AEEE-45631E37251F}.Debug|x86.ActiveCfg = Debug|x86
+		{D0B74BE9-8195-4907-AEEE-45631E37251F}.Debug|x86.Build.0 = Debug|x86
+		{D0B74BE9-8195-4907-AEEE-45631E37251F}.Release|Any CPU.ActiveCfg = Release|x86
+		{D0B74BE9-8195-4907-AEEE-45631E37251F}.Release|x86.ActiveCfg = Release|x86
+		{D0B74BE9-8195-4907-AEEE-45631E37251F}.Release|x86.Build.0 = Release|x86
+		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}.Debug|x86.ActiveCfg = Debug|x86
+		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}.Debug|x86.Build.0 = Debug|x86
+		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}.Release|Any CPU.ActiveCfg = Release|x86
+		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}.Release|x86.ActiveCfg = Release|x86
+		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}.Release|x86.Build.0 = Release|x86
+		{A1AFA75C-324E-4B79-BE13-5557E495FBBE}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{A1AFA75C-324E-4B79-BE13-5557E495FBBE}.Debug|x86.ActiveCfg = Debug|x86
+		{A1AFA75C-324E-4B79-BE13-5557E495FBBE}.Debug|x86.Build.0 = Debug|x86
+		{A1AFA75C-324E-4B79-BE13-5557E495FBBE}.Release|Any CPU.ActiveCfg = Release|x86
+		{A1AFA75C-324E-4B79-BE13-5557E495FBBE}.Release|x86.ActiveCfg = Release|x86
+		{A1AFA75C-324E-4B79-BE13-5557E495FBBE}.Release|x86.Build.0 = Release|x86
+		{18603392-CD64-4C1C-B892-381E99995451}.Debug|Any CPU.ActiveCfg = Debug
+		{18603392-CD64-4C1C-B892-381E99995451}.Debug|x86.ActiveCfg = Debug
+		{18603392-CD64-4C1C-B892-381E99995451}.Release|Any CPU.ActiveCfg = Release
+		{18603392-CD64-4C1C-B892-381E99995451}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -224,6 +316,19 @@ Global
 		{55C41D48-17AC-4ED5-9440-B42AF65CCE4E} = {FF0C329F-41E8-4540-BCDB-97690911077D}
 		{7E981C51-DADD-4047-AF5B-21B0E3442B99} = {55C41D48-17AC-4ED5-9440-B42AF65CCE4E}
 		{7DC0A312-39AD-41B0-BB53-72ACACC76959} = {7E981C51-DADD-4047-AF5B-21B0E3442B99}
+		{83C828B9-2B1E-4982-B4B7-69D173DFBB27} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
+		{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{5F1052CB-8586-49CB-8F46-427A5F6901C2} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{FDB25B74-D0CD-4665-9152-DE968A1028D8} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{D0B74BE9-8195-4907-AEEE-45631E37251F} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{A1AFA75C-324E-4B79-BE13-5557E495FBBE} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{888C04E1-6F50-4800-93FE-F128B78AE645} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
+		{18603392-CD64-4C1C-B892-381E99995451} = {888C04E1-6F50-4800-93FE-F128B78AE645}
+		{00BBF52C-217D-421F-BEAF-918C167D4C20} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
+		{8A423F72-C92C-4C8E-87D8-02849FD079E2} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

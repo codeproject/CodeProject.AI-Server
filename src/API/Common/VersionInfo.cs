@@ -28,6 +28,11 @@ namespace CodeProject.SenseAI.API.Common
         public string? PreRelease { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether this version contains a security update
+        /// </summary>
+        public bool? SecurityUpdate { get; set; } 
+
+        /// <summary>
         /// Gets or sets the build number
         /// </summary>
         public int Build { get; set; }
@@ -83,9 +88,9 @@ namespace CodeProject.SenseAI.API.Common
 
         /// <summary>
         /// Compares two versions. If versionA &lt; versionB then this method returns &lt; 0. If
-        /// the two versions are equal it returns 0. Otherwise this method returns %gt; 0. No 
-        /// comparison is done on PreRelease; only Major, Minor, Patch and Build (in that order)
-        /// are used in the comparison.
+        /// the two versions are equal it returns 0. Otherwise this method returns %gt; 0. 
+        /// Comparison order is Major, Minor, Patch, Build, PreRelease then Security.
+        /// 
         /// </summary>
         /// <param name="versionA">The first version to compare</param>
         /// <param name="versionB">The second version to compare</param>
@@ -104,7 +109,11 @@ namespace CodeProject.SenseAI.API.Common
             if (versionA.Build != versionB.Build)
                 return versionA.Build - versionB.Build;
 
-            return 0;
+            int result = (versionA.PreRelease ?? "").CompareTo(versionB.PreRelease ?? "");
+            if (result != 0)
+                return result;
+
+            return (versionA.SecurityUpdate ?? false).CompareTo(versionB.SecurityUpdate ?? false);
         }
     }
 }

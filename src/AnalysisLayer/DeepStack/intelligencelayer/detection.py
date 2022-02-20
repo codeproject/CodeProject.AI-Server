@@ -1,4 +1,4 @@
-import _thread as thread
+## import _thread as thread
 import ast
 import io
 import json
@@ -123,6 +123,7 @@ def objectdetection(thread_name: str, delay: float):
                         "error":   "invalid image file",
                         "code":    400,
                     }
+                    frontendClient.errLog("objectdetection", "detection.py", err_trace, "UnidentifiedImageError")
 
                 except Exception:
 
@@ -134,6 +135,8 @@ def objectdetection(thread_name: str, delay: float):
                         "error":   "error occured on the server",
                         "code":    500,
                     }
+
+                    frontendClient.errLog("objectdetection", "detection.py", err_trace, "Exception")
 
                 finally:
                     frontendClient.endTimer(timer)

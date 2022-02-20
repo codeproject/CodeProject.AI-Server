@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" 
+	 xmlns:bal="http://schemas.microsoft.com/wix/BalExtension"
+	 xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+	
+	<Bundle Name="CodeProject SenseAI" 
+			IconSourceFile="..\favicon.ico"
+			Version="1.0.0.0"
+			Manufacturer="CodeProject" 
+			UpgradeCode="c04bbd0d-fd36-4fa4-805b-106bccd9bc79">
+
+		<util:RegistrySearchRef Id="VCRedistInstalled"/>
+
+		<BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkSidebarLicense">
+			<bal:WixStandardBootstrapperApplication
+				LicenseUrl="https://www.mongodb.com/licensing/server-side-public-license"
+				LicenseFile="..\license.rtf"
+				LogoFile="..\Logo.png"
+				LogoSideFile="..\Sense-install-sidebar.png"
+				SuppressOptionsUI="yes"
+				ShowVersion="yes"
+				
+			/>
+			
+		</BootstrapperApplicationRef>
+
+		<Chain>
+			<!-- Add the .NET 6 Desktop and ASP.NET runtimes  -->
+			<ExePackage 
+				SourceFile="dotnet-hosting-5.0.14-win.exe"
+				DownloadUrl="https://download.visualstudio.microsoft.com/download/pr/5adf4f36-aff5-447f-99db-86eae913d4eb/b71f76ea31156438499da1d419c577ff/dotnet-hosting-5.0.14-win.exe"
+
+				InstallCommand="/q /install"
+                RepairCommand="/q /repair"
+				UninstallCommand="/q /uninstall"
+				Compressed="no" 
+			/>
+
+			<ExePackage
+				SourceFile="VC_redist.x64.exe"
+				DownloadUrl="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/VC_redist.x64.exe"
+				InstallCommand="/q /install"
+                RepairCommand="/q /repair"
+				UninstallCommand="/q /uninstall"
+				Compressed="no"  
+				InstallCondition="NOT VCRedistributableInstalled"
+			/>
+			
+			<!--
+			<MsiPackage Id="SENSEAISERVER" SourceFile="$(var.SenseAI.Server.Installer.TargetDir)SenseAI.Server.Installer.msi" />
+			<MsiPackage Id="SENSEAIYOLONET" SourceFile="$(var.YoloNet.Installer.TargetDir)YoloNet.Installer.msi" />
+			<MsiPackage Id="SENSEAIPYTHON" SourceFile="$(var.Python37.Installer.TargetDir)Python37.Installer.msi" />
+
+
+			<MsiPackage Id="LEGACYMODULES" SourceFile="$(var.DeepStack.Installer.TargetDir)DeepStack.Installer.msi" />
+			<MsiPackage Id="LEGACYMODELS" SourceFile="$(var.DeepStackModels.Installer.TargetDir)DeepStackModels.Installer.msi" />
+			-->
+
+			<!--
+			-->			
+			
+			<MsiPackage Id="SENSEAIYOLONET" 
+						SourceFile="$(var.YoloNet.Installer.TargetDir)YoloNet.Installer.msi"
+						DownloadUrl="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/YoloNet.Installer.msi"
+						Compressed="no"
+						ForcePerMachine="yes"
+			/>
+
+			<MsiPackage Id="SENSEAIPYTHON"  
+						SourceFile="$(var.Python37.Installer.TargetDir)Python37.Installer.msi"
+						DownloadUrl="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/Python37.Installer.msi"
+						Compressed="no"
+						ForcePerMachine="yes"
+			/>
+
+
+			<MsiPackage Id="LEGACYMODULES"
+						SourceFile="$(var.DeepStack.Installer.TargetDir)DeepStack.Installer.msi"
+						DownloadUrl="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/DeepStack.Installer.msi"
+						Compressed="no"
+						ForcePerMachine="yes"
+			/>
+
+			<MsiPackage Id="LEGACYMODELS"
+						SourceFile="$(var.DeepStackModels.Installer.TargetDir)DeepStackModels.Installer.msi"
+						DownloadUrl="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/DeepStackModels.Installer.msi"
+						Compressed="no"
+						ForcePerMachine="yes"
+			/>
+			
+			<MsiPackage Id="SENSEAISERVER"
+						SourceFile="$(var.SenseAI.Server.Installer.TargetDir)SenseAI.Server.Installer.msi"
+						DownloadUrl="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/SenseAI.Server.Installer.msi"
+						Compressed="no"
+						ForcePerMachine="yes"
+			/>
+
+		</Chain>
+	</Bundle>
+	
+	<Fragment>
+		<util:RegistrySearch
+			  Id='VCRedistInstalled'
+			  Variable="VCRedistributableInstalled"
+			  Result="exists"
+			  Root="HKLM"
+			  Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
+			  Value="Installed"
+			  Win64="yes"
+			  />
+	</Fragment>
+</Wix>

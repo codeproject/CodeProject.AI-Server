@@ -20,31 +20,43 @@ namespace CodeProject.SenseAI.Analysis.Yolo
     /// </summary>
     public class ObjectDetector
     {
-        private readonly YoloScorer<YoloCocoP5Model> _scorer;
+        private readonly YoloScorer<YoloCocoP5Model>? _scorer = null;
         private readonly ILogger<ObjectDetector>     _logger;
 
         public ObjectDetector(IConfiguration config, IHostEnvironment env, ILogger<ObjectDetector> logger)
         {
             _logger = logger;
-            var path = AppContext.BaseDirectory;
+            string path = AppContext.BaseDirectory;
 #if DEBUG
             _logger.LogInformation($"Yolo Execution Path: {path}");
             if (!Directory.Exists(Path.Combine(path, "Assets")))
             {
-                // We have been started by the Frontend in debug mode
-                // look for the assets in the project root.
-                // Move up from bin\debug\net5.0
+                // We have been started by the Frontend in debug mode. Look for the assets in the
+                // project root. Move up from bin\debug\netX.0
                 path = Path.Combine(path, "..\\..\\..");
             }
 #endif
-            var mode = config.GetValue<string>("MODE");
-            var modelPath = (mode ?? string.Empty.ToLower()) switch
+            string mode = config.GetValue<string>("MODE");
+            string modelPath = (mode ?? string.Empty.ToLower()) switch
             {
                 "low"  => "Assets/yolov5n.onnx",
                 "high" => "Assets/yolov5m.onnx",
                 _      => "Assets/yolov5s.onnx"
             };
-            _scorer = new YoloScorer<YoloCocoP5Model>(Path.Combine(path, modelPath));
+
+            try
+            {
+                string modelFilePath = Path.Combine(path, modelPath);
+                var modelFileInfo = new FileInfo(modelFilePath);
+                if (modelFileInfo.Exists)
+                    _scorer = new YoloScorer<YoloCocoP5Model>(modelFilePath);
+                else
+                    _logger.LogError("Unable to load the model at " + modelFilePath);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Unable to initialise the YOLO scorer");
+            }
         }
 
         /// <summary>
@@ -58,21 +70,25 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             if (!fi.Exists)
                 return null;
 
-            using var image                   = GetImage(filename);
+            using Image? image = GetImage(filename);
             List<YoloPrediction>? predictions = (image is not null) ? Predict(image) : null;
 
             return predictions;
         }
 
         /// <summary>
-        /// 
+        /// Predicts the objects in an image.
         /// </summary>
         /// <param name="image"></param>
         /// <returns>The predicted objects with bounding boxes and confidences.</returns>
-        public List<YoloPrediction> Predict(Image image)
+        public List<YoloPrediction>? Predict(Image image)
         {
+            if (_scorer is null)
+                return null;
+
             return _scorer.Predict(image);
         }
+
         /// <summary>
         /// Loads a Bitmap from a file.
         /// </summary>

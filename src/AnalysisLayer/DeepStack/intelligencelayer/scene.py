@@ -1,4 +1,5 @@
-import _thread as thread
+##import _thread as thread
+
 import ast
 import io
 import json

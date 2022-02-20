@@ -22,8 +22,6 @@
   <ItemGroup>
     <Content Include="noop.bat" />
     <Content Include="requirements.txt" />
-    <Content Include="start.sh" />
-    <Content Include="start.bat" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="commons\utils.py" />

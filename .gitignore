@@ -388,3 +388,5 @@ FodyWeavers.xsd
 /src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5s.onnx
 /src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5n.onnx
 /src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5m.onnx
+/Installers/downloads
+*.DS_Store

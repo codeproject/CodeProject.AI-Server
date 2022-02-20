@@ -5,11 +5,16 @@
     <meta charset="utf-8" />
     <title>CodeProject SenseAI Demos</title>
 
-    <link rel="stylesheet" type="text/css" href="assets/styles.css">
+    <link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
+
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-16x16.png">
-    
-    <style>       
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <style>
+        .header {
+            background: rgb(255,153,0);
+            background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, rgb(255 181 0) 78%, rgba(255,208,0,1) 100%);
+        }
+
         #faces::file-selector-button { width:10rem; }
     </style>
 
@@ -333,7 +338,7 @@
 
             var images = [];
             for (var i = 0; i < faceCtrl.files.length; i++)
-                images.push(faceCtrl.files[1]);
+                images.push(faceCtrl.files[i]);
 
             submitRequest('face/register', images, [["userid", userId]], function (data) {
                 if (data)
@@ -417,144 +422,165 @@
 
 </head>
 
-<body>
+<body class="dark-mode">
+<div>
+    <div class="bg-dark mx-auto p-3" style="max-width:1100px;">
 
-    <div style="max-width:866px;margin:0 auto;">
-
-    <div id="ctl00_SH" class="site-header fixed">
-		<div class="main-content">
-			<div class="logo"><a href="/"><img tabindex="1" title="CodeProject" src="assets/logo250x135.gif" 
-                                               alt="Home" style="height:135px;width:250px;border-width:0px;"></a></div>
-			<div class="promo"></div>
+	    <div class="w-100 header d-flex">
+            <a href="https://www.codeproject.com">
+            <img tabindex="1" title="CodeProject" src="assets/codeproject60x60.png" 
+                alt="Home" style="width:60px;height:60px;border-width:0px;"></a>
+            <span class="fs-2 mt-2 d-inline-block">CODE<b>PROJECT</b> SenseAI Playground</span>
         </div>
-	</div>
 
-    <h2>The CodeProject SenseAI Playground</h2>
-    <form method="post" action="" enctype="multipart/form-data" id="myform">
+        <div class="card mt-3">
+        <div class="card-body bg-secondary">
 
-        <div style="display:flex">
-            <div style="width:500px">
+            <div class="form-group row">
+                <label class="col-form-label col-2 text-end">Service API URL</label>
+                <input class="form-control" type="text" id="serviceUrl" style="width:25rem;"/>
+                <label id="status" class="col-form-label col bg-white fw-bold ms-4"></label>
 
-                <div class="row" style="text-align:right; margin-top: -.9rem;">
-                    <span style="font-size:90%">Service API URL:</span>
-                    <input type="text" id="serviceUrl" style="width:10rem;font-size:90%" />
+            </div>
+        </div>
+        </div>
+
+        <form method="post" action="" enctype="multipart/form-data" id="myform">
+        <div class="d-flex align-content-between">
+
+            <div style="width:600px">
+
+                <div class="card mt-3">
+                <div class="card-header h3">Object Detection</div>
+                <div class="card-body bg-secondary">
+
+                    <div class="form-group row">
+                        <label class="col-form-label col-3">Image</label>
+                        <input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
+                    </div>
+                    <div class="form-group row mt-2">
+                        <label class="col-form-label col-3">Operation</label>
+                        <input class="col form-control btn-success" type="button" value="Detect Scene"  id="scene"  onclick="onDetectScene(image)" />
+                        <input class="col form-control btn-info" type="button" value="Detect Face"   id="face"   onclick="onDetectFaces(image)" />
+                        <input class="col form-control btn-warning" type="button" value="Detect Things" id="things" onclick="onDetectThings(image)" />
+                    </div>
+                </div>
                 </div>
 
-                <fieldset>
-                    <legend>Object Detection</legend>
-                    <div class="row">
-                        <label>Image</label>
-                        <input id="image" type="file" onchange="return previewImage(this)" />
+                <div class="card mt-3">
+                <div class="card-header h3">Face Comparison</div>
+                <div class="card-body bg-secondary">
+                    <div class="d-flex align-items-center">
+                        <div class="w-75">
+                            <div class="form-group row">
+                                <label class="col-form-label col-3">Image 1</label>
+                                <input class="col form-control btn-light" id="face1" type="file" onchange="return previewImage(this)" />
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-form-label col-3">Image 2</label>
+                                <input class="col form-control btn-light" id="face2" type="file" onchange="return previewImage(this)" />
+                            </div>
+                        </div>
+                        <div style="width:10rem" class="text-end">
+                             <input type="button" value="Compare" class="btn btn-success" onclick="onCompareFaces(face1, face2)" />
+                        </div>
                     </div>
-                    <div class="row">
-                        <label>Operation</label>
-                        <input type="button" value="Detect Scene"  id="scene"  class="styleA" onclick="onDetectScene(image)" />
-                        <input type="button" value="Detect Face"   id="face"   class="styleB" onclick="onDetectFaces(image)" />
-                        <input type="button" value="Detect Things" id="things" class="styleC" onclick="onDetectThings(image)" />
-                    </div>
-                </fieldset>
+                </div>
+                </div>
 
-                <fieldset>
-                    <legend>Face Comparison</legend>
-                    <div style="display:flex">
-                        <div>
-                            <div class="row">
-                                <label>Image 1</label>
-                                <input style="width:17rem" id="face1" type="file" onchange="return previewImage(this)" />
-                            </div>
-                            <div class="row">
-                                <label>Image 2</label>
-                                <input style="width:17rem" id="face2" type="file" onchange="return previewImage(this)" />
-                            </div>
+                <div class="card mt-3">
+                <div class="card-header h3">Face Registration</div>
+                <div class="card-body bg-secondary">
+
+                    <div>
+                        <div class="form-group row">
+                            <label class="col-form-label col-4">1. Person's name</label>
+                            <input class="form-control" style="width:12rem" id="userId" type="text"
+                                   placeholder="Enter name"/>
                         </div>
-                        <div style="display:flex;align-items:center;">
-                            <input type="button" value="Compare" class="styleB" onclick="onCompareFaces(face1, face2)" />
+                        <div class="form-group row my-3">
+                            <label class="col-form-label col-4">2. Select images</label>
+                            <input class="btn-light col form-control" style="width:8rem" id="faces" multiple="multiple" type="file" />
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-form-label col-4">3. Final step</label>
+                            <input class="form-control btn-success" style="width:12rem;" id="register" type="button" 
+                                        value="Register Faces" onclick="onRegisterFaces(userId.value, faces)" />
                         </div>
                     </div>
-                </fieldset>
 
-                <fieldset>
-                    <legend>Face registration</legend>
-                    <div style="display:flex">
-                        <div style="width:20rem">
-                            <div class="row">
-                                <label>1. Person's name</label>
-                                <input style="width:9.5rem" id="userId" type="text" />
-                            </div>
-                            <div class="row">
-                                <label>2. Select images</label>
-                                <input style="width:10rem" id="faces" multiple="multiple" type="file" class="styleA"/>
-                            </div>
-                            <div class="row">
-                                <label>3. Final step</label>
-                                <input style="width:10rem;" id="register" type="button" class="styleB" 
-                                    value="Register Faces" onclick="onRegisterFaces(userId.value, faces)" />
-                            </div>
-                        </div>
-                        <div style="margin-left:1rem;display:flex;align-items:center;flex-direction: column;justify-content: space-around;">
-                            <input style="width:12rem" id="listfaces"   type="button" value="List Registered Faces"
-                                onclick="onListRegisteredFaces()" />
-                            <input style="width:12rem;" class="styleD" id="deleteFaces" type="button"
-                                   value="Delete Person's Images" onclick="onDeleteFace(userId.value)" />
-                        </div>
+                    <div class="mt-4 text-center">
+                        <input style="width:12rem" id="listfaces" type="button" class="btn  btn-primary ml-3``"
+                                value="List Registered Faces" onclick="onListRegisteredFaces()" />
+                        <input style="width:12rem;" class="btn btn-danger" id="deleteFaces" type="button"
+                            value="Delete Person's Images" onclick="onDeleteFace(userId.value)" />
                     </div>
-                </fieldset>
 
-                <fieldset>
-                    <legend>Face Recognition</legend>
-                    <div class="row">
-                        <label>Image</label>
-                        <input id="faceInput" type="file" style="width:17rem"
+                </div>
+                </div>
+
+                <div class="card mt-3">
+                <div class="card-header h3">Face Recognition</div>
+                <div class="card-body bg-secondary">
+
+                    <div class="form-group row">
+                        <label class="col-form-label col-2">Image</label>
+                        <input class="col form-control btn-light" id="faceInput" type="file" style="width:17rem"
                             onchange="return previewImage(this)" />
-                        <input type="button" value="Recognise" id="recognise" class="styleB"
-                            onclick="onRecogniseFace(faceInput, minRecogConfidence.value)" />
+                        <input class="form-control btn-success" type="button" value="Recognise" style="width:7rem"
+                               id="recognise" onclick="onRecogniseFace(faceInput, minRecogConfidence.value)" />
                     </div>
-                    <div class="row">
-                        <span>Minimum Recognition Confidence</span>
-                        <input value="0.6" id="minRecogConfidence" type="text" style="width:3rem"/>
-                    </div>
-                </fieldset>
 
-                <fieldset>
-                    <legend>Benchmark</legend>
-                    <div class="row">
-                        <label>Image</label>
-                        <input id="benchmarkInput" type="file" style="width:17rem"
+                    <div class="form-group row mt-1">
+                          <label class="col-7 col-form-label text-end">Minimum Recognition Confidence</label>
+                          <input class="form-control" value="0.6" id="minRecogConfidence" type="text" 
+                                 style="width:5rem"/>
+                    </div>
+                </div>
+                </div>
+
+            </div>
+
+            <div class="ms-4 mt-3" style="width:475px;">
+               
+                <div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black"
+                    style="height: 195px; overflow-y: auto;"></div>
+
+                <div class="w-100 position-relative border-1 border-light">
+
+                    <canvas id="annotations" class="position-absolute" 
+                        style="left:0;top:0;pointer-events:none;z-index:10"></canvas>
+
+                    <img src="" id="img" class="w-100" style="height:250px;visibility:hidden">
+                </div>
+
+                <div class="card mt-3">
+                <div class="card-header h3">Benchmark</div>
+                <div class="card-body bg-secondary">
+
+                    <div class="form-group row">
+                        <label class="col-form-label col-2">Image</label>
+                        <input class="col form-control btn-light" id="benchmarkInput" type="file" style="width:17rem"
                             onchange="return previewImage(this)" />
-                        <input type="button" value="Go" id="benchmark" class="styleB"
-                            onclick="onBenchmark(benchmarkInput, benchmarkResult)" />
+                        <input class="form-control btn-success" type="button" value="Go" style="width:7rem"
+                               id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkResult)" />
 
                         <!-- See note above on how this button isn't currently that useful
                         <input type="button" value="Stop" class="styleD" style="margin-left:1em"
-                            onclick="isBenchmarkCancelled = true;" />
-                        -->
+                               onclick="isBenchmarkCancelled = true;" />
+                         -->
                     </div>
-                    <div class="row">
+                    <div class="form-group row mt-1">
                         <span id="benchmarkResult"></span>
                     </div>
-                </fieldset>
-
-            </div>
-
-            <div style="width:350px;margin-left: 1rem;margin-top:-8px">
-
-                <div id="status" 
-                     style="width:100%;height:32px; display:block;background-color:white;margin-bottom:.5rem;font-weight:bold"></div>
-                
-                <div id="result" 
-                    style="width: 330px; height: 195px; margin-bottom: 10px; background-color: white; border: #ccc 1px solid; overflow-y: auto; padding: 0.75rem;"></div>
-
-                <div style="position:relative;border:1px #ccc solid;width:350px">
-                    <canvas id="annotations" 
-                        style="position:absolute;left:0;top:0;pointer-events:none;z-index:10"></canvas>
-                    <img src="" id="img" style="width:350px;height:250px;visibility:hidden">
+                </div>
                 </div>
 
             </div>
+
         </div>
-
-    </form>
-
+        </form>
+    </div>
 </div>
 </body>
 </html>

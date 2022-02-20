@@ -333,7 +333,7 @@
 
             var images = [];
             for (var i = 0; i < faceCtrl.files.length; i++)
-                images.push(faceCtrl.files[1]);
+                images.push(faceCtrl.files[i]);
 
             submitRequest('face/register', images, [["userid", userId]], function (data) {
                 if (data)

@@ -56,12 +56,18 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             if (_client is null)
             {
                 _client = new HttpClient { Timeout = new TimeSpan(0, 0, 30) };
-                // Sending this allows us to store some state on the server's side between status
-                // calls. Not used at the moment, but will be in the future. 
-                // SECURITY: Always ensure that InstallConfig.Id does not contain personally
-                //           identifiable information. It should just be a random GUID that can be
-                //           wiped or replaced on the installation side without issue.
+
+                // This allows us to store some state on the server's side between status calls. 
+                // This is analogous to a session cookie.
+                // SECURITY: Always ensure that InstallConfig.Id does NOT contain personally
+                //           identifiable information. It should be a random GUID that can be wiped
+                //           or replaced on the installation side without issue.
                 _client.DefaultRequestHeaders.Add("X-CPSense-Install", InstallConfig.Id.ToString());
+
+                // Handy to allow the checkee to return emergency info if the current installed
+                // version has issues
+                string currentVersion = VersionConfig.VersionInfo?.Version ?? string.Empty;
+                _client.DefaultRequestHeaders.Add("X-CPSense-Version", currentVersion);
             }
 
             string updateCheckUrl = Configuration.GetValue<string>("UpdateCheckUrl");

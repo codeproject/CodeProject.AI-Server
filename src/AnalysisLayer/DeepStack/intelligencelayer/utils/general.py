@@ -1471,6 +1471,9 @@ def plot_study_txt(
 
 
 def plot_labels(labels, save_dir=""):
+    """
+    You will need to install Seaborn: python.exe -m pip install Seaborn 
+    """
     # plot dataset labels
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes

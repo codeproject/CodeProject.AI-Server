@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	
+	<?include ..\SharedConfiguration.wxi ?>
+	
+	<Product Id="300c0913-4534-455e-9221-cf4934cf9757" 
+			 Name="CodeProject SenseAI Yolo Object Detector" 
+			 Language="1033" Version="1.0.0.0" 
+			 Manufacturer="CodeProject" 
+			 UpgradeCode="b18457d2-1ff3-49d2-b17d-6f1ca197089e">
+		
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+		<?include ..\SharedUIConfiguration.wxi ?>
+
+		<Feature Id="YoloNetFeature" Title="Yolo Object Detection Module" Level="1">
+			<ComponentGroupRef Id="YoloNetFilesComponentGroup" />
+			<!--<ComponentGroupRef Id="YoloNetModelsComponentGroup" />-->
+		</Feature>
+	</Product>
+
+	<?include ..\SharedDirectories.wxi ?>
+</Wix>

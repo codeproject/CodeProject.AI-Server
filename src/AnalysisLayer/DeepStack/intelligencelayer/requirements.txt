@@ -2,7 +2,6 @@
 THOP # Installing THOP (PyTorch-OpCounter) for measuring performance
 ONNX # Installing ONNX, the Open Neural Network Exchange library
 Pandas # Installing Pandas, a data analysis / data manipulation tool
-Seaborn # Installing Seaborn, A library for making statistical graphics
 CoreMLTools # Installing CoreMLTools, for working with .mlmodel format models
 
 ## General libraries
@@ -20,6 +19,7 @@ Torch==1.6.0+cpu # Installing Torch, for Tensor computation and Deep neural netw
 TorchVision==v0.7.0+cpu # Installing TorchVision, for Computer Vision based AI
 
 ## No longer needed
+## Seaborn # Installing Seaborn, A library for making statistical graphics
 ## wMatplotlib
 ## OpenCV-Python
 ## Cython

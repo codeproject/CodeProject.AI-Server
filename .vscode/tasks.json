@@ -83,22 +83,24 @@
             ]
         },
 
+        /* Now started by the front end server
         {
             "label": "start-analysis",
             "type": "process",
             "isBackground": true,
             "windows": {
                 "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.bat",
-                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
+                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ]
             },
             "linux": {
                 "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.sh",
-                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
+                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ]
             },
             "osx": {
                 "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.sh",
-                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ],
+                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ]
             },
+
             // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
             // to give VSCode enough to be satisfied and just let it run
             "problemMatcher": [
@@ -119,6 +121,8 @@
                 }
             ]
         }, 
+        */
+
         {
             "label": "start-api",
             "windows": {

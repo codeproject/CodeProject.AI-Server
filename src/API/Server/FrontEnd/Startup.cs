@@ -20,6 +20,9 @@ namespace CodeProject.SenseAI.API.Server.Frontend
     /// </summary>
     public class Startup
     {
+        private InstallConfig? _installConfig;
+        private ILogger<Startup>? _logger;
+
         /// <summary>
         /// Initializs a new instance of the Startup class.
         /// </summary>
@@ -52,6 +55,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             });
 
             services.AddControllers();
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
@@ -92,7 +96,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
             services.AddBackendProcessRunner(Configuration);
 
-            services.AddScoped<VersionService, VersionService>();
+            services.AddSingleton<VersionService, VersionService>();
+            services.AddVersionProcessRunner();
         }
 
         /// <summary>
@@ -110,6 +115,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                               ILogger<Startup> logger,
                               IOptions<InstallConfig> installConfig)
         {
+            _installConfig = installConfig.Value;
+            _logger = logger;
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -117,7 +124,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject SenseAI API v1"));
             }
 
-            InitializeInstallConfig(installConfig.Value, logger);
+            InitializeInstallConfig();
 
             bool forceHttps = Configuration.GetValue<bool>(nameof(forceHttps));
             if (forceHttps)
@@ -138,24 +145,31 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             });
         }
 
-        private static void InitializeInstallConfig(InstallConfig installConfig, ILogger<Startup> logger)
+        private void InitializeInstallConfig()
         {
-
-            if (installConfig is null || installConfig.Id == Guid.Empty)
+            if (_installConfig is null || _installConfig.Id == Guid.Empty)
             {
                 try
                 {
-                    installConfig  ??= new InstallConfig();
-                    installConfig.Id = Guid.NewGuid();
-                    var configValues = new { install = installConfig };
-                    var filePath     = InstallConfig.InstallCfgFilename;
+                    _installConfig  ??= new InstallConfig();
+                    _installConfig.Id = Guid.NewGuid();
 
-                    File.WriteAllText(filePath, System.Text.Json.JsonSerializer.Serialize(configValues, 
-                        new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                    var configValues = new { install = _installConfig };
+
+                    string appDataDir     = Configuration["ApplicationDataDir"];
+                    string configFilePath = Path.Combine(appDataDir, InstallConfig.InstallCfgFilename);
+
+                    if (!Directory.Exists(appDataDir))
+                        Directory.CreateDirectory(appDataDir);
+
+                    var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                    string configJson = System.Text.Json.JsonSerializer.Serialize(configValues, options);
+
+                    File.WriteAllText(configFilePath, configJson);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, $"Exception updating {InstallConfig.InstallCfgFilename}");
+                    _logger?.LogError(ex, $"Exception updating {InstallConfig.InstallCfgFilename}");
                 }
             }
         }

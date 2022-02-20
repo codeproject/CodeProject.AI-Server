@@ -60,6 +60,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
         protected override async Task ExecuteAsync(CancellationToken token)
         {
             await Task.Delay(250, token).ConfigureAwait(false);
+
             _logger.LogInformation("Background YoloDetector Task Started.");
             await LogToServer("SenseAI Object Detection module started.", token);
 

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="79ac1e8b-89f9-4e83-a16a-84d6d6ed85e8" 
+			 Name="CodeProject SenseAI Python3.7 Runtime" 
+			 Language="1033" 
+			 Version="1.0.0.0" 
+			 Manufacturer="CodeProject" 
+			 UpgradeCode="d3a7b883-7c7f-4ef7-b92b-65aa53f46e59">
+		
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+		<?include ..\SharedUIConfiguration.wxi ?>
+
+		<Feature Id="Python37Runtime" Title="Python 3.7 Runtime" Level="1">
+			<ComponentGroupRef Id="PythonFilesComponentGroup" />
+		</Feature>
+	</Product>
+	<?include ..\SharedDirectories.wxi ?>
+</Wix>

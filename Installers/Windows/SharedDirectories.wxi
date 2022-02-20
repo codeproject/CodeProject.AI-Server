@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Include>
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFiles64Folder">
+				<Directory Id="CodeProjectInstallFolder" Name="CodeProject">
+					<Directory Id="CodeProjectSenseAiInstallFolder" Name="SenseAI">
+						<Directory Id="TestDataFolder" Name="TestData"/>
+						<Directory Id="SERVERINSTALLFOLDER" Name="Server" />
+						<Directory Id="AnalysisLayerInstallFolder" Name="AnalysisLayer">
+							<Directory Id="YOLONETINSTALLFOLDER" Name="CodeProject.SenseAI.AnalysisLayer.Yolo">
+								<Directory Id="YOLONETMODELSFOLDER" Name="assets"/>
+							</Directory>
+							<Directory Id="DEEPSTACKINSTALLFOLDER" Name="DeepStack">
+								<Directory Id="DeepStackIntelligenceLayerFolder" Name="IntelligenceLayer" />
+								<Directory Id="DeepStackAssetsFolder" Name="assets" />
+								<Directory Id="DeepStackPython37Folder" Name="Python37" />
+								<Directory Id="DeepStackVirtualEnvironmentFolder" Name="venv" />
+							</Directory>
+						</Directory>
+						<Directory Id="DesktopFolder" />
+					</Directory>
+				</Directory>
+			</Directory>
+
+			<Directory Id="CommonAppDataFolder" >
+				<Directory Id="CodeProjectDataFolder" Name="CodeProject">
+					<Directory Id="CodeProjectSenseAiDataFolder" Name="SenseAI">
+						<Directory Id="SERVERDATAFOLDER" Name="Server" />
+					</Directory>
+				</Directory>
+			</Directory>
+
+		</Directory>
+	</Fragment>
+
+</Include>

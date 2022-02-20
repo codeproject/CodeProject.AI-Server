@@ -1,6 +1,7 @@
 {
     "sdk": {
-        "version": "6.0.101"
+        // "version": "6.0.1"
+        // "version": "6.0.200"
         // "version": "5.0.404"  // If you wish to use .NET 5, but remember to disable the check for .NET 6 in install/create_installer
     }
 }

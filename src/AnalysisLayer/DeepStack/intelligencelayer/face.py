@@ -1,4 +1,8 @@
-import _thread as thread
+## import _thread as thread
+## from multiprocessing import Process
+
+import threading
+
 import ast
 import io
 import json
@@ -7,7 +11,6 @@ import sqlite3
 import sys
 import time
 import warnings
-from multiprocessing import Process
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
 from shared import SharedOptions, FrontendClient
@@ -618,6 +621,8 @@ def face(thread_name, delay):
                             "code": 400,
                         }
 
+                        frontendClient.errLog("facedetection", "face.py", err_trace, "UnidentifiedImageError")
+
                     except Exception:
 
                         err_trace = traceback.format_exc()
@@ -628,6 +633,8 @@ def face(thread_name, delay):
                             "error": "error occured on the server",
                             "code": 500,
                         }
+
+                        frontendClient.errLog("facedetection", "face.py", err_trace, "Exception")
 
                     finally:
                         frontendClient.endTimer(timer)
@@ -643,18 +650,16 @@ def face(thread_name, delay):
 
 
 def update_faces(thread_name, delay):
-
     while True:
-
         load_faces()
-
         time.sleep(delay)
 
 if __name__ == "__main__":
-    init_db()
-    p1 = Process(target=update_faces, args=("", 1))
-    p1.start()
+    faceupdate_thread = threading.Thread(None, update_faces, args = ("", 1))
+    face_thread       = threading.Thread(None, face,         args = ("", SharedOptions.SLEEP_TIME))
+    faceupdate_thread.start()
+    face_thread.start()
 
     frontendClient.log("Face Detection module started.")
-    face("", SharedOptions.SLEEP_TIME)
+    face_thread.join();
     # TODO: Send back a "I'm alive" message to the backend of the API server so it can report to the user

@@ -129,14 +129,16 @@ class SharedOptions:
     # elif PROFILE != "windows_native":
     #    SETTINGS.PLATFORM_PKGS = "cpufiles"
 
-    # print(f"APPDIR:       {APPDIR}")
-    # print(f"PROFILE:      {PROFILE}")
-    # print(f"CUDA_MODE:    {CUDA_MODE}")
-    # print(f"TEMP_PATH:    {TEMP_PATH}")
-    # print(f"DATA_DIR:     {DATA_DIR}")
-    # print(f"MODELS_DIR:   {MODELS_DIR}")
-    # print(f"PORT:         {PORT}")
-    # print(f"BaseQueueUrl: {BaseQueueUrl}")
+    # dump the important variables
+
+    #print(f"APPDIR:       {APPDIR}")
+    #print(f"PROFILE:      {PROFILE}")
+    #print(f"CUDA_MODE:    {CUDA_MODE}")
+    #print(f"TEMP_PATH:    {TEMP_PATH}")
+    #print(f"DATA_DIR:     {DATA_DIR}")
+    #print(f"MODELS_DIR:   {MODELS_DIR}")
+    #print(f"PORT:         {PORT}")
+    #print(f"BaseQueueUrl: {BaseQueueUrl}")
 
 class FrontendClient:
     requestSession = requests.Session()

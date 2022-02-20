@@ -23,6 +23,14 @@ namespace CodeProject.SenseAI.API.Common
     }
     #pragma warning restore IDE1006 // Naming Styles
 
+    /// <summary>
+    /// About as simple an implementation of a message log queue as possible. This provides the
+    /// ability to store messages which, in turn, can be displayed by whatever GUI is monitoring
+    /// the system via the Log API. Currently a static object.
+    /// TODO: Make this a more sensible object and inject into LogController and anywhere else
+    /// that needs it via DI (and obviously ensure it's a singleton, or switch to a shared list of
+    /// log entries).
+    /// </summary>
     public class Logger
     {
         private const int MaxLogEntries = 1000;
@@ -65,7 +73,7 @@ namespace CodeProject.SenseAI.API.Common
 
             lock (_lock)
             {
-                if (_logs.Count > 0 && _logs[_logs.Count - 1].id > lastId)
+                if (_logs.Count > 0 && _logs[^1].id > lastId)
                 {
                     // Move down to the first log entry requested
                     int i = _logs.Count - 1;

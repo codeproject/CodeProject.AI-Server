@@ -3,14 +3,21 @@
     "configurations": [
 
         {
-            "name": "CodeProject.SenseAI Analysis Layer",
+            "name": "Build CodeProject.SenseAI",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "start-analysis",
-            "program": "noop.bat",
-            "args": [ ],
-            "cwd": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/",
-            "stopAtEntry": false
+            "program": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/API/Server/FrontEnd",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
         },
 
         {
@@ -27,7 +34,7 @@
             "linux": {
                 "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
             },
-            "args" : ["--VISION-FACE=true", "--VISION-DETECTION=true", "--VISION-SCENE=true", "--PORT=5000"],
+            "args" : [ "--PORT=5000" ],
             "cwd": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/",
             "stopAtEntry": false,
  

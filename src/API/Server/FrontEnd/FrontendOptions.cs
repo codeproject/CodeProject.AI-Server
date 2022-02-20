@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Collections.Generic;
 
 namespace CodeProject.SenseAI.API.Server.Frontend
@@ -11,7 +12,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <summary>
         /// Gets or sets the Root Directory of the installation.
         /// </summary>
-        public string? ROOT_DIR { get; set; }
+        public string? ROOT_PATH { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the API Directory of the installation.
@@ -21,7 +22,17 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <summary>
         /// Gets or sets the root directory that contains the backend modules.
         /// </summary>
-        public string? MODULES_DIR { get; set; }
+        public string? MODULES_PATH { get; set; }
+
+        /// <summary>
+        /// Gets or sets the base directory for the python interpreters.
+        /// </summary>
+        public string? PYTHON_BASEPATH { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path to the Python 3.7 interpreter
+        /// </summary>
+        public string? PYTHON37_PATH { get; set; }
 
         /// <summary>
         /// Gets or sets the information to start all the backend processes.
@@ -52,7 +63,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <summary>
         /// Gets or sets the name of the configuration value which enables this process.
         /// </summary>
-        public string? EnableFlag { get; set; }
+        public string[] EnableFlags { get; set; } = Array.Empty<string>();
 
         /// <summary>
         /// Gets or sets a value indicating whether this procoess should be activated on startup if
@@ -63,7 +74,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <summary>
         /// Gets or sets the name of the Queue used by this process.
         /// </summary>
-        public string? Queue { get; set; }
+        public string[] Queues { get; set; } = Array.Empty<string>();
 
         /// <summary>
         /// Gets or sets the name of the command to be executed.
@@ -74,5 +85,10 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// Gets or sets the arguments passed to the command.
         /// </summary>
         public string? Args { get; set; }
+
+        /// <summary>
+        /// Gets or sets the platforms on which this module is supported.
+        /// </summary>
+        public string[] Platforms { get; set; } = Array.Empty<string>();
     }
 }

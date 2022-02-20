@@ -2,27 +2,45 @@
 
 	<PropertyGroup>
 		<TargetFramework>net5.0</TargetFramework>
-		<Nullable>enable</Nullable>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!--<RuntimeIdentifiers>win-x64,linux-x64</RuntimeIdentifiers>-->
+    <Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<RootNamespace>CodeProject.SenseAI.AnalysisLayer.Yolo</RootNamespace>
 		<AssemblyName>CodeProject.SenseAI.AnalysisLayer.Yolo</AssemblyName>
 		<UserSecretsId>dotnet-CodeProject.SenseAI.AnalysisLayer.Yolo-384BE45C-AAED-42BA-9DDB-EF37356B630F</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<DockerfileContext>..\..\..</DockerfileContext>
-		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
 	</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="assets\yolov5m.onnx" />
+    <None Remove="assets\yolov5n.onnx" />
+    <None Remove="assets\yolov5s.onnx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="assets\yolov5m.onnx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\yolov5n.onnx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\yolov5s.onnx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.10.0" />
 	<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
-	<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.80.3" />
+	<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.0-preview.155" />
   </ItemGroup>
 
   <ItemGroup>

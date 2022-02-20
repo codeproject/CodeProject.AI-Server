@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="DeepStackAssetsFolder" />
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="DeepStackAssetsComponentGroup">
+            <Component Id="cmp42DB76A448E091DC71C26B1BB8F25B70" Directory="DeepStackAssetsFolder" Guid="*">
+                <File Id="fil18CF26FBD7DC0E81FCD16F9AED069BEE" KeyPath="yes" Source="$(var.ModelsHarvestPath)\categories_places365.txt" />
+            </Component>
+            <Component Id="cmp524FE79C73711F2A39862C7C07F5F603" Directory="DeepStackAssetsFolder" Guid="*">
+                <File Id="filD434BE56B5E953E557336BE0F53FDDAE" KeyPath="yes" Source="$(var.ModelsHarvestPath)\face.pt" />
+            </Component>
+            <Component Id="cmp306217BC3D0903CD3CB495B237FBC988" Directory="DeepStackAssetsFolder" Guid="*">
+                <File Id="fil89DDDD2FBA4154117667D33DE8BFE7EF" KeyPath="yes" Source="$(var.ModelsHarvestPath)\facerec-high.model" />
+            </Component>
+            <Component Id="cmp9DBDF6170E424EE05309FEBBD3F47053" Directory="DeepStackAssetsFolder" Guid="*">
+                <File Id="fil06205218C80783D6CCB4CA279F87AFAF" KeyPath="yes" Source="$(var.ModelsHarvestPath)\face_lite.pt" />
+            </Component>
+            <Component Id="cmp25D87FA9088B584B7CC8DC36CB0F9729" Directory="DeepStackAssetsFolder" Guid="*">
+                <File Id="fil1B0A8A9BF5E55686CCC248EBD0F8256D" KeyPath="yes" Source="$(var.ModelsHarvestPath)\scene.model" />
+            </Component>
+            <Component Id="cmpF0094B8B0810C0FFDBDBA6392C08A5E4" Directory="DeepStackAssetsFolder" Guid="*">
+                <File Id="filD80538062972E6E307E38DC21B488E0D" KeyPath="yes" Source="$(var.ModelsHarvestPath)\scene.pt" />
+            </Component>
+            <Component Id="cmpCB524833B5E49A98DA2FFB76BD6E0892" Directory="DeepStackAssetsFolder" Guid="*">
+                <File Id="fil99D36DAEA25CBCDF07EE933A6035A76D" KeyPath="yes" Source="$(var.ModelsHarvestPath)\yolov5m.pt" />
+            </Component>
+            <Component Id="cmpB9307AC47B951125E0DED88B657EF729" Directory="DeepStackAssetsFolder" Guid="*">
+                <File Id="fil53847F76537BA6F475759C393D4BA80E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\yolov5s.pt" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

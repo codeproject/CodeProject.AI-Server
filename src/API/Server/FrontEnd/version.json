@@ -1,12 +1,13 @@
 {
     "versionSection": {
         "versionInfo": {
-            "Major": 0,
-            "Minor": 2,
-            "Patch": 1,
-            "PreRelease": "Beta2",
+            "Major": 1,
+            "Minor": 0,
+            "Patch": 0,
+            "PreRelease": "Beta",
             "Build": 0,
-            "File": "CodeProject.SenseAI.0.0201.zip"
+            "SecurityUpdate": false,
+            "File": "CodeProject.SenseAI.1.0.0.Beta.zip"
         }
     }
 }

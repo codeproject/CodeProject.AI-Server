@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="SERVERINSTALLFOLDER">
+            <Directory Id="dirDBCED855961F2686DCD7C1B7D75E0458" Name="ref" />
+            <Directory Id="dirC8B2AD31842D5E551E27E438E360BDC4" Name="runtimes" />
+            <Directory Id="dirD7E4C5F4F06B8FFF50A61DE55F9C2F0F" Name="wwwroot" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="FrontendFilesComponentGroup">
+            <Component Id="cmp7008CE731C0E8841C5F2FEF7C8562ADF" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filDE12DA9D759862C0AD5B7ADB0F6AB20F" KeyPath="yes" Source="$(var.Frontend.TargetDir)\appsettings.Development.json" />
+            </Component>
+            <Component Id="cmp5803C33AA46B702A501014E4F1E70CFC" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil1C56E80690C8F0E24320B8CD187A8B4C" KeyPath="yes" Source="$(var.Frontend.TargetDir)\appsettings.json" />
+            </Component>
+            <Component Id="cmp220A034E5AAABEA03789464784910090" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filC67B89C6E8E80EF8E6EDCACFFA501353" KeyPath="yes" Source="$(var.Frontend.TargetDir)\CodeProject.SenseAI.API.Common.dll" />
+            </Component>
+            <Component Id="cmp6D0D20E18B181CED64DE43CA2E4DB28D" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filECD1614546731B7D6BF64EEC8C7DB4AB" KeyPath="yes" Source="$(var.Frontend.TargetDir)\CodeProject.SenseAI.Server.Backend.dll" />
+            </Component>
+            <Component Id="cmpEA9A5B46E62765076736A8C26FEBB811" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil98BA799C2A6F6821321419DE6F8B1385" KeyPath="yes" Source="$(var.Frontend.TargetDir)\CodeProject.SenseAI.Server.deps.json" />
+            </Component>
+            <Component Id="cmp57AFC4473C505E36D36B84E0746CD13F" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filFE0FFE5C0F66EADFDD05CD6C99196F23" KeyPath="yes" Source="$(var.Frontend.TargetDir)\CodeProject.SenseAI.Server.dll" />
+            </Component>
+            <Component Id="cmp0CA80FAA498E6811C4DF098EA791D755" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil6DA808E7E7AA61A565917001FDBE2DD2" KeyPath="yes" Source="$(var.Frontend.TargetDir)\CodeProject.SenseAI.Server.exe" />
+            </Component>
+            <Component Id="cmp4918DD556F9688B1994183208DBB923E" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil2776631711EEED32610DF32B96E645F8" KeyPath="yes" Source="$(var.Frontend.TargetDir)\CodeProject.SenseAI.Server.runtimeconfig.dev.json" />
+            </Component>
+            <Component Id="cmpF82F914E25EEAF08D815148ED9F81997" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil04D5C97B43804D22DE328FA3CA0F2DB9" KeyPath="yes" Source="$(var.Frontend.TargetDir)\CodeProject.SenseAI.Server.runtimeconfig.json" />
+            </Component>
+            <Component Id="cmpFBCF2DCD05A9A748E5874E67715A40DD" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filD49B4F1299C102292676F97C5A4E2510" KeyPath="yes" Source="$(var.Frontend.TargetDir)\CodeProject.SenseAI.Server.xml" />
+            </Component>
+            <Component Id="cmpD7297E59FA1E86DE6F2C75A0C8B0939D" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil2968C35275ECF4C0473F7C05F246D99D" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.AspNetCore.Http.Features.dll" />
+            </Component>
+            <Component Id="cmp059933877D4B66522A9B9A1DDBCCE1DE" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filD27CD2563C006FF8F992BD7CDF6B15FA" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Configuration.Abstractions.dll" />
+            </Component>
+            <Component Id="cmp3AAB53A39B00A3F332B798A383A969A7" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filF4E106A9FA01D9F8ECA24C3787D641AF" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Configuration.Binder.dll" />
+            </Component>
+            <Component Id="cmpEF38156A7208FF51E67CE4303E700CAA" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filBD91550934DBCC93BBE0634DF62D1CB1" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Configuration.CommandLine.dll" />
+            </Component>
+            <Component Id="cmp70D061905F818DAC11A6E0F9631A9081" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil810DC0C8A5E0A52904EDBA7AAB7F7CA7" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Configuration.dll" />
+            </Component>
+            <Component Id="cmp0DCA23357D6B90EE499F3C99D2915CAC" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filBCAA3B2B0D25B95F204EAFFD4B230E15" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+            </Component>
+            <Component Id="cmpE2D5DB05BD1A32A4F68B17A413DDD4F0" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil9D38907E6F3A839A1DAE745F409F339E" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Configuration.FileExtensions.dll" />
+            </Component>
+            <Component Id="cmpCE5CE0AFC9C5FD2D973F6ABFCAEAC61C" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil1DB4540988906611E5F02C9940712485" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Configuration.Json.dll" />
+            </Component>
+            <Component Id="cmp9F29FF38F10A8805C8224158C018EA95" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filB2792DE7660D9F954BD5ADA67F1C4EEA" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Configuration.UserSecrets.dll" />
+            </Component>
+            <Component Id="cmpA6266A4FB1B469324D012DD991429D8D" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil45B486D2E748CAC86ED2096D182CB761" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+            </Component>
+            <Component Id="cmp076B6257F66EDD775EF7E99843CB9DE9" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filF1D61ECD372EDDCBB0F5F03BDF973FE2" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.DependencyInjection.dll" />
+            </Component>
+            <Component Id="cmp770BD96E4F5614450337926B95EB4B0D" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filCE74E0AF0D5AFD7A82BF191D50335FD8" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.FileProviders.Abstractions.dll" />
+            </Component>
+            <Component Id="cmpBC25DDDE534041BA45BF7FCA08C25ECF" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filEFEDAB24CAB5CF38E8E6A0540C077DA1" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.FileProviders.Physical.dll" />
+            </Component>
+            <Component Id="cmp6B327F9D27F514255D21CFCD43F2AF7E" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil48BCD6802D7F535FF94EF08BD3E3FA86" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.FileSystemGlobbing.dll" />
+            </Component>
+            <Component Id="cmp0E991657A223C2F38A7073756C902714" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filDE2A3A2450113B732F745263867E7A8F" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Hosting.Abstractions.dll" />
+            </Component>
+            <Component Id="cmp3949F92771707872D648B0B33E6A45ED" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filE508072CD3CD40C13372DBD64CB12404" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Hosting.dll" />
+            </Component>
+            <Component Id="cmpDDBAB87023F26005C9C618AFCE009383" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil1364A1A251AAD3E8281AE5757B4326FA" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Hosting.Systemd.dll" />
+            </Component>
+            <Component Id="cmpDA22C888814EAB0577BDCCB650BCDAF7" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil9A2C399077EDE077CC6CDDB5D0660BC1" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Hosting.WindowsServices.dll" />
+            </Component>
+            <Component Id="cmpAF3F4686F9F481ABBBAF973B1F605992" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil89DAB2E31F3C3CABDA8D5144B7BA47E7" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Logging.Abstractions.dll" />
+            </Component>
+            <Component Id="cmpA13467419EFF6AF20538E2FDA9624F5D" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil7886C52DEBBFE45F3C8F77B337D65796" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Logging.Configuration.dll" />
+            </Component>
+            <Component Id="cmp2049D2CB55821F8AD86885DBC1642E80" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filF8642B4E11DAE91F2D863D95CC9484B0" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Logging.Console.dll" />
+            </Component>
+            <Component Id="cmpC85CF86145FB025C2A216210A996C6EF" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil65E57BB4BD907FDA93C2C40B2ADC8A4B" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Logging.Debug.dll" />
+            </Component>
+            <Component Id="cmp51D54B523591E0D172E5E88DC113C318" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil918995B3DEBC175473D378AF0CAFDBB0" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Logging.dll" />
+            </Component>
+            <Component Id="cmpC7F1BC9EB26F44582BECD1DF17E9FAE4" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filBAECF0A96E8D8565DED65C439D6996FA" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Logging.EventLog.dll" />
+            </Component>
+            <Component Id="cmpC93FB5418110C83BD952A48150F6D630" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filE2D7F75996EF0051986C2807CBD94FAA" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Logging.EventSource.dll" />
+            </Component>
+            <Component Id="cmpB50421C668A810174985010F1ECA5487" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil2D3C57644B4B297107342A47DBAEE4E0" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
+            </Component>
+            <Component Id="cmp569BBD5A98D4B1C026884DC37C83A8CB" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filCD217CE1AEAD1205A767FC4D236DCC37" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Options.dll" />
+            </Component>
+            <Component Id="cmpD87865CBD3980A9DBB98189D956DDEA5" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filD16D178345090408EFC37E61A1434B6E" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Extensions.Primitives.dll" />
+            </Component>
+            <Component Id="cmpEB84062592B28584429ED8FDAF15F11C" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil0A6EB867C1F428179A92EED283E261E6" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.OpenApi.dll" />
+            </Component>
+            <Component Id="cmp72F2D22768A6B9EE09E58487BAD70C37" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filB22C577B7522FC9EFDF64746D85E36EC" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Swashbuckle.AspNetCore.Swagger.dll" />
+            </Component>
+            <Component Id="cmp226C4A1B43C721245EEE8DFB939CC961" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil3A1FF555AF6D10CC2679DCFA34E6B336" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Swashbuckle.AspNetCore.SwaggerGen.dll" />
+            </Component>
+            <Component Id="cmp9764C37FF9A2750CEBB863D42DA8EC27" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil45006DE25A2AC18D65BC7051EEBF856F" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Swashbuckle.AspNetCore.SwaggerUI.dll" />
+            </Component>
+            <Component Id="cmpFCBDBD07041675551B120334A4BD2EB2" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil44490F2049ACF5DD51E33BBC54EAF081" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.Diagnostics.DiagnosticSource.dll" />
+            </Component>
+            <Component Id="cmp5E052994C728C62FBE292E18EDED7FBE" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filFEEC16131FE36022D045DC4F68C9BCEC" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.Diagnostics.EventLog.dll" />
+            </Component>
+            <Component Id="cmp97CA9489670CDD3A2CEE003AC33DD706" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil80B88CB9E8A9FA8E3179B8BBBF645ABA" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.IO.Pipelines.dll" />
+            </Component>
+            <Component Id="cmp02C5B763BEA4ADF90586CFE278D0DC81" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil238267AB4A3C6CC13D485EDE8BF19650" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.Runtime.CompilerServices.Unsafe.dll" />
+            </Component>
+            <Component Id="cmpD7B4F025CCA8DD849121055AC5E276F8" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil6E1E341E965E4284BC6076D89876832A" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.ServiceProcess.ServiceController.dll" />
+            </Component>
+            <Component Id="cmp8EBBD980D1077353D3A6324527DCF4F2" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filC795CDC82307686B0A2CDB05187D4089" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.Text.Encodings.Web.dll" />
+            </Component>
+            <Component Id="cmp1D9AB72400AF092B6810DBAD53B62DD4" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil156B65F28A5EA94D8BA82C105DA00804" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.Text.Json.dll" />
+            </Component>
+            <Component Id="cmpE9601446720DC970A7E6EE6025904779" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="filF96FCB6DBBC3E6B69C6CE2F9414A409F" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.Threading.Channels.dll" />
+            </Component>
+            <Component Id="cmpFFB91CE68AE866C4BED3B4A7B3C71CFF" Directory="SERVERINSTALLFOLDER" Guid="*">
+                <File Id="fil6952DB343E31DBF99CBCFEF4C8B15D7F" KeyPath="yes" Source="$(var.Frontend.TargetDir)\version.json" />
+            </Component>
+            <Component Id="cmpAC0ED985B001625E0298904310294B25" Directory="dirDBCED855961F2686DCD7C1B7D75E0458" Guid="*">
+                <File Id="fil56AEF9CF4B09789621B13C7CA9E5EEF5" KeyPath="yes" Source="$(var.Frontend.TargetDir)\ref\CodeProject.SenseAI.Server.dll" />
+            </Component>
+            <Component Id="cmp4A656274BA55FEF7902ACD9170D475CB" Directory="dir58D372F7D7838D5012B087573C7D439B" Guid="*">
+                <File Id="filCDD3F53841697CA8BFAEB2B958EFFAF1" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win\lib\netcoreapp3.1\System.Diagnostics.EventLog.dll" />
+            </Component>
+            <Component Id="cmp75952B265A19AD30F02B5AD12B867896" Directory="dir58D372F7D7838D5012B087573C7D439B" Guid="*">
+                <File Id="fil330B91AA5099BAD86B6FC6874C883F63" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win\lib\netcoreapp3.1\System.Diagnostics.EventLog.Messages.dll" />
+            </Component>
+            <Component Id="cmp9E784777C9629C4034DB4021E6E3D8AB" Directory="dir58D372F7D7838D5012B087573C7D439B" Guid="*">
+                <File Id="fil4A49F4B7D558508D4D15CEADB4D1F745" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win\lib\netcoreapp3.1\System.ServiceProcess.ServiceController.dll" />
+            </Component>
+            <Component Id="cmpA890CBC2BD57782188072A6DB87727E9" Directory="dirD7E4C5F4F06B8FFF50A61DE55F9C2F0F" Guid="*">
+                <File Id="fil12BAB13EA1A2D754129A00350C9D4503" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\Index.html" />
+            </Component>
+            <Component Id="cmpFA6C7CE78DA24780B82AC5D8E6389D14" Directory="dirD7E4C5F4F06B8FFF50A61DE55F9C2F0F" Guid="*">
+                <File Id="fil9B2451AC3773DE6320150B68CD491391" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\Vision.html" />
+            </Component>
+            <Component Id="cmp6B2C3125F86747E343F0A331047150C6" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="fil9869F9D84FF352D1BF8DD8B6CE54402E" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\apexcharts.css" />
+            </Component>
+            <Component Id="cmpEA7C84CCEB23FD35C460F6B616907D19" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="fil7922A8C61B59B266CEAC51768C658C43" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\apexcharts.min.js" />
+            </Component>
+            <Component Id="cmp32AD3CAEF9CEB424EDE9731D27B66159" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="fil4C06BC8DC71A56C95342AD026C98059E" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\bootstrap.bundle.min.js" />
+            </Component>
+            <Component Id="cmpF620831B1A45F0D25E4626D08F0C6F3E" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="fil97B4EE570F5B67C1449B4EF713E9DD18" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\bootstrap.min.css" />
+            </Component>
+            <Component Id="cmp71AA9CA0287103F2C3C3E7ED9B9F7A3B" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="filB1A438355A7C029FE8EB97C2335231BA" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\codeproject60x60.png" />
+            </Component>
+            <Component Id="cmpCFF6C3E1B8F4A00978EA0586CF47EDAA" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="filA7378391D93FBD601B2F3A44536177B0" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\favicon-16x16.png" />
+            </Component>
+            <Component Id="cmp1A296569CB5566E97C17B0F568ED6B99" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="fil26643F8015B73619F9B52B4F1390E793" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\favicon-32x32.png" />
+            </Component>
+            <Component Id="cmpA9BDBA5EF3190A0862E3D928D0B6774E" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="filA7A2BBAADBDEDE67E5609E15B1C9AB21" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\logo135-bg.gif" />
+            </Component>
+            <Component Id="cmp3874C4EF836CC1953FB32A03339606ED" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="fil4DF0FEE6E413608B4ABF25AE82C58CE8" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\logo250x135.gif" />
+            </Component>
+            <Component Id="cmpF7B926AB96EEBFBD0AABBF4ECFF791EB" Directory="dir9A7406F9130C4A59BEEA35826C8798D5" Guid="*">
+                <File Id="fil2BABE106D2B5EB86022BC22B1FA190E8" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\styles.css" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirC8B2AD31842D5E551E27E438E360BDC4">
+            <Directory Id="dir0245EA6411AC9AA5A52B9A8993B6FC25" Name="win" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir0245EA6411AC9AA5A52B9A8993B6FC25">
+            <Directory Id="dir1B28B0CA73761201569CA86C84E69603" Name="lib" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir1B28B0CA73761201569CA86C84E69603">
+            <Directory Id="dir58D372F7D7838D5012B087573C7D439B" Name="netcoreapp3.1" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirD7E4C5F4F06B8FFF50A61DE55F9C2F0F">
+            <Directory Id="dir9A7406F9130C4A59BEEA35826C8798D5" Name="assets" />
+        </DirectoryRef>
+    </Fragment>
+</Wix>

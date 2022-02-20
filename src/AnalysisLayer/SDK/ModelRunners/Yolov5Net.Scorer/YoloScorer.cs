@@ -74,9 +74,9 @@ namespace Yolov5Net.Scorer
             {
                 graphics.Clear(Color.FromArgb(0, 0, 0, 0)); // clear canvas
 
-                graphics.SmoothingMode = SmoothingMode.None; // no smoothing
+                graphics.SmoothingMode     = SmoothingMode.None;         // no smoothing
                 graphics.InterpolationMode = InterpolationMode.Bilinear; // bilinear interpolation
-                graphics.PixelOffsetMode = PixelOffsetMode.Half; // half pixel offset
+                graphics.PixelOffsetMode   = PixelOffsetMode.Half;       // half pixel offset
 
                 graphics.DrawImage(image, roi); // draw scaled
             }

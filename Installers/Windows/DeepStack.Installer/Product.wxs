@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="bc1bbdda-96df-4810-8cf8-993494feaf5d" 
+			 Name="CodeProject SenseAI Legacy AI Modules" 
+			 Language="1033" 
+			 Version="1.0.0.0" 
+			 Manufacturer="CodeProject" 
+			 UpgradeCode="1ff8d713-9056-40b3-99d7-5eda4001cd64">
+		
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+		<MediaTemplate EmbedCab="yes" />
+		<?include ..\SharedUIConfiguration.wxi ?>
+		
+		<Feature Id="LegacyAIFeature" Title="Legacy AI Modules" Level="1">
+			<ComponentGroupRef Id="DeepStackFilesComponentGroup" />
+		</Feature>
+
+		<CustomAction Id="CreateVenvCmd" 
+					  Directory="DEEPSTACKINSTALLFOLDER"
+					  ExeCommand='"[DEEPSTACKINSTALLFOLDER]Python37\Python.exe" -m venv "[DEEPSTACKINSTALLFOLDER]venv"' 
+					  Execute='deferred'
+					  Return='ignore'
+					  Impersonate='yes'/>
+
+		<CustomAction Id="PipUpgradeCmd"
+					  Directory="DEEPSTACKINSTALLFOLDER"
+					  ExeCommand='"[DEEPSTACKINSTALLFOLDER]venv\scripts\pip.exe" install --upgrade pip"'
+					  Execute='deferred'
+					  Return='ignore'
+					  Impersonate='yes'/>
+
+		<CustomAction Id="PipPackagesCmd"
+					  Directory="DEEPSTACKINSTALLFOLDER"
+					  ExeCommand='"[DEEPSTACKINSTALLFOLDER]venv\scripts\pip.exe" install -r "[DEEPSTACKINSTALLFOLDER]intelligenceLayer\requirements.txt"'
+					  Execute='deferred'
+					  Return='ignore'
+					  Impersonate='yes'/>
+
+		<CustomAction Id="RemoveVenvCmd" 
+					  Directory="DEEPSTACKINSTALLFOLDER"
+					  ExeCommand='cmd /C rmdir /s /q venv' 
+					  Execute='deferred'
+					  Return='ignore'
+					  Impersonate='yes'/>		
+		
+		<InstallExecuteSequence>
+			<Custom Action='PipUpgradeCmd' Before='InstallFinalize'>NOT Installed</Custom>
+			<Custom Action='CreateVenvCmd' After='PipUpgradeCmd'>NOT Installed</Custom>
+			<Custom Action='PipPackagesCmd' After='CreateVenvCmd'>NOT Installed</Custom>
+			<Custom Action='RemoveVenvCmd' Before='RemoveFiles'>REMOVE="ALL"</Custom>
+		</InstallExecuteSequence>
+
+		<UI>
+			<ProgressText Action='PipUpgradeCmd'>Updgrading Pip ... </ProgressText>
+			<ProgressText Action='CreateVenvCmd'>Creating a Python Virtual Environment ... </ProgressText>
+			<ProgressText Action='PipPackagesCmd'>Installing required Python Packages ... (This will take several minutes)</ProgressText>
+		</UI>
+
+	</Product>
+	<?include ..\SharedDirectories.wxi ?>
+</Wix>
