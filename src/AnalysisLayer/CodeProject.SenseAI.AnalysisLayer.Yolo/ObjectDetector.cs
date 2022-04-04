@@ -29,7 +29,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             string path = AppContext.BaseDirectory;
 #if DEBUG
             _logger.LogInformation($"Yolo Execution Path: {path}");
-            if (!Directory.Exists(Path.Combine(path, "Assets")))
+            if (!Directory.Exists(Path.Combine(path, "assets")))
             {
                 // We have been started by the Frontend in debug mode. Look for the assets in the
                 // project root. Move up from bin\debug\netX.0
@@ -39,9 +39,9 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             string mode = config.GetValue<string>("MODE");
             string modelPath = (mode ?? string.Empty.ToLower()) switch
             {
-                "low"  => "Assets/yolov5n.onnx",
-                "high" => "Assets/yolov5m.onnx",
-                _      => "Assets/yolov5s.onnx"
+                "low"  => "assets/yolov5n.onnx",
+                "high" => "assets/yolov5m.onnx",
+                _      => "assets/yolov5s.onnx"
             };
 
             try

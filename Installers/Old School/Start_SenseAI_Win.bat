@@ -87,7 +87,7 @@ call :WriteLine Green "Done"
 :: In case the installation has been moved to a different directory after installation
 :: CodeProject SenseAI API Server
 set CPSENSEAI_ROOTDIR=%cd%
-:: Modules: Deepstack specific
+:: Modules: DeepStack specific
 set APPDIR=!CPSENSEAI_ROOTDIR!\!CPSENSEAI_APPDIR!\!CPSENSEAI_ANALYSISDIR!\DeepStack\intelligencelayer
 set DATA_DIR=!CPSENSEAI_ROOTDIR!\!CPSENSEAI_APPDIR!\!CPSENSEAI_ANALYSISDIR!\DeepStack\datastore
 set TEMP_PATH=!CPSENSEAI_ROOTDIR!\!CPSENSEAI_APPDIR!\!CPSENSEAI_ANALYSISDIR!\DeepStack\tempstore

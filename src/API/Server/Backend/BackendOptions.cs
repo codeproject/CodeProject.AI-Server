@@ -18,6 +18,6 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// </summary>
         public int MaxQueueLength { get; set; } = 20;
 
-        public string ImageTempDir { get; set; } = "CodeProject AI Temp Images";
+        public string ImageTempDir { get; set; } = "CodeProject.SenseAI.TempImages";
     }
 }

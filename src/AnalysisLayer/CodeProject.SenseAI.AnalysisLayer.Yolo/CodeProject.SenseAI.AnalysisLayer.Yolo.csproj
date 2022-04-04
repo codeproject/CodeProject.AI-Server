@@ -1,17 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
 	<PropertyGroup>
-		<TargetFramework>net5.0</TargetFramework>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <!--<RuntimeIdentifiers>win-x64,linux-x64</RuntimeIdentifiers>-->
-    <Nullable>enable</Nullable>
+		<TargetFramework>net6.0</TargetFramework>
+		<!--<RuntimeIdentifier>win-x64</RuntimeIdentifier>-->
+        <Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<RootNamespace>CodeProject.SenseAI.AnalysisLayer.Yolo</RootNamespace>
 		<AssemblyName>CodeProject.SenseAI.AnalysisLayer.Yolo</AssemblyName>
+		<Version>1.1.0.0</Version>
 		<UserSecretsId>dotnet-CodeProject.SenseAI.AnalysisLayer.Yolo-384BE45C-AAED-42BA-9DDB-EF37356B630F</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<DockerfileContext>..\..\..</DockerfileContext>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
 	</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>none</DebugType>
@@ -38,14 +39,20 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.10.0" />
 	<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
-	<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.0-preview.155" />
+	<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.0-preview.209" />
+	<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.0-preview.209" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\API\Server\Backend\Backend.csproj" />
     <ProjectReference Include="..\SDK\ModelRunners\Yolov5Net.Scorer\Yolov5Net.Scorer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="runtimeconfig.template.json">
+      <Generator>SettingsSingleFileGenerator</Generator>
+    </Content>
   </ItemGroup>
 
 </Project>

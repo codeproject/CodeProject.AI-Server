@@ -87,9 +87,11 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             _config           = config;
             _logger           = logger;
             _queueServices    = queueServices;
+
+            // ApplicationDataDir is set in Program.cs and added to an InMemoryCollection config set.
             _appDataDirectory = config.GetValue<string>("ApplicationDataDir");
 
-            ExpandOptions();
+            ExpandMacros();
             BuildBackendEnvironmentVar();
         }
 
@@ -105,17 +107,6 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         {
             _logger.LogInformation("BackendProcessRunner Stop");
 
-            /*
-            foreach (var process in _runningProcesses)
-            {
-                if (!process.HasExited)
-                {
-                    _logger.LogInformation($"Killing process: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
-                    process.Kill(true);
-                }
-            }
-            */
-
             // Doing the above in Parallel speeds things up
             Parallel.ForEach(_runningProcesses.Where(x => !x.HasExited), process =>
             {
@@ -124,20 +115,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 process.Kill(true);
             });
 
-            /* Not need at this point
-            foreach (var cmdInfo in _options.StartupProcesses)
-            {
-                cmdInfo.Running = false;
-            }
-            */
-
             return base.StopAsync(cancellationToken);
         }
 
         /// <inheritdoc></inheritdoc>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            bool loggerIsValid = true;// You just never know, right?
+        {        
+            bool loggerIsValid = true; // You just never know, right?
 
             try
             {
@@ -156,6 +140,14 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 loggerIsValid = false;
             }
 
+            bool launchAnalysisServices = _config.GetValue("LaunchAnalysisServices", true);
+            if (!launchAnalysisServices)
+            {
+                _logger.LogInformation("Skipping Background AI Modules startup");
+                Logger.Log("Skipping Background AI Modules startup");
+                return;
+            }
+
             // Let's make sure the front end is up and running before we start the backend 
             // analysis services
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
@@ -163,9 +155,12 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             if (loggerIsValid)
             {
                 _logger.LogInformation($"Root Path:      {_options.ROOT_PATH}");
-                _logger.LogInformation($"Module Path:    {_options.MODULES_PATH} [full: {Path.GetFullPath(_options.MODULES_PATH!)}]");
+                _logger.LogInformation($"Module Path:    {_options.MODULES_PATH}");
                 _logger.LogInformation($"Python3.7 Path: {_options.PYTHON37_PATH}");
-                Logger.Log($"Root path is {_options.ROOT_PATH}");
+                _logger.LogInformation($"Image Temp Dir: {Path.GetTempPath()}");
+                
+                Logger.Log($"App directory {_options.ROOT_PATH}");
+                Logger.Log($"Analysis modules in {_options.MODULES_PATH}");
             }
 
             foreach (var cmdInfo in _options.StartupProcesses!)
@@ -176,7 +171,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     break;
 
                 bool activate = cmdInfo.Activate ?? false;
-                bool enabled = activate;
+                bool enabled  = activate;
                 foreach (var envVar in cmdInfo.EnableFlags)
                     enabled = enabled || _config.GetValue(envVar, false);
 
@@ -193,9 +188,14 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 {
                     // _logger.LogError($"Starting {cmdInfo.Command}");
 
-                    ProcessStartInfo? procStartInfo = new($"\"{cmdInfo.Command}\"", $"\"{cmdInfo.Args ?? ""}\"")
+                    // ProcessStartInfo? procStartInfo = new ProcessStartInfo($"\"{cmdInfo.Command}\"", $"\"{cmdInfo.Args ?? ""}\"")
+                    ProcessStartInfo? procStartInfo = new ProcessStartInfo($"{cmdInfo.Command}", $"{cmdInfo.Args ?? ""}")
                     {
-                        UseShellExecute = false
+                        UseShellExecute  = false,
+                        WorkingDirectory = cmdInfo.WorkingDirectory,
+                        CreateNoWindow = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
                     };
 
                     // setup the environment
@@ -210,8 +210,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     try
                     {
                         if (loggerIsValid)
-                            _logger.LogDebug($"Starting {procStartInfo.FileName} {procStartInfo.Arguments}");
-
+                            _logger.LogInformation($"Starting {procStartInfo.FileName} {procStartInfo.Arguments}");
+//#if Windows
                         Process? process = Process.Start(procStartInfo);
                         if (process is not null)
                         {
@@ -227,13 +227,48 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                         {
                             if (loggerIsValid)
                                 _logger.LogError($"Unable to start {cmdInfo.Name} backend");
+
                             Logger.Log($"Unable to start {cmdInfo.Name}");
                         }
+//#else
+//                        Process process = new Process()
+//                        {
+//                            StartInfo = procStartInfo,
+//                        };
+//                        process.OutputDataReceived += (sender, data) => {
+//                            System.Console.WriteLine(data.Data);
+//                        };
+//                        process.ErrorDataReceived += (sender, data) => {
+//                            System.Console.WriteLine(data.Data);
+//                        };
+
+//                        process.Start();
+//                        process.BeginOutputReadLine();
+//                        process.BeginErrorReadLine();
+//                        process.WaitForExit();
+
+//                        if (loggerIsValid)
+//                            _logger.LogInformation($"Started {cmdInfo.Name} backend");
+
+//                        _runningProcesses.Add(process);
+//                        cmdInfo.Running = true;
+
+//                        Logger.Log($"Started {cmdInfo.Name}");                        
+//#endif
                     }
                     catch (Exception ex)
                     {
                         if (loggerIsValid)
-                            _logger.LogError(ex, $"Error trying to start { cmdInfo.Name} backend from {cmdInfo.Command} {cmdInfo.Args}");
+                        {
+                            _logger.LogError(ex, $"Error trying to start { cmdInfo.Name}");
+
+                            Console.WriteLine("-------------------------------------------------");
+                            Console.WriteLine($"Working: {cmdInfo.WorkingDirectory}");
+                            Console.WriteLine($"Command: {cmdInfo.Command}");
+                            Console.WriteLine($"Args:    {cmdInfo.Args}");
+                            Console.WriteLine("-------------------------------------------------");
+                        }
+
                         Logger.Log($"Error running {cmdInfo.Command} {cmdInfo.Args}");
 #if DEBUG
                         if (_platform == "windows")
@@ -252,12 +287,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <summary>
         /// Expands all the directory markers in the options.
         /// </summary>
-        private void ExpandOptions()
+        private void ExpandMacros()
         {
             if (_options is null)
                 return;
 
-            // This is slightly inconvenient
+            //  Wouldn't it be AWESOME if OSPlatform.Windows etc were actual values rather than
+            //  getters so we could use a switch statement.
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 _platform = OSPlatform.Windows.ToString();
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -267,59 +303,116 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
             _platform = _platform.ToLower();
 
+            // Quick Sanity check
+            // Console.WriteLine($"Initial ROOT_PATH = {_options.ROOT_PATH}");
+            // Console.WriteLine($"Initial MODULES_PATH = {_options.MODULES_PATH}");
+            // Console.WriteLine($"Initial PYTHON_BASEPATH = {_options.PYTHON_BASEPATH}");
+            // Console.WriteLine($"Initial PYTHON37_PATH = {_options.PYTHON37_PATH}");
+
             // For Macro expansion in appsettings settings we have PYTHON37_PATH which depends on
             // PYTHON_BASEPATH which usually depends on MODULES_PATH and both depend on ROOT_PATH.
             // Get and expand each of these in the correct order.
 
-            /*
-            // It's assumed that this application will be under the /working-dir/src/API/FrontEnd 
-            // directory, and will either be in the FrontEnd folder directly (Production) or buried
-            // deeeep in the /bin/Debug/net/ etc etc bowels of the folder system. Dig to the surface.
-
-            ** Disablng this because once this is installed in prod the directory structure is very
-               different. Let's stick to hard-coding in appsettings and vigilence for the moment.
-
-            DirectoryInfo currentDir = new(AppContext.BaseDirectory);
-            if (_options.API_DIRNAME != null)
-            {
-                // Grab a shovel and dig up towards the API directory
-                while (currentDir.Parent != null && currentDir.Name.ToLower() != _options.API_DIRNAME.ToLower())
-                    currentDir = currentDir.Parent;
-
-                // Up to the src directory
-                if (currentDir != null && currentDir.Parent != null)
-                    currentDir = currentDir.Parent;
-
-                // Up to the root directory
-                if (currentDir != null && currentDir.Parent != null)
-                    currentDir = currentDir.Parent;
-            }
-
-            if (!string.IsNullOrEmpty(currentDir?.FullName))
-                _options.ROOT_PATH = currentDir?.FullName;
-            else
-                _options.ROOT_PATH   = Path.GetFullPath(_options.ROOT_PATH!);
-            */
-
-            // Be careful with cross platform handling of \ vs /
-            _options.ROOT_PATH       = _options.ROOT_PATH!.Replace('\\', Path.DirectorySeparatorChar);
-            // ROOT_PATH points to the root directory of SenseAI, relative to the current app.
-            // Change this so that it's an actual, physical path.
-            _options.ROOT_PATH       = Path.Combine(AppContext.BaseDirectory, _options.ROOT_PATH!);
-            // GetFullPath converts ".."'s to the correct relative path
-            _options.ROOT_PATH       = Path.GetFullPath(_options.ROOT_PATH); 
-                            
+            _options.ROOT_PATH       = GetRootPath(_options.ROOT_PATH);
+            _options.MODULES_PATH    = Path.GetFullPath(ExpandOption(_options.MODULES_PATH)!);
             _options.PYTHON_BASEPATH = Path.GetFullPath(ExpandOption(_options.PYTHON_BASEPATH)!);
             _options.PYTHON37_PATH   = Path.GetFullPath(ExpandOption(_options.PYTHON37_PATH)!);
+
+            Console.WriteLine("------------------------------------------------------------------");
+            Console.WriteLine($"Expanded ROOT_PATH = {_options.ROOT_PATH}");
+            Console.WriteLine($"Expanded MODULES_PATH = {_options.MODULES_PATH}");
+            Console.WriteLine($"Expanded PYTHON_BASEPATH = {_options.PYTHON_BASEPATH}");
+            Console.WriteLine($"Expanded PYTHON37_PATH = {_options.PYTHON37_PATH}");
+            Console.WriteLine("------------------------------------------------------------------");
 
             if (_options.StartupProcesses is not null)
             {
                 foreach (var backend in _options.StartupProcesses)
                 {
-                    backend.Command = ExpandOption(backend.Command);
-                    backend.Args    = ExpandOption(backend.Args);
+                    backend.Command          = ExpandOption(backend.Command);
+                    backend.WorkingDirectory = ExpandOption(backend.WorkingDirectory);
+                    backend.Args             = ExpandOption(backend.Args);
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the directory that is the root of this system. 
+        /// </summary>
+        /// <param name="configRootPath">The root path specified in the config file.
+        /// assumptions</param>
+        /// <returns>A string</returns>
+        private string GetRootPath(string? configRootPath)
+        {
+            string defaultPath = configRootPath ?? AppContext.BaseDirectory;
+            // Correct for cross platform (win = \, linux = /)
+            defaultPath = defaultPath.Replace('\\', Path.DirectorySeparatorChar);
+
+            // Either the config file or lets assume it's the current dir if all else fails
+            string rootPath = defaultPath;
+
+            // If the config value is a relative path then add it to the current dir. This is where
+            // we have to trust the config values are right, and we also have to trust that when
+            // this server is called the "ASPNETCORE_ENVIRONMENT" flag is set as necessary in order
+            // to ensure the appsettings.Development.json config files are includwed
+            if (rootPath.StartsWith(".."))
+                rootPath = Path.Combine(AppContext.BaseDirectory, rootPath!);
+
+            // converts relative URLs and squashes the path to he correct absolute path
+            rootPath = Path.GetFullPath(rootPath); 
+            return rootPath;
+
+            /* ALTERNATIVE: We can dynamically hunt for the correct path if we're in the mood.
+
+            // If we're in Development then we can dynamically find the correct root path. But this
+            // is fragile and a Really Bad Idea. Trust configuration values. The are adaptable.
+            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            if (aspNetEnv != null && aspNetEnv == "Development")
+            {
+                // In dev we assume the application will be under the /working-dir/src/API/FrontEnd/
+                // directory, buried deeeep in the /bin/Debug/net/ etc etc bowels of the folder
+                // system. Dig to the surface.
+
+                DirectoryInfo currentDir = new(AppContext.BaseDirectory);
+                if (_options.API_DIRNAME != null)
+                {
+                    // Grab a shovel and dig up towards the API directory
+                    while (currentDir.Parent != null &&
+                        currentDir.Name.ToLower() != _options.API_DIRNAME.ToLower())
+                    {
+                        currentDir = currentDir.Parent;
+                    }
+
+                    // Up to the src directory
+                    if (currentDir != null && currentDir.Parent != null)
+                        currentDir = currentDir.Parent;
+
+                    // Up to the root directory
+                    if (currentDir != null && currentDir.Parent != null)
+                        currentDir = currentDir.Parent;
+                }
+
+                if (string.IsNullOrEmpty(currentDir?.FullName)) // No luck. Fall back to default.
+                    rootPath = defaultPath;
+                else
+                    rootPath = currentDir.FullName;
+            }
+            else
+            {
+                // Check if the app's launch directory is "Server" meaning we're in production
+                DirectoryInfo currentDir = new(AppContext.BaseDirectory);
+                if (currentDir.Name.ToLower() == _options.SERVEREXE_DIRNAME && currentDir.Parent != null)
+                    rootPath = currentDir.Parent.FullName;
+                else
+                    rootPath = defaultPath;
+            }
+
+            if (rootPath.StartsWith(".."))
+                rootPath = Path.Combine(AppContext.BaseDirectory, rootPath!);
+
+            rootPath = Path.GetFullPath(rootPath); // converts ".."'s to the correct relative path
+            return rootPath;
+            */
         }
 
         /// <summary>
@@ -360,10 +453,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 // permission. So: have the writes done in a spot where we know we have permission.
                 _backendEnvironmentVars["DATA_DIR"] = _appDataDirectory;
 
+                Console.WriteLine("Setting Environment variables");
+                Console.WriteLine("------------------------------------------------------------------");
                 foreach (var envVar in _backendEnvironmentVars)
                 {
-                    _logger.LogDebug($"[{envVar.Key}] = [{envVar.Value}]");
+                    Console.WriteLine($"{envVar.Key.PadRight(16)} = {envVar.Value}");
                 }
+                Console.WriteLine("------------------------------------------------------------------");
             }
         }
     }

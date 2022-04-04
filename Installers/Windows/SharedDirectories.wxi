@@ -3,20 +3,25 @@
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFiles64Folder">
+
 				<Directory Id="CodeProjectInstallFolder" Name="CodeProject">
 					<Directory Id="CodeProjectSenseAiInstallFolder" Name="SenseAI">
 						<Directory Id="TestDataFolder" Name="TestData"/>
-						<Directory Id="SERVERINSTALLFOLDER" Name="Server" />
+						<Directory Id="ServerInstallFolder" Name="Server" />
 						<Directory Id="AnalysisLayerInstallFolder" Name="AnalysisLayer">
-							<Directory Id="YOLONETINSTALLFOLDER" Name="CodeProject.SenseAI.AnalysisLayer.Yolo">
-								<Directory Id="YOLONETMODELSFOLDER" Name="assets"/>
+							<Directory Id="AnalysisBinFolder" Name="bin">
+								<Directory Id="Python37Folder" Name="Python37">
+									<Directory Id="Python37VenvFolder" Name="venv" />
+								</Directory>
 							</Directory>
-							<Directory Id="DEEPSTACKINSTALLFOLDER" Name="DeepStack">
+							<Directory Id="YoloNetInstallFolder" Name="CodeProject.SenseAI.AnalysisLayer.Yolo">
+								<Directory Id="YoloNetModelsFolder" Name="assets"/>
+							</Directory>
+							<Directory Id="DeepStackInstallFolder" Name="DeepStack">
 								<Directory Id="DeepStackIntelligenceLayerFolder" Name="IntelligenceLayer" />
 								<Directory Id="DeepStackAssetsFolder" Name="assets" />
-								<Directory Id="DeepStackPython37Folder" Name="Python37" />
-								<Directory Id="DeepStackVirtualEnvironmentFolder" Name="venv" />
 							</Directory>
+							<Directory Id="TextSummaryInstallFolder" Name="TextSummary" />
 						</Directory>
 						<Directory Id="DesktopFolder" />
 					</Directory>
@@ -25,8 +30,8 @@
 
 			<Directory Id="CommonAppDataFolder" >
 				<Directory Id="CodeProjectDataFolder" Name="CodeProject">
-					<Directory Id="CodeProjectSenseAiDataFolder" Name="SenseAI">
-						<Directory Id="SERVERDATAFOLDER" Name="Server" />
+					<Directory Id="CodeProjectSenseAiServerDataFolder" Name="SenseAI">
+						<Directory Id="SenseAiServerDataFolder" Name="Server" />
 					</Directory>
 				</Directory>
 			</Directory>

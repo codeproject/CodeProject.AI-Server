@@ -45,6 +45,8 @@ namespace CodeProject.SenseAI.API.Common
         /// <param name="message">The message for the log entry</param>
         public static void Log(string message)
         {
+            // Console.WriteLine($"{DateTime.Now.ToShortTimeString()}: {message}");
+
             lock (_lock)
             {
                 while (_logs.Count > MaxLogEntries)

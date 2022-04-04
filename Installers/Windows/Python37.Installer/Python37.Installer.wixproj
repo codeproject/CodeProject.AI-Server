@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>3f34eaee-8a53-40d1-8cdb-a13ae728fa06</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>Python37.Installer</OutputName>
+    <OutputName>CodeProject.SenseAI.Python37-1.1.0</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -45,7 +45,7 @@
     <!--<DefineConstants Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">HarvestPath=..\distribution\Release</DefineConstants>-->
   </PropertyGroup>
   <Target Name="BeforeBuild">
-    <HeatDirectory OutputFile="$(ProjectDir)\Python37Files.wxs" Directory="..\..\..\install\downloads\Python37" ComponentGroupName="PythonFilesComponentGroup" DirectoryRefId="DeepStackPython37Folder" AutogenerateGuids="true" PreprocessorVariable="var.ModelsHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
+    <HeatDirectory RunAsSeparateProcess="$(RunWixToolsOutOfProc)" OutputFile="$(ProjectDir)\Python37Files.wxs" Directory="..\..\..\install\downloads\Python37" ComponentGroupName="PythonFilesComponentGroup" DirectoryRefId="Python37Folder" AutogenerateGuids="true" PreprocessorVariable="var.ModelsHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

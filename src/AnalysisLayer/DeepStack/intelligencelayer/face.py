@@ -1,6 +1,9 @@
 ## import _thread as thread
 ## from multiprocessing import Process
 
+from senseAI import SenseAIBackend # will also set the python packages path correctly
+senseAI = SenseAIBackend()
+
 import threading
 
 import ast
@@ -13,7 +16,7 @@ import time
 import warnings
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-from shared import SharedOptions, FrontendClient
+from shared import SharedOptions
 
 # TODO: Currently doesn't exist. The Python venv is setup at install time for a single platform in
 # order to reduce downloads. Having the ability to switch profiles at runtime will be added, but
@@ -51,8 +54,6 @@ def init_db():
 
 master_face_map = {"map": {}}
 facemap         = {}
-
-frontendClient = FrontendClient()
 
 def load_faces():
 
@@ -126,7 +127,7 @@ def face(thread_name, delay):
 
     while True:
 
-        queue = frontendClient.getCommand(IMAGE_QUEUE);
+        queue = senseAI.getCommand(IMAGE_QUEUE);
 
         if len(queue) > 0:
 
@@ -138,7 +139,7 @@ def face(thread_name, delay):
                 req_id    = req_data["reqid"]
 
                 if task_type == "detect":
-                    timer = frontendClient.startTimer("Face Detection")
+                    timer = senseAI.startTimer("Face Detection")
                     img_id = req_data["imgid"]
  #                   img_path = os.path.join(SharedOptions.TEMP_PATH, img_id)
                     img_path = img_id
@@ -172,7 +173,7 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "invalid image",
@@ -181,7 +182,7 @@ def face(thread_name, delay):
 
                     except Exception:
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "error occured on the server",
@@ -189,13 +190,13 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        frontendClient.endTimer(timer)
-                        frontendClient.sendResponse(req_id, json.dumps(output))
+                        senseAI.endTimer(timer)
+                        senseAI.sendResponse(req_id, json.dumps(output))
                         if os.path.exists(img_path):
                             os.remove(img_path)
 
                 elif task_type == "register":
-                    timer = frontendClient.startTimer("Face Register")
+                    timer = senseAI.startTimer("Face Register")
 
                     try:
 
@@ -243,7 +244,7 @@ def face(thread_name, delay):
                                 "error": "no face detected",
                                 "code": 400,
                             }
-                            frontendClient.sendResponse(req_id, json.dumps(output))
+                            senseAI.sendResponse(req_id, json.dumps(output))
                             continue
 
                         img_embeddings = faceclassifier.predict(batch).cpu()
@@ -278,7 +279,7 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "invalid image",
@@ -288,7 +289,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -297,14 +298,14 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        frontendClient.endTimer(timer)
-                        frontendClient.sendResponse(req_id, json.dumps(output))
+                        senseAI.endTimer(timer)
+                        senseAI.sendResponse(req_id, json.dumps(output))
                         for img_id in user_images:
                             if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , img_id)):
                                 os.remove(os.path.join(SharedOptions.TEMP_PATH , img_id))
 
                 elif task_type == "list":
-                    timer = frontendClient.startTimer("Face List Registrations")
+                    timer = senseAI.startTimer("Face List Registrations")
 
                     try:                        
                         conn = sqlite3.connect(databaseFilePath)
@@ -325,7 +326,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -334,13 +335,13 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        frontendClient.endTimer(timer)
-                        frontendClient.sendResponse(req_id, json.dumps(output))
+                        senseAI.endTimer(timer)
+                        senseAI.sendResponse(req_id, json.dumps(output))
 
                 elif task_type == "delete":
 
                     try:
-                        timer = frontendClient.startTimer("Face Registration Delete")
+                        timer = senseAI.startTimer("Face Registration Delete")
 
                         user_id = req_data["userid"]
                         
@@ -359,7 +360,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -368,11 +369,11 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        frontendClient.endTimer(timer)
-                        frontendClient.sendResponse(req_id, json.dumps(output))
+                        senseAI.endTimer(timer)
+                        senseAI.sendResponse(req_id, json.dumps(output))
 
                 elif task_type == "recognize":
-                    timer = frontendClient.startTimer("Face Recognise")
+                    timer = senseAI.startTimer("Face Recognise")
 
                     try:
 
@@ -521,7 +522,7 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -532,7 +533,7 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -541,14 +542,14 @@ def face(thread_name, delay):
                         }
 
                     finally:
-                        frontendClient.endTimer(timer)
-                        frontendClient.sendResponse(req_id, json.dumps(output))
+                        senseAI.endTimer(timer)
+                        senseAI.sendResponse(req_id, json.dumps(output))
 
                         if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , img_id)):
                             os.remove(os.path.join(SharedOptions.TEMP_PATH , img_id))
 
                 elif task_type == "match":
-                    timer = frontendClient.startTimer("Face Match")
+                    timer = senseAI.startTimer("Face Match")
 
                     try:
 
@@ -569,7 +570,7 @@ def face(thread_name, delay):
                         if len(det1) == 0 or len(det2) == 0:
 
                             output = {"success": False, "error": "no face found"}
-                            frontendClient.sendResponse(req_id, json.dumps(output))
+                            senseAI.sendResponse(req_id, json.dumps(output))
                             continue
 
                         for *xyxy, conf, cls in reversed(det1):
@@ -613,7 +614,7 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -621,12 +622,12 @@ def face(thread_name, delay):
                             "code": 400,
                         }
 
-                        frontendClient.errLog("facedetection", "face.py", err_trace, "UnidentifiedImageError")
+                        senseAI.errLog("facedetection", "face.py", err_trace, "UnidentifiedImageError")
 
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        frontendClient.log(err_trace, is_error=True)
+                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
@@ -634,11 +635,11 @@ def face(thread_name, delay):
                             "code": 500,
                         }
 
-                        frontendClient.errLog("facedetection", "face.py", err_trace, "Exception")
+                        senseAI.errLog("facedetection", "face.py", err_trace, "Exception")
 
                     finally:
-                        frontendClient.endTimer(timer)
-                        frontendClient.sendResponse(req_id, json.dumps(output))
+                        senseAI.endTimer(timer)
+                        senseAI.sendResponse(req_id, json.dumps(output))
 
                         if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , user_images[0])):
                             os.remove(os.path.join(SharedOptions.TEMP_PATH , user_images[0]))
@@ -660,6 +661,6 @@ if __name__ == "__main__":
     faceupdate_thread.start()
     face_thread.start()
 
-    frontendClient.log("Face Detection module started.")
+    senseAI.log("Face Detection module started.")
     face_thread.join();
     # TODO: Send back a "I'm alive" message to the backend of the API server so it can report to the user

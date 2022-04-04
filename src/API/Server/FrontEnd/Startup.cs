@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+#if Windows
 using System.Reflection;
+#endif
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,7 +11,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+#if Windows
 using Microsoft.OpenApi.Models;
+#endif
 
 using CodeProject.SenseAI.API.Server.Backend;
 
@@ -56,6 +61,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
             services.AddControllers();
 
+#if Windows
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
@@ -73,7 +79,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
                     License = new OpenApiLicense
                     {
-                        Name = "Use under COPL",
+                        Name = "Use under CPOL",
                         Url  = new Uri("https://www.codeproject.com/info/cpol10.aspx"),
                     }
                 });
@@ -83,6 +89,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments(xmlPath);
             });
+#endif
+            // ListConfigValues();
 
             // Configure application services and DI
             services.Configure<BackendOptions>(Configuration.GetSection(nameof(BackendOptions)))
@@ -116,12 +124,15 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                               IOptions<InstallConfig> installConfig)
         {
             _installConfig = installConfig.Value;
-            _logger = logger;
+            _logger        = logger;
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+#if Windows                
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject SenseAI API v1"));
+#endif
             }
 
             InitializeInstallConfig();
@@ -169,8 +180,19 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogError(ex, $"Exception updating {InstallConfig.InstallCfgFilename}");
+                    _logger?.LogError($"Exception updating Install Config: {ex.Message}");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Lists the values from the combined configuration sources
+        /// </summary>
+        public void ListConfigValues()
+        {
+            foreach (KeyValuePair<string, string> pair in Configuration.AsEnumerable())
+            {
+                Console.WriteLine($"{pair.Key}: {pair.Value}");
             }
         }
     }

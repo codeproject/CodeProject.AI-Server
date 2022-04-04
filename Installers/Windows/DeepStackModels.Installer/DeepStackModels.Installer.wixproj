@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>d0b74be9-8195-4907-aeee-45631e37251f</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>DeepStackModels.Installer</OutputName>
+    <OutputName>CodeProject.SenseAI.LegacyModels-1.1.0</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -45,7 +45,7 @@
     <!--<DefineConstants Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">HarvestPath=..\distribution\Release</DefineConstants>-->
   </PropertyGroup>
   <Target Name="BeforeBuild">
-    <HeatDirectory OutputFile="$(ProjectDir)\DeepStackModuleFiles.wxs" Directory="..\..\..\src\AnalysisLayer\DeepStack\assets" ComponentGroupName="DeepStackAssetsComponentGroup" DirectoryRefId="DeepStackAssetsFolder" AutogenerateGuids="true" PreprocessorVariable="var.ModelsHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
+    <HeatDirectory RunAsSeparateProcess="$(RunWixToolsOutOfProc)" OutputFile="$(ProjectDir)\DeepStackModuleFiles.wxs" Directory="..\..\..\src\AnalysisLayer\DeepStack\assets" ComponentGroupName="DeepStackAssetsComponentGroup" DirectoryRefId="DeepStackAssetsFolder" AutogenerateGuids="true" PreprocessorVariable="var.ModelsHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

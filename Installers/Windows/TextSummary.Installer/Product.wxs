@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+	<?include ..\SharedProperties.wxi ?>
+	
+	<Product Id="*"
+			 Name="CodeProject SenseAI Text Summary Module"
+			 Language="1033"
+			 Version="$(var.BuildVersion)"
+			 Manufacturer="CodeProject"
+			 UpgradeCode="7b402cba-bef3-49de-acdd-834527bfe257">
+
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+		<MediaTemplate EmbedCab="yes" />
+
+		<Feature Id="TextSummaryAIFeature" Title="Text Summary Module" Level="1">
+			<ComponentGroupRef Id="TextSummaryFilesComponentGroup" />
+		</Feature>
+
+		<!-- Each module that uses Python will need to include a custom action to install their 
+			packages into the venv which will be Python37VenvFolder -->
+		<CustomAction Id="PipPackagesCmd"
+					  Directory="TextSummaryInstallFolder"
+					  ExeCommand='"[Python37VenvFolder]scripts\pip.exe" install -r "[TextSummaryInstallFolder]requirements.txt"'
+					  Execute='deferred'
+					  Return='ignore'
+					  Impersonate='yes'/>
+
+		<InstallExecuteSequence>
+			<Custom Action='PipPackagesCmd' Before='InstallFinalize'>NOT Installed</Custom>
+		</InstallExecuteSequence>
+
+		<UI>
+			<ProgressText Action='PipPackagesCmd'>Installing required Python Packages ... (This will take several minutes)</ProgressText>
+		</UI>
+
+	</Product>
+	<?include ..\SharedDirectories.wxi ?>
+</Wix>

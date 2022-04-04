@@ -1,29 +1,13 @@
-import argparse
-import os
-import platform
-import shutil
-import time
-from pathlib import Path
 
 import numpy as np
 import torch
-import torch.backends.cudnn as cudnn
 from models.experimental import attempt_load
-from numpy import random
 from PIL import Image
-from utils.datasets import LoadImages, LoadStreams, letterbox
+from utils.datasets import letterbox
 from utils.general import (
-    apply_classifier,
-    check_img_size,
     non_max_suppression,
-    plot_one_box,
     scale_coords,
-    set_logging,
-    strip_optimizer,
-    xyxy2xywh,
 )
-from utils.torch_utils import load_classifier, select_device, time_synchronized
-
 
 class YOLODetector(object):
     def __init__(self, model_path: str, reso: int = 640, cuda: bool = False):

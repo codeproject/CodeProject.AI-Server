@@ -2,421 +2,502 @@
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8" />
-    <title>CodeProject SenseAI Demos</title>
+	<meta charset="utf-8" />
+	<title>CodeProject SenseAI Demos</title>
 
-    <link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
 
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
-    <style>
-        .header {
-            background: rgb(255,153,0);
-            background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, rgb(255 181 0) 78%, rgba(255,208,0,1) 100%);
-        }
+	<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+	<style>
+		.header {
+			background: rgb(255,153,0);
+			background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, rgb(255 181 0) 78%, rgba(255,208,0,1) 100%);
+		}
 
-        #faces::file-selector-button { width:10rem; }
-    </style>
+		#faces::file-selector-button { width:10rem; }
+	</style>
 
-    <script type="text/javascript">
+	<script type="text/javascript">
 
-        const pingFrequency = 2000; // milliseconds
-        const apiServiceUrl = "http://localhost:5000";
-        var serverOnline    = false;
+		const useSVG        = true;
+		const pingFrequency = 2000; // milliseconds
+		const apiServiceUrl = "http://localhost:5000";
+		var serverOnline    = false;
 
-        window.addEventListener('DOMContentLoaded', function (event) {
-            serviceUrl.value = apiServiceUrl;
-            setStatus("Searching for API Server...", "orange");
-            setInterval(ping, pingFrequency);
-        });
+		window.addEventListener('DOMContentLoaded', function (event) {
+			serviceUrl.value = apiServiceUrl;
+			setStatus("Searching for API Server...", "orange");
+			setInterval(ping, pingFrequency);
+		});
 
-        function adjustCanvas() {
-            annotations.height = this.height;
-            annotations.width  = this.width;
-            return true;
-        }
+		function adjustForImageSize() {
 
-        function previewImage(fileChooser) {
+			if (useSVG) {
+				clearCanvas();
+				imageMask.style.height = this.height + 'px';
+                imageMask.style.width  = this.width  + 'px';
+			}
+			else {
+				annotations.height = this.height;
+				annotations.width  = this.width;
+			}
 
-            if (fileChooser.files) {
-                img.onload           = adjustCanvas;
-                img.src              = URL.createObjectURL(fileChooser.files[0]);
-                img.style.height     = "auto";
+			return true;
+		}
+
+		function previewImage(fileChooser) {
+
+			if (fileChooser.files) {
+				img.onload           = adjustForImageSize;
+				img.src              = URL.createObjectURL(fileChooser.files[0]);
+				img.style.height     = "auto";
+				img.style.visibility = "visible";
+			}
+		}
+
+		function clearCanvas() {
+			if (useSVG) {
+				imageMask.innerHTML = '';
                 img.style.visibility = "visible";
-            }
-        }
-
-        function clearCanvas() {
-            var context = annotations.getContext("2d");
-            context.clearRect(0, 0, annotations.width, annotations.height);
-        }
-
-        function setStatus(text, color) {
-            if (color)
-                document.getElementById("status").innerHTML = "<span style='color:" + color + "'>" + text + "</span>";
-            else
-                document.getElementById("status").innerHTML = "<span>" + text + "</span>";
-        }
-
-        function drawRectangles(predictions) {
-
-            if (!img.width || !img.height)
-                return;
-
-            if (!(predictions && predictions.length > 0))
-                return;
-
-            var xRatio = img.width * 1.0 / img.naturalWidth;
-            var yRatio = img.height * 1.0 / img.naturalHeight;
-
-            var context = annotations.getContext("2d");
-            context.clearRect(0, 0, annotations.width, annotations.height);
-            context.lineWidth = "1";
-
-            // Sort descending
-            predictions.sort(function(a, b) {
-                return b.confidence - a.confidence;
-            });
-
-            for (var i = 0; i < predictions.length; i++) {
-                var rect   = predictions[i];
-                var left   = Math.min(rect.x_min, rect.x_max) * xRatio;
-                var top    = Math.min(rect.y_min, rect.y_max) * yRatio;
-                var width  = Math.abs(rect.x_min - rect.x_max) * xRatio;
-                var height = Math.abs(rect.y_min - rect.y_max) * yRatio;
-
-                context.strokeStyle = "red";
-                context.strokeRect(left, top, width, height);
-                context.strokeStyle = "yellow";
-                context.strokeText(i + " " + (rect.label || ""), left, top);
-            }
-        }
-
-        function displayPredictionResults(predictions) {
-
-            if (!(predictions && predictions.length > 0)) {
-                result.innerHTML = "No predictions returned";
-                return;
-            }
-
-            // Sort descending
-            predictions.sort(function(a, b) {
-                return b.confidence - a.confidence;
-            });
-
-            var html = "<table style='width:100%'><tr><th>#</th><th>Label</th><th>Confidence</th></tr>";
-            for (var i = 0; i < predictions.length; i++) {
-                var pred = predictions[i];
-                html += "<tr><td>" + i + "</td><td>" + (pred.label || "Face")
-                      + "</td><td>" + confidence(pred.confidence) + "</td></tr>";
-            }
-            html += "</table>";
-            result.innerHTML = html;
-        }
-
-        function displayRecognitionResults(recognitions) {
-
-            if (!(recognitions && recognitions.length > 0)) {
-                result.innerHTML = "No recognitions returned";
-                return;
-            }
-
-            // Sort descending
-            recognitions.sort(function(a, b) {
-                return b.confidence - a.confidence;
-            });
-
-            var html = "<table style='width:100%'><tr><th>#</th><th>Name</th><th>Confidence</th></tr>";
-            for (var i = 0; i < recognitions.length; i++) {
-                var recog = recognitions[i];
-                html += "<tr><td>" + i + "</td><td>" + (recog.userid || "Face")
-                      + "</td><td>" + confidence(recog.confidence) + "</td></tr>";
-            }
-            html += "</table>";
-            result.innerHTML = html;
-        }
-
-        function displayMatchResults(match) {
-            if (!match) {
-                result.innerHTML = "No matches returned";
-                return;
-            }
-
-            var html = "Match: " + confidence(match.similarity);
-            result.innerHTML = html;
-        }
-
-        function displayBaseResults(base) {
-
-            if (!base) {
-                result.innerHTML = "No results returned";
-                return;
-            }
-
-            var html = base.success ? "Operation successful" : "Operation failed";
-            result.innerHTML = html;
-        }
-
-        function displayRegisteredFaces(data) {
-
-            if (!data || data.faces == null || data.faces.length <= 0) {
-                result.innerHTML = "No faces registered";
-                return;
-            }
-
-            var html = "";
-            for (var name of data.faces)
-                html += name + "<br>";
-            result.innerHTML = html;
-        }
-
-        function confidence(value) {
-            if (value == undefined) return '';
-
-            return Math.round(value * 100.0) + "%";
-        }
-
-        async function ping() {
-
-            var url = serviceUrl.value.trim() + '/v1/status/ping';
-
-            await fetch(url, { method: "GET" })
-                .then(response => {
-                    if (!response.ok)
-                        setStatus('Error contacting API server', "red");
-                    else
-                        response.json().then(data => {
-                            if (serverOnline == data.success)
-                                return;
-
-                            serverOnline = data.success;
-                            if (serverOnline)
-                                setStatus('API server is online', "green");
-                            else
-                                setStatus('Unable to contact API server', "red");
-                        })
-                        .catch(error => setStatus('Unable to contact API server', "red"));
-                  })
-                .catch(error => {
-                      serverOnline = false;
-                      setStatus(/*error.message*/ "Unable to contact AI Server", "red");
-                  });
-        }
-
-        function submitRequest(apiName, images, data, doneFunc) {
-
-            setStatus("Sending request to AI server", "blue");
-
-            var formData = new FormData();
-
-            // Check file selected or not
-            if (images && images.length > 0) {
-                if (images.length == 1) {
-                    file = images[0];
-                    formData.append('image', file);
-                }
-                else {
-                    for (var i = 0; i < images.length; i++) {
-                        file = images[i];
-                        formData.append('image' + (i + 1), file);
-                    }
-                }
-            }
-
-            if (data && data.length > 0) {
-                for (var i = 0; i < data.length; i++) {
-                    keypair = data[i];
-                    formData.append(keypair[0], keypair[1]);
-                }
-            }
-
-            var url = serviceUrl.value.trim() + '/v1/vision/' + apiName;
-
-            result.innerHTML = "";
-
-            fetch(url, {
-                method: "POST",
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok)
-                    setStatus('Error contacting API server', "red");
-                else {
-                    response.json().then(data => {
-                        if (data) {
-                            doneFunc(data)
-                            setStatus("Call to " + apiName + " complete", "green");
-                        } else
-                            setStatus('No data was returned', "red");
-                    })
-                    .catch(error => setStatus(error, "red"));
-                }})
-            .catch(error => setStatus(error, "red"));
-        }
-
-        function onDetectScene(fileChooser) {
-
-            clearCanvas();
-
-            if (fileChooser.files.length == 0) {
-                alert("No file was selected for scene detection");
-                return;
-            }
-
-            var images = [fileChooser.files[0]];
-
-            submitRequest('scene', images, null, function (data) {
-                result.innerHTML = "<table style='width:100%'>" +
-                                    "<tr><th>Label</th><th>Confidence</th></tr><tr>" +
-                                    "<tr><td> " + data.label + "</td>" +
-                                    "<td> " + confidence(data.confidence) + "</td ></tr> " +
-                                    "<table>";
-            });
-        }
-
-        function onDetectFaces(fileChooser) {
-
-            clearCanvas();
-
-            if (fileChooser.files.length == 0) {
-                alert("No file was selected for scene detection");
-                return;
-            }
-
-            var images = [fileChooser.files[0]];
-
-            submitRequest('face', images, null, function (data) {
-                drawRectangles(data.predictions);
-                displayPredictionResults(data.predictions)
-            });
-        }
-
-        function onDetectThings(fileChooser) {
-
-            clearCanvas();
-
-            if (fileChooser.files.length == 0) {
-                alert("No file was selected for scene detection");
-                return;
-            }
-
-            var images = [fileChooser.files[0]];
-
-            submitRequest('detection', images, null, function (data) {
-                drawRectangles(data.predictions);
-                displayPredictionResults(data.predictions)
-            });
-        }
-
-        function onCompareFaces(face1Ctrl, face2Ctrl) {
-            clearCanvas();
-
-            if (face1Ctrl.files.length == 0 || face2Ctrl.files.length == 0) {
-                alert("No file was selected for scene detection");
-                return;
-            }
-
-            var images = [face1Ctrl.files[0], face2Ctrl.files[0]];
-
-            submitRequest('face/match', images, null, function (data) {
-                displayMatchResults(data);
-            });
-        }
-
-        function onRegisterFaces(userId, faceCtrl) {
-            clearCanvas();
-
-            if (faceCtrl.files.length == 0) {
-                alert("No files were selected for face registration");
-                return;
-            }
-
-            if (!userId) {
-                alert("No name supplied");
-                return;
-            }
-
-            var images = [];
-            for (var i = 0; i < faceCtrl.files.length; i++)
-                images.push(faceCtrl.files[i]);
-
-            submitRequest('face/register', images, [["userid", userId]], function (data) {
-                if (data)
-                    displayBaseResults(data);
-                else
-                    result.innerText = "Unable to register faces";
-            });
-        }
-
-        function onListRegisteredFaces() {
-
-            clearCanvas();
-
-            submitRequest('face/list', null, null, function (data) {
-                displayRegisteredFaces(data)
-            });
-        }
-
-        function onDeleteFace(userId) {
-
-            clearCanvas();
-
-            submitRequest('face/delete', null, [["userid", userId]], function (data) {
-            });
-        }
-
-        function onRecogniseFace(fileChooser, minimumConfidence) {
-
-            clearCanvas();
-
-            if (fileChooser.files.length == 0) {
-                alert("No file was selected for scene detection");
-                return;
-            }
-
-            var images = [fileChooser.files[0]];
-
-            var params = []
-            var minConfidence = parseFloat(minimumConfidence);
-            if (!isNaN(minConfidence))
-                params = [["min_confidence", minConfidence]]
-
-            submitRequest('face/recognize', images, params, function (data) {
-                drawRectangles(data.predictions);
-                displayRecognitionResults(data.predictions)
-            });
-        }
-
-        var isBenchmarkCancelled;
-        function onBenchmark(fileChooser, resultElm) {
-
-            clearCanvas();
-
-            if (fileChooser.files.length == 0) {
-                alert("No file was selected for benchmarking");
-                return;
-            }
-
-            var images = [fileChooser.files[0]];
-            let startMilliseconds = performance.now();
-            
-            isBenchmarkCancelled = false;
-
-            for (let i = 0; i < 50 && !isBenchmarkCancelled; i++) {
-
-                // Funny thing about the cancellation bit. These requests are sent to the API
-                // server which queues them up for processing. Sending is fast. Processing takes
-                // longer. By the time you've cancelled the benchmark loop all requests have
-                // already been queued and what you're seeing are the result of the requests coming
-                // back. So not much point having a cancellation feature here. But the guts are 
-                // included for grins.
-                submitRequest('detection', images, null, function (data) {
-                    let currentMilliseconds = performance.now();
-                    let opsPerSecond = (i * 1000) / (currentMilliseconds - startMilliseconds);
-                    resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second";
-                });
-            }
-        }
+			}
+			else {
+				var context = annotations.getContext("2d");
+				context.clearRect(0, 0, annotations.width, annotations.height);
+			}
+		}
+
+		function setStatus(text, color) {
+			if (color)
+				document.getElementById("status").innerHTML = "<span style='color:" + color + "'>" + text + "</span>";
+			else
+				document.getElementById("status").innerHTML = "<span>" + text + "</span>";
+		}
+
+		function drawRectangles(predictions) {
+
+			if (!img.width || !img.height)
+				return;
+
+			if (!(predictions && predictions.length > 0))
+				return;
+
+			// Sort descending
+			predictions.sort(function(a, b) {
+				return b.confidence - a.confidence;
+			});
+
+			let svg = null;
+            let xRatio = img.width * 1.0 / img.naturalWidth;
+            let yRatio = img.height * 1.0 / img.naturalHeight;
+
+			if (useSVG) {
+				svg = `
+				<svg viewBox="0 0 ${img.width} ${img.height}">
+					<defs>
+						<mask id="mask">
+							<rect fill="#999" x="0" y="0" width="${img.width}" height="${img.height}"></rect>`;
+			}
+			else {
+				let context = annotations.getContext("2d");
+				context.clearRect(0, 0, annotations.width, annotations.height);
+				context.lineWidth = "1";
+			}
+
+			for (var i = 0; i < predictions.length; i++) {
+				let rect   = predictions[i];
+				let left   = Math.min(rect.x_min, rect.x_max) * xRatio;
+				let top    = Math.min(rect.y_min, rect.y_max) * yRatio;
+				let width  = Math.abs(rect.x_min - rect.x_max) * xRatio;
+				let height = Math.abs(rect.y_min - rect.y_max) * yRatio;
+
+				if (useSVG) {
+					svg += `<rect fill="#ffffff" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
+				}
+				else {
+					context.strokeStyle = "red";
+					context.strokeRect(left, top, width, height);
+					context.strokeStyle = "yellow";
+					context.strokeText(i + " " + (rect.label || ""), left, top);
+				}
+			}
+
+			if (useSVG) {
+				svg += `
+						</mask>
+					</defs>
+					<image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
+						   xlink:href="${img.src}" width="${img.width}" height="${img.height}"></image>`;
+
+				for (var i = 0; i < predictions.length; i++) {
+					let rect = predictions[i];
+					let left   = Math.min(rect.x_min, rect.x_max) * xRatio;
+					let top    = Math.min(rect.y_min, rect.y_max) * yRatio;
+					let width  = Math.abs(rect.x_min - rect.x_max) * xRatio;
+					let height = Math.abs(rect.y_min - rect.y_max) * yRatio;
+
+					svg += `<text x="${left}" y="${top-5}" style="stroke: none; fill: #FFF;font-size:12px">${rect.label || ""}</text>`;
+                    svg += `<rect stroke="red" stroke-width="2px" fill="transparent" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
+				}
+
+				svg += `
+				</svg>`;
+
+				imageMask.innerHTML  = svg;
+                img.style.visibility = "hidden";
+			}
+		}
+
+		function displayPredictionResults(predictions) {
+
+			if (!(predictions && predictions.length > 0)) {
+				result.innerHTML = "No predictions returned";
+				return;
+			}
+
+			// Sort descending
+			predictions.sort(function(a, b) {
+				return b.confidence - a.confidence;
+			});
+
+			var html = "<table style='width:100%'><tr><th>#</th><th>Label</th><th>Confidence</th></tr>";
+			for (var i = 0; i < predictions.length; i++) {
+				var pred = predictions[i];
+				html += "<tr><td>" + i + "</td><td>" + (pred.label || "Face")
+					  + "</td><td>" + confidence(pred.confidence) + "</td></tr>";
+			}
+			html += "</table>";
+			result.innerHTML = html;
+		}
+
+		function displayRecognitionResults(recognitions) {
+
+			if (!(recognitions && recognitions.length > 0)) {
+				result.innerHTML = "No recognitions returned";
+				return;
+			}
+
+			// Sort descending
+			recognitions.sort(function(a, b) {
+				return b.confidence - a.confidence;
+			});
+
+			var html = "<table style='width:100%'><tr><th>#</th><th>Name</th><th>Confidence</th></tr>";
+			for (var i = 0; i < recognitions.length; i++) {
+				var recog = recognitions[i];
+				html += "<tr><td>" + i + "</td><td>" + (recog.userid || "Face")
+					  + "</td><td>" + confidence(recog.confidence) + "</td></tr>";
+			}
+			html += "</table>";
+			result.innerHTML = html;
+		}
+
+		function displayMatchResults(match) {
+			if (!match) {
+				result.innerHTML = "No matches returned";
+				return;
+			}
+
+			var html = "Match: " + confidence(match.similarity);
+			result.innerHTML = html;
+		}
+
+		function displayBaseResults(base) {
+
+			if (!base) {
+				result.innerHTML = "No results returned";
+				return;
+			}
+
+			var html = base.success ? "Operation successful" : "Operation failed";
+			result.innerHTML = html;
+		}
+
+		function displayRegisteredFaces(data) {
+
+			if (!data || data.faces == null || data.faces.length <= 0) {
+				result.innerHTML = "No faces registered";
+				return;
+			}
+
+			var html = "";
+			for (var name of data.faces)
+				html += name + "<br>";
+			result.innerHTML = html;
+		}
+
+		function showSummaryText(text) {
+			result.innerHTML = text;
+		}
+
+		function confidence(value) {
+			if (value == undefined) return '';
+
+			return Math.round(value * 100.0) + "%";
+		}
+
+		async function ping() {
+
+			var url = serviceUrl.value.trim() + '/v1/status/ping';
+
+			await fetch(url, { method: "GET" })
+				.then(response => {
+					if (!response.ok)
+						setStatus('Error contacting API server', "red");
+					else
+						response.json().then(data => {
+							if (serverOnline == data.success)
+								return;
+
+							serverOnline = data.success;
+							if (serverOnline)
+								setStatus('API server is online', "green");
+							else
+								setStatus('Unable to contact API server', "red");
+						})
+						.catch(error => {
+							setStatus('Unable to contact API server: ' + error, "red")
+						});
+				  })
+				.catch(error => {
+					  serverOnline = false;
+					  setStatus(/*error.message*/ "Unable to contact AI Server", "red");
+				  });
+		}
+
+		function submitRequest(controller, apiName, images, parameters, doneFunc) {
+
+			setStatus("Sending request to AI server", "blue");
+
+			var formData = new FormData();
+
+			// Check file selected or not
+			if (images && images.length > 0) {
+				if (images.length == 1) {
+					file = images[0];
+					formData.append('image', file);
+				}
+				else {
+					for (var i = 0; i < images.length; i++) {
+						file = images[i];
+						formData.append('image' + (i + 1), file);
+					}
+				}
+			}
+
+			if (parameters && parameters.length > 0) {
+				for (var i = 0; i < parameters.length; i++) {
+					keypair = parameters[i];
+					formData.append(keypair[0], keypair[1]);
+				}
+			}
+
+			var url = serviceUrl.value.trim() + '/v1/' + controller + '/' + apiName;
+
+			result.innerHTML = "";
+
+			fetch(url, {
+				method: "POST",
+				body: formData
+			})
+			.then(response => {
+				if (!response.ok)
+					setStatus('Error contacting API server', "red");
+				else {
+					response.json().then(data => {
+						if (data) {
+							doneFunc(data)
+							setStatus("Call to " + apiName + " complete", "green");
+						} else
+							setStatus('No data was returned', "red");
+					})
+					.catch(error => {
+						setStatus("Unable to read response: " + error, "red");
+					})
+				}})
+				.catch(error => {
+					setStatus('Unable to complete API call: ' + error, "red")
+				});
+		}
+
+		function onDetectScene(fileChooser) {
+
+			clearCanvas();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for scene detection");
+				return;
+			}
+
+			var images = [fileChooser.files[0]];
+
+			submitRequest('vision', 'scene', images, null, function (data) {
+				result.innerHTML = "<table style='width:100%'>" +
+									"<tr><th>Label</th><th>Confidence</th></tr><tr>" +
+									"<tr><td> " + data.label + "</td>" +
+									"<td> " + confidence(data.confidence) + "</td ></tr> " +
+									"<table>";
+			});
+		}
+
+		function onDetectFaces(fileChooser) {
+
+			clearCanvas();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for scene detection");
+				return;
+			}
+
+			var images = [fileChooser.files[0]];
+
+			submitRequest('vision', 'face', images, null, function (data) {
+				drawRectangles(data.predictions);
+				displayPredictionResults(data.predictions)
+			});
+		}
+
+		function onDetectThings(fileChooser) {
+
+			clearCanvas();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for scene detection");
+				return;
+			}
+
+			var images = [fileChooser.files[0]];
+
+			submitRequest('vision', 'detection', images, null, function (data) {
+				drawRectangles(data.predictions);
+				displayPredictionResults(data.predictions)
+			});
+		}
+
+		function onCompareFaces(face1Ctrl, face2Ctrl) {
+			clearCanvas();
+
+			if (face1Ctrl.files.length == 0 || face2Ctrl.files.length == 0) {
+				alert("No file was selected for scene detection");
+				return;
+			}
+
+			var images = [face1Ctrl.files[0], face2Ctrl.files[0]];
+
+			submitRequest('vision', 'face/match', images, null, function (data) {
+				displayMatchResults(data);
+			});
+		}
+
+		function onRegisterFaces(userId, faceCtrl) {
+			clearCanvas();
+
+			if (faceCtrl.files.length == 0) {
+				alert("No files were selected for face registration");
+				return;
+			}
+
+			if (!userId) {
+				alert("No name supplied");
+				return;
+			}
+
+			var images = [];
+			for (var i = 0; i < faceCtrl.files.length; i++)
+				images.push(faceCtrl.files[i]);
+
+			submitRequest('vision', 'face/register', images, [["userid", userId]], function (data) {
+				if (data)
+					displayBaseResults(data);
+				else
+					result.innerText = "Unable to register faces";
+			});
+		}
+
+		function onListRegisteredFaces() {
+
+			clearCanvas();
+
+			submitRequest('vision', 'face/list', null, null, function (data) {
+				displayRegisteredFaces(data)
+			});
+		}
+
+		function onDeleteFace(userId) {
+
+			clearCanvas();
+
+			submitRequest('vision', 'face/delete', null, [["userid", userId]], function (data) {
+			});
+		}
+
+		function onRecogniseFace(fileChooser, minimumConfidence) {
+
+			clearCanvas();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for scene detection");
+				return;
+			}
+
+			var images = [fileChooser.files[0]];
+
+			var params = []
+			var minConfidence = parseFloat(minimumConfidence);
+			if (!isNaN(minConfidence))
+				params = [["min_confidence", minConfidence]]
+
+			submitRequest('vision', 'face/recognize', images, params, function (data) {
+				drawRectangles(data.predictions);
+				displayRecognitionResults(data.predictions)
+			});
+		}
+
+		function onSummarizeText(articleText, numberOfSentences) {
+
+			if (!articleText) {
+				alert("No text was provided for text summary");
+				return;
+			}
+
+			var numberOfSentences = !isNaN(numberOfSentences) ? parseInt(numberOfSentences) : 2;
+			var params            = [['text', articleText], ["num_sentences", numberOfSentences]]
+
+			submitRequest('text', 'summarize', null, params, function (data) {
+				showSummaryText(data.summary || "No summary was returned");
+			});
+		}
+
+		var isBenchmarkCancelled;
+		function onBenchmark(fileChooser, resultElm) {
+
+			clearCanvas();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for benchmarking");
+				return;
+			}
+
+			var images = [fileChooser.files[0]];
+			let startMilliseconds = performance.now();
+			
+			isBenchmarkCancelled = false;
+
+			for (let i = 0; i < 50 && !isBenchmarkCancelled; i++) {
+
+				// Funny thing about the cancellation bit. These requests are sent to the API
+				// server which queues them up for processing. Sending is fast. Processing takes
+				// longer. By the time you've cancelled the benchmark loop all requests have
+				// already been queued and what you're seeing are the result of the requests coming
+				// back. So not much point having a cancellation feature here. But the guts are 
+				// included for grins.
+				submitRequest('vision', 'detection', images, null, function (data) {
+					let currentMilliseconds = performance.now();
+					let opsPerSecond = (i * 1000) / (currentMilliseconds - startMilliseconds);
+					resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second";
+				});
+			}
+		}
 
    </script>
 
@@ -424,163 +505,185 @@
 
 <body class="dark-mode">
 <div>
-    <div class="bg-dark mx-auto p-3" style="max-width:1100px;">
+	<div class="bg-dark mx-auto p-3" style="max-width:1100px;">
 
-	    <div class="w-100 header d-flex">
-            <a href="https://www.codeproject.com">
-            <img tabindex="1" title="CodeProject" src="assets/codeproject60x60.png" 
-                alt="Home" style="width:60px;height:60px;border-width:0px;"></a>
-            <span class="fs-2 mt-2 d-inline-block">CODE<b>PROJECT</b> SenseAI Playground</span>
-        </div>
+		<div class="w-100 header d-flex">
+			<a href="https://www.codeproject.com">
+			<img tabindex="1" title="CodeProject" src="assets/codeproject60x60.png" 
+				alt="Home" style="width:60px;height:60px;border-width:0px;"></a>
+			<span class="fs-2 mt-2 d-inline-block">CODE<b>PROJECT</b> SenseAI Playground</span>
+		</div>
 
-        <div class="card mt-3">
-        <div class="card-body bg-secondary">
+		<div class="card mt-3">
+		<div class="card-body bg-secondary">
 
-            <div class="form-group row">
-                <label class="col-form-label col-2 text-end">Service API URL</label>
-                <input class="form-control" type="text" id="serviceUrl" style="width:25rem;"/>
-                <label id="status" class="col-form-label col bg-white fw-bold ms-4"></label>
+			<div class="form-group row">
+				<label class="col-form-label col-2 text-end">Service API URL</label>
+				<input class="form-control" type="text" id="serviceUrl" style="width:25rem;"/>
+				<label id="status" class="col-form-label col bg-white fw-bold ms-4"></label>
 
-            </div>
-        </div>
-        </div>
+			</div>
+		</div>
+		</div>
 
-        <form method="post" action="" enctype="multipart/form-data" id="myform">
-        <div class="d-flex align-content-between">
+		<form method="post" action="" enctype="multipart/form-data" id="myform">
+		<div class="d-flex align-content-between">
 
-            <div style="width:600px">
+			<div style="width:600px">
 
-                <div class="card mt-3">
-                <div class="card-header h3">Object Detection</div>
-                <div class="card-body bg-secondary">
+				<div class="card mt-3">
+					<div class="card-header h3">Object Detection</div>
+					<div class="card-body bg-secondary">
 
-                    <div class="form-group row">
-                        <label class="col-form-label col-3">Image</label>
-                        <input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
-                    </div>
-                    <div class="form-group row mt-2">
-                        <label class="col-form-label col-3">Operation</label>
-                        <input class="col form-control btn-success" type="button" value="Detect Scene"  id="scene"  onclick="onDetectScene(image)" />
-                        <input class="col form-control btn-info" type="button" value="Detect Face"   id="face"   onclick="onDetectFaces(image)" />
-                        <input class="col form-control btn-warning" type="button" value="Detect Things" id="things" onclick="onDetectThings(image)" />
-                    </div>
-                </div>
-                </div>
+						<div class="form-group row">
+							<label class="col-form-label col-3">Image</label>
+							<input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
+						</div>
+						<div class="form-group row mt-2">
+							<label class="col-form-label col-3">Operation</label>
+							<input class="col form-control btn-success" type="button" value="Detect Scene" id="scene" onclick="onDetectScene(image)" />
+							<input class="col form-control btn-info" type="button" value="Detect Face" id="face" onclick="onDetectFaces(image)" />
+							<input class="col form-control btn-warning" type="button" value="Detect Things" id="things" onclick="onDetectThings(image)" />
+						</div>
+					</div>
+				</div>
 
-                <div class="card mt-3">
-                <div class="card-header h3">Face Comparison</div>
-                <div class="card-body bg-secondary">
-                    <div class="d-flex align-items-center">
-                        <div class="w-75">
-                            <div class="form-group row">
-                                <label class="col-form-label col-3">Image 1</label>
-                                <input class="col form-control btn-light" id="face1" type="file" onchange="return previewImage(this)" />
-                            </div>
-                            <div class="form-group row">
-                                <label class="col-form-label col-3">Image 2</label>
-                                <input class="col form-control btn-light" id="face2" type="file" onchange="return previewImage(this)" />
-                            </div>
-                        </div>
-                        <div style="width:10rem" class="text-end">
-                             <input type="button" value="Compare" class="btn btn-success" onclick="onCompareFaces(face1, face2)" />
-                        </div>
-                    </div>
-                </div>
-                </div>
+				<div class="card mt-3">
+					<div class="card-header h3">Face Comparison</div>
+					<div class="card-body bg-secondary">
+						<div class="d-flex align-items-center">
+							<div class="w-75">
+								<div class="form-group row">
+									<label class="col-form-label col-3">Image 1</label>
+									<input class="col form-control btn-light" id="face1" type="file" onchange="return previewImage(this)" />
+								</div>
+								<div class="form-group row">
+									<label class="col-form-label col-3">Image 2</label>
+									<input class="col form-control btn-light" id="face2" type="file" onchange="return previewImage(this)" />
+								</div>
+							</div>
+							<div style="width:10rem" class="text-end">
+								<input type="button" value="Compare" class="btn btn-success" onclick="onCompareFaces(face1, face2)" />
+							</div>
+						</div>
+					</div>
+				</div>
 
-                <div class="card mt-3">
-                <div class="card-header h3">Face Registration</div>
-                <div class="card-body bg-secondary">
+				<div class="card mt-3">
+					<div class="card-header h3">Face Registration</div>
+					<div class="card-body bg-secondary">
 
-                    <div>
-                        <div class="form-group row">
-                            <label class="col-form-label col-4">1. Person's name</label>
-                            <input class="form-control" style="width:12rem" id="userId" type="text"
-                                   placeholder="Enter name"/>
-                        </div>
-                        <div class="form-group row my-3">
-                            <label class="col-form-label col-4">2. Select images</label>
-                            <input class="btn-light col form-control" style="width:8rem" id="faces" multiple="multiple" type="file" />
-                        </div>
-                        <div class="form-group row">
-                            <label class="col-form-label col-4">3. Final step</label>
-                            <input class="form-control btn-success" style="width:12rem;" id="register" type="button" 
-                                        value="Register Faces" onclick="onRegisterFaces(userId.value, faces)" />
-                        </div>
-                    </div>
+						<div>
+							<div class="form-group row">
+								<label class="col-form-label col-4">1. Person's name</label>
+								<input class="form-control" style="width:12rem" id="userId" type="text"
+									   placeholder="Enter name" />
+							</div>
+							<div class="form-group row my-3">
+								<label class="col-form-label col-4">2. Select images</label>
+								<input class="btn-light col form-control" style="width:8rem" id="faces" multiple="multiple" type="file" />
+							</div>
+							<div class="form-group row">
+								<label class="col-form-label col-4">3. Final step</label>
+								<input class="form-control btn-success" style="width:12rem;" id="register" type="button"
+									   value="Register Faces" onclick="onRegisterFaces(userId.value, faces)" />
+							</div>
+						</div>
 
-                    <div class="mt-4 text-center">
-                        <input style="width:12rem" id="listfaces" type="button" class="btn  btn-primary ml-3``"
-                                value="List Registered Faces" onclick="onListRegisteredFaces()" />
-                        <input style="width:12rem;" class="btn btn-danger" id="deleteFaces" type="button"
-                            value="Delete Person's Images" onclick="onDeleteFace(userId.value)" />
-                    </div>
+						<div class="mt-4 text-center">
+							<input style="width:12rem" id="listfaces" type="button" class="btn  btn-primary ml-3``"
+								   value="List Registered Faces" onclick="onListRegisteredFaces()" />
+							<input style="width:12rem;" class="btn btn-danger" id="deleteFaces" type="button"
+								   value="Delete Person's Images" onclick="onDeleteFace(userId.value)" />
+						</div>
 
-                </div>
-                </div>
+					</div>
+				</div>
 
-                <div class="card mt-3">
-                <div class="card-header h3">Face Recognition</div>
-                <div class="card-body bg-secondary">
+				<div class="card mt-3">
+					<div class="card-header h3">Face Recognition</div>
+					<div class="card-body bg-secondary">
 
-                    <div class="form-group row">
-                        <label class="col-form-label col-2">Image</label>
-                        <input class="col form-control btn-light" id="faceInput" type="file" style="width:17rem"
-                            onchange="return previewImage(this)" />
-                        <input class="form-control btn-success" type="button" value="Recognise" style="width:7rem"
-                               id="recognise" onclick="onRecogniseFace(faceInput, minRecogConfidence.value)" />
-                    </div>
+						<div class="form-group row">
+							<label class="col-form-label col-2">Image</label>
+							<input class="col form-control btn-light" id="faceInput" type="file" style="width:17rem"
+								   onchange="return previewImage(this)" />
+							<input class="form-control btn-success" type="button" value="Recognise" style="width:7rem"
+								   id="recognise" onclick="onRecogniseFace(faceInput, minRecogConfidence.value)" />
+						</div>
 
-                    <div class="form-group row mt-1">
-                          <label class="col-7 col-form-label text-end">Minimum Recognition Confidence</label>
-                          <input class="form-control" value="0.6" id="minRecogConfidence" type="text" 
-                                 style="width:5rem"/>
-                    </div>
-                </div>
-                </div>
+						<div class="form-group row mt-1">
+							<label class="col-7 col-form-label text-end">Minimum Recognition Confidence</label>
+							<input class="form-control" value="0.6" id="minRecogConfidence" type="text"
+								   style="width:5rem" />
+						</div>
+					</div>
+				</div>
 
-            </div>
+				<div class="card mt-3">
+					<div class="card-header h3">Text Summary</div>
+					<div class="card-body bg-secondary">
 
-            <div class="ms-4 mt-3" style="width:475px;">
-               
-                <div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black"
-                    style="height: 195px; overflow-y: auto;"></div>
+						<div class="form-group mt-1">
+							<textarea id="articleText" class="w-100" style="height:200px"></textarea>
+							<input class="btn-success" type="button" value="Summarize"
+								   id="summarize" onclick="onSummarizeText(articleText.value, numSentences.value)" />
+						</div>
 
-                <div class="w-100 position-relative border-1 border-light">
+						<div class="form-group row mt-1">
+							<label class="col-7 col-form-label text-end">Sentences to produce</label>
+							<input class="form-control" value="2" id="numSentences" type="number"
+								   style="width:5rem" />
+						</div>
+					</div>
 
-                    <canvas id="annotations" class="position-absolute" 
-                        style="left:0;top:0;pointer-events:none;z-index:10"></canvas>
+				</div>
 
-                    <img src="" id="img" class="w-100" style="height:250px;visibility:hidden">
-                </div>
+			</div>
 
-                <div class="card mt-3">
-                <div class="card-header h3">Benchmark</div>
-                <div class="card-body bg-secondary">
+			<div class="ms-4 mt-3" style="width:475px;">
+			   
+				<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black"
+					style="height: 195px; overflow-y: auto;"></div>
 
-                    <div class="form-group row">
-                        <label class="col-form-label col-2">Image</label>
-                        <input class="col form-control btn-light" id="benchmarkInput" type="file" style="width:17rem"
-                            onchange="return previewImage(this)" />
-                        <input class="form-control btn-success" type="button" value="Go" style="width:7rem"
-                               id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkResult)" />
+				<div class="w-100 position-relative border-1 border-light">
 
-                        <!-- See note above on how this button isn't currently that useful
-                        <input type="button" value="Stop" class="styleD" style="margin-left:1em"
-                               onclick="isBenchmarkCancelled = true;" />
-                         -->
-                    </div>
-                    <div class="form-group row mt-1">
-                        <span id="benchmarkResult"></span>
-                    </div>
-                </div>
-                </div>
+					<canvas id="annotations" class="position-absolute"
+							style="left:0;top:0;pointer-events:none;z-index:10"></canvas>
 
-            </div>
+					<div id="imageMask" class="position-absolute"
+						 style="left:0;top:0;pointer-events:none;z-index:10"></div>
 
-        </div>
-        </form>
-    </div>
+					<img src="" id="img" class="w-100" style="height:250px;visibility:hidden">
+				</div>
+
+				<div class="card mt-3">
+				<div class="card-header h3">Benchmark</div>
+				<div class="card-body bg-secondary">
+
+					<div class="form-group row">
+						<label class="col-form-label col-2">Image</label>
+						<input class="col form-control btn-light" id="benchmarkInput" type="file" style="width:17rem"
+							onchange="return previewImage(this)" />
+						<input class="form-control btn-success" type="button" value="Go" style="width:7rem"
+							   id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkResult)" />
+
+						<!-- See note above on how this button isn't currently that useful
+						<input type="button" value="Stop" class="styleD" style="margin-left:1em"
+							   onclick="isBenchmarkCancelled = true;" />
+						 -->
+					</div>
+					<div class="form-group row mt-1">
+						<span id="benchmarkResult"></span>
+					</div>
+				</div>
+				</div>
+
+			</div>
+
+		</div>
+		</form>
+	</div>
 </div>
 </body>
 </html>

@@ -72,6 +72,13 @@ CodeProject SenseAI includes
 2. **Backend Analysis services**.  The brains of the operation is in the analysis services sitting behind the front end API. All processing of data is done on the current machine. No calls to the cloud and no data leaving the device.
 3. **The Source Code**, naturally.
 
+## Supported platforms
+
+ - Windowws
+ - Linux (Ubuntu)
+ - macOS
+ - Docker
+
 ## What can it do?
 
 It can detect stuff!
@@ -82,6 +89,7 @@ CodeProject SenseAI can currently
 - Detect faces in images
 - Detect the type of scene represented in an image
 - Recognise faces that have been registered with the service
+- Pick out the most relevant sentences from text to generate a summary
 
 We will be constantly expanding the feature list.
 
@@ -100,11 +108,35 @@ This is a Beta release and so support is constrained solely to Windows 10+, 64bi
 
 ### Installing CodeProject.SenseAI
 
+#### Windows
+
 To **install CodeProject.SenseAI** as a standalone service ready for integration with applications such as HomeAssist or BlueIris, download the [latest installation package](https://www.codeproject.com/ai/sense/latest.aspx).
 
 Double click the installer. This will install the server as a Windows Service. SenseAI Server and the backend analysis services will now be running, and will automatically restart each time your machine is restarted.
 
-To **explore CodeProject.SenseAI** open the <code>/demos/Javascript/</code> folder and double click on the <code>Vision.html</code> page. The server will, of course, need to be running for this test application to function. Sample images can be found in the <code>TestData</code> folder under the <code>demos</code> folder
+To **explore CodeProject.SenseAI** Click on the SensaAI playground link on the server dashboard. The server will, of course, need to be running for this test application to function. Sample images can be found in the <code>TestData</code> folder under the <code>C:\Program Files\CodeProject\SenseAI</code> folder
+
+#### Docker
+
+##### For Windows
+
+```
+docker run -p 5000:5000 --name SenseAI-Server -d -v c:\ProgramData\CodeProject\SenseAI:/usr/share/CodeProject/SenseAI codeproject/senseai-server
+```
+
+##### For Linux
+
+```
+docker run -p 5000:5000 --name SenseAI-Server -d -v /usr/share/CodeProject/SenseAI:/usr/share/CodeProject/SenseAI codeproject/senseai-server 
+```
+
+##### For macOS, choose a port other than 5000:
+
+```
+docker run -p 5500:5000 --name SenseAI-Server -d -v /usr/share/CodeProject/SenseAI:/usr/share/CodeProject/SenseAI codeproject/senseai-server
+```
+
+For Docker, please visit http://localhost:5000/testdata.zip (after launching SenseAI server) to download some test images for use with the SenseAI playground
 
 ### Setting up the development environment
 
@@ -129,12 +161,12 @@ If you wish to debug or make enhancements to the code then you should install:
 
 2. For **Ubuntu** 21.10, 21.04 (inc. LTS), 18.04 (LTS) first install the .NET 6 packages
     ```bash   
-    wget https://packages.microsoft.com/config/ubuntu/<version>/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    wget https://packages.microsoft.com/config/ubuntu/<UBUNTU-VERSION-HERE>/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
     sudo dpkg -i packages-microsoft-prod.deb
     rm packages-microsoft-prod.deb
     ```
 
-    where <version> is the version of Ubuntu (use `lbs_release -d` to find your current version). **Note** that for Ubuntu 21.10 you should use 21.04 due to the 21.10 packages not yet being available.
+    where &lt;UBUNTU-VERSION-HERE> is the version of Ubuntu (use `lbs_release -d` to find your current version). **Note** that for Ubuntu 21.10 you should use 21.04 due to the 21.10 packages not yet being available.
 
     To install the .NET 6 SDK on Ubuntu run
 
@@ -146,46 +178,54 @@ If you wish to debug or make enhancements to the code then you should install:
     ```
 
     See [Install the .NET SDK or the .NET Runtime on Ubuntu](https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu) for more information.
-   
+ 
 3. For **macOS** just use the [standalone .NET SDK installers](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
-4. 
+
 #### If you are using VS Code
 
 You'll need the following extensions
 
 1. [Python extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
-2. [C# extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
-3. (If developing for Linux using WSL on Windows) The [Remote WSL Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl) for Visual Studio Code.
 
-To build and run:
+2. [C# extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp).
+
+
+##### If you are using VS Code on WSL (Windows Subsystem for Linux)
+
+1. You will need to install the [C# Extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) for WSL, even if you've already installed it for Windows. 
+    
+    Load up the SenseAI project in VS Code within Ubuntu by navigating to the SenseAI root folder in a Ubuntu window and typing "`code .`". Then head to the [C# Extension page](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp), choose install, and the extension should be installed. If you get a warning that there is an instance of VS Code already running, close VS code and hit the install button again.
+
+2. Also install the [Remote WSL Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl) for Visual Studio Code.
+
+### To build and run:
 
 1. Clone the [CodeProject.SenseAI repository](https://github.com/codeproject/CodeProject.SenseAI.git) from GitHub
 
-2. run `/installers/Dev/setup_dev_env_win.bat` (for windows) or `bash setup_dev_env_linux.sh` (for Ubuntu or macOS). This will download required assets and setup the Python environment.
+2. run `/installers/Dev/setup_dev_env_win.bat` (for windows) or `sudo bash setup_dev_env_linux.sh` (for Ubuntu or macOS). This will download required assets and setup the Python environment.
 
-3. Open the main application folder in VSCode
 
-4. Click the "Run and Debug" button on the left hand tab bar (the arrow)
+#### If you are using VS Code
 
-5. From the dropdown at the top of the window, select **Launch CodeProject.SenseAI**
+1. Open the main application folder in VS Code
+
+2. Click the "Run and Debug" button on the left hand tab bar (the arrow)
+
+3. From the dropdown at the top of the window, select **Launch CodeProject.SenseAI**
 ![Choosing a launch profile](docs/images/Choose-launch.png "Choosing a launch profile")
 
-6. CLick the green arrow next to the dropdown
+4. CLick the green arrow next to the dropdown
 
 The dashboard webpage should launch after the code has built and the server has started.
 
 
 #### If you are using Visual Studio
 
-1. Clone the [CodeProject.SenseAI repository](https://github.com/codeproject/CodeProject.SenseAI.git) from GitHub
+1. You may wish to have the Python workflow enabled in Visual Studio. While not critical, it does help with debugging.
 
-2. Ensure you have the Python workflow enabled in Visual Studio. While not critical, it does help with debugging.
+2. Open the solution in Visual Studio and build the entire solution
 
-3. run `/installers/Dev/setup_dev_env_win.bat` (for windows) or `bash setup_dev_env_linux.sh` (for Ubuntu). This will download required assets and setup the Python environment.
-
-4. Open the solution in Visual Studio and build the entire solution
-
-5. To run the Server and the demo application in DEBUG you can either
+3. To run the Server and the demo application in DEBUG you can either
 
     1. Start both the projects in debug mode by 
         1. In Solution Explorer, open demos / .NET and right-click on CodeProject.SenseAI.Playground and choose Debug -> Start new instance.
@@ -198,10 +238,11 @@ The dashboard webpage should launch after the code has built and the server has 
     3. Now when you start with or without debugging, both the Server and demo projects with start.  Also, this will be  shown on the toolbar as shown below.  
        ![Mutliple Project Toolbar](docs/images/Mulitple-Project-Toolbar.png)
 
-6. In Solution Explorer, open src / AnalysisLayer. Right click on DeepStack and choose <code>Open Folder in File Explorer</code>. Double click on the start.bat script.  This script will ensure that the Python virtual environment is enabled and environment variables set.  
+4. In Solution Explorer, open src / AnalysisLayer. Right click on DeepStack and choose <code>Open Folder in File Explorer</code>. Double click on the start.bat script.  This script will ensure that the Python virtual environment is enabled and environment variables set.  
 
+#### It's running!
 
-At this point the Playground application should be indicting it has a connection to the API server, and the servwe should be dispatching requests to the backend Analysis layer.
+At this point the Playground application should be indicting it has a connection to the API server, and the server should be dispatching requests to the backend Analysis layer.
 
 #### Common Errors
 

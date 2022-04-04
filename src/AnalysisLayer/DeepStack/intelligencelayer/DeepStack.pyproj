@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>MSBuild|venv|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
     <Name>DeepStack</Name>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
@@ -39,6 +39,7 @@
     <Compile Include="recognition\__init__.py" />
     <Compile Include="runAll.py" />
     <Compile Include="scene.py" />
+    <Compile Include="senseAI.py" />
     <Compile Include="shared.py" />
     <Compile Include="utils\activations.py" />
     <Compile Include="utils\datasets.py" />
@@ -55,10 +56,10 @@
     <Folder Include="utils" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\venv\">
-      <Id>venv</Id>
+    <Interpreter Include="..\..\bin\windows\python37\venv\env\">
+      <Id>env</Id>
       <Version>3.7</Version>
-      <Description>venv (Python 3.7 (64-bit))</Description>
+      <Description>env (Python 3.7 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>

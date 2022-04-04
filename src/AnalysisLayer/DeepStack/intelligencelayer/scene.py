@@ -1,5 +1,8 @@
 ##import _thread as thread
 
+from senseAI import SenseAIBackend # will also set the python packages path correctly
+senseAI = SenseAIBackend()
+
 import ast
 import io
 import json
@@ -10,7 +13,7 @@ import time
 import warnings
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-from shared import SharedOptions, FrontendClient
+from shared import SharedOptions
 
 # TODO: Currently doesn't exist. The Python venv is setup at install time for a single platform in
 # order to reduce downloads. Having the ability to switch profiles at runtime will be added, but
@@ -27,8 +30,6 @@ import traceback
 
 import torchvision.transforms as transforms
 from torchvision.models import resnet50
-
-frontendClient = FrontendClient()
 
 class SceneModel(object):
     def __init__(self, model_path, cuda=False):
@@ -72,10 +73,10 @@ def scenerecognition(thread_name, delay):
     )
 
     while True:
-        queue = frontendClient.getCommand(IMAGE_QUEUE);
+        queue = senseAI.getCommand(IMAGE_QUEUE);
 
         if len(queue) > 0:           
-            timer = frontendClient.startTimer("Scene Classification")
+            timer = senseAI.startTimer("Scene Classification")
 
             for req_data in queue:
                 req_data = json.JSONDecoder().decode(req_data)
@@ -83,6 +84,7 @@ def scenerecognition(thread_name, delay):
                 req_id   = req_data["reqid"]
                 req_type = req_data["reqtype"]
                 img_path = os.path.join(SharedOptions.TEMP_PATH,img_id)
+
                 try:
 
                     img = Image.open(img_path).convert("RGB")
@@ -112,7 +114,7 @@ def scenerecognition(thread_name, delay):
 
                 except UnidentifiedImageError:
                     err_trace = traceback.format_exc()
-                    frontendClient.log(err_trace, is_error=True)
+                    senseAI.log(err_trace, is_error=True)
 
                     output = {
                         "success": False,
@@ -120,19 +122,19 @@ def scenerecognition(thread_name, delay):
                         "code": 400,
                     }
 
-                    frontendClient.errLog("scenerecognition", "scene.py", err_trace, "UnidentifiedImageError")
+                    senseAI.errLog("scenerecognition", "scene.py", err_trace, "UnidentifiedImageError")
 
                 except Exception:
                     err_trace = traceback.format_exc()
-                    frontendClient.log(err_trace, is_error=True)
+                    senseAI.log(err_trace, is_error=True)
 
                     output = {"success": False, "error": "invalid image", "code": 500}
 
-                    frontendClient.errLog("scenerecognition", "scene.py", err_trace, "Exception")
+                    senseAI.errLog("scenerecognition", "scene.py", err_trace, "Exception")
 
                 finally:
-                    frontendClient.endTimer(timer)
-                    frontendClient.sendResponse(req_id, json.dumps(output))
+                    senseAI.endTimer(timer)
+                    senseAI.sendResponse(req_id, json.dumps(output))
 
                     if os.path.exists(img_path):
                         os.remove(img_path)
@@ -141,6 +143,6 @@ def scenerecognition(thread_name, delay):
 
 
 if __name__ == "__main__":
-    frontendClient.log("Scene Detection module started.")
+    senseAI.log("Scene Detection module started.")
     scenerecognition("", SharedOptions.SLEEP_TIME)
     # TODO: Send back a "I'm alive" message to the backend of the API server so it can report to the user

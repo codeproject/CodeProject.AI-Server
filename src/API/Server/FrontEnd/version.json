@@ -1,13 +1,14 @@
 {
     "versionSection": {
-        "versionInfo": {
-            "Major": 1,
-            "Minor": 0,
-            "Patch": 0,
-            "PreRelease": "Beta",
-            "Build": 0,
-            "SecurityUpdate": false,
-            "File": "CodeProject.SenseAI.1.0.0.Beta.zip"
-        }
+      "versionInfo": {
+        "Major": 1,
+        "Minor": 1,
+        "Patch": 0,
+        "PreRelease": "Beta",
+        "Build": 0,
+        "SecurityUpdate": false,
+        "File": "CodeProject.SenseAI.Server-1.1.0.zip",
+        "ReleaseNotes": "Added Text Summary module"
+      }
     }
 }

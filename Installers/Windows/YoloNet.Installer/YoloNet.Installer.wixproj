@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>e0aede8a-e336-49c6-9d6a-7a05e8155ab9</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>YoloNet.Installer</OutputName>
+    <OutputName>CodeProject.SenseAI.YoloNet-1.1.0</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -24,7 +24,6 @@
   <ItemGroup>
     <Compile Include="Product.wxs" />
     <Compile Include="YoloNetInstallFiles.wxs" />
-    <Compile Include="YoloNetModelFiles.wxs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo\CodeProject.SenseAI.AnalysisLayer.Yolo.csproj">
@@ -55,13 +54,8 @@
 	To modify your build process, add your task inside one of the targets below and uncomment it.
 	Other similar extension points exist, see Wix.targets.
 	-->
-  <PropertyGroup>
-    <DefineConstants>ModelsHarvestPath=..\..\..\src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo\assets</DefineConstants>
-    <!--<DefineConstants Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">HarvestPath=..\distribution\Release</DefineConstants>-->
-  </PropertyGroup>
   <Target Name="BeforeBuild">
-    <HeatDirectory OutputFile="$(ProjectDir)\YoloNetInstallFiles.wxs" Directory="..\..\..\src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo\bin\release\net5.0\win-x64" ComponentGroupName="YoloNetFilesComponentGroup" DirectoryRefId="YOLONETINSTALLFOLDER" AutogenerateGuids="true" PreprocessorVariable="var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
-    <HeatDirectory OutputFile="$(ProjectDir)\YoloNetModelFiles.wxs" Directory="..\..\..\src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo\assets" ComponentGroupName="YoloNetModelsComponentGroup" DirectoryRefId="YOLONETMODELSFOLDER" AutogenerateGuids="true" PreprocessorVariable="var.ModelsHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
+    <HeatDirectory RunAsSeparateProcess="$(RunWixToolsOutOfProc)" OutputFile="$(ProjectDir)\YoloNetInstallFiles.wxs" Directory="..\..\..\src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo\bin\release\net6.0" ComponentGroupName="YoloNetFilesComponentGroup" DirectoryRefId="YoloNetInstallFolder" AutogenerateGuids="true" PreprocessorVariable="var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

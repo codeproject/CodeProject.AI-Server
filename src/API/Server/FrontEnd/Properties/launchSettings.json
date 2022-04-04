@@ -1,49 +1,67 @@
 {
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:49781/",
-      "sslPort": 44356
-    }
-  },
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
     "CodeProject.SenseAI Server (Debug)": {
       "commandName": "Project",
-      "commandLineArgs": "--PORT=5000",
       "launchBrowser": true,
-      "launchUrl": "swagger",
+      "launchUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "dotnetRunMessages": true,
-      "applicationUrl": ""
+      "applicationUrl": "http://localhost:5000",
+      "dotnetRunMessages": true
     },
     "CodeProject.SenseAI Server (Release,SSL)": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "swagger",
+      "launchUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:5000"
-    },
-    "IIS Express": {
-      "commandName": "IISExpress",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      "applicationUrl": "http://localhost:5000",
+      "dotnetRunMessages": true
     },
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://+:5000"
+      },
+      "httpPort": 5000,
       "publishAllPorts": true,
-      "useSSL": true
+      "useSSL": false
+    },
+    "CodeProject.SenseAI Server Install (Debug)": {
+      "commandName": "Project",
+      "commandLineArgs": "/install",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "",
+      "dotnetRunMessages": true
+    },
+    "CodeProject.SenseAI Server unInstall (Debug)": {
+      "commandName": "Project",
+      "commandLineArgs": "/uninstall",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "",
+      "dotnetRunMessages": true
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:5000/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5000"
+      },
+      "distributionName": ""
     }
   }
 }

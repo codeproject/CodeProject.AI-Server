@@ -15,7 +15,25 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_1F293594B1C24786A04513C2D38BB33B"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_3ADC0FA03E9E4ED6890C7562F0E236CA"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_4784C9FAEE1A46C395361B8FC874E176"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5360A80A6AC84CF3BEE28A9ED6C4B429"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -27,7 +45,25 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_9B912B68E3C4477FA74A4388CB610697"
+        "MsmKey" = "8:_5D41CF87176A4F249355F3C1F67197C8"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_6A25336E97B443E5B8F05E9BF150AC6C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D8EBC93228844344B534CB0589C2A2D7"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_ECF5CDDE4DC54AC1972E4B6FF7BA327E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -56,6 +92,14 @@
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
             }
         }
         "Release"
@@ -86,6 +130,11 @@
                     {
                     "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
                     "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.NetCore.CoreRuntime.3.1.x64"
+                    {
+                    "Name" = "8:.NET Core Runtime 3.1.22 (x64)"
+                    "ProductCode" = "8:Microsoft.NetCore.CoreRuntime.3.1.x64"
                     }
                 }
             }
@@ -120,12 +169,152 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1F293594B1C24786A04513C2D38BB33B"
+            {
+            "SourcePath" = "8:..\\..\\Windows\\Sense-install-sidebar.jpg"
+            "TargetName" = "8:Sense-install-sidebar.jpg"
+            "Tag" = "8:"
+            "Folder" = "8:_1D60DBF57B5E45EAA7F014C362C523C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3ADC0FA03E9E4ED6890C7562F0E236CA"
             {
             "SourcePath" = "8:..\\..\\Windows\\favicon.ico"
             "TargetName" = "8:favicon.ico"
             "Tag" = "8:"
-            "Folder" = "8:_014DAD4572924BCA9696EF3F4790498D"
+            "Folder" = "8:_1D60DBF57B5E45EAA7F014C362C523C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4784C9FAEE1A46C395361B8FC874E176"
+            {
+            "SourcePath" = "8:..\\..\\Windows\\license.rtf"
+            "TargetName" = "8:license.rtf"
+            "Tag" = "8:"
+            "Folder" = "8:_1D60DBF57B5E45EAA7F014C362C523C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5360A80A6AC84CF3BEE28A9ED6C4B429"
+            {
+            "SourcePath" = "8:..\\..\\Windows\\Sense-install-sidebar.png"
+            "TargetName" = "8:Sense-install-sidebar.png"
+            "Tag" = "8:"
+            "Folder" = "8:_1D60DBF57B5E45EAA7F014C362C523C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5D41CF87176A4F249355F3C1F67197C8"
+            {
+            "SourcePath" = "8:..\\..\\Windows\\Sense-install-topbanner.png"
+            "TargetName" = "8:Sense-install-topbanner.png"
+            "Tag" = "8:"
+            "Folder" = "8:_1D60DBF57B5E45EAA7F014C362C523C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6A25336E97B443E5B8F05E9BF150AC6C"
+            {
+            "SourcePath" = "8:..\\..\\Windows\\logoSide.png"
+            "TargetName" = "8:logoSide.png"
+            "Tag" = "8:"
+            "Folder" = "8:_1D60DBF57B5E45EAA7F014C362C523C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D8EBC93228844344B534CB0589C2A2D7"
+            {
+            "SourcePath" = "8:..\\..\\Windows\\logo.png"
+            "TargetName" = "8:logo.png"
+            "Tag" = "8:"
+            "Folder" = "8:_1D60DBF57B5E45EAA7F014C362C523C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ECF5CDDE4DC54AC1972E4B6FF7BA327E"
+            {
+            "SourcePath" = "8:..\\..\\Windows\\Sense-install-BG.png"
+            "TargetName" = "8:Sense-install-BG.png"
+            "Tag" = "8:"
+            "Folder" = "8:_1D60DBF57B5E45EAA7F014C362C523C8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -167,6 +356,17 @@
                         {
                         }
                     }
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_1D60DBF57B5E45EAA7F014C362C523C8"
+                    {
+                    "Name" = "8:Assets"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_F06422E2542D41EF8F28CD991C5478FF"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
             "{1525181F-901A-416C-8A58-119130FE478E}:_91472A8083AA42ACA664716F43649300"
@@ -194,6 +394,13 @@
         }
         "LaunchCondition"
         {
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_9DF674264DFF44F6B96410F30F282EC3"
+            {
+            "Name" = "8:YoloNet"
+            "Condition" = "8:true"
+            "Message" = "8:<Error Message>"
+            "InstallUrl" = "8:https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/YoloNet.Installer.msi"
+            }
         }
         "Locator"
         {
@@ -208,22 +415,22 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:SenseAI"
         "ProductCode" = "8:{3A372EE5-9E89-4D86-8F99-9961F33B3034}"
-        "PackageCode" = "8:{E0A5E4B0-28B9-4A07-B640-557F4E8179BA}"
+        "PackageCode" = "8:{B6EF94DD-EA2B-4448-BCC3-796F332E93CD}"
         "UpgradeCode" = "8:{6E01970A-754A-4E19-9C41-5DD4B5CCBB5C}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "InstallAllUsers" = "11:FALSE"
+        "InstallAllUsers" = "11:TRUE"
         "ProductVersion" = "8:1.0.0"
         "Manufacturer" = "8:CodeProject"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
-        "Title" = "8:SenseAI Server"
+        "Title" = "8:CodeProject SenseAI Server"
         "Subject" = "8:"
         "ARPCONTACT" = "8:CodeProject"
         "Keywords" = "8:"
-        "ARPCOMMENTS" = "8:"
+        "ARPCOMMENTS" = "8:Making AI Easy."
         "ARPURLINFOABOUT" = "8:https://www.codeproject.com"
         "ARPPRODUCTICON" = "8:_3ADC0FA03E9E4ED6890C7562F0E236CA"
         "ARPIconIndex" = "3:0"
@@ -328,30 +535,16 @@
         }
         "Shortcut"
         {
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_49FE3B5CB7B842ED91203E252AC8EE04"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_B7FC6E0415AF456695C35C0E236BB052"
             {
-            "Name" = "8:Shortcut to Primary output from Frontend (Active)"
-            "Arguments" = "8:"
-            "Description" = "8:"
-            "ShowCmd" = "3:1"
-            "IconIndex" = "3:0"
-            "Transitive" = "11:FALSE"
-            "Target" = "8:_9B912B68E3C4477FA74A4388CB610697"
-            "Folder" = "8:_E55FF5A72D4B4713803A471D45CAF1D9"
-            "WorkingFolder" = "8:_3A09BB4650594AB8898085639E786B26"
-            "Icon" = "8:"
-            "Feature" = "8:"
-            }
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_4AB764125F734A2BA198B1E8C5FB7789"
-            {
-            "Name" = "8:Shortcut to Primary output from Frontend (Active)"
+            "Name" = "8:CodeProject SenseAI Server"
             "Arguments" = "8:--PORT 5000"
-            "Description" = "8:SenseAI Server"
+            "Description" = "8:Starts the CodeProject SenseAI Server"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_9B912B68E3C4477FA74A4388CB610697"
-            "Folder" = "8:_014DAD4572924BCA9696EF3F4790498D"
+            "Target" = "8:_5585AB44C7C549C1A6732445D4E1CE37"
+            "Folder" = "8:_E55FF5A72D4B4713803A471D45CAF1D9"
             "WorkingFolder" = "8:_014DAD4572924BCA9696EF3F4790498D"
             "Icon" = "8:_3ADC0FA03E9E4ED6890C7562F0E236CA"
             "Feature" = "8:"
@@ -453,13 +646,13 @@
             "Attributes" = "3:1"
                 "Dialogs"
                 {
-                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_78E912D6D67E420A803FDB0DF56A1B2B"
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_A071855366334BB590F48221E5C11F95"
                     {
-                    "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
+                    "Sequence" = "3:110"
+                    "DisplayName" = "8:License Agreement"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
-                    "SourcePath" = "8:<VsdDialogDir>\\VsdFolderDlg.wid"
+                    "SourcePath" = "8:<VsdDialogDir>\\VsdLicenseDlg.wid"
                         "Properties"
                         {
                             "BannerBitmap"
@@ -470,20 +663,33 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:1"
+                            "Setting" = "3:2"
+                            "Value" = "8:_5D41CF87176A4F249355F3C1F67197C8"
                             "UsePlugInResources" = "11:TRUE"
                             }
-                            "InstallAllUsersVisible"
+                            "EulaText"
                             {
-                            "Name" = "8:InstallAllUsersVisible"
-                            "DisplayName" = "8:#1059"
-                            "Description" = "8:#1159"
+                            "Name" = "8:EulaText"
+                            "DisplayName" = "8:#1008"
+                            "Description" = "8:#1108"
+                            "Type" = "3:6"
+                            "ContextData" = "8:"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:2"
+                            "Value" = "8:_4784C9FAEE1A46C395361B8FC874E176"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "Sunken"
+                            {
+                            "Name" = "8:Sunken"
+                            "DisplayName" = "8:#1007"
+                            "Description" = "8:#1107"
                             "Type" = "3:5"
-                            "ContextData" = "8:1;True=1;False=0"
+                            "ContextData" = "8:4;True=4;False=0"
                             "Attributes" = "3:0"
                             "Setting" = "3:0"
-                            "Value" = "3:1"
-                            "DefaultValue" = "3:1"
+                            "Value" = "3:4"
+                            "DefaultValue" = "3:4"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -505,7 +711,8 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:1"
+                            "Setting" = "3:2"
+                            "Value" = "8:_5D41CF87176A4F249355F3C1F67197C8"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "CopyrightWarning"
@@ -516,8 +723,8 @@
                             "Type" = "3:3"
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
-                            "Setting" = "3:1"
-                            "Value" = "8:#1202"
+                            "Setting" = "3:2"
+                            "Value" = "8:WARNING: This computer program is protected by copyright law and international treaties. Unauthorized duplication or distribution of this program, or any portion of it, may result in severe civil or criminal penalties, and will be prosecuted to the maximum extent possible under the law."
                             "DefaultValue" = "8:#1202"
                             "UsePlugInResources" = "11:TRUE"
                             }
@@ -553,7 +760,8 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:1"
+                            "Setting" = "3:2"
+                            "Value" = "8:_5D41CF87176A4F249355F3C1F67197C8"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -777,34 +985,6 @@
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:Release|Any CPU"
             "OutputGroupCanonicalName" = "8:PublishItems"
-            "OutputProjectGuid" = "8:{A0CF3BEE-8EE3-4B23-BEB8-9D258C0510A3}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9B912B68E3C4477FA74A4388CB610697"
-            {
-            "SourcePath" = "8:..\\..\\..\\src\\API\\Server\\FrontEnd\\obj\\Release\\net5.0\\CodeProject.SenseAI.Server.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_014DAD4572924BCA9696EF3F4790498D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{A0CF3BEE-8EE3-4B23-BEB8-9D258C0510A3}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"

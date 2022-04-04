@@ -1,24 +1,14 @@
 {
     "version": "2.0.0",
     "tasks": [
-        {
-            "label": "build-all",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
 
+        // All platforms
         {
-            "label": "build-server",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
+            "label": "build-server",    // Builds ONLY the API server, and not any backend analsysis or playground apps
+             "type": "process",
+             "group": "build",
+             "command": "dotnet",
+             "args": [
                 "build",
                 "${workspaceFolder}/src/API/Server/FrontEnd",
                 "/property:GenerateFullPaths=true",
@@ -28,103 +18,53 @@
         },
 
         {
-            "label": "publish",
-            "command": "dotnet",
+            "label": "build-yolo",      // Builds ONLY the Yolo .NET analysis module
             "type": "process",
+            "group": "build",
+            "command": "dotnet",
             "args": [
-                "publish",
-                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "build",
+                "${workspaceFolder}/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
-        },
+        },   
 
         {
-            "label": "watch",
-            "command": "dotnet",
+            "label": "build-playground",      // Builds ONLY the Yolo .NET analysis module
             "type": "process",
+            "group": "build",
+            "command": "dotnet",
             "args": [
-                "watch",
-                "run",
-                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "build",
+                "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
-        },
+        },   
 
         {
-            "label": "prepare-server",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-server",
-                // "start-analysis"
-            ]
-        },
-
-        {
-            "label": "launch-server",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-server",
-                // "start-analysis",
-                "start-api"
-            ]
-        },
-
-        {
-            "label": "prepare-playground",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-all",
-                // "start-analysis",
-                "start-api",
-            ]
-        },
-
-        /* Now started by the front end server
-        {
-            "label": "start-analysis",
+            "label": "build-common",      // Builds ONLY the Yolo .NET analysis module
             "type": "process",
+            "group": "build",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/API/Common",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },   
+
+        {
+            "label": "start-api",       // Starts the API server, which in turn will start the backend analysis modules. No build is performed
             "isBackground": true,
-            "windows": {
-                "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.bat",
-                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ]
-            },
-            "linux": {
-                "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.sh",
-                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ]
-            },
-            "osx": {
-                "command": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/start.sh",
-                "args": [ "--no-color", "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer" ]
-            },
-
-            // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
-            // to give VSCode enough to be satisfied and just let it run
-            "problemMatcher": [
-                {
-                    "pattern": [
-                        {
-                            "regexp": ".",
-                            "file": 1,
-                            "location": 2,
-                            "message": 3
-                        }
-                    ],
-                    "background": {
-                        "activeOnStart": true,
-                        "beginsPattern": ".",
-                        "endsPattern": ".",
-                    }
-                }
-            ]
-        }, 
-        */
-
-        {
-            "label": "start-api",
+            "type": "process",
+            "group": "none",
+            "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.exe",
             "windows": {
                 "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.exe"
             },
@@ -134,8 +74,6 @@
             "linux": {
                 "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
             },
-            "isBackground": true,
-            "type": "process",
             "args": [],
 
             // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
@@ -160,23 +98,178 @@
         },
 
         {
-            "label": "start-playground",
+            "label": "start-api-noprocesses",   // Starts the API server, WITHOUT starting the backend analysis modules
+            "isBackground": true,
+            "type": "process",
+            "group": "none",
+            "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.exe",
             "windows": {
-                // Windows form apps only work in Windows
-                "command": "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground/bin/Debug/net5.0-windows/",
-                "args": []            
-            },
-            "linux": {
-                // Windows form apps only work in Windows
-                "command": "echo",
-                "args": [ "Windows Forms apps are not available in Linux"] 
+                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.exe"
             },
             "osx": {
-                // Windows form apps only work in Windows
-                "command": "echo",
-                "args": [ "Windows Forms apps are not available in Linux"] 
+                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
             },
+            "linux": {
+                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
+            },
+            "args": [ "--LaunchAnalysisServices=false" ],
+
+            // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
+            // to give VSCode enough to be satisfied and just let it run
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".",
+                        "endsPattern": ".",
+                    }
+                }
+            ]
+        },
+
+        // Linux / macOS
+        {
+            "label": "build-all-linux",         // Builds all projects that can be built for Linux (ie not any Windows Forms apps)
+            "group": "build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-common",
+                "build-yolo",
+                "build-server"
+            ]
+        },
+
+        {
+            "label": "launch-analysis-linux",   // Launches ONLY the backend Python analysis services. Allows us to debug them
             "type": "process",
-        }        
+            "isBackground": true,
+            "group": "none",
+            "command": "${workspaceFolder}\\src\\AnalysisLayer\\start-analysis.bat",
+            "windows": {
+                "command": "${workspaceFolder}\\src\\AnalysisLayer\\start-analysis.bat"
+            },
+            "osx": {
+                "command": "/bin/bash '${workspaceFolder}/src/AnalysisLayer/start-analysis.sh'"
+            },
+            "linux": {
+                "command": "/bin/bash ${workspaceFolder}/src/AnalysisLayer/start-analysis.sh"
+            },
+            "args": [ "'${workspaceFolder}/src/AnalysisLayer/'" ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
+            // to give VSCode enough to be satisfied and just let it run
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".",
+                        "endsPattern": ".",
+                    }
+                }
+            ]
+        },        
+
+        {
+            "label": "launch-server-linux",     // Builds and Launches the AI server for Linux
+            "group": "none",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-yolo",
+                "build-server",
+                "start-api"
+            ]
+        },
+
+        {
+            "label": "pre-launch-server-linux-debug", // Builds all, then Launches only background processes, allowing Python debug 
+            "group": "none",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-yolo",
+                "build-server",
+                "launch-analysis-linux"
+            ]
+        },
+
+        // Windows (includes Playground, which is Windows Forms)
+        {
+            "label": "build-all-win",         // Builds all projects that can be built for Linux (ie not any Windows Forms apps)
+            "group": "build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-common",
+                "build-yolo",
+                "build-server",
+                "build-playground"
+            ]
+        },
+
+        {
+            "label": "launch-server-win",       // Builds all projects then launches the front end API server
+            "group": "none",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-all-win",
+                "start-api"
+            ]
+        },
+
+        {
+            "label": "start-playground",        // Starts the Playground Windows form app. No building or launching of API server done.
+            "group": "none",
+            // Windows form apps only work in Windows
+            "command": "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground/bin/Debug/net6.0-windows/",
+            "args": [],
+            "type": "process",
+        },
+
+        // Misc
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "group": "none",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "watch",
+            "command": "dotnet",
+            "group": "none",
+            "type": "process",
+            "args": [
+                "watch",
+                "run",
+                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        }    
     ]
 }

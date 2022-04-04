@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace CodeProject.SenseAI.API.Server.Backend
 {
     /// <summary>
-    /// Manages the Concurrent Queues used to
+    /// Manages the Concurrent Queues
     /// </summary>
     public class QueueServices
     {
@@ -174,14 +174,17 @@ namespace CodeProject.SenseAI.API.Server.Backend
             if (!_queues.TryGetValue(queueName, out Channel<BackendRequestBase>? queue))
                 return null;
 
-            BackendRequestBase? request;
+            BackendRequestBase? request = null;
             do
             {
+
                 // setup a request timeout.
                 using var cancelationSource = new CancellationTokenSource(_settings.CommandDequeueTimeout);
                 var timeoutToken = cancelationSource.Token;
-                CancellationToken theToken =
-                    CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken).Token;
+                var theToken = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken).Token;
+
+                // NOTE FOR VS CODE users: In debug, you may want to uncheck "All Exceptions" under the
+                // breakpoints section (the bottom section) of the Run and Debug tab.
 
                 try
                 {

@@ -95,7 +95,7 @@ if /i "%verbosity%"   == "info" set pipFlags=
 :: Setup backend analysis modules
 set analysisPath=%srcDir%\%analysisLayerDir%
 
-:: Module 1: Deepstack
+:: Module 1: DeepStack
 set deepStackPath=%cd%\%analysisPath%\%deepstackDir%
 
 :: Module 2: Yolo.net

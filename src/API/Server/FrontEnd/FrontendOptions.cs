@@ -14,10 +14,21 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// </summary>
         public string? ROOT_PATH { get; set; }
 
+        /* These are last resort for helping correct paths...
+         
         /// <summary>
-        /// Gets or sets the name of the API Directory of the installation.
+        /// Gets or sets the name of the API Directory of the installation. This is only used to
+        /// dynamically work up the directory chain to find the API directory in Development mode
         /// </summary>
-        public string? API_DIRNAME { get; set; }
+        public string? APICODE_DIRNAME { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the Directory in which the API server will be installed in
+        /// production. This is used to assess at runtime where the exe is in relation to the root
+        /// path.
+        /// </summary>
+        public string? SERVEREXE_DIRNAME { get; set; }
+        */
 
         /// <summary>
         /// Gets or sets the root directory that contains the backend modules.
@@ -80,6 +91,11 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// Gets or sets the name of the command to be executed.
         /// </summary>
         public string? Command { get; set; }
+
+        /// <summary>
+        /// Gets or set the working directory for this command
+        /// </summary>
+        public string? WorkingDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the arguments passed to the command.

@@ -18,12 +18,8 @@ set forceOverwrite=false
 :: Show output in wild, crazy colours
 set techniColor=true
 
-:: Basic App Features
+:: Platform can define where things are located
 set platform=windows
-set PROFILE=windows_native
-set CUDA_MODE=False
-set PORT=5000
-
 
 :: Basic locations
 
@@ -35,8 +31,9 @@ set rootPath=../..
 :: The name of the dir holding the frontend API server
 set senseAPIDir=API
 
-:: The name of the startup settings file (No longer used)
-:: set settingsFile=CodeProject.SenseAI.json
+:: TextSummary specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+set textSummaryDir=TextSummary
 
 :: DeepStack specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -130,6 +127,9 @@ call :Write White "Creating Directories..."
 :: For downloading assets
 if not exist "%downloadPath%\" mkdir "%downloadPath%"
 
+:: For Text Summary 
+set textSummaryPath=%analysisLayerPath%\%textSummaryDir%
+
 :: For DeepStack
 set deepStackPath=%analysisLayerPath%\%deepstackDir%
 if not exist "%deepStackPath%\%tempstoreDir%\" mkdir "%deepStackPath%\%tempstoreDir%"
@@ -143,8 +143,7 @@ call :WriteLine Green "Done"
 call :Write White "Downloading utilities and models: "
 call :WriteLine Gray "Starting"
 
-REM set pythonInstallPath=%analysisLayerPath%/bin/%platform%/%pythonDir% - soon!
-set pythonInstallPath=%deepStackPath%\%pythonDir%
+set pythonInstallPath=%analysisLayerPath%\bin\%platform%\%pythonDir%
 
 :: Clean up directories to force a re-download if necessary
 if /i "%forceOverwrite%" == "true" (
@@ -231,21 +230,20 @@ if "%verbosity%"=="loud" where Python
 
 
 :: ============================================================================
-:: 3. Install PIP packages
+:: 3a. Install PIP packages for Python analysis services
 
-:: ASSUMPTION: If venv\Lib\site-packages\torch exists then no need to do this
+call :Write White "Installing Python package manager..."
+python -m pip install --trusted-host pypi.python.org ^
+                      --trusted-host files.pythonhosted.org ^
+                      --trusted-host pypi.org --upgrade pip !pipFlags!
+call :WriteLine Green "Done"
 
 call :Write White "Checking for required packages..."
 
+:: ASSUMPTION: If venv\Lib\site-packages\torch exists then no need to do this
 if not exist "!VIRTUAL_ENV!\Lib\site-packages\torch" (
 
     call :WriteLine Yellow "Installing"
-
-    call :Write White "  - Installing Python package manager..."
-    python -m pip install --trusted-host pypi.python.org ^
-                          --trusted-host files.pythonhosted.org ^
-                          --trusted-host pypi.org --upgrade pip !pipFlags!
-    call :WriteLine Green "Done"
 
     REM call :Write White "Installing Packages into Virtual Environment..."
     REM pip install -r %deepStackPath%\%intelligenceDir%\requirements.txt !pipFlags!
@@ -294,38 +292,16 @@ if not exist "!VIRTUAL_ENV!\Lib\site-packages\torch" (
 )
 
 :: ============================================================================
-:: 5. Let's do this!
+:: 3b. Install PIP packages for TextSummary
+
+call :Write White "Installing required Text Processing packages..."
+pip install -r %textSummaryPath%\requirements.txt !pipFlags!
+call :WriteLine Green "Success"
 
 
-:: a) SET all Env. variables and store in a json file that will be loaded by 
-::    the .NET API app
-
-:: No longer needed (will be removed) due to the Server now handling all this
-
-REM call :Write White "Setting Environment variables..."
-REM 
-REM :: For CodeProject.SenseAI
-REM 
-REM set CPSENSEAI_ROOTDIR=!absoluteRootDir!
-REM set CPSENSEAI_APPDIR=!srcDir!
-REM set CPSENSEAI_APIDIR=!senseAPIDir!
-REM set CPSENSEAI_ANALYSISDIR=!analysisLayerDir!
-REM set CPSENSEAI_CONFIG=Debug
-REM set CPSENSEAI_PRODUCTION=False
-REM set CPSENSEAI_BUILDSERVER=True
-REM 
-REM :: For DeepStack
-REM 
-REM set APPDIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%intelligenceDir%
-REM set MODELS_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%modelsDir%
-REM set DATA_DIR=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%datastoreDir%
-REM set TEMP_PATH=%CPSENSEAI_ROOTDIR%\%srcDir%\%analysisLayerDir%\%deepstackDir%\%tempstoreDir%
-REM 
-REM call save_environment  "!absoluteRootDir!\!settingsFile!"
-REM 
-REM call :WriteLine White "Done."
-
+:: ============================================================================
 :: and we're done.
+
 call :WriteLine Yellow "Development Environment setup complete" 
 call :WriteLine White ""
 call :WriteLine White ""

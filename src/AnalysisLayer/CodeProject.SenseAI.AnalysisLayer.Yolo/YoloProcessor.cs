@@ -29,6 +29,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
     {
         private const string                    _queueName = "detection_queue";
         private static HttpClient?              _httpClient;
+        private int                             _parallelism = 4; // 4 also seems to be good on my machine.
         private readonly ILogger<YoloProcessor> _logger;
         private readonly ObjectDetector         _objectDetector;
 
@@ -64,6 +65,15 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             _logger.LogInformation("Background YoloDetector Task Started.");
             await LogToServer("SenseAI Object Detection module started.", token);
 
+            List<Task> tasks = new List<Task>();
+            for (int i= 0; i < _parallelism; i++)
+                tasks.Add(ProcessQueue(token));
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        private async Task ProcessQueue(CancellationToken token)
+        {
             while (!token.IsCancellationRequested)
             {
                 BackendResponseBase response;
@@ -96,6 +106,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                 {
                     if (string.IsNullOrWhiteSpace(detectRequest.imgid))
                     {
+                        await LogToServer("Object Detection Null or Whitespace filename.", token);
                         response = new BackendErrorResponse(-1, "Object Detection Invalid filename.");
                     }
                     else
@@ -106,8 +117,9 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                         {
                             yoloResult = _objectDetector.Predict(detectRequest.imgid);
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
+                             await LogToServer($"Object Detection Error for {detectRequest.imgid}.", token);
                             _logger.LogError(ex, "Yolo Object Detector Exception");
                             yoloResult = null;
                         }

@@ -27,9 +27,9 @@
         const statusFrequency      = 3000;    // milliseconds
         const checkUpdateFrequency = 24 * 3600 * 1000; // 24hr in milliseconds
 
-        var _lastLogId      = 0;
-        var _serverIsOnline = false;
-        var _version        = null;
+        let _lastLogId      = 0;
+        let _serverIsOnline = false;
+        let _version        = null;
 
         window.addEventListener('DOMContentLoaded', function (event) {
 
@@ -54,7 +54,7 @@
 
         async function callStatus(method, callback) {
             
-            var url = serviceUrl.value.trim() + '/v1/status/' + method;
+            let url = serviceUrl.value.trim() + '/v1/status/' + method;
 
             await fetch(url, { method: "GET" })
                 .then(response => {
@@ -105,22 +105,25 @@
                         let update = document.getElementById("update");
                         update.style.display = '';
 
-                        update.innerHTML = data.message
-                                         + " <a href='" + data.version.file + "'>Download<a>";
+                        let message = data.message + " <a href='" + data.version.file + "'>Download<a>";
+                        if (data.version.releaseNotes)
+                            message += "<div class='mt-2 text-white-50'>" + data.version.releaseNotes + "</div>";
+
+                        update.innerHTML      = message;
                         update.styles.display = '';
                     }
                     else if (showResult) {
 
                         update.styles.display = '';
-                        update.innerHTML = "You have the latest version of SenseAI";
+                        update.innerHTML      = "You have the latest version of SenseAI";
                     }
 
                 }
                 else {
 
                     updateError.innerHTML = "Unable to check for updates";
-                    var element = document.getElementById("updateToast");
-                    var toastPopup = new bootstrap.Toast(element);
+                    let element = document.getElementById("updateToast");
+                    let toastPopup = new bootstrap.Toast(element);
                     toastPopup.show();
                 }
             });
@@ -135,7 +138,7 @@
 
             // In the future we will ask for "logs since log ID 'x'" so we have
             // a full history. For now, a simple "last 10".
-            var url = serviceUrl.value.trim() + '/v1/status/analysis/list';
+            let url = serviceUrl.value.trim() + '/v1/status/analysis/list';
 
             fetch(url, {
                 method: "GET"
@@ -147,7 +150,7 @@
 
                         if (data && data.statuses) {
 
-                            var results = "<div id='serviceStatus' class='d-flex w-100 mt-3 justify-content-between'>";
+                            let results = "<div id='serviceStatus' class='d-flex w-100 mt-3 justify-content-between'>";
 
                             for (let i = 0; i < data.statuses.length; i++) {
                                 let className = data.statuses[i].value ? "success" : "warning";
@@ -172,7 +175,7 @@
          */
         async function getLogs() {
 
-            var url = serviceUrl.value.trim() + '/v1/log/list?count=20&last_id=' + _lastLogId;
+            let url = serviceUrl.value.trim() + '/v1/log/list?count=20&last_id=' + _lastLogId;
 
             fetch(url, {
                 method: "GET"
@@ -183,19 +186,22 @@
                     response.json().then(data => {
                         if (data && data.entries) {
 
-                            var newLogs = "";
+                            let newLogs = "";
                             for (let i = 0; i < data.entries.length; i++) {
-                                var logEntry = data.entries[i];
-                                var date = new Date(logEntry.timestamp).toLocaleTimeString();
-                                newLogs = date + ": " + logEntry.entry + "\n" + newLogs;
+                                let logEntry = data.entries[i];
+                                let date = new Date(logEntry.timestamp).toLocaleTimeString();
+                                newLogs += date + ": " + logEntry.entry + "\n";
                                 _lastLogId = logEntry.id;
                             }
 
                             if (newLogs) {
-                                var log = newLogs + logs.innerHTML;
+
+                                let log = logs.innerHTML + newLogs;
                                 if (log.length > 10000)
                                     log = log.substring(0, 10000);
                                 logs.innerHTML = log;
+
+                                logs.scrollIntoView(false);
                             }
                         }
                     })
@@ -252,8 +258,10 @@
                 <span id="status" class="font-weight-bold ms-2"></span>
                 </div>
 
-                <div class="mt-3 overflow-scroll font-monospace text-break border border-1 border-light" id="logs"
-                     style="white-space:pre; width:100%;height:150px;overflow-x:hidden !important"></div>
+                <div class="mt-3 overflow-scroll border border-1 border-light"
+                     style="width:100%;height:150px;overflow-x:hidden !important">
+                    <div id="logs" class="font-monospace text-break" style="white-space:pre;"></div>
+                </div>
             </div>
         </div>
 
@@ -274,7 +282,7 @@
                     <li>Join the discussion and ask questions on the 
                     <b><a href="https://www.codeproject.com/Feature/SenseAI-Discussions.aspx" 
                           target="_blank">SenseAI forum</a></b>.</li>
-                    <li>Open the <b><a href="Vision.html" target="_blank">CodeProject SenseAI 
+                    <li>Open the <b><a href="vision.html" target="_blank">CodeProject SenseAI 
                         Playground</a></b> to explore the capabilities.</li>
                 <!--<li>Explore the API using our <a href="http://localhost:5000/swagger/index.html">SwaggerUI</a></li>-->
                     <li> <a href="https://github.com/codeproject/CodeProject.SenseAI">Explore the 

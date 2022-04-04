@@ -18,13 +18,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
     [DisableResponseChunking]
     public class VisionController : ControllerBase
     {
-        private readonly CommandDispatcher _dispatcher;
+        private readonly VisionCommandDispatcher _dispatcher;
 
         /// <summary>
         /// Initializes a new instance of the VisionController class.
         /// </summary>
         /// <param name="dispatcher">The Command Dispatcher instance.</param>
-        public VisionController(CommandDispatcher dispatcher)
+        public VisionController(VisionCommandDispatcher dispatcher)
         {
             _dispatcher = dispatcher;
         }

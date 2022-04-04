@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>a1afa75c-324e-4b79-be13-5557e495fbbe</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>SenseAI.Server.Installer</OutputName>
+    <OutputName>CodeProject.SenseAI.WebAPI-1.1.0</OutputName>
     <OutputType>Package</OutputType>
     <Name>SenseAI.Server.Installer</Name>
   </PropertyGroup>
@@ -59,13 +59,13 @@
 	To modify your build process, add your task inside one of the targets below and uncomment it.
 	Other similar extension points exist, see Wix.targets.
 	-->
-	<PropertyGroup>
-		<DefineConstants>TestDataHarvestPath=..\..\..\demos\TestData</DefineConstants>
-		<!--<DefineConstants Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">HarvestPath=..\distribution\Release</DefineConstants>-->
-	</PropertyGroup>
-	<Target Name="BeforeBuild">
-    <HeatDirectory OutputFile="$(ProjectDir)\FrontendInstallFiles.wxs" Directory="..\..\..\src\api\server\frontend\bin\release\net5.0" ComponentGroupName="FrontendFilesComponentGroup" DirectoryRefId="SERVERINSTALLFOLDER" AutogenerateGuids="true" PreprocessorVariable="var.Frontend.TargetDir" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
-    <HeatDirectory OutputFile="$(ProjectDir)\DemoImangesFiles.wxs" Directory="..\..\..\demos\TestData" ComponentGroupName="TestDataFilesComponentGroup" DirectoryRefId="TestDataFolder" AutogenerateGuids="true" PreprocessorVariable="var.TestDataHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
+  <PropertyGroup>
+    <DefineConstants>TestDataHarvestPath=..\..\..\demos\TestData</DefineConstants>
+    <!--<DefineConstants Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">HarvestPath=..\distribution\Release</DefineConstants>-->
+  </PropertyGroup>
+  <Target Name="BeforeBuild">
+    <HeatDirectory RunAsSeparateProcess="$(RunWixToolsOutOfProc)" OutputFile="$(ProjectDir)\FrontendInstallFiles.wxs" Directory="..\..\..\src\api\server\frontend\bin\release\net6.0" ComponentGroupName="FrontendFilesComponentGroup" DirectoryRefId="ServerInstallFolder" AutogenerateGuids="true" PreprocessorVariable="var.Frontend.TargetDir" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
+    <HeatDirectory RunAsSeparateProcess="$(RunWixToolsOutOfProc)" OutputFile="$(ProjectDir)\DemoImangesFiles.wxs" Directory="..\..\..\demos\TestData" ComponentGroupName="TestDataFilesComponentGroup" DirectoryRefId="TestDataFolder" AutogenerateGuids="true" PreprocessorVariable="var.TestDataHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

@@ -43,6 +43,11 @@ namespace CodeProject.SenseAI.API.Common
         public string? File { get; set; }
 
         /// <summary>
+        /// Gets or sets the main release notes for this version.
+        /// </summary>
+        public string? ReleaseNotes { get; set; }
+
+        /// <summary>
         /// Gets a string representation of the version without pre-release or build info
         /// </summary>
         [JsonIgnore]

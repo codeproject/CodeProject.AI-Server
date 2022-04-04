@@ -219,7 +219,7 @@ set senseAIInstallPath=%installationDir%\%srcDir%\%senseAPIDir%
 if not exist "%senseAIInstallPath%" mkdir "%senseAIInstallPath%"
 
 :: For DeepStack
-:: Deepstack gets copied over in one fell swoop. No need to create dirs
+:: DeepStack gets copied over in one fell swoop. No need to create dirs
 
 call :WriteLine Green "Done"
 

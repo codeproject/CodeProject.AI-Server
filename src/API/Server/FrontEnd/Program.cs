@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace CodeProject.SenseAI.API.Server.Frontend
 {
@@ -33,6 +34,27 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             const string company = "CodeProject";
             const string product = "SenseAI";
 
+            var assembly           = Assembly.GetExecutingAssembly();
+            var assemblyName       = assembly.GetName().Name ?? String.Empty;
+            var servicePath        = assembly.Location.Remove(Assembly.GetExecutingAssembly().Location.Length - 4) + ".exe";
+            var serviceName        = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
+                                   ?? assemblyName.Replace(".", " ");
+            var serviceDescription = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? string.Empty;
+
+            if (args.Length == 1)
+            {
+                if (args[0].Equals("/Install", StringComparison.OrdinalIgnoreCase))
+                {
+                    WindowsServiceInstaller.Install(servicePath, serviceName, serviceDescription);
+                    return;
+                }
+                else if (args[0].Equals("/Uninstall", StringComparison.OrdinalIgnoreCase))
+                {
+                    WindowsServiceInstaller.Uninstall(serviceName);
+                    return;
+                }
+            }
+
             string programDataDir     = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
 
@@ -40,29 +62,56 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 { "ApplicationDataDir", applicationDataDir }
             };
 
+            string platform = "windows";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                platform = "osx";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                platform = "linux";
+
+            bool inVScode = (Environment.GetEnvironmentVariable("RUNNING_IN_VSCODE") ?? "") == "true";
+            bool inDocker = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
+
+            if (inDocker)
+                platform = "docker";  // which in our case implies that we are running in Linux
+
             IHost? host = CreateHostBuilder(args)
                        .ConfigureAppConfiguration((hostingContext, config) =>
                        {
-                            // Windows loads this stuff by default, and exceptions are only for osx/linux
-                            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                            {
-                               config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"), optional: false, reloadOnChange: true);
-                               if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                                   config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.osx.json"), optional: false, reloadOnChange: true);
-                               else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                                   config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.linux.json"), optional: false, reloadOnChange: true);
-#if DEBUG
-                               config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.development.json"), optional: false, reloadOnChange: true);
-                               if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                                   config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.osx.development.json"), optional: false, reloadOnChange: true);
-                               else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                                   config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.linux.development.json"), optional: false, reloadOnChange: true);
-#endif
-                            }
+                           string baseDir = AppContext.BaseDirectory;
 
-                            config.AddInMemoryCollection(inMemoryConfigData);
-                            config.AddJsonFile(Path.Combine(applicationDataDir, InstallConfig.InstallCfgFilename), reloadOnChange: true, optional: true);
-                            config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, VersionConfig.VersionCfgFilename), reloadOnChange: true, optional: true);
+                           // We've had issues where the default appsettings files not being loaded.
+                           if (inVScode && platform != "windows")
+                           {
+                                config.AddJsonFile(Path.Combine(baseDir, "appsettings.json"),
+                                                   optional: false, reloadOnChange: true);
+                           }
+
+                           config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.json"),
+                                              optional: true, reloadOnChange: true);
+
+                           // ListEnvVariables(Environment.GetEnvironmentVariables());
+
+                           string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                           if (!string.IsNullOrWhiteSpace(aspNetEnv))
+                           {
+                                // We've had issues where the default appsettings files not being loaded.
+                                if (inVScode && platform != "windows")
+                                {
+                                    config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{aspNetEnv}.json"),
+                                                       optional: true, reloadOnChange: true);
+                                }
+                                
+                                config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.{aspNetEnv}.json"),
+                                                  optional: true, reloadOnChange: true);
+                           }
+
+                           config.AddInMemoryCollection(inMemoryConfigData);
+                           config.AddJsonFile(Path.Combine(applicationDataDir, InstallConfig.InstallCfgFilename),
+                                              reloadOnChange: true, optional: true);
+                           config.AddJsonFile(Path.Combine(baseDir, VersionConfig.VersionCfgFilename), 
+                                              reloadOnChange: true, optional: true);
+
+                           // ListConfigSources(config.Sources);
                        })
                        .Build()
                        ;
@@ -89,7 +138,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             catch (Exception ex)
             {
                 // TODO: Host is gone, so no logger ??
-                Console.WriteLine($"\n\nUnable to start the server due to {ex.Message}.\nCheck that another instance is not running on the same port.");
+                Console.WriteLine($"\n\nUnable to start the server: {ex.Message}.\n" +
+                                  "Check that another instance is not running on the same port.");
                 Console.Write("Press Enter to close.");
                 Console.ReadLine();
             }
@@ -102,48 +152,36 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <returns>Returns the builder.</returns>
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
-            // Some faffing around: We want to launch a webpage, and in our infinite cleverness we
-            // want the page to load external files (CSS, JS). For this we need to set the 
-            // ContentRoot for the server. Easy, except we have to hunt for the correct directory.
-            // ASSUMPTION: The content root will always be the /src/API/FrontEnd directory. When
-            // this server is launched from an install, that install is clean and this exe is in
-            // the /FrontEnd directory. When launched from within the dev environment, the exe is
-            // buried deep down the labyrinth. Grab a torch and hunt.
-
-            /* Currently not needed
-            DirectoryInfo currentDir = new(AppContext.BaseDirectory);
-            while (currentDir != null && currentDir.Name.ToLower() != "frontend" && currentDir.Name.ToLower() != "server")
-            {
-                if (currentDir.Parent == null)
-                    throw new DirectoryNotFoundException("Unable to find the FrontEnd parent directory");
-               
-                currentDir = currentDir.Parent;
-            }
-            */
-
             return Host.CreateDefaultBuilder(args)
-
-                        // configure for running as a Windows Service or LinuxSystemmd in addition
+                        // configure for running as a Windows Service or Linux Systemmd in addition
                         // as an executable in either OS.
                        .UseWindowsService()
                        .UseSystemd()
                        .ConfigureWebHostDefaults(webBuilder =>
                        {
-                           webBuilder.UseShutdownTimeout(TimeSpan.FromMinutes(2));
-                           webBuilder.ConfigureKestrel((hostbuilderContext, serverOptions) =>
-                                       {
-                                           _port = GetServerPort(hostbuilderContext);
-                                           serverOptions.Listen(IPAddress.Any, _port);
+                            webBuilder.UseShutdownTimeout(TimeSpan.FromSeconds(30));
+                            webBuilder.ConfigureKestrel((hostbuilderContext, serverOptions) =>
+                            {
+                                _port = GetServerPort(hostbuilderContext);
+                                serverOptions.Listen(IPAddress.IPv6Any, _port);
                                            
-                                           // Add a self-signed certificate to enable HTTPS locally
-                                           // serverOptions.Listen(IPAddress.Loopback, _sPort,
-                                           //    listenOptions => {
-                                           //    {
-                                           //        listenOptions.UseHttps("testCert.pfx", "testPassword");
-                                           //    });
-                                       })
-                                       // .UseContentRoot(currentDir!.FullName) // for static files
-                                       .UseStartup<Startup>();
+                                // Add a self-signed certificate to enable HTTPS locally
+                                // serverOptions.Listen(IPAddress.Loopback, _sPort,
+                                //    listenOptions => {
+                                //    {
+                                //        listenOptions.UseHttps("testCert.pfx", "testPassword");
+                                //    });
+                            })
+                            .UseStartup<Startup>();
+
+                            // Keep things clean and simple for now
+                            webBuilder.ConfigureLogging(logging =>
+                            {
+                                logging.ClearProviders()
+                                       .AddFilter("Microsoft", LogLevel.Warning)
+                                       .AddFilter("System", LogLevel.Warning)
+                                       .AddConsole();
+                            });
 
                     // Or if we want to do this manually...
                     // webBuilder.UseUrls($"http://localhost:{_port}/", $"https://localhost:{_sPort}/");
@@ -154,6 +192,10 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         {
             IConfiguration config = hostbuilderContext.Configuration;
             int port = config.GetValue<int>("PORT", -1);
+
+            if (port < 0)
+                port = config.GetValue<int>("FrontEndOptions:BackendEnvironmentVariables:PORT", -1);
+
             if (port < 0)
             {
                 string urls = config.GetValue<string>("urls");
@@ -170,6 +212,32 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         }
 
         /// <summary>
+        /// Lists the config sources
+        /// </summary>
+        /// <param name="sources">The sources</param>
+        public static void ListConfigSources(IList<IConfigurationSource> sources)
+        {
+            foreach (var source in sources)
+            {
+                if (source is Microsoft.Extensions.Configuration.Json.JsonConfigurationSource jsonConfig)
+                    Console.WriteLine($"Config source = {jsonConfig.Path}");
+            }
+        }
+
+        /// <summary>
+        /// Lists all current environment variables
+        /// </summary>
+        /// <param name="variables">The dict of environment variables</param>
+        public static void ListEnvVariables(System.Collections.IDictionary variables)
+        {
+            foreach (string key in variables.Keys)
+            {
+                object? value = Environment.GetEnvironmentVariable(key);
+                Console.WriteLine($"{key} = [{value ?? "null"}]");
+            }
+        }
+
+        /// <summary>
         /// Opens the default browser on the given system with the given url.
         /// To be tested, and if there are issues, see also https://stackoverflow.com/a/53570859
         /// </summary>
@@ -179,24 +247,32 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             try
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    Process.Start(url);
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    Process.Start("sensible-browser", url);
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    Process.Start("sensible-browser", url);
+            }
+            catch
+            {
+                // hack because of this: https://github.com/dotnet/corefx/issues/10361
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); // Works ok on windows
+                    url = url.Replace("&", "^&");
+                    Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    Process.Start("xdg-open", url);  // Works ok on linux
+                    Process.Start("xdg-open", url);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    Process.Start("open", url); // Not tested
+                    Process.Start("open", url);
                 }
                 else
                 {
-                    // System not supported
+                    throw;
                 }
-            }
-            catch
-            { 
             }
         }
     }

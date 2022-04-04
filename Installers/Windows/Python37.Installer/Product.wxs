@@ -1,21 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="79ac1e8b-89f9-4e83-a16a-84d6d6ed85e8" 
+	
+	<?include ..\SharedProperties.wxi ?>
+
+	<Product Id="*" 
 			 Name="CodeProject SenseAI Python3.7 Runtime" 
 			 Language="1033" 
-			 Version="1.0.0.0" 
+			 Version="$(var.BuildVersion)"
 			 Manufacturer="CodeProject" 
 			 UpgradeCode="d3a7b883-7c7f-4ef7-b92b-65aa53f46e59">
 		
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    
 		<MediaTemplate EmbedCab="yes" />
-		<?include ..\SharedUIConfiguration.wxi ?>
-
+		
 		<Feature Id="Python37Runtime" Title="Python 3.7 Runtime" Level="1">
-			<ComponentGroupRef Id="PythonFilesComponentGroup" />
-		</Feature>
-	</Product>
+      <ComponentGroupRef Id="PythonFilesComponentGroup" />
+    </Feature>
+
+    <CustomAction Id="CreateVenvCmd"
+				  Directory="Python37Folder"
+				  ExeCommand='"[Python37Folder]Python.exe" -m venv "[Python37Folder]venv"'
+				  Execute='deferred'
+				  Return="ignore"
+				  Impersonate='yes'/>
+
+    <CustomAction Id="PipUpgradeCmd"
+				  Directory="Python37Folder"
+				  ExeCommand='"[Python37VenvFolder]scripts\pip.exe" install --upgrade pip'
+				  Execute='deferred'
+				  Return='ignore'
+				  Impersonate='yes'/>
+		
+	<CustomAction Id="RemoveVenvCmd"
+				  Directory="Python37Folder"
+				  ExeCommand='cmd /C rmdir /s /q "[Python37Folder]venv"'
+				  Execute='deferred'
+				  Return='ignore'
+				  Impersonate='yes'/>
+
+		<InstallExecuteSequence>
+			<Custom Action='CreateVenvCmd' Before='InstallFinalize'>NOT Installed</Custom>
+			<Custom Action='PipUpgradeCmd' After='CreateVenvCmd'>NOT Installed</Custom>
+			<Custom Action='RemoveVenvCmd' Before='RemoveFiles'>REMOVE="ALL"</Custom>
+		</InstallExecuteSequence>    
+		
+		<UI>
+			<ProgressText Action='PipUpgradeCmd'>Updgrading Pip ... </ProgressText>
+			<ProgressText Action='CreateVenvCmd'>Creating a Python Virtual Environment ... </ProgressText>
+			<ProgressText Action='RemoveVenvCmd'>Removing Python Virtual Environment ... </ProgressText>
+		</UI>
+    
+    
+  </Product>
+  
 	<?include ..\SharedDirectories.wxi ?>
 </Wix>

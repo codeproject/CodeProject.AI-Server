@@ -3,16 +3,12 @@
     "configurations": [
 
         {
-            "name": "Build CodeProject.SenseAI",
+            "name": "Build All (Win)",
             "type": "coreclr",
             "request": "launch",
+            "preLaunchTask": "build-all-win",
             "program": "dotnet",
-            "args": [
-                "build",
-                "${workspaceFolder}/src/API/Server/FrontEnd",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
+            "args": [ "--version" ],
             "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
             "stopAtEntry": false,
             "env": {
@@ -21,21 +17,27 @@
         },
 
         {
-            "name": "Launch CodeProject.SenseAI",
+            "name": "Build All (Linux)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "prepare-server",
-            "windows": {
-                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.exe"
-            },
-            "osx": {
-                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
-            },
-            "linux": {
-                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.SenseAI.Server.dll"
-            },
-            "args" : [ "--PORT=5000" ],
-            "cwd": "${workspaceFolder}/src/AnalysisLayer/DeepStack/intelligencelayer/",
+            "preLaunchTask": "build-all-linux",
+            "program": "dotnet",
+            "args": [ "--version" ],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },        
+
+        {
+            "name": "Launch SenseAI (Win)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-all-win",
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.SenseAI.Server.exe",
+            "args" : [ ],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
             "stopAtEntry": false,
  
             "serverReadyAction": {
@@ -45,25 +47,85 @@
             },
  
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true"
             }
         },
 
         {
-            "name": "CodeProject.SenseAI Playground",
+            "name": "Launch SenseAI (Linux)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "prepare-playground",
-            "windows": {
-                "program": "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground/bin/Debug/net5.0-windows/win-x64/CodeProject.SenseAI.Demo.Playground.exe",
+            "preLaunchTask": "build-all-linux",
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.SenseAI.Server",
+            "args" : [ ],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+ 
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "http://localhost:%s/swagger"
             },
+ 
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true"
+            },
+
+            "logging": {
+                "engineLogging": false,
+                "moduleLoad": false,
+                "exceptions": false,
+                "browserStdOut": false
+            },            
+        },
+
+        {
+            "name": "Launch SenseAI (Debug/Linux)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "pre-launch-server-linux-debug",
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.SenseAI.Server",
+            "args" : [ "--LaunchAnalysisServices=false" ],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/",
+            "stopAtEntry": false,
+ 
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "http://localhost:%s/swagger"
+            },
+ 
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true"
+            },
+
+            "logging": {
+                "engineLogging": false,
+                "moduleLoad": false,
+                "exceptions": true,
+                "browserStdOut": false
+            },            
+        },
+
+        {
+            "name": "Launch SenseAI Playground (Win)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "launch-server-win",
+            // "windows": { - VS Code linter gets all upset at this
+                "program": "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground/bin/Debug/net5.0-windows/win-x64/CodeProject.SenseAI.Demo.Playground.exe",
+            // },
             "args": [ ],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole",
 
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true"
             }
         }
     ]

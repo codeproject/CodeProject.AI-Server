@@ -1,22 +1,13 @@
 import os
 import sys
-import requests
 import time
-
 import json
-import requests
 from datetime import datetime
 
-from enum import Enum
+from senseAI import SenseAIBackend # will also set the python packages path correctly
+senseAI = SenseAIBackend()
 
-# This should be inside Settings as a "private" static method.
-def getEnvVariable(varName: str, default: str):
-    value = os.getenv(varName, "")
-    if value == "" and default != "":
-        value = default
-        print(f"{varName} not found. Setting to default {default}")
-    return value
-
+import requests
 
 class Settings:
     def __init__(
@@ -44,33 +35,41 @@ class Settings:
 
 class SharedOptions:
 
-    APPDIR          = getEnvVariable("APPDIR", os.path.join(os.getcwd(), ".."))
+    def getEnvVariable(varName: str, default: str):
+        value = os.getenv(varName, "")
+        if value == "" and default != "":
+            value = default
+            print(f"{varName} not found. Setting to default {default}")
+
+        return value
+
+    showEnvVariables = False
+
+    print(f"Analysis services setup: Retrieving environment variables...")
+
+    APPDIR          = os.path.normpath(getEnvVariable("APPDIR", os.path.join(os.getcwd(), "..")))
     PROFILE         = getEnvVariable("PROFILE", "desktop_cpu")
 
     CUDA_MODE       = getEnvVariable("CUDA_MODE", "False")
-    TEMP_PATH       = getEnvVariable("TEMP_PATH",  f"{APPDIR}\tempstore")
-    DATA_DIR        = getEnvVariable("DATA_DIR",   f"{APPDIR}\datastore")
-    MODELS_DIR      = getEnvVariable("MODELS_DIR", f"{APPDIR}\assets")
+    TEMP_PATH       = os.path.normpath(getEnvVariable("TEMP_PATH",  f"{APPDIR}/tempstore"))
+    DATA_DIR        = os.path.normpath(getEnvVariable("DATA_DIR",   f"{APPDIR}/datastore"))
+    MODELS_DIR      = os.path.normpath(getEnvVariable("MODELS_DIR", f"{APPDIR}/assets"))
     PORT            = getEnvVariable("PORT",       "5000")
-
-    ERRLOG_APIKEY   = getEnvVariable("ERRLOG_APIKEY", "")
+    VIRTUAL_ENV     = getEnvVariable("VIRTUAL_ENV", senseAI.virtualEnv)
 
     if CUDA_MODE == "True":
-        CUDA_MODE = True
+        CUDA_MODE   = True
     else:
-        CUDA_MODE = False
+        CUDA_MODE   = False
 
     SLEEP_TIME      = 0.01
-    ERROR_PAUSE     = 1.0
 
     MODE            = "Medium"
+
     if "MODE" in os.environ:
         MODE = os.environ["MODE"]
     
-    SHARED_APP_DIR  = os.path.join(APPDIR, MODELS_DIR)
-
-    BaseQueueUrl = f"http://localhost:{PORT}/v1/queue/"
-    BaseLogUrl   = f"http://localhost:{PORT}/v1/log/"
+    SHARED_APP_DIR  = os.path.normpath(os.path.join(APPDIR, MODELS_DIR))
 
     PROFILE_SETTINGS = {
         "desktop_cpu": Settings(
@@ -130,132 +129,13 @@ class SharedOptions:
     #    SETTINGS.PLATFORM_PKGS = "cpufiles"
 
     # dump the important variables
-
-    #print(f"APPDIR:       {APPDIR}")
-    #print(f"PROFILE:      {PROFILE}")
-    #print(f"CUDA_MODE:    {CUDA_MODE}")
-    #print(f"TEMP_PATH:    {TEMP_PATH}")
-    #print(f"DATA_DIR:     {DATA_DIR}")
-    #print(f"MODELS_DIR:   {MODELS_DIR}")
-    #print(f"PORT:         {PORT}")
-    #print(f"BaseQueueUrl: {BaseQueueUrl}")
-
-class FrontendClient:
-    requestSession = requests.Session()
-
-    # TODO: Wrap these into a Timer class
-    def startTimer(self, desc:str) :
-        return (desc, time.perf_counter())
-
-    def endTimer(self, timer : tuple) :
-        (desc, startTime) = timer
-        elapsedSeconds = time.perf_counter() - startTime
-        # log(f"{desc} took {elapsedSeconds:.3} seconds")
-
-    # TODO: Wrap these into a Command class    
-    def getCommand(self, queueName : str):
-        success = False
-        try:
-            cmdTimer = self.startTimer(f"Getting Command from {queueName}")
-            response = self.requestSession.get(
-                SharedOptions.BaseQueueUrl + queueName,
-                timeout=30,
-                verify=False
-            )
-            if (response.ok and len(response.content) > 2):
-                success = True
-                content = response.text
-                return [content]
-            else:
-                return []
-
-        except Exception as ex:
-            # print(f"Error retrieving command: {str(ex)}")
-            print(f"Error retrieving command: Is the API Server running?")
-            time.sleep(SharedOptions.ERROR_PAUSE)
-            return []
-
-        finally:
-            if success:
-                self.endTimer(cmdTimer)
-        
-    def sendResponse(self, req_id : str, body : str):
-        # self.log(f"Sending response for id: {req_id}")
-
-        success = False
-        respTimer = self.startTimer("Sending Response")
-
-        try:
-            self.requestSession.post(
-                SharedOptions.BaseQueueUrl + req_id,
-                data = body,
-                timeout=1,
-                verify=False)
-
-            success = True
-
-        except Exception as ex:
-            time.sleep(SharedOptions.ERROR_PAUSE)
-            print(f"Error sending response: {str(ex)}")
-            # print(f"Error sending response: Is the API Server running?")
-
-        finally:
-            if success:
-                self.endTimer(respTimer)
-
-    # TODO: Wrap these into a Logging class
-    def sendLog(self, entry : str):
-
-        payload = { "entry" : entry }
-
-        try:
-            self.requestSession.post(
-                SharedOptions.BaseLogUrl, 
-                data = payload, 
-                timeout = 1, 
-                verify = False)
-
-        except Exception as ex:
-            # print(f"Error posting log: {str(ex)}")
-            print(f"Error posting log: Is the API Server running?")
-            return
-
-    def log(self, entry : str, is_error : bool = False):
-        if is_error:
-            print(entry, file=sys.stderr, flush=True)
-        else:
-            print(entry, file=sys.stdout, flush=True)
-        self.sendLog(entry)
-
-
-    def errLog(self, method : str, file:str, message : str, exceptionType: str):
-        """
-        Logs an error to our remote logging server (errLog.io)
-        """
-
-        url = 'https://relay.errlog.io/api/v1/log'
-
-        obj = {
-            'message' : message,
-            'apikey' : SharedOptions.ERRLOG_APIKEY,
-            'applicationname' : 'CodeProject SenseAI',
-            'type' : exceptionType,
-            'errordate' : datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-            'filename' : file,
-            'method' : method,
-            'lineno' : 0,
-            'colno' : 0
-        }
-
-        data = json.dumps(obj)
-
-        # If you want to see the data you're sending.
-        # print "Json Data: ", data
-
-        headers = {'Content-Type': 'application/json','Accept': 'application/json'}
-        r = requests.post(url, data = data, headers = headers)
-
-        # print("Response:", r)
-        # print("Text: " , r.text)
-
-        return r
+    if showEnvVariables:
+        print(f"APPDIR:       {APPDIR}")
+        print(f"PROFILE:      {PROFILE}")
+        print(f"CUDA_MODE:    {CUDA_MODE}")
+        print(f"TEMP_PATH:    {TEMP_PATH}")
+        print(f"DATA_DIR:     {DATA_DIR}")
+        print(f"MODELS_DIR:   {MODELS_DIR}")
+        print(f"PORT:         {PORT}")
+        print(f"MODE:         {MODE}")
+        print(f"VIRTUAL_ENV:  {VIRTUAL_ENV}")

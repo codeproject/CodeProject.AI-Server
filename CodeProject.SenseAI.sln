@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.32126.315
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A8B76501-496A-4011-9C37-8308A1EBDFA7}"
+	ProjectSection(SolutionItems) = preProject
+		src\start.bat = src\start.bat
+		src\start.sh = src\start.sh
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D982BD8C-2257-413B-8513-8043AB3035F3}"
 EndProject
@@ -15,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{2379A486-0D2
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3BF27572-9D3A-497C-8375-29110EBBD3D1}"
 	ProjectSection(SolutionItems) = preProject
+		docs\Docker Hub SenesAI Server ReadMe.md = docs\Docker Hub SenesAI Server ReadMe.md
+		docs\installing on WSL.md = docs\installing on WSL.md
 		LICENCE.md = LICENCE.md
 		README.md = README.md
 		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
@@ -22,6 +28,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3BF27572-9
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AnalysisLayer", "AnalysisLayer", "{156BFEDA-D477-43B2-92DA-FCC9BAF1F893}"
+	ProjectSection(SolutionItems) = preProject
+		src\AnalysisLayer\start-analysis.bat = src\AnalysisLayer\start-analysis.bat
+		src\AnalysisLayer\start-analysis.sh = src\AnalysisLayer\start-analysis.sh
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{D885EE64-C1BD-44D6-84D8-1E46806298D9}"
 EndProject
@@ -66,11 +76,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestData", "TestData", "{B1
 		demos\TestData\pexels-tiger-lily-4481324.jpg = demos\TestData\pexels-tiger-lily-4481324.jpg
 		demos\TestData\pexels-tima-miroshnichenko-6694964.jpg = demos\TestData\pexels-tima-miroshnichenko-6694964.jpg
 		demos\TestData\pexels-victoria-borodinova-1648396.jpg = demos\TestData\pexels-victoria-borodinova-1648396.jpg
+		demos\TestData\Readme.txt = demos\TestData\Readme.txt
 		demos\TestData\Robert1.PNG = demos\TestData\Robert1.PNG
 		demos\TestData\Robert2.PNG = demos\TestData\Robert2.PNG
 		demos\TestData\Robert3.PNG = demos\TestData\Robert3.PNG
 		demos\TestData\Robert4.PNG = demos\TestData\Robert4.PNG
 		demos\TestData\Robert5.PNG = demos\TestData\Robert5.PNG
+		demos\TestData\testdata.zip = demos\TestData\testdata.zip
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.Playground", "demos\dotNet\CodeProject.SenseAI.Playground\CodeProject.SenseAI.Playground.csproj", "{C33D90E7-7570-46FB-9EB9-ED6B40A93A9B}"
@@ -107,6 +119,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{460DB5C8-46F3-4407-A2DF-D9063D14493A}"
 	ProjectSection(SolutionItems) = preProject
+		BuildDockerBase.bat = BuildDockerBase.bat
+		commands.json = commands.json
+		Dockerfile-Base = Dockerfile-Base
 		global.json = global.json
 	EndProjectSection
 EndProject
@@ -133,8 +148,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{5F1052
 		Installers\Windows\Sense-install-BG.png = Installers\Windows\Sense-install-BG.png
 		Installers\Windows\Sense-install-sidebar.png = Installers\Windows\Sense-install-sidebar.png
 		Installers\Windows\Sense-install-topbanner.png = Installers\Windows\Sense-install-topbanner.png
-		Installers\Windows\SharedConfiguration.wxi = Installers\Windows\SharedConfiguration.wxi
 		Installers\Windows\SharedDirectories.wxi = Installers\Windows\SharedDirectories.wxi
+		Installers\Windows\SharedProperties.wxi = Installers\Windows\SharedProperties.wxi
 		Installers\Windows\SharedUIConfiguration.wxi = Installers\Windows\SharedUIConfiguration.wxi
 	EndProjectSection
 EndProject
@@ -148,10 +163,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Old School Scripts", "Old School Scripts", "{FDB25B74-D0CD-4665-9152-DE968A1028D8}"
 	ProjectSection(SolutionItems) = preProject
 		Installers\Old School\create_installer_win.bat = Installers\Old School\create_installer_win.bat
+		Installers\Old School\CreateWindowsService.cmd = Installers\Old School\CreateWindowsService.cmd
+		Installers\Old School\DeleteWindowsService.cmd = Installers\Old School\DeleteWindowsService.cmd
 		Installers\Old School\load_environment.bat = Installers\Old School\load_environment.bat
 		Installers\Old School\save_environment.bat = Installers\Old School\save_environment.bat
-		Installers\Old School\set_environment.sh = Installers\Old School\set_environment.sh
-		Installers\Old School\setup_dev_env_win.bat = Installers\Old School\setup_dev_env_win.bat
 		Installers\Old School\Setup_SenseAI_Win.bat = Installers\Old School\Setup_SenseAI_Win.bat
 		Installers\Old School\Start_SenseAI_Win.bat = Installers\Old School\Start_SenseAI_Win.bat
 	EndProjectSection
@@ -177,6 +192,26 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".NET 3.5.1", ".NET 3.5.1", "{8A423F72-C92C-4C8E-87D8-02849FD079E2}"
 	ProjectSection(SolutionItems) = preProject
 		Installers\Windows\.NET 3.5.1\Download .NET Framework 3.5 SP1.url = Installers\Windows\.NET 3.5.1\Download .NET Framework 3.5 SP1.url
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TextSummary", "TextSummary", "{0D5152E1-741C-4C67-8558-8F92A40BC48F}"
+	ProjectSection(SolutionItems) = preProject
+		src\AnalysisLayer\TextSummary\__init__.py = src\AnalysisLayer\TextSummary\__init__.py
+		src\AnalysisLayer\TextSummary\requirements.txt = src\AnalysisLayer\TextSummary\requirements.txt
+		src\AnalysisLayer\TextSummary\senseAI.py = src\AnalysisLayer\TextSummary\senseAI.py
+		src\AnalysisLayer\TextSummary\summarize.py = src\AnalysisLayer\TextSummary\summarize.py
+		src\AnalysisLayer\TextSummary\textsummary.py = src\AnalysisLayer\TextSummary\textsummary.py
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nltk_data", "nltk_data", "{E9766120-39AB-48FC-AADF-BEB3C0F8912C}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "TextSummary.Installer", "Installers\Windows\TextSummary.Installer\TextSummary.Installer.wixproj", "{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2}"
+	ProjectSection(SolutionItems) = preProject
+		Installers\Docker\BuildDockerBase.bat = Installers\Docker\BuildDockerBase.bat
+		Installers\Docker\Dockerfile-Base = Installers\Docker\Dockerfile-Base
+		Installers\Docker\README = Installers\Docker\README
 	EndProjectSection
 EndProject
 Global
@@ -291,6 +326,14 @@ Global
 		{18603392-CD64-4C1C-B892-381E99995451}.Debug|x86.ActiveCfg = Debug
 		{18603392-CD64-4C1C-B892-381E99995451}.Release|Any CPU.ActiveCfg = Release
 		{18603392-CD64-4C1C-B892-381E99995451}.Release|x86.ActiveCfg = Release
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Debug|Any CPU.Build.0 = Debug|x86
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Debug|x86.ActiveCfg = Debug|x86
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Debug|x86.Build.0 = Debug|x86
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Release|Any CPU.ActiveCfg = Release|x86
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Release|Any CPU.Build.0 = Release|x86
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Release|x86.ActiveCfg = Release|x86
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -329,6 +372,10 @@ Global
 		{18603392-CD64-4C1C-B892-381E99995451} = {888C04E1-6F50-4800-93FE-F128B78AE645}
 		{00BBF52C-217D-421F-BEAF-918C167D4C20} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{8A423F72-C92C-4C8E-87D8-02849FD079E2} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{0D5152E1-741C-4C67-8558-8F92A40BC48F} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
+		{E9766120-39AB-48FC-AADF-BEB3C0F8912C} = {0D5152E1-741C-4C67-8558-8F92A40BC48F}
+		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

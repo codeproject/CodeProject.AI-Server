@@ -1,0 +1,46 @@
+################################################################################
+##
+## The CodeProject SenseAI Server base Docker image                          
+## 
+## Based on the Microsoft ASP.NET / .NET6 image. See https://aka.ms/containerfastmode
+## for indo on how Visual Studio uses this Dockerfile to build your images for faster
+## debugging.
+##
+################################################################################
+
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-focal
+
+RUN apt-get update -y
+RUN apt install software-properties-common -y
+
+################################################################################
+## This would be installed if you want to select a specific (or muitiple)
+## versions of Python to run
+##
+#RUN add-apt-repository ppa:deadsnakes/ppa -y
+################################################################################
+
+RUN apt update -y
+
+################################################################################
+## Uncomment this to install Python 3.7 and set it as the default. It's currently
+## commented out because Python 3.8, which gets installed, seems to work fine.
+##
+#RUN apt-get install python3.7 -y
+#RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 0
+################################################################################
+
+# This (currently) installs python3.8 as a dependency. It could be in the future
+# that a different version of python is installed instead, in which case we may
+# need to pin the installed python version.
+
+RUN apt-get install python3-pip -y
+
+################################################################################
+## These will be installed by the modules that require them. They are here only
+## to remind us that we haven't forgotten about them
+## 
+#RUN pip3 install --upgrade setuptools pip
+#RUN apt-get install libsm6 libxext6 libxrender1 libglib2.0-0 ffmpeg -y
+#RUN pip3 install torch==1.10.1+cu113 torchvision==0.11.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+################################################################################

@@ -1,844 +1,361 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
-        <DirectoryRef Id="YOLONETINSTALLFOLDER">
-            <Directory Id="dirA247C82ACBDD1112877767CB90469F01" Name="assets" />
-            <Directory Id="dir41ED6835C7479746AD3A4E1E8AA0D707" Name="ref" />
+        <DirectoryRef Id="YoloNetInstallFolder">
+            <Directory Id="dir24BF92BF6B2F030C4F8AF64D79AFEAE0" Name="assets" />
+            <Directory Id="dir4D2817FD43D72DB4937B7A6CA83C752A" Name="runtimes" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
         <ComponentGroup Id="YoloNetFilesComponentGroup">
-            <Component Id="cmpAA92E06860594C553A6A38AB8CCD391B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6494F70CA5C65EAD272AE5D1F1DF795E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-console-l1-1-0.dll" />
+            <Component Id="cmp3489C446C231BD471A5A926E5B1E2D48" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil0BC76FF1C2DF46B935A350E095581D87" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\appsettings.Development.json" />
             </Component>
-            <Component Id="cmp5AD0B498B77E790E3CD1875BC30822C4" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filDCA55B700CA9D7E443B589B123FAFF80" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-console-l1-2-0.dll" />
+            <Component Id="cmp53A909F17FFFAF651BECE3F422ABC031" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil464CD764A7FE831374C12ABB5A3E2929" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\appsettings.json" />
             </Component>
-            <Component Id="cmp6012DDFF1A10B31BE80588F0D9C098E9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1E1675CDD7D47EFBA5B6D1C8180D03CB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-datetime-l1-1-0.dll" />
+            <Component Id="cmpAEAD300DA943D6D18896E6D657A5964A" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filB55083D392A50E5EBA146609D14A1806" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.deps.json" />
             </Component>
-            <Component Id="cmp5636595ED23FE61268ADA31A15C4BDB7" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil66F1026DE00CA5CDCD1F2CF70D753039" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-debug-l1-1-0.dll" />
+            <Component Id="cmp6982E5A49402782E4BA48B4AD34AFA55" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil43D0AAA3CB2958AA99E80E47AE47ADD6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.dll" />
             </Component>
-            <Component Id="cmp3DBD35A4EE6D42367EFA08D660F8EDB9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6846C658A4A46FC17D2E100F4F57B41B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-errorhandling-l1-1-0.dll" />
+            <Component Id="cmp6D550294069171332981332EC7AD7DCD" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil30C0D6897D4CAA1F07F101D0DBE7A3D3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.exe" />
             </Component>
-            <Component Id="cmp5DB4DB03A84FCBE292CA6E29359A3149" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE8FAE45018699112AAE8D400887CE047" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-file-l1-1-0.dll" />
+            <Component Id="cmp435000F33876F6C7C5A95B1BEB027FD5" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filADF867B679F0C7285F92DE77BB8B7185" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.runtimeconfig.json" />
             </Component>
-            <Component Id="cmpB00984E8DA938B4E34C72B0CD06F0C46" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filF512ADAF39B99C01DB0B9EE76C578514" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-file-l1-2-0.dll" />
+            <Component Id="cmpBFB919E3DFAC173EDAEDB3CB65B639A5" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil90639D843D30465FE027508B868A5685" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.API.Common.dll" />
             </Component>
-            <Component Id="cmpF5C9CD2B1888BC0A6A9D7F980C49CDB1" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil879B3B9C22B2C690AD3D28B8F2717F1F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-file-l2-1-0.dll" />
+            <Component Id="cmpC193D06B957B63A4BD2804249F7212DE" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil47D3A252FCD2E0FC3AC3247AFD03BE5F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.Server.Backend.dll" />
             </Component>
-            <Component Id="cmp36612B637195128302AB3EFF7C4F7FBF" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1E2017DE2CA1DC1831DD04AC8ACC9C6E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-handle-l1-1-0.dll" />
+            <Component Id="cmpFCDEC1ADB5CB65E49F69860AE9B41E5F" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil98F3B041C46B6AF2298264CA99AF6F56" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.AspNetCore.Http.Features.dll" />
             </Component>
-            <Component Id="cmpC43DF39A974548100C20B1F812DAC8F8" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil60128A8114D3F89FA6AF34364BCA5326" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-heap-l1-1-0.dll" />
+            <Component Id="cmp6D349B4130C03BFEF42EE14641D87EB8" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil52E9BF1935FBA562845FADDE9458EA7D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.Abstractions.dll" />
             </Component>
-            <Component Id="cmp1B0D122D195DD0121F34EE8264EE4025" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3817CC3E9393145DADE752D1735C74F3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-interlocked-l1-1-0.dll" />
+            <Component Id="cmp1C34ED5153EF4B2BFA09169BA93A6C95" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil09EC336ECF11FD4D95FD09EB455AA516" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.Binder.dll" />
             </Component>
-            <Component Id="cmp21F6F02CBD7A7EE63529D8204A60E9C6" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC59D89E88F69B1C0C7289A0C61323044" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-libraryloader-l1-1-0.dll" />
+            <Component Id="cmpCFC0A6501CF229D48295D49D79CD3097" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filA32B0FFF54CE6ABB4623E3AEF0D6B760" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.CommandLine.dll" />
             </Component>
-            <Component Id="cmp9E2A3194077254230C98E89A76C9B408" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil05B34AA3798EA64C371F5B8C0643CBC4" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-localization-l1-2-0.dll" />
+            <Component Id="cmp23C3F89A62E236E6CA5EE9EADDD2C3DD" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filD34716BF12840916AE8F2A7E969B447F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.dll" />
             </Component>
-            <Component Id="cmp1097323595C49BAF6ADC8AC9E961BEEF" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7FD88162113E148058555D41378008A4" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-memory-l1-1-0.dll" />
+            <Component Id="cmp712FDFB0975B0CB780C54AC6B7AB9764" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filD956E55444933F1AB9677D722A9039C5" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
             </Component>
-            <Component Id="cmpA79BE19319931FA2881D41F9E9F4AC36" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil63040AC1000C9863E69F9B605634AA8B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-namedpipe-l1-1-0.dll" />
+            <Component Id="cmp8BFDC581F18B312E45EA06A08EBA5954" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil3EBE775E272366CA276013E3C878410F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.FileExtensions.dll" />
             </Component>
-            <Component Id="cmp81211F26AB93218258C145939749D857" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filD5BC9666228C5064AB0D0D9E5D86EE9E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-processenvironment-l1-1-0.dll" />
+            <Component Id="cmp2470380BA0268397336031D7772DD806" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filDC0403F96B3EE1ED3A9594050832D6E5" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.Json.dll" />
             </Component>
-            <Component Id="cmpE572E1E57C09045588BB8EA6684A30AF" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filAC64C096F22CAF18F875763ED2C6686F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-processthreads-l1-1-0.dll" />
+            <Component Id="cmp81977843D46C5B8EAD737B97F14E4FBF" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filD3C0D0FF061F37E15AC2668C21DA1C7F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.UserSecrets.dll" />
             </Component>
-            <Component Id="cmp2288AE9C9B90793D32D63E636ADCED30" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil763E8C5EF4ED4A3A9DF9C23F46577A7C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-processthreads-l1-1-1.dll" />
+            <Component Id="cmp894C220821BF3AF6F70421E8EDA4E051" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil91643851A82A3F9FD57966B69BB0BC0C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
             </Component>
-            <Component Id="cmp77FC7F1DBEF39184D12A43ED5477F40B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9702A6644EB7251DE9CA41EEBD46D41F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-profile-l1-1-0.dll" />
+            <Component Id="cmpECB623990FE0C7BF5C79F971D240D1B1" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil2E6D1F02E92D0DDDA91C149F7225A46C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.DependencyInjection.dll" />
             </Component>
-            <Component Id="cmp46AFAFB35328A02A97084AB38C7639A0" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filA7BB928A60B6AB51E75D2E39E8C95859" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-rtlsupport-l1-1-0.dll" />
+            <Component Id="cmpC07A511165172C502F11756C040B6193" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil5AFC873ED60D7A0D8992FE1F234F8531" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.FileProviders.Abstractions.dll" />
             </Component>
-            <Component Id="cmp19DA57F05466217C067A0B2AB6030B73" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0F40A3D170FF65EC4DCB8893D2339008" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-string-l1-1-0.dll" />
+            <Component Id="cmp5CCEF4A10DCB84A7756615492FC41F4C" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil793EF1CDD83A7AB7B64F021187461C8F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.FileProviders.Physical.dll" />
             </Component>
-            <Component Id="cmpCD8CC30E0B21665C954B95993D4EE56A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil07910EEB845CF2EBA8E600ED7CAEB591" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-synch-l1-1-0.dll" />
+            <Component Id="cmp04ECE08CB9E575AB71F3F5ADD3E303B4" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filF66B8FA03221B1A26DCF3521DA8EBCF9" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.FileSystemGlobbing.dll" />
             </Component>
-            <Component Id="cmp00C2CF94B1337D0D86720B075AC9C62A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6970582BAB2E9E37495756C68E5D4442" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-synch-l1-2-0.dll" />
+            <Component Id="cmp078E918DF9982188C4C26860F47F4951" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil98D65208291824AD7A885FEDC31F8338" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Hosting.Abstractions.dll" />
             </Component>
-            <Component Id="cmp0FFE5E04849210864523C14AB9C3C47C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil11F93EA5D08C1ECD0AC4BD0C1C6D7B18" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-sysinfo-l1-1-0.dll" />
+            <Component Id="cmpE5C2AF44B51303A4EE52866B7CD14B31" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil514F9E418CDF464A9FF54A73E7ECE3FA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Hosting.dll" />
             </Component>
-            <Component Id="cmpE7521226C60A80D3B331D59C2405AA72" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7C73FE68CEC903A1E9B1364F77D6C520" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-timezone-l1-1-0.dll" />
+            <Component Id="cmpC905D12F740E77AB335065EBCC62A20E" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil0DDCE47A549BBCCAB0504DCEA228D34F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Hosting.Systemd.dll" />
             </Component>
-            <Component Id="cmp506E067ECC823B1A10C4B512969905CD" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE45521859B18091EB39B19A15A9EA89D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-core-util-l1-1-0.dll" />
+            <Component Id="cmp13D6FECBC3FFFF0B7C32FE07274B31EA" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filB6793389F35595514E860550F656352E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Hosting.WindowsServices.dll" />
             </Component>
-            <Component Id="cmp570B461FB51FC7D3BD3648F7ADEADA0F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil4EE75DA9C3E6A8EBADEA6045029239EA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-conio-l1-1-0.dll" />
+            <Component Id="cmpE35263F74A7C9CF7C440AB8D1E34E4E2" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil269E4ABF2668A040B39CEC6F8E0FD180" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.Abstractions.dll" />
             </Component>
-            <Component Id="cmpE57D3AEC20975CE27E46179A9C7E8377" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filBCF57E524497C6F4D62F3B3DE31A75B3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-convert-l1-1-0.dll" />
+            <Component Id="cmpE6E3109E84C5D9BB81454D0BD8306A35" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filF4FDA6C8F00BD5690C4FB058868BE9CB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.Configuration.dll" />
             </Component>
-            <Component Id="cmp364C9155EC42700F4C255A6547B37994" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filBD1461EDDDE27626D82BAD043AB2459C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-environment-l1-1-0.dll" />
+            <Component Id="cmp072C8ADC652ACE006C534CD68AA00070" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil0708B9C990F8F86BCFC602929EF1CF01" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.Console.dll" />
             </Component>
-            <Component Id="cmp29703B6ADBA9104009A292F07FCB8B2B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil78C9CA9DE58394E30A7B26C3616B64E0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-filesystem-l1-1-0.dll" />
+            <Component Id="cmpC9AF1E7B04D4CB4993A05FD74BCA5D67" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil046CB205D4A4FBE25BF5F9ECF7CDC584" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.Debug.dll" />
             </Component>
-            <Component Id="cmpFB50F8562575AACFCA10266B575E319F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil98C23697FA72C66B1B02A02A2A54476C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-heap-l1-1-0.dll" />
+            <Component Id="cmpEE99441574EF600576547DA88C29AF94" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil66EDDD76606F80C6933FABC828FD41EE" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.dll" />
             </Component>
-            <Component Id="cmp75CB9DCE6AA32C318AD4423B74BE8188" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9CCB28FF2007157A7B50BD93E08D01DA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-locale-l1-1-0.dll" />
+            <Component Id="cmp944F54E8568CF34AB8A2DFE834570F18" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil9A18112CAED395CE544BB838A72AF4BF" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.EventLog.dll" />
             </Component>
-            <Component Id="cmp5823D0695D96599464E97891F0D90742" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5C8C3995BECB914D6B97600D59EDE88E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-math-l1-1-0.dll" />
+            <Component Id="cmp43E6EEC8435476D4998069DBA10B26D4" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filB20045AB0EFBB1109BFC5177586FBF08" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.EventSource.dll" />
             </Component>
-            <Component Id="cmp6C1BE19CD5C1ED3978FC65A28947FBDA" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7AB9C1E714AEB9E791B21C8DC9205F87" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-multibyte-l1-1-0.dll" />
+            <Component Id="cmp289DF7777533A2C9B6589E503EC5EB32" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filEB9295E30E1E225E9E712DCFD0241FF9" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
             </Component>
-            <Component Id="cmp8ED0185BB7B6C9F4C38198162F54E81C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil19A357949A206F26A7E823666C8B9F5B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-private-l1-1-0.dll" />
+            <Component Id="cmpBDDBC2554BAF7E6EB16FF22DB4AD6918" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filD7775E40271B51EDBBE4AE45383F9A8F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Options.dll" />
             </Component>
-            <Component Id="cmpF64CC1E383C00BF833AB9438A0B1FCAA" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE8A81CF1A3735983741AF9B7721AD5EC" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-process-l1-1-0.dll" />
+            <Component Id="cmp9F118ACA15F04C5B28CF35F79D47EF4A" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil4A6C8BAF4A701869636373BA625AC389" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Primitives.dll" />
             </Component>
-            <Component Id="cmp56D8CE9B373E04DFF94BAD5EE5884DCA" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE6B34173A01B0453D2D5304EEB0FFC0E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-runtime-l1-1-0.dll" />
+            <Component Id="cmp5BD3A90717E3DDF54D402661FB9B8F57" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil09415C1D8940407BE26DCCBEC628D944" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.ML.OnnxRuntime.dll" />
             </Component>
-            <Component Id="cmpE57C0109E43E1298A25C94EE5C263A2F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filED427417B1B16CFFA3C29C0EC3597076" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-stdio-l1-1-0.dll" />
+            <Component Id="cmp1D3292142B631BC0B13A8B677DFD0B64" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filB24CC698D7EE1919EE971B27F913D83B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Win32.SystemEvents.dll" />
             </Component>
-            <Component Id="cmpA257CCB180C8CA602144FFD08FAAECB5" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0DB357B7E144B9817B1A87597373A541" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-string-l1-1-0.dll" />
+            <Component Id="cmpC2CA79C810EDBD134C824722189F2BD3" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil3E91EF221DDA4C68B83BA6A3EFBADE09" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimeconfig.template.json" />
             </Component>
-            <Component Id="cmpF98D8D72466B3C57A0FAEF9B1EBD2C2A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE2DC3C15F0C461C4C0342E61611D6469" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-time-l1-1-0.dll" />
+            <Component Id="cmpCABC701113FC5B39922B4E1ECAF0DB9C" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filF1C8823F3ED5CCB10D85CB26058B435B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\SkiaSharp.dll" />
             </Component>
-            <Component Id="cmpF14ACCE9D90AB0E67E2F2A100251D596" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB28C55AD9937619C0147F4440B73D5EA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\api-ms-win-crt-utility-l1-1-0.dll" />
+            <Component Id="cmp2464D87C1247C6EA11524C1C7AB9A63D" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil9B88BEE66B147A89D24137AFCBECCDDA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\SkiaSharp.Views.Desktop.Common.dll" />
             </Component>
-            <Component Id="cmp429F442D195B3385E1F594B1A56E010C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil325E188474EA482FEDFD1A691DD614D4" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\appsettings.Development.json" />
+            <Component Id="cmp8EF66C36202E73A4FDC2B590795C5AFB" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil2ABE41DE7D1322B43F18FCB85EBE320E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.EventLog.dll" />
             </Component>
-            <Component Id="cmp341D23E9DA70EF8A099C7E9B9F165F28" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7BACEDAA6CE84A7F4FBF87505CDF427D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\appsettings.json" />
+            <Component Id="cmp31570E23CCBF1FF44DC0673B9D7361FA" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil3F6BFA2788DA5B0409E041A66EC11BF3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Drawing.Common.dll" />
             </Component>
-            <Component Id="cmpBB596ADDEAFB5512818764752CC2C50F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil67DE5D6C5377C76289DABB699C3D59A1" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\clrcompression.dll" />
+            <Component Id="cmp628F3CB4C4965D93B9CD7543B7FB2A34" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil2005570B8A7B6F84C59054AB4CE25A98" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.Pipelines.dll" />
             </Component>
-            <Component Id="cmp7410075D6FB699ED45011579C593F815" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE32DAB74164ECBDA0780C273C1BBC758" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\clretwrc.dll" />
+            <Component Id="cmpD4E73FBC36DDB9A26F1BBD788F69FF0C" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="filCC2E78B3CB50631846ED4B70C6BD8B76" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ServiceProcess.ServiceController.dll" />
             </Component>
-            <Component Id="cmp849113623AF4AF96640CD21F6E29AA8C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filD6E47A8F1D698997EA37007907D756B3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\clrjit.dll" />
+            <Component Id="cmp14AE4D63EEF45E1CC7A8FDEFBEEA62D1" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil5DC9E7DB762CB0916E2CF11A7EF58C83" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Text.Json.dll" />
             </Component>
-            <Component Id="cmp5269D37309D404CEE517FC9B71328305" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil426D90C303FBD8C3B1E99EC59F7C6C92" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.deps.json" />
+            <Component Id="cmp3957711AFD608B13CBDF03025ADD7B49" Directory="YoloNetInstallFolder" Guid="*">
+                <File Id="fil0B1BA56DDF5FBF583825ED8D5111EF37" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Yolov5Net.Scorer.dll" />
             </Component>
-            <Component Id="cmp386B932AD67ACB8120A33FADA17F80CB" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil2801A2EB1284283CAAA126DCC4F400EC" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.dll" />
+            <Component Id="cmpA3CCB14850F13F02E5B1D23EED0E6429" Directory="dir24BF92BF6B2F030C4F8AF64D79AFEAE0" Guid="*">
+                <File Id="fil93D5456D3EA8413EFBD73B48E92D048B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\assets\yolov5m.onnx" />
             </Component>
-            <Component Id="cmpF35E7D90AFF892055AF0D5DCF93AD42D" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9CD9DF148AA7D8410495DC39BDD913E3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.exe" />
+            <Component Id="cmp678AA154DDC8A1EC343FC30301C84426" Directory="dir24BF92BF6B2F030C4F8AF64D79AFEAE0" Guid="*">
+                <File Id="filEEE3F8B357A2C55DD4E092DC2929A706" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\assets\yolov5n.onnx" />
             </Component>
-            <Component Id="cmp8541BA63DD5F333712F8B033A985072A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil58F95EA81A095EE494A19FE4F3F3A370" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.runtimeconfig.dev.json" />
+            <Component Id="cmp7CFF8E710217B5A806486E79284A60E8" Directory="dir24BF92BF6B2F030C4F8AF64D79AFEAE0" Guid="*">
+                <File Id="fil37BFE8A82FE9797B19C3ED0D04B432F0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\assets\yolov5s.onnx" />
             </Component>
-            <Component Id="cmp509908EDC69103FA8E0A8995F209A1DA" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil892CB7E2D0E5A96CD85420BDC807340E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.runtimeconfig.json" />
+            <Component Id="cmpB553CCDCE1DE4C4555286B181FEEFE67" Directory="dirBE65F1E9C5F571FF6E19882D2AC32169" Guid="*">
+                <File Id="fil663EE2B529380836D9A978107C842607" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\linux-arm\native\libSkiaSharp.so" />
             </Component>
-            <Component Id="cmp393D6A1F01DB609813B4CF15F05EF650" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB68B5F83F291FE1CCB970B7A00D7F078" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.API.Common.dll" />
+            <Component Id="cmpBFDF7D6A004A4FC4F7CCD6B7CDBBFD43" Directory="dirCDBAC7171615C1434AC2A7EB6DAC2C85" Guid="*">
+                <File Id="fil819487D11C0FEBCA0092AFABEF2C8A1E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\linux-arm64\native\libSkiaSharp.so" />
             </Component>
-            <Component Id="cmpF3C98BC0B671B48156BC25D8540C503C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filD59A5BA5F513CEC7E920D35C700DA5F1" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\CodeProject.SenseAI.Server.Backend.dll" />
+            <Component Id="cmpC4666816C80AED11468CD2C886FCCAD2" Directory="dirC8702F12AAD1FDD33E73B0E335B302F0" Guid="*">
+                <File Id="fil9D86347FC4B4E62DD04C92E74837E8F6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\linux-musl-x64\native\libSkiaSharp.so" />
             </Component>
-            <Component Id="cmpACF9D1C66977B057D7793F38B4C33F09" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil4FA720F1C9C0C7530E522A5EE897709C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\coreclr.dll" />
+            <Component Id="cmpC1D8352D1988EDE82A7781F03BD5F33E" Directory="dirDF3AE194E1DC89EE0EE93A285AFD8D26" Guid="*">
+                <File Id="fil3929D4E0DD20455FF7086BFAA16307F2" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\linux-x64\native\libSkiaSharp.so" />
             </Component>
-            <Component Id="cmp9C5488DE8EFEFFAFC3747156EDF48787" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filCD5F2526C9A4B330242178879E37AE9F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\createdump.exe" />
+            <Component Id="cmp35EED0D31D27AB9E4865D61A6ED8520E" Directory="dirC36E81190E013F57688704128E1910CA" Guid="*">
+                <File Id="fil5EE0154FA824937E893C78425302C8E9" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\osx\native\libSkiaSharp.dylib" />
             </Component>
-            <Component Id="cmpB01E7934F50AEBBDBC6E9112EC74A3AA" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1ABEDCC3D7DE37C9A52268F62F8B47E4" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\dbgshim.dll" />
+            <Component Id="cmp211076FD66424FBE7419C8068DB3B9AD" Directory="dir9B2EA7E000F4E4E8AD8A4979436BF70D" Guid="*">
+                <File Id="fil27326CF6395381CBFAB4C817AF623DC2" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\unix\lib\net6.0\System.Drawing.Common.dll" />
             </Component>
-            <Component Id="cmp1E121B5667F5EC3E5249C23B0839700B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filCED472BC57328A7067FDBB7671613B3C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\hostfxr.dll" />
+            <Component Id="cmpF8AE186CD05DEBD26EE098B06B292E88" Directory="dir5F88ECE3435D77B545EEB9D406399853" Guid="*">
+                <File Id="fil4275D2ED43857CAFA985D06D8ECE23F9" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll" />
             </Component>
-            <Component Id="cmp370D229043FD0149B4F30A2F83EF9E17" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil15FC2C9FC5CC3CCB7BCFF29DEABDFC2D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\hostpolicy.dll" />
+            <Component Id="cmpCA447446DC8D6533F740FA6F64C78E2E" Directory="dir5F88ECE3435D77B545EEB9D406399853" Guid="*">
+                <File Id="filCA3FC97AD3904EDF6517CD7770050347" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win\lib\net6.0\System.Diagnostics.EventLog.dll" />
             </Component>
-            <Component Id="cmp03C87B91C03C5777536EE5758624A87C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0DB5EF70AD0376190DE18D3B5D1D5836" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\libSkiaSharp.dll" />
+            <Component Id="cmp43F0767F16ED1B6ED4B5D3172523205E" Directory="dir5F88ECE3435D77B545EEB9D406399853" Guid="*">
+                <File Id="filF39CE975A77FD5D53A32ECCEC9DE4544" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win\lib\net6.0\System.Diagnostics.EventLog.Messages.dll" />
             </Component>
-            <Component Id="cmp992FB38A84C6E7502D7E32F8BB5A1271" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil8CD83B504467E76332B90D4B762F729B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.AspNetCore.Http.Features.dll" />
+            <Component Id="cmp394CE7151695068015DF6FBF7E410486" Directory="dir5F88ECE3435D77B545EEB9D406399853" Guid="*">
+                <File Id="fil3A4CFB0785C6F08CECB9F9E3AD4969A1" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win\lib\net6.0\System.Drawing.Common.dll" />
             </Component>
-            <Component Id="cmp3FFCDB6A9326C91C688FDA785AAFA91B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1B9621F2800D3108751783933E717108" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.CSharp.dll" />
+            <Component Id="cmpA6842430D797524CD119736AA6E3A51F" Directory="dir5F88ECE3435D77B545EEB9D406399853" Guid="*">
+                <File Id="filD11ED45188E5D968EBA404C1381EA11B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win\lib\net6.0\System.ServiceProcess.ServiceController.dll" />
             </Component>
-            <Component Id="cmp305CA1C323E3075CFEF4E0388C5FD080" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil154E84E93748A274FFE65A7739023FC7" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.DiaSymReader.Native.amd64.dll" />
+            <Component Id="cmpD53E30C2F2FEFD5796AB5CE953A7008C" Directory="dirA8824C8A34A7D7785B61FE60FF83E9A3" Guid="*">
+                <File Id="filA081B71A7C5639CEF709D6AAC45984DA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm\native\onnxruntime.dll" />
             </Component>
-            <Component Id="cmpEA89A3D3AE5B35CE09CBE8A8194DB745" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9FD5A748064F522B4B12B9857704D681" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.Abstractions.dll" />
+            <Component Id="cmpC190BFF38A58C05E302A31BEF5A57187" Directory="dirA8824C8A34A7D7785B61FE60FF83E9A3" Guid="*">
+                <File Id="fil6FB7FACF46DA61EA01640D2D445DF4C0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm\native\onnxruntime.lib" />
             </Component>
-            <Component Id="cmp052FAC70D5DB7601E72B5F62D5D00D40" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filAD410EF4CFC71525771F0FAB0A5E71DB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.Binder.dll" />
+            <Component Id="cmpCE1C1470F6D7AF260CA3C50C0B3B7A0C" Directory="dirA8824C8A34A7D7785B61FE60FF83E9A3" Guid="*">
+                <File Id="fil2394E8AE8CE954392A041C0768400DBD" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm\native\onnxruntime.pdb" />
             </Component>
-            <Component Id="cmpAEB0A4C22DA543C27420DA7A8571A0AC" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6D9CC4B5898BC50BF41EF24E8F2A9092" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.CommandLine.dll" />
+            <Component Id="cmp13AC01D1C59CB6B593ED4BECA567DB3B" Directory="dir3A64F71C0BE5F6CAFF1040E45F53FF2D" Guid="*">
+                <File Id="filB88DFB56010984D7900C2AF6AB730C13" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm64\native\libSkiaSharp.dll" />
             </Component>
-            <Component Id="cmp623B7C9214D9EC00A6D893DDB98F80A6" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil63CD86D1F1998F87DB89AAE28B560EB9" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.dll" />
+            <Component Id="cmp7DE1BA57E05B7B3B28A3ED484C7B8447" Directory="dir3A64F71C0BE5F6CAFF1040E45F53FF2D" Guid="*">
+                <File Id="fil32A1336C2779915CA1071B76FF952AB0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm64\native\onnxruntime.dll" />
             </Component>
-            <Component Id="cmp05CB97B3A1328071B3C7D6923C83FB97" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil2A2B566C6ED88F2783AE3C6FB26BEFD0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+            <Component Id="cmp9F21F15640CC07294E84B29663CD84D7" Directory="dir3A64F71C0BE5F6CAFF1040E45F53FF2D" Guid="*">
+                <File Id="fil5850B04C8B350CD0EC6E1FE8771F3DDA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm64\native\onnxruntime.lib" />
             </Component>
-            <Component Id="cmp25F487B99CA933AAFC3DCB61C2467135" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9E601E70B51D703777788E8FE7369AA7" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.FileExtensions.dll" />
+            <Component Id="cmpAD68F6D2817A2D405C158F1413086E82" Directory="dir3A64F71C0BE5F6CAFF1040E45F53FF2D" Guid="*">
+                <File Id="fil92393443282053A5FCBD930363826FE2" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm64\native\onnxruntime.pdb" />
             </Component>
-            <Component Id="cmpCFA848DD67369A23C62B159B5F8AB6CE" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC140735A03635790F98D7DB88173761B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.Json.dll" />
+            <Component Id="cmp87BEAB686FBA29D189A77DAC5A5A4DC7" Directory="dirFBC83227DD6C6B044D7067A15A971248" Guid="*">
+                <File Id="fil0BAADCADCA17E2B2395B07F90C48D613" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x64\native\libSkiaSharp.dll" />
             </Component>
-            <Component Id="cmpA52F64F8CAD5643B4274AE3FC5930235" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC9FF57231344EC9F451CC325373D8D14" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Configuration.UserSecrets.dll" />
+            <Component Id="cmp52CDDD9256884269B096012852703D57" Directory="dirFBC83227DD6C6B044D7067A15A971248" Guid="*">
+                <File Id="fil652E1B8E34AB82B70098CA61482FD282" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x64\native\onnxruntime.dll" />
             </Component>
-            <Component Id="cmp535D80CD64CC1A78680DF35A21E041BA" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC2F272A674D4F5FE025206D6B2138262" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+            <Component Id="cmp2D410E035744E6DAE786C889F35E0C7E" Directory="dirFBC83227DD6C6B044D7067A15A971248" Guid="*">
+                <File Id="fil2ACF28571D8C94CE62DC9A63D650E506" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x64\native\onnxruntime.lib" />
             </Component>
-            <Component Id="cmpEE4DB48671CE90731B0D886EA92DF3C8" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil500D5980B25AA12941249ACD4B95995C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.DependencyInjection.dll" />
+            <Component Id="cmp5E6C23C7607A9C7507DB4206EAE429D7" Directory="dirFBC83227DD6C6B044D7067A15A971248" Guid="*">
+                <File Id="filB3101D8453FD36CF8C64826A6665656B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x64\native\onnxruntime.pdb" />
             </Component>
-            <Component Id="cmp78AA02AC9F686EB18EA86E5423D6E0CC" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filD860F38636E2C7DC55B52E465BB19D32" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.FileProviders.Abstractions.dll" />
+            <Component Id="cmpEEBE8F5F923381583CC9AE590034B133" Directory="dir6E57CAF6C0A352FF1B5354EF4C940068" Guid="*">
+                <File Id="fil627A796BD1CC1E1037777F9FDD47D2CB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x86\native\libSkiaSharp.dll" />
             </Component>
-            <Component Id="cmp9D39EEB6E62A0CBBA9DF736C0D63A732" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil8ED44B22A3FE7A6EB3D899C0B5DA5F1A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.FileProviders.Physical.dll" />
+            <Component Id="cmpED4132F81DF5A2F63B58B7CEE2D73AC9" Directory="dir6E57CAF6C0A352FF1B5354EF4C940068" Guid="*">
+                <File Id="filE498A75EEED7172F2AD649D9B3A4AF6B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x86\native\onnxruntime.dll" />
             </Component>
-            <Component Id="cmpD5D3011D5570B740AA6A7A284A6FD533" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil47C1E5BAF447EE7C1892A63546B9F425" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.FileSystemGlobbing.dll" />
+            <Component Id="cmp2283797E9CC9F9B2B48032C1BAE47DDD" Directory="dir6E57CAF6C0A352FF1B5354EF4C940068" Guid="*">
+                <File Id="fil0FE29095456F05B3B3AB191504299137" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x86\native\onnxruntime.lib" />
             </Component>
-            <Component Id="cmp840530D38A5DD416987DCB83C09B7B90" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6F14C76DBD19E27E8A4131BFE245A2B3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Hosting.Abstractions.dll" />
-            </Component>
-            <Component Id="cmp1DE2EDC4E8DD0C5BD1B7532102C6D238" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil8A0DEB5E82C53C2332C2F4EBED711E48" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Hosting.dll" />
-            </Component>
-            <Component Id="cmpC0785DD3729D2E7E2E795C565F1B22B5" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB23F754007DF4DF14CB64E0C9904CC41" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Hosting.Systemd.dll" />
-            </Component>
-            <Component Id="cmp8FCEEEBFEF7D32AE19F773A023322B92" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB715792DE4DB6789C9219E6E91ACB304" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Hosting.WindowsServices.dll" />
-            </Component>
-            <Component Id="cmp0B75D7F1B52F81302444A90BAE3EA967" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filBEE5F4A343C8028C6DDA1B84E6557AAB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.Abstractions.dll" />
-            </Component>
-            <Component Id="cmp5C40E73156A88A6D38504E26439DEAE1" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil98CC1F6BBDA55D8112ABD380AB6B68D1" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.Configuration.dll" />
-            </Component>
-            <Component Id="cmp1E2774AB06C1AAFD9E0B05799D4B3260" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil4AA2F56B3CDE8FDAFE3EDA8DF52B6BC0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.Console.dll" />
-            </Component>
-            <Component Id="cmp96238B48CB4453A4A0F70F5184998DBD" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil036E871DB8FF1ABFCC4F7BEC2EFFC27E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.Debug.dll" />
-            </Component>
-            <Component Id="cmp38CF68705811E5576B8552824D2ABAC5" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB28C098628830D0087E71A6809B89B05" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.dll" />
-            </Component>
-            <Component Id="cmpC53AF7E325891DDFFAE836075DB0A7F9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil15A6695254BFF4D972133EAB19E4CAFC" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.EventLog.dll" />
-            </Component>
-            <Component Id="cmpD9E612A6ACF3A2D91C2B1D0A62588312" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil79A470A80C80F13FC48CE3323770090A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Logging.EventSource.dll" />
-            </Component>
-            <Component Id="cmp7823AEFFF3FA8746E681278A32F5F4B1" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil30ACC77FE2D059BFCA07A70CA54A681E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
-            </Component>
-            <Component Id="cmpEC6B41E18549F5F75ED4BBD9433F3F0E" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil396885734ACACADE1C79D5A09432CBC0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Options.dll" />
-            </Component>
-            <Component Id="cmp682F1B16663F20F192692E6B3A3BE8D6" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB5017B62046BE18FF535D244470BFB6F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Extensions.Primitives.dll" />
-            </Component>
-            <Component Id="cmpE069903D52B0FE675CDC56CD8F157C56" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1F8177BDF5BB8AA2417296959CEFB1B3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.ML.OnnxRuntime.dll" />
-            </Component>
-            <Component Id="cmp8FA1C2F00156498CB098ADB61ABCAA24" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1FFAEE17285DBBB7671DE8A02760C262" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.VisualBasic.Core.dll" />
-            </Component>
-            <Component Id="cmpBC02A37F96B6F9E5EDB125419DFD20FF" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil66ED773DB6F8C6233590DB7BA3B25A38" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.VisualBasic.dll" />
-            </Component>
-            <Component Id="cmpC4A5A0E7B7F2176486A6627684862CE6" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil25E275BC51C2F64D75E1E348E5949E47" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Win32.Primitives.dll" />
-            </Component>
-            <Component Id="cmp88F463630E9FD5798F98954E26148488" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil23C81BA2D13C58ED5C9F5E8A7E4D0828" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Win32.Registry.dll" />
-            </Component>
-            <Component Id="cmpC40A9B0D9195D20DD618A060FBF7CD11" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filBC824592BB396373BDF2AE605C597968" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Microsoft.Win32.SystemEvents.dll" />
-            </Component>
-            <Component Id="cmp71B521D81FE09E2908F7F48CA4A5B5A2" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE2C49A6AA82970265469233B11299DC1" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\mscordaccore.dll" />
-            </Component>
-            <Component Id="cmpC6E4037314ADC9C1E032B5526FEA1E25" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil63096E0010D8719F6DF1771DBAFD41D6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\mscordaccore_amd64_amd64_5.0.1321.56516.dll" />
-            </Component>
-            <Component Id="cmp233E36FBF65743A932492E49579A0FF8" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil14FE14D77CE43CA0E5802369C2BDBB57" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\mscordbi.dll" />
-            </Component>
-            <Component Id="cmpD3980CC7A2D15A978BE26026DD73AC12" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filDCB68B411B4EFBA34563D5608828ED73" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\mscorlib.dll" />
-            </Component>
-            <Component Id="cmpEB4F2266F1C46E045E3F3E9F653E0CE3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filCBE2AC93DAEBADEB8C3796FC1668276F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\mscorrc.dll" />
-            </Component>
-            <Component Id="cmp5AE4498E42C089C5715482820935F2B6" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil81EA80E93CAED16BE635395A9441E062" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\netstandard.dll" />
-            </Component>
-            <Component Id="cmpA665FF4DF6AD2FCA255D445B3F86F182" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil84B7BF3EAF204D38936A95BAF3A5F3FB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\onnxruntime.dll" />
-            </Component>
-            <Component Id="cmpC669E0B9B67D4162AF25EA69946ED85F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3AF79445840B970B14D6ABD1A9E2FE68" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\onnxruntime.lib" />
-            </Component>
-            <Component Id="cmp30D0156FF02E69480C16C066673A961C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5CBBC213CA16468655F2879997FD7AD5" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\onnxruntime.pdb" />
-            </Component>
-            <Component Id="cmpD8CBAE46674BC457B61EE7292DF46410" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil246AA64099C3EB6FD603FEBA2D4FCF13" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\onnxruntime_providers_shared.dll" />
-            </Component>
-            <Component Id="cmp2AEF4E5F284BE7C984C0F6F479E0CD20" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0FE2E1E0DF5D9467533885A5E520A0C5" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\onnxruntime_providers_shared.lib" />
-            </Component>
-            <Component Id="cmp406A5DEE1D0EBA0074AC1B410B640AE7" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil13595475E649FAB623CA0E85316F5E52" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\onnxruntime_providers_shared.pdb" />
-            </Component>
-            <Component Id="cmpC256E48B9A2D519797C001E508493970" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil50A00D99CE41C01DF361334AE2DBDEA8" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\SkiaSharp.dll" />
-            </Component>
-            <Component Id="cmp1D552337DFE28BC94B773F65CA55EC82" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil32B84B28BCBBBC970193A40C1E3E5455" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\SkiaSharp.Views.Desktop.Common.dll" />
-            </Component>
-            <Component Id="cmp0D9B5F32EC9F476B5A4C01C07C25E050" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filF60A6253434B41422BE1987BF18C3827" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.AppContext.dll" />
-            </Component>
-            <Component Id="cmpB33F54C96435101C3472F33C2CC85675" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filEADD2AB38A8F665EE6F0BA24182B8638" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Buffers.dll" />
-            </Component>
-            <Component Id="cmp31D04DDFE08D386331AAD553512A907D" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0570CA61FD7FF2014FF650AA20C54AA4" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Collections.Concurrent.dll" />
-            </Component>
-            <Component Id="cmp9CD03C7D387F4CA892F12AA084331452" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filA5E31F7A5C21FF529232696F2740B07E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Collections.dll" />
-            </Component>
-            <Component Id="cmpB2CCADB232BE5E6863E0BF7EB0C6D9BB" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filBD98247E85899D87F5C2B9DCD8AD37F7" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Collections.Immutable.dll" />
-            </Component>
-            <Component Id="cmpF1BC525186CAF235BAA6458B1E93EAA6" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil53CC5B9660184C13C71540985DD32053" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Collections.NonGeneric.dll" />
-            </Component>
-            <Component Id="cmpBA4142E8F9D26CE67E7A77796F303678" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil34E8BCA3A25ED0379C041291DDDAAF82" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Collections.Specialized.dll" />
-            </Component>
-            <Component Id="cmpD024C3BF4FEB6F79FAD01527943A8CD0" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB421D9F0A86B9201BD2F18220D8DF2A3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ComponentModel.Annotations.dll" />
-            </Component>
-            <Component Id="cmp2B1540DB06FF7FFD99D2608402A560D1" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5DC3E0662B9B008468D8CF3F275631B0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ComponentModel.DataAnnotations.dll" />
-            </Component>
-            <Component Id="cmp155EC6AB0524CFD6A1AC0FD42E5E305F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC7F4B7C52955A627783FDA9146650910" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ComponentModel.dll" />
-            </Component>
-            <Component Id="cmp8BE45F9598CC4AA1A6A876D15310B500" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6BAE9471CAD535C921D42420B3A5AC6D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ComponentModel.EventBasedAsync.dll" />
-            </Component>
-            <Component Id="cmp4577E6291FDF6459C374A6F66C733926" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filBF01ECAB164758210FC742E2D17492D3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ComponentModel.Primitives.dll" />
-            </Component>
-            <Component Id="cmpF998936EB2DE5198AFF90B5CDBBA4486" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB9ACC560296F80149FEFDADCCBBEE0E6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ComponentModel.TypeConverter.dll" />
-            </Component>
-            <Component Id="cmp32DB6896C7A361C9A07BBD5FF323FC2D" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3091C55431E74B2490A1CFC0A2C2A7DE" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Configuration.dll" />
-            </Component>
-            <Component Id="cmpC911131D2E51563026A463FB4AE6E01A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9FF17C48FF5209139A4A5E1D3EDE7DAB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Console.dll" />
-            </Component>
-            <Component Id="cmpC030352313D43A744C8DD82E10F09FA3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filFA0B7B7207E02FE1BE816D564A64C723" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Core.dll" />
-            </Component>
-            <Component Id="cmp87E94FFA8DB1B36BE9B07C7D6E9D8573" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3E2051BBB1AE05CC170B79ADBECFF1AA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Data.Common.dll" />
-            </Component>
-            <Component Id="cmp61B5BA79E56376A5CE403FF654297A01" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7E963A39442F7B79104E09633237ED17" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Data.DataSetExtensions.dll" />
-            </Component>
-            <Component Id="cmp03D2BDF187FC8AB12B7D2D4DDD328C7B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filD46FB93E5AA8C301EA1C19CFF8D74A18" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Data.dll" />
-            </Component>
-            <Component Id="cmp2BAC0A58BFB26DC55A7C1A933AFC0EDB" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3CAA795958169E3184AFBF588FD49937" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.Contracts.dll" />
-            </Component>
-            <Component Id="cmp080EEF96680674527DE220DF59641EAD" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filDF9704F9D03B7252FC84BA41FFB86991" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.Debug.dll" />
-            </Component>
-            <Component Id="cmp54FF50D39C4910C5618A87A810E6F648" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6E644316FFC91AD545E7B79FC2159155" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.DiagnosticSource.dll" />
-            </Component>
-            <Component Id="cmp81F746B7A22A50E6EEAA1C90553FA2E1" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil8285DDCC6AE357134839833FA72B017B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.EventLog.dll" />
-            </Component>
-            <Component Id="cmpB28D273D58C0AB2BE2CC02F6ABA8E802" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil29A70AE69D567A9BE18EA2BA3A08E299" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.EventLog.Messages.dll" />
-            </Component>
-            <Component Id="cmp7A3902C4A5685FA6269C1AEBF3ED17A3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil016656CDB75BCB09EAC0C9FF4B46D40F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.FileVersionInfo.dll" />
-            </Component>
-            <Component Id="cmp809236F0CC61C1197276E040C24CB5BB" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil76B5283D36557D06751E4BDD18AF4D44" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.Process.dll" />
-            </Component>
-            <Component Id="cmpD1CEF69A3EDAA2F643B4EA5EBD3D2973" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil188B5D6584D5ED33A5D95AEBC8D518A6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.StackTrace.dll" />
-            </Component>
-            <Component Id="cmp9D10FAD620068EA6689C1B0783215949" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filFF40251D1176FBAD9DD2FD7328471D23" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.TextWriterTraceListener.dll" />
-            </Component>
-            <Component Id="cmp85FBD2A35C018B3D2CAF06837E1A0D93" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0CA9B28CE80E994952488E1F35080D99" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.Tools.dll" />
-            </Component>
-            <Component Id="cmp245C9AF77A28EEB8DCCA329CDCCB972B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil2FD6A46598FA4506438DBD08BAA4ADA5" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.TraceSource.dll" />
-            </Component>
-            <Component Id="cmp714B75841BFE61BBCC1662B0520AA7E3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil4E2EF215EB4740F5F6539D3999B0127A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Diagnostics.Tracing.dll" />
-            </Component>
-            <Component Id="cmp8D110DDD7A0B62E18E975C3E869D106F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil882CC3C47144482F88666B4DCD9F229A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.dll" />
-            </Component>
-            <Component Id="cmp54AB1E733558D48BDBE6A12F8CA4EA7D" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0951690B7AD0F3C839DFD3FF35B92FA8" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Drawing.Common.dll" />
-            </Component>
-            <Component Id="cmpD76634C1C87FBF54B534ED76BF09E9F2" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filA0363440F7E314F682D039846ADCCE9A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Drawing.dll" />
-            </Component>
-            <Component Id="cmp4D443FB9F0DC0C6A02BA3C3A629ACB17" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3C194516A351F3910F3C249414A85DFD" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Drawing.Primitives.dll" />
-            </Component>
-            <Component Id="cmpC7E7421430E7020C163FA1E0C4572AA0" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1A5A9D49FCB3731BB6D15675738F4EBE" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Dynamic.Runtime.dll" />
-            </Component>
-            <Component Id="cmp8FE294052CB2EB2C50CEBA0D77945BE3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6252F5566DD1D9353B28A1152FB98FB8" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Formats.Asn1.dll" />
-            </Component>
-            <Component Id="cmp6A7097F93C1F9BDC5ACAD2879F3E112B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filAF01C0BE021FDB1D410F037403F25772" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Globalization.Calendars.dll" />
-            </Component>
-            <Component Id="cmp917B8C1F82ED5EDEA751753FE73CFE19" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil49C9B263333BC22C3019963ADB6F3E30" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Globalization.dll" />
-            </Component>
-            <Component Id="cmpF2A883978BEFE33C265474C1D291BD66" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil99E58F66A1C8410E5AE22C2177E20E57" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Globalization.Extensions.dll" />
-            </Component>
-            <Component Id="cmp6F785CC95713FEA3D3DAE9FD0C0358DE" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0392F488E64162D852706A41DF25A635" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.Compression.Brotli.dll" />
-            </Component>
-            <Component Id="cmp2479CC7E14CE3232509C5F234123BCA9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9C24222A11513F14A431651BFCC1BA7A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.Compression.dll" />
-            </Component>
-            <Component Id="cmpBFFB71A9E5A988EA440FAA4531DDED4B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil97D492BAA68459212D671FA9059EE99E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.Compression.FileSystem.dll" />
-            </Component>
-            <Component Id="cmpF038BC3925FFB7D8628E06E236FFF5D7" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil4677CB18F653A5BEC208EE8944794F1F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.Compression.ZipFile.dll" />
-            </Component>
-            <Component Id="cmpFFB5B6548B30058F1A31CCF9BB8205AB" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil616A0490F65261D4B96BECD8B715C648" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.dll" />
-            </Component>
-            <Component Id="cmp40172D28A183E7934AF022EDC6C889C3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil4AF17861640528EC1B15F90D236E5856" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.FileSystem.AccessControl.dll" />
-            </Component>
-            <Component Id="cmp95B02C2CE063D218BBB09B5F7C125608" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB474FE427B1A61CBCBE51EE94DD11221" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.FileSystem.dll" />
-            </Component>
-            <Component Id="cmpEDB63E738A8F751A5DDED2D73497D0F7" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filECF45A769B4A832ABEF1E1B3E86ABD5E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.FileSystem.DriveInfo.dll" />
-            </Component>
-            <Component Id="cmp2107CCDF4255C055B0E626228668A4BE" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC148BEB6A26220D7B39F69A6ADE8DE7D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.FileSystem.Primitives.dll" />
-            </Component>
-            <Component Id="cmp0C51FBA3640B789D890C45C1695B7EFA" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filA127B2954F94D9694CEE4C3DA275638F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.FileSystem.Watcher.dll" />
-            </Component>
-            <Component Id="cmpA18458B7DA13A00E6D8E0A39F52A20B9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC5A1934CA3E4A0556310F16FA6AB75E7" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.IsolatedStorage.dll" />
-            </Component>
-            <Component Id="cmp944A0036CC08BE47E83EE8F79FB47E14" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil626D198FB982437215AFE5E59061818F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.MemoryMappedFiles.dll" />
-            </Component>
-            <Component Id="cmpFB206CA238C8617B3F95F30EBEC7DBB3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil00777336CF13789B530CAAC34437C978" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.Pipelines.dll" />
-            </Component>
-            <Component Id="cmp726B290C4FD0B82187559E659C63EB79" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5AB470C63FDBD13D05CFB9B5E60EB913" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.Pipes.AccessControl.dll" />
-            </Component>
-            <Component Id="cmp6C0ED5DD39F234C3CFA4331F3DFE7CCC" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil169C380C1E9AC14E087F3CA645480E5F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.Pipes.dll" />
-            </Component>
-            <Component Id="cmp0EEB6E6B725306BBD0B66235F554B68B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil87933210A3911A1A3C553E8592C89F0B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.IO.UnmanagedMemoryStream.dll" />
-            </Component>
-            <Component Id="cmp2F741144F5D188B5E4F6849E68C6AF73" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5CE62CED5048B207A57DC45AAFE80416" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Linq.dll" />
-            </Component>
-            <Component Id="cmp930D3F44DBF4B1977EF63CD1284AAA9A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filED27F40B1C77E7562C15446E1679791E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Linq.Expressions.dll" />
-            </Component>
-            <Component Id="cmp3C9B4C9D8161DE738E7A362C7B1748A0" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil799209D9A1693407945C7414DE5AC8A5" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Linq.Parallel.dll" />
-            </Component>
-            <Component Id="cmp7DAFAEF657562CF0B897399FE7A8EA59" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB5BCA50848D66B2A73CC4BD7D688BF60" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Linq.Queryable.dll" />
-            </Component>
-            <Component Id="cmpFF86067FDBD5730F18DEF68396E1DBED" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil38495EC4D710E23D54BC1AC9D770A98E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Memory.dll" />
-            </Component>
-            <Component Id="cmp71AAE7C36A451DCB9168FE6A024CB0DF" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC644955D9A2A1373AB38F6382F5ECF55" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.dll" />
-            </Component>
-            <Component Id="cmp9CE1D3DE2EA511015E8A6BF27A131BF9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7F4C740D5CE3473F4195378C48C79BBB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.Http.dll" />
-            </Component>
-            <Component Id="cmpD2EF5500FB75BD2A08B2C9DF5E88E5C7" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil867C20EDACE60778FB33E9EAA08D44D0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.Http.Json.dll" />
-            </Component>
-            <Component Id="cmp00C58F827EC71FAF7E0F9A256124E926" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filBB3B099B9EB4FF8462795E0D0E7E7D24" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.HttpListener.dll" />
-            </Component>
-            <Component Id="cmpC9F9D08DF609DBC19AB46E519B86EF74" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB0D170860CD63536933C7B6D4A9DF58B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.Mail.dll" />
-            </Component>
-            <Component Id="cmp4E87706C075C7561AAFC564C044D5521" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE1C579C2ADFF79BAA737565E44DDFFA5" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.NameResolution.dll" />
-            </Component>
-            <Component Id="cmp930DD28E3A1C86AC32FBFD8F458E7181" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7B63D9845C7E41FCE1E73ED2BE173CD0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.NetworkInformation.dll" />
-            </Component>
-            <Component Id="cmp83C66990A0F02E70AA6E93ECBAC490B9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9E87BB4528170BC08EA143452E20E37E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.Ping.dll" />
-            </Component>
-            <Component Id="cmp9F323445358F6599711DF4EBC46D09F8" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filF5E3FB4331368229952EAA96A4C3DD36" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.Primitives.dll" />
-            </Component>
-            <Component Id="cmpE75B11DF6FB2030083A9F4E56C29DB2C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil4CA9783034158AE8A2EDE91C096550B0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.Requests.dll" />
-            </Component>
-            <Component Id="cmpA230816EC417ED7078D5F6FA887ED377" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil35E4EEC6BDB521A5FB3F9D2DC9F9166B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.Security.dll" />
-            </Component>
-            <Component Id="cmpB93D602F60B2ED358131DBDED415FA13" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil36223F526643FA320084387A78D01E36" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.ServicePoint.dll" />
-            </Component>
-            <Component Id="cmp264672A253C022943070F9E6D8976270" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil8E62095CE060B6C5650264BB07C6CC93" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.Sockets.dll" />
-            </Component>
-            <Component Id="cmp41E8DADEAC7019F2460BC160B9E330E4" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filD2A51D13C4DBFD3271653BD44D26F5E8" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.WebClient.dll" />
-            </Component>
-            <Component Id="cmp49FADE31902ED6C60D6EC4E1E9DEA6F3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil245689BF5D93F2C213620AAC833A6E06" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.WebHeaderCollection.dll" />
-            </Component>
-            <Component Id="cmp7AE1FA0BC8DECCBF13992AC12A090A21" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7A246CAAB8A0E24170446D6FAA50247F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.WebProxy.dll" />
-            </Component>
-            <Component Id="cmp3E660D88D57934F55D73ABB26C7623ED" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE9083C93463C9294689DB1B984CFEACD" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.WebSockets.Client.dll" />
-            </Component>
-            <Component Id="cmpB42553296837D875D9504F3F89E7F9A3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC0CAB3786194481B713B6AA7EC303605" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Net.WebSockets.dll" />
-            </Component>
-            <Component Id="cmp03DC10F12013115001443D317361D32E" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE798162B682FD7A5E4F1BA88E7BC409A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Numerics.dll" />
-            </Component>
-            <Component Id="cmp931903EDA6CECCBA6D885BB046CBAEF8" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5BF451BFFE7FDDBAA13F53B3B418027B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Numerics.Vectors.dll" />
-            </Component>
-            <Component Id="cmp8AE096E86BB353D3A75AC5C91B35417F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filCAE87A5A902FEE7529F16E3FC1C0A90C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ObjectModel.dll" />
-            </Component>
-            <Component Id="cmpB2FB2C2DE36190B3529AB989FCDFFBA3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB140BD62A1023B75BC70616D758C100C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Private.CoreLib.dll" />
-            </Component>
-            <Component Id="cmpAAA1D6317EA9B181BDEA67CBA434756E" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil898F11D55FA25375038F77660BDD82B6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Private.DataContractSerialization.dll" />
-            </Component>
-            <Component Id="cmp33D20B156651AE0964248A0FFD686EBC" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil31A82185394FD3BBBC261EF26AB71F71" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Private.Uri.dll" />
-            </Component>
-            <Component Id="cmp37F17661A140BDE30D97A148FADB08D7" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7B5A5A49FBF17634F7E16F11F3BE3A3B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Private.Xml.dll" />
-            </Component>
-            <Component Id="cmp3FEFB7563826EB989F9D70ACC9761FA7" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6BBFE405B919D62242512DBD7E29EC65" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Private.Xml.Linq.dll" />
-            </Component>
-            <Component Id="cmp8B303334422986CE95958F45B702204F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filB76D63CC954D15A692A3ECAF9CBED80E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.DispatchProxy.dll" />
-            </Component>
-            <Component Id="cmp793A6BC1BD137B12F64B77C3C4465D4A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filEB8E0799A6511CA5E897DA24F8A20545" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.dll" />
-            </Component>
-            <Component Id="cmp521BC17E10714AD61865372075690208" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil97FB0C0F37EBDDC9A6EC28729FA86D9E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.Emit.dll" />
-            </Component>
-            <Component Id="cmp8D31ACBB981DC1FF494C6A71EA2F5D6A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil2913524FDEAAD6CAF356B84E58506C77" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.Emit.ILGeneration.dll" />
-            </Component>
-            <Component Id="cmp68032C3BB1D16E98C8CD9DB0237CDE33" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil626FD14C2B727A0CF4504E68D5E96428" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.Emit.Lightweight.dll" />
-            </Component>
-            <Component Id="cmp80FC13341CEBFD5D973B087768273237" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6D4B9D3AA7A61EF5EE0EE0008176E06B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.Extensions.dll" />
-            </Component>
-            <Component Id="cmp56C1D2A1EDFB0269C3E228D1D8D0229B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5148133A59EA43678B358CC16E59C85A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.Metadata.dll" />
-            </Component>
-            <Component Id="cmpA77145FED90E48380130FE7786C072D4" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7B8849EC6B0C7C7DB3C33050F3FE51D5" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.Primitives.dll" />
-            </Component>
-            <Component Id="cmp6856B48B34BC96F281FA51A6E4B9DEF3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filA0AAE3BFCF96F7A127ADF1B1C877EA11" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Reflection.TypeExtensions.dll" />
-            </Component>
-            <Component Id="cmp4908CA71F86B7D87CCC055E3440E02BD" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filEED35D2552B4BDD2EB9C11684358C398" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Resources.Reader.dll" />
-            </Component>
-            <Component Id="cmp7EEB68ECB63CE64D1E37E2F0BDC52117" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil291FDF66D5E6159FC23B00088B2FA48A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Resources.ResourceManager.dll" />
-            </Component>
-            <Component Id="cmpDDB0426BC7E15BBEA3B5EFC173F8A1F9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7227A3CCF04E5AF7FE9CCCBB65F1E3A2" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Resources.Writer.dll" />
-            </Component>
-            <Component Id="cmp687B44FCDE39D532454EA99838094A28" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE8B99B48A2F2558196ED20E0D5B91D03" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.CompilerServices.Unsafe.dll" />
-            </Component>
-            <Component Id="cmpED1DB096DB91F6ACF99B727F6548F3D1" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil38F7FF23A4CF245BD0EA4A8767FFA18B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.CompilerServices.VisualC.dll" />
-            </Component>
-            <Component Id="cmp4FB2EDF6A4C184BB54A4C3673DC0B4A5" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3C248F3C3C0181D32F0B24B9C81FBEF8" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.dll" />
-            </Component>
-            <Component Id="cmp6C75927D64F70E349D7D26AD584CC7DF" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1ADB749F776B6F97A48C2D158C0B443C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Extensions.dll" />
-            </Component>
-            <Component Id="cmp0F4F328E951DF412DE2B65A00AE8744F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil41147EFFA1E730DF6E6ABBB8245E3E33" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Handles.dll" />
-            </Component>
-            <Component Id="cmp8857EE67C1E2A42615CD5A33BC24ABDD" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filF863A9653CB8F7D61CE126474B621327" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.InteropServices.dll" />
-            </Component>
-            <Component Id="cmpAA0284A0C1D2BC4452E2271A91604992" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7E898484E3AE8A734691614A7771F28B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.InteropServices.RuntimeInformation.dll" />
-            </Component>
-            <Component Id="cmpC699237F6396DE74DDA42B249FB3DFA0" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3674632E1A97D55096DA391D601A02F6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Intrinsics.dll" />
-            </Component>
-            <Component Id="cmp545F6F2691FACFBEBFA24BF0976C3987" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1FB7606CFD9C0A996DF99152BE57C8CD" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Loader.dll" />
-            </Component>
-            <Component Id="cmpA8EBF877FB4FB37919F18A4432BBA89D" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE9403A614F5040B7A6CABA48281F830C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Numerics.dll" />
-            </Component>
-            <Component Id="cmp1519A9010DF1D7F27FC5599B3F8191C4" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil87ADAB1E090C965DDA110491D67227D9" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Serialization.dll" />
-            </Component>
-            <Component Id="cmp0B08C4A86677610ACC7FC1F3122CAFF2" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filFC98DC9206070716B84210608C42A0E3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Serialization.Formatters.dll" />
-            </Component>
-            <Component Id="cmp8BC29A827B5437FD23471920037550D5" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0643E0BD7B114BE208CC3262614BEC18" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Serialization.Json.dll" />
-            </Component>
-            <Component Id="cmp4384AF6B500534A658BA3BA251B7E8E3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filD90D60E46117AAF2668D946154BC0587" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Serialization.Primitives.dll" />
-            </Component>
-            <Component Id="cmpE3BABACFC83BA021313B955F01BF99AE" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0DAE8A193A29C95B52E0C11B45242E29" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Runtime.Serialization.Xml.dll" />
-            </Component>
-            <Component Id="cmp8773927380261DC3D9962D7157AD4893" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filCC7EE7003CF319B27FD4942B3B18737D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.AccessControl.dll" />
-            </Component>
-            <Component Id="cmp3076D7CB77F863272751195D7B02982A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filAC12A0AA00659A99EB3EF0C7D16349CF" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Claims.dll" />
-            </Component>
-            <Component Id="cmpAA42A37D5AAF516A9E4D041AB715F60C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9CFD1F346FFAA380A909B4AA53953D21" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Cryptography.Algorithms.dll" />
-            </Component>
-            <Component Id="cmp7226F0290AE69F5F4D7F98659E545152" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1703B7A24D5FF38B5B72D94454B31F1D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Cryptography.Cng.dll" />
-            </Component>
-            <Component Id="cmp2AD875601B27C16442706836F36F349A" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filF05D018FE55D2AAA40FA546877DA6941" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Cryptography.Csp.dll" />
-            </Component>
-            <Component Id="cmp8404D38F4A84E6D093E787A4697F5322" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil01102A0FBB90802F897660F312ED6FFD" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Cryptography.Encoding.dll" />
-            </Component>
-            <Component Id="cmp28EA5A14B7F414E584B930205D8D5F81" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil898000DF8E6AD874EBFDE7C58D0C0FAE" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Cryptography.OpenSsl.dll" />
-            </Component>
-            <Component Id="cmp34AF7F02C9B8BC91D82EAC290D79D1CD" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil43B9F553EA6C5C70698252399F701EFF" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Cryptography.Primitives.dll" />
-            </Component>
-            <Component Id="cmp89E66FECE6B2BE6057996706D43A35CB" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3BBFC017477806079376E2FFBD23DB3B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Cryptography.X509Certificates.dll" />
-            </Component>
-            <Component Id="cmp22767C43F80F821B3A45E09ADEDC475C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC109C606B49096E054E1467E0F2AD9A2" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.dll" />
-            </Component>
-            <Component Id="cmpDC01EE8EE9462A8A92DDF6AFEDF46DE4" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil05A8D6106984E21727A18DE8BCE37A14" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Principal.dll" />
-            </Component>
-            <Component Id="cmpCBCB0B776785006F5EDFCA5DBBBB8BB2" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filBF2F6DF2ED613F961973B9092337591C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.Principal.Windows.dll" />
-            </Component>
-            <Component Id="cmp9FFDA80837E96B6E04D1B79C442F3633" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil827C85629BD54CDAA059D9A0348B6EAA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Security.SecureString.dll" />
-            </Component>
-            <Component Id="cmpFC3465A440EBC030BFA3EEAA45CB5CCD" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filC183EB5119A7D7E57DBB1056A80222D1" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ServiceModel.Web.dll" />
-            </Component>
-            <Component Id="cmpD884D502D63351AB2888B7B089B2987B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7082E6610BCB25AA797E2319B1A21286" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ServiceProcess.dll" />
-            </Component>
-            <Component Id="cmpB35288E9A00EC04EE0978A609952A27C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil233A0E95C1B5C28A5570D0EFDBC2DC86" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ServiceProcess.ServiceController.dll" />
-            </Component>
-            <Component Id="cmpA9CD000DCE352EF2B891388FE9572C4B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil87A2C09BBC3D243A2D6FA59ED85CEFE6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Text.Encoding.CodePages.dll" />
-            </Component>
-            <Component Id="cmpAED686A45A97978BE79DCE4166220BE1" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE3FAB811AABD55AD5F55164CD1E8EAAB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Text.Encoding.dll" />
-            </Component>
-            <Component Id="cmp81B8AB20E2AF96A4C6272199E727384B" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil1DC166567FC35D6346144D109CB88423" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Text.Encoding.Extensions.dll" />
-            </Component>
-            <Component Id="cmp559F5BCDDD971F1E8518236DA32D3BB2" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil3A2DA7EA816AF33556D0B36BC7C0F2D7" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Text.Encodings.Web.dll" />
-            </Component>
-            <Component Id="cmp091643FC64389C8891B18256FAEBE2F9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filD14DE21063E4560731438E3C7B802338" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Text.Json.dll" />
-            </Component>
-            <Component Id="cmpC89FB5E0317F8670CF29FDCDB58EC5E5" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5CA76E739CE618B47D39D1E423A3CE7C" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Text.RegularExpressions.dll" />
-            </Component>
-            <Component Id="cmp0C26129986CB8E7245F8477AC32915FE" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil2631E08CF6BB651BF3CD23801E9E9DFF" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.Channels.dll" />
-            </Component>
-            <Component Id="cmp5E1D5C52D2E26FB6FC48B4B319326995" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil772D95C1CF800974127526B1E699FE6B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.dll" />
-            </Component>
-            <Component Id="cmp950EE02470DB5DFFA9E53B6009162B1F" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil2992678EBF0DE41A719229D1998FE4EE" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.Overlapped.dll" />
-            </Component>
-            <Component Id="cmpDDB8F03A60046E256553C5CC7F26DA4C" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil925F8F8EFF670A50A800A8154F679CD3" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.Tasks.Dataflow.dll" />
-            </Component>
-            <Component Id="cmp04FB45103D593A40FA47122A3805C22E" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil2E5DD2AC5AD8B2E79A63A4235D91BBC6" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.Tasks.dll" />
-            </Component>
-            <Component Id="cmpAD55A674406D37D8F86D5D1C698548B2" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil0B43AA42CDCB2BD15FE9117209A4CF2A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.Tasks.Extensions.dll" />
-            </Component>
-            <Component Id="cmpAC831B0E799704F9D06DB412208317C9" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE777940F6EA3F346AAB0F70746096094" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.Tasks.Parallel.dll" />
-            </Component>
-            <Component Id="cmp72A6B9D0CFB09A45EB16949EB47F9749" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil6392665F372D81FBEA93FC8C1D8C36AC" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.Thread.dll" />
-            </Component>
-            <Component Id="cmpF051FF022FCAF8002F4990A291FF1A3D" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filF193C41D85EEF2669122C3932D13B43E" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.ThreadPool.dll" />
-            </Component>
-            <Component Id="cmpB7E3A053841CB48CF6D56FC26783F870" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filEFBED4DF34D3F40F2A02FD920EBC9C34" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Threading.Timer.dll" />
-            </Component>
-            <Component Id="cmpDA52D5B37A5F70E91DF1C8D64CC2CE61" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filCCEA148969A58B3E46370A5B0A14B0FF" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Transactions.dll" />
-            </Component>
-            <Component Id="cmp3CA03BD7A18E1CF8F200C99AAF5B67CA" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9BCE5D68241E0168D075196E0F3B5A52" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Transactions.Local.dll" />
-            </Component>
-            <Component Id="cmp21678BC5F59781B9B8A9F51C2F69E1E3" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7167C1B7A4D8BBCE1FB54B1A953D2D5F" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.ValueTuple.dll" />
-            </Component>
-            <Component Id="cmp79E0BDD33A551534C955D360374794BB" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil5511AFA0C7C9EF60EDA6243988BB686D" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Web.dll" />
-            </Component>
-            <Component Id="cmp18347292A1F30674B1E386F377190D51" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil8CEBAF85EDEAC19BF57B336A2441ED1B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Web.HttpUtility.dll" />
-            </Component>
-            <Component Id="cmpB0056323F64907A0F19630ABF64B7A5D" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filF377DC54FB8FBF0B91C529A73F70BF97" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Windows.dll" />
-            </Component>
-            <Component Id="cmpFE57D18247DC45F74F13943A715CA9CC" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil61C28D254264B8E71215C209B4684DCE" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.dll" />
-            </Component>
-            <Component Id="cmpDA41F7A43ADF470C3B2E44453028CD45" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filEE1674276973796ACD142970B5755453" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.Linq.dll" />
-            </Component>
-            <Component Id="cmp26C14DB1260BC0DCD94C59B33A1802C4" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil11F25DC399628CA031D7D161D7236298" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.ReaderWriter.dll" />
-            </Component>
-            <Component Id="cmp1B0F15CB78C38EF93A1F1414DDB5FAB5" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filA6631A5260C79FA02D1DC02A90149275" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.Serialization.dll" />
-            </Component>
-            <Component Id="cmp3EE03C56BDB43BD283F973E8728F8319" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil488A780D485F7D304D4756A8207EE810" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.XDocument.dll" />
-            </Component>
-            <Component Id="cmpAF38F3F22646E85B8BE2CF1F50869AB8" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil479542F67DD4AB97D69A78849BE8474B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.XmlDocument.dll" />
-            </Component>
-            <Component Id="cmpA878F021B62516C69867F1C95EA2C247" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil10FF522500C259FDB38773C45F9B7C77" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.XmlSerializer.dll" />
-            </Component>
-            <Component Id="cmp4D1D7BB1DB0A8594FE7BA9B415D65A18" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil9699D379A406DD3CDB8900E4F000C719" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.XPath.dll" />
-            </Component>
-            <Component Id="cmpA1E50372AC266453F560CB48656D47C1" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil795C602513F30AAA6EFC62B88971E915" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\System.Xml.XPath.XDocument.dll" />
-            </Component>
-            <Component Id="cmpB70B3406F97948355661777C2855B590" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil557DEEFF4E593D2B670AEC041BF2E4BF" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\ucrtbase.dll" />
-            </Component>
-            <Component Id="cmpAB6C050F61B8D04972E5FA9F5C1894E5" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="fil7C662ABD7BAF57974B179244027A4DE4" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\WindowsBase.dll" />
-            </Component>
-            <Component Id="cmp52B0A66E76437E02AC477730969C6F62" Directory="YOLONETINSTALLFOLDER" Guid="*">
-                <File Id="filE896C39E7520485D9C8034096FFA4846" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\Yolov5Net.Scorer.dll" />
-            </Component>
-            <Component Id="cmpB385B107B37DF933B4337E54AF3EB816" Directory="dirA247C82ACBDD1112877767CB90469F01" Guid="*">
-                <File Id="fil9BB79F8843BB1F63BC9BD44396542A6A" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\assets\yolov5m.onnx" />
-            </Component>
-            <Component Id="cmp6F7258C4D2AC6AA4D40ACACCD3C338CE" Directory="dirA247C82ACBDD1112877767CB90469F01" Guid="*">
-                <File Id="fil0C20F2E1A4DC4C420BA188E122170999" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\assets\yolov5n.onnx" />
-            </Component>
-            <Component Id="cmpAC515E478BAEA0C29988B604D20E96AE" Directory="dirA247C82ACBDD1112877767CB90469F01" Guid="*">
-                <File Id="fil2FDA9917347C6658CE96249C2B415579" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\assets\yolov5s.onnx" />
-            </Component>
-            <Component Id="cmpB933FEAEDE8647AAC7DD760348FBD7C5" Directory="dir41ED6835C7479746AD3A4E1E8AA0D707" Guid="*">
-                <File Id="fil2D0EB8766D8CA61CAFBB09822AD2B1DA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\ref\CodeProject.SenseAI.AnalysisLayer.Yolo.dll" />
+            <Component Id="cmpA35C1E997A4B3DD378ED585B1C2527E1" Directory="dir6E57CAF6C0A352FF1B5354EF4C940068" Guid="*">
+                <File Id="fil88F5FA5CBC1E33270256124E47A3C0A4" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x86\native\onnxruntime.pdb" />
             </Component>
         </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dir19C95C9F3A682E904E0444A7940AA0BD" Name="osx" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirF6B9CAB81A3790B857DFD9773BDEDD52">
+            <Directory Id="dir3A64F71C0BE5F6CAFF1040E45F53FF2D" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dir3DD9196CCC208CB8AD3C25E7B728A694" Name="linux-arm" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dir54E3B69282AADBA52982A9888878A40E" Name="unix" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir63CE3C5F407FA3B25A731172E2DE9C94">
+            <Directory Id="dir5F88ECE3435D77B545EEB9D406399853" Name="net6.0" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirDC6E269AC3DF22B392F8C2347C774EF2">
+            <Directory Id="dir63CE3C5F407FA3B25A731172E2DE9C94" Name="lib" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir75A5D9F5BCD33A999548DF616930A5B6">
+            <Directory Id="dir6E57CAF6C0A352FF1B5354EF4C940068" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dir75A5D9F5BCD33A999548DF616930A5B6" Name="win-x86" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dir93A1646324749F9430A3BC8BBD0EC3DC" Name="linux-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirF0678236AB9FAB985D37EEDC11BD05AC">
+            <Directory Id="dir9B2EA7E000F4E4E8AD8A4979436BF70D" Name="net6.0" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dir9FA81F8362C61671DE4978B96D621A8D" Name="linux-musl-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirF8FEDB2834AC08BE69636E0E5F1D15B2">
+            <Directory Id="dirA8824C8A34A7D7785B61FE60FF83E9A3" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir3DD9196CCC208CB8AD3C25E7B728A694">
+            <Directory Id="dirBE65F1E9C5F571FF6E19882D2AC32169" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir19C95C9F3A682E904E0444A7940AA0BD">
+            <Directory Id="dirC36E81190E013F57688704128E1910CA" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir9FA81F8362C61671DE4978B96D621A8D">
+            <Directory Id="dirC8702F12AAD1FDD33E73B0E335B302F0" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dirCB067EA577CF854CB3A9D184CE232BC9" Name="linux-arm64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dirCC5A107DF20D95FDE0664749C3C38A06" Name="win-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirCB067EA577CF854CB3A9D184CE232BC9">
+            <Directory Id="dirCDBAC7171615C1434AC2A7EB6DAC2C85" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dirDC6E269AC3DF22B392F8C2347C774EF2" Name="win" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir93A1646324749F9430A3BC8BBD0EC3DC">
+            <Directory Id="dirDF3AE194E1DC89EE0EE93A285AFD8D26" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir54E3B69282AADBA52982A9888878A40E">
+            <Directory Id="dirF0678236AB9FAB985D37EEDC11BD05AC" Name="lib" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dirF6B9CAB81A3790B857DFD9773BDEDD52" Name="win-arm64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4D2817FD43D72DB4937B7A6CA83C752A">
+            <Directory Id="dirF8FEDB2834AC08BE69636E0E5F1D15B2" Name="win-arm" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirCC5A107DF20D95FDE0664749C3C38A06">
+            <Directory Id="dirFBC83227DD6C6B044D7067A15A971248" Name="native" />
+        </DirectoryRef>
     </Fragment>
 </Wix>

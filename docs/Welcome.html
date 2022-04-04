@@ -64,6 +64,7 @@
 
     <h2>To Get Started</h2>
 
+    <H3>Windows</H3>
     <ol>
         <li>
             Setup the CodeProject SenseAI Server by double-clicking the
@@ -74,6 +75,28 @@
         <li>Open the <a href="./demos/javascript/vision.html" style="font-weight:bold">CodeProject 
         SenseAI Playground</a> to explore the capabilities.</li>
     </ol>
+
+    <h3>Docker</h3>
+
+    <h4>For Windows</h4>
+    <pre>
+docker run -p 5000:5000 --name SenseAI-Server -d -v c:\ProgramData\CodeProject\SenseAI:/usr/share/CodeProject/SenseAI codeproject/senseai-server
+    </pre>
+
+    <h4>For Linux</h4>
+
+<pre>
+docker run -p 5000:5000 --name SenseAI-Server -d -v /usr/share/CodeProject/SenseAI:/usr/share/CodeProject/SenseAI codeproject/senseai-server  
+</pre>
+
+    <h4> For macOS, choose an external port other than 5000</h4>
+
+    <pre>>
+docker run -p 5500:5000 --name SenseAI-Server -d -v /usr/share/CodeProject/SenseAI:/usr/share/CodeProject/SenseAI codeproject/senseai-server 
+</pre>
+
+    <p>For Docker, please visit http://localhost:5000/testdata.zip (after launching SenseAI server)
+     to download some test images for use with the SenseAI playground</p>
 
     <div class="callout">
         This is a developer preview full of sharp edges and exciting ledges, but that's part of what
@@ -88,6 +111,13 @@
         include AI processing as part of their service. The service is a simple REST API based
         on HTTP that is fully self contained, can be installed locally, and requires no 
         off-device processing.</p>
+
+
+    <h2>Supported platforms</h2>
+
+    <p><b>[TO BE DONE]</b></p>
+
+    <p>icon-Windows icon-Ubuntu icon-macOS icon-Docker</p>
 
     <h2>What does it include?</h2>
 

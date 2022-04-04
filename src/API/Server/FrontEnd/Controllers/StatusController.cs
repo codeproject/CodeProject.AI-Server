@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 using CodeProject.SenseAI.API.Common;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 
 namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 {
@@ -70,6 +71,26 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
             };
 
             return response;
+        }
+
+        /// <summary>
+        /// Allows for a client to retrieve the current Paths.
+        /// </summary>
+        /// <returns>A ResponseBase object.</returns>
+        [HttpGet("Paths", Name = "Paths")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public ObjectResult GetPaths([FromServices] IWebHostEnvironment env)
+        {
+            var response = new
+            {
+                env.ContentRootPath,
+                env.WebRootPath,
+                env.EnvironmentName,
+            };
+
+            return new ObjectResult(response);
         }
 
         /// <summary>

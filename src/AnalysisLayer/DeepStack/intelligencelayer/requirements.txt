@@ -1,3 +1,5 @@
+#! Python3.7
+
 ## Needed, but not used everywhere.
 THOP # Installing THOP (PyTorch-OpCounter) for measuring performance
 ONNX # Installing ONNX, the Open Neural Network Exchange library

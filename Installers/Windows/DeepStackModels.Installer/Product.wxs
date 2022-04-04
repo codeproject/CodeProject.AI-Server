@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="4527e54d-ce79-4ff3-827c-39950c95ea9d" 
+	
+	<?include ..\SharedProperties.wxi ?>
+
+	<Product Id="*" 
 			 Name="CodeProject SenseAI Legacy Models" 
 			 Language="1033" 
-			 Version="1.0.0.0" 
+			 Version="$(var.BuildVersion)"
 			 Manufacturer="CodeProject" 
 			 UpgradeCode="3840d8e0-09df-4729-a365-b8ea7813464d">
 		
@@ -11,7 +14,6 @@
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate EmbedCab="yes" />
-		<?include ..\SharedUIConfiguration.wxi ?>
 
 		<Feature Id="LegacyModelsFeature" Title="Legacy AI Models" Level="1">
 			<ComponentGroupRef Id="DeepStackAssetsComponentGroup" />
