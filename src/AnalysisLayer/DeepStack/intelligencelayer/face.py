@@ -140,15 +140,16 @@ def face(thread_name, delay):
 
                 if task_type == "detect":
                     timer = senseAI.startTimer("Face Detection")
-                    img_id = req_data["imgid"]
- #                   img_path = os.path.join(SharedOptions.TEMP_PATH, img_id)
-                    img_path = img_id
+                    #img_id = req_data["imgid"]
+                    #img_path = os.path.join(SharedOptions.TEMP_PATH, img_id)
+                    #img_path = img_id
                     try:
                         
-                        threshold = float(req_data["minconfidence"])
+                        threshold = float(req_data.get("minconfidence", "0.4"))
 
-                        det = detector.predict(img_path, threshold)
-                        os.remove(img_path)
+                        img = senseAI.getImageFromRequest(req_data, 0)
+                        det = detector.predictFromImage(img, threshold)
+                        #os.remove(img_path)
 
                         outputs = []
 
@@ -192,29 +193,34 @@ def face(thread_name, delay):
                     finally:
                         senseAI.endTimer(timer)
                         senseAI.sendResponse(req_id, json.dumps(output))
-                        if os.path.exists(img_path):
-                            os.remove(img_path)
+                        #if os.path.exists(img_path):
+                        #    os.remove(img_path)
 
                 elif task_type == "register":
                     timer = senseAI.startTimer("Face Register")
 
                     try:
 
-                        user_id     = req_data["userid"]
-                        user_images = req_data["images"]
+                        #user_id     = req_data["userid"]
+                        #user_images = req_data["images"]
                         
+                        user_id = senseAI.getRequestValue(req_data, "userid")
                         conn = sqlite3.connect(databaseFilePath)
 
                         batch = None
+                        numFiles = senseAI.getRequestImageCount(req_data)
 
-                        for img_id in user_images:
+                        for i in range(0, numFiles):
 
-                            img_path = os.path.join(SharedOptions.TEMP_PATH , img_id)
-                            pil_image = Image.open(img_path).convert("RGB")
+                            #img_path = os.path.join(SharedOptions.TEMP_PATH , img_id)
+                            #pil_image = Image.open(img_path).convert("RGB")
 
-                            det = detector.predict(img_path, 0.55)
-                            if os.path.exists(img_path):
-                                os.remove(img_path)
+                            #det = detector.predict(img_path, 0.55)
+                            #if os.path.exists(img_path):
+                            #    os.remove(img_path)
+
+                            pil_image = senseAI.getImageFromRequest(req_data, i)
+                            det = detector.predictFromImage(pil_image, 0.55)
 
                             outputs = []
                             new_img = None
@@ -300,9 +306,9 @@ def face(thread_name, delay):
                     finally:
                         senseAI.endTimer(timer)
                         senseAI.sendResponse(req_id, json.dumps(output))
-                        for img_id in user_images:
-                            if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , img_id)):
-                                os.remove(os.path.join(SharedOptions.TEMP_PATH , img_id))
+                        #for img_id in user_images:
+                        #    if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , img_id)):
+                        #        os.remove(os.path.join(SharedOptions.TEMP_PATH , img_id))
 
                 elif task_type == "list":
                     timer = senseAI.startTimer("Face List Registrations")
@@ -343,7 +349,7 @@ def face(thread_name, delay):
                     try:
                         timer = senseAI.startTimer("Face Registration Delete")
 
-                        user_id = req_data["userid"]
+                        user_id = senseAI.getRequestValue(req_data, "userid")
                         
                         conn = sqlite3.connect(databaseFilePath)
 
@@ -390,16 +396,13 @@ def face(thread_name, delay):
                         if SharedOptions.CUDA_MODE and len(face_array) > 0:
                             face_tensors = face_tensors.cuda()
 
-                        img_id    = req_data["imgid"]
-                        threshold = float(req_data["minconfidence"])
+                        threshold = float(req_data.get("min_confidence", "0.4"))
 
-                        img = os.path.join(SharedOptions.TEMP_PATH , img_id)
+                        pil_image = senseAI.getImageFromRequest(req_data, 0)
 
-                        pil_image = Image.open(img).convert("RGB")
+                        det = detector.predictFromImage(pil_image, threshold)
 
-                        det = detector.predict(img, threshold)
-
-                        os.remove(img)
+                        #os.remove(img)
 
                         faces = [[]]
                         detections = []
@@ -545,27 +548,30 @@ def face(thread_name, delay):
                         senseAI.endTimer(timer)
                         senseAI.sendResponse(req_id, json.dumps(output))
 
-                        if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , img_id)):
-                            os.remove(os.path.join(SharedOptions.TEMP_PATH , img_id))
+                        #if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , img_id)):
+                        #    os.remove(os.path.join(SharedOptions.TEMP_PATH , img_id))
 
                 elif task_type == "match":
                     timer = senseAI.startTimer("Face Match")
 
                     try:
 
-                        user_images = req_data["images"]
+                        #user_images = req_data["images"]
 
-                        img1 = os.path.join(SharedOptions.TEMP_PATH , user_images[0])
-                        img2 = os.path.join(SharedOptions.TEMP_PATH , user_images[1])
+                        #img1 = os.path.join(SharedOptions.TEMP_PATH , user_images[0])
+                        #img2 = os.path.join(SharedOptions.TEMP_PATH , user_images[1])
 
-                        image1 = Image.open(img1).convert("RGB")
-                        image2 = Image.open(img2).convert("RGB")
+                        #image1 = Image.open(img1).convert("RGB")
+                        #image2 = Image.open(img2).convert("RGB")
 
-                        det1 = detector.predict(img1, 0.8)
-                        det2 = detector.predict(img2, 0.8)
+                        image1 = senseAI.getImageFromRequest(req_data, 0)
+                        image2 = senseAI.getImageFromRequest(req_data, 1)
 
-                        os.remove(img1)
-                        os.remove(img2)
+                        det1 = detector.predictFromImage(image1, 0.8)
+                        det2 = detector.predictFromImage(image2, 0.8)
+
+                        #os.remove(img1)
+                        #os.remove(img2)
 
                         if len(det1) == 0 or len(det2) == 0:
 
@@ -641,11 +647,11 @@ def face(thread_name, delay):
                         senseAI.endTimer(timer)
                         senseAI.sendResponse(req_id, json.dumps(output))
 
-                        if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , user_images[0])):
-                            os.remove(os.path.join(SharedOptions.TEMP_PATH , user_images[0]))
+                        #if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , user_images[0])):
+                        #    os.remove(os.path.join(SharedOptions.TEMP_PATH , user_images[0]))
 
-                        if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , user_images[1])):
-                            os.remove(os.path.join(SharedOptions.TEMP_PATH , user_images[1]))
+                        #if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , user_images[1])):
+                        #    os.remove(os.path.join(SharedOptions.TEMP_PATH , user_images[1]))
 
         # time.sleep(delay)
 

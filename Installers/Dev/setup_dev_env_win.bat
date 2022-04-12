@@ -16,7 +16,7 @@ set verbosity=quiet
 set forceOverwrite=false
 
 :: Show output in wild, crazy colours
-set techniColor=true
+set useColor=true
 
 :: Platform can define where things are located
 set platform=windows
@@ -88,8 +88,8 @@ cd %currentDir%
 set analysisLayerPath=%absoluteRootDir%\%srcDir%\%analysisLayerDir%
 set downloadPath=%absoluteRootDir%\Installers\%downloadDir%
 
-if /i "%1" == "false" set techniColor=false
-if /i "%techniColor%" == "true" call :setESC
+if /i "%1" == "false" set useColor=false
+if /i "%useColor%" == "true" call :setESC
 
 :: Set Flags
 
@@ -109,20 +109,20 @@ if /i "%verbosity%"=="loud" (
     set roboCopyFlags=
 )
 
-call :WriteLine Yellow "Setting up CodeProject.SenseAI Development Environment" 
-call :WriteLine White ""
-call :WriteLine White "========================================================================"
-call :WriteLine White ""
-call :WriteLine White "                 CodeProject SenseAI Installer"
-call :WriteLine White ""
-call :WriteLine White "========================================================================"
-call :WriteLine White ""
+call :WriteLine "        Setting up CodeProject.SenseAI Development Environment          " "DarkYellow" 
+call :WriteLine "                                                                        " "DarkGreen" 
+call :WriteLine "========================================================================" "DarkGreen" 
+call :WriteLine "                                                                        " "DarkGreen" 
+call :WriteLine "                 CodeProject SenseAI Installer                          " "DarkGreen" 
+call :WriteLine "                                                                        " "DarkGreen"
+call :WriteLine "========================================================================" "DarkGreen" 
+call :WriteLine "                                                                        " "DarkGreen"
 
 :: ============================================================================
 :: 1. Ensure directories are created and download required assets
 
 :: Create some directories
-call :Write White "Creating Directories..."
+call :Write "Creating Directories..."
 
 :: For downloading assets
 if not exist "%downloadPath%\" mkdir "%downloadPath%"
@@ -138,10 +138,10 @@ if not exist "%deepStackPath%\%datastoreDir%\" mkdir "%deepStackPath%\%datastore
 :: For Yolo.NET
 set yoloNetPath=%analysisLayerPath%\%yoloNetDir%
 
-call :WriteLine Green "Done"
+call :WriteLine "Done" Green
 
-call :Write White "Downloading utilities and models: "
-call :WriteLine Gray "Starting"
+call :Write "Downloading utilities and models: "
+call :WriteLine "Starting" Gray 
 
 set pythonInstallPath=%analysisLayerPath%\bin\%platform%\%pythonDir%
 
@@ -185,26 +185,26 @@ if not exist "%yoloNetPath%\%modelsDir%" (
     )
 )
 
-call :WriteLine "Green" "Modules and models downloaded"
+call :WriteLine "Modules and models downloaded" "Green"
 
 :: Copy over the startup script
-:: call :Write White "Copying over startup script..."
+:: call :Write "Copying over startup script..."
 :: copy /Y "Start_SenseAI_Win.bat" "!absoluteRootDir!" >nul 2>nul
-:: :WriteLine Green "Done."
+:: :WriteLine "Done." "Green"
 
 
 :: ============================================================================
 :: 2. Create & Activate Virtual Environment: DeepStack specific / Python 3.7
 
-call :Write White "Creating Virtual Environment..."
+call :Write "Creating Virtual Environment..."
 if exist "%pythonInstallPath%\venv" (
-    call :WriteLine Green "Already present"
+    call :WriteLine "Already present" "Green"
 ) else (
     "%pythonInstallPath%\python.exe" -m venv "%pythonInstallPath%\venv"
-    call :WriteLine Green "Done"
+    call :WriteLine "Done" "Green"
 )
 
-call :Write White "Enabling our Virtual Environment..."
+call :Write "Enabling our Virtual Environment..."
 pushd "%pythonInstallPath%"
 
 :: set PYTHONHOME="%cd%\venv\Scripts"
@@ -218,13 +218,13 @@ if not defined PROMPT set PROMPT=$P$G
 set PROMPT=(venv) !PROMPT!
 
 popd
-call :WriteLine Green "Done"
+call :WriteLine "Done" "Green"
 
 :: Ensure Python Exists
-call :Write White "Checking for Python 3.7..."
+call :Write "Checking for Python 3.7..."
 python --version | find "3.7" > NUL
 if errorlevel 1 goto errorNoPython
-call :WriteLine Green "present"
+call :WriteLine "present" "Green"
 
 if "%verbosity%"=="loud" where Python
 
@@ -232,22 +232,22 @@ if "%verbosity%"=="loud" where Python
 :: ============================================================================
 :: 3a. Install PIP packages for Python analysis services
 
-call :Write White "Installing Python package manager..."
+call :Write "Installing Python package manager..."
 python -m pip install --trusted-host pypi.python.org ^
                       --trusted-host files.pythonhosted.org ^
                       --trusted-host pypi.org --upgrade pip !pipFlags!
-call :WriteLine Green "Done"
+call :WriteLine "Done" "Green"
 
-call :Write White "Checking for required packages..."
+call :Write "Checking for required packages..."
 
 :: ASSUMPTION: If venv\Lib\site-packages\torch exists then no need to do this
 if not exist "!VIRTUAL_ENV!\Lib\site-packages\torch" (
 
-    call :WriteLine Yellow "Installing"
+    call :WriteLine "Installing" "Yellow"
 
-    REM call :Write White "Installing Packages into Virtual Environment..."
+    REM call :Write "Installing Packages into Virtual Environment..."
     REM pip install -r %deepStackPath%\%intelligenceDir%\requirements.txt !pipFlags!
-    REM call :WriteLine Green "Success"
+    REM call :WriteLine "Success" "Green"
 
     REM We'll do this the long way so we can see some progress
 
@@ -273,7 +273,7 @@ if not exist "!VIRTUAL_ENV!\Lib\site-packages\torch" (
             if "!description!" == "" set description=Installing !module!
 
             if "!module!" NEQ "" (
-                call :Write White "  -!description!..."
+                call :Write "  -!description!..."
 
                 if /i "%verbosity%" == "quiet" (
                     python.exe -m pip install !module! !currentOption! !pipFlags! >nul 2>nul 
@@ -281,30 +281,30 @@ if not exist "!VIRTUAL_ENV!\Lib\site-packages\torch" (
                     python.exe -m pip install !module! !currentOption! !pipFlags!
                 )
 
-                call :WriteLine Green "Done"
+                call :WriteLine "Done" "Green"
             )
 
             set currentOption=
         )
     )
 ) else (
-    call :WriteLine Green "present."
+    call :WriteLine "present." "Green"
 )
 
 :: ============================================================================
 :: 3b. Install PIP packages for TextSummary
 
-call :Write White "Installing required Text Processing packages..."
-pip install -r %textSummaryPath%\requirements.txt !pipFlags!
-call :WriteLine Green "Success"
+call :Write "Installing required Text Processing packages..."
+pip install -r "%textSummaryPath%\requirements.txt" !pipFlags!
+call :WriteLine "Success" "Green"
 
 
 :: ============================================================================
 :: and we're done.
 
-call :WriteLine Yellow "Development Environment setup complete" 
-call :WriteLine White ""
-call :WriteLine White ""
+call :WriteLine 
+call :WriteLine "                Development Environment setup complete                  " "White" "DarkGreen"
+call :WriteLine 
 
 goto:eof
 
@@ -312,6 +312,7 @@ goto:eof
 
 :: sub-routines
 
+:: Sets up the ESC string for use later in this script
 :setESC
     for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
       set ESC=%%b
@@ -319,79 +320,155 @@ goto:eof
     )
     exit /B 0
 
-:setColor
-    REM echo %ESC%[4m - Underline
-    REM echo %ESC%[7m - Inverse
 
-    if /i "%2" == "foreground" (
-        REM Foreground Colours
-        if /i "%1" == "Black"       set currentColor=!ESC![30m
-        if /i "%1" == "DarkRed"     set currentColor=!ESC![31m
-        if /i "%1" == "DarkGreen"   set currentColor=!ESC![32m
-        if /i "%1" == "DarkYellow"  set currentColor=!ESC![33m
-        if /i "%1" == "DarkBlue"    set currentColor=!ESC![34m
-        if /i "%1" == "DarkMagenta" set currentColor=!ESC![35m
-        if /i "%1" == "DarkCyan"    set currentColor=!ESC![36m
-        if /i "%1" == "Gray"        set currentColor=!ESC![37m
-        if /i "%1" == "DarkGray"    set currentColor=!ESC![90m
-        if /i "%1" == "Red"         set currentColor=!ESC![91m
-        if /i "%1" == "Green"       set currentColor=!ESC![92m
-        if /i "%1" == "Yellow"      set currentColor=!ESC![93m
-        if /i "%1" == "Blue"        set currentColor=!ESC![94m
-        if /i "%1" == "Magenta"     set currentColor=!ESC![95m
-        if /i "%1" == "Cyan"        set currentColor=!ESC![96m
-        if /i "%1" == "White"       set currentColor=!ESC![97m
-    ) else (
-        REM Background Colours
-        if /i "%1" == "Black"       set currentColor=!ESC![40m
-        if /i "%1" == "DarkRed"     set currentColor=!ESC![41m
-        if /i "%1" == "DarkGreen"   set currentColor=!ESC![42m
-        if /i "%1" == "DarkYellow"  set currentColor=!ESC![43m
-        if /i "%1" == "DarkBlue"    set currentColor=!ESC![44m
-        if /i "%1" == "DarkMagenta" set currentColor=!ESC![45m
-        if /i "%1" == "DarkCyan"    set currentColor=!ESC![46m
-        if /i "%1" == "Gray"        set currentColor=!ESC![47m
-        if /i "%1" == "DarkGray"    set currentColor=!ESC![100m
-        if /i "%1" == "Red"         set currentColor=!ESC![101m
-        if /i "%1" == "Green"       set currentColor=!ESC![102m
-        if /i "%1" == "Yellow"      set currentColor=!ESC![103m
-        if /i "%1" == "Blue"        set currentColor=!ESC![104m
-        if /i "%1" == "Magenta"     set currentColor=!ESC![105m
-        if /i "%1" == "Cyan"        set currentColor=!ESC![106m
-        if /i "%1" == "White"       set currentColor=!ESC![107m
-    )
+:: Sets the name of a color that will providing a contrasting foreground
+:: color for the given background color.
+::
+:: string background color name. 
+:: on return, contrastForeground will be set
+:setContrastForeground
+
+    set background=%~1
+
+    if "!background!"=="" background=Black
+
+    if /i "!background!"=="Black"       set contrastForeground=White
+    if /i "!background!"=="DarkRed"     set contrastForeground=White
+    if /i "!background!"=="DarkGreen"   set contrastForeground=White
+    if /i "!background!"=="DarkYellow"  set contrastForeground=White
+    if /i "!background!"=="DarkBlue"    set contrastForeground=White
+    if /i "!background!"=="DarkMagenta" set contrastForeground=White
+    if /i "!background!"=="DarkCyan"    set contrastForeground=White
+    if /i "!background!"=="Gray"        set contrastForeground=Black
+    if /i "!background!"=="DarkGray"    set contrastForeground=White
+    if /i "!background!"=="Red"         set contrastForeground=White
+    if /i "!background!"=="Green"       set contrastForeground=White
+    if /i "!background!"=="Yellow"      set contrastForeground=Black
+    if /i "!background!"=="Blue"        set contrastForeground=White
+    if /i "!background!"=="Magenta"     set contrastForeground=White
+    if /i "!background!"=="Cyan"        set contrastForeground=Black
+    if /i "!background!"=="White"       set contrastForeground=Black
+
     exit /B 0
 
+
+:: Sets the currentColor global for the given foreground/background colors
+:: currentColor must be output to the terminal before outputing text in
+:: order to generate a colored output.
+::
+:: string foreground color name. Optional if no background provided.
+::        Defaults to "White"
+:: string background color name.  Optional. Defaults to Black.
+:setColor
+
+    REM If you want to get a little fancy then you can also try
+    REM  - %ESC%[4m - Underline
+    REM  - %ESC%[7m - Inverse
+
+    set foreground=%~1
+    set background=%~2
+
+    if "!foreground!"=="" set foreground=White
+    if /i "!foreground!"=="Default" set foreground=White
+    if "!background!"=="" set background=Black
+    if /i "!background!"=="Default" set background=Black
+
+    if "!ESC!"=="" call :setESC
+
+    if /i "!foreground!"=="Contrast" (
+		call :setContrastForeground !background!
+		set foreground=!contrastForeground!
+	)
+
+    set currentColor=
+
+    REM Foreground Colours
+    if /i "!foreground!"=="Black"       set currentColor=!ESC![30m
+    if /i "!foreground!"=="DarkRed"     set currentColor=!ESC![31m
+    if /i "!foreground!"=="DarkGreen"   set currentColor=!ESC![32m
+    if /i "!foreground!"=="DarkYellow"  set currentColor=!ESC![33m
+    if /i "!foreground!"=="DarkBlue"    set currentColor=!ESC![34m
+    if /i "!foreground!"=="DarkMagenta" set currentColor=!ESC![35m
+    if /i "!foreground!"=="DarkCyan"    set currentColor=!ESC![36m
+    if /i "!foreground!"=="Gray"        set currentColor=!ESC![37m
+    if /i "!foreground!"=="DarkGray"    set currentColor=!ESC![90m
+    if /i "!foreground!"=="Red"         set currentColor=!ESC![91m
+    if /i "!foreground!"=="Green"       set currentColor=!ESC![92m
+    if /i "!foreground!"=="Yellow"      set currentColor=!ESC![93m
+    if /i "!foreground!"=="Blue"        set currentColor=!ESC![94m
+    if /i "!foreground!"=="Magenta"     set currentColor=!ESC![95m
+    if /i "!foreground!"=="Cyan"        set currentColor=!ESC![96m
+    if /i "!foreground!"=="White"       set currentColor=!ESC![97m
+    if "!currentColor!"=="" set currentColor=!ESC![97m
+	
+    if /i "!background!"=="Black"       set currentColor=!currentColor!!ESC![40m
+    if /i "!background!"=="DarkRed"     set currentColor=!currentColor!!ESC![41m
+    if /i "!background!"=="DarkGreen"   set currentColor=!currentColor!!ESC![42m
+    if /i "!background!"=="DarkYellow"  set currentColor=!currentColor!!ESC![43m
+    if /i "!background!"=="DarkBlue"    set currentColor=!currentColor!!ESC![44m
+    if /i "!background!"=="DarkMagenta" set currentColor=!currentColor!!ESC![45m
+    if /i "!background!"=="DarkCyan"    set currentColor=!currentColor!!ESC![46m
+    if /i "!background!"=="Gray"        set currentColor=!currentColor!!ESC![47m
+    if /i "!background!"=="DarkGray"    set currentColor=!currentColor!!ESC![100m
+    if /i "!background!"=="Red"         set currentColor=!currentColor!!ESC![101m
+    if /i "!background!"=="Green"       set currentColor=!currentColor!!ESC![102m
+    if /i "!background!"=="Yellow"      set currentColor=!currentColor!!ESC![103m
+    if /i "!background!"=="Blue"        set currentColor=!currentColor!!ESC![104m
+    if /i "!background!"=="Magenta"     set currentColor=!currentColor!!ESC![105m
+    if /i "!background!"=="Cyan"        set currentColor=!currentColor!!ESC![106m
+    if /i "!background!"=="White"       set currentColor=!currentColor!!ESC![107m
+
+    exit /B 0
+
+:: Outputs a line, including linefeed, to the terminal using the given foreground / background
+:: colors 
+::
+:: string The text to output. Optional if no foreground provided. Default is just a line feed.
+:: string Foreground color name. Optional if no background provided. Defaults to "White"
+:: string Background color name. Optional. Defaults to "Black"
 :WriteLine
     SetLocal EnableDelayedExpansion
+	
+    if "!ESC!"=="" call :setESC	
     set resetColor=!ESC![0m
 
-    set str=%~2
+    set str=%~1
 
-    if "!str!" == "" (
-        Echo:
+    if "!str!"=="" (
+        echo:
+        exit /b 0
+    )
+    if "!str: =!"=="" (
+        echo:
         exit /b 0
     )
 
-    if /i "%techniColor%" == "true" (
-        REM powershell write-host -foregroundcolor %1 !str!
-        call :setColor %1 foreground
+    if /i "%useColor%"=="true" (
+        call :setColor %2 %3
         echo !currentColor!!str!!resetColor!
     ) else (
-        Echo !str!
+        echo !str!
     )
     exit /b 0
 
+:: Outputs a line without a linefeed to the terminal using the given foreground / background colors 
+::
+:: string The text to output. Optional if no foreground provided. Default is just a line feed.
+:: string Foreground color name. Optional if no background provided. Defaults to "White"
+:: string Background color name. Optional. Defaults to "Black"
 :Write
     SetLocal EnableDelayedExpansion
+	
+    if "!ESC!"=="" call :setESC
     set resetColor=!ESC![0m
 
-    set str=%~2
-    if "!str!" == "" exit /b 0
+    set str=%~1
 
-    if /i "%techniColor%" == "true" (
-        REM powershell write-host -foregroundcolor %1 -NoNewline !str!
-        call :setColor %1 foreground
+    if "!str!"=="" exit /b 0
+    if "!str: =!"=="" exit /b 0
+
+    if /i "%useColor%"=="true" (
+        call :setColor %2 %3
         <NUL set /p =!currentColor!!str!!resetColor!
     ) else (
         <NUL set /p =!str!
@@ -423,36 +500,31 @@ goto:eof
     set message=!message:"=!
 
     if "!message!" == "" set message=Downloading !fileToGet!...
-    call :Write White "!message!"
+    call :Write "!message!"
 
     if exist "!downloadToDir!!dirToSave!.zip" (
-        call :Write Yellow "already exists..."
+        call :Write "already exists..." "Yellow"
     ) else (
 
         REM Doesn't provide progress as % 
         REM powershell Invoke-WebRequest -Uri !storageUrl: =!!fileToGet! ^
         REM                              -OutFile !downloadPath!!dirToSave!.zip
 
-        REM ***
-        REM If you get the error "Start-BitsTransfer : A positional parameter cannot 
-        REM be found that accepts argument" then ensure paths you supply don't have
-        REM trailing spaces
-        REM ***
-        powershell Start-BitsTransfer -Source "!storageUrl!!fileToGet!" ^
-                                      -Destination "!downloadToDir!!dirToSave!.zip"
+        REM Be careful with the quotes so we can handle paths with spaces
+        powershell -command "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Destination '!downloadToDir!!dirToSave!.zip'"
 
         if errorlevel 1 (
-            call :WriteLine Red "An error occurred that could not be resolved."
+            call :WriteLine "An error occurred that could not be resolved." "Red"
             exit /b
         )
 
         if not exist "!downloadToDir!!dirToSave!.zip" (
-            call :WriteLine Red "An error occurred that could not be resolved."
+            call :WriteLine "An error occurred that could not be resolved." "Red"
             exit /b
         )
     )
 
-    call :Write Yellow "Expanding..."
+    call :Write "Expanding..." "Yellow"
 
     REM Try tar first. If that doesn't work, fall back to pwershell (slow)
     set tarExists=true
@@ -467,13 +539,12 @@ goto:eof
     popd
 
     if "!tarExists!" == "false" (
-        powershell Expand-Archive -Path "!downloadToDir!!dirToSave!.zip" ^
-                                  -DestinationPath "!downloadToDir!" -Force
+        powershell -command "Expand-Archive -Path '!downloadToDir!!dirToSave!.zip' -DestinationPath '!downloadToDir!' -Force"
     )
 
     REM del /s /f /q "!downloadToDir!!dirToSave!.zip" > nul
 
-    call :WriteLine Green "Done."
+    call :WriteLine "Done." "Green"
 
     exit /b
 
@@ -481,8 +552,8 @@ goto:eof
 :: Jump points
 
 :errorNoPython
-call :WriteLine White ""
-call :WriteLine White ""
-call :WriteLine White "-------------------------------------------------------"
-call :WriteLine Red "Error: Python not installed"
+call :WriteLine
+call :WriteLine
+call :WriteLine "-------------------------------------------------------"
+call :WriteLine "Error: Python not installed" "Red"
 goto:eof

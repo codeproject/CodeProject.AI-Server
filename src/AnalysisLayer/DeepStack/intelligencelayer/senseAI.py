@@ -1,23 +1,27 @@
 import os
+import io
 import sys
+import base64
+import time
+import json
+from datetime import datetime
 
-# Add to the package search path the path of the packages within our local virtual environment
+# Get the Python interpreter directory, and add to the package search path the path of the packages
+#  within our local virtual environment
 if sys.platform.startswith('linux'):
     currentPythonDir = os.path.normpath(os.path.join(os.getcwd(), "../../bin/linux/python37"))
+    sys.path.insert(0, currentPythonDir + "/venv/lib/python3.7/site-packages")
 elif sys.platform.startswith('darwin'):
     currentPythonDir = os.path.normpath(os.path.join(os.getcwd(), "../../bin/osx/python37"))
+    sys.path.insert(0, currentPythonDir + "/venv/lib/python3.7/site-packages")
 elif sys.platform.startswith('win'):
     currentPythonDir = os.path.normpath(os.path.join(os.getcwd(), "..\\..\\bin\\win\\python37"))
+    sys.path.insert(0, currentPythonDir + "\\venv\\lib\\site-packages")
 else:
     currentPythonDir = ""
 
-if currentPythonDir != "":
-    sys.path.insert(0, currentPythonDir)
-
-import time
-import json
 import requests
-from datetime import datetime
+from PIL import Image
 
 class SenseAIBackend:
 
@@ -155,3 +159,33 @@ class SenseAIBackend:
         # print("Text: " , r.text)
 
         return r
+
+    def getImageFromRequest(self, req_data, index : int):
+        """
+        Gets an image from the requests 'files' array.
+        """
+        payload     = req_data["payload"]
+        files       = payload["files"]
+        img_file    = files[index]
+        img_dataB64 = img_file["data"]
+        img_bytes   = base64.b64decode(img_dataB64)
+        img_stream  = io.BytesIO(img_bytes)
+        img         = Image.open(img_stream).convert("RGB")
+
+        return img
+
+    def getRequestImageCount(self, req_data):
+        payload = req_data["payload"]
+        files   = payload["files"]
+        return len(files)
+
+    def getRequestValue(self, req_data, key : str):
+        payload = req_data["payload"]
+        values  = payload["values"]
+
+        for value in values:
+            if value["key"] == key :
+                return value["value"][0]
+
+        return None
+

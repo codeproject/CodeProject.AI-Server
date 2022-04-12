@@ -31,6 +31,13 @@ class YOLODetector(object):
         confidence = max(0.1,confidence)
 
         img0 = Image.open(img_path).convert("RGB")
+
+        return self.predictFromImage(img0, confidence)
+
+
+    def predictFromImage(self, img0: Image, confidence: float = 0.4):
+        confidence = max(0.1,confidence)
+
         img = np.asarray(letterbox(img0, new_shape=self.reso)[0])
         img = img.transpose(2, 0, 1)
         img = np.ascontiguousarray(img)

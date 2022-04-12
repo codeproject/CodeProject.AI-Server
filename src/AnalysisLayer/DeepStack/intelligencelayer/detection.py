@@ -63,14 +63,15 @@ def objectdetection(thread_name: str, delay: float):
                 timer    = senseAI.startTimer("Object Detection")
                 req_data = json.JSONDecoder().decode(req_data)
 
-                img_id    = req_data["imgid"]
+                #img_id    = req_data["imgid"]
                 req_id    = req_data["reqid"]
                 req_type  = req_data["reqtype"]
-                threshold = float(req_data["minconfidence"])
-                img_path  = os.path.join(TEMP_PATH, img_id)
+                threshold = float(req_data.get("min_confidence", "0.4"))
+                #img_path  = os.path.join(TEMP_PATH, img_id)
 
                 try:
-                    det     = detector.predict(img_path, threshold)
+                    img = senseAI.getImageFromRequest(req_data, 0)
+                    det = detector.predictFromImage(img, threshold)
 
                     outputs = []
 
@@ -123,11 +124,6 @@ def objectdetection(thread_name: str, delay: float):
                 finally:
                     senseAI.endTimer(timer)
                     senseAI.sendResponse(req_id, json.dumps(output))
-
-                    # the image file deletion should, and is, being
-                    # done at the front end.
-                    if os.path.exists(img_path):
-                        os.remove(img_path)
 
         # time.sleep(delay)
 

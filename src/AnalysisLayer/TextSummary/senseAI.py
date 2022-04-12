@@ -1,5 +1,10 @@
 import os
+import io
 import sys
+import base64
+import time
+import json
+from datetime import datetime
 
 # Add to the package search path the path of the packages within our local virtual environment
 if sys.platform.startswith('linux'):
@@ -14,10 +19,7 @@ else:
 if currentPythonDir != "":
     sys.path.insert(0, currentPythonDir)
 
-import time
-import json
 import requests
-from datetime import datetime
 
 class SenseAIBackend:
 
@@ -155,3 +157,33 @@ class SenseAIBackend:
         # print("Text: " , r.text)
 
         return r
+
+    def getImageFromRequest(self, req_data, index : int):
+        """
+        Gets an image from the requests 'files' array.
+        """
+        payload     = req_data["payload"]
+        files       = payload["files"]
+        img_file    = files[index]
+        img_dataB64 = img_file["data"]
+        img_bytes   = base64.b64decode(img_dataB64)
+        img_stream  = io.BytesIO(img_bytes)
+        img         = Image.open(img_stream).convert("RGB")
+
+        return img
+
+    def getRequestImageCount(self, req_data):
+        payload = req_data["payload"]
+        files   = payload["files"]
+        return len(files)
+
+    def getRequestValue(self, req_data, key : str):
+        payload = req_data["payload"]
+        values  = payload["values"]
+
+        for value in values:
+            if value["key"] == key :
+                return value["value"][0]
+
+        return None
+

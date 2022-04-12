@@ -39,9 +39,10 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             string mode = config.GetValue<string>("MODE");
             string modelPath = (mode ?? string.Empty.ToLower()) switch
             {
-                "low"  => "assets/yolov5n.onnx",
-                "high" => "assets/yolov5m.onnx",
-                _      => "assets/yolov5s.onnx"
+                "low"    => "assets/yolov5n.onnx",
+                "high"   => "assets/yolov5m.onnx",
+                "medium" => "assets/yolov5s.onnx",
+                _        => "assets/yolov5m.onnx"
             };
 
             try
@@ -71,7 +72,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                 return null;
 
             using Image? image = GetImage(filename);
-            List<YoloPrediction>? predictions = (image is not null) ? Predict(image) : null;
+            List<YoloPrediction>? predictions = Predict(image);
 
             return predictions;
         }
@@ -81,12 +82,25 @@ namespace CodeProject.SenseAI.Analysis.Yolo
         /// </summary>
         /// <param name="image"></param>
         /// <returns>The predicted objects with bounding boxes and confidences.</returns>
-        public List<YoloPrediction>? Predict(Image image)
+        public List<YoloPrediction>? Predict(Image? image)
         {
+            if (image == null)
+                return null;
+
             if (_scorer is null)
                 return null;
 
             return _scorer.Predict(image);
+        }
+
+        public List<YoloPrediction>? Predict(byte[]? imageData)
+        {
+            if (imageData == null)
+                return null;
+
+            var image = GetImage(imageData);
+
+            return _scorer?.Predict(image);
         }
 
         /// <summary>
@@ -98,6 +112,15 @@ namespace CodeProject.SenseAI.Analysis.Yolo
         private Image? GetImage(string filename)
         {
             var skiaImage = SKImage.FromEncodedData(filename);
+            if (skiaImage is null)
+                return null;
+
+            return skiaImage.ToBitmap();
+        }
+
+        private Image? GetImage(byte[] imageData)
+        {
+            var skiaImage = SKImage.FromEncodedData(imageData);
             if (skiaImage is null)
                 return null;
 

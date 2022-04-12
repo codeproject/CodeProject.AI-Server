@@ -9,15 +9,29 @@
 
 # Sub Routines :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+
+
+# Returns a color code for the given foreground/background colors
+# This code is echoed to the terminal before outputing text in
+# order to generate a colored output.
+#
+# string foreground color name. Optional if no background provided.
+#        Defaults to "Default" which uses the system default
+# string background color name.  Optional. Defaults to $color_background
+#        which is set based on the current terminal background
+# returns a string
 function Color () {
 
     local foreground=$1
     local background=$2
 
-    if [ "$background" == "" ]; then
-        background="Default"
-    fi
+    if [ "$foreground" == "" ];  then foreground="Default"; fi
+    if [ "$background" == "" ]; then background="$color_background"; fi
 
+    if [ "$foreground" == "Contrast" ]; then
+	    foreground=$(ContrastForeground ${background})
+	fi
+	
     local colorString='\033['
 
     # Foreground Colours
@@ -67,12 +81,116 @@ function Color () {
     echo "${colorString}"
 }
 
+# Returns the name of a color that will providing a contrasting foreground
+# color for the given background color. This function assumes $darkmode has
+# been set globally.
+#
+# string background color name. 
+# returns a string representing a contrasting foreground colour name
+function ContrastForeground () {
+
+    local color=$1
+    if [ "$color" == "" ]; then color="Default"; fi
+
+    if [ "$darkmode" == "true" ]; then
+        case "$color" in
+            "Default" )     echo "White";;
+            "Black" )       echo "White";;
+            "DarkRed" )     echo "White";;
+            "DarkGreen" )   echo "White";;
+            "DarkYellow" )  echo "White";;
+            "DarkBlue" )    echo "White";;
+            "DarkMagenta" ) echo "White";;
+            "DarkCyan" )    echo "White";;
+            "Gray" )        echo "Black";;
+            "DarkGray" )    echo "White";;
+            "Red" )         echo "White";;
+            "Green" )       echo "White";;
+            "Yellow" )      echo "Black";;
+            "Blue" )        echo "White";;
+            "Magenta" )     echo "White";;
+            "Cyan" )        echo "Black";;
+            "White" )       echo "Black";;
+            *)              echo "White";;
+        esac
+    else
+        case "$color" in
+            "Default" )     echo "Black";;
+            "Black" )       echo "White";;
+            "DarkRed" )     echo "White";;
+            "DarkGreen" )   echo "White";;
+            "DarkYellow" )  echo "White";;
+            "DarkBlue" )    echo "White";;
+            "DarkMagenta" ) echo "White";;
+            "DarkCyan" )    echo "White";;
+            "Gray" )        echo "Black";;
+            "DarkGray" )    echo "White";;
+            "Red" )         echo "White";;
+            "Green" )       echo "Black";;
+            "Yellow" )      echo "Black";;
+            "Blue" )        echo "White";;
+            "Magenta" )     echo "White";;
+            "Cyan" )        echo "Black";;
+            "White" )       echo "Black";;
+            *)              echo "White";;
+        esac
+    fi
+    
+    echo "${colorString}"
+}
+
+
+# Gets the terminal background color. It's a very naive guess 
+# returns an RGB triplet, values from 0 - 64K
+function getBackground () {
+
+    if [[ $OSTYPE == 'darwin'* ]]; then
+        osascript -e \
+        'tell application "Terminal"
+            get background color of selected tab of window 1
+        end tell'
+    else
+
+        # See https://github.com/rocky/shell-term-background/blob/master/term-background.bash
+        # for a comprehensive way to test for background colour. For now we're just going to
+        # assume that non-macOS terminals have a black background.
+
+        echo "0,0,0" # we're making assumptions here
+    fi
+}
+
+# Determines whether or not the current terminal is in dark mode (dark background, light text)
+# returns "true" if running in dark mode; false otherwise
+function isDarkMode () {
+
+    local bgColor=$(getBackground)
+    
+    IFS=','; colors=($bgColor); IFS=' ';
+
+    # Is the background more or less dark?
+    if [ ${colors[0]} -lt 20000 ] && [ ${colors[1]} -lt 20000 ] && [ ${colors[2]} -lt 20000 ]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+
+# Outputs a line, including linefeed, to the terminal using the given foreground / background
+# colors 
+#
+# string The text to output. Optional if no foreground provided. Default is just a line feed.
+# string Foreground color name. Optional if no background provided. Defaults to "Default" which
+#        uses the system default
+# string Background color name.  Optional. Defaults to $color_background which is set based on the
+#        current terminal background
 function WriteLine () {
+
     local resetColor='\033[0m'
 
-    local forecolor=$1
-    local backcolor=$2
-    local str=$3
+    local str=$1
+    local forecolor=$2
+    local backcolor=$3
 
     if [ "$str" == "" ]; then
         printf "\n"
@@ -80,7 +198,7 @@ function WriteLine () {
     fi
 
     # Note the use of the format placeholder %s. This allows us to pass "--" as strings without error
-    if [ "$techniColor" == "true" ]; then
+    if [ "$useColor" == "true" ]; then
         local colorString=$(Color ${forecolor} ${backcolor})
         printf "${colorString}%s${resetColor}\n" "${str}"
     else
@@ -88,19 +206,27 @@ function WriteLine () {
     fi
 }
 
+# Outputs a line without a linefeed to the terminal using the given foreground / background colors 
+#
+# string The text to output. Optional if no foreground provided. Default is just a line feed.
+# string Foreground color name. Optional if no background provided. Defaults to "Default" which
+#        uses the system default
+# string Background color name.  Optional. Defaults to $color_background which is set based on the
+#        current terminal background
 function Write () {
+
     local resetColor="\033[0m"
 
-    local forecolor=$1
-    local backcolor=$2
-    local str=$3
+    local str=$1
+    local forecolor=$2
+    local backcolor=$3
 
     if [ "$str" == "" ];  then
         return;
     fi
 
     # Note the use of the format placeholder %s. This allows us to pass "--" as strings without error
-    if [ "$techniColor" == "true" ]; then
+    if [ "$useColor" == "true" ]; then
         local colorString=$(Color ${forecolor} ${backcolor})
         printf "${colorString}%s${resetColor}" "${str}"
     else
@@ -116,37 +242,37 @@ function checkForTool () {
         return
     fi
 
-    WriteLine "$color_primary" "Default" ""
-    WriteLine "$color_primary" "Default"  ""
-    WriteLine "$color_primary" "Default"  "------------------------------------------------------------------------"
-    WriteLine "$color_error" "Default"  "Error: ${name} is not installed on your system"
+    WriteLine
+    WriteLine
+    WriteLine "------------------------------------------------------------------------"
+    WriteLine "Error: ${name} is not installed on your system" $color_error
 
     if [ "$platform" == "osx" ]; then
-        WriteLine "$color_error" "Default"  "       Please run 'brew install ${name}'"
+        WriteLine "       Please run 'brew install ${name}'" $color_error
 
         if ! command -v brew &> /dev/null; then
-            WriteLine "" ""
-            WriteLine "$color_warn" "Default"  "Error: It looks like you don't have brew installed either"
-            WriteLine "$color_warn" "Default"  "       Please run:"
-            WriteLine "$color_warn" "Default"  "       /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'"
+            WriteLine
+            WriteLine "Error: It looks like you don't have brew installed either" $color_warn
+            WriteLine "       Please run:" $color_warn
+            WriteLine "       /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'" $color_warn
             quit
         fi
     else
-        WriteLine "$color_error" "Default"  "       Please run 'sudo apt install ${name}'"
+        WriteLine "       Please run 'sudo apt install ${name}'" $color_error
     fi
 
-    WriteLine "" ""
-    WriteLine "" ""
+    WriteLine
+    WriteLine
     quit
 }
 
 function errorNoPython () {
-    WriteLine "$color_primary" "Default"  ""
-    WriteLine "$color_primary" "Default"  ""
-    WriteLine "$color_primary" "Default"  "------------------------------------------------------------------------"
-    WriteLine "$color_error" "Default"  "Error: Python 3.7 not installed"
-    WriteLine "" "" ""
-    WriteLine "" "" ""
+    WriteLine
+    WriteLine
+    WriteLine "------------------------------------------------------------------------" $color_primary
+    WriteLine "Default"  "Error: Python 3.7 not installed" $color_error
+    WriteLine 
+    WriteLine
     
     quit
 }
@@ -188,12 +314,12 @@ function Download () {
         message="Downloading ${fileToGet}..."
     fi
 
-    # WriteLine "$color_primary" "Default"  "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}"
+    # WriteLine "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}" $color_primary
 
-    Write "$color_primary" "Default" "$message"
+    Write $message $color_primary
 
     if [ -d "${downloadToDir}/${dirToSave}" ]; then
-        WriteLine "$color_info" "Default"  "Directory already exists"
+        WriteLine "Directory already exists" $color_info
         return 0 # This is ok and assumes it's already downloaded. Whether that's true or not...
     fi
 
@@ -201,7 +327,7 @@ function Download () {
     if [ ! "${extension}" == ".gz" ]; then
         extension="${fileToGet:(-4)}"
         if [ ! "${extension}" == ".zip" ]; then
-            WriteLine "$color_error" "Default"  "Unknown and unsupported file type for file ${fileToGet}"
+            WriteLine "Unknown and unsupported file type for file ${fileToGet}" $color_error
 
             quit    # no point in carrying on
             # return 1
@@ -209,13 +335,13 @@ function Download () {
     fi
 
     if [ ! -f  "${downloadToDir}/${fileToGet}" ]; then
-        # WriteLine "$color_warn" "DEfault" "Downloading ${fileToGet} to ${dirToSave}.zip in ${downloadToDir}" 
+        # WriteLine "Downloading ${fileToGet} to ${dirToSave}.zip in ${downloadToDir}"  $color_warn
         wget $wgetFlags --show-progress -O "${downloadToDir}/${fileToGet}" -P "${downloadToDir}" \
                                            "${storageUrl}${fileToGet}"
         
         status=$?    
         if [ $status -ne 0 ]; then
-            WriteLine "$color_error" "Default" "The wget command failed for file ${fileToGet}."
+            WriteLine "The wget command failed for file ${fileToGet}." $color_error
 
             quit    # no point in carrying on
             # return 2
@@ -223,13 +349,13 @@ function Download () {
     fi
 
     if [ ! -f  "${downloadToDir}/${fileToGet}" ]; then
-        WriteLine "$color_error" "Default"  "The downloaded file '${fileToGet}' doesn't appear to exist."
+        WriteLine "The downloaded file '${fileToGet}' doesn't appear to exist." $color_error
 
         quit    # no point in carrying on
         # return 3
     fi
 
-    Write "$color_info" "Default"  "Expanding..."
+    Write "Expanding..." $color_info
 
     pushd "${downloadToDir}" >/dev/null
 
@@ -246,7 +372,7 @@ function Download () {
     spin $! # process ID of the unzip/tar call
 
     if [[ ! -d "${dirToSave}" ]]; then
-        WriteLine "$color_error" "Default"  "Unable to extract download. Can you please check you have write permission to "${dirToSave}"."
+        WriteLine "Unable to extract download. Can you please check you have write permission to "${dirToSave}"." $color_error
         quit    # no point in carrying on
     fi
     
@@ -254,35 +380,7 @@ function Download () {
 
     # rm /s /f /q "${downloadToDir}/${fileToGet}" >/dev/null
 
-    WriteLine "$color_success" "Default"  "Done."
-}
-
-function getBackground () {
-
-    if [ "$platform" == "osx" ]; then
-        osascript -e \
-        'tell application "Terminal"
-            get background color of selected tab of window 1
-        end tell'
-    else
-
-        # See https://github.com/rocky/shell-term-background/blob/master/term-background.bash
-        # for a comprehensive way to test for background colour. For now we're just going to
-        # assume that non-macOS terminals have a black background.
-
-        echo "0,0,0" # we're making assumptions here
-    fi
-}
-
-function isDarkMode () {
-    local bgColor=$(getBackground)
-    IFS=','; colors=($bgColor); IFS=' ';
-
-    if [ ${colors[0]} -lt 20000 ] && [ ${colors[1]} -lt 20000 ] && [ ${colors[2]} -lt 20000 ]; then
-        echo "true"
-    else
-        echo "false"
-    fi
+    WriteLine "Done." $color_success
 }
 
 function getDisplaySize () {
@@ -292,7 +390,7 @@ function getDisplaySize () {
 
 function quit () {
 
-    if [ "${techniColor}" == "true" ] && "${darkmode}" == "true" ]; then
+    if [ "${useColor}" == "true" ] && "${darkmode}" == "true" ]; then
         # this resets the terminal, but also clears the screen which isn't great
         # tput reset
         echo
@@ -301,6 +399,29 @@ function quit () {
 }
 
 # Main script :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+useColor="true"
+darkmode=$(isDarkMode)
+
+# Setup some predefined colours. Note that we can't reliably determine the background 
+# color of the terminal so we avoid specifically setting black or white for the foreground
+# or background. You can always just use "White" and "Black" if you specifically want
+# this combo, but test thoroughly
+if [ "$darkmode" == "true" ]; then
+    color_primary="White"
+    color_mute="Gray"
+    color_info="Yellow"
+    color_success="Green"
+    color_warn="DarkYellow"
+    color_error="Red"
+else
+    color_primary="Black"
+    color_mute="Gray"
+    color_info="Magenta"
+    color_success="DarkGreen"
+    color_warn="DarkYellow"
+    color_error="Red"
+fi
 
 clear
 
@@ -384,35 +505,6 @@ cd $currentDir
 analysisLayerPath="${absoluteRootDir}/${srcDir}/${analysisLayerDir}"
 downloadPath="${absoluteRootDir}/Installers/${downloadDir}"
 
-# Show output in wild, crazy colours
-techniColor="true"
-if [ "$1" = "false" ]; then
-    techniColor="false"
-else
-    darkmode=$(isDarkMode)
-    if [ "$darkmode" == "false" ]; then
-        color_primary="Black"
-        color_mute="Gray"
-        color_info="DarkMagenta"
-        color_success="DarkGreen"
-        color_warn="DarkYellow"
-        color_error="Red"
-    else
-        color_primary="White"
-        color_mute="Gray"
-        color_info="Yellow"
-        color_success="Green"
-        color_warn="DarkYellow"
-        color_error="Red"
-
-        # We can't reliably find the background colour of the current terminal so we'll make 
-        # assumptions and then, for dark backgrounds, set the text output background as Black.
-        # This will mean that if we assumed correct, nothing will change. If we assumed wrong,
-        # then at least the text is readable
-        tput setab 0
-    fi
-fi
-
 # Set Flags
 
 wgetFlags="-q"
@@ -437,14 +529,14 @@ elif [ $verbosity == "loud" ]; then
     tarFlags="xvf"
 fi
 
-WriteLine "$color_info" "Default"  "Setting up CodeProject.SenseAI Development Environment"
-WriteLine "$color_primary" "Default"  ""
-WriteLine "$color_primary" "Default"  "========================================================================"
-WriteLine "$color_primary" "Default"  ""
-WriteLine "$color_primary" "Default"  "                 CodeProject SenseAI Installer                          "
-WriteLine "$color_primary" "Default"  ""
-WriteLine "$color_primary" "Default"  "========================================================================"
-WriteLine "$color_primary" "Default"  ""
+WriteLine "        Setting up CodeProject.SenseAI Development Environment          " "DarkYellow" 
+WriteLine "                                                                        " "DarkGreen" 
+WriteLine "========================================================================" "DarkGreen" 
+WriteLine "                                                                        " "DarkGreen" 
+WriteLine "                 CodeProject SenseAI Installer                          " "DarkGreen" 
+WriteLine "                                                                        " "DarkGreen"
+WriteLine "========================================================================" "DarkGreen" 
+WriteLine "                                                                        " "DarkGreen"
 
 # ============================================================================
 # House keeping
@@ -453,7 +545,7 @@ checkForTool wget
 checkForTool unzip
 
 if [ "$platform" == "linux" ] && [ "$EUID" -ne 0 ]; then
-    WriteLine "$color_error" "Default"  "Please run this script as root: sudo bash setup_dev_env_linux.sh"
+    WriteLine "Please run this script as root: sudo bash setup_dev_env_linux.sh" $color_error
     exit
 fi
 
@@ -461,7 +553,7 @@ fi
 # 1. Ensure directories are created and download required assets
 
 # Create some directories
-Write "$color_primary" "Creating Directories..."
+Write "Creating Directories..." $color_primary
 
 # For downloading assets
 mkdir -p "${downloadPath}"
@@ -472,15 +564,17 @@ textSummaryPath="${analysisLayerPath}/${textSummaryDir}"
 # For DeepStack
 deepStackPath="${analysisLayerPath}/${deepstackDir}"
 mkdir -p "${deepStackPath}/${tempstoreDir}"
-mkdir -p "${deepStackPath}/${datastoreDir}"
+
+# To do this properly we're going to use the standard directories for common application data
+#mkdir -p "${deepStackPath}/${datastoreDir}"
+mkdir -p /usr/share/CodeProject/SenseAI
+chmod 777 /usr/share/CodeProject/SenseAI
+
 
 # For Yolo.NET
 yoloNetPath=${analysisLayerPath}/${yoloNetDir}
 
-WriteLine "$color_success" "Default"  "Done"
-
-Write "$color_primary" "Default"  "Downloading modules and models: "
-WriteLine "$color_mute" "Default"  "Starting"
+WriteLine "Done" $color_success
 
 pythonInstallPath="${analysisLayerPath}/bin/${platform}/${pythonDir}"
 
@@ -506,10 +600,10 @@ if [ ! -d "${pythonInstallPath}" ]; then
 fi
 
 if command -v python3.7 &> /dev/null; then
-     WriteLine "$color_mute" "Default"  "Python 3.7 is already installed"
+     WriteLine "Python 3.7 is already installed" $color_success
 else
 
-    WriteLine "$color_primary" "Default"  "Installing Python 3.7"
+    WriteLine "Installing Python 3.7" $color_primary
 
     if [ "$platform" == "osx" ]; then
         Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" "${platform}/${pythonDir}" "Downloading Python interpreter..."
@@ -523,17 +617,26 @@ else
         cp /usr/lib/python3/dist-packages/apt_pkg.cpython-35m-x86_64-linux-gnu.so /usr/lib/python3.7/apt_pkg.cpython-37m-x86_64-linux-gnu.so >/dev/null
         ln -s /usr/lib/python3.5/lib-dynload/_gdbm.cpython-35m-x86_64-linux-gnu.so /usr/lib/python3.7/lib-dynload/_gdbm.cpython-37m-x86_64-linux-gnu.so >/dev/null
     fi
-    WriteLine "$color_success" "Default"  "Python install complete"
+    WriteLine "Python install complete" $color_success
 fi
 
 # We need to be sure on linux that pip/venv is available for python3.7 specifically
 if [ "$platform" == "linux" ]; then
-    WriteLine "$color_primary" "Default"  "Installing PIP and venv to enable final Python environment setup"
-    apt-get install python3-pip -y
-    apt-get install python3.7-venv -y
-    WriteLine "$color_success" "Default"  "PIP and venv setup"
+    Write "Installing PIP and venv to enable final Python environment setup..." $color_primary
+
+    if [ "${verbosity}" == "quiet" ]; then
+        apt-get install python3-pip -y  >/dev/null 2>/dev/null
+        apt-get install python3.7-venv -y >/dev/null 2>/dev/null
+    else
+        apt-get install python3-pip -y 
+        apt-get install python3.7-venv -y
+    fi
+
+    WriteLine "Done" $color_success
 fi
 
+Write "Downloading modules and models: " $color_primary
+WriteLine "Starting" $color_mute
 
 # Download the models 
 if [ ! -d "${deepStackPath}/${modelsDir}" ]; then
@@ -550,24 +653,24 @@ if [ ! -d "${yoloNetPath}/${modelsDir}" ]; then
     fi
 fi
 
-WriteLine "$color_success" "Default"  "Modules and models downloaded"
+WriteLine "Modules and models downloaded" $color_success
 
 # ============================================================================
 # 2. Create & Activate Virtual Environment: DeepStack specific / Python 3.7
 
-Write "$color_primary" "Default"  "Creating Virtual Environment..."
+Write "Creating Virtual Environment..." $color_primary
 
 if [ -d  "${pythonInstallPath}/venv"  ]; then
-    WriteLine "$color_success" "Default"  "Already present"
+    WriteLine "Already present" $color_success
 else
 
     python3.7 -m venv "${pythonInstallPath}/venv" &
 
     spin $! # process ID of the unzip/tar call
-    WriteLine "$color_success" "Default"  "Done"
+    WriteLine "Done" $color_success
 fi
 
-Write "$color_primary" "Default" "Enabling our Virtual Environment..."
+Write "Enabling our Virtual Environment..." $color_primary
 pushd "${pythonInstallPath}" >/dev/null
 
 # PYTHONHOME="$(pwd)/venv"
@@ -584,39 +687,39 @@ pythonInterpreterPath="${VIRTUAL_ENV}/bin/python3"
 PS1="(venv) ${PS1:-}"
 
 popd >/dev/null
-WriteLine "$color_success" "Default"  "Done"
+WriteLine "Done" $color_success
 
 # Ensure Python Exists
-Write "$color_primary" "Default"  "Checking for Python 3.7..."
+Write "Checking for Python 3.7..." $color_primary
 pyVersion=$($pythonInterpreterPath --version)
-Write "$color_mute" "Default"  "Found ${pyVersion}. "
+Write "Found ${pyVersion}. " $color_mute
 
 echo $pyVersion | grep "3.7" >/dev/null
 if [ $? -ne 0 ]; then
     errorNoPython
 fi 
-WriteLine "$color_success" "Default"  "present"
+WriteLine "present" $color_success
 
 # ============================================================================
 # 3a. Install PIP packages
 
-Write "$color_primary" "Default"  "Installing Python package manager..."
+Write "Installing Python package manager..." $color_primary
 pushd "$VIRTUAL_ENV/bin" > /dev/null
 ./python3 -m pip install --upgrade pip $pipFlags &
 spin $!
 popd > /dev/null
-WriteLine "$color_success" "Default"  "Done"
+WriteLine "Done" $color_success
 
-Write "$color_primary" "Default"  "Checking for required packages..."
+Write "Checking for required packages..." $color_primary
 # ASSUMPTION: If venv/Lib/python3.7/site-packages/torch exists then no need to do this
 if [ ! -d "${VIRTUAL_ENV}/Lib/python3.7/site-packages/torch" ]; then
 
-    WriteLine "$color_info" "Default"  "Installing"
+    WriteLine "Installing" $color_info
 
     # We'll do this the long way so we can see some progress
-    # Write "$color_primary" "Default"  "Installing Packages into Virtual Environment..."
+    # Write "Installing Packages into Virtual Environment..." $color_primary
     # pip install -r "${deepStackPath}/${intelligenceDir}/requirements.txt" $pipFlags
-    # WriteLine "$color_success" "Default"  "Success"
+    # WriteLine "Success" $color_success
 
     # Open requirements.txt and grab each line. We need to be careful with --find-links lines
     requirementsFile="${deepStackPath}/${intelligenceDir}/requirements.txt"
@@ -661,7 +764,7 @@ if [ ! -d "${VIRTUAL_ENV}/Lib/python3.7/site-packages/torch" ]; then
                 fi
                 currentOption=""    # Given that we're stripping versions, ignore this too
 
-                Write "$color_primary" "Default"  "  -${description}..."
+                Write "  -${description}..." $color_primary
 
                 pushd "$VIRTUAL_ENV/bin" > /dev/null
                 if [ "${verbosity}" == "quiet" ]; then
@@ -673,7 +776,7 @@ if [ ! -d "${VIRTUAL_ENV}/Lib/python3.7/site-packages/torch" ]; then
                 fi
                 popd > /dev/null
 
-                WriteLine "$color_success" "Default"  "Done"
+                WriteLine "Done" $color_success
 
             fi
 
@@ -684,26 +787,26 @@ if [ ! -d "${VIRTUAL_ENV}/Lib/python3.7/site-packages/torch" ]; then
     done
     unset IFS
 else
-    WriteLine "$color_success" "Default"  "present."
+    WriteLine "present." $color_success
 fi
 
 # ============================================================================
 # 3b. Install PIP packages for TextSummary
 
-Write "$color_primary" "Default"  "Installing required Text Processing packages..."
+Write "Installing required Text Processing packages..." $color_primary
 
 pushd "$VIRTUAL_ENV/bin" > /dev/null
-./python3 -m pip install -r "${textSummaryPath}/requirements.txt" $pipFlags # >/dev/null 2>/dev/null &
-#spin $!
+./python3 -m pip install -r "${textSummaryPath}/requirements.txt" $pipFlags >/dev/null 2>/dev/null &
+spin $!
 popd > /dev/null
 
-WriteLine "$color_success" "Default"  "Done"
+WriteLine "Done" $color_success
 
 # ============================================================================
 # ...and we're done.
 
-WriteLine "$color_info" "Default"  "Development Environment setup complete" 
-WriteLine "$color_primary" "Default"  ""
-WriteLine "$color_primary" "Default"  ""
+WriteLine 
+WriteLine "                Development Environment setup complete                  " "White" "DarkGreen"
+WriteLine 
 
 quit

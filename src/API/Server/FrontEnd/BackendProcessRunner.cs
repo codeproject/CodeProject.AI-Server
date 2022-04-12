@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 using CodeProject.SenseAI.API.Common;
 using CodeProject.SenseAI.API.Server.Backend;
+using CodeProject.SenseAI.Server.Backend;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,11 +35,35 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         private readonly IConfiguration                _config;
         private readonly ILogger<BackendProcessRunner> _logger;
         private readonly QueueServices                 _queueServices;
+        private readonly BackendRouteMap               _routeMap;
         private readonly Dictionary<string, string?>   _backendEnvironmentVars = new();
         private readonly List<Process>                 _runningProcesses = new();
         private readonly string?                       _appDataDirectory;
 
-        private string _platform = OSPlatform.Linux.ToString();
+        /// <summary>
+        /// Gets the current platform name
+        /// </summary>
+        private string Platform
+        {
+            get
+            {
+                // RuntimeInformation.GetPlatform() or RuntimeInformation.Platform would have been
+                // too easy...
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    return OSPlatform.Windows.ToString();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    return OSPlatform.OSX.ToString();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    return OSPlatform.Linux.ToString();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+                    return OSPlatform.FreeBSD.ToString();
+
+                return OSPlatform.Windows.ToString(); // Gotta be something...
+            }
+        }
 
         /// <summary>
         /// Gets a list of the startup processes.
@@ -77,16 +102,19 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <param name="options">The FrontendOptions</param>
         /// <param name="config">The application configuration.</param>
         /// <param name="queueServices">The Queue management service.</param>
+        /// <param name="routeMap">The RouteMap service.</param>
         /// <param name="logger">The logger.</param>
         public BackendProcessRunner(IOptions<FrontendOptions> options,
                                     IConfiguration config,
                                     QueueServices queueServices,
+                                    BackendRouteMap routeMap,
                                     ILogger<BackendProcessRunner> logger)
         {
             _options          = options.Value;
             _config           = config;
             _logger           = logger;
             _queueServices    = queueServices;
+            _routeMap         = routeMap;
 
             // ApplicationDataDir is set in Program.cs and added to an InMemoryCollection config set.
             _appDataDirectory = config.GetValue<string>("ApplicationDataDir");
@@ -140,6 +168,20 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 loggerIsValid = false;
             }
 
+            // Setup routes.  Do this first so they are active during debug without launching services.
+            foreach (var cmdInfo in _options.StartupProcesses!)
+            {
+                // setup the routes for this module.
+                if (cmdInfo.Activate ?? false)
+                    if (!(cmdInfo.RouteMaps?.Any() ?? false))
+                    {
+                        Logger.Log($"No routes defined for {cmdInfo.Name}");
+                    }
+                    else
+                        foreach (var routeInfo in cmdInfo.RouteMaps!)
+                            _routeMap.Register(routeInfo.Path, routeInfo.Queue, routeInfo.Command);
+            }
+
             bool launchAnalysisServices = _config.GetValue("LaunchAnalysisServices", true);
             if (!launchAnalysisServices)
             {
@@ -172,49 +214,77 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
                 bool activate = cmdInfo.Activate ?? false;
                 bool enabled  = activate;
+
+                // TODO: remove the Enable Flags
                 foreach (var envVar in cmdInfo.EnableFlags)
                     enabled = enabled || _config.GetValue(envVar, false);
 
                 if (!enabled)
                     Logger.Log($"Not starting {cmdInfo.Name}: Not set as enabled");
 
-                if (enabled && !cmdInfo.Platforms!.Any(platform => platform.ToLower() == _platform.ToLower()))
+                if (enabled && !cmdInfo.Platforms!.Any(platform => platform.ToLower() == Platform.ToLower()))
                 {
                     enabled = false;
-                    Logger.Log($"Not starting {cmdInfo.Name}: Not anabled for {_platform}");
+                    Logger.Log($"Not starting {cmdInfo.Name}: Not anabled for {Platform}");
                 }
 
                 if (enabled && !string.IsNullOrEmpty(cmdInfo.Command))
                 {
                     // _logger.LogError($"Starting {cmdInfo.Command}");
 
-                    // ProcessStartInfo? procStartInfo = new ProcessStartInfo($"\"{cmdInfo.Command}\"", $"\"{cmdInfo.Args ?? ""}\"")
-                    ProcessStartInfo? procStartInfo = new ProcessStartInfo($"{cmdInfo.Command}", $"{cmdInfo.Args ?? ""}")
-                    {
-                        UseShellExecute  = false,
-                        WorkingDirectory = cmdInfo.WorkingDirectory,
-                        CreateNoWindow = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true
-                    };
-
-                    // setup the environment
-                    foreach (var kv in _backendEnvironmentVars)
-                        procStartInfo.Environment.TryAdd(kv.Key, kv.Value);
-
                     // create the required Queues
                     foreach (var queueName in cmdInfo.Queues)
                     if (!string.IsNullOrWhiteSpace(queueName))
                         _queueServices.EnsureQueueExists(queueName);
 
+                    // Setup the process we're going to launch
+                    ProcessStartInfo? procStartInfo = new ProcessStartInfo($"{cmdInfo.Command}", $"{cmdInfo.Args ?? ""}")
+                    {
+                        UseShellExecute        = false,
+                        WorkingDirectory       = cmdInfo.WorkingDirectory,
+                        CreateNoWindow         = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError  = true
+                    };
+
+                    // Set the environment variables
+                    foreach (var kv in _backendEnvironmentVars)
+                        procStartInfo.Environment.TryAdd(kv.Key, kv.Value);
+
+                    // Start the process
                     try
                     {
                         if (loggerIsValid)
                             _logger.LogInformation($"Starting {procStartInfo.FileName} {procStartInfo.Arguments}");
-//#if Windows
-                        Process? process = Process.Start(procStartInfo);
+
+                        Process? process = new Process();
+                        process.StartInfo = procStartInfo;
+                        process.EnableRaisingEvents = true;
+                        process.OutputDataReceived += (sender, data) =>
+                        {
+                            string filename = string.Empty;
+                            if (sender is Process process)
+                                filename = Path.GetFileName(process.StartInfo.Arguments);
+
+                            Logger.Log(string.IsNullOrEmpty(filename) ? data.Data : filename + ": " + data.Data);
+                        };
+                        process.ErrorDataReceived += (sender, data) =>
+                        {
+                            string filename = string.Empty;
+                            if (sender is Process process)
+                                filename = Path.GetFileName(process.StartInfo.Arguments);
+
+                            Logger.Log(string.IsNullOrEmpty(filename) ? data.Data : filename + ": " + data.Data);
+                        };
+
+                        if (!process.Start())
+                            process = null;
+
                         if (process is not null)
                         {
+                            process.BeginOutputReadLine();
+                            process.BeginErrorReadLine();
+
                             if (loggerIsValid)
                                 _logger.LogInformation($"Started {cmdInfo.Name} backend");
 
@@ -230,31 +300,6 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
                             Logger.Log($"Unable to start {cmdInfo.Name}");
                         }
-//#else
-//                        Process process = new Process()
-//                        {
-//                            StartInfo = procStartInfo,
-//                        };
-//                        process.OutputDataReceived += (sender, data) => {
-//                            System.Console.WriteLine(data.Data);
-//                        };
-//                        process.ErrorDataReceived += (sender, data) => {
-//                            System.Console.WriteLine(data.Data);
-//                        };
-
-//                        process.Start();
-//                        process.BeginOutputReadLine();
-//                        process.BeginErrorReadLine();
-//                        process.WaitForExit();
-
-//                        if (loggerIsValid)
-//                            _logger.LogInformation($"Started {cmdInfo.Name} backend");
-
-//                        _runningProcesses.Add(process);
-//                        cmdInfo.Running = true;
-
-//                        Logger.Log($"Started {cmdInfo.Name}");                        
-//#endif
                     }
                     catch (Exception ex)
                     {
@@ -271,7 +316,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
                         Logger.Log($"Error running {cmdInfo.Command} {cmdInfo.Args}");
 #if DEBUG
-                        if (_platform == "windows")
+                        if (Platform == "windows")
                             Logger.Log($"    Run /Installers/Dev/setup_dev_env_win.bat");
                         else
                             Logger.Log($"    In /Installers/Dev/, run 'bash setup_dev_env_linux.sh'");
@@ -292,22 +337,11 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             if (_options is null)
                 return;
 
-            //  Wouldn't it be AWESOME if OSPlatform.Windows etc were actual values rather than
-            //  getters so we could use a switch statement.
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                _platform = OSPlatform.Windows.ToString();
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                _platform = OSPlatform.OSX.ToString();
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                _platform = OSPlatform.Linux.ToString();
-
-            _platform = _platform.ToLower();
-
             // Quick Sanity check
-            // Console.WriteLine($"Initial ROOT_PATH = {_options.ROOT_PATH}");
-            // Console.WriteLine($"Initial MODULES_PATH = {_options.MODULES_PATH}");
+            // Console.WriteLine($"Initial ROOT_PATH       = {_options.ROOT_PATH}");
+            // Console.WriteLine($"Initial MODULES_PATH    = {_options.MODULES_PATH}");
             // Console.WriteLine($"Initial PYTHON_BASEPATH = {_options.PYTHON_BASEPATH}");
-            // Console.WriteLine($"Initial PYTHON37_PATH = {_options.PYTHON37_PATH}");
+            // Console.WriteLine($"Initial PYTHON37_PATH   = {_options.PYTHON37_PATH}");
 
             // For Macro expansion in appsettings settings we have PYTHON37_PATH which depends on
             // PYTHON_BASEPATH which usually depends on MODULES_PATH and both depend on ROOT_PATH.
@@ -319,10 +353,10 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             _options.PYTHON37_PATH   = Path.GetFullPath(ExpandOption(_options.PYTHON37_PATH)!);
 
             Console.WriteLine("------------------------------------------------------------------");
-            Console.WriteLine($"Expanded ROOT_PATH = {_options.ROOT_PATH}");
-            Console.WriteLine($"Expanded MODULES_PATH = {_options.MODULES_PATH}");
+            Console.WriteLine($"Expanded ROOT_PATH       = {_options.ROOT_PATH}");
+            Console.WriteLine($"Expanded MODULES_PATH    = {_options.MODULES_PATH}");
             Console.WriteLine($"Expanded PYTHON_BASEPATH = {_options.PYTHON_BASEPATH}");
-            Console.WriteLine($"Expanded PYTHON37_PATH = {_options.PYTHON37_PATH}");
+            Console.WriteLine($"Expanded PYTHON37_PATH   = {_options.PYTHON37_PATH}");
             Console.WriteLine("------------------------------------------------------------------");
 
             if (_options.StartupProcesses is not null)
@@ -427,7 +461,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
             value = value.Replace(ModulesPathMarker,    _options.MODULES_PATH);
             value = value.Replace(RootPathMarker,       _options.ROOT_PATH);
-            value = value.Replace(PlatformMarker,       _platform);
+            value = value.Replace(PlatformMarker,       Platform.ToLower());
             value = value.Replace(PythonBasePathMarker, _options.PYTHON_BASEPATH);
             value = value.Replace(Python37PathMarker,   _options.PYTHON37_PATH);
 

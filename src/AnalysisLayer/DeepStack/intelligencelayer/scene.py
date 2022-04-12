@@ -80,14 +80,17 @@ def scenerecognition(thread_name, delay):
 
             for req_data in queue:
                 req_data = json.JSONDecoder().decode(req_data)
-                img_id   = req_data["imgid"]
                 req_id   = req_data["reqid"]
                 req_type = req_data["reqtype"]
-                img_path = os.path.join(SharedOptions.TEMP_PATH,img_id)
+                #img_id   = req_data["imgid"]
+                #img_path = os.path.join(SharedOptions.TEMP_PATH,img_id)
+
+                payload     = req_data["payload"]
+                files       = payload["files"]
+                img_file    = files[0]
 
                 try:
-
-                    img = Image.open(img_path).convert("RGB")
+                    img = senseAI.getImageFromRequest(req_data, 0)
 
                     trans = transforms.Compose(
                         [
@@ -102,7 +105,7 @@ def scenerecognition(thread_name, delay):
 
                     img = trans(img).unsqueeze(0)
                     
-                    os.remove(img_path)
+                    #os.remove(img_path)
 
                     cl, conf = classifier.predict(img)
 
@@ -136,8 +139,8 @@ def scenerecognition(thread_name, delay):
                     senseAI.endTimer(timer)
                     senseAI.sendResponse(req_id, json.dumps(output))
 
-                    if os.path.exists(img_path):
-                        os.remove(img_path)
+                    #if os.path.exists(img_path):
+                    #    os.remove(img_path)
 
         # time.sleep(delay)
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,7 +34,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="numberOfSentences">The number of sentences to produce.</param>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A list of the detected objects or an error response.</returns>
-        public async Task<BackendResponseBase> SummarizeText(string? text, int numberOfSentences, 
+        public async Task<Object> SummarizeText(string? text, int numberOfSentences, 
                                                              CancellationToken token = default)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -44,7 +45,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendTextSummaryResponse>(SummaryQueueName,
+                var response = await _queueServices.SendRequestAsync(SummaryQueueName,
                                                     new BackendTextSummaryRequest(text, numberOfSentences),
                                                     token).ConfigureAwait(false);
                 return response;

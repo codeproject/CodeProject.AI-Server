@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using CodeProject.SenseAI.API.Server.Backend;
 using Microsoft.Extensions.Configuration;
 using CodeProject.SenseAI.API.Common;
+using System.Text.Json.Nodes;
 
 namespace CodeProject.SenseAI.Analysis.Yolo
 {
@@ -50,7 +51,12 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             if (port == default)
                 port = 5000;
 
-            _httpClient ??= new HttpClient { BaseAddress = new Uri($"http://localhost:{port}/v1/") };
+            _httpClient ??= new HttpClient { 
+                BaseAddress = new Uri($"http://localhost:{port}/")
+#if DEBUG
+                ,Timeout = TimeSpan.FromMinutes(1)
+#endif
+            };
         }
 
         /// <summary>
@@ -60,7 +66,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
         /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken token)
         {
-            await Task.Delay(250, token).ConfigureAwait(false);
+            await Task.Delay(1_000, token).ConfigureAwait(false);
 
             _logger.LogInformation("Background YoloDetector Task Started.");
             await LogToServer("SenseAI Object Detection module started.", token);
@@ -77,18 +83,18 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             while (!token.IsCancellationRequested)
             {
                 BackendResponseBase response;
-                BackendObjectDetectionRequest? request = null;
+                BackendRequest? request = null;
                 try
                 {
                     //_logger.LogInformation("Yolo attempting to pull from Queue.");
-                    var httpResponse = await _httpClient!.GetAsync($"queue/{_queueName}", token)
+                    var httpResponse = await _httpClient!.GetAsync($"v1/queue/{_queueName}", token)
                                                         .ConfigureAwait(false);
 
                     if (httpResponse is not null &&
                         httpResponse.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         var jsonString = await httpResponse.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                        request = JsonSerializer.Deserialize<BackendObjectDetectionRequest>(jsonString,
+                        request = JsonSerializer.Deserialize<BackendRequest>(jsonString,
                                         new JsonSerializerOptions(JsonSerializerDefaults.Web));
                     }
                 }
@@ -97,61 +103,60 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                     _logger.LogInformation(ex, "Yolo Exception");
                     continue;
                 }
-                if (request == null)
-                {
-                    // await Task.Delay(1000, token).ConfigureAwait(false);
+                if (request is null)
                     continue;
-                }
-                else if (request is BackendObjectDetectionRequest detectRequest)
-                {
-                    if (string.IsNullOrWhiteSpace(detectRequest.imgid))
-                    {
-                        await LogToServer("Object Detection Null or Whitespace filename.", token);
-                        response = new BackendErrorResponse(-1, "Object Detection Invalid filename.");
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"Processing {detectRequest.imgid}");
-                        List<Yolov5Net.Scorer.YoloPrediction>? yoloResult = null;
-                        try
-                        {
-                            yoloResult = _objectDetector.Predict(detectRequest.imgid);
-                        }
-                        catch (Exception ex)
-                        {
-                             await LogToServer($"Object Detection Error for {detectRequest.imgid}.", token);
-                            _logger.LogError(ex, "Yolo Object Detector Exception");
-                            yoloResult = null;
-                        }
 
-                        if (yoloResult == null)
-                        {
-                            response = new BackendErrorResponse(-1, "Yolo returned null.");
-                        }
-                        else
-                        {
-                            response = new BackendObjectDetectionResponse
-                            {
-                                predictions = yoloResult
-                                              .Where(x => x.Score >= (detectRequest.minconfidence ?? 0.4f))
-                                              .Select(x =>
-                                               new DetectionPrediction
-                                               {
-                                                   confidence = x.Score,
-                                                   label = x.Label.Name,
-                                                   x_min = (int)x.Rectangle.X,
-                                                   y_min = (int)x.Rectangle.Y,
-                                                   x_max = (int)(x.Rectangle.X + x.Rectangle.Width),
-                                                   y_max = (int)(x.Rectangle.Y + x.Rectangle.Height)
-                                               })
-                                            .ToArray()
-                            };
-                        }
-                    }
+                var file = request.payload?.files?.FirstOrDefault();
+                    
+                if (file is null)
+                {
+                    await LogToServer("Object Detection Null or File.", token);
+                    response = new BackendErrorResponse(-1, "Object Detection Invalid File.");
                 }
                 else
                 {
-                    response = new BackendErrorResponse(-1, "Invalid Request Type.");
+                    _logger.LogInformation($"Processing {file.filename}");
+                    List<Yolov5Net.Scorer.YoloPrediction>? yoloResult = null;
+                    try
+                    {
+                        var imageData = file.data;
+
+                        yoloResult = _objectDetector.Predict(imageData);
+                    }
+                    catch (Exception ex)
+                    {
+                            await LogToServer($"Object Detection Error for {file.filename}.", token);
+                        _logger.LogError(ex, "Yolo Object Detector Exception");
+                        yoloResult = null;
+                    }
+
+                    if (yoloResult == null)
+                    {
+                        response = new BackendErrorResponse(-1, "Yolo returned null.");
+                    }
+                    else
+                    {
+                        var minConfidenceValues = request.payload?.values?.FirstOrDefault(x => x.Key == "minConfidence")
+                                          .Value;
+                        float.TryParse(minConfidenceValues?[0], out float minConfidence);
+
+                        response = new BackendObjectDetectionResponse
+                        {
+                            predictions = yoloResult
+                                            .Where(x => x.Score >= minConfidence)
+                                            .Select(x =>
+                                            new DetectionPrediction
+                                            {
+                                                confidence = x.Score,
+                                                label = x.Label.Name,
+                                                x_min = (int)x.Rectangle.X,
+                                                y_min = (int)x.Rectangle.Y,
+                                                x_max = (int)(x.Rectangle.X + x.Rectangle.Width),
+                                                y_max = (int)(x.Rectangle.Y + x.Rectangle.Height)
+                                            })
+                                        .ToArray()
+                        };
+                    }
                 }
 
                 HttpContent? content = null;
@@ -160,7 +165,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                 else
                     content = JsonContent.Create(response as BackendErrorResponse);
 
-                await _httpClient.PostAsync($"queue/{request.reqid}", content, token).ConfigureAwait(false);
+                await _httpClient.PostAsync($"v1/queue/{request.reqid}", content, token).ConfigureAwait(false);
             }
         }
 
@@ -169,8 +174,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             var form = new FormUrlEncodedContent(new[]
                 { new KeyValuePair<string?, string?>("entry", message)}
             );
-            var response = await _httpClient!.PostAsync($"log", form, token).ConfigureAwait(false);
-
+            var response = await _httpClient!.PostAsync($"v1/log", form, token).ConfigureAwait(false);
         }
 
         /// <summary>

@@ -25,7 +25,7 @@
         public string? error { get; set; } = null;
 
         /// <summary>
-        /// Instantiates a new instance of the cref="QueuedErrorResponse" class.
+        /// Instantiates a new instance of the <cref="BackendErrorResponse" /> class.
         /// </summary>
         /// <param name="errorCode">The error code.</param>
         /// <param name="errorMessage">The error message.</param>
@@ -43,7 +43,7 @@
     public class BackendSuccessResponse : BackendResponseBase
     {
         /// <summary>
-        /// Constructor.
+        /// Instantiates a new instance of the <cref="BackendSuccessResponse" /> class.
         /// </summary>
         public BackendSuccessResponse()
         {

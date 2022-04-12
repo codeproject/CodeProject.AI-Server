@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{e5d27495-ee4f-4aaf-8749-a6ba848111e2}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>runAll.py</StartupFile>
+    <StartupFile>face.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -56,7 +56,7 @@
     <Folder Include="utils" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\..\bin\windows\python37\venv\env\">
+    <Interpreter Include="..\..\bin\windows\python37\venv\">
       <Id>env</Id>
       <Version>3.7</Version>
       <Description>env (Python 3.7 (64-bit))</Description>

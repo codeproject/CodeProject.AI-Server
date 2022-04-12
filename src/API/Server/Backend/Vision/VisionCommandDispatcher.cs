@@ -64,6 +64,16 @@ namespace CodeProject.SenseAI.API.Server.Backend
             return filePath;
         }
 
+        public async Task<Object> QueueRequest(string queueName, string command, RequestPayload payload, 
+                                                            CancellationToken token = default)
+        {
+            var response = await _queueServices.SendRequestAsync(queueName, 
+                    new BackendRequest (command, payload),
+                    token);
+
+            return response;
+        }
+
         // TODO: All of these methods need to be simplified down to a single method, so that
         //       instead of "DetectObjects" we have the method "Infer" that accepts a payload of
         //       incoming information (binary data as a filename, confidence settings as floats -
@@ -80,7 +90,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="minConfidence">The minimum confidence for the detected objects.</param>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A list of the detected objects or an error response.</returns>
-        public async Task<BackendResponseBase> DetectObjects(IFormFile image, float? minConfidence, 
+        public async Task<Object> DetectObjects(IFormFile image, float? minConfidence, 
                                                              CancellationToken token = default)
         {
             string? filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
@@ -89,7 +99,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendObjectDetectionResponse>(DetectionQueueName,
+                var response = await _queueServices.SendRequestAsync(DetectionQueueName,
                                                     new BackendObjectDetectionRequest(filename, minConfidence ?? 0.45F),
                                                     token).ConfigureAwait(false);
                 return response;
@@ -107,7 +117,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="image">The Form File for the image to be processed.</param>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A label and confidence for the detected scene or an error response.</returns>
-        public async Task<BackendResponseBase> DetectScene(IFormFile image,
+        public async Task<Object> DetectScene(IFormFile image,
                                                            CancellationToken token = default)
         {
             string? filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
@@ -116,7 +126,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendSceneDetectResponse>(SceneQueueName,
+                var response = await _queueServices.SendRequestAsync(SceneQueueName,
                                                     new BackendSceneDetectionRequest(filename), token).ConfigureAwait(false);
                 return response;
             }
@@ -135,7 +145,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="minConfidence">The minimum confidence for the detected objects.</param>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A list of the detected Faces or an error response.</returns>
-        public async Task<BackendResponseBase> DetectFaces(IFormFile image, float? minConfidence,
+        public async Task<Object> DetectFaces(IFormFile image, float? minConfidence,
                                                            CancellationToken token = default)
         {
             string? filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
@@ -144,7 +154,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendFaceDetectionResponse>(FaceQueueName,
+                var response = await _queueServices.SendRequestAsync(FaceQueueName,
                                                     new BackendFaceDetectionRequest(filename, minConfidence ?? 0.4F)
                                                     , token).ConfigureAwait(false);
                 return response;
@@ -163,7 +173,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="image2">The Form File for the image to be processed.</param>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A value indicating the similarity of the two faces.</returns>
-        public async Task<BackendResponseBase> MatchFaces(IFormFile image1, IFormFile image2,
+        public async Task<Object> MatchFaces(IFormFile image1, IFormFile image2,
                                                           CancellationToken token = default)
         {
             string? filename1 = await SaveFileToTempAsync(image1).ConfigureAwait(false);
@@ -176,7 +186,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendFaceMatchResponse>(FaceQueueName,
+                var response = await _queueServices.SendRequestAsync(FaceQueueName,
                                                     new BackendFaceMatchRequest(filename1, filename2)
                                                     , token).ConfigureAwait(false);
                 return response;
@@ -198,7 +208,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="images">The Form File images of the given user.</param>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A value indicating the similarity of the two faces.</returns>
-        public async Task<BackendResponseBase> RegisterFaces(string userId, 
+        public async Task<Object> RegisterFaces(string userId, 
                                                              IFormFileCollection images,
                                                              CancellationToken token = default)
         {
@@ -217,7 +227,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendFaceRegisterResponse>(FaceQueueName,
+                var response = await _queueServices.SendRequestAsync(FaceQueueName,
                                                     new BackendFaceRegisterRequest(userId, filenames.ToArray()),
                                                     token).ConfigureAwait(false);
                 return response;
@@ -240,7 +250,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="minConfidence">The minimum confidence for the detected faces.</param>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A list of the recognized Faces or an error response.</returns>
-        public async Task<BackendResponseBase> RecognizeFaces(IFormFile image, float? minConfidence,
+        public async Task<Object> RecognizeFaces(IFormFile image, float? minConfidence,
                                                               CancellationToken token = default)
         {
             string? filename = await SaveFileToTempAsync(image).ConfigureAwait(false);
@@ -249,7 +259,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
 
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendFaceRecognitionResponse>(FaceQueueName,
+                var response = await _queueServices.SendRequestAsync(FaceQueueName,
                                                     new BackendFaceRecognitionRequest(filename, minConfidence ?? 0.67f)
                                                     , token).ConfigureAwait(false);
                 return response;
@@ -266,11 +276,11 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// </summary>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A list of the registered Faces or an error response.</returns>
-        public async Task<BackendResponseBase> ListFaces(CancellationToken token = default)
+        public async Task<Object> ListFaces(CancellationToken token = default)
         {
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendListRegisteredFacesResponse>(FaceQueueName,
+                var response = await _queueServices.SendRequestAsync(FaceQueueName,
                                                     new BackendFaceListRequest(), token).ConfigureAwait(false);
                 return response;
             }
@@ -285,12 +295,12 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="userId">The id of the user whose face data will be deleted.</param>
         /// <param name="token">A Cancellation Token (optional).</param>
         /// <returns>A list of the recognized Faces or an error response.</returns>
-        public async Task<BackendResponseBase> DeleteFaces(string userid,
+        public async Task<Object> DeleteFaces(string userid,
                                                            CancellationToken token = default)
         {
             try
             {
-                var response = await _queueServices.SendRequestAsync<BackendFaceDeleteResponse>(FaceQueueName,
+                var response = await _queueServices.SendRequestAsync(FaceQueueName,
                                                     new BackendFaceDeleteRequest(userid), token).ConfigureAwait(false);
                 return response;
             }

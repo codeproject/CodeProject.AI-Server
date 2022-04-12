@@ -6,6 +6,7 @@ using System.Threading;
 
 using CodeProject.SenseAI.API.Server.Backend;
 using CodeProject.SenseAI.API.Common;
+using System;
 
 namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 {
@@ -61,7 +62,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
             return HandleErrorResponse(backendResponse);
         }
 
-        private static ErrorResponse HandleErrorResponse(BackendResponseBase backendResponse)
+        private static ErrorResponse HandleErrorResponse(Object backendResponse)
         {
             if (backendResponse is BackendErrorResponse errorResponse)
                 return new ErrorResponse(errorResponse.error, errorResponse.code);

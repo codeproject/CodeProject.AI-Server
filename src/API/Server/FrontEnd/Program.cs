@@ -244,18 +244,26 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <param name="url"></param>
         public static void OpenBrowser(string url)
         {
+            // HACK: Read this: https://github.com/dotnet/corefx/issues/10361 and 
+            //       https://brockallen.com/2016/09/24/process-start-for-urls-on-net-core/
+
             try
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
                     Process.Start(url);
+                }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
                     Process.Start("sensible-browser", url);
+                }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
                     Process.Start("sensible-browser", url);
+                }
             }
             catch
             {
-                // hack because of this: https://github.com/dotnet/corefx/issues/10361
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     url = url.Replace("&", "^&");

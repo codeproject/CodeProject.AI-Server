@@ -6,6 +6,18 @@ A standalone, self-hosted, fast, free and Open Source Artificial Intelligence mi
 platform, any language. It can be installed locally, required no off-device or out of network data
 transfer, and is easy to use.
 
+![Object detection](docs/images/example-detect.png "Object detection example")
+
+# Supported Platforms
+
+<div style="width:75%;min-width:700px;margin:30px auto">
+
+|   <img src="docs/images/windows.svg" title="Windows" style="width:64px">  |  <img src="docs/images/macos.svg" title="macOS" style="width:64px">|   <img src="docs/images/Ubuntu.svg" title="Ubuntu" style="width:64px">  |   <img src="docs/images/docker.svg" title="Docker" style="width:64px">  |         <img src="docs/images/visualstudio.svg" title="Visual Studio" style="width:64px">         |         <img src="docs/images/visualstudiocode.svg" title="Visual Studio Code" style="width:64px">        |
+|:-------:|:-----:|:------:|:------:|:-------------------:|:------------------:|
+| Windows | macOS | Ubuntu | Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
+
+</div>
+
 # Why
 
 1. AI programming is something every single developer should be aware of. We wanted a fun project we could use to help teach developers and get them involved in AI. We'll be using SenseAI as a focus for articles and exploration to make it fun and painless to learn AI programming.
@@ -16,14 +28,12 @@ transfer, and is easy to use.
 
 ## Cut to the chase: how do I play with it?
 
-![Object detection](docs/images/example-detect.png "Object detection example")
-
-#### 1: Running and playing with the features
+### 1: Running and playing with the features
 
 1. [**Download the latest version**](https://www.codeproject.com/ai/sense/latest.aspx), install, and launch the shortcut to the server's dashboard on your desktop.
 2. On the dashboard, at the bottom, is a link to the demo playground. Open that and play!
 
-#### 2: Running and debugging the code
+### 2: Running and debugging the code
 
 1. Clone the CodeProject SenseAI reposotory.
 2. Make sure you have Visual Studio Code or Visual Studio 2019+ installed.
@@ -72,13 +82,6 @@ CodeProject SenseAI includes
 2. **Backend Analysis services**.  The brains of the operation is in the analysis services sitting behind the front end API. All processing of data is done on the current machine. No calls to the cloud and no data leaving the device.
 3. **The Source Code**, naturally.
 
-## Supported platforms
-
- - Windowws
- - Linux (Ubuntu)
- - macOS
- - Docker
-
 ## What can it do?
 
 It can detect stuff!
@@ -89,7 +92,7 @@ CodeProject SenseAI can currently
 - Detect faces in images
 - Detect the type of scene represented in an image
 - Recognise faces that have been registered with the service
-- Pick out the most relevant sentences from text to generate a summary
+- Pull out the most important sentences in text to generate a text summary
 
 We will be constantly expanding the feature list.
 
@@ -130,7 +133,7 @@ docker run -p 5000:5000 --name SenseAI-Server -d -v c:\ProgramData\CodeProject\S
 docker run -p 5000:5000 --name SenseAI-Server -d -v /usr/share/CodeProject/SenseAI:/usr/share/CodeProject/SenseAI codeproject/senseai-server 
 ```
 
-##### For macOS, choose a port other than 5000:
+##### For macOS, choose a port other than 5000 such as 5500:
 
 ```
 docker run -p 5500:5000 --name SenseAI-Server -d -v /usr/share/CodeProject/SenseAI:/usr/share/CodeProject/SenseAI codeproject/senseai-server
@@ -276,8 +279,7 @@ Either you have CodeProject.SenseAI already running, or another application is u
 
 The following features will be added over the coming weeks and months
 
-1. Better Linux / macOS development environment support
-2. Docker images
+1. More modules and a streamlined plugin architecture
 2. A GUI management system
 3. GPU support
 4. More analysis services

@@ -21,7 +21,7 @@
 	<script type="text/javascript">
 
 		const useSVG        = true;
-		const pingFrequency = 2000; // milliseconds
+		const pingFrequency = 10000; // milliseconds
 		const apiServiceUrl = "http://localhost:5000";
 		var serverOnline    = false;
 
@@ -265,61 +265,61 @@
 				  });
 		}
 
-		function submitRequest(controller, apiName, images, parameters, doneFunc) {
+        function submitRequest(controller, apiName, images, parameters, doneFunc) {
 
-			setStatus("Sending request to AI server", "blue");
+            setStatus("Sending request to AI server", "blue");
 
-			var formData = new FormData();
+            var formData = new FormData();
 
-			// Check file selected or not
-			if (images && images.length > 0) {
-				if (images.length == 1) {
-					file = images[0];
-					formData.append('image', file);
-				}
-				else {
-					for (var i = 0; i < images.length; i++) {
-						file = images[i];
-						formData.append('image' + (i + 1), file);
-					}
-				}
-			}
+            // Check file selected or not
+            if (images && images.length > 0) {
+                if (images.length == 1) {
+                    file = images[0];
+                    formData.append('image', file);
+                }
+                else {
+                    for (var i = 0; i < images.length; i++) {
+                        file = images[i];
+                        formData.append('image' + (i + 1), file);
+                    }
+                }
+            }
 
-			if (parameters && parameters.length > 0) {
-				for (var i = 0; i < parameters.length; i++) {
-					keypair = parameters[i];
-					formData.append(keypair[0], keypair[1]);
-				}
-			}
+            if (parameters && parameters.length > 0) {
+                for (var i = 0; i < parameters.length; i++) {
+                    keypair = parameters[i];
+                    formData.append(keypair[0], keypair[1]);
+                }
+            }
 
-			var url = serviceUrl.value.trim() + '/v1/' + controller + '/' + apiName;
+            var url = serviceUrl.value.trim() + '/v1/' + controller + '/' + apiName;
 
-			result.innerHTML = "";
+            result.innerHTML = "";
 
-			fetch(url, {
-				method: "POST",
-				body: formData
-			})
-			.then(response => {
-				if (!response.ok)
-					setStatus('Error contacting API server', "red");
-				else {
-					response.json().then(data => {
-						if (data) {
-							doneFunc(data)
-							setStatus("Call to " + apiName + " complete", "green");
-						} else
-							setStatus('No data was returned', "red");
-					})
-					.catch(error => {
-						setStatus("Unable to read response: " + error, "red");
-					})
-				}})
-				.catch(error => {
-					setStatus('Unable to complete API call: ' + error, "red")
-				});
-		}
-
+            fetch(url, {
+                method: "POST",
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok)
+                        setStatus('Error contacting API server', "red");
+                    else {
+                        response.json().then(data => {
+                            if (data) {
+                                doneFunc(data)
+                                setStatus("Call to " + apiName + " complete", "green");
+                            } else
+                                setStatus('No data was returned', "red");
+                        })
+                            .catch(error => {
+                                setStatus("Unable to read response: " + error, "red");
+                            })
+                    }
+                })
+                .catch(error => {
+                    setStatus('Unable to complete API call: ' + error, "red")
+                });
+        }
 		function onDetectScene(fileChooser) {
 
 			clearCanvas();
@@ -482,9 +482,9 @@
 			let startMilliseconds = performance.now();
 			
 			isBenchmarkCancelled = false;
+            let nResponses = 0;
 
 			for (let i = 0; i < 50 && !isBenchmarkCancelled; i++) {
-
 				// Funny thing about the cancellation bit. These requests are sent to the API
 				// server which queues them up for processing. Sending is fast. Processing takes
 				// longer. By the time you've cancelled the benchmark loop all requests have
@@ -493,8 +493,9 @@
 				// included for grins.
 				submitRequest('vision', 'detection', images, null, function (data) {
 					let currentMilliseconds = performance.now();
-					let opsPerSecond = (i * 1000) / (currentMilliseconds - startMilliseconds);
-					resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second";
+					nResponses++;
+                    let opsPerSecond = (nResponses * 1000) / (currentMilliseconds - startMilliseconds);
+					resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second - " + nResponses + "/50";
 				});
 			}
 		}

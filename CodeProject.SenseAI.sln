@@ -103,9 +103,16 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{8C92DCAE-EDE7-4DEC-A5CB-BB2388905064}"
 	ProjectSection(SolutionItems) = preProject
 		docs\images\Choose-launch.png = docs\images\Choose-launch.png
+		docs\images\docker.svg = docs\images\docker.svg
 		docs\images\example-detect.png = docs\images\example-detect.png
+		docs\images\macos.svg = docs\images\macos.svg
 		docs\images\Mulitple-Project-Toolbar.png = docs\images\Mulitple-Project-Toolbar.png
+		docs\images\RaspberryPi.svg = docs\images\RaspberryPi.svg
 		docs\images\Set-Startup_Projects.png = docs\images\Set-Startup_Projects.png
+		docs\images\Ubuntu.svg = docs\images\Ubuntu.svg
+		docs\images\VisualStudio.svg = docs\images\VisualStudio.svg
+		docs\images\VisualStudioCode.svg = docs\images\VisualStudioCode.svg
+		docs\images\windows.svg = docs\images\windows.svg
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB5B-DB85-4A59-A3AE-FA55A35D05B0}"
@@ -194,17 +201,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".NET 3.5.1", ".NET 3.5.1", 
 		Installers\Windows\.NET 3.5.1\Download .NET Framework 3.5 SP1.url = Installers\Windows\.NET 3.5.1\Download .NET Framework 3.5 SP1.url
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TextSummary", "TextSummary", "{0D5152E1-741C-4C67-8558-8F92A40BC48F}"
-	ProjectSection(SolutionItems) = preProject
-		src\AnalysisLayer\TextSummary\__init__.py = src\AnalysisLayer\TextSummary\__init__.py
-		src\AnalysisLayer\TextSummary\requirements.txt = src\AnalysisLayer\TextSummary\requirements.txt
-		src\AnalysisLayer\TextSummary\senseAI.py = src\AnalysisLayer\TextSummary\senseAI.py
-		src\AnalysisLayer\TextSummary\summarize.py = src\AnalysisLayer\TextSummary\summarize.py
-		src\AnalysisLayer\TextSummary\textsummary.py = src\AnalysisLayer\TextSummary\textsummary.py
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nltk_data", "nltk_data", "{E9766120-39AB-48FC-AADF-BEB3C0F8912C}"
-EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "TextSummary.Installer", "Installers\Windows\TextSummary.Installer\TextSummary.Installer.wixproj", "{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2}"
@@ -213,6 +209,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{FB0561
 		Installers\Docker\Dockerfile-Base = Installers\Docker\Dockerfile-Base
 		Installers\Docker\README = Installers\Docker\README
 	EndProjectSection
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TextSummary", "src\AnalysisLayer\TextSummary\TextSummary.pyproj", "{470D3417-36A4-49A4-B719-496466FA92FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -334,6 +332,10 @@ Global
 		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Release|Any CPU.Build.0 = Release|x86
 		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Release|x86.ActiveCfg = Release|x86
 		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD}.Release|x86.Build.0 = Release|x86
+		{470D3417-36A4-49A4-B719-496466FA92FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{470D3417-36A4-49A4-B719-496466FA92FB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{470D3417-36A4-49A4-B719-496466FA92FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{470D3417-36A4-49A4-B719-496466FA92FB}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -372,10 +374,9 @@ Global
 		{18603392-CD64-4C1C-B892-381E99995451} = {888C04E1-6F50-4800-93FE-F128B78AE645}
 		{00BBF52C-217D-421F-BEAF-918C167D4C20} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{8A423F72-C92C-4C8E-87D8-02849FD079E2} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
-		{0D5152E1-741C-4C67-8558-8F92A40BC48F} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
-		{E9766120-39AB-48FC-AADF-BEB3C0F8912C} = {0D5152E1-741C-4C67-8558-8F92A40BC48F}
 		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 		{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
+		{470D3417-36A4-49A4-B719-496466FA92FB} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

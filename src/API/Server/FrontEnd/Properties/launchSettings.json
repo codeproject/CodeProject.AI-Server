@@ -3,7 +3,6 @@
   "profiles": {
     "CodeProject.SenseAI Server (Debug)": {
       "commandName": "Project",
-      "launchBrowser": true,
       "launchUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

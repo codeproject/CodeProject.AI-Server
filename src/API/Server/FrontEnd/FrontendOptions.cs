@@ -57,6 +57,41 @@ namespace CodeProject.SenseAI.API.Server.Frontend
     }
 
     /// <summary>
+    /// Data mapping a path to a queue and command.
+    /// </summary>
+    public struct ApiRouteMap 
+    {
+        /// <summary>
+        /// Gets or sets the path for the route.
+        /// </summary>
+        public string Path { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the Queue used by this path.
+        /// </summary>
+        public string Queue { get; set; }
+
+        /// <summary>
+        /// Gets the command passed as part of the payload to the 
+        /// queue for this path.
+        /// </summary>
+        public string Command { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the ApiRoute struct.
+        /// </summary>
+        /// <param name="Path"></param>
+        /// <param name="Queue"></param>
+        /// <param name="Command"></param>
+        public ApiRouteMap(string Path, string Queue, string Command)
+        {
+            this.Path    = Path;
+            this.Queue   = Queue;
+            this.Command = Command;
+        }
+    }
+
+    /// <summary>
     /// Information required to start the backend processes.
     /// </summary>
     public class StartupProcess
@@ -86,6 +121,11 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// Gets or sets the name of the Queue used by this process.
         /// </summary>
         public string[] Queues { get; set; } = Array.Empty<string>();
+
+        /// <summary>
+        /// Gets or sets a list of RouteMaps.
+        /// </summary>
+        public ApiRouteMap[] RouteMaps { get; set; } = Array.Empty<ApiRouteMap>();
 
         /// <summary>
         /// Gets or sets the name of the command to be executed.

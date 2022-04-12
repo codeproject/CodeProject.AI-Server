@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CodeProject.SenseAI.Server.Backend;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CodeProject.SenseAI.API.Server.Backend
 {
@@ -9,6 +11,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
             services.AddSingleton<QueueServices>();
             services.AddSingleton<VisionCommandDispatcher>();
             services.AddSingleton<TextCommandDispatcher>();
+            services.AddSingleton<BackendRouteMap>();
             return services;
         }
     }

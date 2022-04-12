@@ -40,10 +40,9 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <param name="queueName">The name of the queue.</param>
         /// <param name="request">The Request to be processed.</param>
         /// <returns>The response.</returns>
-        public async ValueTask<BackendResponseBase> SendRequestAsync<ResponseType>(string queueName,
-                                                                                   BackendRequestBase request,
-                                                                                   CancellationToken token = default)
-            where ResponseType : BackendResponseBase
+        public async ValueTask<Object> SendRequestAsync(string queueName,
+                                                        BackendRequestBase request,
+                                                        CancellationToken token = default)
         {
             Channel<BackendRequestBase> queue = GetOrCreateQueue(queueName);
 
@@ -92,9 +91,8 @@ namespace CodeProject.SenseAI.API.Server.Backend
                 }
                 else
                 {
-                    var response = JsonSerializer.Deserialize<ResponseType>(jsonString);
-                    return response
-                        ?? (BackendResponseBase)new BackendErrorResponse(-6, "null object from JSON string.");
+                    // var response = JsonSerializer.Deserialize<ResponseType>(jsonString);
+                    return jsonString;
                 }
             }
             catch (OperationCanceledException)
