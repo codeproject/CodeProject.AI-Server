@@ -12,7 +12,7 @@ transfer, and is easy to use.
 
 <div style="width:75%;min-width:700px;margin:30px auto">
 
-|   <img src="docs/images/windows.svg" title="Windows" style="width:64px">  |  <img src="docs/images/macos.svg" title="macOS" style="width:64px">|   <img src="docs/images/Ubuntu.svg" title="Ubuntu" style="width:64px">  |   <img src="docs/images/docker.svg" title="Docker" style="width:64px">  |         <img src="docs/images/visualstudio.svg" title="Visual Studio" style="width:64px">         |         <img src="docs/images/visualstudiocode.svg" title="Visual Studio Code" style="width:64px">        |
+|   <img src="docs/images/windows.svg" title="Windows" style="width:64px">  |  <img src="docs/images/macos.svg" title="macOS" style="width:64px">|   <img src="docs/images/Ubuntu.svg" title="Ubuntu" style="width:64px">  |   <img src="docs/images/docker.svg" title="Docker" style="width:64px">  |         <img src="docs/images/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="docs/images/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
 |:-------:|:-----:|:------:|:------:|:-------------------:|:------------------:|
 | Windows | macOS | Ubuntu | Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
 
