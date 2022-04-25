@@ -42,20 +42,20 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 VersionInfo? latest = await _versionService.GetLatestVersion();
                 if (latest != null && _versionService.VersionConfig?.VersionInfo != null)
                 {
-                    Logger.Log($"Update check: Current Version is {_versionService.VersionConfig.VersionInfo.Version}");
+                    Logger.Log($"Version check: Current Version is {_versionService.VersionConfig.VersionInfo.Version}");
 
                     int compare = VersionInfo.Compare(_versionService.VersionConfig.VersionInfo, latest);
                     if (compare < 0)
                     {
                         if (latest.SecurityUpdate ?? false)
-                            Logger.Log($"A SECURITY UPDATE {latest.Version} is available");
+                            Logger.Log($" ** A SECURITY UPDATE {latest.Version} is available ** ");
                         else
-                            Logger.Log($"A new version {latest.Version} is available");
+                            Logger.Log($" ** A new version {latest.Version} is available ** ");
                     }
                     else if (compare == 0)
-                        Logger.Log("This is the latest version");
+                        Logger.Log("Version check: This is the latest version");
                     else
-                        Logger.Log("This is a pre-release version");
+                        Logger.Log("Version check: This is a new, unreleased version");
                 }
             }
         }

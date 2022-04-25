@@ -1,6 +1,4 @@
-﻿#define USE_HTTPCLIENT
-
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using System;
@@ -14,8 +12,6 @@ using System.Threading.Tasks;
 
 using CodeProject.SenseAI.API.Server.Backend;
 using Microsoft.Extensions.Configuration;
-using CodeProject.SenseAI.API.Common;
-using System.Text.Json.Nodes;
 
 namespace CodeProject.SenseAI.Analysis.Yolo
 {
@@ -88,12 +84,14 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                 {
                     //_logger.LogInformation("Yolo attempting to pull from Queue.");
                     var httpResponse = await _httpClient!.GetAsync($"v1/queue/{_queueName}", token)
-                                                        .ConfigureAwait(false);
+                                                         .ConfigureAwait(false);
 
                     if (httpResponse is not null &&
                         httpResponse.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-                        var jsonString = await httpResponse.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                        var jsonString = await httpResponse.Content.ReadAsStringAsync(token)
+                                                           .ConfigureAwait(false);
+
                         request = JsonSerializer.Deserialize<BackendRequest>(jsonString,
                                         new JsonSerializerOptions(JsonSerializerDefaults.Web));
                     }
@@ -103,6 +101,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                     _logger.LogInformation(ex, "Yolo Exception");
                     continue;
                 }
+
                 if (request is null)
                     continue;
 
@@ -116,6 +115,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                 else
                 {
                     _logger.LogInformation($"Processing {file.filename}");
+
                     List<Yolov5Net.Scorer.YoloPrediction>? yoloResult = null;
                     try
                     {
@@ -125,7 +125,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                     }
                     catch (Exception ex)
                     {
-                            await LogToServer($"Object Detection Error for {file.filename}.", token);
+                        await LogToServer($"Object Detection Error for {file.filename}.", token);
                         _logger.LogError(ex, "Yolo Object Detector Exception");
                         yoloResult = null;
                     }
@@ -136,8 +136,10 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                     }
                     else
                     {
-                        var minConfidenceValues = request.payload?.values?.FirstOrDefault(x => x.Key == "minConfidence")
-                                          .Value;
+                        var minConfidenceValues = request.payload?.values?
+                                                         .FirstOrDefault(x => x.Key == "minConfidence")
+                                                         .Value;
+
                         float.TryParse(minConfidenceValues?[0], out float minConfidence);
 
                         response = new BackendObjectDetectionResponse
@@ -165,7 +167,8 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                 else
                     content = JsonContent.Create(response as BackendErrorResponse);
 
-                await _httpClient.PostAsync($"v1/queue/{request.reqid}", content, token).ConfigureAwait(false);
+                await _httpClient.PostAsync($"v1/queue/{request.reqid}", content, token)
+                                 .ConfigureAwait(false);
             }
         }
 
@@ -174,7 +177,9 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             var form = new FormUrlEncodedContent(new[]
                 { new KeyValuePair<string?, string?>("entry", message)}
             );
-            var response = await _httpClient!.PostAsync($"v1/log", form, token).ConfigureAwait(false);
+
+            /*var response = */ await _httpClient!.PostAsync($"v1/log", form, token)
+                                                  .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -184,7 +189,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
         /// <returns></returns>
         public override async Task StopAsync(CancellationToken token)
         {
-            _logger.LogInformation("QBackground YoloDetector Task is stopping.");
+            _logger.LogInformation("Background YoloDetector Task is stopping.");
 
             await base.StopAsync(token);
         }

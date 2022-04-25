@@ -145,7 +145,7 @@ def face(thread_name, delay):
                     #img_path = img_id
                     try:
                         
-                        threshold = float(req_data.get("minconfidence", "0.4"))
+                        threshold = float(senseAI.getRequestValue(req_data, "min_confidence", "0.4"))
 
                         img = senseAI.getImageFromRequest(req_data, 0)
                         det = detector.predictFromImage(img, threshold)
@@ -396,7 +396,7 @@ def face(thread_name, delay):
                         if SharedOptions.CUDA_MODE and len(face_array) > 0:
                             face_tensors = face_tensors.cuda()
 
-                        threshold = float(req_data.get("min_confidence", "0.4"))
+                        threshold = float(senseAI.getRequestValue(req_data, "min_confidence", "0.4"))
 
                         pil_image = senseAI.getImageFromRequest(req_data, 0)
 

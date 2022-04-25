@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>c04bbd0d-fd36-4fa4-805b-106bccd9bc79</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>CodeProject.SenseAI.Server-1.1.0</OutputName>
+    <OutputName>CodeProject.SenseAI.Server-1.2.1</OutputName>
     <OutputType>Bundle</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

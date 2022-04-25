@@ -197,9 +197,6 @@
             <Component Id="cmpC190BFF38A58C05E302A31BEF5A57187" Directory="dirA8824C8A34A7D7785B61FE60FF83E9A3" Guid="*">
                 <File Id="fil6FB7FACF46DA61EA01640D2D445DF4C0" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm\native\onnxruntime.lib" />
             </Component>
-            <Component Id="cmpCE1C1470F6D7AF260CA3C50C0B3B7A0C" Directory="dirA8824C8A34A7D7785B61FE60FF83E9A3" Guid="*">
-                <File Id="fil2394E8AE8CE954392A041C0768400DBD" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm\native\onnxruntime.pdb" />
-            </Component>
             <Component Id="cmp13AC01D1C59CB6B593ED4BECA567DB3B" Directory="dir3A64F71C0BE5F6CAFF1040E45F53FF2D" Guid="*">
                 <File Id="filB88DFB56010984D7900C2AF6AB730C13" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm64\native\libSkiaSharp.dll" />
             </Component>
@@ -208,9 +205,6 @@
             </Component>
             <Component Id="cmp9F21F15640CC07294E84B29663CD84D7" Directory="dir3A64F71C0BE5F6CAFF1040E45F53FF2D" Guid="*">
                 <File Id="fil5850B04C8B350CD0EC6E1FE8771F3DDA" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm64\native\onnxruntime.lib" />
-            </Component>
-            <Component Id="cmpAD68F6D2817A2D405C158F1413086E82" Directory="dir3A64F71C0BE5F6CAFF1040E45F53FF2D" Guid="*">
-                <File Id="fil92393443282053A5FCBD930363826FE2" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-arm64\native\onnxruntime.pdb" />
             </Component>
             <Component Id="cmp87BEAB686FBA29D189A77DAC5A5A4DC7" Directory="dirFBC83227DD6C6B044D7067A15A971248" Guid="*">
                 <File Id="fil0BAADCADCA17E2B2395B07F90C48D613" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x64\native\libSkiaSharp.dll" />
@@ -221,9 +215,6 @@
             <Component Id="cmp2D410E035744E6DAE786C889F35E0C7E" Directory="dirFBC83227DD6C6B044D7067A15A971248" Guid="*">
                 <File Id="fil2ACF28571D8C94CE62DC9A63D650E506" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x64\native\onnxruntime.lib" />
             </Component>
-            <Component Id="cmp5E6C23C7607A9C7507DB4206EAE429D7" Directory="dirFBC83227DD6C6B044D7067A15A971248" Guid="*">
-                <File Id="filB3101D8453FD36CF8C64826A6665656B" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x64\native\onnxruntime.pdb" />
-            </Component>
             <Component Id="cmpEEBE8F5F923381583CC9AE590034B133" Directory="dir6E57CAF6C0A352FF1B5354EF4C940068" Guid="*">
                 <File Id="fil627A796BD1CC1E1037777F9FDD47D2CB" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x86\native\libSkiaSharp.dll" />
             </Component>
@@ -232,9 +223,6 @@
             </Component>
             <Component Id="cmp2283797E9CC9F9B2B48032C1BAE47DDD" Directory="dir6E57CAF6C0A352FF1B5354EF4C940068" Guid="*">
                 <File Id="fil0FE29095456F05B3B3AB191504299137" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x86\native\onnxruntime.lib" />
-            </Component>
-            <Component Id="cmpA35C1E997A4B3DD378ED585B1C2527E1" Directory="dir6E57CAF6C0A352FF1B5354EF4C940068" Guid="*">
-                <File Id="fil88F5FA5CBC1E33270256124E47A3C0A4" KeyPath="yes" Source="$(var.CodeProject.SenseAI.AnalysisLayer.Yolo.TargetDir)\runtimes\win-x86\native\onnxruntime.pdb" />
             </Component>
         </ComponentGroup>
     </Fragment>

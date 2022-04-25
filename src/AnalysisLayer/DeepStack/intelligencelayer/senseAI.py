@@ -179,13 +179,38 @@ class SenseAIBackend:
         files   = payload["files"]
         return len(files)
 
-    def getRequestValue(self, req_data, key : str):
-        payload = req_data["payload"]
-        values  = payload["values"]
+    def getRequestValue(self, req_data, key : str, defaultValue : str = None):
+        """
+        Gets a value from the HTTP request Form send by the client
+        Param: req_data - the request data from the HTTP form
+        Param: key - the name of the key holding the data in the form collection
+        Returns: The data if successful; None otherwise.
+        Remarks: Note that HTTP forms contain multiple values per key (a string array) to allow
+        for situations like checkboxes, where a set of checkbox controls share a name but have 
+        unique IDs. The form will contain an array of values for the shared name. WE ONLY RETURN
+        THE FIRST VALUE HERE.
+        """
 
-        for value in values:
-            if value["key"] == key :
-                return value["value"][0]
+        try:
+            # req_data is a dict
+            payload = req_data.get("payload", None)
+            if payload is None:
+                return defaultValue
 
-        return None
+            # payload is also a dict
+            valueList = payload.get("values", None)
+            if valueList is None:
+                return defaultValue
+
+            # valueList is a list. Note that in a HTML form, each element may have multiple values 
+            for value in valueList:
+                if value["key"] == key :
+                    return value["value"][0]
+        
+            return defaultValue
+
+        except:
+            return defaultValue
+
+
 

@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>a1afa75c-324e-4b79-be13-5557e495fbbe</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>CodeProject.SenseAI.WebAPI-1.1.0</OutputName>
+    <OutputName>CodeProject.SenseAI.WebAPI-1.2.1</OutputName>
     <OutputType>Package</OutputType>
     <Name>SenseAI.Server.Installer</Name>
   </PropertyGroup>

@@ -1,14 +1,14 @@
 {
     "versionSection": {
-      "versionInfo": {
-        "Major": 1,
-        "Minor": 2,
-        "Patch": 0,
-        "PreRelease": "Beta",
-        "Build": 0,
-        "SecurityUpdate": false,
-        "File": "CodeProject.SenseAI.Server-1.2.0.zip",
-        "ReleaseNotes": "Reworked the internal message bus for easier addition of new modules"
-      }
+        "versionInfo": {
+            "Major": 1,
+            "Minor": 2,
+            "Patch": 1,
+            "Build": 0,
+            "PreRelease": "Beta",
+            "SecurityUpdate": false,
+            "File": "CodeProject.SenseAI.Server-1.2.1.zip",
+            "ReleaseNotes": "Improved message bus between server and analysis modules"
+        }
     }
 }

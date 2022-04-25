@@ -25,56 +25,56 @@ function Color () {
     local foreground=$1
     local background=$2
 
-    if [ "$foreground" == "" ];  then foreground="Default"; fi
+    if [ "$foreground" == "" ];  then foreground='Default'; fi
     if [ "$background" == "" ]; then background="$color_background"; fi
 
-    if [ "$foreground" == "Contrast" ]; then
-	    foreground=$(ContrastForeground ${background})
-	fi
-	
+    if [ "$foreground" == 'Contrast' ]; then
+        foreground=$(ContrastForeground ${background})
+    fi
+    
     local colorString='\033['
 
     # Foreground Colours
     case "$foreground" in
-        "Default")      colorString='\033[0;39m';;
-        "Black" )       colorString='\033[0;30m';;
-        "DarkRed" )     colorString='\033[0;31m';;
-        "DarkGreen" )   colorString='\033[0;32m';;
-        "DarkYellow" )  colorString='\033[0;33m';;
-        "DarkBlue" )    colorString='\033[0;34m';;
-        "DarkMagenta" ) colorString='\033[0;35m';;
-        "DarkCyan" )    colorString='\033[0;36m';;
-        "Gray" )        colorString='\033[0;37m';;
-        "DarkGray" )    colorString='\033[1;90m';;
-        "Red" )         colorString='\033[1;91m';;
-        "Green" )       colorString='\033[1;92m';;
-        "Yellow" )      colorString='\033[1;93m';;
-        "Blue" )        colorString='\033[1;94m';;
-        "Magenta" )     colorString='\033[1;95m';;
-        "Cyan" )        colorString='\033[1;96m';;
-        "White" )       colorString='\033[1;97m';;
+        'Default')      colorString='\033[0;39m';;
+        'Black' )       colorString='\033[0;30m';;
+        'DarkRed' )     colorString='\033[0;31m';;
+        'DarkGreen' )   colorString='\033[0;32m';;
+        'DarkYellow' )  colorString='\033[0;33m';;
+        'DarkBlue' )    colorString='\033[0;34m';;
+        'DarkMagenta' ) colorString='\033[0;35m';;
+        'DarkCyan' )    colorString='\033[0;36m';;
+        'Gray' )        colorString='\033[0;37m';;
+        'DarkGray' )    colorString='\033[1;90m';;
+        'Red' )         colorString='\033[1;91m';;
+        'Green' )       colorString='\033[1;92m';;
+        'Yellow' )      colorString='\033[1;93m';;
+        'Blue' )        colorString='\033[1;94m';;
+        'Magenta' )     colorString='\033[1;95m';;
+        'Cyan' )        colorString='\033[1;96m';;
+        'White' )       colorString='\033[1;97m';;
         *)              colorString='\033[0;39m';;
     esac
 
     # Background Colours
     case "$background" in
-        "Default" )     colorString="${colorString}\033[49m";;
-        "Black" )       colorString="${colorString}\033[40m";;
-        "DarkRed" )     colorString="${colorString}\033[41m";;
-        "DarkGreen" )   colorString="${colorString}\033[42m";;
-        "DarkYellow" )  colorString="${colorString}\033[43m";;
-        "DarkBlue" )    colorString="${colorString}\033[44m";;
-        "DarkMagenta" ) colorString="${colorString}\033[45m";;
-        "DarkCyan" )    colorString="${colorString}\033[46m";;
-        "Gray" )        colorString="${colorString}\033[47m";;
-        "DarkGray" )    colorString="${colorString}\033[100m";;
-        "Red" )         colorString="${colorString}\033[101m";;
-        "Green" )       colorString="${colorString}\033[102m";;
-        "Yellow" )      colorString="${colorString}\033[103m";;
-        "Blue" )        colorString="${colorString}\033[104m";;
-        "Magenta" )     colorString="${colorString}\033[105m";;
-        "Cyan" )        colorString="${colorString}\033[106m";;
-        "White" )       colorString="${colorString}\033[107m";;
+        'Default' )     colorString="${colorString}\033[49m";;
+        'Black' )       colorString="${colorString}\033[40m";;
+        'DarkRed' )     colorString="${colorString}\033[41m";;
+        'DarkGreen' )   colorString="${colorString}\033[42m";;
+        'DarkYellow' )  colorString="${colorString}\033[43m";;
+        'DarkBlue' )    colorString="${colorString}\033[44m";;
+        'DarkMagenta' ) colorString="${colorString}\033[45m";;
+        'DarkCyan' )    colorString="${colorString}\033[46m";;
+        'Gray' )        colorString="${colorString}\033[47m";;
+        'DarkGray' )    colorString="${colorString}\033[100m";;
+        'Red' )         colorString="${colorString}\033[101m";;
+        'Green' )       colorString="${colorString}\033[102m";;
+        'Yellow' )      colorString="${colorString}\033[103m";;
+        'Blue' )        colorString="${colorString}\033[104m";;
+        'Magenta' )     colorString="${colorString}\033[105m";;
+        'Cyan' )        colorString="${colorString}\033[106m";;
+        'White' )       colorString="${colorString}\033[107m";;
         *)              colorString="${colorString}\033[49m";;
     esac
 
@@ -90,49 +90,49 @@ function Color () {
 function ContrastForeground () {
 
     local color=$1
-    if [ "$color" == "" ]; then color="Default"; fi
+    if [ "$color" == '' ]; then color='Default'; fi
 
-    if [ "$darkmode" == "true" ]; then
+    if [ "$darkmode" == 'true' ]; then
         case "$color" in
-            "Default" )     echo "White";;
-            "Black" )       echo "White";;
-            "DarkRed" )     echo "White";;
-            "DarkGreen" )   echo "White";;
-            "DarkYellow" )  echo "White";;
-            "DarkBlue" )    echo "White";;
-            "DarkMagenta" ) echo "White";;
-            "DarkCyan" )    echo "White";;
-            "Gray" )        echo "Black";;
-            "DarkGray" )    echo "White";;
-            "Red" )         echo "White";;
-            "Green" )       echo "White";;
-            "Yellow" )      echo "Black";;
-            "Blue" )        echo "White";;
-            "Magenta" )     echo "White";;
-            "Cyan" )        echo "Black";;
-            "White" )       echo "Black";;
-            *)              echo "White";;
+            'Default' )     echo 'White';;
+            'Black' )       echo 'White';;
+            'DarkRed' )     echo 'White';;
+            'DarkGreen' )   echo 'White';;
+            'DarkYellow' )  echo 'White';;
+            'DarkBlue' )    echo 'White';;
+            'DarkMagenta' ) echo 'White';;
+            'DarkCyan' )    echo 'White';;
+            'Gray' )        echo 'Black';;
+            'DarkGray' )    echo 'White';;
+            'Red' )         echo 'White';;
+            'Green' )       echo 'White';;
+            'Yellow' )      echo 'Black';;
+            'Blue' )        echo 'White';;
+            'Magenta' )     echo 'White';;
+            'Cyan' )        echo 'Black';;
+            'White' )       echo 'Black';;
+            *)              echo 'White';;
         esac
     else
         case "$color" in
-            "Default" )     echo "Black";;
-            "Black" )       echo "White";;
-            "DarkRed" )     echo "White";;
-            "DarkGreen" )   echo "White";;
-            "DarkYellow" )  echo "White";;
-            "DarkBlue" )    echo "White";;
-            "DarkMagenta" ) echo "White";;
-            "DarkCyan" )    echo "White";;
-            "Gray" )        echo "Black";;
-            "DarkGray" )    echo "White";;
-            "Red" )         echo "White";;
-            "Green" )       echo "Black";;
-            "Yellow" )      echo "Black";;
-            "Blue" )        echo "White";;
-            "Magenta" )     echo "White";;
-            "Cyan" )        echo "Black";;
-            "White" )       echo "Black";;
-            *)              echo "White";;
+            'Default' )     echo 'Black';;
+            'Black' )       echo 'White';;
+            'DarkRed' )     echo 'White';;
+            'DarkGreen' )   echo 'White';;
+            'DarkYellow' )  echo 'White';;
+            'DarkBlue' )    echo 'White';;
+            'DarkMagenta' ) echo 'White';;
+            'DarkCyan' )    echo 'White';;
+            'Gray' )        echo 'Black';;
+            'DarkGray' )    echo 'White';;
+            'Red' )         echo 'White';;
+            'Green' )       echo 'Black';;
+            'Yellow' )      echo 'Black';;
+            'Blue' )        echo 'White';;
+            'Magenta' )     echo 'White';;
+            'Cyan' )        echo 'Black';;
+            'White' )       echo 'Black';;
+            *)              echo 'White';;
         esac
     fi
     
@@ -155,7 +155,7 @@ function getBackground () {
         # for a comprehensive way to test for background colour. For now we're just going to
         # assume that non-macOS terminals have a black background.
 
-        echo "0,0,0" # we're making assumptions here
+        echo '0,0,0' # we're making assumptions here
     fi
 }
 
@@ -169,12 +169,11 @@ function isDarkMode () {
 
     # Is the background more or less dark?
     if [ ${colors[0]} -lt 20000 ] && [ ${colors[1]} -lt 20000 ] && [ ${colors[2]} -lt 20000 ]; then
-        echo "true"
+        echo 'true'
     else
-        echo "false"
+        echo 'false'
     fi
 }
-
 
 # Outputs a line, including linefeed, to the terminal using the given foreground / background
 # colors 
@@ -193,7 +192,7 @@ function WriteLine () {
     local backcolor=$3
 
     if [ "$str" == "" ]; then
-        printf "\n"
+        printf '\n'
         return;
     fi
 
@@ -215,7 +214,7 @@ function WriteLine () {
 #        current terminal background
 function Write () {
 
-    local resetColor="\033[0m"
+    local resetColor='\033[0m'
 
     local str=$1
     local forecolor=$2
@@ -226,7 +225,7 @@ function Write () {
     fi
 
     # Note the use of the format placeholder %s. This allows us to pass "--" as strings without error
-    if [ "$useColor" == "true" ]; then
+    if [ "$useColor" == 'true' ]; then
         local colorString=$(Color ${forecolor} ${backcolor})
         printf "${colorString}%s${resetColor}" "${str}"
     else
@@ -270,7 +269,7 @@ function errorNoPython () {
     WriteLine
     WriteLine
     WriteLine "------------------------------------------------------------------------" $color_primary
-    WriteLine "Default"  "Error: Python 3.7 not installed" $color_error
+    WriteLine "Error: Python 3.7 not installed" $color_error
     WriteLine 
     WriteLine
     
@@ -281,20 +280,20 @@ function spin () {
 
     local pid=$1
 
-    spin[0]="-"
-    spin[1]="\\"
-    spin[2]="|"
-    spin[3]="/"
+    spin[0]='-'
+    spin[1]='\\'
+    spin[2]='|'
+    spin[3]='/'
 
     while kill -0 $pid 2> /dev/null; do
         for i in "${spin[@]}"
         do
-            echo -ne "\b$i"
+            echo -ne "$i\b"
             sleep 0.1
         done
     done
 
-    echo -ne "\b"
+    echo -ne ' \b'
 }
 
 function Download () {
@@ -305,10 +304,15 @@ function Download () {
     local dirToSave=$4
     local message=$5
 
-    # storageUrl = "https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/"
-    # downloadToDir = "downloads/" - relative to the current directory
+    # storageUrl = 'https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/'
+    # downloadToDir = 'downloads/' - relative to the current directory
     # fileToGet = packages_for_gpu.zip
     # dirToSave = packages
+
+    if [ "${fileToGet}" == "" ]; then
+        WriteLine 'No download file was specified' $color_error
+        quit    # no point in carrying on
+    fi
 
     if [ "${message}" == "" ]; then
         message="Downloading ${fileToGet}..."
@@ -319,7 +323,7 @@ function Download () {
     Write $message $color_primary
 
     if [ -d "${downloadToDir}/${dirToSave}" ]; then
-        WriteLine "Directory already exists" $color_info
+        WriteLine " Directory already exists" $color_info
         return 0 # This is ok and assumes it's already downloaded. Whether that's true or not...
     fi
 
@@ -355,7 +359,7 @@ function Download () {
         # return 3
     fi
 
-    Write "Expanding..." $color_info
+    Write 'Expanding...' $color_info
 
     pushd "${downloadToDir}" >/dev/null
 
@@ -380,13 +384,68 @@ function Download () {
 
     # rm /s /f /q "${downloadToDir}/${fileToGet}" >/dev/null
 
-    WriteLine "Done." $color_success
+    WriteLine 'Done.' $color_success
 }
 
 function getDisplaySize () {
     # See https://linuxcommand.org/lc3_adv_tput.php some great tips around this
     echo "Rows=$(tput lines) Cols=$(tput cols)"
 }
+
+function displayMacOSPermissionError () {
+    WriteLine
+    WriteLine "Unable to Create a Directory"  $color_error
+
+    if [[ $OSTYPE == 'darwin'* ]]; then
+
+       local commonDir=$1
+
+        WriteLine
+        WriteLine "But we may be able to suggest something:"  $color_info
+
+        WriteLine '1. Pull down the  Apple menu and choose "System Preferences"'
+        WriteLine '2. Choose “Security & Privacy” control panel'
+        WriteLine '3. Now select the “Privacy” tab, then from the left-side menu select'
+        WriteLine '   “Full Disk Access”'
+        WriteLine '4. Click the lock icon in the lower left corner of the preference '
+        WriteLine '   panel and authenticate with an admin level login'
+        WriteLine '5. Now click the [+] plus button to add an application with full disk'
+        WriteLine '   access'
+        WriteLine '6. Click the Plus button to add Terminal to Full Disk Access in macOS'
+        WriteLine "7. Navigate to the '${commonDir}' folder and choose 'Terminal'"
+        WriteLine '   to grant Terminal with Full Disk Access privileges'
+        WriteLine '8. Select "Terminal app" to grant full disk access in MacOS'
+        WriteLine '9. Relaunch Terminal, the “Operation not permitted” error messages will'
+        WriteLine '   be gone'
+        WriteLine
+        WriteLine 'Thanks to https://osxdaily.com/2018/10/09/fix-operation-not-permitted-terminal-error-macos/'
+    fi
+
+    quit
+}
+
+function needRosettaAndiBrew () {
+
+    WriteLine
+    WriteLine "You're on an Mx Mac running ARM but Python3.7 only works on Intel."  $color_error
+    WriteLine "You will need to install Rosetta2 to continue."  $color_error
+    WriteLine
+    read -p 'Install Rosetta2 (Y/N)?' installRosetta
+    if [ "${installRosetta}" == "y" ] || [ "${installRosetta}" == "Y" ]; then
+        /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+    else
+        quit
+    fi
+
+    WriteLine "Then you need to install brew under Rosetta (We'll alias it as ibrew)"
+    read -p 'Install brew for x86 (Y/N)?' installiBrew
+    if [ "${installiBrew}" == "y" ] || [ "${installiBrew}" == "Y" ]; then
+        arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+    else
+        quit
+    fi
+}
+
 
 function quit () {
 
@@ -408,91 +467,95 @@ darkmode=$(isDarkMode)
 # or background. You can always just use "White" and "Black" if you specifically want
 # this combo, but test thoroughly
 if [ "$darkmode" == "true" ]; then
-    color_primary="White"
-    color_mute="Gray"
-    color_info="Yellow"
-    color_success="Green"
-    color_warn="DarkYellow"
-    color_error="Red"
+    color_primary='White'
+    color_mute='Gray'
+    color_info='Yellow'
+    color_success='Green'
+    color_warn='DarkYellow'
+    color_error='Red'
 else
-    color_primary="Black"
-    color_mute="Gray"
-    color_info="Magenta"
-    color_success="DarkGreen"
-    color_warn="DarkYellow"
-    color_error="Red"
+    color_primary='Black'
+    color_mute='Gray'
+    color_info='Magenta'
+    color_success='DarkGreen'
+    color_warn='DarkYellow'
+    color_error='Red'
 fi
 
 clear
 
 # verbosity can be: quiet | info | loud
-verbosity="quiet"
+verbosity="info"
 
 # If files are already present, then don't overwrite if this is false
 forceOverwrite=false
 
 # Platform can define where things are located
 if [[ $OSTYPE == 'darwin'* ]]; then
-    platform="osx"
+    platform='osx'
 else
-    platform="linux"
+    platform='linux'
 fi
 
 # Basic locations
 
 # The location of the solution root directory relative to this script
-rootPath="../.."
+rootPath='../..'
 
 # SenseAI specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # The name of the dir holding the frontend API server
-senseAPIDir="API"
+senseAPIDir='API'
 
 # TextSummary specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-textSummaryDir="TextSummary"
+textSummaryDir='TextSummary'
 
 # DeepStack specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # The name of the dir holding the DeepStack analysis services
-deepstackDir="DeepStack"
+deepstackDir='DeepStack'
 
 # The name of the dir containing the Python code itself
-intelligenceDir="intelligencelayer"
+intelligenceDir='intelligencelayer'
 
 # The name of the dir containing the AI models themselves
-modelsDir="assets"
+modelsDir='assets'
 
 # The name of the dir containing persisted DeepStack data
-datastoreDir="datastore"
+datastoreDir='datastore'
 
 # The name of the dir containing temporary DeepStack data
-tempstoreDir="tempstore"
+tempstoreDir='tempstore'
 
 # Yolo.Net specific
-yoloNetDir="CodeProject.SenseAI.AnalysisLayer.Yolo"
-yoloModelsDir="yoloModels"
+yoloNetDir='CodeProject.SenseAI.AnalysisLayer.Yolo'
+yoloModelsDir='yoloModels'
 
 # Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # The location of large packages that need to be downloaded
 # a. From AWS
-storageUrl="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/"
+storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/'
 # b. Use a local directory rather than from online. Handy for debugging.
-# storageUrl="/mnt/c/dev/CodeProject/CodeProject.SenseAI/install/cached_downloads/"
+# storageUrl='/mnt/c/dev/CodeProject/CodeProject.SenseAI/install/cached_downloads/'
 
 # The name of the source directory
-srcDir="src"
+srcDir='src'
 
 # The name of the dir, within the current directory, where install assets will
 # be downloaded
-downloadDir="downloads"
+downloadDir='downloads'
 
 # The name of the dir containing the Python interpreter
-pythonDir="python37"
+pythonDir='python37'
+pythonCmd='python3.7'
+
+# Whether or not to install all python packages in one step (-r requirements.txt) or step by step
+oneStepPIP="true"
 
 # The name of the dir holding the backend analysis services
-analysisLayerDir="AnalysisLayer"
+analysisLayerDir='AnalysisLayer'
 
 # Absolute paths :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # The absolute path to the root directory of CodeProject.SenseAI
@@ -507,36 +570,36 @@ downloadPath="${absoluteRootDir}/Installers/${downloadDir}"
 
 # Set Flags
 
-wgetFlags="-q"
-pipFlags="-q"
-copyFlags="/NFL /NDL /NJH /NJS /nc /ns  >/dev/null"
-unzipFlags="-qq"
-tarFlags="xf"
+wgetFlags='-q --no-check-certificate'
+pipFlags='-q'
+copyFlags='/NFL /NDL /NJH /NJS /nc /ns  >/dev/null'
+unzipFlags='-qq'
+tarFlags='xf'
 
 if [ $verbosity == "info" ]; then
-    wgetFlags="--no-verbose"
-    pipFlags="-q"
-    rmdirFlags="/q"
-    copyFlags="/NFL /NDL /NJH"
-    unzipFlags="-q"
-    tarFlags="xf"
+    wgetFlags='--no-verbose --no-check-certificate'
+    pipFlags='-q'
+    rmdirFlags='/q'
+    copyFlags='/NFL /NDL /NJH'
+    unzipFlags='-q'
+    tarFlags='xf'
 elif [ $verbosity == "loud" ]; then
-    wgetFlags="-v"
-    pipFlags=""
-    rmdirFlags=""
-    copyFlags=""
-    unzipFlags=""
-    tarFlags="xvf"
+    wgetFlags='-v --no-check-certificate'
+    pipFlags=''
+    rmdirFlags=''
+    copyFlags=''
+    unzipFlags=''
+    tarFlags='xvf'
 fi
 
-WriteLine "        Setting up CodeProject.SenseAI Development Environment          " "DarkYellow" 
-WriteLine "                                                                        " "DarkGreen" 
-WriteLine "========================================================================" "DarkGreen" 
-WriteLine "                                                                        " "DarkGreen" 
-WriteLine "                 CodeProject SenseAI Installer                          " "DarkGreen" 
-WriteLine "                                                                        " "DarkGreen"
-WriteLine "========================================================================" "DarkGreen" 
-WriteLine "                                                                        " "DarkGreen"
+WriteLine '        Setting up CodeProject.SenseAI Development Environment          ' 'DarkYellow'
+WriteLine '                                                                        ' 'DarkGreen'
+WriteLine '========================================================================' 'DarkGreen'
+WriteLine '                                                                        ' 'DarkGreen'
+WriteLine '                 CodeProject SenseAI Installer                          ' 'DarkGreen'
+WriteLine '                                                                        ' 'DarkGreen'
+WriteLine '========================================================================' 'DarkGreen'
+WriteLine '                                                                        ' 'DarkGreen'
 
 # ============================================================================
 # House keeping
@@ -547,6 +610,18 @@ checkForTool unzip
 if [ "$platform" == "linux" ] && [ "$EUID" -ne 0 ]; then
     WriteLine "Please run this script as root: sudo bash setup_dev_env_linux.sh" $color_error
     exit
+fi
+
+# M1 macs are trouble for python
+if [ "$platform" == "osx" ] && [[ $(uname -p) == 'arm' ]]; then
+    Write "ARM (Apple silicon) Mac detected, not running under Rosetta. " $color_warn
+    if [ $(/usr/bin/pgrep oahd >/dev/null 2>&1; echo $?) -gt 0 ]; then
+    #if [ "$(pkgutil --files com.apple.pkg.RosettaUpdateAuto)" == "" ]; then 
+    	WriteLine 'Rosetta is not installed' $color_error
+        needRosettaAndiBrew
+    else
+    	WriteLine 'Rosetta installed. We''re good to go' $color_success
+    fi
 fi
 
 # ============================================================================
@@ -566,10 +641,15 @@ deepStackPath="${analysisLayerPath}/${deepstackDir}"
 mkdir -p "${deepStackPath}/${tempstoreDir}"
 
 # To do this properly we're going to use the standard directories for common application data
-#mkdir -p "${deepStackPath}/${datastoreDir}"
-mkdir -p /usr/share/CodeProject/SenseAI
-chmod 777 /usr/share/CodeProject/SenseAI
+# commonDataDir="${deepStackPath}/${datastoreDir}"
+commonDataDir='/usr/share/CodeProject/SenseAI'
+if [ "$platform" == "osx" ]; then commonDataDir='~/Library/Application Support/CodeProject/SenseAI'; fi
 
+mkdir -p "$commonDataDir"
+if [ $? -ne 0 ]; then
+    displayMacOSPermissionError "$commonDataDir"
+fi 
+chmod 777 "$commonDataDir"
 
 # For Yolo.NET
 yoloNetPath=${analysisLayerPath}/${yoloNetDir}
@@ -591,36 +671,92 @@ if [ "${forceOverwrite}" == "true" ]; then
 fi
 
 
-# Install Python 3.7. Using deadsnakes for Linux, so be aware if you have concerns about potential
-# late adoption of security patches 
+# Install Python 3.7. Using deadsnakes for Linux (not macOS), so be aware if you have concerns
+# about potential late adoption of security patches.
 
 if [ ! -d "${pythonInstallPath}" ]; then
-    mkdir -p "${analysisLayerPath}/bin/${platform}"
-    mkdir -p "${analysisLayerPath}/bin/${platform}/${pythonDir}"
+    # mkdir -p "${analysisLayerPath}/bin/${platform}"
+    # mkdir -p "${analysisLayerPath}/bin/${platform}/${pythonDir}"
+    mkdir -p "$pythonInstallPath"
 fi
 
-if command -v python3.7 &> /dev/null; then
+if command -v $pythonCmd &> /dev/null; then
      WriteLine "Python 3.7 is already installed" $color_success
 else
 
-    WriteLine "Installing Python 3.7" $color_primary
-
+    # For macOS we'll use brew to install python
     if [ "$platform" == "osx" ]; then
-        Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" "${platform}/${pythonDir}" "Downloading Python interpreter..."
+
+        if [[ $(uname -p) == 'arm' ]]; then
+
+            # Apple silicon requires Rosetta2 for python3.7 to run, so use the x86 version of Brew
+            # we installed earlier
+            if [ "${verbosity}" == "quiet" ]; then
+                arch -x86_64 /usr/local/bin/brew install python@3.7  >/dev/null 2>/dev/null &
+                spin $!
+            else
+                arch -x86_64 /usr/local/bin/brew install python@3.7
+            fi
+
+            # Note that we only need the specific location of the python interpreter to setup the
+            # virtual environment. After it's setup, all python calls are relative to the same venv
+            # no matter the location of the original python interpreter
+            pythonCmd='/usr/local/opt/python@3.7/bin/python3.7'
+
+        else
+
+            # We have a x64 version of python for macOS in our S3 bucket but it's easier simply to
+            # install python natively
+
+            # Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" "${platform}/${pythonDir}" "Downloading Python interpreter..."
+            # cp -R "${downloadPath}/${platform}/${pythonDir}" "${analysisLayerPath}/bin/${platform}"
+
+            if [ "${verbosity}" == "quiet" ]; then
+                brew install python@3.7  >/dev/null 2>/dev/null &
+                spin $!
+            else
+                brew install python@3.7
+            fi   
+
+        fi
+
+    # For Linux we'll use apt-get the deadsnakes PPA to get the old version of python. Deadsnakes?
+    # Old python? Get it? Get it?! And who said developers have no sense of humour.
     else
-        apt-get update -y
-        apt install software-properties-common -y
-        add-apt-repository ppa:deadsnakes/ppa -y
-        apt update -y
-        apt-get install python3.7 -y
+
+        if [ "${verbosity}" == "quiet" ]; then
+            Write "Installing Python 3.7..." $color_primary
+            apt-get update -y >/dev/null 2>/dev/null &
+            spin $!
+            apt install software-properties-common -y >/dev/null 2>/dev/null &
+            spin $!
+            add-apt-repository ppa:deadsnakes/ppa -y >/dev/null 2>/dev/null &
+            spin $!
+            apt update -y >/dev/null 2>/dev/null &
+            spin $!
+            apt-get install python3.7 -y >/dev/null 2>/dev/null &
+            spin $!
+            WriteLine "Done" $color_success
+        else
+            WriteLine "Installing Python 3.7" $color_primary
+            apt-get update -y
+            apt install software-properties-common -y
+            add-apt-repository ppa:deadsnakes/ppa -y
+            apt update -y
+            apt-get install python3.7 -y
+            WriteLine "Done" $color_success
+        fi
+
         # This is just in case: Correct https://askubuntu.com/a/1090081
-        cp /usr/lib/python3/dist-packages/apt_pkg.cpython-35m-x86_64-linux-gnu.so /usr/lib/python3.7/apt_pkg.cpython-37m-x86_64-linux-gnu.so >/dev/null
-        ln -s /usr/lib/python3.5/lib-dynload/_gdbm.cpython-35m-x86_64-linux-gnu.so /usr/lib/python3.7/lib-dynload/_gdbm.cpython-37m-x86_64-linux-gnu.so >/dev/null
+        {
+            cp /usr/lib/python3/dist-packages/apt_pkg.cpython-35m-x86_64-linux-gnu.so /usr/lib/python3.7/apt_pkg.cpython-37m-x86_64-linux-gnu.so >/dev/null 2>/dev/null
+            ln -s /usr/lib/python3.5/lib-dynload/_gdbm.cpython-35m-x86_64-linux-gnu.so /usr/lib/python3.7/lib-dynload/_gdbm.cpython-37m-x86_64-linux-gnu.so >/dev/null 2>/dev/null
+        }  >/dev/null 2>/dev/null
     fi
-    WriteLine "Python install complete" $color_success
 fi
 
-# We need to be sure on linux that pip/venv is available for python3.7 specifically
+# We need to be sure on linux that pip/venv is available for python3.7 specifically. Brew on macOS
+# adds pip3 within the brew formula, so just worry about linux
 if [ "$platform" == "linux" ]; then
     Write "Installing PIP and venv to enable final Python environment setup..." $color_primary
 
@@ -664,7 +800,11 @@ if [ -d  "${pythonInstallPath}/venv"  ]; then
     WriteLine "Already present" $color_success
 else
 
-    python3.7 -m venv "${pythonInstallPath}/venv" &
+    #if [ "$platform" == "osx" ]; then
+    #    "$pythonInstallPath/bin/python3.7" -m venv "${pythonInstallPath}/venv" &
+    #else
+        ${pythonCmd} -m venv "${pythonInstallPath}/venv" &
+    #fi
 
     spin $! # process ID of the unzip/tar call
     WriteLine "Done" $color_success
@@ -711,81 +851,91 @@ popd > /dev/null
 WriteLine "Done" $color_success
 
 Write "Checking for required packages..." $color_primary
-# ASSUMPTION: If venv/Lib/python3.7/site-packages/torch exists then no need to do this
-if [ ! -d "${VIRTUAL_ENV}/Lib/python3.7/site-packages/torch" ]; then
+# ASSUMPTION: If venv/lib/python3.7/site-packages/torch exists then no need to do this
+if [ ! -d "${VIRTUAL_ENV}/lib/python3.7/site-packages/torch" ]; then
 
-    WriteLine "Installing" $color_info
-
-    # We'll do this the long way so we can see some progress
-    # Write "Installing Packages into Virtual Environment..." $color_primary
-    # pip install -r "${deepStackPath}/${intelligenceDir}/requirements.txt" $pipFlags
-    # WriteLine "Success" $color_success
-
-    # Open requirements.txt and grab each line. We need to be careful with --find-links lines
+    WriteLine "Packages missing. Installing..." $color_info
     requirementsFile="${deepStackPath}/${intelligenceDir}/requirements.txt"
 
-    currentOption=""
+    if [ "${oneStepPIP}" == "true" ]; then
 
-    IFS=$'\n' # set the Internal Field Separator as end of line
-    cat "${requirementsFile}" | while read -r line
-    do
+        # Install the Python Packages in one fell swoop. Not much feedback, but it works
+        Write "Installing Packages into Virtual Environment..." $color_primary
+        #pip install -r "${requirementsFile}" $pipFlags
+        pushd "$VIRTUAL_ENV/bin" > /dev/null
+        ./python3 -m pip install -r ${requirementsFile} > /dev/null
+        popd > /dev/null
+        WriteLine "Success" $color_success
 
-        line="$(echo $line | tr -d '\r\n')"    # trim newlines / CRs
+    else
 
-        if [ "${line}" == "" ]; then
-            currentOption=""
-        elif [ "${line:0:2}" == "##" ]; then
-            currentOption=""
-        elif [ "${line:0:12}" == "--find-links" ]; then
-            currentOption="${line}"
-        else
+        # Open requirements.txt and grab each line. We need to be careful with --find-links lines
+        # as this doesn't currently work in Linux
+        currentOption=""
+
+        IFS=$'\n' # set the Internal Field Separator as end of line
+        cat "${requirementsFile}" | while read -r line
+        do
+
+            line="$(echo $line | tr -d '\r\n')"    # trim newlines / CRs
+
+            if [ "${line}" == "" ]; then
+                currentOption=""
+            elif [ "${line:0:2}" == "##" ]; then
+                currentOption=""
+            elif [ "${line:0:2}" == "#!" ]; then
+                currentOption=""
+            elif [ "${line:0:12}" == "--find-links" ]; then
+                currentOption="${line}"
+            else
             
-            module="${line}"
-            description=""
+                module="${line}"
+                description=""
         
-            # breakup line into module name and description
-            IFS='#'; tokens=($module); IFS=$'\n';
+                # breakup line into module name and description
+                IFS='#'; tokens=($module); IFS=$'\n';
 
-            if [ ${#tokens[*]} -gt 1 ]; then
-                module="${tokens[0]}"
-                description="${tokens[1]}"
-            fi
-
-            if [ "${description}" == "" ]; then
-                description="Installing ${module}"
-            fi
-
-            if [ "${module}" != "" ]; then
-
-                # Some packages have a version nunber after a "==". We need to trim that here.
-                IFS='='; tokens=($module); IFS=$'\n';
                 if [ ${#tokens[*]} -gt 1 ]; then
-                     module="${tokens[0]}"
+                    module="${tokens[0]}"
+                    description="${tokens[1]}"
                 fi
-                currentOption=""    # Given that we're stripping versions, ignore this too
 
-                Write "  -${description}..." $color_primary
-
-                pushd "$VIRTUAL_ENV/bin" > /dev/null
-                if [ "${verbosity}" == "quiet" ]; then
-                    ./python3 -m pip install $module $currentOption $pipFlags >/dev/null 2>/dev/null &
-                    spin $!
-                else
-                    # echo python3 -m pip install $module $currentOption $pipFlags
-                    ./python3 -m pip install $module $currentOption $pipFlags
+                if [ "${description}" == "" ]; then
+                    description="Installing ${module}"
                 fi
-                popd > /dev/null
 
-                WriteLine "Done" $color_success
+                if [ "${module}" != "" ]; then
+
+                    # Some packages have a version nunber after a "==". We need to trim that here.
+                    IFS='='; tokens=($module); IFS=$'\n';
+                    if [ ${#tokens[*]} -gt 1 ]; then
+                         module="${tokens[0]}"
+                    fi
+                    currentOption=""    # Given that we're stripping versions, ignore this too
+
+                    Write "  -${description}..." $color_primary
+
+                    pushd "$VIRTUAL_ENV/bin" > /dev/null
+                    if [ "${verbosity}" == "quiet" ]; then
+                        ./python3 -m pip install $module $currentOption $pipFlags >/dev/null 2>/dev/null &
+                        spin $!
+                    else
+                        # echo python3 -m pip install $module $currentOption $pipFlags
+                        ./python3 -m pip install $module $currentOption $pipFlags
+                    fi
+                    popd > /dev/null
+
+                    WriteLine "Done" $color_success
+
+                fi
+
+                currentOption=""
 
             fi
 
-            currentOption=""
-
-        fi
-
-    done
-    unset IFS
+        done
+        unset IFS
+    fi
 else
     WriteLine "present." $color_success
 fi
@@ -795,18 +945,39 @@ fi
 
 Write "Installing required Text Processing packages..." $color_primary
 
-pushd "$VIRTUAL_ENV/bin" > /dev/null
-./python3 -m pip install -r "${textSummaryPath}/requirements.txt" $pipFlags >/dev/null 2>/dev/null &
-spin $!
-popd > /dev/null
+# making an assumption here that the presence of site-packages/nltk means TextSummary packages installed
+if [ ! -d "${VIRTUAL_ENV}/lib/python3.7/site-packages/nltk" ]; then
+    pushd "$VIRTUAL_ENV/bin" > /dev/null
+    ./python3 -m pip install -r "${textSummaryPath}/requirements.txt" $pipFlags >/dev/null 2>/dev/null &
+    spin $!
+    popd > /dev/null
+    WriteLine "Done" $color_success
+else
+    WriteLine "Already present" $color_success
+fi
 
-WriteLine "Done" $color_success
+# ============================================================================
+# 3c. Install libraries for .NET Yolo inferrer
+
+# libfontconfig1 is required for SkiaSharp, libgdplus is required for System.Drawing
+if [ "$platform" == "linux" ]; then
+    if [ "${verbosity}" == "quiet" ]; then
+        apt-get install libfontconfig1 -y  >/dev/null 2>/dev/null
+        apt-get install libgdiplus -y  >/dev/null 2>/dev/null
+    else
+        apt-get install libfontconfig1 -y 
+        apt-get install libgdiplus -y 
+    fi
+else
+    brew install fontconfig
+    brew install mono-libgdiplus
+fi
 
 # ============================================================================
 # ...and we're done.
 
 WriteLine 
-WriteLine "                Development Environment setup complete                  " "White" "DarkGreen"
+WriteLine '                Development Environment setup complete                  ' 'White' 'DarkGreen'
 WriteLine 
 
 quit

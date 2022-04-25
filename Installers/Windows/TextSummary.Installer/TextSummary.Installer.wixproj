@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>f675bea0-4a75-4b30-9e70-cbbe8641e9cd</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>CodeProject.SenseAI.TextSummary-1.1.0</OutputName>
+    <OutputName>CodeProject.SenseAI.TextSummary-1.2.1</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

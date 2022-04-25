@@ -24,8 +24,8 @@ export ASPNETCORE_ENVIRONMENT
 if [ "${senseAI_starts_analysis}" == "true" ]; then
 
     echo "Starting API Server (with analysis)"
-	cd ./API/Server/Frontend/bin/Debug/net6.0/
-	./CodeProject.SenseAI.Server
+    cd ./API/Server/Frontend/bin/Debug/net6.0/
+    ./CodeProject.SenseAI.Server
 
 else
 

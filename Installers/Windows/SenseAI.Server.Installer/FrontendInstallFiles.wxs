@@ -86,14 +86,14 @@
             <Component Id="cmp5569A324BC7DB3907E6466D32850FFC4" Directory="dir247E3913CFBA78AFC18B815AA02FF95C" Guid="*">
                 <File Id="fil41A75D39D56654A242ADF09444E6CA51" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win\lib\net6.0\System.ServiceProcess.ServiceController.dll" />
             </Component>
-            <Component Id="cmpB796F046A2ED7FF521158C14BF50FF84" Directory="dir04F97EE04AE3A2707DD5BA1234DEBB1A" Guid="*">
-                <File Id="fil4EB9F993856281C04E7EB68D403A3AD6" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\index.html" />
+            <Component Id="cmpFE49DE562653D22623D73BFEBCEA11D9" Directory="dir04F97EE04AE3A2707DD5BA1234DEBB1A" Guid="*">
+                <File Id="fil1216E59B9D1AF69F527D8A4048976030" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\Index.html" />
             </Component>
             <Component Id="cmp6B053DF0E1912537AA14852BAD6DDDC6" Directory="dir04F97EE04AE3A2707DD5BA1234DEBB1A" Guid="*">
                 <File Id="filB8153E58DE1E1731CEF4721F69FBA9C3" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\testdata.zip" />
             </Component>
-            <Component Id="cmpC85CDE9FA3FF0CC5B114472CBC60484F" Directory="dir04F97EE04AE3A2707DD5BA1234DEBB1A" Guid="*">
-                <File Id="filCB8F5CDF835B88E6099F611E03C1DD25" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\vision.html" />
+            <Component Id="cmpF5D8B11B9E8921B1E0F17D9BCCE4E475" Directory="dir04F97EE04AE3A2707DD5BA1234DEBB1A" Guid="*">
+                <File Id="filDA3875C6103D3F65ED95904474FC4ADB" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\Vision.html" />
             </Component>
             <Component Id="cmpAF557327D03A2F4B8B3A305F6BB94B23" Directory="dirB77721C42B3E60B4E319181AAFD28D2C" Guid="*">
                 <File Id="fil4725FA1931EBBE0798F7B9F38236B228" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\assets\apexcharts.css" />

@@ -173,13 +173,17 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             {
                 // setup the routes for this module.
                 if (cmdInfo.Activate ?? false)
+                {
                     if (!(cmdInfo.RouteMaps?.Any() ?? false))
                     {
                         Logger.Log($"No routes defined for {cmdInfo.Name}");
                     }
                     else
+                    {
                         foreach (var routeInfo in cmdInfo.RouteMaps!)
                             _routeMap.Register(routeInfo.Path, routeInfo.Queue, routeInfo.Command);
+                    }
+                }
             }
 
             bool launchAnalysisServices = _config.GetValue("LaunchAnalysisServices", true);
@@ -187,6 +191,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             {
                 _logger.LogInformation("Skipping Background AI Modules startup");
                 Logger.Log("Skipping Background AI Modules startup");
+
                 return;
             }
 

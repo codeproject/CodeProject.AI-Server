@@ -60,7 +60,7 @@ set yoloModelsDir=yoloModels
 
 :: The location of large packages that need to be downloaded
 :: a. From AWS
-set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/
+set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/
 :: b. Use a local directory rather than from online. Handy for debugging.
 rem set storageUrl=C:\Dev\CodeProject\CodeProject.SenseAI\install\cached_downloads\
 
@@ -258,6 +258,8 @@ if not exist "!VIRTUAL_ENV!\Lib\site-packages\torch" (
         if "!line!" == "" (
             set currentOption=
         ) else if "!line:~0,2!" == "##" (
+            set currentOption=
+        ) else if "!line:~0,2!" == "#!" (
             set currentOption=
         ) else if "!line:~0,12!" == "--find-links" (
             set currentOption=!line!

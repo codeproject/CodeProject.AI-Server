@@ -5,7 +5,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>CodeProject.SenseAI.Server</AssemblyName>
-	  <Version>1.2.0.0</Version>
+	  <Version>1.2.1.0</Version>
     <RootNamespace>CodeProject.SenseAI.API.Server.Frontend</RootNamespace>
     <UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>

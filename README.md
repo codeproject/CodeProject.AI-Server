@@ -105,9 +105,9 @@ We will be constantly expanding the feature list.
 
 ## How to download and install CodeProject.SenseAI
 
-#### Supported Environments
+#### Supported Development Environments
 
-This is a Beta release and so support is constrained solely to Windows 10+, 64bit, using CPU acceleration. Future releases will include other Operating Systems as well as GPU support.
+This current release works in Visual Studio 2019+ on Windows 10+, and Visual Studio Code on Windows 10+. Ubuntu and macOS (both Intel and Apple Silicon). The current release focuses solely on CPU support, but future releases will include GPU support.
 
 ### Installing CodeProject.SenseAI
 

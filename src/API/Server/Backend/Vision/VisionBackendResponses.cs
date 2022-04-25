@@ -1,4 +1,6 @@
-﻿namespace CodeProject.SenseAI.API.Server.Backend
+﻿// NO LONGER USED.
+
+namespace CodeProject.SenseAI.API.Server.Backend
 {
 #pragma warning disable IDE1006 // Naming Styles
     /// <summary>

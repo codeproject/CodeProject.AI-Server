@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Include>
-	<?define BuildVersion="1.1.0.0" ?>
-	<?define AwsVerionDirectory="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/version-1.1.0/" ?>
+	<?define BuildVersion="1.2.1.0" ?>
+	<?define AwsVerionDirectory="https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/version-1.2.1/" ?>
 </Include>

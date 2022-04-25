@@ -55,18 +55,20 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 }
             }
 
-            string programDataDir     = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-            string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
-
-            var inMemoryConfigData = new Dictionary<string, string> {
-                { "ApplicationDataDir", applicationDataDir }
-            };
-
             string platform = "windows";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 platform = "osx";
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 platform = "linux";
+
+            string programDataDir     = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
+            if (platform == "osx")
+                applicationDataDir = $"~/Library/Application Support/{company}/{product}";
+
+            var inMemoryConfigData = new Dictionary<string, string> {
+                { "ApplicationDataDir", applicationDataDir }
+            };
 
             bool inVScode = (Environment.GetEnvironmentVariable("RUNNING_IN_VSCODE") ?? "") == "true";
             bool inDocker = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";

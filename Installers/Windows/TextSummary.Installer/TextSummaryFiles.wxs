@@ -20,6 +20,9 @@
             <Component Id="cmp4B34C7B42268F48413A9988876E1B1C6" Directory="TextSummaryInstallFolder" Guid="*">
                 <File Id="filFB9245F8B8AB95655D87A24F0E5ED18B" KeyPath="yes" Source="$(var.ModelsHarvestPath)\textsummary.py" />
             </Component>
+            <Component Id="cmpCA040E4A81537B8D0CBC7576CC7873A5" Directory="TextSummaryInstallFolder" Guid="*">
+                <File Id="filF0CF669C56FABB990B2B5BCCB78B835F" KeyPath="yes" Source="$(var.ModelsHarvestPath)\TextSummary.pyproj" />
+            </Component>
             <Component Id="cmpD56480B5F8FE0D9B0780BE870B7CC292" Directory="TextSummaryInstallFolder" Guid="*">
                 <File Id="fil8BDA5C2EDB1F261458EB90A8713499E0" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__init__.py" />
             </Component>

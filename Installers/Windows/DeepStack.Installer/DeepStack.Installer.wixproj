@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>ed492608-6013-4552-a29b-a7e14f4beb0b</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>CodeProject.SenseAI.Legacy-1.1.0</OutputName>
+    <OutputName>CodeProject.SenseAI.Legacy-1.2.1</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

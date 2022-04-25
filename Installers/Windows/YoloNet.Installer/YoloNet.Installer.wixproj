@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>e0aede8a-e336-49c6-9d6a-7a05e8155ab9</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>CodeProject.SenseAI.YoloNet-1.1.0</OutputName>
+    <OutputName>CodeProject.SenseAI.YoloNet-1.2.1</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

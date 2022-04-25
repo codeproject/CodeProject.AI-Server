@@ -36,7 +36,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
     public class ProxyController : ControllerBase
     {
         private readonly VisionCommandDispatcher _dispatcher;
-        private readonly BackendRouteMap      _routeMap;
+        private readonly BackendRouteMap         _routeMap;
 
         /// <summary>
         /// Initializes a new instance of the VisionController class.

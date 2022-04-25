@@ -66,7 +66,7 @@ def objectdetection(thread_name: str, delay: float):
                 #img_id    = req_data["imgid"]
                 req_id    = req_data["reqid"]
                 req_type  = req_data["reqtype"]
-                threshold = float(req_data.get("min_confidence", "0.4"))
+                threshold = float(senseAI.getRequestValue(req_data, "min_confidence", "0.4"))
                 #img_path  = os.path.join(TEMP_PATH, img_id)
 
                 try:

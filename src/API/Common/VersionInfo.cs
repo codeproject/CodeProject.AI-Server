@@ -56,10 +56,10 @@ namespace CodeProject.SenseAI.API.Common
             get
             {
                 // https://semver.org/
-                string version = $"{Major}.{Minor:00}";
+                string version = $"{Major}.{Minor}";
 
                 if (Patch > 0)
-                    version += $".{Patch:00}";
+                    version += $".{Patch}";
 
                 return version;
             }
@@ -80,7 +80,7 @@ namespace CodeProject.SenseAI.API.Common
                     version += $"-{PreRelease}";
 
                 if (Build > 0)
-                    version += $"+{Build:000}";
+                    version += $"+{Build:0000}";
 
                 return version;
             }

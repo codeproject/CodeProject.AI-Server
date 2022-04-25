@@ -17,6 +17,11 @@
             background: rgb(255,153,0);
             background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, rgb(255 181 0) 78%, rgba(255,208,0,1) 100%);
         }
+        .logs {
+            text-indent:-2em;
+            padding-left:2em;
+            font-size:x-small;
+        }
     </style>
     <script type="text/javascript">
 
@@ -189,8 +194,9 @@
                             let newLogs = "";
                             for (let i = 0; i < data.entries.length; i++) {
                                 let logEntry = data.entries[i];
+                                let lotText = logEntry.entry.replace("\n", "<br>");
                                 let date = new Date(logEntry.timestamp).toLocaleTimeString();
-                                newLogs += date + ": " + logEntry.entry + "\n";
+                                newLogs += "<div>" + date + ": " + lotText + "</div>";
                                 _lastLogId = logEntry.id;
                             }
 
@@ -260,7 +266,7 @@
 
                 <div class="mt-3 overflow-scroll border border-1 border-light"
                      style="width:100%;height:150px;overflow-x:hidden !important">
-                    <div id="logs" class="font-monospace text-break" style="white-space:pre;"></div>
+                    <div id="logs" class="font-monospace text-break logs"></div>
                 </div>
             </div>
         </div>
