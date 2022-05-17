@@ -45,7 +45,7 @@ class SharedOptions:
 
     showEnvVariables = False
 
-    print(f"Analysis services setup: Retrieving environment variables...")
+    print(f"Vision AI services setup: Retrieving environment variables...")
 
     APPDIR          = os.path.normpath(getEnvVariable("APPDIR", os.path.join(os.getcwd(), "..")))
     PROFILE         = getEnvVariable("PROFILE", "desktop_cpu")

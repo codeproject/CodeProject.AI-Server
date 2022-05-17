@@ -1,189 +1,251 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
-        <DirectoryRef Id="DeepStackIntelligenceLayerFolder">
-            <Directory Id="dir831C361F1604CBFB77DF5F9C7C1DD266" Name="commons" />
-            <Directory Id="dir7661435D5A138B698B014FD9A5F749AF" Name="models" />
-            <Directory Id="dir99ED27ACB63EDE091057D5A6B90FFCD2" Name="recognition" />
-            <Directory Id="dirBEB306539B2E5C4821AE37212BF691B6" Name="utils" />
-            <Directory Id="dirF9ACB94420470F92F6C919E53DCB4237" Name="__pycache__" />
+        <DirectoryRef Id="DeepStackInstallFolder">
+            <Directory Id="dir0DC9852E0252D93A663D9EB7CD65C155" Name="assets" />
+            <Directory Id="dirBA772071E1FEFFE111FFF4FD01F0A1D9" Name="datastore" />
+            <Directory Id="dir4C7B1FB0EF519B575D728258CD763F1F" Name="intelligencelayer" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
         <ComponentGroup Id="DeepStackFilesComponentGroup">
-            <Component Id="cmpA96344E0D929155CF6D1B61ECA6CD23C" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="fil524088F7A5E47D8A9767EFB702ABADC8" KeyPath="yes" Source="$(var.ModelsHarvestPath)\DeepStack.pyproj" />
+            <Component Id="cmpFBC0499522EA1537F2EF5B6262C98CD1" Directory="DeepStackInstallFolder" Guid="*">
+                <File Id="filB0F03C0F0AEC84DF2562FD53F07BAC17" KeyPath="yes" Source="$(var.ModelsHarvestPath)\modulesettings.docker.json" />
             </Component>
-            <Component Id="cmp557616560A45D96DCB23D263251A8C35" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="filBC71644FEF2DED0053AD34FD15C66BC7" KeyPath="yes" Source="$(var.ModelsHarvestPath)\DeepStack.pyproj.user" />
+            <Component Id="cmpFEDE2980927CAA6BD2DC3E667EEA837D" Directory="DeepStackInstallFolder" Guid="*">
+                <File Id="fil26783006DE553DA46FCBA493F46CB6C9" KeyPath="yes" Source="$(var.ModelsHarvestPath)\modulesettings.json" />
             </Component>
-            <Component Id="cmp95CCDCD9C0F2604B79B8EE68C04A012B" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="filCE63DD2C8408EFFE04939A0991E77A8E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\detection.py" />
+            <Component Id="cmpDB039BEF4C0C9445241CDD20C68C89F5" Directory="DeepStackInstallFolder" Guid="*">
+                <File Id="filDA50EF9290C16C3419E48C6F13621544" KeyPath="yes" Source="$(var.ModelsHarvestPath)\modulesettings.macos.json" />
             </Component>
-            <Component Id="cmp44015466071B3AF5F191FAAFBF22709E" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="filF0AEE9D1B7AF75683E794AFFD7CE752C" KeyPath="yes" Source="$(var.ModelsHarvestPath)\face.py" />
+            <Component Id="cmpAEF90950A52E5928C991A4D5F569AC09" Directory="DeepStackInstallFolder" Guid="*">
+                <File Id="filF13D745CB7059D29AFA677D8A90F3830" KeyPath="yes" Source="$(var.ModelsHarvestPath)\modulesettings.windows.json" />
             </Component>
-            <Component Id="cmp0833FA377879C166240D1FF52EF7E04E" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="fil7E6AB8A9F52A76E22D0995CB60D664B6" KeyPath="yes" Source="$(var.ModelsHarvestPath)\init.py" />
+            <Component Id="cmp5431071C7DFCD8C0D96F6795BD47EA98" Directory="dir0DC9852E0252D93A663D9EB7CD65C155" Guid="*">
+                <File Id="fil268ED379D34C51D6E1EDFBD30186AF9A" KeyPath="yes" Source="$(var.ModelsHarvestPath)\assets\categories_places365.txt" />
             </Component>
-            <Component Id="cmpF81FAF7C32C7F70F73AB7F30A42F1B23" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="fil57AD5ED8319A118BBFE19C5069D417DF" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer.pyproj.user" />
+            <Component Id="cmp233A9B3C6FD4A25B78F1941CD9AD0183" Directory="dir0DC9852E0252D93A663D9EB7CD65C155" Guid="*">
+                <File Id="fil98F193D4653E198E0A69D4D69D975658" KeyPath="yes" Source="$(var.ModelsHarvestPath)\assets\face.pt" />
             </Component>
-            <Component Id="cmp346187CFCA61B6132C098056F35CD92D" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="filBAC2B8655D1762C788798A4F096658F9" KeyPath="yes" Source="$(var.ModelsHarvestPath)\noop.bat" />
+            <Component Id="cmp36AF789EA19DC97B4E59EACB34A17D27" Directory="dir0DC9852E0252D93A663D9EB7CD65C155" Guid="*">
+                <File Id="fil6967198A7EC10E01A2034B6F51FA8896" KeyPath="yes" Source="$(var.ModelsHarvestPath)\assets\facerec-high.model" />
             </Component>
-            <Component Id="cmp3B3B88877E8062C59B5190FE02FBCFCF" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="filE5CC549D20AAD9BF28B0AD419616E9E5" KeyPath="yes" Source="$(var.ModelsHarvestPath)\process.py" />
+            <Component Id="cmp5D93965B008978EBAE04FDA3B81E7EFF" Directory="dir0DC9852E0252D93A663D9EB7CD65C155" Guid="*">
+                <File Id="filE9D96059734E27A90B0413BD181A2B88" KeyPath="yes" Source="$(var.ModelsHarvestPath)\assets\face_lite.pt" />
             </Component>
-            <Component Id="cmpCE35235B51623EDB07340B4D48FAC538" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="fil32A31DC4A5D0818BB89D4353B264E823" KeyPath="yes" Source="$(var.ModelsHarvestPath)\requirements.txt" />
+            <Component Id="cmpFE27FB844A3B223E8877B7861A98E3DA" Directory="dir0DC9852E0252D93A663D9EB7CD65C155" Guid="*">
+                <File Id="fil4000D0BC3E12E0D3104169953E11ED77" KeyPath="yes" Source="$(var.ModelsHarvestPath)\assets\scene.model" />
             </Component>
-            <Component Id="cmpA887756C4881777786CA6804FB7FB2F2" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="filCE4DE2501CE0F0CC10F242458F80922B" KeyPath="yes" Source="$(var.ModelsHarvestPath)\runAll.py" />
+            <Component Id="cmpE3482F201BF49D0E837E3F1E8C7EC5FC" Directory="dir0DC9852E0252D93A663D9EB7CD65C155" Guid="*">
+                <File Id="filA34FB824B6E2A521B3FD0BD56CEBB239" KeyPath="yes" Source="$(var.ModelsHarvestPath)\assets\scene.pt" />
             </Component>
-            <Component Id="cmpA1A5D1F85F8E7AA54D8EADED2B3B2414" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="fil6E8E2D5E54F17EAA8EF57FB5EFEB3695" KeyPath="yes" Source="$(var.ModelsHarvestPath)\scene.py" />
+            <Component Id="cmpF4193B88D456E840B02204A9B4FB7797" Directory="dir0DC9852E0252D93A663D9EB7CD65C155" Guid="*">
+                <File Id="fil3A2554C90FAAC4A634F59A2CFC5BF614" KeyPath="yes" Source="$(var.ModelsHarvestPath)\assets\yolov5m.pt" />
             </Component>
-            <Component Id="cmp5D5DC262CD9A1F554C9A540FEC3A9EC6" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="filB1531077E6E9610DEE6295E85B0E3FBD" KeyPath="yes" Source="$(var.ModelsHarvestPath)\senseAI.py" />
+            <Component Id="cmp914283330EF80D90511BD4126E970F38" Directory="dir0DC9852E0252D93A663D9EB7CD65C155" Guid="*">
+                <File Id="filB94EC2418E132107EA431C02278128BD" KeyPath="yes" Source="$(var.ModelsHarvestPath)\assets\yolov5s.pt" />
             </Component>
-            <Component Id="cmp56D6A2727A867F28691B1131EE70ADC5" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="filDDBC8019F26E0E51124E466A47B24574" KeyPath="yes" Source="$(var.ModelsHarvestPath)\shared.py" />
+            <Component Id="cmp27D7E81E7EA68D69959102D4BECB21F0" Directory="dirBA772071E1FEFFE111FFF4FD01F0A1D9" Guid="*">
+                <File Id="fil28FCBBE904C7A51DFCAA728301360C9A" KeyPath="yes" Source="$(var.ModelsHarvestPath)\datastore\faceembedding.db" />
             </Component>
-            <Component Id="cmp4F9E919B5A7C033E97795A08998F9B18" Directory="DeepStackIntelligenceLayerFolder" Guid="*">
-                <File Id="fil922195DEE67730C6B346CDDB4A9C01F3" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__init__.py" />
+            <Component Id="cmp7B7A18B4E24518D2D734E0B7164C528D" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="fil943C1B3049B18FE82631FE6CBE07D725" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\DeepStack.pyproj.user" />
             </Component>
-            <Component Id="cmp503230D0D1797891E82661C684B10FA2" Directory="dir831C361F1604CBFB77DF5F9C7C1DD266" Guid="*">
-                <File Id="fil4DFCC7AD6F51FDE143E40C77DDB1CF93" KeyPath="yes" Source="$(var.ModelsHarvestPath)\commons\utils.py" />
+            <Component Id="cmpE0B1BDAFB3DFDF3345A6011F764AD986" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="filD93E21D8B99D76481B9659DF343C9436" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\detection.py" />
             </Component>
-            <Component Id="cmpFE92040CF9CF1F83066FB991F418D71A" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="filB51F52D5CC056A5D6BA7964A64A8EFDC" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\common.py" />
+            <Component Id="cmpD95B45E52982E8195CD9AD129544762D" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="fil5BCFC73F605647A504D19285B7004967" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\face.py" />
             </Component>
-            <Component Id="cmpE24C0803F34D53DB49D631FAF6738F78" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="filDFC001685CB58C01CD4C72ED8DACFDF6" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\experimental.py" />
+            <Component Id="cmpD303DB0D3EA1F9EE3136B9FC325717DB" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="filD379297180A9171043B996A3545AE231" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\init.py" />
             </Component>
-            <Component Id="cmp193FFB0EB09A0F295353AA36C8D7CED8" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="fil27362314F59CA6B60796EEDA5CA19DB1" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\export.py" />
+            <Component Id="cmp7C1442EF6D41CD0CF282557F8092337C" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="fil1881B0D3FE0F122D0E5096897E3478AE" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\intelligencelayer.pyproj.user" />
             </Component>
-            <Component Id="cmp331E29A50E21E5D290CD46064607F072" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="fil551C1CD3BE9428A95B12D93E1092DE04" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\yolo.py" />
+            <Component Id="cmp6717AC4C3AFB64B5C227B1047C6D354E" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="filAAF11A54831C18F53B28C5D3419B5DFC" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\noop.bat" />
             </Component>
-            <Component Id="cmp9643043A8AF2F37D8949A27DB46810F4" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="fil9D1360CBC457E14DC2AFB04827AE6941" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\yolov5l.yaml" />
+            <Component Id="cmp32619B79B27D96D813C4992DAA31095B" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="filEC9243AF91E14CDDE6425B04E7681EE9" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\process.py" />
             </Component>
-            <Component Id="cmp3F9899FE0E760420073B692434E89E2C" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="filC647CD61E10DB0ED436F78F72DC6F65A" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\yolov5m.yaml" />
+            <Component Id="cmp4E57B47143F7CA3AB135929DA3F87517" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="filC5A41CFF481142366825356D6B68294F" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\requirements.macos.txt" />
             </Component>
-            <Component Id="cmp4F2B67884A4F4F1EADB4C82D326A48E5" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="filA1E621B1E9D3F9F504C4E49D79FF2208" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\yolov5s.yaml" />
+            <Component Id="cmp775B8EDF4C8982E97052A05EDE003CBA" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="filDF35232821178EF4F00206CDF7BFDC5E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\requirements.txt" />
             </Component>
-            <Component Id="cmp817877A5CE7E9A586E12FC01566BE256" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="fil9A62DE03A5B1DF6B8353BCB276F497B9" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\yolov5x.yaml" />
+            <Component Id="cmp3BEFFCC34F298874FD38659E4B216CB8" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="fil5A06DC5990911F37DAAA0BA5EAECC453" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\runAll.py" />
             </Component>
-            <Component Id="cmp0AB28BEC7B454001FD3D23D07870FD9B" Directory="dir7661435D5A138B698B014FD9A5F749AF" Guid="*">
-                <File Id="fil7ED0FABC5282F49B2E4A6C7EC0F75E17" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\__init__.py" />
+            <Component Id="cmpA3647B00F68A101DDF404AAB47DAB81A" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="fil482816EC2AFAD332B6064094F651CC0C" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\scene.py" />
             </Component>
-            <Component Id="cmpCCFB2F95AC7D54DB9241EC41C526B674" Directory="dir42DFC6CC20B55A5EB82EFCA42A7A2671" Guid="*">
-                <File Id="fil54C04610728F1899DD5608B380AB8C03" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\hub\yolov3-spp.yaml" />
+            <Component Id="cmpFFE9031A4027D396A1D93C68E9047D62" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="filF1B85F21D025B5F2969052B9860D0729" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\shared.py" />
             </Component>
-            <Component Id="cmp772FBADE822E39D5D0A9804E293C73EC" Directory="dir42DFC6CC20B55A5EB82EFCA42A7A2671" Guid="*">
-                <File Id="filDE2CE0C0CCC7ED78CA50EF3C91CDB716" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\hub\yolov5-fpn.yaml" />
+            <Component Id="cmp44C8881B50BB0A1230A2E8EB0559FFE5" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="fil32BB29CFCDC358D14F23F31D1D002E20" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\Vision.pyproj" />
             </Component>
-            <Component Id="cmp04EF1BCAB3EA8435FE8AB238054F0C32" Directory="dir42DFC6CC20B55A5EB82EFCA42A7A2671" Guid="*">
-                <File Id="filAE890915A1B076C4ACF0071023B13F61" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\hub\yolov5-panet.yaml" />
+            <Component Id="cmpFDD875DBC53DC4C747383B487BE912E7" Directory="dir4C7B1FB0EF519B575D728258CD763F1F" Guid="*">
+                <File Id="filD20BAA76D3577784A09A9E28F3FAE2A1" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\__init__.py" />
             </Component>
-            <Component Id="cmpFF9B23A9B304DEB34DEF83DB8C3DE595" Directory="dir513EE81772B1D431D0C17376C9CCC757" Guid="*">
-                <File Id="fil36BD82AD004B896C1932FA53595E5CE9" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\__pycache__\common.cpython-37.pyc" />
+            <Component Id="cmp34792BDBC9D7789F0364C9F41E1A320D" Directory="dir5178DC4F3108894D54747129AE80BDFC" Guid="*">
+                <File Id="filF30D95529F20CB552698402E5CA756EC" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\commons\utils.py" />
             </Component>
-            <Component Id="cmp0E0C439FE15AE991946659DA6B84E8EB" Directory="dir513EE81772B1D431D0C17376C9CCC757" Guid="*">
-                <File Id="filDC6C17F93160CC35B390E50F92CE0E6E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\__pycache__\experimental.cpython-37.pyc" />
+            <Component Id="cmpD4968CDC57F5EB6911D969277D886B33" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="fil1DA117F0AC93291BF6BD07706B6ED9AD" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\common.py" />
             </Component>
-            <Component Id="cmpCBFB8511E04769C919B0D072F704D5C2" Directory="dir513EE81772B1D431D0C17376C9CCC757" Guid="*">
-                <File Id="fil70A7CDC1FB42E5F7FAB9E7DAFC6C9A87" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\__pycache__\yolo.cpython-37.pyc" />
+            <Component Id="cmp54557001CDAB7D662C216C20976B86E0" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="fil10861BF91F146760D47262ABE2CEBE0B" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\experimental.py" />
             </Component>
-            <Component Id="cmpA9D319A623234405657E98CA4B57F0A6" Directory="dir513EE81772B1D431D0C17376C9CCC757" Guid="*">
-                <File Id="filAB4D9EFCC5DC03C7B865F9A30722CFA4" KeyPath="yes" Source="$(var.ModelsHarvestPath)\models\__pycache__\__init__.cpython-37.pyc" />
+            <Component Id="cmp11F6AF5F755BEF3BDF4A567441BBC800" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="fil90235719A3C6E6503D5E50C14A800F19" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\export.py" />
             </Component>
-            <Component Id="cmp1582160AB91D8E96C0F7E1E73BD969E0" Directory="dir99ED27ACB63EDE091057D5A6B90FFCD2" Guid="*">
-                <File Id="fil83F69ECA83E3C7CDD0743ED8DF9BBCB2" KeyPath="yes" Source="$(var.ModelsHarvestPath)\recognition\networks.py" />
+            <Component Id="cmpBF7F92DBF6D2A452AA5795CB6BD24576" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="fil79F4F9670C236B353DC2680813DD2262" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\yolo.py" />
             </Component>
-            <Component Id="cmp21FE816471098160FE84D01E7D083B01" Directory="dir99ED27ACB63EDE091057D5A6B90FFCD2" Guid="*">
-                <File Id="fil6511118E8F5A9834FC48A10068E79182" KeyPath="yes" Source="$(var.ModelsHarvestPath)\recognition\process.py" />
+            <Component Id="cmpE7D1B219621774870043297DED2251AF" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="filE82CF40BC70E29F3F57BDA638D808E0E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\yolov5l.yaml" />
             </Component>
-            <Component Id="cmp30BBD012FA503B40378347E855885E62" Directory="dir99ED27ACB63EDE091057D5A6B90FFCD2" Guid="*">
-                <File Id="fil39E11A020E81D313168F88BE120953D5" KeyPath="yes" Source="$(var.ModelsHarvestPath)\recognition\__init__.py" />
+            <Component Id="cmp5775D9F5A04C13E8DAC983CE104BDCB8" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="fil719720007F020E9DA17FF5E4A758CD8D" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\yolov5m.yaml" />
             </Component>
-            <Component Id="cmp03CBFDCA2D6A0AA45F6D5FF0932C49FF" Directory="dirD5699945D3A9FB7208EFD0CD7576B836" Guid="*">
-                <File Id="fil8E14910916360E5C3454CC5CEF6718BA" KeyPath="yes" Source="$(var.ModelsHarvestPath)\recognition\__pycache__\networks.cpython-37.pyc" />
+            <Component Id="cmpD46C1A269EA6C9815F596F33238857F2" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="fil9857FDC78950963CD089D017EE1EE3AE" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\yolov5s.yaml" />
             </Component>
-            <Component Id="cmp1C4E5297A362032283BFD747F910D82D" Directory="dirD5699945D3A9FB7208EFD0CD7576B836" Guid="*">
-                <File Id="fil0E48697D3192E70969073164C3989034" KeyPath="yes" Source="$(var.ModelsHarvestPath)\recognition\__pycache__\process.cpython-37.pyc" />
+            <Component Id="cmp872E1EBEBAAA3CF2A54B19412AF50036" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="filA96225F298815AEB1F7196D4DD392509" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\yolov5x.yaml" />
             </Component>
-            <Component Id="cmp897205D7496A229912052FC8AC9D0D1E" Directory="dirD5699945D3A9FB7208EFD0CD7576B836" Guid="*">
-                <File Id="filF042194F3BDCD2356E32B07DEC7DD93E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\recognition\__pycache__\__init__.cpython-37.pyc" />
+            <Component Id="cmp1F6CC9931B083B514F74842CFC16204F" Directory="dirACBB3399831A0233978737CF510D81DA" Guid="*">
+                <File Id="filB2936CAE741A29563A94D16DEC78FEE2" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\__init__.py" />
             </Component>
-            <Component Id="cmp749191DB00AD9D45001BAD4D6ECAA2A0" Directory="dirBEB306539B2E5C4821AE37212BF691B6" Guid="*">
-                <File Id="fil1A46FECF4119C7D904FAA8E13A64A126" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\activations.py" />
+            <Component Id="cmp358ACAD1E0DE04CB4562CF03AA29363D" Directory="dir385CA24DF55B3DC0AC7908A837291C1C" Guid="*">
+                <File Id="filAF6615B81CDBE09C13FD445342F58CAC" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\hub\yolov3-spp.yaml" />
             </Component>
-            <Component Id="cmp3CE1DD202D82F7E457B136339C015E72" Directory="dirBEB306539B2E5C4821AE37212BF691B6" Guid="*">
-                <File Id="filB7D6CEF2E0938F30644DE1A9AB86B29E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\datasets.py" />
+            <Component Id="cmp48823EFA876F00F16CC728B0FB2BADA2" Directory="dir385CA24DF55B3DC0AC7908A837291C1C" Guid="*">
+                <File Id="filF92843E9FF9B9E8807669D86E99D48B8" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\hub\yolov5-fpn.yaml" />
             </Component>
-            <Component Id="cmpE8797B77B193A4E882042E45086E11CC" Directory="dirBEB306539B2E5C4821AE37212BF691B6" Guid="*">
-                <File Id="fil1A4332A06A2BC6A17C28AC1FF9520E6D" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\general.py" />
+            <Component Id="cmpD03C22540868745DAB33064128AF2437" Directory="dir385CA24DF55B3DC0AC7908A837291C1C" Guid="*">
+                <File Id="filC61793F348D7C7614B7EAC3D2CCC03E1" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\hub\yolov5-panet.yaml" />
             </Component>
-            <Component Id="cmpB382D000467CCA82C4E9CDAF94A2776D" Directory="dirBEB306539B2E5C4821AE37212BF691B6" Guid="*">
-                <File Id="filF39ACAF2F7B543014E442C5022C954B2" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\google_utils.py" />
+            <Component Id="cmp7E60646BCC1A78B4ADF8C6E7AF91956B" Directory="dir97EA52F8422DE13A6DF62C96919F4AFE" Guid="*">
+                <File Id="fil697577B782FDDD63CA3B62FE77A8A6B7" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\__pycache__\common.cpython-37.pyc" />
             </Component>
-            <Component Id="cmp942322AC327274E09246B9BD1A9CA8EF" Directory="dirBEB306539B2E5C4821AE37212BF691B6" Guid="*">
-                <File Id="filE479CD4A6C5225A9DF18B22E25227EA0" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\torch_utils.py" />
+            <Component Id="cmp3F1E9CEA6096E9FEE90725B5B10D06A0" Directory="dir97EA52F8422DE13A6DF62C96919F4AFE" Guid="*">
+                <File Id="fil22A8E5E8AE7FEEB134E8292C5A12C0F2" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\__pycache__\experimental.cpython-37.pyc" />
             </Component>
-            <Component Id="cmpF5B0244F7B8B98EE2310FA6C5D6FE560" Directory="dirBEB306539B2E5C4821AE37212BF691B6" Guid="*">
-                <File Id="filB717BD89A7BDA4181276A323FC6DD345" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\__init__.py" />
+            <Component Id="cmp7926A7EAE254081CC3C2AA57C13D6B64" Directory="dir97EA52F8422DE13A6DF62C96919F4AFE" Guid="*">
+                <File Id="fil39A0627313929452CFF8F2A6DECC1E97" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\__pycache__\yolo.cpython-37.pyc" />
             </Component>
-            <Component Id="cmpE9AAB5EAA9A3264CB2CA6E602073789C" Directory="dir72269D8DFFFB2550556909DFF1041E3A" Guid="*">
-                <File Id="fil0EDD58D9060A477F61DB89FA869BC0C8" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\__pycache__\datasets.cpython-37.pyc" />
+            <Component Id="cmpC038BF621BBD457BB6A48C5DC5D88DC4" Directory="dir97EA52F8422DE13A6DF62C96919F4AFE" Guid="*">
+                <File Id="fil36059FE6B64538F8EC96557E05C9F5A7" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\models\__pycache__\__init__.cpython-37.pyc" />
             </Component>
-            <Component Id="cmp1D4942DA733E1D277777B13C27506F45" Directory="dir72269D8DFFFB2550556909DFF1041E3A" Guid="*">
-                <File Id="fil1335CA6A819955839A56864A4464E3EF" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\__pycache__\general.cpython-37.pyc" />
+            <Component Id="cmp47DB35817D3FDB598114FF9FFF836F90" Directory="dir57ECEB97785864527955EE97FD867785" Guid="*">
+                <File Id="fil980AD15C5535CB7BE265735DE79DD413" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\recognition\networks.py" />
             </Component>
-            <Component Id="cmpED37DC08EA3D505AA4B7DDCF301B069B" Directory="dir72269D8DFFFB2550556909DFF1041E3A" Guid="*">
-                <File Id="fil298939BF523555E8CF4D43A33B3A31BF" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\__pycache__\google_utils.cpython-37.pyc" />
+            <Component Id="cmpB3DBEC8804E3894F4D9E70F8FDCF5434" Directory="dir57ECEB97785864527955EE97FD867785" Guid="*">
+                <File Id="filCE3331C981EDB72FBDAB0AA7FFB19FD7" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\recognition\process.py" />
             </Component>
-            <Component Id="cmpB308F1E178013244DD2DF39DC20923DA" Directory="dir72269D8DFFFB2550556909DFF1041E3A" Guid="*">
-                <File Id="fil7B0E6891D97D03B3D58909619C239544" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\__pycache__\torch_utils.cpython-37.pyc" />
+            <Component Id="cmp507D9B730A4B101E4212C8AC2738EA52" Directory="dir57ECEB97785864527955EE97FD867785" Guid="*">
+                <File Id="fil4C75E9823B41D84783C413FC0CEBB54F" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\recognition\__init__.py" />
             </Component>
-            <Component Id="cmp6578C72FBE6AB8B3C68E217D4B943BDD" Directory="dir72269D8DFFFB2550556909DFF1041E3A" Guid="*">
-                <File Id="filB60FBBC051B74A4C5AE853E8E5832D6C" KeyPath="yes" Source="$(var.ModelsHarvestPath)\utils\__pycache__\__init__.cpython-37.pyc" />
+            <Component Id="cmp68D34A7FB03633641F80EFC849C0E284" Directory="dir4B07EFBCCF0E46C6294A6D2C3C308DED" Guid="*">
+                <File Id="fil288022C7C0DBF7F072634E7E50531B29" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\recognition\__pycache__\networks.cpython-37.pyc" />
             </Component>
-            <Component Id="cmpE5DA0C7115A809B050FD8988259F1A5E" Directory="dirF9ACB94420470F92F6C919E53DCB4237" Guid="*">
-                <File Id="fil337EFC199C8010777AD83BDBE70873A5" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\process.cpython-37.pyc" />
+            <Component Id="cmpFD8D6817E45BE10821179E6C335EFF7E" Directory="dir4B07EFBCCF0E46C6294A6D2C3C308DED" Guid="*">
+                <File Id="fil5D3D304906C2BE55C830CE215F323056" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\recognition\__pycache__\process.cpython-37.pyc" />
             </Component>
-            <Component Id="cmp9A8B83F03BA62B77F300984E19DBC054" Directory="dirF9ACB94420470F92F6C919E53DCB4237" Guid="*">
-                <File Id="fil274819A5F075AFD3E3CD8F7E7BC2D359" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\senseAI.cpython-37.pyc" />
+            <Component Id="cmpB023F322B20F9DAA1A2EBA7EC2D2EA1E" Directory="dir4B07EFBCCF0E46C6294A6D2C3C308DED" Guid="*">
+                <File Id="filCFCA1B1414424A15EA23E723DE2E5D75" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\recognition\__pycache__\__init__.cpython-37.pyc" />
             </Component>
-            <Component Id="cmp40549CFFC36C99AB15596E2FA89DFFF3" Directory="dirF9ACB94420470F92F6C919E53DCB4237" Guid="*">
-                <File Id="fil25A6FF1158FC179B6A741F55416B3608" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\shared.cpython-37.pyc" />
+            <Component Id="cmp60327345684D494DC04F56072F0D499F" Directory="dir76161354ED82CA8728C1119253D53839" Guid="*">
+                <File Id="fil238653CB1418DC3BA98B75D94DEED8A0" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\activations.py" />
+            </Component>
+            <Component Id="cmp27C218EFA6B931E74034BFE938494709" Directory="dir76161354ED82CA8728C1119253D53839" Guid="*">
+                <File Id="fil3ECA53167C719C7096FAFF35C7B654EB" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\datasets.py" />
+            </Component>
+            <Component Id="cmp46012BC598A11C9B990C1FDB3F876955" Directory="dir76161354ED82CA8728C1119253D53839" Guid="*">
+                <File Id="filD52F5228239701D354F3C4896EE5F405" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\general.py" />
+            </Component>
+            <Component Id="cmp6B92392664ACAB65BAF07ED31B53CD53" Directory="dir76161354ED82CA8728C1119253D53839" Guid="*">
+                <File Id="fil1B5FE6CE0F3A7D93671002256516CD98" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\google_utils.py" />
+            </Component>
+            <Component Id="cmp51900C9506E0882D8897B20D5F2BD3D0" Directory="dir76161354ED82CA8728C1119253D53839" Guid="*">
+                <File Id="filE45F39CD2F03A8EACF3E23BCD8D8DCB3" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\torch_utils.py" />
+            </Component>
+            <Component Id="cmpB21360CF304042D2F4F51BDDA9ED3549" Directory="dir76161354ED82CA8728C1119253D53839" Guid="*">
+                <File Id="fil4C12759E3C0BCF17E9B160C930259AAF" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\__init__.py" />
+            </Component>
+            <Component Id="cmpCE824D0DCDB729ABAC7C35B0951C1562" Directory="dir7A9B8AEC4B8F86293B458C64469A5FC4" Guid="*">
+                <File Id="fil85DBD596672BB2E681423D88F3802CA5" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\__pycache__\datasets.cpython-37.pyc" />
+            </Component>
+            <Component Id="cmpD39C701A964E216F2482DED4967BFB99" Directory="dir7A9B8AEC4B8F86293B458C64469A5FC4" Guid="*">
+                <File Id="filAD9ECE248A51BAFED5CE9565AE80966E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\__pycache__\general.cpython-37.pyc" />
+            </Component>
+            <Component Id="cmpAE7E5EB903AA055E39A6584D6E4B5541" Directory="dir7A9B8AEC4B8F86293B458C64469A5FC4" Guid="*">
+                <File Id="fil333C5B8A22199BA29EB0BBB0C5BA7D37" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\__pycache__\google_utils.cpython-37.pyc" />
+            </Component>
+            <Component Id="cmp76BC0C62EEA6B5D5A071BFB7F5F874BB" Directory="dir7A9B8AEC4B8F86293B458C64469A5FC4" Guid="*">
+                <File Id="fil4DBE38BE6A272B444E6FE5DC271294DB" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\__pycache__\torch_utils.cpython-37.pyc" />
+            </Component>
+            <Component Id="cmp10CD427D7E6215099A73EAA2965E1F4A" Directory="dir7A9B8AEC4B8F86293B458C64469A5FC4" Guid="*">
+                <File Id="filCA533162164349097D1EE0059CDDA2B7" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\utils\__pycache__\__init__.cpython-37.pyc" />
+            </Component>
+            <Component Id="cmpB5C434E41B7CE83EB551A92994022840" Directory="dir076F872BC97ADACB37598996D3975FB3" Guid="*">
+                <File Id="filCEBFA7829FF61098BAE3C7EF0DB374E6" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\__pycache__\process.cpython-37.pyc" />
+            </Component>
+            <Component Id="cmp97C84036973309251C4C64815585D5A6" Directory="dir076F872BC97ADACB37598996D3975FB3" Guid="*">
+                <File Id="filE95FE0039F64E496ECFBA9265EBF1F76" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\__pycache__\senseAI.cpython-37.pyc" />
+            </Component>
+            <Component Id="cmpBCDC9CAA45867F137DC6F0A7A42A9BB4" Directory="dir076F872BC97ADACB37598996D3975FB3" Guid="*">
+                <File Id="fil8DB4D88B4AC1B8CE20EFB5B132A1C9A6" KeyPath="yes" Source="$(var.ModelsHarvestPath)\intelligencelayer\__pycache__\shared.cpython-37.pyc" />
             </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
-        <DirectoryRef Id="dir7661435D5A138B698B014FD9A5F749AF">
-            <Directory Id="dir42DFC6CC20B55A5EB82EFCA42A7A2671" Name="hub" />
+        <DirectoryRef Id="dir4C7B1FB0EF519B575D728258CD763F1F">
+            <Directory Id="dir076F872BC97ADACB37598996D3975FB3" Name="__pycache__" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
-        <DirectoryRef Id="dir7661435D5A138B698B014FD9A5F749AF">
-            <Directory Id="dir513EE81772B1D431D0C17376C9CCC757" Name="__pycache__" />
+        <DirectoryRef Id="dirACBB3399831A0233978737CF510D81DA">
+            <Directory Id="dir385CA24DF55B3DC0AC7908A837291C1C" Name="hub" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
-        <DirectoryRef Id="dirBEB306539B2E5C4821AE37212BF691B6">
-            <Directory Id="dir72269D8DFFFB2550556909DFF1041E3A" Name="__pycache__" />
+        <DirectoryRef Id="dir57ECEB97785864527955EE97FD867785">
+            <Directory Id="dir4B07EFBCCF0E46C6294A6D2C3C308DED" Name="__pycache__" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
-        <DirectoryRef Id="dir99ED27ACB63EDE091057D5A6B90FFCD2">
-            <Directory Id="dirD5699945D3A9FB7208EFD0CD7576B836" Name="__pycache__" />
+        <DirectoryRef Id="dir4C7B1FB0EF519B575D728258CD763F1F">
+            <Directory Id="dir5178DC4F3108894D54747129AE80BDFC" Name="commons" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4C7B1FB0EF519B575D728258CD763F1F">
+            <Directory Id="dir57ECEB97785864527955EE97FD867785" Name="recognition" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4C7B1FB0EF519B575D728258CD763F1F">
+            <Directory Id="dir76161354ED82CA8728C1119253D53839" Name="utils" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir76161354ED82CA8728C1119253D53839">
+            <Directory Id="dir7A9B8AEC4B8F86293B458C64469A5FC4" Name="__pycache__" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirACBB3399831A0233978737CF510D81DA">
+            <Directory Id="dir97EA52F8422DE13A6DF62C96919F4AFE" Name="__pycache__" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4C7B1FB0EF519B575D728258CD763F1F">
+            <Directory Id="dirACBB3399831A0233978737CF510D81DA" Name="models" />
         </DirectoryRef>
     </Fragment>
 </Wix>

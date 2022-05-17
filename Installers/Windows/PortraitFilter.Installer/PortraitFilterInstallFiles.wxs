@@ -1,0 +1,334 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="PortraitFilterInstallFolder">
+            <Directory Id="dir808668000CF875A89AAD7E84CAD96A9F" Name="Lib" />
+            <Directory Id="dir453F12E89CCF1A6EDF9D8D5E68572768" Name="runtimes" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="PortraitFilterFilesComponentGroup">
+            <Component Id="cmp41D774020EDBE141FAF4457B5127C24B" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filB37F2E0FCBEE2D7105618C3E4913E7FB" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\appsettings.Development.json" />
+            </Component>
+            <Component Id="cmp833A5C35A572D24B85D2F54A09DAE4CF" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil524C5215824F56CBF3A5D301443F1401" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\appsettings.json" />
+            </Component>
+            <Component Id="cmp298D950F26D9AB0C499F40E934C72FDB" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil851D0A551E7A169544B8A9AAC7C6F99F" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\CodeProject.SenseAI.AnalysisLayer.SDK.dll" />
+            </Component>
+            <Component Id="cmpB6793B16041BD48727F56AB536148017" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil3B2D8B3667920C8DA99088AAE013FC0C" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\CodeProject.SenseAI.AnalysisLayer.SDK.pdb" />
+            </Component>
+            <Component Id="cmpE443B41B8C153A9758831F6413D6711A" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filB27F1C843C74FC8EB103C259EE90C261" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Configuration.Abstractions.dll" />
+            </Component>
+            <Component Id="cmp4A61C88CABF6F2D113396BF260FFE7E2" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filF47A7C0666F6DFF32BA8B03F1F17DDAE" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Configuration.Binder.dll" />
+            </Component>
+            <Component Id="cmpD256711037BE41D1E01BC26768D955DE" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil88C5FB73CE85AA43A9097AA9E7A9DFB3" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Configuration.CommandLine.dll" />
+            </Component>
+            <Component Id="cmp328A4D16955D0C76FF9271D070C29469" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil7F2EF893C47968466D5ABFB5601FFF21" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Configuration.dll" />
+            </Component>
+            <Component Id="cmp405AD3A2D31AF76589D467FD0D367C7E" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil0E40DF7FBAD64F24B3CAD52AD6CAFCCA" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+            </Component>
+            <Component Id="cmp4D128354A05B5ABF90586B8B57FE7CD5" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil74D3E4FE3482E0703A31657950F2CE01" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Configuration.FileExtensions.dll" />
+            </Component>
+            <Component Id="cmp8D8BBAC6C53F8EABB7A8763C88BDC6B1" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil0890F63648DDB09178EBD555E5522CDB" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Configuration.Json.dll" />
+            </Component>
+            <Component Id="cmp46D2955532E5F39CAE1559C1D0BBC039" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filC46A1AEBFB877D81964FD2851507E0C7" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Configuration.UserSecrets.dll" />
+            </Component>
+            <Component Id="cmp4AB687FC66B73B17B6EE6688330B0FAC" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filCD777E8062AD85EA84F0ED14AC0AD4BE" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+            </Component>
+            <Component Id="cmp4CBBB86D203DB57665D6153D378A1BEE" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil77F2737D05D4DBA104D8BA1463F63788" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.DependencyInjection.dll" />
+            </Component>
+            <Component Id="cmp9377F632CBA7D347A2B7E50F1019A74A" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil82D6159CD2DBA182D32437286116659A" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.FileProviders.Abstractions.dll" />
+            </Component>
+            <Component Id="cmp7BE0563E18BFB99426B518D15F5D92C6" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil9A48CB17A992B3AC9930DD77573E1C42" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.FileProviders.Physical.dll" />
+            </Component>
+            <Component Id="cmpCA6662EF8010E1572F815CAF3CB95C33" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil184D593EA7E32A9C6C8495491349A4F4" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.FileSystemGlobbing.dll" />
+            </Component>
+            <Component Id="cmpB2C93B616AA452A515301AD846DCF555" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil3ED034C701D26EE9F343EFF78D07712A" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Hosting.Abstractions.dll" />
+            </Component>
+            <Component Id="cmp4DDABDCFAF28B05BFF23FE76EBC863D9" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil6077E25E1085CBABE26869BCB29FF9DD" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Hosting.dll" />
+            </Component>
+            <Component Id="cmpE6D38DC8A5A9637FDDA6A8EB98AF8480" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filF1D05BF5121FCF6B168AFAA739BCD991" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Logging.Abstractions.dll" />
+            </Component>
+            <Component Id="cmp2065094B258EF1957AB4B1D50C33E8DC" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filF9F349D4A8D28F84C2198420A178E15A" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Logging.Configuration.dll" />
+            </Component>
+            <Component Id="cmp6F8246FB96CBCF41D0394ADEB512267A" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil0DAC60E71367A39B7F5A210C062DF318" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Logging.Console.dll" />
+            </Component>
+            <Component Id="cmp627EC0DC43FE676BF7076224D639AE7C" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil13308A91FFE1572EEE0E2BF677D1EBD4" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Logging.Debug.dll" />
+            </Component>
+            <Component Id="cmpC87996465BB449457674095CB0304B38" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filC7252CFED3D9BC6FBFAF8BC3ECA5ADFC" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Logging.dll" />
+            </Component>
+            <Component Id="cmpFBBE46985987E14A0A673207A6D1207D" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil58C9A5D5F95BD69F34CBA13909C9D476" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Logging.EventLog.dll" />
+            </Component>
+            <Component Id="cmp20C381FDA4B3367809FC61509F8BD29A" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil38558C4B860FBC0916549D569AC6BC5F" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Logging.EventSource.dll" />
+            </Component>
+            <Component Id="cmpD3CF6DD5A857E1134530DD753F98F684" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filD0EE1F6B73DB97102414E3DB1D49295F" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
+            </Component>
+            <Component Id="cmpAB4AFD600F84B45A7BFC3A766F791D14" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil2D07745F98DFFB925EE1679D98CAE474" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Options.dll" />
+            </Component>
+            <Component Id="cmpD8E592C4CCF745B0CFF025F1BBE02B4D" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil0F54F38104B9C68F16D10DB56E6A2CD6" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Extensions.Primitives.dll" />
+            </Component>
+            <Component Id="cmp9A547BBD7448C15AA2F35CE23C1FF58D" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filC7C73D8EABD773AAF844C18898A1D351" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.ML.OnnxRuntime.dll" />
+            </Component>
+            <Component Id="cmp37E877931898D6349BEBE326C0EE5159" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil48A5B9FDD1E784F5A92AF4947EA6F9CE" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Microsoft.Win32.SystemEvents.dll" />
+            </Component>
+            <Component Id="cmpD2894A63582F53B668C77A74C9E97691" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil001B3D36E2A5C12A1F012F77F888FE92" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\modulesettings.development.json" />
+            </Component>
+            <Component Id="cmpD693451EA2F83ED2D2221290D8EC117E" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filE952C28EFE3E8AD1BBF6EF135E368FA0" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\modulesettings.json" />
+            </Component>
+            <Component Id="cmp9755C679391D86CC7D2E1B033129B721" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil48DE7CED9C864C3120A1F57352BDF247" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\modulesettings.windows.development.json" />
+            </Component>
+            <Component Id="cmp34A331EDC8C891756D0F3E8A11A758CE" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filCB3ACADFD1E79125614818D347E7BF6F" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\PortraitFilter.deps.json" />
+            </Component>
+            <Component Id="cmpDA1925DEAB487B11CF993C3CDB79842A" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filA42D727C8FC1D01B7E667DBBD96694E9" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\PortraitFilter.dll" />
+            </Component>
+            <Component Id="cmpAE3B6313F7EF22ADA2B575B78AC3EBD8" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil7DAF0057002EAB59DAC0FFF8F81279D5" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\PortraitFilter.exe" />
+            </Component>
+            <Component Id="cmpF9D46F6FDB9727AB7FF3B74E8601BA12" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil7C3F7E96F0CF093D71DA09AC793DE59B" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\PortraitFilter.pdb" />
+            </Component>
+            <Component Id="cmp1A7520C9D42591744AD023D35F48033E" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil7DFD81EAABD6DCF5CCD10138A9518EBD" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\PortraitFilter.runtimeconfig.json" />
+            </Component>
+            <Component Id="cmpD97C1FFE9BA994587535D3CE2CA435B7" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filAA677BBB75930DE2CB455485CA7C2695" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimeconfig.template.json" />
+            </Component>
+            <Component Id="cmp42C5A52871006EF64146BDBCF3F58C8E" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil14C7D59202EBE20FFC4FB35606010702" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\SkiaSharp.dll" />
+            </Component>
+            <Component Id="cmp5DAFB33E917749B8C3ADA65CE1D0A816" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil12B29609D6DB27C7A4B7B58F04886E38" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\SkiaSharp.Views.Desktop.Common.dll" />
+            </Component>
+            <Component Id="cmp42EEC5AF0277FD936061E5BDCE9EF6D6" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="filFA32CFF27C0F7F2A1CF5918B931D5A99" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\System.Diagnostics.EventLog.dll" />
+            </Component>
+            <Component Id="cmpBBA7CE50067B699E5AD7932624E9CABA" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil26829CAC4B76A52D09E59E3E5998D1D8" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\System.Drawing.Common.dll" />
+            </Component>
+            <Component Id="cmp9EE4822EB912510D8A09F02C3645A4C3" Directory="PortraitFilterInstallFolder" Guid="*">
+                <File Id="fil680366710D9CAA2A0F35CCE214AC3861" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\UMapx.dll" />
+            </Component>
+            <Component Id="cmpD6B42F138CA3AFA024DFAEEFA1DEE3E4" Directory="dir808668000CF875A89AAD7E84CAD96A9F" Guid="*">
+                <File Id="fil0FC1F9B1620FECAD27037A6399EEB164" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\Lib\deeplabv3_mnv2_pascal_train_aug.onnx" />
+            </Component>
+            <Component Id="cmp74946FC399D58A60B7A32A76E49F7B77" Directory="dirB66263C76304C27116E0CCC22A6887A0" Guid="*">
+                <File Id="filF9B4DC39276D84631415FFE4F9A462E3" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\linux-arm\native\libSkiaSharp.so" />
+            </Component>
+            <Component Id="cmp7C08197F9827B613CEBD0E9B9662BAEA" Directory="dirC79B6CEE6936D29F28BCD2B2FCAF631E" Guid="*">
+                <File Id="fil6E413FE84A922131DEC28291EB0710BC" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\linux-arm64\native\libSkiaSharp.so" />
+            </Component>
+            <Component Id="cmp43058D7E03A17EA3D93F3E16C2CEA138" Directory="dirF8A8A5D2FB7F634A66FD05DF8B97E99F" Guid="*">
+                <File Id="fil5F4DC3876AB2659F6EC0A7EAB3B01424" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\linux-musl-x64\native\libSkiaSharp.so" />
+            </Component>
+            <Component Id="cmp14E0FB0A1B9B9F8CDEC9FA541601C072" Directory="dir570731D5819A9BE697A9924609E2527E" Guid="*">
+                <File Id="fil64872BE7CCB0AE21C6E588258ED95D50" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\linux-x64\native\libSkiaSharp.so" />
+            </Component>
+            <Component Id="cmpEDA1AEE30E7E9CDBE2847E6AAE581CBD" Directory="dir99689028FB11E3DC4E72D1DEB7A50102" Guid="*">
+                <File Id="fil7F1E6DE76B6C7C777CA62D22D3F1371E" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\osx\native\libSkiaSharp.dylib" />
+            </Component>
+            <Component Id="cmpBF0AA37E960A7728616E9D83D0744720" Directory="dir132E57F2B0EA52B9C7F7BA4E2463D714" Guid="*">
+                <File Id="fil9C1E75CCAFAEC77CDC33E96E1A0AFA1E" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\unix\lib\net6.0\System.Drawing.Common.dll" />
+            </Component>
+            <Component Id="cmpB96C2B91B3278D6FD770459F31E63D57" Directory="dirA95E167063962C751C878175C6F0C8AE" Guid="*">
+                <File Id="fil634CEF446CFA3C2CD665A0DC8D5D5FE2" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll" />
+            </Component>
+            <Component Id="cmpE3C5FDA5DF45B38BA9649A35388CC3F4" Directory="dirA95E167063962C751C878175C6F0C8AE" Guid="*">
+                <File Id="fil0EC0593D9115307012EBC34DC9ED5F63" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\net6.0\System.Diagnostics.EventLog.dll" />
+            </Component>
+            <Component Id="cmp01AC99FBA18A3F6413C1B4D0BC671F39" Directory="dirA95E167063962C751C878175C6F0C8AE" Guid="*">
+                <File Id="fil2B083CB859060B656313F8AAAD2B755E" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\net6.0\System.Diagnostics.EventLog.Messages.dll" />
+            </Component>
+            <Component Id="cmpE2BDA64ABED650449C11CD5D3765DE6A" Directory="dirA95E167063962C751C878175C6F0C8AE" Guid="*">
+                <File Id="fil63D613634A7FBB034EF898C5CEFD62F0" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\net6.0\System.Drawing.Common.dll" />
+            </Component>
+            <Component Id="cmpE864BA471F93357CB9CE6062A815A403" Directory="dir97F3372FD2A4325D6A34D0C819A31566" Guid="*">
+                <File Id="fil26CB7DE993AFDC406DF975556C60CB95" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-arm\native\onnxruntime.dll" />
+            </Component>
+            <Component Id="cmpBCBAD9CA6CD158767CE08894630621C8" Directory="dir97F3372FD2A4325D6A34D0C819A31566" Guid="*">
+                <File Id="filA0018B1A06F81329BF055C3F5D10AE4E" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-arm\native\onnxruntime.lib" />
+            </Component>
+            <Component Id="cmpE8090E0059E7370C6B2775AE8125F99E" Directory="dirF4059B45CD6E212F4440B52F593CEEA3" Guid="*">
+                <File Id="filA0829D53840DDCAB0104CD94F4B80285" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-arm64\native\libSkiaSharp.dll" />
+            </Component>
+            <Component Id="cmpF63C8ADAF2E16372818518B09643FABF" Directory="dirF4059B45CD6E212F4440B52F593CEEA3" Guid="*">
+                <File Id="fil918E24AED7EC0B8DFD68EEECFF301C6A" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-arm64\native\onnxruntime.dll" />
+            </Component>
+            <Component Id="cmpDC7BDCFF4039B1FE180C09841189B461" Directory="dirF4059B45CD6E212F4440B52F593CEEA3" Guid="*">
+                <File Id="fil12A599B813224750162DFD2EB1694F0A" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-arm64\native\onnxruntime.lib" />
+            </Component>
+            <Component Id="cmpEC4A3857243A5BC05473F77502DDDB28" Directory="dir85B80FE50CF05DD375B250EB979D26D9" Guid="*">
+                <File Id="filB752BF27FD1564BD6A6651D2A6299248" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-x64\native\libSkiaSharp.dll" />
+            </Component>
+            <Component Id="cmpC2C8A8DC018E816E6393793445C82363" Directory="dir85B80FE50CF05DD375B250EB979D26D9" Guid="*">
+                <File Id="filF3B28C72AD88F040199D24053F6678D3" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-x64\native\onnxruntime.dll" />
+            </Component>
+            <Component Id="cmpB8B4C89A82841051AD49717F14E37A70" Directory="dir85B80FE50CF05DD375B250EB979D26D9" Guid="*">
+                <File Id="fil70BC64F362C59147E07A37463A2E39B8" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-x64\native\onnxruntime.lib" />
+            </Component>
+            <Component Id="cmpAEDF8C593C897B3A77D857F72C80C087" Directory="dir62931A9D8C32B2084ED81AD7C1437A51" Guid="*">
+                <File Id="fil015E465023E116F5E9567DCC2FED7A1F" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-x86\native\libSkiaSharp.dll" />
+            </Component>
+            <Component Id="cmp0E8E4F554630C3519129B3F80B288D1A" Directory="dir62931A9D8C32B2084ED81AD7C1437A51" Guid="*">
+                <File Id="fil4ACDD93E615D5FD2D5054D3CCA9A85CB" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-x86\native\onnxruntime.dll" />
+            </Component>
+            <Component Id="cmp4D656B612487A97B2BDDCFD53F1D6EA3" Directory="dir62931A9D8C32B2084ED81AD7C1437A51" Guid="*">
+                <File Id="fil3609C2D35D2C1516E57E236832CD1858" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-x86\native\onnxruntime.lib" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dir0FF5A080B957C03D29186274E3DA9191" Name="linux-musl-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2DF83170CC4F140DC7F03429D98063B3">
+            <Directory Id="dir132E57F2B0EA52B9C7F7BA4E2463D714" Name="net6.0" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dir23A4F360DC36835C75AC6ECA874B68C8" Name="win" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dir2C49DC1F6EE4BD272BD857B7A0AFE148" Name="osx" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir87089D4DC4483E78802A58464DF9014D">
+            <Directory Id="dir2DF83170CC4F140DC7F03429D98063B3" Name="lib" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dir3014AD20355D4068F2CC1820BB752DE4" Name="win-arm" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dir3D4680255E53F8F528E8621FD459BF3E" Name="linux-arm64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir6524871B3C6A32B710DB562E30443650">
+            <Directory Id="dir570731D5819A9BE697A9924609E2527E" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirE366A2DFD161339FCA8CD508930209BE">
+            <Directory Id="dir62931A9D8C32B2084ED81AD7C1437A51" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dir6524871B3C6A32B710DB562E30443650" Name="linux-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dir7ECD486B62E17CCBB087E979126D4ABF" Name="win-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir7ECD486B62E17CCBB087E979126D4ABF">
+            <Directory Id="dir85B80FE50CF05DD375B250EB979D26D9" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dir87089D4DC4483E78802A58464DF9014D" Name="unix" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir3014AD20355D4068F2CC1820BB752DE4">
+            <Directory Id="dir97F3372FD2A4325D6A34D0C819A31566" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2C49DC1F6EE4BD272BD857B7A0AFE148">
+            <Directory Id="dir99689028FB11E3DC4E72D1DEB7A50102" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirF13D5B493D828E1BFF055B9F8086985C">
+            <Directory Id="dirA95E167063962C751C878175C6F0C8AE" Name="net6.0" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirF0075EE8A769518C8C1E80F55289A41A">
+            <Directory Id="dirB66263C76304C27116E0CCC22A6887A0" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir3D4680255E53F8F528E8621FD459BF3E">
+            <Directory Id="dirC79B6CEE6936D29F28BCD2B2FCAF631E" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dirC804129221FE3440AB97E1ABC658AF24" Name="win-arm64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dirE366A2DFD161339FCA8CD508930209BE" Name="win-x86" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
+            <Directory Id="dirF0075EE8A769518C8C1E80F55289A41A" Name="linux-arm" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir23A4F360DC36835C75AC6ECA874B68C8">
+            <Directory Id="dirF13D5B493D828E1BFF055B9F8086985C" Name="lib" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirC804129221FE3440AB97E1ABC658AF24">
+            <Directory Id="dirF4059B45CD6E212F4440B52F593CEEA3" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir0FF5A080B957C03D29186274E3DA9191">
+            <Directory Id="dirF8A8A5D2FB7F634A66FD05DF8B97E99F" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+</Wix>

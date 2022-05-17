@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 
+using CodeProject.SenseAI.Server.Backend;
+
 namespace CodeProject.SenseAI.API.Server.Frontend
 {
     /// <summary>
@@ -41,110 +43,14 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         public string? PYTHON_BASEPATH { get; set; }
 
         /// <summary>
-        /// Gets or sets the path to the Python 3.7 interpreter
+        /// Gets or sets the tamplated path to the Python interpreter. This path
+        /// may include a %PYTHON_RUNTIME% marker which will need to be replaced.
         /// </summary>
-        public string? PYTHON37_PATH { get; set; }
+        public string? PYTHON_PATH { get; set; }
 
         /// <summary>
-        /// Gets or sets the information to start all the backend processes.
+        /// Gets or sets the environment variables, common to the SenseAI Server ecosystem, to set.
         /// </summary>
-        public StartupProcess[]? StartupProcesses { get; set; }
-
-        /// <summary>
-        /// Gets or sets the information to pass to the backend processes.
-        /// </summary>
-        public Dictionary<string, object>? BackendEnvironmentVariables { get; set; }
-    }
-
-    /// <summary>
-    /// Data mapping a path to a queue and command.
-    /// </summary>
-    public struct ApiRouteMap 
-    {
-        /// <summary>
-        /// Gets or sets the path for the route.
-        /// </summary>
-        public string Path { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the Queue used by this path.
-        /// </summary>
-        public string Queue { get; set; }
-
-        /// <summary>
-        /// Gets the command passed as part of the payload to the 
-        /// queue for this path.
-        /// </summary>
-        public string Command { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the ApiRoute struct.
-        /// </summary>
-        /// <param name="Path"></param>
-        /// <param name="Queue"></param>
-        /// <param name="Command"></param>
-        public ApiRouteMap(string Path, string Queue, string Command)
-        {
-            this.Path    = Path;
-            this.Queue   = Queue;
-            this.Command = Command;
-        }
-    }
-
-    /// <summary>
-    /// Information required to start the backend processes.
-    /// </summary>
-    public class StartupProcess
-    {
-        /// <summary>
-        /// Gets or sets the Name to be displayed.
-        /// </summary>
-        public string? Name { get; set; }
-
-        /// <summary>
-        /// Gets or sets whether this process is currently running.
-        /// </summary>
-        public bool? Running { get; set; } = false;
-
-        /// <summary>
-        /// Gets or sets the name of the configuration value which enables this process.
-        /// </summary>
-        public string[] EnableFlags { get; set; } = Array.Empty<string>();
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this procoess should be activated on startup if
-        /// no instruction to the contrary is seen. A default "Start me up" flag.
-        /// </summary>
-        public bool? Activate { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the Queue used by this process.
-        /// </summary>
-        public string[] Queues { get; set; } = Array.Empty<string>();
-
-        /// <summary>
-        /// Gets or sets a list of RouteMaps.
-        /// </summary>
-        public ApiRouteMap[] RouteMaps { get; set; } = Array.Empty<ApiRouteMap>();
-
-        /// <summary>
-        /// Gets or sets the name of the command to be executed.
-        /// </summary>
-        public string? Command { get; set; }
-
-        /// <summary>
-        /// Gets or set the working directory for this command
-        /// </summary>
-        public string? WorkingDirectory { get; set; }
-
-        /// <summary>
-        /// Gets or sets the arguments passed to the command.
-        /// </summary>
-        public string? Args { get; set; }
-
-        /// <summary>
-        /// Gets or sets the platforms on which this module is supported.
-        /// </summary>
-        public string[] Platforms { get; set; } = Array.Empty<string>();
+        public Dictionary<string, object>? EnvironmentVariables { get; set; }
     }
 }

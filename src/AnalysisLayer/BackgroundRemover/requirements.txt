@@ -1,0 +1,25 @@
+#! Python3.9
+
+## SenseAI
+requests					# Installing Requests, the HTTP library
+Pillow						# Installing Pillow, a Python Image Library
+
+## Background Remover
+filetype==1.0.9				# Installing FileType, a package to infer file types and MIME types
+gdown==4.4.0				# Installing gdown, a package for downloading from Google Drive folders
+numpy==1.21.6				# Installing the required version of numpy of pymatting - numba
+pymatting==1.1.5			# Installing pymatting, a Python Library for Alpha Matting
+onnxruntime					# ==1.10.0  # Installing the ONNX runtime
+
+## Not needed for our usage
+## watchdog==2.1.7			# Installing watchdog, a set of utilities to monitor file system events
+## asyncer==0.0.1			# Installing Asyncer, a library to make our networking/concurrency calls easier.
+## pillow==9.0.1			# Pillow, the image library
+## uvicorn==0.17.0			# Uvicorn, an ASGI web server implementation for Python
+## aiohttp==3.8.1			# AIOHTTP, an Asynchronous HTTP Client/Server
+## click==8.0.3				# Click, the Command Line Interface Creation Kit
+## fastapi==0.72.0			# FastAPI, a web framework for building APIs
+## python-multipart==0.0.5
+## scikit-image==0.19.1
+## scipy==1.8.0
+## tqdm==4.62.3

@@ -8,11 +8,14 @@
     </Fragment>
     <Fragment>
         <ComponentGroup Id="TextSummaryFilesComponentGroup">
+            <Component Id="cmp12B125E51BEBEFF62F8634DF7962D408" Directory="TextSummaryInstallFolder" Guid="*">
+                <File Id="filC572B1744C4AE747232BD2878D373A1E" KeyPath="yes" Source="$(var.ModelsHarvestPath)\modulesettings.json" />
+            </Component>
+            <Component Id="cmpAEC8E02367B79F72CE659C3B489FF39C" Directory="TextSummaryInstallFolder" Guid="*">
+                <File Id="fil928D6DFF0BD5A201E83A1A03494F9F13" KeyPath="yes" Source="$(var.ModelsHarvestPath)\modulesettings.windows.json" />
+            </Component>
             <Component Id="cmp4B1D65ABB3D598CB9A09A63ABD218937" Directory="TextSummaryInstallFolder" Guid="*">
                 <File Id="filBAC50F3AC35D8544F8DAFED64BE6B0FC" KeyPath="yes" Source="$(var.ModelsHarvestPath)\requirements.txt" />
-            </Component>
-            <Component Id="cmpB971475B88123A2D2405F0E0A30C1242" Directory="TextSummaryInstallFolder" Guid="*">
-                <File Id="fil64490987FF8228C27CDA8D4F6FE46E6D" KeyPath="yes" Source="$(var.ModelsHarvestPath)\senseAI.py" />
             </Component>
             <Component Id="cmpB68B18A34CEC2686381BCC61CB76D5E2" Directory="TextSummaryInstallFolder" Guid="*">
                 <File Id="fil9B1EA2B7765ECF0559BB15D1428EBCDC" KeyPath="yes" Source="$(var.ModelsHarvestPath)\summarize.py" />
@@ -106,6 +109,12 @@
             </Component>
             <Component Id="cmp68474069130887ACBDC35F889AF5708C" Directory="dirC3E6D955D4E088C2ECFC1CD73194099B" Guid="*">
                 <File Id="filC4D6C953767808DE8BB9FF7E179FE057" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\summarize.cpython-37.pyc" />
+            </Component>
+            <Component Id="cmp472D2C4AEEEA1C8B382B6BAC7551BA9A" Directory="dirC3E6D955D4E088C2ECFC1CD73194099B" Guid="*">
+                <File Id="fil43CF1EE082A128C83693FC0359B9C18B" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\summarize.cpython-38.pyc" />
+            </Component>
+            <Component Id="cmp41C38EDFBED2E0DC76072411D873209A" Directory="dirC3E6D955D4E088C2ECFC1CD73194099B" Guid="*">
+                <File Id="fil672A429A2947FFD380116FA4A0EE9C3C" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\summarize.cpython-39.pyc" />
             </Component>
         </ComponentGroup>
     </Fragment>

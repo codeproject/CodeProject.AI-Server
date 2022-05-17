@@ -17,7 +17,9 @@
 		<MediaTemplate EmbedCab="yes" />
 		
 		<Feature Id="Python37Runtime" Title="Python 3.7 Runtime" Level="1">
-      <ComponentGroupRef Id="PythonFilesComponentGroup" />
+			
+        <ComponentGroupRef Id="Python37FilesComponentGroup" />
+		<ComponentGroupRef Id="PythonSdkFilesComponentGroup"/>
     </Feature>
 
     <CustomAction Id="CreateVenvCmd"

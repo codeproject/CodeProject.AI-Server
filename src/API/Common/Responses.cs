@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace CodeProject.SenseAI.API.Common
@@ -15,7 +16,6 @@ namespace CodeProject.SenseAI.API.Common
         /// </summary>
         [JsonPropertyOrder(-5)]
         public bool success { get; set; } = false;
-
     }
 
     public class SuccessResponse : ResponseBase
@@ -70,12 +70,49 @@ namespace CodeProject.SenseAI.API.Common
         public LogEntry[]? entries { get; set; }
     }
 
+
+    /// <summary>
+    /// Represents that status of a process
+    /// </summary>
+    public class ProcessStatus
+    {
+        /// <summary>
+        /// Gets or sets the module Id
+        /// </summary>
+        public string? ModuleId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the module name
+        /// </summary>
+        public string? Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the UTC time the module was started
+        /// </summary>
+        public DateTime? Started { get; set; }
+
+        /// <summary>
+        /// Gets or sets the UTC time the module was last seen making a request to the backend queue
+        /// </summary>
+        public DateTime? LastSeen { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether or not the module is running
+        /// </summary>
+        public bool Running { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of requests processed
+        /// </summary>
+        public int Processed { get; set; }
+    }
+
     /// <summary>
     /// The Response when requesting the status of the backend analysis services
     /// </summary>
     public class AnalysisServicesStatusResponse : SuccessResponse
     {
-        public KeyValuePair<string, bool>[]? statuses { get; set; }
+        public List<ProcessStatus>? statuses { get; set; }
     }
 
 #pragma warning restore IDE1006 // Naming Styles

@@ -1,6 +1,8 @@
 ##import _thread as thread
 
-from senseAI import SenseAIBackend # will also set the python packages path correctly
+import sys
+sys.path.append("../../SDK/Python")
+from senseAI import SenseAIBackend, LogMethod # will also set the python packages path correctly
 senseAI = SenseAIBackend()
 
 import ast
@@ -8,7 +10,6 @@ import io
 import json
 import os
 import sqlite3
-import sys
 import time
 import warnings
 
@@ -117,23 +118,34 @@ def scenerecognition(thread_name, delay):
 
                 except UnidentifiedImageError:
                     err_trace = traceback.format_exc()
-                    senseAI.log(err_trace, is_error=True)
 
                     output = {
                         "success": False,
                         "error": "error occured on the server",
                         "code": 400,
                     }
-
-                    senseAI.errLog("scenerecognition", "scene.py", err_trace, "UnidentifiedImageError")
+                    senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                    { 
+                        "process": "scene recognize", 
+                        "file": "scene.py",
+                        "method": "scenerecognition",
+                        "message": err_trace, 
+                        "exception_type": "UnidentifiedImageError"
+                    })
 
                 except Exception:
                     err_trace = traceback.format_exc()
-                    senseAI.log(err_trace, is_error=True)
 
                     output = {"success": False, "error": "invalid image", "code": 500}
 
-                    senseAI.errLog("scenerecognition", "scene.py", err_trace, "Exception")
+                    senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                    { 
+                        "process": "scene recognize", 
+                        "file": "scene.py",
+                        "method": "scenerecognition",
+                        "message": err_trace,
+                        "exception_type": "Exception"
+                    })
 
                 finally:
                     senseAI.endTimer(timer)
@@ -146,6 +158,5 @@ def scenerecognition(thread_name, delay):
 
 
 if __name__ == "__main__":
-    senseAI.log("Scene Detection module started.")
+    senseAI.log(LogMethod.Info | LogMethod.Server, {"message": "Scene Detection module started."})
     scenerecognition("", SharedOptions.SLEEP_TIME)
-    # TODO: Send back a "I'm alive" message to the backend of the API server so it can report to the user

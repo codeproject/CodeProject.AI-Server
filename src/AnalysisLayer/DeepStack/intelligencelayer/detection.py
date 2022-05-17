@@ -1,7 +1,12 @@
 import sys
+sys.path.append("../../SDK/Python")
+from senseAI import SenseAIBackend, LogMethod # will also set the python packages path correctly
+senseAI = SenseAIBackend()
+
 import os
 import json
 import threading
+
 
 from senseAI import SenseAIBackend # will also set the python packages path correctly
 senseAI = SenseAIBackend()
@@ -99,19 +104,23 @@ def objectdetection(thread_name: str, delay: float):
 
                 except UnidentifiedImageError:
                     err_trace = traceback.format_exc()
-                    senseAI.log(err_trace, is_error=True)
 
                     output = {
                         "success": False,
                         "error":   "invalid image file",
                         "code":    400,
                     }
-                    senseAI.errLog("objectdetection", "detection.py", err_trace, "UnidentifiedImageError")
+
+                    senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                               { "process": "objectdetection", 
+                                 "file": "detection.py",
+                                 "method": "objectdetection",
+                                 "message": err_trace, 
+                                 "exception_type": "UnidentifiedImageError"})
 
                 except Exception:
 
                     err_trace = traceback.format_exc()
-                    senseAI.log(err_trace, is_error=True)
 
                     output = {
                         "success": False,
@@ -119,7 +128,12 @@ def objectdetection(thread_name: str, delay: float):
                         "code":    500,
                     }
 
-                    senseAI.errLog("objectdetection", "detection.py", err_trace, "Exception")
+                    senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                               { "process": "objectdetection", 
+                                 "file": "detection.py",
+                                 "method": "objectdetection",
+                                 "message": err_trace, 
+                                 "exception_type": "Exception"})
 
                 finally:
                     senseAI.endTimer(timer)
@@ -128,9 +142,8 @@ def objectdetection(thread_name: str, delay: float):
         # time.sleep(delay)
 
 if __name__ == "__main__":
-    senseAI.log("Object Detection module started.")
+    senseAI.log(LogMethod.Info | LogMethod.Server, {"message": "Object Detection module started."})
     objectdetection("", SharedOptions.SLEEP_TIME)
-    # TODO: Send back a "I'm alive" message to the backend of the API server so it can report to the user
 
     # for x in range(1, 4):
     #     thread = threading.Thread(None, objectdetection, args = ("", SharedOptions.SLEEP_TIME))

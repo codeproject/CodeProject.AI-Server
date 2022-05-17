@@ -6,12 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.SenseAI.API.Server.Backend;
 using Microsoft.Extensions.Configuration;
+using CodeProject.SenseAI.AnalysisLayer.SDK;
 
 namespace CodeProject.SenseAI.Analysis.Yolo
 {
@@ -24,12 +23,13 @@ namespace CodeProject.SenseAI.Analysis.Yolo
     /// </summary>
     public class YoloProcessor : BackgroundService
     {
-        private const string                    _queueName = "detection_queue";
-        private static HttpClient?              _httpClient;
+        private string                          _queueName = "detection_queue";
+        private string                          _moduleId  = "_moduleId";
+
         private int                             _parallelism = 4; // 4 also seems to be good on my machine.
         private readonly ILogger<YoloProcessor> _logger;
         private readonly ObjectDetector         _objectDetector;
-
+        private readonly SenseAIClient          _senseAI;
         /// <summary>
         /// Initializes a new instance of the YoloProcessor.
         /// </summary>
@@ -47,12 +47,19 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             if (port == default)
                 port = 5000;
 
-            _httpClient ??= new HttpClient { 
-                BaseAddress = new Uri($"http://localhost:{port}/")
+            _queueName = configuration.GetValue<string>("MODULE_QUEUE");
+            if (_queueName == default)
+                _queueName = "detection_queue";
+
+            _moduleId = configuration.GetValue<string>("MODULE_ID");
+            if (_moduleId == default)
+                _moduleId = "object-detect";
+
+            _senseAI = new SenseAIClient($"http://localhost:{port}/"
 #if DEBUG
-                ,Timeout = TimeSpan.FromMinutes(1)
+                ,TimeSpan.FromMinutes(1)
 #endif
-            };
+            );
         }
 
         /// <summary>
@@ -65,7 +72,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
             _logger.LogInformation("Background YoloDetector Task Started.");
-            await LogToServer("SenseAI Object Detection module started.", token);
+            await _senseAI.LogToServer("SenseAI Object Detection module started.", token);
 
             List<Task> tasks = new List<Task>();
             for (int i= 0; i < _parallelism; i++)
@@ -82,19 +89,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                 BackendRequest? request = null;
                 try
                 {
-                    //_logger.LogInformation("Yolo attempting to pull from Queue.");
-                    var httpResponse = await _httpClient!.GetAsync($"v1/queue/{_queueName}", token)
-                                                         .ConfigureAwait(false);
-
-                    if (httpResponse is not null &&
-                        httpResponse.StatusCode == System.Net.HttpStatusCode.OK)
-                    {
-                        var jsonString = await httpResponse.Content.ReadAsStringAsync(token)
-                                                           .ConfigureAwait(false);
-
-                        request = JsonSerializer.Deserialize<BackendRequest>(jsonString,
-                                        new JsonSerializerOptions(JsonSerializerDefaults.Web));
-                    }
+                    request = await _senseAI.GetRequest(_queueName, _moduleId, token);
                 }
                 catch (Exception ex)
                 {
@@ -109,7 +104,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                     
                 if (file is null)
                 {
-                    await LogToServer("Object Detection Null or File.", token);
+                    await _senseAI.LogToServer("Object Detection Null or File.", token);
                     response = new BackendErrorResponse(-1, "Object Detection Invalid File.");
                 }
                 else
@@ -125,7 +120,7 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                     }
                     catch (Exception ex)
                     {
-                        await LogToServer($"Object Detection Error for {file.filename}.", token);
+                        await _senseAI.LogToServer($"Object Detection Error for {file.filename}.", token);
                         _logger.LogError(ex, "Yolo Object Detector Exception");
                         yoloResult = null;
                     }
@@ -167,19 +162,8 @@ namespace CodeProject.SenseAI.Analysis.Yolo
                 else
                     content = JsonContent.Create(response as BackendErrorResponse);
 
-                await _httpClient.PostAsync($"v1/queue/{request.reqid}", content, token)
-                                 .ConfigureAwait(false);
+                await _senseAI.SendResponse(request.reqid, _moduleId, content, token);
             }
-        }
-
-        private async Task LogToServer(string message, CancellationToken token)
-        {
-            var form = new FormUrlEncodedContent(new[]
-                { new KeyValuePair<string?, string?>("entry", message)}
-            );
-
-            /*var response = */ await _httpClient!.PostAsync($"v1/log", form, token)
-                                                  .ConfigureAwait(false);
         }
 
         /// <summary>

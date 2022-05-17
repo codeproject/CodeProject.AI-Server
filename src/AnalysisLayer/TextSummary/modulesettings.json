@@ -1,0 +1,49 @@
+{
+    "Modules": {
+        "TextSummary": {
+            "Name": "Text Summary",
+            "Activate": true,
+            "Description": "Summarizes some content by selecting a number of sentences that are most representitive of the content.",
+            "FilePath": "TextSummary\\textsummary.py",
+            "Runtime": "python38",
+            "Platforms": [ "windows", "linux", "macos", "docker" ],
+
+            "EnvironmentVariables": {
+                "NLTK_DATA": "%MODULES_PATH%\\TextSummary\\nltk_data"
+            },
+
+            "RouteMaps": [
+                {
+                    "Path": "text/summarize",
+                    "Queue": "summary_queue",
+                    "Command": "summarize",
+                    "Description": "Summarizes some content by selecting a number of sentences that are most representitive of the content.",
+                    "Inputs": [
+                        {
+                            "Name": "text",
+                            "Type": "Text",
+                            "Description": "The text to be summarized"
+                        },
+                        {
+                            "Name": "num_sentences",
+                            "Type": "Integer",
+                            "Description": "The number of sentences to produce."
+                        }
+                    ],
+                    "Outputs": [
+                        {
+                            "Name": "success",
+                            "Type": "Boolean",
+                            "Description": "True if successful."
+                        },
+                        {
+                            "Name": "summary",
+                            "Type": "Text",
+                            "Description": "The summarized text."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

@@ -5,6 +5,7 @@ VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A8B76501-496A-4011-9C37-8308A1EBDFA7}"
 	ProjectSection(SolutionItems) = preProject
+		src\clean.bat = src\clean.bat
 		src\start.bat = src\start.bat
 		src\start.sh = src\start.sh
 	EndProjectSection
@@ -34,8 +35,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AnalysisLayer", "AnalysisLa
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{D885EE64-C1BD-44D6-84D8-1E46806298D9}"
-EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DeepStack", "src\AnalysisLayer\DeepStack\intelligencelayer\DeepStack.pyproj", "{E5D27495-EE4F-4AAF-8749-A6BA848111E2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Javascript", "Javascript", "{3A860CDD-94B9-4002-BA08-87E8822DDE50}"
 	ProjectSection(SolutionItems) = preProject
@@ -70,7 +69,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestData", "TestData", "{B1
 		demos\TestData\pexels-pixabay-273935.jpg = demos\TestData\pexels-pixabay-273935.jpg
 		demos\TestData\pexels-polina-tankilevitch-5848781.jpg = demos\TestData\pexels-polina-tankilevitch-5848781.jpg
 		demos\TestData\pexels-roberto-nickson-2559941.jpg = demos\TestData\pexels-roberto-nickson-2559941.jpg
-		demos\TestData\pexels-thirdman-7268587 (1).jpg = demos\TestData\pexels-thirdman-7268587 (1).jpg
 		demos\TestData\pexels-thirdman-7652055.jpg = demos\TestData\pexels-thirdman-7652055.jpg
 		demos\TestData\pexels-tiger-lily-4480988.jpg = demos\TestData\pexels-tiger-lily-4480988.jpg
 		demos\TestData\pexels-tiger-lily-4481324.jpg = demos\TestData\pexels-tiger-lily-4481324.jpg
@@ -94,6 +92,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frontend", "src\API\Server\FrontEnd\Frontend.csproj", "{A0CF3BEE-8EE3-4B23-BEB8-9D258C0510A3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{232710A8-9180-4139-8FF2-8F21F649D927} = {232710A8-9180-4139-8FF2-8F21F649D927}
+		{7DC0A312-39AD-41B0-BB53-72ACACC76959} = {7DC0A312-39AD-41B0-BB53-72ACACC76959}
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482} = {AB47CC99-15ED-4928-A2F2-DC8F83DA9482}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend", "src\API\Server\Backend\Backend.csproj", "{C93C22D7-4EB2-4EC0-A7F0-FBCFB9F6F72D}"
@@ -132,7 +132,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		global.json = global.json
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.AnalysisLayer.Yolo", "src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo\CodeProject.SenseAI.AnalysisLayer.Yolo.csproj", "{232710A8-9180-4139-8FF2-8F21F649D927}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetector", "src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo\ObjectDetector.csproj", "{232710A8-9180-4139-8FF2-8F21F649D927}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{FF0C329F-41E8-4540-BCDB-97690911077D}"
 EndProject
@@ -162,9 +162,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{5F1052
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "SenseAI.BootStrapper", "Installers\Windows\SenseAI.BootStrapper\SenseAI.BootStrapper.wixproj", "{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79}"
 	ProjectSection(ProjectDependencies) = postProject
-		{ED492608-6013-4552-A29B-A7E14F4BEB0B} = {ED492608-6013-4552-A29B-A7E14F4BEB0B}
-		{D0B74BE9-8195-4907-AEEE-45631E37251F} = {D0B74BE9-8195-4907-AEEE-45631E37251F}
 		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06} = {3F34EAEE-8A53-40D1-8CDB-A13AE728FA06}
+		{D0B74BE9-8195-4907-AEEE-45631E37251F} = {D0B74BE9-8195-4907-AEEE-45631E37251F}
+		{ED492608-6013-4552-A29B-A7E14F4BEB0B} = {ED492608-6013-4552-A29B-A7E14F4BEB0B}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Old School Scripts", "Old School Scripts", "{FDB25B74-D0CD-4665-9152-DE968A1028D8}"
@@ -208,6 +208,38 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{FB0561
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TextSummary", "src\AnalysisLayer\TextSummary\TextSummary.pyproj", "{470D3417-36A4-49A4-B719-496466FA92FB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Articles", "Articles", "{2E9D03C1-BF8F-4E3D-944A-0DDEDDE620C5}"
+	ProjectSection(SolutionItems) = preProject
+		docs\Articles\adding-a-module.md = docs\Articles\adding-a-module.md
+		docs\Articles\adding-a-net6-module.md = docs\Articles\adding-a-net6-module.md
+		docs\Articles\dog_and_man_rembg.png = docs\Articles\dog_and_man_rembg.png
+		docs\Articles\How-to-add-AI-to-an-app.md = docs\Articles\How-to-add-AI-to-an-app.md
+		docs\Articles\pexels-thirdman-7268587.jpg = docs\Articles\pexels-thirdman-7268587.jpg
+		docs\Articles\test.html.jpg = docs\Articles\test.html.jpg
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Python", "Python", "{D2B223B6-983B-4782-B231-5F481504A86F}"
+	ProjectSection(SolutionItems) = preProject
+		src\AnalysisLayer\SDK\Python\requirements.txt = src\AnalysisLayer\SDK\Python\requirements.txt
+		src\AnalysisLayer\SDK\Python\senseAI.py = src\AnalysisLayer\SDK\Python\senseAI.py
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NET", "NET", "{11F66210-D711-4A0A-AE3A-8AC11432CDC3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PortraitFilter", "src\AnalysisLayer\PortraitFilter\PortraitFilter.csproj", "{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "BackgroundRemover", "src\AnalysisLayer\BackgroundRemover\BackgroundRemover.pyproj", "{470D3417-36A4-49A4-B719-496466FA92FC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.AnalysisLayer.SDK", "src\AnalysisLayer\SDK\NET\CodeProject.SenseAI.AnalysisLayer.SDK\CodeProject.SenseAI.AnalysisLayer.SDK.csproj", "{56DFAAD2-2E14-45D8-8BC9-D171785235E9}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Vision", "src\AnalysisLayer\DeepStack\intelligencelayer\Vision.pyproj", "{E5D27495-EE4F-4AAF-8749-A6BA848111E2}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "BackgroundRemover.Installer", "Installers\Windows\BackgroundRemover.Installer\BackgroundRemover.Installer.wixproj", "{7E70C376-7119-4C90-AC30-344EEA29594E}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "PortraitFilter.Installer", "Installers\Windows\PortraitFilter.Installer\PortraitFilter.Installer.wixproj", "{476475CE-3C81-446B-914E-AC472D41B82A}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Python39.Installer", "Installers\Windows\Python39.Installer\Python39.Installer.wixproj", "{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -220,10 +252,6 @@ Global
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446}.Release|x86.ActiveCfg = Release|Any CPU
-		{E5D27495-EE4F-4AAF-8749-A6BA848111E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E5D27495-EE4F-4AAF-8749-A6BA848111E2}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{E5D27495-EE4F-4AAF-8749-A6BA848111E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E5D27495-EE4F-4AAF-8749-A6BA848111E2}.Release|x86.ActiveCfg = Release|Any CPU
 		{C33D90E7-7570-46FB-9EB9-ED6B40A93A9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C33D90E7-7570-46FB-9EB9-ED6B40A93A9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C33D90E7-7570-46FB-9EB9-ED6B40A93A9B}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -328,6 +356,54 @@ Global
 		{470D3417-36A4-49A4-B719-496466FA92FB}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{470D3417-36A4-49A4-B719-496466FA92FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{470D3417-36A4-49A4-B719-496466FA92FB}.Release|x86.ActiveCfg = Release|Any CPU
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}.Debug|x86.Build.0 = Debug|Any CPU
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}.Release|x86.ActiveCfg = Release|Any CPU
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482}.Release|x86.Build.0 = Release|Any CPU
+		{470D3417-36A4-49A4-B719-496466FA92FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{470D3417-36A4-49A4-B719-496466FA92FC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{470D3417-36A4-49A4-B719-496466FA92FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{470D3417-36A4-49A4-B719-496466FA92FC}.Release|x86.ActiveCfg = Release|Any CPU
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9}.Debug|x86.Build.0 = Debug|Any CPU
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9}.Release|x86.ActiveCfg = Release|Any CPU
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9}.Release|x86.Build.0 = Release|Any CPU
+		{E5D27495-EE4F-4AAF-8749-A6BA848111E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5D27495-EE4F-4AAF-8749-A6BA848111E2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E5D27495-EE4F-4AAF-8749-A6BA848111E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5D27495-EE4F-4AAF-8749-A6BA848111E2}.Release|x86.ActiveCfg = Release|Any CPU
+		{7E70C376-7119-4C90-AC30-344EEA29594E}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{7E70C376-7119-4C90-AC30-344EEA29594E}.Debug|Any CPU.Build.0 = Debug|x86
+		{7E70C376-7119-4C90-AC30-344EEA29594E}.Debug|x86.ActiveCfg = Debug|x86
+		{7E70C376-7119-4C90-AC30-344EEA29594E}.Debug|x86.Build.0 = Debug|x86
+		{7E70C376-7119-4C90-AC30-344EEA29594E}.Release|Any CPU.ActiveCfg = Release|x86
+		{7E70C376-7119-4C90-AC30-344EEA29594E}.Release|Any CPU.Build.0 = Release|x86
+		{7E70C376-7119-4C90-AC30-344EEA29594E}.Release|x86.ActiveCfg = Release|x86
+		{7E70C376-7119-4C90-AC30-344EEA29594E}.Release|x86.Build.0 = Release|x86
+		{476475CE-3C81-446B-914E-AC472D41B82A}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{476475CE-3C81-446B-914E-AC472D41B82A}.Debug|Any CPU.Build.0 = Debug|x86
+		{476475CE-3C81-446B-914E-AC472D41B82A}.Debug|x86.ActiveCfg = Debug|x86
+		{476475CE-3C81-446B-914E-AC472D41B82A}.Debug|x86.Build.0 = Debug|x86
+		{476475CE-3C81-446B-914E-AC472D41B82A}.Release|Any CPU.ActiveCfg = Release|x86
+		{476475CE-3C81-446B-914E-AC472D41B82A}.Release|Any CPU.Build.0 = Release|x86
+		{476475CE-3C81-446B-914E-AC472D41B82A}.Release|x86.ActiveCfg = Release|x86
+		{476475CE-3C81-446B-914E-AC472D41B82A}.Release|x86.Build.0 = Release|x86
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Debug|Any CPU.Build.0 = Debug|x86
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Debug|x86.ActiveCfg = Debug|x86
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Debug|x86.Build.0 = Debug|x86
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Release|Any CPU.ActiveCfg = Release|x86
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Release|Any CPU.Build.0 = Release|x86
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Release|x86.ActiveCfg = Release|x86
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -336,7 +412,6 @@ Global
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
 		{2379A486-0D28-4CAD-BB13-E77FBA538E0D} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
 		{156BFEDA-D477-43B2-92DA-FCC9BAF1F893} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
-		{E5D27495-EE4F-4AAF-8749-A6BA848111E2} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{3A860CDD-94B9-4002-BA08-87E8822DDE50} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
 		{1912618E-7942-4BB0-BC2B-7F48A38D1049} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
 		{B10B59B5-9F63-41C2-BFBB-6C7311DC4E99} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
@@ -367,6 +442,16 @@ Global
 		{F675BEA0-4A75-4B30-9E70-CBBE8641E9CD} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 		{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{470D3417-36A4-49A4-B719-496466FA92FB} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
+		{2E9D03C1-BF8F-4E3D-944A-0DDEDDE620C5} = {3BF27572-9D3A-497C-8375-29110EBBD3D1}
+		{D2B223B6-983B-4782-B231-5F481504A86F} = {FF0C329F-41E8-4540-BCDB-97690911077D}
+		{11F66210-D711-4A0A-AE3A-8AC11432CDC3} = {FF0C329F-41E8-4540-BCDB-97690911077D}
+		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
+		{470D3417-36A4-49A4-B719-496466FA92FC} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
+		{56DFAAD2-2E14-45D8-8BC9-D171785235E9} = {11F66210-D711-4A0A-AE3A-8AC11432CDC3}
+		{E5D27495-EE4F-4AAF-8749-A6BA848111E2} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
+		{7E70C376-7119-4C90-AC30-344EEA29594E} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{476475CE-3C81-446B-914E-AC472D41B82A} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

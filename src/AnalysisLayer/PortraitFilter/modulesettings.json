@@ -1,0 +1,46 @@
+{
+    // The processes (typically the backend analysis processes) that are to be started when the
+    // server starts. They will be started in order of appearance.
+    "Modules": {
+        "PortraitFilter": {
+            "Name": "Portrait Filter",
+            "Activate": true,
+            "Description": "Blurs the background behind people in an image.",
+            "FilePath": "PortraitFilter\\PortraitFilter.dll",
+            "Runtime": "dotnet",
+            "Platforms": [ "windows", "linux", "docker" ],
+            "RouteMaps": [
+                {
+                    "Path": "image/portraitfilter",
+                    "Queue": "portraitfilter_queue",
+                    "Command": "filter",
+                    "Description": "Blurs the background behind people in an image.",
+                    "Inputs": [
+                        {
+                            "Name": "image",
+                            "Type": "File",
+                            "Description": "The image to be filtered."
+                        },
+                        {
+                            "Name": "strength",
+                            "Type": "Float",
+                            "Description": "How much to blur the background (0.0 - 1.0). Default 0.5."
+                        }
+                    ],
+                    "Outputs": [
+                        {
+                            "Name": "success",
+                            "Type": "Boolean",
+                            "Description": "True if successful."
+                        },
+                        {
+                            "Name": "filtered_image",
+                            "Type": "File",
+                            "Description": "The filtered image."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

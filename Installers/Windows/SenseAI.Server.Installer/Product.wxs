@@ -27,7 +27,8 @@
                  Guid="22ba67a0-de8d-45dc-abb1-ac07a0919106"
                  Directory="CODEPROJECTSENSEAISTARTMENUFOLDER">
 
-        <!-- REVIEW: The PORT needs to be handled carefully. What if it's changed in appsettings? -->
+				<!-- NOTE: The PORT needs to be handled carefully. If it's changed in appsettings
+				           then it will need to be manually updated here. -->
 				<util:InternetShortcut Id="MenuLaunchDashboardShortcut"
                                Name="SenseAI Dashboard"
                                IconFile="[#filFavicon]"

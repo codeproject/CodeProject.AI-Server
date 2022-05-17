@@ -1,7 +1,9 @@
 ## import _thread as thread
 ## from multiprocessing import Process
 
-from senseAI import SenseAIBackend # will also set the python packages path correctly
+import sys
+sys.path.append("../../SDK/Python")
+from senseAI import SenseAIBackend, LogMethod # will also set the python packages path correctly
 senseAI = SenseAIBackend()
 
 import threading
@@ -11,7 +13,6 @@ import io
 import json
 import os
 import sqlite3
-import sys
 import time
 import warnings
 
@@ -106,9 +107,6 @@ def face(thread_name, delay):
         cuda=SharedOptions.CUDA_MODE,
     )
 
-    init_db()
-    load_faces()
-
     ADD_FACE    = "INSERT INTO TB_EMBEDDINGS(userid,embedding) VALUES(?,?)"
     UPDATE_FACE = "UPDATE TB_EMBEDDINGS SET embedding = ? where userid = ?"
     SELECT_FACE = "SELECT * FROM TB_EMBEDDINGS where userid = ?"
@@ -174,21 +172,35 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        senseAI.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "invalid image",
                             "code": 400,
                         }
+                        senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                        { 
+                            "process": "face detection", 
+                            "file": "face.py",
+                            "method": "face",
+                            "message": err_trace, 
+                            "exception_type": "UnidentifiedImageError"
+                        })
 
                     except Exception:
                         err_trace = traceback.format_exc()
-                        senseAI.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "error occured on the server",
                             "code": 500,
                         }
+                        senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                        { 
+                            "process": "face detection", 
+                            "file": "face.py",
+                            "method": "face",
+                            "message": err_trace, 
+                            "exception_type": "Exception"
+                        })
 
                     finally:
                         senseAI.endTimer(timer)
@@ -285,12 +297,19 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        senseAI.log(err_trace, is_error=True)
                         output = {
                             "success": False,
                             "error": "invalid image",
                             "code": 400,
                         }
+                        senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                        { 
+                            "process": "face register", 
+                            "file": "face.py",
+                            "method": "face",
+                            "message": err_trace, 
+                            "exception_type": "UnidentifiedImageError"
+                        })
 
                     except Exception:
 
@@ -302,6 +321,14 @@ def face(thread_name, delay):
                             "error": "error occured on the server",
                             "code": 500,
                         }
+                        senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                        { 
+                            "process": "face register", 
+                            "file": "face.py",
+                            "method": "face",
+                            "message": err_trace, 
+                            "exception_type": "Exception"
+                        })
 
                     finally:
                         senseAI.endTimer(timer)
@@ -332,13 +359,20 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
                             "error": "error occured on the server",
                             "code": 500,
                         }
+                        senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                        { 
+                            "process": "face registration list", 
+                            "file": "face.py",
+                            "method": "face",
+                            "message": err_trace, 
+                            "exception_type": "Exception"
+                        })
 
                     finally:
                         senseAI.endTimer(timer)
@@ -366,13 +400,20 @@ def face(thread_name, delay):
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
                             "error": "error occured on the server",
                             "code": 500,
                         }
+                        senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                        { 
+                            "process": "face registration delete", 
+                            "file": "face.py",
+                            "method": "face",
+                            "message": err_trace, 
+                            "exception_type": "Exception"
+                        })
 
                     finally:
                         senseAI.endTimer(timer)
@@ -525,24 +566,38 @@ def face(thread_name, delay):
 
                     except UnidentifiedImageError:
                         err_trace = traceback.format_exc()
-                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
                             "error": "invalid image",
                             "code": 400,
                         }
+                        senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                        { 
+                            "process": "face recognize", 
+                            "file": "face.py",
+                            "method": "face",
+                            "message": err_trace, 
+                            "exception_type": "UnidentifiedImageError"
+                        })
 
                     except Exception:
 
                         err_trace = traceback.format_exc()
-                        senseAI.log(err_trace, is_error=True)
 
                         output = {
                             "success": False,
                             "error": "error occured on the server",
                             "code": 500,
                         }
+                        senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                        { 
+                            "process": "face recognize", 
+                            "file": "face.py",
+                            "method": "face",
+                            "message": err_trace, 
+                            "exception_type": "Exception"
+                        })
 
                     finally:
                         senseAI.endTimer(timer)
@@ -662,11 +717,13 @@ def update_faces(thread_name, delay):
         time.sleep(delay)
 
 if __name__ == "__main__":
+    init_db()
+    load_faces()
+
     faceupdate_thread = threading.Thread(None, update_faces, args = ("", 1))
     face_thread       = threading.Thread(None, face,         args = ("", SharedOptions.SLEEP_TIME))
     faceupdate_thread.start()
     face_thread.start()
 
-    senseAI.log("Face Detection module started.")
+    senseAI.log(LogMethod.Info | LogMethod.Server, {"message": "Face Detection module started."})
     face_thread.join();
-    # TODO: Send back a "I'm alive" message to the backend of the API server so it can report to the user

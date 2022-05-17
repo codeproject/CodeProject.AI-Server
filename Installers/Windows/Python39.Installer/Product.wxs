@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" 
+			 Name="Python39.Installer" 
+			 Language="1033" 
+			 Version="1.0.0.0" 
+			 Manufacturer="CodeProject" 
+			 UpgradeCode="f42c74a0-78ca-4914-a2a1-12ddcb7b53f8">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		
+		<MediaTemplate EmbedCab="yes" />
+
+		<Feature Id="Python39Runtime" Title="Python 3.9 Runtime" Level="1">
+			<ComponentGroupRef Id="Python39FilesComponentGroup" />
+		</Feature>
+		<CustomAction Id="CreateVenvCmd"
+					  Directory="Python39Folder"
+					  ExeCommand='"[Python39Folder]Python.exe" -m venv "[Python39Folder]venv"'
+					  Execute='deferred'
+					  Return="ignore"
+					  Impersonate='yes'/>
+
+		<CustomAction Id="PipUpgradeCmd"
+					  Directory="Python39Folder"
+					  ExeCommand='"[Python39VenvFolder]scripts\pip.exe" install --upgrade pip'
+					  Execute='deferred'
+					  Return='ignore'
+					  Impersonate='yes'/>
+
+		<CustomAction Id="RemoveVenvCmd"
+					  Directory="Python39Folder"
+					  ExeCommand='cmd /C rmdir /s /q "[Python39Folder]venv"'
+					  Execute='deferred'
+					  Return='ignore'
+					  Impersonate='yes'/>
+
+		<InstallExecuteSequence>
+			<Custom Action='CreateVenvCmd' Before='InstallFinalize'>NOT Installed</Custom>
+			<Custom Action='PipUpgradeCmd' After='CreateVenvCmd'>NOT Installed</Custom>
+			<Custom Action='RemoveVenvCmd' Before='RemoveFiles'>REMOVE="ALL"</Custom>
+		</InstallExecuteSequence>
+
+		<UI>
+			<ProgressText Action='PipUpgradeCmd'>Updgrading Pip ... </ProgressText>
+			<ProgressText Action='CreateVenvCmd'>Creating a Python Virtual Environment ... </ProgressText>
+			<ProgressText Action='RemoveVenvCmd'>Removing Python Virtual Environment ... </ProgressText>
+		</UI>
+
+
+	</Product>
+
+	<?include ..\SharedDirectories.wxi ?>
+</Wix>

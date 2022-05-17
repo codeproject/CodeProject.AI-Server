@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>3f34eaee-8a53-40d1-8cdb-a13ae728fa06</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>CodeProject.SenseAI.Python37-1.2.1</OutputName>
+    <OutputName>CodeProject.SenseAI.Python37-1.3.0</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Include="Product.wxs" />
     <Compile Include="Python37Files.wxs" />
+    <Compile Include="PythonSdkFiles.wxs" />
   </ItemGroup>
   <ItemGroup>
     <WixExtension Include="WixUIExtension">
@@ -41,11 +42,12 @@
 	Other similar extension points exist, see Wix.targets.
 	-->
   <PropertyGroup>
-    <DefineConstants>ModelsHarvestPath=..\..\..\installers\downloads\windows\Python37</DefineConstants>
+    <DefineConstants>ModelsHarvestPath=..\..\..\installers\downloads\windows\Python37;PythonSdkHarvestPath=..\..\..\src\AnalysisLayer\SDK\Python</DefineConstants>
     <!--<DefineConstants Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">HarvestPath=..\distribution\Release</DefineConstants>-->
   </PropertyGroup>
   <Target Name="BeforeBuild">
-    <HeatDirectory RunAsSeparateProcess="$(RunWixToolsOutOfProc)" OutputFile="$(ProjectDir)\Python37Files.wxs" Directory="..\..\..\installers\downloads\windows\Python37" ComponentGroupName="PythonFilesComponentGroup" DirectoryRefId="Python37Folder" AutogenerateGuids="true" PreprocessorVariable="var.ModelsHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
+    <HeatDirectory RunAsSeparateProcess="$(RunWixToolsOutOfProc)" OutputFile="$(ProjectDir)\Python37Files.wxs" Directory="..\..\..\installers\downloads\windows\Python37" ComponentGroupName="Python37FilesComponentGroup" DirectoryRefId="Python37Folder" AutogenerateGuids="true" PreprocessorVariable="var.ModelsHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
+    <HeatDirectory RunAsSeparateProcess="$(RunWixToolsOutOfProc)" OutputFile="$(ProjectDir)\PythonSdkFiles.wxs" Directory="..\..\..\src\AnalysisLayer\SDK\Python" ComponentGroupName="PythonSdkFilesComponentGroup" DirectoryRefId="PythonSdkFolder" AutogenerateGuids="true" PreprocessorVariable="var.PythonSdkHarvestPath" SuppressRegistry="true" SuppressRootDirectory="true" ToolPath="$(WixToolPath)" NoLogo="true" />
   </Target>
   <Target Name="AfterBuild">
   </Target>

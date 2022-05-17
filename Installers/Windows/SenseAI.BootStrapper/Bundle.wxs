@@ -28,26 +28,28 @@
 		<Chain>
 			<!-- Add the .NET 6 Desktop and ASP.NET runtimes  -->
 			<ExePackage
-        SourceFile="dotnet-hosting-6.0.2-win.exe"
+				SourceFile="dotnet-hosting-6.0.2-win.exe"
 				DownloadUrl="https://download.visualstudio.microsoft.com/download/pr/bff26878-9597-4390-a4ef-5bd818ba41a0/a7a8114362771690ec52e6fd09236ab8/dotnet-hosting-6.0.2-win.exe"
 				InstallCommand="/q /install"
-        RepairCommand="/q /repair"
+				RepairCommand="/q /repair"
 				UninstallCommand="/q /uninstall"
 				Compressed="no" 
 			/>
 
-      <!-- REVIEW: It would be good to add the VC++ version number to this filename -->
+			<!-- TODO: add the version number to the file.-->
 			<ExePackage
 				SourceFile="VC_redist.x64.exe"
 				DownloadUrl="$(var.AwsVerionDirectory)VC_redist.x64.exe"
 				InstallCommand="/q /install"
-        RepairCommand="/q /repair"
+				RepairCommand="/q /repair"
 				UninstallCommand="/q /uninstall"
 				Compressed="no"  
 				InstallCondition="NOT VCRedistributableInstalled"
 			/>
 			
-      <!-- REVIEW: add version number to filename -->
+			<!-- NOTE: Prior to building the BootStrapper we update the output filename of the WIX
+			installers to include the version number so $var.<installerProject>.TargetPath) includes
+			the version. -->
 			<MsiPackage Id="SENSEAIYOLONET" 
 						SourceFile="$(var.YoloNet.Installer.TargetPath)"
 						DownloadUrl="$(var.AwsVerionDirectory)$(var.YoloNet.Installer.TargetFileName)"
@@ -55,15 +57,20 @@
 						ForcePerMachine="yes"
 			/>
 
-      <!-- REVIEW: add version number to filename -->
-			<MsiPackage Id="SENSEAIPYTHON"  
+			<MsiPackage Id="SENSEAIPYTHON"
 						SourceFile="$(var.Python37.Installer.TargetPath)"
 						DownloadUrl="$(var.AwsVerionDirectory)$(var.Python37.Installer.TargetFileName)"
 						Compressed="no"
 						ForcePerMachine="yes"
 			/>
 
-      <!-- REVIEW: add version number to filename -->
+			<MsiPackage Id="SENSEAIPYTHON39"
+						SourceFile="$(var.Python39.Installer.TargetPath)"
+						DownloadUrl="$(var.AwsVerionDirectory)$(var.Python39.Installer.TargetFileName)"
+						Compressed="no"
+						ForcePerMachine="yes"
+			/>
+
 			<MsiPackage Id="LEGACYMODULES"
 						SourceFile="$(var.DeepStack.Installer.TargetPath)"
 						DownloadUrl="$(var.AwsVerionDirectory)$(var.DeepStack.Installer.TargetFileName)"
@@ -71,18 +78,23 @@
 						ForcePerMachine="yes"
 			/>
 
-      <!-- REVIEW: add version number to filename -->
-			<MsiPackage Id="LEGACYMODELS"
-						SourceFile="$(var.DeepStackModels.Installer.TargetPath)"
-						DownloadUrl="$(var.AwsVerionDirectory)$(var.DeepStackModels.Installer.TargetFileName)"
+			<MsiPackage Id="TEXTSUMMARY"
+						SourceFile="$(var.TextSummary.Installer.TargetPath)"
+						DownloadUrl="$(var.AwsVerionDirectory)$(var.TextSummary.Installer.TargetFileName)"
+						Compressed="no"
+					ForcePerMachine="yes"
+			/>
+
+			<MsiPackage Id="BACKGROUNDREMOVER"
+						SourceFile="$(var.BackgroundRemover.Installer.TargetPath)"
+						DownloadUrl="$(var.AwsVerionDirectory)$(var.BackgroundRemover.Installer.TargetFileName)"
 						Compressed="no"
 						ForcePerMachine="yes"
 			/>
 
-			<!-- REVIEW: add version number to filename -->
-			<MsiPackage Id="TEXTSUMMARY"
-						SourceFile="$(var.TextSummary.Installer.TargetPath)"
-						DownloadUrl="$(var.AwsVerionDirectory)$(var.TextSummary.Installer.TargetFileName)"
+			<MsiPackage Id="PORTRAITFILTER"
+						SourceFile="$(var.PortraitFilter.Installer.TargetPath)"
+						DownloadUrl="$(var.AwsVerionDirectory)$(var.PortraitFilter.Installer.TargetFileName)"
 						Compressed="no"
 						ForcePerMachine="yes"
 			/>

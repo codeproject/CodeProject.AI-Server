@@ -21,14 +21,18 @@
 	<script type="text/javascript">
 
 		const useSVG        = true;
-		const pingFrequency = 10000; // milliseconds
-		const apiServiceUrl = "http://localhost:5000";
-		var serverOnline    = false;
+		const pingFrequency = 1000; // milliseconds
+		let   apiServiceUrl = "http://localhost:5000";
+		var   serverOnline    = false;
+
+		if (navigator.platform.toUpperCase().indexOf('MAC') >= 0)
+			apiServiceUrl = "http://localhost:5500";
 
 		window.addEventListener('DOMContentLoaded', function (event) {
 			serviceUrl.value = apiServiceUrl;
 			setStatus("Searching for API Server...", "orange");
 			setInterval(ping, pingFrequency);
+			setInterval(getAnalysisStatus, pingFrequency);
 		});
 
 		function adjustForImageSize() {
@@ -265,6 +269,46 @@
 				  });
 		}
 
+		async function getAnalysisStatus() {
+
+            // In the future we will ask for "logs since log ID 'x'" so we have
+            // a full history. For now, a simple "last 10".
+            let url = serviceUrl.value.trim() + '/v1/status/analysis/list';
+
+            fetch(url, {
+                method: "GET"
+            })
+            .then(response => {
+
+                if (response.ok) {
+                    response.json().then(data => {
+
+                        if (data && data.statuses) {
+
+                            // disable all first
+                            var cards = document.getElementsByClassName('card');
+                            for (const card of cards)
+                                card.classList.replace('d-flex', 'd-none');
+
+							for (let i = 0; i < data.statuses.length; i++) {
+
+								let moduleId = data.statuses[i].moduleId.replace(" ", "-");
+								let running = data.statuses[i].running;
+
+								// enable those that need enabling. Note that some cards will be
+								// shared among modules, so we need to ensure we're not disabling
+								// a card that was just enabled by a different module
+								var cards = document.getElementsByClassName('card ' + moduleId);
+								for (const card of cards) {
+									if (running)
+										card.classList.replace('d-none', 'd-flex');
+								}
+							}
+						}
+                    })
+                }})
+        }
+
         function submitRequest(controller, apiName, images, parameters, doneFunc) {
 
             setStatus("Sending request to AI server", "blue");
@@ -273,15 +317,9 @@
 
             // Check file selected or not
             if (images && images.length > 0) {
-                if (images.length == 1) {
-                    file = images[0];
-                    formData.append('image', file);
-                }
-                else {
-                    for (var i = 0; i < images.length; i++) {
-                        file = images[i];
-                        formData.append('image' + (i + 1), file);
-                    }
+                for (var i = 0; i < images.length; i++) {
+                    file = images[i];
+                    formData.append('image' + (i + 1), file);
                 }
             }
 
@@ -319,7 +357,8 @@
                 .catch(error => {
                     setStatus('Unable to complete API call: ' + error, "red")
                 });
-        }
+		}
+
 		function onDetectScene(fileChooser) {
 
 			clearCanvas();
@@ -453,6 +492,40 @@
 			});
 		}
 
+        function onRemoveBackground(fileChooser, use_alphamatting) {
+
+			clearCanvas();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for scene detection");
+				return;
+			}
+
+			var images = [fileChooser.files[0]];
+			var params = [["use_alphamatting", use_alphamatting]]
+
+			submitRequest('image', 'removebackground', images, params, function (data) {
+                img.src = "data:image/png;base64," + data.imageBase64;
+			});
+		}
+
+        function onBlurBackground(fileChooser, strength) {
+
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for scene detection");
+                return;
+            }
+
+            var images = [fileChooser.files[0]];
+            var params = [["strength", strength]]
+
+            submitRequest('image', 'portraitfilter', images, params, function (data) {
+                img.src = "data:image/png;base64," + data.filtered_image;
+            });
+		}
+
 		function onSummarizeText(articleText, numberOfSentences) {
 
 			if (!articleText) {
@@ -532,7 +605,7 @@
 
 			<div style="width:600px">
 
-				<div class="card mt-3">
+				<div class="card mt-3 d-none FaceProcessing ObjectDetection SceneClassification LegacyObjectDetection">
 					<div class="card-header h3">Object Detection</div>
 					<div class="card-body bg-secondary">
 
@@ -540,7 +613,7 @@
 							<label class="col-form-label col-3">Image</label>
 							<input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
 						</div>
-						<div class="form-group row mt-2">
+						<div class="form-group row mt-2 flex-nowrap">
 							<label class="col-form-label col-3">Operation</label>
 							<input class="col form-control btn-success" type="button" value="Detect Scene" id="scene" onclick="onDetectScene(image)" />
 							<input class="col form-control btn-info" type="button" value="Detect Face" id="face" onclick="onDetectFaces(image)" />
@@ -549,7 +622,51 @@
 					</div>
 				</div>
 
-				<div class="card mt-3">
+				<!-- Hidden. Later visibility will be caclulated based on the status.-->
+				<div class="card mt-3 d-none BackgroundRemoval">
+					<div class="card-header h3">Background Removal</div>
+					<div class="card-body bg-secondary">
+
+						<div class="form-group row">
+							<label class="col-form-label col-2">Image</label>
+							<input class="col form-control btn-light" id="removeBgInput" type="file" style="width:17rem"
+								   onchange="return previewImage(this)" />
+							<input class="form-control btn-success" type="button" value="Remove Background"
+								   style="width:11rem" id="recognise"
+								   onclick="onRemoveBackground(removeBgInput, use_alphamatting.checked)" />
+						</div>
+
+						<div class="form-group row mt-1">
+							<div class="checkbox checkbox-primary">
+								<input id="use_alphamatting" class="styled" type="checkbox" checked>
+								<label for="use_alphamatting">Use Alpha matting</label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Hidden. Later visibility will be caclulated based on the status.-->
+				<div class="card mt-3 d-none PortraitFilter">
+					<div class="card-header h3">Background blurring</div>
+					<div class="card-body bg-secondary">
+
+						<div class="form-group row">
+							<label class="col-form-label col-2">Image</label>
+							<input class="col form-control btn-light" id="blurBgInput" type="file" style="width:17rem"
+								   onchange="return previewImage(this)" />
+							<input class="form-control btn-success" type="button" value="Blur Background" style="width:10rem"
+								   id="recognise" onclick="onBlurBackground(blurBgInput, strength.value)" />
+						</div>
+
+						<div class="form-group row mt-1">
+							<label class="col-7 col-form-label text-end">Blur Strength</label>
+							<input class="form-control" id="strength" style="width:5rem"
+								   type="number" min="0.0" max="1.0" step="0.1" value="1.0" />
+						</div>
+					</div>
+				</div>
+
+				<div class="card mt-3 d-none FaceProcessing">
 					<div class="card-header h3">Face Comparison</div>
 					<div class="card-body bg-secondary">
 						<div class="d-flex align-items-center">
@@ -570,7 +687,7 @@
 					</div>
 				</div>
 
-				<div class="card mt-3">
+				<div class="card mt-3 d-none FaceProcessing">
 					<div class="card-header h3">Face Registration</div>
 					<div class="card-body bg-secondary">
 
@@ -601,7 +718,7 @@
 					</div>
 				</div>
 
-				<div class="card mt-3">
+				<div class="card mt-3 d-none FaceProcessing">
 					<div class="card-header h3">Face Recognition</div>
 					<div class="card-body bg-secondary">
 
@@ -621,7 +738,7 @@
 					</div>
 				</div>
 
-				<div class="card mt-3">
+				<div class="card mt-3 d-none TextSummary">
 					<div class="card-header h3">Text Summary</div>
 					<div class="card-body bg-secondary">
 
@@ -642,7 +759,7 @@
 
 			</div>
 
-			<div class="ms-4 mt-3" style="width:475px;">
+			<div class="ms-4 mt-3 position-sticky" style="width:475px;">
 			   
 				<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black"
 					style="height: 195px; overflow-y: auto;"></div>

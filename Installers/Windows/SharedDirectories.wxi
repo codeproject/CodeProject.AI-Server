@@ -9,9 +9,15 @@
 						<Directory Id="TestDataFolder" Name="TestData"/>
 						<Directory Id="ServerInstallFolder" Name="Server" />
 						<Directory Id="AnalysisLayerInstallFolder" Name="AnalysisLayer">
+							<Directory Id="SdkFolder" Name="SDK">
+								<Directory Id="PythonSdkFolder" Name="Python" />
+							</Directory>
 							<Directory Id="AnalysisBinFolder" Name="bin">
 								<Directory Id="Python37Folder" Name="Python37">
 									<Directory Id="Python37VenvFolder" Name="venv" />
+								</Directory>
+								<Directory Id="Python39Folder" Name="Python39">
+									<Directory Id="Python39VenvFolder" Name="venv" />
 								</Directory>
 							</Directory>
 							<Directory Id="YoloNetInstallFolder" Name="CodeProject.SenseAI.AnalysisLayer.Yolo">
@@ -22,6 +28,8 @@
 								<Directory Id="DeepStackAssetsFolder" Name="assets" />
 							</Directory>
 							<Directory Id="TextSummaryInstallFolder" Name="TextSummary" />
+							<Directory Id="PortraitFilterInstallFolder" Name="PortraitFilter" />
+							<Directory Id="BackgroundRemoverInstallFolder" Name="BackgroundRemover" />
 						</Directory>
 						<Directory Id="DesktopFolder" />
 					</Directory>

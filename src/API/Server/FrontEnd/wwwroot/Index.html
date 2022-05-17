@@ -135,9 +135,8 @@
         }
 
         /**
-         * TODO: This will query the server for a list of services that are 
-         * installed, and their status. The results of this will be used to
-         * pppulate the serviceStatus table
+         * Query the server for a list of services that are installed, and their status. The
+         * results of this will be used to populate the serviceStatus table
          */
         async function getAnalysisStatus() {
 
@@ -155,16 +154,28 @@
 
                         if (data && data.statuses) {
 
-                            let results = "<div id='serviceStatus' class='d-flex w-100 mt-3 justify-content-between'>";
+                            let results = "<div id='serviceStatus' class='d-flex flex-wrap w-100 mt-3'>";
 
                             for (let i = 0; i < data.statuses.length; i++) {
-                                let className = data.statuses[i].value ? "success" : "warning";
-                                let status    = data.statuses[i].value ? "Enabled" : "Not Running";
 
-                                results += "<div class='alert alert-" + className + "'>"
-                                        +  "<b>" + data.statuses[i].key.toUpperCase() + "</b><br>"
-                                        +  status
-                                        + "</div>";
+                                let running    = data.statuses[i].running;
+                                let moduleName = data.statuses[i].name;
+                                let started    = data.statuses[i].started;
+                                let lastSeen   = data.statuses[i].lastSeen;
+                                let processed  = data.statuses[i].processed;
+
+                                let className = running ? "success" : (started? "warning" : "muted");
+                                let status    = running ? "Enabled" : (started? "Not Running" : "Not Started");
+
+                                results +=
+                                    "<div class='mx-1 alert alert-" + className + "' style='width:10em;height:8rem'>"
+                                        + "<b>" + moduleName + "</b>"
+                                        + "<div class='small'>" + status + "</div>"
+                                        + "<div style='position:absolute;bottom:0rem' class='d-flex justify-content-between small'>"
+                                            // + "<div>Last: " + lastSeen + "</div>"
+                                            + "<div>Processed: " + processed + "</div>"
+                                        + "</div>"
+                                    + "</div>";
                             }
                             results += "</div>";
 
@@ -194,9 +205,9 @@
                             let newLogs = "";
                             for (let i = 0; i < data.entries.length; i++) {
                                 let logEntry = data.entries[i];
-                                let lotText = logEntry.entry.replace("\n", "<br>");
+                                let logText = logEntry.entry.replace("\n", "<br>");
                                 let date = new Date(logEntry.timestamp).toLocaleTimeString();
-                                newLogs += "<div>" + date + ": " + lotText + "</div>";
+                                newLogs += "<div>" + date + ": " + logText + "</div>";
                                 _lastLogId = logEntry.id;
                             }
 

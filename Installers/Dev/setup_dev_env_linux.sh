@@ -183,7 +183,7 @@ function isDarkMode () {
 #        uses the system default
 # string Background color name.  Optional. Defaults to $color_background which is set based on the
 #        current terminal background
-function WriteLine () {
+function writeLine () {
 
     local resetColor='\033[0m'
 
@@ -212,7 +212,7 @@ function WriteLine () {
 #        uses the system default
 # string Background color name.  Optional. Defaults to $color_background which is set based on the
 #        current terminal background
-function Write () {
+function write () {
 
     local resetColor='\033[0m'
 
@@ -241,37 +241,408 @@ function checkForTool () {
         return
     fi
 
-    WriteLine
-    WriteLine
-    WriteLine "------------------------------------------------------------------------"
-    WriteLine "Error: ${name} is not installed on your system" $color_error
+    writeLine
+    writeLine
+    writeLine "------------------------------------------------------------------------"
+    writeLine "Error: ${name} is not installed on your system" $color_error
 
-    if [ "$platform" == "osx" ]; then
-        WriteLine "       Please run 'brew install ${name}'" $color_error
+    if [ "$platform" == "macos" ]; then
+        writeLine "       Please run 'brew install ${name}'" $color_error
 
         if ! command -v brew &> /dev/null; then
-            WriteLine
-            WriteLine "Error: It looks like you don't have brew installed either" $color_warn
-            WriteLine "       Please run:" $color_warn
-            WriteLine "       /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'" $color_warn
+            writeLine
+            writeLine "Error: It looks like you don't have brew installed either" $color_warn
+            writeLine "       Please run:" $color_warn
+            writeLine "       /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'" $color_warn
             quit
         fi
     else
-        WriteLine "       Please run 'sudo apt install ${name}'" $color_error
+        writeLine "       Please run 'sudo apt install ${name}'" $color_error
     fi
 
-    WriteLine
-    WriteLine
+    writeLine
+    writeLine
     quit
 }
 
+function setupPython () {
+
+    # M1 macs are trouble for python
+    if [ "$platform" == "macos" ] && [[ $(uname -p) == 'arm' ]]; then
+        write "ARM (Apple silicon) Mac detected, but we are not running under Rosetta. " $color_warn
+        if [ $(/usr/bin/pgrep oahd >/dev/null 2>&1; echo $?) -gt 0 ]; then
+        #if [ "$(pkgutil --files com.apple.pkg.RosettaUpdateAuto)" == "" ]; then 
+    	    writeLine 'Rosetta is not installed' $color_error
+            needRosettaAndiBrew
+        else
+    	    writeLine 'Rosetta is installed. We can continue.' $color_success
+        fi
+    fi
+
+    local pythonVersion=$1
+
+    # Version with ".'s removed
+    local pythonName="python${pythonVersion/./}"
+
+    installPath="${analysisLayerPath}/bin/${platform}/${pythonName}"
+
+    if [ "${forceOverwrite}" == "true" ]; then
+
+        if [ ! $verbosity == "quiet" ]; then
+            writeLine "Cleaning download directory to force re-install of Python" $color_info
+        fi
+
+        # Force Re-download
+        if [ -d "${downloadPath}/${platform}/${pythonName}" ]; then 
+            rm -rf "${downloadPath}/${platform}/${pythonName}"
+        fi
+
+        # Force overwrite
+        if [ -d "${installPath}" ]; then 
+            rm -rf "${installPath}"
+        fi
+    fi
+
+    # ============================================================================
+    # 1. Install Python. Using deadsnakes for Linux (not macOS), so be aware if you have concerns
+    #                    about potential late adoption of security patches.
+
+     if [ $verbosity == "loud" ]; then
+        writeLine "Python install path is ${installPath}" $color_info
+     fi
+
+     if [ ! -d "${installPath}" ]; then
+        if [ "$platform" == "macos" ]; then
+            mkdir -p "${installPath}"
+        else
+            mkdir -p "${installPath}"
+        fi
+     fi
+
+     pythonCmd="python${pythonVersion}"
+     if command -v $pythonCmd &> /dev/null; then
+         writeLine "Python ${pythonVersion} is already installed" $color_success
+     else
+
+        # For macOS we'll use brew to install python
+        if [ "$platform" == "macos" ]; then
+
+            write "Installing Python ${pythonVersion}..." $color_primary
+
+            if [[ $(uname -p) == 'arm' ]]; then
+
+                # Apple silicon requires Rosetta2 for python to run, so use the x86 version of Brew
+                # we installed earlier
+                if [ "${verbosity}" == "quiet" ]; then
+                    arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
+                    spin $!
+                else
+                    arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}
+                fi
+
+                # Note that we only need the specific location of the python interpreter to setup the
+                # virtual environment. After it's setup, all python calls are relative to the same venv
+                # no matter the location of the original python interpreter
+                pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+
+            else
+
+                # We have a x64 version of python for macOS in our S3 bucket but it's easier simply to
+                # install python natively
+
+                # Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" "${platform}/${pythonDir}" "Downloading Python interpreter..."
+                # cp -R "${downloadPath}/${platform}/${pythonDir}" "${analysisLayerPath}/bin/${platform}"
+
+                if [ "${verbosity}" == "quiet" ]; then
+                    brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
+                    spin $!
+                else
+                    brew install python@${pythonVersion}
+                fi
+
+                # Brew specific path
+                pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+
+            fi
+
+            writeLine "Done" $color_success
+
+        # For Linux we'll use apt-get the deadsnakes PPA to get the old version of python. Deadsnakes?
+        # Old python? Get it? Get it?! And who said developers have no sense of humour.
+        else
+
+            if [ ! "${verbosity}" == "loud" ]; then
+
+                write "Installing Python ${pythonVersion}..." $color_primary
+
+                if [ "${verbosity}" == "info" ]; then writeLine "Updating apt-get" $color_info; fi;
+                apt-get update -y >/dev/null 2>/dev/null &
+                spin $!
+
+                if [ "${verbosity}" == "info" ]; then writeLine "Installing software-properties-common" $color_info; fi;
+                apt install software-properties-common -y >/dev/null 2>/dev/null &
+                spin $!
+
+                if [ "${verbosity}" == "info" ]; then writeLine "Adding deadsnakes as a Python install source (PPA)" $color_info; fi;
+                add-apt-repository ppa:deadsnakes/ppa -y >/dev/null 2>/dev/null &
+                spin $!
+
+                if [ "${verbosity}" == "info" ]; then writeLine "Updating apt" $color_info; fi;
+                apt update -y >/dev/null 2>/dev/null &
+                spin $!
+
+                if [ "${verbosity}" == "info" ]; then writeLine "Installing Python ${pythonVersion}" $color_info; fi;
+                apt-get install python${pythonVersion} -y >/dev/null 2>/dev/null &
+                spin $!
+
+                # apt-get install python3-pip
+                writeLine "Done" $color_success
+            else
+                writeLine "Updating apt-get" $color_info
+                apt-get update -y
+                writeLine "Installing software-properties-common" $color_info
+                apt install software-properties-common -y
+                writeLine "Adding deadsnakes as a Python install source (PPA)" $color_info
+                add-apt-repository ppa:deadsnakes/ppa -y
+                writeLine "Updating apt" $color_info
+                apt update -y
+                writeLine "Installing Python ${pythonVersion}" $color_primary
+                apt-get install python${pythonVersion} -y
+                # apt-get install python3-pip
+                writeLine "Done" $color_success
+            fi
+        fi
+    fi
+
+    # ============================================================================
+    # 2. Create Virtual Environment
+
+    if [ -d  "${installPath}/venv" ]; then
+        writeLine "Virtual Environment already present" $color_success
+    else
+
+        # Make sure we have pythonNN-env installed
+        if [ "$platform" == "macos" ]; then
+            if [ "${verbosity}" == "quiet" ]; then
+                write "Installing Virtual Environment tools for mac..." $color_primary
+                pip3 install virtualenv virtualenvwrapper >/dev/null 2>/dev/null &
+                spin $!
+                writeLine "Done" $color_success
+            else
+                writeLine "Installing Virtual Environment tools for mac..." $color_primary
+        
+                # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
+                if [ "$platform" == "macos" ] && [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
+                    writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
+                fi
+
+                pip3 install virtualenv virtualenvwrapper
+            fi
+        else
+            if [ "${verbosity}" == "quiet" ]; then
+                write "Installing Virtual Environment tools for Linux..." $color_primary
+
+                # just in case - but doesn't seem to be effective
+                # writeLine
+                # writeLine "First: correcting broken installs".
+                # apt --fix-broken install
+
+                apt install python${pythonVersion}-venv >/dev/null 2>/dev/null &
+                spin $!
+                writeLine "Done" $color_success
+            else
+                writeLine "Installing Virtual Environment tools for Linux..." $color_primary
+                apt install python${pythonVersion}-venv
+            fi
+        fi
+
+        # Create the virtual env
+        write "Creating Virtual Environment..." $color_primary
+        
+        if [ $verbosity == "loud" ]; then
+            writeLine "Install path is ${installPath}"
+        fi
+
+        if [ "$platform" == "macos" ]; then
+            ${pythonCmd} -m venv "${installPath}/venv"
+        else
+            ${pythonCmd} -m venv "${installPath}/venv" &
+            spin $! # process ID of the unzip/tar call
+        fi
+        writeLine "Done" $color_success
+    fi
+
+    pushd "${installPath}" >/dev/null
+    venvPath="$(pwd)/venv"
+    pythonInterpreterPath="${venvPath}/bin/python3"
+    popd >/dev/null
+
+    # Ensure Python Exists
+    write "Checking for Python ${pythonVersion}..." $color_primary
+    pyVersion=$($pythonInterpreterPath --version)
+    write "Found ${pyVersion}. " $color_mute
+
+    echo $pyVersion | grep "${pythonVersion}" >/dev/null
+    if [ $? -ne 0 ]; then
+        errorNoPython
+    fi 
+    writeLine "present" $color_success
+}
+
+function installPythonPackages () {
+
+    # Whether or not to install all python packages in one step (-r requirements.txt) or step by step
+    oneStepPIP="true"
+
+    pythonVersion=$1
+    # Version with ".'s removed
+    local pythonName="python${pythonVersion/./}"
+
+    pythonCmd="python${pythonVersion}"
+
+    # Brew doesn't set PATH by default (nor do we need it to) which means we just have to be careful
+    if [ "$platform" == "macos" ]; then
+        
+        # If running "PythonX.Y" doesn't actually work, then let's adjust the python command
+        # to point to where we think the python launcher should be
+        python${pythonVersion} --version >/dev/null  2>/dev/null
+        if [ $? -ne 0 ]; then
+            # writeLine "Did not find python in default location"
+            pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+        fi
+    fi
+
+    # Quick check to ensure PIP is upo to date
+    if [ "${verbosity}" == "quiet" ]; then
+        write "Updating Python PIP..."
+        ${pythonCmd} -m pip install --upgrade pip >/dev/null 2>/dev/null &
+        spin $!
+        writeLine "Done" $color_success
+    else
+        writeLine "Updating Python PIP..."
+        # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
+        if [ "$platform" == "macos" ] && [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
+            writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
+        fi
+        ${pythonCmd} -m pip install --upgrade pip
+    fi
+
+    requirementsPath=$2
+
+    testForPipExistanceName=$3
+
+    virtualEnv="${analysisLayerPath}/bin/${platform}/${pythonName}/venv"
+
+    # ============================================================================
+    # Install PIP packages
+
+    write "Checking for required packages..." $color_primary
+
+    # ASSUMPTION: If a folder by the name of "testForPipExistanceName" exists in the site-packages
+    # directory then we assume the requirements.txt file has already been processed.
+
+    packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
+
+    if [ ! -d "${packagesPath}/${testForPipExistanceName}" ]; then
+
+        if [ ! "${verbosity}" == "quiet" ]; then
+            writeLine "Installing packages from ${requirementsPath}" $color_info
+        fi
+        writeLine "Packages missing. Installing..." $color_info
+
+        if [ "${oneStepPIP}" == "true" ]; then
+
+            # Install the Python Packages in one fell swoop. Not much feedback, but it works
+            write "Installing Packages into Virtual Environment..." $color_primary
+            if [ "${verbosity}" == "quiet" ]; then
+                ${pythonCmd} -m pip install -r ${requirementsPath} --target ${packagesPath} > /dev/null &
+                spin $!
+            else
+                ${pythonCmd} -m pip install -r ${requirementsPath} --target ${packagesPath}
+            fi
+            writeLine "Success" $color_success
+
+        else
+
+            # Open requirements.txt and grab each line. We need to be careful with --find-links lines
+            # as this doesn't currently work in Linux
+            currentOption=""
+
+            IFS=$'\n' # set the Internal Field Separator as end of line
+            cat "${requirementsPath}" | while read -r line
+            do
+
+                line="$(echo $line | tr -d '\r\n')"    # trim newlines / CRs
+
+                if [ "${line}" == "" ]; then
+                    currentOption=""
+                elif [ "${line:0:2}" == "##" ]; then
+                    currentOption=""
+                elif [ "${line:0:2}" == "#!" ]; then
+                    currentOption=""
+                elif [ "${line:0:12}" == "--find-links" ]; then
+                    currentOption="${line}"
+                else
+            
+                    module="${line}"
+                    description=""
+        
+                    # breakup line into module name and description
+                    IFS='#'; tokens=($module); IFS=$'\n';
+
+                    if [ ${#tokens[*]} -gt 1 ]; then
+                        module="${tokens[0]}"
+                        description="${tokens[1]}"
+                    fi
+
+                    if [ "${description}" == "" ]; then
+                        description="Installing ${module}"
+                    fi
+
+                    if [ "${module}" != "" ]; then
+
+                        # Some packages have a version nunber after a "==". We need to trim that here.
+                        IFS='='; tokens=($module); IFS=$'\n';
+                        if [ ${#tokens[*]} -gt 1 ]; then
+                             module="${tokens[0]}"
+                        fi
+                        currentOption=""    # Given that we're stripping versions, ignore this too
+
+                        write "  -${description}..." $color_primary
+
+                        pushd "${virtualEnv}/bin" > /dev/null
+                        if [ "${verbosity}" == "quiet" ]; then
+                            ./python${pythonVersion} -m pip install $module $currentOption $pipFlags >/dev/null 2>/dev/null &
+                            spin $!
+                        else
+                            # echo python3 -m pip install $module $currentOption $pipFlags
+                            ./python${pythonVersion} -m pip install $module $currentOption $pipFlags
+                        fi
+                        popd > /dev/null
+
+                        writeLine "Done" $color_success
+
+                    fi
+
+                    currentOption=""
+
+                fi
+
+            done
+            unset IFS
+        fi
+    else
+        writeLine "present." $color_success
+    fi
+}
+
 function errorNoPython () {
-    WriteLine
-    WriteLine
-    WriteLine "------------------------------------------------------------------------" $color_primary
-    WriteLine "Error: Python 3.7 not installed" $color_error
-    WriteLine 
-    WriteLine
+    writeLine
+    writeLine
+    writeLine "------------------------------------------------------------------------" $color_primary
+    writeLine "Error: Python not installed" $color_error
+    writeLine 
+    writeLine
     
     quit
 }
@@ -310,7 +681,7 @@ function Download () {
     # dirToSave = packages
 
     if [ "${fileToGet}" == "" ]; then
-        WriteLine 'No download file was specified' $color_error
+        writeLine 'No download file was specified' $color_error
         quit    # no point in carrying on
     fi
 
@@ -318,12 +689,12 @@ function Download () {
         message="Downloading ${fileToGet}..."
     fi
 
-    # WriteLine "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}" $color_primary
+    # writeLine "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}" $color_primary
 
-    Write $message $color_primary
+    write $message $color_primary
 
     if [ -d "${downloadToDir}/${dirToSave}" ]; then
-        WriteLine " Directory already exists" $color_info
+        writeLine " Directory already exists" $color_info
         return 0 # This is ok and assumes it's already downloaded. Whether that's true or not...
     fi
 
@@ -331,7 +702,7 @@ function Download () {
     if [ ! "${extension}" == ".gz" ]; then
         extension="${fileToGet:(-4)}"
         if [ ! "${extension}" == ".zip" ]; then
-            WriteLine "Unknown and unsupported file type for file ${fileToGet}" $color_error
+            writeLine "Unknown and unsupported file type for file ${fileToGet}" $color_error
 
             quit    # no point in carrying on
             # return 1
@@ -339,13 +710,13 @@ function Download () {
     fi
 
     if [ ! -f  "${downloadToDir}/${fileToGet}" ]; then
-        # WriteLine "Downloading ${fileToGet} to ${dirToSave}.zip in ${downloadToDir}"  $color_warn
+        # writeLine "Downloading ${fileToGet} to ${dirToSave}.zip in ${downloadToDir}"  $color_warn
         wget $wgetFlags --show-progress -O "${downloadToDir}/${fileToGet}" -P "${downloadToDir}" \
                                            "${storageUrl}${fileToGet}"
         
         status=$?    
         if [ $status -ne 0 ]; then
-            WriteLine "The wget command failed for file ${fileToGet}." $color_error
+            writeLine "The wget command failed for file ${fileToGet}." $color_error
 
             quit    # no point in carrying on
             # return 2
@@ -353,13 +724,13 @@ function Download () {
     fi
 
     if [ ! -f  "${downloadToDir}/${fileToGet}" ]; then
-        WriteLine "The downloaded file '${fileToGet}' doesn't appear to exist." $color_error
+        writeLine "The downloaded file '${fileToGet}' doesn't appear to exist." $color_error
 
         quit    # no point in carrying on
         # return 3
     fi
 
-    Write 'Expanding...' $color_info
+    write 'Expanding...' $color_info
 
     pushd "${downloadToDir}" >/dev/null
 
@@ -376,7 +747,7 @@ function Download () {
     spin $! # process ID of the unzip/tar call
 
     if [[ ! -d "${dirToSave}" ]]; then
-        WriteLine "Unable to extract download. Can you please check you have write permission to "${dirToSave}"." $color_error
+        writeLine "Unable to extract download. Can you please check you have write permission to "${dirToSave}"." $color_error
         quit    # no point in carrying on
     fi
     
@@ -384,7 +755,49 @@ function Download () {
 
     # rm /s /f /q "${downloadToDir}/${fileToGet}" >/dev/null
 
-    WriteLine 'Done.' $color_success
+    writeLine 'Done.' $color_success
+}
+
+# Thanks: https://stackoverflow.com/a/4025065 with mods
+# compares two version numbers (eg 3.9.12 < 3.10.1)
+versionCompare () {
+ 
+      # trivial equal case
+    if [[ $1 == $2 ]]; then
+        echo "0"
+        return 0
+    fi
+ 
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            echo "1" # $1 > $2
+            return 0
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            echo "-1" # $1 < $2
+            return 0
+        fi
+    done
+
+    echo "0"
 }
 
 function getDisplaySize () {
@@ -393,32 +806,30 @@ function getDisplaySize () {
 }
 
 function displayMacOSPermissionError () {
-    WriteLine
-    WriteLine "Unable to Create a Directory"  $color_error
+    writeLine
+    writeLine "Unable to Create a Directory"  $color_error
 
     if [[ $OSTYPE == 'darwin'* ]]; then
 
        local commonDir=$1
 
-        WriteLine
-        WriteLine "But we may be able to suggest something:"  $color_info
+        writeLine
+        writeLine "But we may be able to suggest something:"  $color_info
 
-        WriteLine '1. Pull down the  Apple menu and choose "System Preferences"'
-        WriteLine '2. Choose “Security & Privacy” control panel'
-        WriteLine '3. Now select the “Privacy” tab, then from the left-side menu select'
-        WriteLine '   “Full Disk Access”'
-        WriteLine '4. Click the lock icon in the lower left corner of the preference '
-        WriteLine '   panel and authenticate with an admin level login'
-        WriteLine '5. Now click the [+] plus button to add an application with full disk'
-        WriteLine '   access'
-        WriteLine '6. Click the Plus button to add Terminal to Full Disk Access in macOS'
-        WriteLine "7. Navigate to the '${commonDir}' folder and choose 'Terminal'"
-        WriteLine '   to grant Terminal with Full Disk Access privileges'
-        WriteLine '8. Select "Terminal app" to grant full disk access in MacOS'
-        WriteLine '9. Relaunch Terminal, the “Operation not permitted” error messages will'
-        WriteLine '   be gone'
-        WriteLine
-        WriteLine 'Thanks to https://osxdaily.com/2018/10/09/fix-operation-not-permitted-terminal-error-macos/'
+        # Note that  will appear as the Apple symbol on macOS, but probably not on Windows or Linux
+        writeLine '1. Pull down the  Apple menu and choose "System Preferences"'
+        writeLine '2. Choose “Security & Privacy” control panel'
+        writeLine '3. Now select the “Privacy” tab, then from the left-side menu select'
+        writeLine '   “Full Disk Access”'
+        writeLine '4. Click the lock icon in the lower left corner of the preference '
+        writeLine '   panel and authenticate with an admin level login'
+        writeLine '5. Now click the [+] plus button so we can full disk access to Terminal'
+        writeLine "6. Navigate to the /Applications/Utilities/ folder and choose 'Terminal'"
+        writeLine '   to grant Terminal Full Disk Access privileges'
+        writeLine '7. Relaunch Terminal, the “Operation not permitted” error messages should'
+        writeLine '   be gone'
+        writeLine
+        writeLine 'Thanks to https://osxdaily.com/2018/10/09/fix-operation-not-permitted-terminal-error-macos/'
     fi
 
     quit
@@ -426,10 +837,10 @@ function displayMacOSPermissionError () {
 
 function needRosettaAndiBrew () {
 
-    WriteLine
-    WriteLine "You're on an Mx Mac running ARM but Python3.7 only works on Intel."  $color_error
-    WriteLine "You will need to install Rosetta2 to continue."  $color_error
-    WriteLine
+    writeLine
+    writeLine "You're on an Mx Mac running ARM but Python3 only works on Intel."  $color_error
+    writeLine "You will need to install Rosetta2 to continue."  $color_error
+    writeLine
     read -p 'Install Rosetta2 (Y/N)?' installRosetta
     if [ "${installRosetta}" == "y" ] || [ "${installRosetta}" == "Y" ]; then
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
@@ -437,7 +848,7 @@ function needRosettaAndiBrew () {
         quit
     fi
 
-    WriteLine "Then you need to install brew under Rosetta (We'll alias it as ibrew)"
+    writeLine "Then you need to install brew under Rosetta (We'll alias it as ibrew)"
     read -p 'Install brew for x86 (Y/N)?' installiBrew
     if [ "${installiBrew}" == "y" ] || [ "${installiBrew}" == "Y" ]; then
         arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
@@ -485,52 +896,29 @@ fi
 clear
 
 # verbosity can be: quiet | info | loud
-verbosity="info"
+verbosity="quiet"
 
 # If files are already present, then don't overwrite if this is false
 forceOverwrite=false
 
 # Platform can define where things are located
 if [[ $OSTYPE == 'darwin'* ]]; then
-    platform='osx'
+    platform='macos'
 else
     platform='linux'
 fi
+
 
 # Basic locations
 
 # The location of the solution root directory relative to this script
 rootPath='../..'
 
-# SenseAI specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# SenseAI Server specific ::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # The name of the dir holding the frontend API server
 senseAPIDir='API'
 
-# TextSummary specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-textSummaryDir='TextSummary'
-
-# DeepStack specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-# The name of the dir holding the DeepStack analysis services
-deepstackDir='DeepStack'
-
-# The name of the dir containing the Python code itself
-intelligenceDir='intelligencelayer'
-
-# The name of the dir containing the AI models themselves
-modelsDir='assets'
-
-# The name of the dir containing persisted DeepStack data
-datastoreDir='datastore'
-
-# The name of the dir containing temporary DeepStack data
-tempstoreDir='tempstore'
-
-# Yolo.Net specific
-yoloNetDir='CodeProject.SenseAI.AnalysisLayer.Yolo'
-yoloModelsDir='yoloModels'
 
 # Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -546,13 +934,6 @@ srcDir='src'
 # The name of the dir, within the current directory, where install assets will
 # be downloaded
 downloadDir='downloads'
-
-# The name of the dir containing the Python interpreter
-pythonDir='python37'
-pythonCmd='python3.7'
-
-# Whether or not to install all python packages in one step (-r requirements.txt) or step by step
-oneStepPIP="true"
 
 # The name of the dir holding the backend analysis services
 analysisLayerDir='AnalysisLayer'
@@ -592,14 +973,14 @@ elif [ $verbosity == "loud" ]; then
     tarFlags='xvf'
 fi
 
-WriteLine '        Setting up CodeProject.SenseAI Development Environment          ' 'DarkYellow'
-WriteLine '                                                                        ' 'DarkGreen'
-WriteLine '========================================================================' 'DarkGreen'
-WriteLine '                                                                        ' 'DarkGreen'
-WriteLine '                 CodeProject SenseAI Installer                          ' 'DarkGreen'
-WriteLine '                                                                        ' 'DarkGreen'
-WriteLine '========================================================================' 'DarkGreen'
-WriteLine '                                                                        ' 'DarkGreen'
+writeLine '        Setting up CodeProject.SenseAI Development Environment          ' 'DarkYellow'
+writeLine '                                                                        ' 'DarkGreen'
+writeLine '========================================================================' 'DarkGreen'
+writeLine '                                                                        ' 'DarkGreen'
+writeLine '                 CodeProject SenseAI Installer                          ' 'DarkGreen'
+writeLine '                                                                        ' 'DarkGreen'
+writeLine '========================================================================' 'DarkGreen'
+writeLine '                                                                        ' 'DarkGreen'
 
 # ============================================================================
 # House keeping
@@ -608,376 +989,205 @@ checkForTool wget
 checkForTool unzip
 
 if [ "$platform" == "linux" ] && [ "$EUID" -ne 0 ]; then
-    WriteLine "Please run this script as root: sudo bash setup_dev_env_linux.sh" $color_error
+    writeLine "Please run this script as root: sudo bash setup_dev_env_linux.sh" $color_error
     exit
-fi
-
-# M1 macs are trouble for python
-if [ "$platform" == "osx" ] && [[ $(uname -p) == 'arm' ]]; then
-    Write "ARM (Apple silicon) Mac detected, not running under Rosetta. " $color_warn
-    if [ $(/usr/bin/pgrep oahd >/dev/null 2>&1; echo $?) -gt 0 ]; then
-    #if [ "$(pkgutil --files com.apple.pkg.RosettaUpdateAuto)" == "" ]; then 
-    	WriteLine 'Rosetta is not installed' $color_error
-        needRosettaAndiBrew
-    else
-    	WriteLine 'Rosetta installed. We''re good to go' $color_success
-    fi
 fi
 
 # ============================================================================
 # 1. Ensure directories are created and download required assets
 
+writeLine
+writeLine 'General SenseAI setup                                                   ' "White" "Blue"
+
 # Create some directories
-Write "Creating Directories..." $color_primary
 
 # For downloading assets
+write "Creating Directories..." $color_primary
+if [ $verbosity == "loud" ]; then writeLine "downloadPath is ${downloadPath}"; fi;
+
 mkdir -p "${downloadPath}"
+if [ "$platform" == "macos" ]; then 
+    write "We'll need to run under root to set permissions. " $color_warn
+    sudo chmod 777 "${downloadPath}"
+else
+    write "Creating Directories..." $color_primary
+fi
+writeLine "Done" $color_success
 
-# For Text Summary 
-textSummaryPath="${analysisLayerPath}/${textSummaryDir}"
 
-# For DeepStack
-deepStackPath="${analysisLayerPath}/${deepstackDir}"
+# TextSummary specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+writeLine
+writeLine 'TextSummary setup                                                       ' "White" "Blue"
+
+# The name of the dir containing the TextSummary module
+moduleDir='TextSummary'
+
+# Full path to the TextSummary dir
+modulePath="${analysisLayerPath}/${moduleDir}"
+
+setupPython 3.8
+installPythonPackages 3.8 "${modulePath}/requirements.txt" "nltk"
+
+
+# Background Remover :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+writeLine
+writeLine 'Background Remover setup                                                ' "White" "Blue"
+
+# The name of the dir containing the background remover module
+moduleDir='BackgroundRemover'
+
+# The name of the dir containing the background remover models
+modulePath="${analysisLayerPath}/${moduleDir}"
+
+# The name of the dir containing the background remover models
+moduleAssetsDir='models'
+
+# The name of the file in our S3 bucket containing the assets required for this module
+modelsAssetFilename='rembg-models.zip'
+
+setupPython 3.9
+installPythonPackages 3.9 "${modulePath}/requirements.txt" "onnxruntime"
+
+# Clean up directories to force a re-copy if necessary
+if [ "${forceOverwrite}" == "true" ]; then
+    rm -rf "${downloadPath}/${moduleDir}"
+    rm -rf "${modulePath}/${moduleAssetsDir}"
+fi
+
+if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
+    Download $storageUrl "${downloadPath}" $modelsAssetFilename "${moduleDir}" "Downloading models..."
+    if [ -d "${downloadPath}/${moduleDir}" ]; then
+        mv -f "${downloadPath}/${moduleDir}" "${modulePath}/${moduleAssetsDir}"
+    fi
+fi
+
+
+# DeepStack specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+writeLine
+writeLine 'Vision toolkit setup                                                    ' "White" "Blue"
+
+# The name of the dir containing the background remover module
+moduleDir='DeepStack'
+
+# The name of the dir containing the background remover models
+modulePath="${analysisLayerPath}/${moduleDir}"
+
+# The name of the dir containing the background remover models
+moduleAssetsDir='assets'
+
+# The name of the file in our S3 bucket containing the assets required for this module
+modelsAssetFilename='models.zip'
+
+setupPython 3.8
+if [ "$platform" == "macos" ]; then
+    installPythonPackages 3.8 "${modulePath}/intelligencelayer/requirements.macos.txt" "torch"
+else
+    installPythonPackages 3.8 "${modulePath}/intelligencelayer/requirements.txt" "torch"
+fi
+
+# Clean up directories to force a re-copy if necessary
+if [ "${forceOverwrite}" == "true" ]; then
+    rm -rf "${downloadPath}/${moduleDir}"
+    rm -rf "${modulePath}/${moduleAssetsDir}"
+fi
+
+if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
+    Download $storageUrl "${downloadPath}" $modelsAssetFilename "${moduleDir}" "Downloading models..."
+    if [ -d "${downloadPath}/${moduleDir}" ]; then
+        mv -f "${downloadPath}/${moduleDir}" "${modulePath}/${moduleAssetsDir}"
+    fi
+fi
+
+# Deepstack needs these to store temp and pesrsisted data
 mkdir -p "${deepStackPath}/${tempstoreDir}"
 
 # To do this properly we're going to use the standard directories for common application data
-# commonDataDir="${deepStackPath}/${datastoreDir}"
+# mkdir -p "${deepStackPath}/${datastoreDir}"
 commonDataDir='/usr/share/CodeProject/SenseAI'
-if [ "$platform" == "osx" ]; then commonDataDir='~/Library/Application Support/CodeProject/SenseAI'; fi
+if [ "$platform" == "macos" ]; then 
+    commonDataDir="/Library/Application Support/CodeProject/SenseAI"
+fi
 
-mkdir -p "$commonDataDir"
-if [ $? -ne 0 ]; then
-    displayMacOSPermissionError "$commonDataDir"
-fi 
-chmod 777 "$commonDataDir"
+if [ ! -d "${commonDataDir}" ]; then
+    if [ "$platform" == "macos" ]; then 
+        if [[ $EUID > 0 ]]; then
+            writeLine "Creating data directory at ${commonDataDir}. We'll need admin access..." $color_info
+        fi
 
-# For Yolo.NET
-yoloNetPath=${analysisLayerPath}/${yoloNetDir}
+        sudo mkdir -p "${commonDataDir}"   
+        if [ $? -ne 0 ]; then
+            displayMacOSPermissionError "${commonDataDir}"
+        fi
+        sudo chmod 777 "${commonDataDir}"
+    else
+        mkdir -p "${commonDataDir}"
+    fi
+fi
 
-WriteLine "Done" $color_success
+# For Yolo.NET :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-pythonInstallPath="${analysisLayerPath}/bin/${platform}/${pythonDir}"
+writeLine
+writeLine 'Object Detector setup                                                   ' "White" "Blue"
 
-# Clean up directories to force a re-download if necessary
+# The name of the dir containing the background remover module
+moduleDir='CodeProject.SenseAI.AnalysisLayer.Yolo'
+
+# The name of the dir containing the background remover models
+modulePath="${analysisLayerPath}/${moduleDir}"
+
+# The name of the dir containing the background remover models
+moduleAssetsDir='assets'
+
+# The name of the file in our S3 bucket containing the assets required for this module
+modelsAssetFilename='yolonet-models.zip'
+
+# Clean up directories to force a re-copy if necessary
 if [ "${forceOverwrite}" == "true" ]; then
-
-    # Force re-download
-    rm -rf "${downloadPath}/${modelsDir}"
-    rm -rf "${downloadPath}/${yoloModelsDir}"
-
-    # force overwrite
-    rm -rf "${deepStackPath}/${modelsDir}"
-    rm -rf "${yoloNetPath}/${modelsDir}"
+    rm -rf "${downloadPath}/${moduleDir}"
+    rm -rf "${modulePath}/${moduleAssetsDir}"
 fi
 
-
-# Install Python 3.7. Using deadsnakes for Linux (not macOS), so be aware if you have concerns
-# about potential late adoption of security patches.
-
-if [ ! -d "${pythonInstallPath}" ]; then
-    # mkdir -p "${analysisLayerPath}/bin/${platform}"
-    # mkdir -p "${analysisLayerPath}/bin/${platform}/${pythonDir}"
-    mkdir -p "$pythonInstallPath"
-fi
-
-if command -v $pythonCmd &> /dev/null; then
-     WriteLine "Python 3.7 is already installed" $color_success
-else
-
-    # For macOS we'll use brew to install python
-    if [ "$platform" == "osx" ]; then
-
-        if [[ $(uname -p) == 'arm' ]]; then
-
-            # Apple silicon requires Rosetta2 for python3.7 to run, so use the x86 version of Brew
-            # we installed earlier
-            if [ "${verbosity}" == "quiet" ]; then
-                arch -x86_64 /usr/local/bin/brew install python@3.7  >/dev/null 2>/dev/null &
-                spin $!
-            else
-                arch -x86_64 /usr/local/bin/brew install python@3.7
-            fi
-
-            # Note that we only need the specific location of the python interpreter to setup the
-            # virtual environment. After it's setup, all python calls are relative to the same venv
-            # no matter the location of the original python interpreter
-            pythonCmd='/usr/local/opt/python@3.7/bin/python3.7'
-
-        else
-
-            # We have a x64 version of python for macOS in our S3 bucket but it's easier simply to
-            # install python natively
-
-            # Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" "${platform}/${pythonDir}" "Downloading Python interpreter..."
-            # cp -R "${downloadPath}/${platform}/${pythonDir}" "${analysisLayerPath}/bin/${platform}"
-
-            if [ "${verbosity}" == "quiet" ]; then
-                brew install python@3.7  >/dev/null 2>/dev/null &
-                spin $!
-            else
-                brew install python@3.7
-            fi   
-
-        fi
-
-    # For Linux we'll use apt-get the deadsnakes PPA to get the old version of python. Deadsnakes?
-    # Old python? Get it? Get it?! And who said developers have no sense of humour.
-    else
-
-        if [ "${verbosity}" == "quiet" ]; then
-            Write "Installing Python 3.7..." $color_primary
-            apt-get update -y >/dev/null 2>/dev/null &
-            spin $!
-            apt install software-properties-common -y >/dev/null 2>/dev/null &
-            spin $!
-            add-apt-repository ppa:deadsnakes/ppa -y >/dev/null 2>/dev/null &
-            spin $!
-            apt update -y >/dev/null 2>/dev/null &
-            spin $!
-            apt-get install python3.7 -y >/dev/null 2>/dev/null &
-            spin $!
-            WriteLine "Done" $color_success
-        else
-            WriteLine "Installing Python 3.7" $color_primary
-            apt-get update -y
-            apt install software-properties-common -y
-            add-apt-repository ppa:deadsnakes/ppa -y
-            apt update -y
-            apt-get install python3.7 -y
-            WriteLine "Done" $color_success
-        fi
-
-        # This is just in case: Correct https://askubuntu.com/a/1090081
-        {
-            cp /usr/lib/python3/dist-packages/apt_pkg.cpython-35m-x86_64-linux-gnu.so /usr/lib/python3.7/apt_pkg.cpython-37m-x86_64-linux-gnu.so >/dev/null 2>/dev/null
-            ln -s /usr/lib/python3.5/lib-dynload/_gdbm.cpython-35m-x86_64-linux-gnu.so /usr/lib/python3.7/lib-dynload/_gdbm.cpython-37m-x86_64-linux-gnu.so >/dev/null 2>/dev/null
-        }  >/dev/null 2>/dev/null
+if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
+    Download $storageUrl "${downloadPath}" $modelsAssetFilename "${moduleDir}" "Downloading models..."
+    if [ -d "${downloadPath}/${moduleDir}" ]; then
+        mv -f "${downloadPath}/${moduleDir}" "${modulePath}/${moduleAssetsDir}"
     fi
 fi
-
-# We need to be sure on linux that pip/venv is available for python3.7 specifically. Brew on macOS
-# adds pip3 within the brew formula, so just worry about linux
-if [ "$platform" == "linux" ]; then
-    Write "Installing PIP and venv to enable final Python environment setup..." $color_primary
-
-    if [ "${verbosity}" == "quiet" ]; then
-        apt-get install python3-pip -y  >/dev/null 2>/dev/null
-        apt-get install python3.7-venv -y >/dev/null 2>/dev/null
-    else
-        apt-get install python3-pip -y 
-        apt-get install python3.7-venv -y
-    fi
-
-    WriteLine "Done" $color_success
-fi
-
-Write "Downloading modules and models: " $color_primary
-WriteLine "Starting" $color_mute
-
-# Download the models 
-if [ ! -d "${deepStackPath}/${modelsDir}" ]; then
-    Download $storageUrl $downloadPath "models.zip" "${modelsDir}" "Downloading models..."
-    if [ -d "${downloadPath}/${modelsDir}" ]; then
-        mv -f "${downloadPath}/${modelsDir}" "${deepStackPath}/${modelsDir}"
-    fi
-fi
-
-if [ ! -d "${yoloNetPath}/${modelsDir}" ]; then
-    Download $storageUrl $downloadPath "yolonet-models.zip" "${yoloModelsDir}" "Downloading Yolo.Net models..."
-    if [ -d "${downloadPath}/${yoloModelsDir}" ]; then
-        mv -f "${downloadPath}/${yoloModelsDir}" "${yoloNetPath}/${modelsDir}"
-    fi
-fi
-
-WriteLine "Modules and models downloaded" $color_success
-
-# ============================================================================
-# 2. Create & Activate Virtual Environment: DeepStack specific / Python 3.7
-
-Write "Creating Virtual Environment..." $color_primary
-
-if [ -d  "${pythonInstallPath}/venv"  ]; then
-    WriteLine "Already present" $color_success
-else
-
-    #if [ "$platform" == "osx" ]; then
-    #    "$pythonInstallPath/bin/python3.7" -m venv "${pythonInstallPath}/venv" &
-    #else
-        ${pythonCmd} -m venv "${pythonInstallPath}/venv" &
-    #fi
-
-    spin $! # process ID of the unzip/tar call
-    WriteLine "Done" $color_success
-fi
-
-Write "Enabling our Virtual Environment..." $color_primary
-pushd "${pythonInstallPath}" >/dev/null
-
-# PYTHONHOME="$(pwd)/venv"
-# export PYTHONHOME
-
-VIRTUAL_ENV="$(pwd)/venv"
-export VIRTUAL_ENV
-
-PATH="$VIRTUAL_ENV/bin:$PATH"
-export PATH
-
-pythonInterpreterPath="${VIRTUAL_ENV}/bin/python3"
-
-PS1="(venv) ${PS1:-}"
-
-popd >/dev/null
-WriteLine "Done" $color_success
-
-# Ensure Python Exists
-Write "Checking for Python 3.7..." $color_primary
-pyVersion=$($pythonInterpreterPath --version)
-Write "Found ${pyVersion}. " $color_mute
-
-echo $pyVersion | grep "3.7" >/dev/null
-if [ $? -ne 0 ]; then
-    errorNoPython
-fi 
-WriteLine "present" $color_success
-
-# ============================================================================
-# 3a. Install PIP packages
-
-Write "Installing Python package manager..." $color_primary
-pushd "$VIRTUAL_ENV/bin" > /dev/null
-./python3 -m pip install --upgrade pip $pipFlags &
-spin $!
-popd > /dev/null
-WriteLine "Done" $color_success
-
-Write "Checking for required packages..." $color_primary
-# ASSUMPTION: If venv/lib/python3.7/site-packages/torch exists then no need to do this
-if [ ! -d "${VIRTUAL_ENV}/lib/python3.7/site-packages/torch" ]; then
-
-    WriteLine "Packages missing. Installing..." $color_info
-    requirementsFile="${deepStackPath}/${intelligenceDir}/requirements.txt"
-
-    if [ "${oneStepPIP}" == "true" ]; then
-
-        # Install the Python Packages in one fell swoop. Not much feedback, but it works
-        Write "Installing Packages into Virtual Environment..." $color_primary
-        #pip install -r "${requirementsFile}" $pipFlags
-        pushd "$VIRTUAL_ENV/bin" > /dev/null
-        ./python3 -m pip install -r ${requirementsFile} > /dev/null
-        popd > /dev/null
-        WriteLine "Success" $color_success
-
-    else
-
-        # Open requirements.txt and grab each line. We need to be careful with --find-links lines
-        # as this doesn't currently work in Linux
-        currentOption=""
-
-        IFS=$'\n' # set the Internal Field Separator as end of line
-        cat "${requirementsFile}" | while read -r line
-        do
-
-            line="$(echo $line | tr -d '\r\n')"    # trim newlines / CRs
-
-            if [ "${line}" == "" ]; then
-                currentOption=""
-            elif [ "${line:0:2}" == "##" ]; then
-                currentOption=""
-            elif [ "${line:0:2}" == "#!" ]; then
-                currentOption=""
-            elif [ "${line:0:12}" == "--find-links" ]; then
-                currentOption="${line}"
-            else
-            
-                module="${line}"
-                description=""
-        
-                # breakup line into module name and description
-                IFS='#'; tokens=($module); IFS=$'\n';
-
-                if [ ${#tokens[*]} -gt 1 ]; then
-                    module="${tokens[0]}"
-                    description="${tokens[1]}"
-                fi
-
-                if [ "${description}" == "" ]; then
-                    description="Installing ${module}"
-                fi
-
-                if [ "${module}" != "" ]; then
-
-                    # Some packages have a version nunber after a "==". We need to trim that here.
-                    IFS='='; tokens=($module); IFS=$'\n';
-                    if [ ${#tokens[*]} -gt 1 ]; then
-                         module="${tokens[0]}"
-                    fi
-                    currentOption=""    # Given that we're stripping versions, ignore this too
-
-                    Write "  -${description}..." $color_primary
-
-                    pushd "$VIRTUAL_ENV/bin" > /dev/null
-                    if [ "${verbosity}" == "quiet" ]; then
-                        ./python3 -m pip install $module $currentOption $pipFlags >/dev/null 2>/dev/null &
-                        spin $!
-                    else
-                        # echo python3 -m pip install $module $currentOption $pipFlags
-                        ./python3 -m pip install $module $currentOption $pipFlags
-                    fi
-                    popd > /dev/null
-
-                    WriteLine "Done" $color_success
-
-                fi
-
-                currentOption=""
-
-            fi
-
-        done
-        unset IFS
-    fi
-else
-    WriteLine "present." $color_success
-fi
-
-# ============================================================================
-# 3b. Install PIP packages for TextSummary
-
-Write "Installing required Text Processing packages..." $color_primary
-
-# making an assumption here that the presence of site-packages/nltk means TextSummary packages installed
-if [ ! -d "${VIRTUAL_ENV}/lib/python3.7/site-packages/nltk" ]; then
-    pushd "$VIRTUAL_ENV/bin" > /dev/null
-    ./python3 -m pip install -r "${textSummaryPath}/requirements.txt" $pipFlags >/dev/null 2>/dev/null &
-    spin $!
-    popd > /dev/null
-    WriteLine "Done" $color_success
-else
-    WriteLine "Already present" $color_success
-fi
-
-# ============================================================================
-# 3c. Install libraries for .NET Yolo inferrer
 
 # libfontconfig1 is required for SkiaSharp, libgdplus is required for System.Drawing
+write "Installing supporting image libraries..."
 if [ "$platform" == "linux" ]; then
     if [ "${verbosity}" == "quiet" ]; then
-        apt-get install libfontconfig1 -y  >/dev/null 2>/dev/null
-        apt-get install libgdiplus -y  >/dev/null 2>/dev/null
+        apt-get install libfontconfig1 -y  >/dev/null 2>/dev/null &
+        spin $!
+        apt-get install libgdiplus -y  >/dev/null 2>/dev/null &
+        spin $!
     else
         apt-get install libfontconfig1 -y 
         apt-get install libgdiplus -y 
     fi
 else
-    brew install fontconfig
-    brew install mono-libgdiplus
+    if [ "${verbosity}" == "quiet" ]; then
+        brew install fontconfig  >/dev/null 2>/dev/null &
+        spin $!
+        brew install mono-libgdiplus  >/dev/null 2>/dev/null &
+        spin $!
+    else
+        brew install fontconfig
+        brew install mono-libgdiplus
+    fi
 fi
+writeLine "Done" $color_success
+
 
 # ============================================================================
 # ...and we're done.
 
-WriteLine 
-WriteLine '                Development Environment setup complete                  ' 'White' 'DarkGreen'
-WriteLine 
+writeLine 
+writeLine '                Development Environment setup complete                  ' 'White' 'DarkGreen'
+writeLine 
 
 quit

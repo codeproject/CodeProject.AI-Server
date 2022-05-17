@@ -93,7 +93,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             // ListConfigValues();
 
             // Configure application services and DI
-            services.Configure<BackendOptions>(Configuration.GetSection(nameof(BackendOptions)))
+            services.Configure<QueueProcessingOptions>(Configuration.GetSection(nameof(QueueProcessingOptions)))
                     .AddQueueProcessing();
 
             // Moved into its own file

@@ -10,7 +10,7 @@ cls
 setlocal enabledelayedexpansion
 
 :: verbosity can be: quiet | info | loud
-set verbosity=quiet
+set verbosity=info
 
 :: If files are already present, then don't overwrite if this is false
 set forceOverwrite=false
@@ -21,40 +21,17 @@ set useColor=true
 :: Platform can define where things are located
 set platform=windows
 
+
 :: Basic locations
 
 :: The location of the solution root directory relative to this script
 set rootPath=../..
 
-:: SenseAI specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: SenseAI Server specific ::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 :: The name of the dir holding the frontend API server
 set senseAPIDir=API
 
-:: TextSummary specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-set textSummaryDir=TextSummary
-
-:: DeepStack specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-:: The name of the dir holding the DeepStack analysis services
-set deepstackDir=DeepStack
-
-:: The name of the dir containing the Python code itself
-set intelligenceDir=intelligencelayer
-
-:: The name of the dir containing the AI models themselves
-set modelsDir=assets
-
-:: The name of the dir containing persisted DeepStack data
-set datastoreDir=datastore
-
-:: The name of the dir containing temporary DeepStack data
-set tempstoreDir=tempstore
-
-:: Yolo.Net specific
-set yoloNetDir=CodeProject.SenseAI.AnalysisLayer.Yolo
-set yoloModelsDir=yoloModels
 
 :: Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -70,9 +47,6 @@ set srcDir=src
 :: The name of the dir, within the current directory, where install assets will
 :: be downloaded
 set downloadDir=downloads
-
-:: The name of the dir containing the Python interpreter
-set pythonDir=python37
 
 :: The name of the dir holding the backend analysis services
 set analysisLayerDir=AnalysisLayer
@@ -121,184 +95,149 @@ call :WriteLine "                                                               
 :: ============================================================================
 :: 1. Ensure directories are created and download required assets
 
+call :WriteLine
+call :WriteLine "General SenseAI setup" "DarkGreen" 
+
 :: Create some directories
 call :Write "Creating Directories..."
 
 :: For downloading assets
 if not exist "%downloadPath%\" mkdir "%downloadPath%"
+call :WriteLine "Done" "Green"
 
-:: For Text Summary 
-set textSummaryPath=%analysisLayerPath%\%textSummaryDir%
 
-:: For DeepStack
-set deepStackPath=%analysisLayerPath%\%deepstackDir%
-if not exist "%deepStackPath%\%tempstoreDir%\" mkdir "%deepStackPath%\%tempstoreDir%"
-if not exist "%deepStackPath%\%datastoreDir%\" mkdir "%deepStackPath%\%datastoreDir%"
+:: TextSummary specific ::::::::::::::::::::::::::::::::::::::::::::::::::::::: 
 
-:: For Yolo.NET
-set yoloNetPath=%analysisLayerPath%\%yoloNetDir%
+call :WriteLine
+call :WriteLine "TextSummary setup" "DarkGreen" 
 
-call :WriteLine "Done" Green
+:: The name of the dir containing the TextSummary module
+set moduleDir=TextSummary
 
-call :Write "Downloading utilities and models: "
-call :WriteLine "Starting" Gray 
+:: Full path to the TextSummary dir
+set modulePath=%analysisLayerPath%\%moduleDir%
 
-set pythonInstallPath=%analysisLayerPath%\bin\%platform%\%pythonDir%
+call :SetupPython 3.7
+call :InstallPythonPackages 3.7 "%modulePath%\requirements.txt" "nltk"
 
-:: Clean up directories to force a re-download if necessary
+
+:: Background Remover :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+call :WriteLine
+call :WriteLine "Background Remover setup" "DarkGreen" 
+
+:: The name of the dir containing the Background Remover module
+set moduleDir=BackgroundRemover
+
+:: The full path of the background remover module
+set modulePath=%analysisLayerPath%\%moduleDir%
+
+:: The name of the dir containing the background remover models
+set moduleAssetsDir=models
+
+:: The name of the file in our S3 bucket containing the assets required for this module
+set modelsAssetFilename=rembg-models.zip
+
+:: Install python and the required dependencies
+call :SetupPython 3.9
+call :InstallPythonPackages 3.9 "%modulePath%\requirements.txt" "onnxruntime"
+
+:: Clean up directories to force a download and re-copy if necessary
 if /i "%forceOverwrite%" == "true" (
-
-    REM Force Re-download
-    if exist "%downloadPath%\%platform%\%pythonDir%" rmdir /s "%rmdirFlags% %downloadPath%\%platform%\%pythonDir%"
-    if exist "%downloadPath%\%modelsDir%"            rmdir /s "%rmdirFlags% %downloadPath%\%modelsDir%"
-    if exist "%downloadPath%\%yoloModelsDir%"        rmdir /s "%rmdirFlags% %downloadPath%\%yoloModelsDir%"
-
-    REM Force overwrite
-    if exist "%pythonInstallPath%"         rmdir /s "%rmdirFlags% %pythonInstallPath%"
-    if exist "%deepStackPath%\%modelsDir%" rmdir /s "%rmdirFlags% %deepStackPath%\%modelsDir%"
-    if exist "%yoloNetPath%\%modelsDir%"   rmdir /s "%rmdirFlags% %yoloNetPath%\%modelsDir%"
+    if exist "%downloadPath%\%moduleDir%"     rmdir /s %rmdirFlags% "%downloadPath%\%moduleDir%"
+    if exist "%modulePath%\%moduleAssetsDir%" rmdir /s %rmdirFlags% "%modulePath%\%moduleAssetsDir%"
 )
 
-:: Download whatever packages are missing 
-if not exist "%pythonInstallPath" (
-    if not exist "%downloadPath%\%platform%\" mkdir "%downloadPath%\%platform%"
-    if not exist "%pythonInstallPath%" (
-        call :Download "%storageUrl%" "%downloadPath%\%platform%\" "python37.zip" "%pythonDir%" ^
-                       "Downloading Python interpreter..."
-        if exist "%downloadPath%\%platform%\%pythonDir%" (
-            robocopy /e "%downloadPath%\%platform%\%pythonDir% " "%pythonInstallPath% " !roboCopyFlags! > NUL
-        )
-    )
-)
-if not exist "%deepStackPath%\%modelsDir%" (
-    call :Download "%storageUrl%" "%downloadPath%\" "models.zip" "%modelsDir%" ^
-                   "Downloading models..."
-    if exist "%downloadPath%\%modelsDir%" (
-        robocopy /e "%downloadPath%\%modelsDir% " "%deepStackPath%\%modelsDir% " !roboCopyFlags! > NUL
-    )
-)
-if not exist "%yoloNetPath%\%modelsDir%" (
-    call :Download "%storageUrl%" "%downloadPath%\" "yolonet-models.zip" "%yoloModelsDir%" ^
-                   "Downloading Yolo.Net models..."
-    if exist %downloadPath%\%yoloModelsDir% (
-        robocopy /e "%downloadPath%\%yoloModelsDir% " "%yoloNetPath%\%modelsDir% " !roboCopyFlags! > NUL
+:: Location of models as per original repo
+:: u2netp:          https://drive.google.com/uc?id=1tNuFmLv0TSNDjYIkjEdeH1IWKQdUA4HR
+:: u2net:           https://drive.google.com/uc?id=1tCU5MM1LhRgGou5OpmpjBQbSrYIUoYab
+:: u2net_human_seg: https://drive.google.com/uc?id=1ZfqwVxu-1XWC1xU1GHIP-FM_Knd_AX5j
+:: u2net_cloth_seg: https://drive.google.com/uc?id=15rKbQSXQzrKCQurUjZFg8HqzZad8bcyz
+
+if not exist "%modulePath%\%moduleAssetsDir%" (
+    call :Download "%storageUrl%" "%downloadPath%\" "%modelsAssetFilename%" "%moduleDir%" ^
+                   "Downloading Background Remover models..."
+    if exist "%downloadPath%\%modulesDir%" (
+        robocopy /e "%downloadPath%\%moduleDir% " "%modulePath%\%moduleAssetsDir% " !roboCopyFlags! > NUL
     )
 )
 
+
+:: For DeepStack Vision AI :::::::::::::::::::::::::::::::::::::::::::::::::
+
+call :WriteLine
+call :WriteLine "Vision toolkit setup" "DarkGreen" 
+
+:: The name of the dir containing the Deepstack Vision modules
+set moduleDir=DeepStack
+
+:: The full path of the Deepstack Vision modules
+set modulePath=%analysisLayerPath%\%moduleDir%
+
+:: The name of the dir containing the AI models themselves
+set moduleAssetsDir=assets
+
+:: The name of the file in our S3 bucket containing the assets required for this module
+set modelsAssetFilename=models.zip
+
+:: Install python and the required dependencies
+call :SetupPython 3.7
+call :InstallPythonPackages 3.7 "%modulePath%\intelligencelayer\requirements.txt" "torch"
+
+:: Clean up directories to force a download and re-copy if necessary
+if /i "%forceOverwrite%" == "true" (
+    REM Force Re-download, then force re-copy of downloads to install dir
+    if exist "%downloadPath%\%moduleDir%"     rmdir /s %rmdirFlags% "%downloadPath%\%moduleDir%"
+    if exist "%modulePath%\%moduleAssetsDir%" rmdir /s %rmdirFlags% "%modulePath%\%moduleAssetsDir%"
+)
+
+if not exist "%modulePath%\%moduleAssetsDir%" (
+    call :Download "%storageUrl%" "%downloadPath%\" "%modelsAssetFilename%" "%moduleDir%" ^
+                   "Downloading Vision models..."
+    if exist "%downloadPath%\%moduleDir%" (
+        robocopy /e "%downloadPath%\%moduleDir% " "%modulePath%\%moduleAssetsDir% " !roboCopyFlags! > NUL
+    )
+)
+
+:: Deepstack needs these to store temp and pesrsisted data
+if not exist "%modulePath%\tempstore\" mkdir "%modulePath%\tempstore"
+if not exist "%modulePath%\datastore\" mkdir "%modulePath%\datastore"
+
+
+:: For CodeProject's YOLO ObjectDetector :::::::::::::::::::::::::::::::::::::::::::::
+
+call :WriteLine
+call :WriteLine "Object Detector setup" "DarkGreen" 
+
+:: The name of the dir containing the Object Detector module. Yes, some brevity here would be good
+set moduleDir=CodeProject.SenseAI.AnalysisLayer.Yolo
+
+:: The full path of the Object Detector module
+set modulePath=%analysisLayerPath%\%moduleDir%
+
+:: The name of the dir containing the AI models themselves
+set moduleAssetsDir=assets
+
+:: The name of the file in our S3 bucket containing the assets required for this module
+set modelsAssetFilename=yolonet-models.zip
+
+:: Clean up directories to force a download and re-copy if necessary
+if /i "%forceOverwrite%" == "true" (
+    REM Force Re-download, then force re-copy of downloads to install dir
+    if exist "%downloadPath%\%moduleDir%"     rmdir /s %rmdirFlags% "%downloadPath%\%moduleDir%"
+    if exist "%modulePath%\%moduleAssetsDir%" rmdir /s %rmdirFlags% "%modulePath%\%moduleAssetsDir%"
+)
+
+if not exist "%modulePath%\%moduleAssetsDir%" (
+    call :Download "%storageUrl%" "%downloadPath%\" "%modelsAssetFilename%" "%moduleDir%" ^
+                   "Downloading Vision models..."
+    if exist "%downloadPath%\%moduleDir%" (
+        robocopy /e "%downloadPath%\%moduleDir% " "%modulePath%\%moduleAssetsDir% " !roboCopyFlags! > NUL
+    )
+)
+
+call :WriteLine
 call :WriteLine "Modules and models downloaded" "Green"
-
-:: Copy over the startup script
-:: call :Write "Copying over startup script..."
-:: copy /Y "Start_SenseAI_Win.bat" "!absoluteRootDir!" >nul 2>nul
-:: :WriteLine "Done." "Green"
-
-
-:: ============================================================================
-:: 2. Create & Activate Virtual Environment: DeepStack specific / Python 3.7
-
-call :Write "Creating Virtual Environment..."
-if exist "%pythonInstallPath%\venv" (
-    call :WriteLine "Already present" "Green"
-) else (
-    "%pythonInstallPath%\python.exe" -m venv "%pythonInstallPath%\venv"
-    call :WriteLine "Done" "Green"
-)
-
-call :Write "Enabling our Virtual Environment..."
-pushd "%pythonInstallPath%"
-
-:: set PYTHONHOME="%cd%\venv\Scripts"
-set VIRTUAL_ENV=%cd%\venv
-set PYTHONHOME=
-set PATH=!VIRTUAL_ENV!\Scripts;%PATH%
-
-set pythonInterpreterPath="!VIRTUAL_ENV!\python3"
-
-if not defined PROMPT set PROMPT=$P$G
-set PROMPT=(venv) !PROMPT!
-
-popd
-call :WriteLine "Done" "Green"
-
-:: Ensure Python Exists
-call :Write "Checking for Python 3.7..."
-python --version | find "3.7" > NUL
-if errorlevel 1 goto errorNoPython
-call :WriteLine "present" "Green"
-
-if "%verbosity%"=="loud" where Python
-
-
-:: ============================================================================
-:: 3a. Install PIP packages for Python analysis services
-
-call :Write "Installing Python package manager..."
-python -m pip install --trusted-host pypi.python.org ^
-                      --trusted-host files.pythonhosted.org ^
-                      --trusted-host pypi.org --upgrade pip !pipFlags!
-call :WriteLine "Done" "Green"
-
-call :Write "Checking for required packages..."
-
-:: ASSUMPTION: If venv\Lib\site-packages\torch exists then no need to do this
-if not exist "!VIRTUAL_ENV!\Lib\site-packages\torch" (
-
-    call :WriteLine "Installing" "Yellow"
-
-    REM call :Write "Installing Packages into Virtual Environment..."
-    REM pip install -r %deepStackPath%\%intelligenceDir%\requirements.txt !pipFlags!
-    REM call :WriteLine "Success" "Green"
-
-    REM We'll do this the long way so we can see some progress
-
-    set currentOption=
-    for /f "tokens=*" %%x in (' more ^< "%deepStackPath%\%intelligenceDir%\requirements.txt" ') do (
-        set line=%%x
-
-        if "!line!" == "" (
-            set currentOption=
-        ) else if "!line:~0,2!" == "##" (
-            set currentOption=
-        ) else if "!line:~0,2!" == "#!" (
-            set currentOption=
-        ) else if "!line:~0,12!" == "--find-links" (
-            set currentOption=!line!
-        ) else (
-           
-            REM  breakup line into module name and description
-            set module=!line!
-            for /F "tokens=1,2 delims=#" %%a in ("!line!") do (
-                set module=%%a
-                set description=%%b
-            )
-
-            if "!description!" == "" set description=Installing !module!
-
-            if "!module!" NEQ "" (
-                call :Write "  -!description!..."
-
-                if /i "%verbosity%" == "quiet" (
-                    python.exe -m pip install !module! !currentOption! !pipFlags! >nul 2>nul 
-                ) else (
-                    python.exe -m pip install !module! !currentOption! !pipFlags!
-                )
-
-                call :WriteLine "Done" "Green"
-            )
-
-            set currentOption=
-        )
-    )
-) else (
-    call :WriteLine "present." "Green"
-)
-
-:: ============================================================================
-:: 3b. Install PIP packages for TextSummary
-
-call :Write "Installing required Text Processing packages..."
-pip install -r "%textSummaryPath%\requirements.txt" !pipFlags!
-call :WriteLine "Success" "Green"
 
 
 :: ============================================================================
@@ -513,6 +452,7 @@ goto:eof
         REM                              -OutFile !downloadPath!!dirToSave!.zip
 
         REM Be careful with the quotes so we can handle paths with spaces
+        REM call :Write "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Destination '!downloadToDir!!dirToSave!.zip' ..." "White"
         powershell -command "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Destination '!downloadToDir!!dirToSave!.zip'"
 
         if errorlevel 1 (
@@ -551,6 +491,160 @@ goto:eof
     exit /b
 
 
+:SetupPython
+    SetLocal EnableDelayedExpansion
+
+    set pythonVersion=%1
+
+    REM Version with ".'s removed
+    set pythonName=python!pythonVersion:.=!
+
+    set installPath=!analysisLayerPath!\bin\!platform!\!pythonName!
+
+    if /i "%forceOverwrite%" == "true" (
+        REM Force Re-download
+        if exist "!downloadPath!\!platform!\!pythonName!" (
+            rmdir /s "%rmdirFlags% "!downloadPath!\!platform!\!pythonName!"
+        )
+
+        REM Force overwrite
+        if exist "!installPath!" rmdir /s %rmdirFlags% "!installPath!"
+    )
+
+    REM Download whatever packages are missing 
+    if exist "!installPath!" (
+        call :WriteLine "!pythonName! package already downloaded" "DarkGray"
+    ) else (
+        set baseDir=!downloadPath!\!platform!\
+        if not exist "!baseDir!" mkdir "!baseDir!"
+        if not exist "!installPath!" (
+            call :Download "%storageUrl%" "!baseDir!" "!pythonName!.zip" "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
+            if exist "!downloadPath!\!platform!\!pythonName!" (
+                robocopy /e "!downloadPath!\!platform!\!pythonName! " "!installPath! " !roboCopyFlags! > NUL
+            )
+        )
+    )
+
+    call :Write "Creating Virtual Environment..."
+    if exist "!installPath!\venv" (
+        call :WriteLine "Python !pythonVersion! Already present" "Green"
+    ) else (
+        "!installPath!\python.exe" -m venv "!installPath!\venv"
+        call :WriteLine "Done" "Green"
+    )
+
+    call :Write "Enabling our Virtual Environment..."
+    pushd "!installPath!"
+
+    set venvPath=%cd%\venv
+    set pythonInterpreterPath="!venvPath!\Scripts\python"
+
+    popd
+
+    call :WriteLine "Done" "Green"
+
+    rem Ensure Python Exists
+    call :Write "Confirming we have Python !pythonVersion!..."
+    !pythonInterpreterPath! --version | find "!pythonVersion!" > NUL
+    if errorlevel 1 goto errorNoPython
+    call :WriteLine "present" "Green"
+
+    exit /b
+
+:InstallPythonPackages
+
+    SetLocal EnableDelayedExpansion
+
+    REM Whether or not to install all python packages in one step (-r requirements.txt) or step by
+    REM step. Doing this allows the PIP manager to handle incompatibilities better.
+    set oneStepPIP=true
+
+    set pythonVersion=%1
+    set pythonName=python!pythonVersion:.=!
+
+    set requirementsPath=%~2
+    set testForPipExistanceName=%~3
+
+    set virtualEnv=!analysisLayerPath!\bin\!platform!\!pythonName!\venv
+
+    rem This will be the python interpreter in the virtual env
+    set pythonPath=!virtualEnv!\Scripts\python
+
+    rem ============================================================================
+    rem 3a. Install PIP packages for Python analysis services
+
+    call :Write "Installing Python package manager..."
+    !pythonPath! -m pip install --trusted-host pypi.python.org ^
+                 --trusted-host files.pythonhosted.org ^
+                 --trusted-host pypi.org --upgrade pip !pipFlags!
+    call :WriteLine "Done" "Green"
+
+    call :Write "Checking for required packages..."
+
+    rem ASSUMPTION: If venv\Lib\site-packages\<test name> exists then no need to check further
+    if not exist "!virtualEnv!\Lib\site-packages\!testForPipExistanceName!" (
+
+        call :WriteLine "Packages missing. Installing..." "Yellow"
+
+        if "!oneStepPIP!" == "true" (
+            
+            call :Write "Installing Packages into Virtual Environment..."
+            REM pip install -r !requirementsPath! !pipFlags!
+            !pythonPath! -m pip install -r !requirementsPath! !pipFlags!
+            call :WriteLine "Success" "Green"
+
+        ) else (
+
+            REM We'll do this the long way so we can see some progress
+
+            set currentOption=
+            for /f "tokens=*" %%x in (' more ^< "!requirementsPath!" ') do (
+                set line=%%x
+
+                if "!line!" == "" (
+                    set currentOption=
+                ) else if "!line:~0,2!" == "##" (
+                    set currentOption=
+                ) else if "!line:~0,8!" == "# Python" (  REM Note: It's actually #! Python in the file.
+                    set currentOption=
+                ) else if "!line:~0,12!" == "--find-links" (
+                    set currentOption=!line!
+                ) else (
+           
+                    REM  breakup line into module name and description
+                    set module=!line!
+                    for /F "tokens=1,2 delims=#" %%a in ("!line!") do (
+                        set module=%%a
+                        set description=%%b
+                    )
+
+                    if "!description!" == "" set description=Installing !module!
+
+                    if "!module!" NEQ "" (
+                        call :Write "  -!description!..."
+
+                        if /i "%verbosity%" == "quiet" (
+                            !pythonPath! -m pip install !module! !currentOption! !pipFlags! >nul 2>nul 
+                        ) else (
+                            !pythonPath! -m pip install !module! !currentOption! !pipFlags!
+                        )
+
+                        call :WriteLine "Done" "Green"
+                    )
+
+                    set currentOption=
+                )
+            )
+
+        )
+
+    ) else (
+        call :WriteLine "present." "Green"
+    )
+
+    exit /b
+
+
 :: Jump points
 
 :errorNoPython
@@ -558,4 +652,5 @@ call :WriteLine
 call :WriteLine
 call :WriteLine "-------------------------------------------------------"
 call :WriteLine "Error: Python not installed" "Red"
-goto:eof
+goto:EOF
+exit

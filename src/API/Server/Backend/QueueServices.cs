@@ -1,5 +1,4 @@
 ﻿
-using CodeProject.SenseAI.API.Common;
 
 using Microsoft.Extensions.Options;
 
@@ -10,6 +9,9 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
+using CodeProject.SenseAI.AnalysisLayer.SDK;
+using CodeProject.SenseAI.API.Common;
+
 namespace CodeProject.SenseAI.API.Server.Backend
 {
     /// <summary>
@@ -17,14 +19,14 @@ namespace CodeProject.SenseAI.API.Server.Backend
     /// </summary>
     public class QueueServices
     {
-        private readonly BackendOptions _settings;
+        private readonly QueueProcessingOptions _settings;
 
         // Keeping track of the queues being used.  Will be created as needed.
         private readonly ConcurrentDictionary<string, Channel<BackendRequestBase>> _queues =
                             new ConcurrentDictionary<string, Channel<BackendRequestBase>>();
         private readonly ConcurrentDictionary<string, TaskCompletionSource<string?>> _pendingResponses =
                             new ConcurrentDictionary<string, TaskCompletionSource<string?>>();
-        public QueueServices(IOptions<BackendOptions> options)
+        public QueueServices(IOptions<QueueProcessingOptions> options)
         {
             _settings = options.Value;
         }

@@ -1,0 +1,15 @@
+{
+    // We don't have a Python3.8 installer for windows, so let's use the existing Python3.7 that
+    // we know works
+    "Modules": {
+        "FaceProcessing": {
+            "Runtime": "python37"
+        },
+        "SceneClassification": {
+            "Runtime": "python37"
+        },
+        "LegacyObjectDetection": {
+            "Runtime": "python37"
+        }
+    }
+}

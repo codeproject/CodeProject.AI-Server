@@ -28,60 +28,75 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         const string RootPathMarker       = "%ROOT_PATH%";
         const string ModulesPathMarker    = "%MODULES_PATH%";
         const string PlatformMarker       = "%PLATFORM%";
+        const string DataDirMarker        = "%DATA_DIR%";
         const string PythonBasePathMarker = "%PYTHON_BASEPATH%";
-        const string Python37PathMarker   = "%PYTHON37_PATH%";
+        const string PythonPathMarker     = "%PYTHON_PATH%";
+        const string PythonRuntimeMarker  = "%PYTHON_RUNTIME%";
 
-        private readonly FrontendOptions               _options;
+        private readonly FrontendOptions               _frontendOptions;
+        private readonly ModuleCollection                 _modules;
         private readonly IConfiguration                _config;
         private readonly ILogger<BackendProcessRunner> _logger;
         private readonly QueueServices                 _queueServices;
         private readonly BackendRouteMap               _routeMap;
-        private readonly Dictionary<string, string?>   _backendEnvironmentVars = new();
         private readonly List<Process>                 _runningProcesses = new();
         private readonly string?                       _appDataDirectory;
+
+        private readonly ModuleCollection _emptyModuleList = new ModuleCollection();
 
         /// <summary>
         /// Gets the current platform name
         /// </summary>
-        private string Platform
+        public static string Platform
         {
             get
             {
+                bool inDocker = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
+                if (inDocker)
+                    return "Docker";  // which in our case implies that we are running in Linux
+
                 // RuntimeInformation.GetPlatform() or RuntimeInformation.Platform would have been
-                // too easy...
+                // too easy.
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    return OSPlatform.Windows.ToString();
+                    return "Windows";
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    return OSPlatform.OSX.ToString();
+                    return "macOS";
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    return OSPlatform.Linux.ToString();
+                    return "Linux";
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
-                    return OSPlatform.FreeBSD.ToString();
+                    return "FreeBSD";
 
-                return OSPlatform.Windows.ToString(); // Gotta be something...
+                return "Windows"; // Gotta be something...
             }
         }
 
         /// <summary>
         /// Gets a list of the startup processes.
         /// </summary>
-        public StartupProcess[] StartupProcesses
+        public ModuleCollection StartupProcesses
         {
-            get { return _options?.StartupProcesses ?? Array.Empty<StartupProcess>(); }
+            get { return _modules ?? _emptyModuleList; }
         }
 
         /// <summary>
         /// Gets a list of the processes names and statuses.
         /// </summary>
-        public Dictionary<string, bool> ProcessStatuses
+        public List<ProcessStatus> ProcessStatuses
         {
             get
             {
-                return StartupProcesses.ToDictionary(cmd => cmd.Name ?? "Unknown",
-                                                     cmd => cmd.Running ?? false);
+                return StartupProcesses.Select(entry => new ProcessStatus()
+                {
+                    ModuleId  = entry.Key ?? "Unknown",
+                    Name      = entry.Value.Name,
+                    Started   = entry.Value.Started,
+                    LastSeen  = entry.Value.LastSeen,
+                    Running   = entry.Value.Running,
+                    Processed = entry.Value.Processed ?? 0
+                }).ToList();
             }
         }
 
@@ -92,25 +107,30 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <returns>The status for the backend process, or false if the queue is invalid.</returns>
         public bool GetStatusForQueue(string queueName)
         {
-            return StartupProcesses.FirstOrDefault(cmd => cmd.Queues!.Any(x => string.Compare(x, queueName, true) == 0))
-                ?.Running ?? false;
+            return StartupProcesses.FirstOrDefault(entry => 
+                                                        entry.Value.RouteMaps!
+                                                             .Any(x => string.Compare(x.Queue, queueName, true) == 0)
+                                                  ).Value?.Running ?? false;
         }
 
         /// <summary>
         /// Initialises a new instance of the BackendProcessRunner.
         /// </summary>
         /// <param name="options">The FrontendOptions</param>
+        /// <param name="modules">The Modules configuration.</param>
         /// <param name="config">The application configuration.</param>
         /// <param name="queueServices">The Queue management service.</param>
         /// <param name="routeMap">The RouteMap service.</param>
         /// <param name="logger">The logger.</param>
         public BackendProcessRunner(IOptions<FrontendOptions> options,
+                                    IOptions<ModuleCollection> modules,
                                     IConfiguration config,
                                     QueueServices queueServices,
                                     BackendRouteMap routeMap,
                                     ILogger<BackendProcessRunner> logger)
         {
-            _options          = options.Value;
+            _frontendOptions  = options.Value;
+            _modules          = modules.Value;
             _config           = config;
             _logger           = logger;
             _queueServices    = queueServices;
@@ -120,7 +140,6 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             _appDataDirectory = config.GetValue<string>("ApplicationDataDir");
 
             ExpandMacros();
-            BuildBackendEnvironmentVar();
         }
 
         /// <inheritdoc></inheritdoc>
@@ -153,7 +172,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
             try
             {
-                if (_options.StartupProcesses is null)
+                if (_modules is null)
                 {
                     _logger.LogInformation("No Background AI Modules specified");
                     Logger.Log("No Background AI Modules specified");
@@ -169,10 +188,10 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             }
 
             // Setup routes.  Do this first so they are active during debug without launching services.
-            foreach (var cmdInfo in _options.StartupProcesses!)
+            foreach (var cmdInfo in _modules!.Values)
             {
                 // setup the routes for this module.
-                if (cmdInfo.Activate ?? false)
+                if (IsEnabled(cmdInfo))
                 {
                     if (!(cmdInfo.RouteMaps?.Any() ?? false))
                     {
@@ -181,7 +200,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     else
                     {
                         foreach (var routeInfo in cmdInfo.RouteMaps!)
-                            _routeMap.Register(routeInfo.Path, routeInfo.Queue, routeInfo.Command);
+                            _routeMap.Register(routeInfo);
                     }
                 }
             }
@@ -201,60 +220,39 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
             if (loggerIsValid)
             {
-                _logger.LogInformation($"Root Path:      {_options.ROOT_PATH}");
-                _logger.LogInformation($"Module Path:    {_options.MODULES_PATH}");
-                _logger.LogInformation($"Python3.7 Path: {_options.PYTHON37_PATH}");
-                _logger.LogInformation($"Image Temp Dir: {Path.GetTempPath()}");
-                
-                Logger.Log($"App directory {_options.ROOT_PATH}");
-                Logger.Log($"Analysis modules in {_options.MODULES_PATH}");
+                _logger.LogInformation($"Root Path:   {_frontendOptions.ROOT_PATH}");
+                _logger.LogInformation($"Module Path: {_frontendOptions.MODULES_PATH}");
+                _logger.LogInformation($"Python Path: {_frontendOptions.PYTHON_PATH}");
+                _logger.LogInformation($"Temp Dir:    {Path.GetTempPath()}");
+                _logger.LogInformation($"Data Dir:    {_appDataDirectory}");
+
+                Logger.Log($"App directory {_frontendOptions.ROOT_PATH}");
+                Logger.Log($"Analysis modules in {_frontendOptions.MODULES_PATH}");
             }
 
-            foreach (var cmdInfo in _options.StartupProcesses!)
+            foreach (var entry in _modules!)
             {
-                cmdInfo.Running = false;
-
+                ModuleConfig? module = entry.Value;
+                string moduleId = entry.Key;
+                    
                 if (stoppingToken.IsCancellationRequested)
                     break;
 
-                bool activate = cmdInfo.Activate ?? false;
-                bool enabled  = activate;
-
-                // TODO: remove the Enable Flags
-                foreach (var envVar in cmdInfo.EnableFlags)
-                    enabled = enabled || _config.GetValue(envVar, false);
+                bool enabled = IsEnabled(module!);
 
                 if (!enabled)
-                    Logger.Log($"Not starting {cmdInfo.Name}: Not set as enabled");
+                    Logger.Log($"Not starting {module.Name}: Not set as enabled");
 
-                if (enabled && !cmdInfo.Platforms!.Any(platform => platform.ToLower() == Platform.ToLower()))
-                {
-                    enabled = false;
-                    Logger.Log($"Not starting {cmdInfo.Name}: Not anabled for {Platform}");
-                }
-
-                if (enabled && !string.IsNullOrEmpty(cmdInfo.Command))
+                if (enabled && !string.IsNullOrEmpty(module.FilePath))
                 {
                     // _logger.LogError($"Starting {cmdInfo.Command}");
 
                     // create the required Queues
-                    foreach (var queueName in cmdInfo.Queues)
-                    if (!string.IsNullOrWhiteSpace(queueName))
-                        _queueServices.EnsureQueueExists(queueName);
+                    foreach (var routeInfo in module.RouteMaps)
+                        if (!string.IsNullOrWhiteSpace(routeInfo.Queue))
+                            _queueServices.EnsureQueueExists(routeInfo.Queue);
 
-                    // Setup the process we're going to launch
-                    ProcessStartInfo? procStartInfo = new ProcessStartInfo($"{cmdInfo.Command}", $"{cmdInfo.Args ?? ""}")
-                    {
-                        UseShellExecute        = false,
-                        WorkingDirectory       = cmdInfo.WorkingDirectory,
-                        CreateNoWindow         = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError  = true
-                    };
-
-                    // Set the environment variables
-                    foreach (var kv in _backendEnvironmentVars)
-                        procStartInfo.Environment.TryAdd(kv.Key, kv.Value);
+                    ProcessStartInfo procStartInfo = CreateProcessStartInfo(module, moduleId);
 
                     // Start the process
                     try
@@ -263,13 +261,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                             _logger.LogInformation($"Starting {procStartInfo.FileName} {procStartInfo.Arguments}");
 
                         Process? process = new Process();
-                        process.StartInfo = procStartInfo;
+                        process.StartInfo           = procStartInfo;
                         process.EnableRaisingEvents = true;
                         process.OutputDataReceived += (sender, data) =>
                         {
                             string filename = string.Empty;
                             if (sender is Process process)
-                                filename = Path.GetFileName(process.StartInfo.Arguments);
+                                filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"", ""));
 
                             Logger.Log(string.IsNullOrEmpty(filename) ? data.Data : filename + ": " + data.Data);
                         };
@@ -277,7 +275,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                         {
                             string filename = string.Empty;
                             if (sender is Process process)
-                                filename = Path.GetFileName(process.StartInfo.Arguments);
+                                filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"",""));
 
                             Logger.Log(string.IsNullOrEmpty(filename) ? data.Data : filename + ": " + data.Data);
                         };
@@ -291,41 +289,39 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                             process.BeginErrorReadLine();
 
                             if (loggerIsValid)
-                                _logger.LogInformation($"Started {cmdInfo.Name} backend");
+                                _logger.LogInformation($"Started {module.Name} backend");
 
                             _runningProcesses.Add(process);
-                            cmdInfo.Running = true;
+                            module.Started = DateTime.UtcNow;
 
-                            Logger.Log($"Started {cmdInfo.Name}");
+                            Logger.Log($"Started {module.Name}");
                         }
                         else
                         {
                             if (loggerIsValid)
-                                _logger.LogError($"Unable to start {cmdInfo.Name} backend");
+                                _logger.LogError($"Unable to start {module.Name} backend");
 
-                            Logger.Log($"Unable to start {cmdInfo.Name}");
+                            Logger.Log($"Unable to start {module.Name}");
                         }
                     }
                     catch (Exception ex)
                     {
                         if (loggerIsValid)
                         {
-                            _logger.LogError(ex, $"Error trying to start { cmdInfo.Name}");
+                            _logger.LogError(ex, $"Error trying to start { module.Name}");
 
                             Console.WriteLine("-------------------------------------------------");
-                            Console.WriteLine($"Working: {cmdInfo.WorkingDirectory}");
-                            Console.WriteLine($"Command: {cmdInfo.Command}");
-                            Console.WriteLine($"Args:    {cmdInfo.Args}");
+                            Console.WriteLine($"FilePath: {module.FilePath}");
                             Console.WriteLine("-------------------------------------------------");
                         }
 
-                        Logger.Log($"Error running {cmdInfo.Command} {cmdInfo.Args}");
+                        Logger.Log($"Error running {module.FilePath}");
 #if DEBUG
-                        if (Platform == "windows")
+                        if (Platform == "Windows")
                             Logger.Log($"    Run /Installers/Dev/setup_dev_env_win.bat");
                         else
                             Logger.Log($"    In /Installers/Dev/, run 'bash setup_dev_env_linux.sh'");
-                            Logger.Log($" ** Did you setup the Development environment?");
+                        Logger.Log($" ** Did you setup the Development environment?");
 #else
                         Logger.Log($"Please check the SenseAI installation completed successfully");
 #endif
@@ -334,45 +330,133 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             }
         }
 
+        private ProcessStartInfo CreateProcessStartInfo(ModuleConfig module, string moduleId)
+        {
+            string? command = ExpandOption(module.Command) ??
+                              GetCommandByRuntime(module.Runtime) ??
+                              GetCommandByExtension(module.FilePath);
+
+            // Correcting for cross platform (win = \, linux = /)
+            string filePath = Path.Combine(_frontendOptions.MODULES_PATH!,
+                                           module.FilePath!.Replace('\\', Path.DirectorySeparatorChar));
+            string? workingDirectory = Path.GetDirectoryName(filePath);
+
+            // Setup the process we're going to launch
+            ProcessStartInfo? procStartInfo = new ProcessStartInfo($"{command}", $"\"{filePath}\"")
+            {
+                UseShellExecute        = false,
+                WorkingDirectory       = workingDirectory,
+                CreateNoWindow         = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true
+            };
+
+            // Set the environment variables
+            Dictionary<string, string?> environmentVars = BuildBackendEnvironmentVar(module);
+            foreach (var kv in environmentVars)
+                procStartInfo.Environment.TryAdd(kv.Key, kv.Value);
+
+            // Queue is currently route specific, so we can't do this at the moment
+            // procStartInfo.Environment.TryAdd("MODULE_QUEUE", cmdInfo.QueueName);
+            procStartInfo.Environment.TryAdd("MODULE_ID", moduleId);
+
+            return procStartInfo;
+        }
+
+        private bool IsEnabled(ModuleConfig module)
+        {
+            // Has it been explicitely activated?
+            bool enabled = module.Activate ?? false;
+
+            // Check the EnableFlags as backup. TODO: remove the Enable Flags
+            if (module.EnableFlags?.Length > 0)
+                foreach (var envVar in module.EnableFlags)
+                    enabled = enabled || _config.GetValue(envVar, false);
+
+            // If the platform list doesn't include the current platform, then veto the activation
+            if (enabled && !module.Platforms!.Any(platform => platform.ToLower() == Platform.ToLower()))
+                enabled = false;
+   
+            return enabled;
+        }
+
+        private string? GetCommandByRuntime(string? runtime)
+        {
+            if (runtime is null)
+                return null;
+
+            runtime = runtime.ToLower();
+
+            // HACK: Ultimately we will have a set of "runtime" modules which will install and
+            // register the runtimes we use. The registration will include the runtime name
+            // (eg "python39") and the path to the runtime's launcher. For now we're going to 
+            // just hardcode Python and .NET support.
+
+            // If it is "Python" then use our default Python location (in this case, python 3.7)
+            if (runtime == "python")
+                runtime = "python37";
+
+            // If it is a PythonNN command then replace our marker in the default python path to
+            // match the requested interpreter location
+            if (runtime.StartsWith("python") && !runtime.StartsWith("python3."))
+                return _frontendOptions.PYTHON_PATH?.Replace(PythonRuntimeMarker,
+                    // HACK: on docker the python command is in the format of python3.N
+                            Platform == "Docker" ? runtime.Replace("python3", "python3.") : runtime);
+
+            if (runtime == "dotnet")
+                return "dotnet";
+
+            return null;
+        }
+
+        private string? GetCommandByExtension(string? filename)
+        {
+            if (filename is null)
+                return null;
+
+            // HACK: Ultimately we will have a set of "runtime" modules which will install and
+            // register the runtimes we use. The registration will include the runtime name
+            // (eg "dotnet") and the file extensions that the runtime can unambiguously handle.
+            // The "python39" runtime, for example, may want to register .py, but so would python37.
+            // "dotnet" is welcome to register .dll as long as no other runtime module wants .dll too.
+
+            switch (Path.GetExtension(filename))
+            {
+                case ".py": return GetCommandByRuntime("python");
+                case ".dll": return "dotnet";
+                default:
+                    throw new Exception("If neither Runtime nor Command is specified then FilePath must have an extension of '.py' or '.dll'.");
+            }
+        }
+
         /// <summary>
         /// Expands all the directory markers in the options.
         /// </summary>
         private void ExpandMacros()
         {
-            if (_options is null)
+            if (_frontendOptions is null)
                 return;
 
-            // Quick Sanity check
-            // Console.WriteLine($"Initial ROOT_PATH       = {_options.ROOT_PATH}");
-            // Console.WriteLine($"Initial MODULES_PATH    = {_options.MODULES_PATH}");
-            // Console.WriteLine($"Initial PYTHON_BASEPATH = {_options.PYTHON_BASEPATH}");
-            // Console.WriteLine($"Initial PYTHON37_PATH   = {_options.PYTHON37_PATH}");
-
-            // For Macro expansion in appsettings settings we have PYTHON37_PATH which depends on
+            // For Macro expansion in appsettings settings we have PYTHON_PATH which depends on
             // PYTHON_BASEPATH which usually depends on MODULES_PATH and both depend on ROOT_PATH.
             // Get and expand each of these in the correct order.
 
-            _options.ROOT_PATH       = GetRootPath(_options.ROOT_PATH);
-            _options.MODULES_PATH    = Path.GetFullPath(ExpandOption(_options.MODULES_PATH)!);
-            _options.PYTHON_BASEPATH = Path.GetFullPath(ExpandOption(_options.PYTHON_BASEPATH)!);
-            _options.PYTHON37_PATH   = Path.GetFullPath(ExpandOption(_options.PYTHON37_PATH)!);
+            _frontendOptions.ROOT_PATH       = GetRootPath(_frontendOptions.ROOT_PATH);
+            _frontendOptions.MODULES_PATH    = Path.GetFullPath(ExpandOption(_frontendOptions.MODULES_PATH)!);
+
+            _frontendOptions.PYTHON_BASEPATH = Path.GetFullPath(ExpandOption(_frontendOptions.PYTHON_BASEPATH)!);
+            _frontendOptions.PYTHON_PATH     = ExpandOption(_frontendOptions.PYTHON_PATH);
+
+            // Fix the slashes
+            if (_frontendOptions.PYTHON_PATH?.Contains(Path.DirectorySeparatorChar) ?? false)
+                _frontendOptions.PYTHON_PATH = Path.GetFullPath(_frontendOptions.PYTHON_PATH);
 
             Console.WriteLine("------------------------------------------------------------------");
-            Console.WriteLine($"Expanded ROOT_PATH       = {_options.ROOT_PATH}");
-            Console.WriteLine($"Expanded MODULES_PATH    = {_options.MODULES_PATH}");
-            Console.WriteLine($"Expanded PYTHON_BASEPATH = {_options.PYTHON_BASEPATH}");
-            Console.WriteLine($"Expanded PYTHON37_PATH   = {_options.PYTHON37_PATH}");
+            Console.WriteLine($"Expanded ROOT_PATH       = {_frontendOptions.ROOT_PATH}");
+            Console.WriteLine($"Expanded MODULES_PATH    = {_frontendOptions.MODULES_PATH}");
+            Console.WriteLine($"Expanded PYTHON_BASEPATH = {_frontendOptions.PYTHON_BASEPATH}");
+            Console.WriteLine($"Expanded PYTHON_PATH     = {_frontendOptions.PYTHON_PATH}");
             Console.WriteLine("------------------------------------------------------------------");
-
-            if (_options.StartupProcesses is not null)
-            {
-                foreach (var backend in _options.StartupProcesses)
-                {
-                    backend.Command          = ExpandOption(backend.Command);
-                    backend.WorkingDirectory = ExpandOption(backend.WorkingDirectory);
-                    backend.Args             = ExpandOption(backend.Args);
-                }
-            }
         }
 
         /// <summary>
@@ -400,58 +484,6 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             // converts relative URLs and squashes the path to he correct absolute path
             rootPath = Path.GetFullPath(rootPath); 
             return rootPath;
-
-            /* ALTERNATIVE: We can dynamically hunt for the correct path if we're in the mood.
-
-            // If we're in Development then we can dynamically find the correct root path. But this
-            // is fragile and a Really Bad Idea. Trust configuration values. The are adaptable.
-            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            if (aspNetEnv != null && aspNetEnv == "Development")
-            {
-                // In dev we assume the application will be under the /working-dir/src/API/FrontEnd/
-                // directory, buried deeeep in the /bin/Debug/net/ etc etc bowels of the folder
-                // system. Dig to the surface.
-
-                DirectoryInfo currentDir = new(AppContext.BaseDirectory);
-                if (_options.API_DIRNAME != null)
-                {
-                    // Grab a shovel and dig up towards the API directory
-                    while (currentDir.Parent != null &&
-                        currentDir.Name.ToLower() != _options.API_DIRNAME.ToLower())
-                    {
-                        currentDir = currentDir.Parent;
-                    }
-
-                    // Up to the src directory
-                    if (currentDir != null && currentDir.Parent != null)
-                        currentDir = currentDir.Parent;
-
-                    // Up to the root directory
-                    if (currentDir != null && currentDir.Parent != null)
-                        currentDir = currentDir.Parent;
-                }
-
-                if (string.IsNullOrEmpty(currentDir?.FullName)) // No luck. Fall back to default.
-                    rootPath = defaultPath;
-                else
-                    rootPath = currentDir.FullName;
-            }
-            else
-            {
-                // Check if the app's launch directory is "Server" meaning we're in production
-                DirectoryInfo currentDir = new(AppContext.BaseDirectory);
-                if (currentDir.Name.ToLower() == _options.SERVEREXE_DIRNAME && currentDir.Parent != null)
-                    rootPath = currentDir.Parent.FullName;
-                else
-                    rootPath = defaultPath;
-            }
-
-            if (rootPath.StartsWith(".."))
-                rootPath = Path.Combine(AppContext.BaseDirectory, rootPath!);
-
-            rootPath = Path.GetFullPath(rootPath); // converts ".."'s to the correct relative path
-            return rootPath;
-            */
         }
 
         /// <summary>
@@ -464,12 +496,14 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             if (value is null)
                 return null;
 
-            value = value.Replace(ModulesPathMarker,    _options.MODULES_PATH);
-            value = value.Replace(RootPathMarker,       _options.ROOT_PATH);
+            value = value.Replace(ModulesPathMarker,    _frontendOptions.MODULES_PATH);
+            value = value.Replace(RootPathMarker,       _frontendOptions.ROOT_PATH);
             value = value.Replace(PlatformMarker,       Platform.ToLower());
-            value = value.Replace(PythonBasePathMarker, _options.PYTHON_BASEPATH);
-            value = value.Replace(Python37PathMarker,   _options.PYTHON37_PATH);
+            value = value.Replace(PythonBasePathMarker, _frontendOptions.PYTHON_BASEPATH);
+            value = value.Replace(PythonPathMarker,     _frontendOptions.PYTHON_PATH);
+            value = value.Replace(DataDirMarker,        _appDataDirectory);
 
+            // Correct for cross platform (win = \, linux = /)
             value = value.Replace('\\', Path.DirectorySeparatorChar);
 
             return value;
@@ -478,28 +512,35 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// <summary>
         /// Creates the collection of backend environment variables.
         /// </summary>
-        private void BuildBackendEnvironmentVar()
+        private Dictionary<string, string?> BuildBackendEnvironmentVar(ModuleConfig module)
         {
-            if (_options.BackendEnvironmentVariables != null)
-            {
-                foreach (var entry in _options.BackendEnvironmentVariables)
-                    _backendEnvironmentVars.Add(entry.Key, ExpandOption(entry.Value.ToString()));
+            Dictionary<string, string?> processEnvironmentVars = new();
 
-                // A bit of a hack for the Vision Python legacy module that requires a directory
-                // for storing a SQLite DB. We'll force it to store the data in the standard
-                // application data directory as per the current OS. This is required because the
-                // app may very well be installed in a directory that doesn't provide write
-                // permission. So: have the writes done in a spot where we know we have permission.
-                _backendEnvironmentVars["DATA_DIR"] = _appDataDirectory;
-
-                Console.WriteLine("Setting Environment variables");
-                Console.WriteLine("------------------------------------------------------------------");
-                foreach (var envVar in _backendEnvironmentVars)
+            if (_frontendOptions.EnvironmentVariables is not null)
+                foreach (var entry in _frontendOptions.EnvironmentVariables)
                 {
-                    Console.WriteLine($"{envVar.Key.PadRight(16)} = {envVar.Value}");
+                    if (processEnvironmentVars.ContainsKey(entry.Key))
+                        processEnvironmentVars[entry.Key] = ExpandOption(entry.Value.ToString());
+                    else
+                        processEnvironmentVars.Add(entry.Key, ExpandOption(entry.Value.ToString()));
                 }
-                Console.WriteLine("------------------------------------------------------------------");
-            }
+
+            if (module.EnvironmentVariables is not null)
+                foreach (var entry in module.EnvironmentVariables)
+                {
+                    if (processEnvironmentVars.ContainsKey(entry.Key))
+                        processEnvironmentVars[entry.Key] = ExpandOption(entry.Value.ToString());
+                    else
+                        processEnvironmentVars.Add(entry.Key, ExpandOption(entry.Value.ToString()));
+                }
+
+            Console.WriteLine($"Setting Environment variables for {module.Name}");
+            Console.WriteLine("------------------------------------------------------------------");
+            foreach (var envVar in processEnvironmentVars)
+                Console.WriteLine($"{envVar.Key.PadRight(16)} = {envVar.Value}");
+            Console.WriteLine("------------------------------------------------------------------");
+
+            return processEnvironmentVars;
         }
     }
 
@@ -518,6 +559,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                                                                  IConfiguration configuration)
         {
             services.Configure<FrontendOptions>(configuration.GetSection("FrontEndOptions"));
+            services.Configure<ModuleCollection>(configuration.GetSection("Modules"));
             services.AddHostedService<BackendProcessRunner>();
             return services;
         }

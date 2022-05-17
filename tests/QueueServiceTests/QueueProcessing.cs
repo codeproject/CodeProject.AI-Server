@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using CodeProject.SenseAI.API.Server.Backend;
+using CodeProject.SenseAI.AnalysisLayer.SDK;
 using Xunit;
 
 namespace QueueServiceTests
@@ -24,17 +25,17 @@ namespace QueueServiceTests
         }
 
         private const string QueueName = "testQueue";
-        private class TestOptions : IOptions<BackendOptions>
+        private class TestOptions : IOptions<QueueProcessingOptions>
         {
-            public TestOptions(BackendOptions options)
+            public TestOptions(QueueProcessingOptions options)
             {
                 Value = options;
             }
 
-            public BackendOptions Value { get; }
+            public QueueProcessingOptions Value { get; }
         }
 
-        private static readonly BackendOptions queueOptions = new()
+        private static readonly QueueProcessingOptions queueOptions = new()
             {
                 MaxQueueLength  = 10,
                 ResponseTimeout = TimeSpan.FromSeconds(10)

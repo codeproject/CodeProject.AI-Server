@@ -6,12 +6,13 @@
     <ProjectGuid>{470d3417-36a4-49a4-b719-496466fa92fb}</ProjectGuid>
     <ProjectHome />
     <StartupFile>textsummary.py</StartupFile>
-    <SearchPath />
+    <SearchPath>..\SDK\Python</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -19,10 +20,11 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.windows.json" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="senseAI.py" />
     <Compile Include="summarize.py" />
     <Compile Include="textsummary.py" />
     <Compile Include="__init__.py" />

@@ -36,6 +36,9 @@ class YOLODetector(object):
 
 
     def predictFromImage(self, img0: Image, confidence: float = 0.4):
+        if img0 is None:
+            return []
+
         confidence = max(0.1,confidence)
 
         img = np.asarray(letterbox(img0, new_shape=self.reso)[0])

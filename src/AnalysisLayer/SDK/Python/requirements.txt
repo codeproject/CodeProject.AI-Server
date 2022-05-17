@@ -1,0 +1,5 @@
+#! Python3
+
+## SenseAI
+requests           # Installing Requests, the HTTP library
+Pillow             # Installing Pillow, a Python Image Library

@@ -11,7 +11,7 @@
         </DirectoryRef>
     </Fragment>
     <Fragment>
-        <ComponentGroup Id="PythonFilesComponentGroup">
+        <ComponentGroup Id="Python37FilesComponentGroup">
             <Component Id="cmp60945983F3B4B78C7BBDC84F57474598" Directory="Python37Folder" Guid="*">
                 <File Id="filA6C09F6EFE64BE9AD4C69333BFC3C627" KeyPath="yes" Source="$(var.ModelsHarvestPath)\LICENSE.txt" />
             </Component>

@@ -77,9 +77,6 @@
             <Component Id="cmp4C62AA85A48BAC715882AE2A634BAAEA" Directory="TestDataFolder" Guid="*">
                 <File Id="fil497D67B28D7DB20239959A7C6B5D4EE3" KeyPath="yes" Source="$(var.TestDataHarvestPath)\pexels-roberto-nickson-2559941.jpg" />
             </Component>
-            <Component Id="cmp87979C3623EFF06F9CE5C10E14D6E8DE" Directory="TestDataFolder" Guid="*">
-                <File Id="filEE24C8E240F293CFF5815A6CA7709C77" KeyPath="yes" Source="$(var.TestDataHarvestPath)\pexels-thirdman-7268587 (1).jpg" />
-            </Component>
             <Component Id="cmpADB20E7EAEF1662083DA5B8111BEA4C1" Directory="TestDataFolder" Guid="*">
                 <File Id="fil15425E69C793631518CEB1E596E58A50" KeyPath="yes" Source="$(var.TestDataHarvestPath)\pexels-thirdman-7652055.jpg" />
             </Component>

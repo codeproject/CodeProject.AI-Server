@@ -9,8 +9,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
         public static IServiceCollection AddQueueProcessing(this IServiceCollection services)
         {
             services.AddSingleton<QueueServices>();
-            services.AddSingleton<VisionCommandDispatcher>();
-            services.AddSingleton<TextCommandDispatcher>();
+            services.AddSingleton<CommandDispatcher>();
             services.AddSingleton<BackendRouteMap>();
             return services;
         }

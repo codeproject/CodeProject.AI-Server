@@ -11,32 +11,42 @@ WORKDIR /src
 COPY ["src/API/Server/FrontEnd/Frontend.csproj", "src/API/Server/FrontEnd/"]
 COPY ["src/API/Server/Backend/Backend.csproj", "src/API/Server/Backend/"]
 COPY ["src/API/Common/Common.csproj", "src/API/Common/"]
-COPY ["src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/CodeProject.SenseAI.AnalysisLayer.Yolo.csproj", "src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/"]
+COPY ["src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/ObjectDetector.csproj", "src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/"]
+COPY ["src/AnalysisLayer/PortraitFilter/PortraitFilter.csproj", "src/AnalysisLayer/PortraitFilter/"]
 COPY ["src/AnalysisLayer/SDK/ModelRunners/Yolov5Net.Scorer/Yolov5Net.Scorer.csproj", "src/AnalysisLayer/SDK/ModelRunners/Yolov5Net.Scorer/"]
+Copy ["src/AnalysisLayer/SDK/NET/CodeProject.SenseAI.AnalysisLayer.SDK/CodeProject.SenseAI.AnalysisLayer.SDK.csproj", "src/AnalysisLayer/SDK/NET/CodeProject.SenseAI.AnalysisLayer.SDK/" ]
+
 RUN dotnet restore "src/API/Server/FrontEnd/Frontend.csproj"
 COPY . .
 WORKDIR "/src/src/API/Server/FrontEnd"
 RUN dotnet build "Frontend.csproj" -c Release -o /app/build/server
 WORKDIR "/src/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo"
-RUN dotnet build "CodeProject.SenseAI.AnalysisLayer.Yolo.csproj" -c Release -o /app/build/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo
+RUN dotnet build "ObjectDetector.csproj" -c Release -o /app/build/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo
+
+WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
+RUN dotnet build "PortraitFilter.csproj" -c Release -o /app/build/AnalysisLayer/PortraitFilter
 
 FROM build AS publish
 WORKDIR "/src/src/API/Server/FrontEnd"
 RUN dotnet publish "Frontend.csproj" -c Release -o /app/publish/server
 WORKDIR "/src/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo"
-RUN dotnet publish "CodeProject.SenseAI.AnalysisLayer.Yolo.csproj" -c Release -o /app/publish/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo
+RUN dotnet publish "ObjectDetector.csproj" -c Release -o /app/publish/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo
+
+WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
+RUN dotnet publish "PortraitFilter.csproj" -c Release -o /app/publish/AnalysisLayer/PortraitFilter
 
 # zipping up the test images and moving to the server wwwroot directory so it can be downloaded from server.
-#RUN apt-get update -y && apt-get upgrade -y
-#RUN apt-get install -y zip
-#WORKDIR "/src/demos/TestData"
-#RUN zip -r testdata.zip .
-#RUN mv testdata.zip /app/publish/server/wwwroot
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install -y zip
+WORKDIR "/src/demos/TestData"
+RUN zip -r testdata.zip .
+RUN mv testdata.zip /app/publish/server/wwwroot
 #
 WORKDIR /src
+COPY ["src/AnalysisLayer/BackgroundRemover/", "/app/publish/AnalysisLayer/BackgroundRemover"]
 COPY ["src/AnalysisLayer/TextSummary/", "/app/publish/AnalysisLayer/TextSummary"]
-COPY ["src/AnalysisLayer/DeepStack/intelligencelayer", "/app/publish/AnalysisLayer/DeepStack/intelligencelayer"]
-COPY ["src/AnalysisLayer/DeepStack/assets", "/app/publish/AnalysisLayer/DeepStack/assets"]
+COPY ["src/AnalysisLayer/DeepStack/", "/app/publish/AnalysisLayer/DeepStack"]
+COPY ["src/AnalysisLayer/SDK/Python", "/app/publish/AnalysisLayer/SDK/Python"]
 COPY ["demos/TestData", "/app/publish/demos/TestData"]
 
 FROM base AS final
@@ -56,8 +66,15 @@ ENV LOGGING__CONSOLE__FORMATTERNAME=simple
 
 WORKDIR /app
 COPY --from=publish /app/publish .
-RUN pip3 install -r /app/AnalysisLayer/TextSummary/requirements.txt
-RUN pip3 install -r /app/AnalysisLayer/DeepStack/intelligencelayer/requirements.txt
+RUN add-apt-repository ppa:deadsnakes/ppa -y
+RUN apt update -y
+RUN apt-get install python3.9 -y
+RUN python3.8 -m pip install --upgrade pip
+RUN python3.9 -m pip install --upgrade pip
+
+RUN python3.8 -m pip install -r /app/AnalysisLayer/TextSummary/requirements.txt
+RUN python3.8 -m pip install -r /app/AnalysisLayer/DeepStack/intelligencelayer/requirements.txt
+RUN python3.9 -m pip install -r /app/AnalysisLayer/BackgroundRemover/requirements.txt
 
 WORKDIR /app/server
 ENTRYPOINT ["dotnet", "CodeProject.SenseAI.Server.dll"]

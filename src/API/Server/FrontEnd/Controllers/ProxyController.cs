@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using CodeProject.SenseAI.AnalysisLayer.SDK;
 namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 {
     // ------------------------------------------------------------------------------
@@ -35,15 +36,15 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
     [ApiController]
     public class ProxyController : ControllerBase
     {
-        private readonly VisionCommandDispatcher _dispatcher;
-        private readonly BackendRouteMap         _routeMap;
+        private readonly CommandDispatcher _dispatcher;
+        private readonly BackendRouteMap   _routeMap;
 
         /// <summary>
         /// Initializes a new instance of the VisionController class.
         /// </summary>
         /// <param name="dispatcher">The Command Dispatcher instance.</param>
         /// <param name="routeMap">The Route Manager</param>
-        public ProxyController(VisionCommandDispatcher dispatcher, BackendRouteMap routeMap)
+        public ProxyController(CommandDispatcher dispatcher, BackendRouteMap routeMap)
         {
             _dispatcher = dispatcher;
             _routeMap   = routeMap;
@@ -76,7 +77,30 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
                     return new ObjectResult(response);
             }
             else
-                return BadRequest();
+                return NotFound();
+        }
+
+        /// <summary>
+        /// Associates a url and command with a queue.
+        /// </summary>
+        /// <param name="routeInfo">The endpoint information to register.</param>
+        /// <returns>OK or Http Error Status response.</returns>
+        // TODO: Should add Name, Description, Inputs and Outputs to the registration
+        [HttpPost("Register")]
+        public IActionResult Register([FromBody] BackendRouteInfo routeInfo)
+        {
+            _routeMap.Register(routeInfo);
+            return Ok();
+        }
+
+        /// <summary>
+        /// List the URL registrations.
+        /// </summary>
+        /// <returns>The List of URL registrations.</returns>
+        [HttpGet("List")]
+        public IActionResult List()
+        {
+            return new ObjectResult(_routeMap.List());
         }
 
         private RequestPayload CreatePayload(BackendRouteInfo routeInfo)
@@ -86,6 +110,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
             var payload       = new RequestPayload
             {
                 command = routeInfo.Command,
+                queue   = routeInfo.Queue,
                 values  = requestValues,
                 files   = form.Files.Select(x => new RequestFormFile
                 {

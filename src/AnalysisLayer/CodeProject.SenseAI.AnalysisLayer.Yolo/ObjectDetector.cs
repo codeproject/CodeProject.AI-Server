@@ -13,8 +13,26 @@ using System.IO;
 using Yolov5Net.Scorer;
 using Yolov5Net.Scorer.Models;
 
+using CodeProject.SenseAI.AnalysisLayer.SDK;
+
 namespace CodeProject.SenseAI.Analysis.Yolo
 {
+    /// <summary>
+    /// An Object Detection Prediction.
+    /// </summary>
+    public class DetectionPrediction : BoundingBoxPrediction
+    {
+        public string? label { get; set; }
+    }
+
+    /// <summary>
+    /// An Object Detection Response.
+    /// </summary>
+    public class BackendObjectDetectionResponse : BackendSuccessResponse
+    {
+        public DetectionPrediction[]? predictions { get; set; }
+    }
+
     /// <summary>
     /// An YoloV5 object detector.
     /// </summary>

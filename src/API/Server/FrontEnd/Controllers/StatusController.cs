@@ -1,13 +1,13 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Hosting;
 
 using CodeProject.SenseAI.API.Common;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 
 namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 {
@@ -157,10 +157,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
             if (backend is null)
                 return new ErrorResponse("Unable to locate backend services");
 
+            if (backend.ProcessStatuses is null)
+                return new ErrorResponse("No backend processes have been registered");
+
             // List them out and return the status
             var response = new AnalysisServicesStatusResponse
             {
-                statuses = backend.ProcessStatuses.ToArray()
+                statuses = backend.ProcessStatuses
             };
 
             return response;

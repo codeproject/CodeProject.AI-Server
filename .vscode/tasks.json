@@ -32,6 +32,20 @@
         },   
 
         {
+            "label": "build-portraitfilter",      // Builds ONLY the Yolo .NET analysis module
+            "type": "process",
+            "group": "build",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/AnalysisLayer/PortraitFilter",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },   
+
+        {
             "label": "build-playground",      // Builds ONLY the Yolo .NET analysis module
             "type": "process",
             "group": "build",
@@ -143,6 +157,7 @@
             "dependsOn": [
                 "build-common",
                 "build-yolo",
+                "build-portraitfilter",
                 "build-server"
             ]
         },
@@ -194,6 +209,7 @@
             "dependsOrder": "sequence",
             "dependsOn": [
                 "build-yolo",
+                "build-portraitfilter",
                 "build-server",
                 "start-api"
             ]
@@ -205,6 +221,7 @@
             "dependsOrder": "sequence",
             "dependsOn": [
                 "build-yolo",
+                "build-portraitfilter",
                 "build-server",
                 "launch-analysis-linux"
             ]
@@ -218,6 +235,7 @@
             "dependsOn": [
                 "build-common",
                 "build-yolo",
+                "build-portraitfilter",
                 "build-server",
                 "build-playground"
             ]

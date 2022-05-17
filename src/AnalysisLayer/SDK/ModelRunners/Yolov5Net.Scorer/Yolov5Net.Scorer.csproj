@@ -30,8 +30,8 @@
     </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.10.0" Condition="$([MSBuild]::IsOsPlatform('Linux'))" />
-		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.10.0" Condition="$([MSBuild]::IsOsPlatform('OSX'))" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Linux'))" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('OSX'))" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Windows'))" />
         <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
     </ItemGroup>

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
-
+import sys
+sys.path.append("../SDK/Python")
 from senseAI import SenseAIBackend, LogMethod
 from summarize import Summarize
 
@@ -16,9 +17,9 @@ def textsummary(thread_name):
     summary = Summarize()
 
     while True:
-        queue_entries: list[str] = senseAI.getCommand(TEXT_QUEUE);
+        queue_entries: list = senseAI.getCommand(TEXT_QUEUE)
 
-        if len(queue_entries) > 0:           
+        if len(queue_entries) > 0:
             timer: tuple = senseAI.startTimer("Text Summary")
 
             for queue_entry in queue_entries:
@@ -46,10 +47,10 @@ def textsummary(thread_name):
                     # summaryText = summary.generate_summary_from_file(file_path, num_sentences)
 
                     # If we're passing a file itself (generate_summary_from_textfile to be added)
-                    # summaryText = summary.generate_summary_from_textfile(text_file, num_sentences)                   
+                    # summaryText = summary.generate_summary_from_textfile(text_file, num_sentences)
 
                     #print("Will summarize the text: ", req_text);
-                    summaryText: str = summary.generate_summary_from_text(req_text, num_sentences)                   
+                    summaryText: str = summary.generate_summary_from_text(req_text, num_sentences)
 
                     output = {"success": True, "summary": summaryText}
 
@@ -59,10 +60,10 @@ def textsummary(thread_name):
                     output = {"success": False, "error": "unable to summarize", "code": 500}
 
                     senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
-                               { "process": "textsummary", 
+                               { "process": "textsummary",
                                  "file": "textsummary.py",
                                  "method": "textsummary",
-                                 "message": err_trace, 
+                                 "message": err_trace,
                                  "exception_type": "Exception"})
 
                 finally:
@@ -72,7 +73,7 @@ def textsummary(thread_name):
                         senseAI.sendResponse(req_id, json.dumps(output))
                     except Exception:
                         print("An exception occured")
-    
+
                     # if os.path.exists(file_path):
                     #    os.remove(file_path)
 

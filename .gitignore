@@ -390,3 +390,4 @@ FodyWeavers.xsd
 /src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5m.onnx
 /Installers/downloads
 *.DS_Store
+/src/AnalysisLayer/BackgroundRemover/models

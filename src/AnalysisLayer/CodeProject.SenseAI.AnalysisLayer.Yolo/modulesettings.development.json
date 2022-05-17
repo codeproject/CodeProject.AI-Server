@@ -1,0 +1,7 @@
+{
+    "Modules": {
+        "ObjectDetection": {
+            "FilePath": "CodeProject.SenseAI.AnalysisLayer.Yolo\\bin\\debug\\net6.0\\ObjectDetector.dll"
+        }
+    }
+}

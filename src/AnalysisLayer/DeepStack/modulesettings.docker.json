@@ -1,0 +1,13 @@
+{
+  "Modules": {
+      "FaceProcessing": {
+        "Runtime": "python38"
+      },
+      "SceneClassification": {
+        "Runtime": "python38"
+      },    
+      "LegacyObjectDetection": {
+        "Runtime": "python38"
+      }
+  }
+}

@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>c04bbd0d-fd36-4fa4-805b-106bccd9bc79</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>CodeProject.SenseAI.Server-1.2.1</OutputName>
+    <OutputName>CodeProject.SenseAI.Server-1.3.0</OutputName>
     <OutputType>Bundle</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -36,6 +36,14 @@
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BackgroundRemover.Installer\BackgroundRemover.Installer.wixproj">
+      <Name>BackgroundRemover.Installer</Name>
+      <Project>{7e70c376-7119-4c90-ac30-344eea29594e}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\DeepStack.Installer\DeepStack.Installer.wixproj">
       <Name>DeepStack.Installer</Name>
       <Project>{ed492608-6013-4552-a29b-a7e14f4beb0b}</Project>
@@ -52,9 +60,25 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\PortraitFilter.Installer\PortraitFilter.Installer.wixproj">
+      <Name>PortraitFilter.Installer</Name>
+      <Project>{476475ce-3c81-446b-914e-ac472d41b82a}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\Python37.Installer\Python37.Installer.wixproj">
       <Name>Python37.Installer</Name>
       <Project>{3f34eaee-8a53-40d1-8cdb-a13ae728fa06}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\Python39.Installer\Python39.Installer.wixproj">
+      <Name>Python39.Installer</Name>
+      <Project>{0dbc85bc-52c3-491f-90f9-6d728ffa2e8f}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>

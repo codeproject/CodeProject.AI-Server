@@ -11,7 +11,7 @@ verbosity="info"
 
 # Get platform
 if [[ $OSTYPE == 'darwin'* ]]; then
-    platform="osx"
+    platform="macos"
 else
     platform="linux"
 fi

@@ -22,7 +22,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
     public class Program
     {
         static int _port = 5000;
-        // static int _sPort = 5001;
+        // static int _sPort = 5001; - eventually for SSL
 
         /// <summary>
         /// The Application Entry Point.
@@ -55,26 +55,25 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 }
             }
 
-            string platform = "windows";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                platform = "osx";
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                platform = "linux";
+            // lower cased as Linux has case senitive file names
+            string platform   = BackendProcessRunner.Platform.ToLower();
+            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                                ?.ToLower();
 
+            // Get a directory for the given platform that allows momdules to store persisted data
             string programDataDir     = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
-            if (platform == "osx")
+
+            // .NET's suggestion for macOS isn't great. Let's do something different.
+            if (platform == "macos")
                 applicationDataDir = $"~/Library/Application Support/{company}/{product}";
 
+            // Store this dir in the config settings so we can get to it later.
             var inMemoryConfigData = new Dictionary<string, string> {
                 { "ApplicationDataDir", applicationDataDir }
             };
 
             bool inVScode = (Environment.GetEnvironmentVariable("RUNNING_IN_VSCODE") ?? "") == "true";
-            bool inDocker = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
-
-            if (inDocker)
-                platform = "docker";  // which in our case implies that we are running in Linux
 
             IHost? host = CreateHostBuilder(args)
                        .ConfigureAppConfiguration((hostingContext, config) =>
@@ -86,6 +85,9 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                            {
                                 config.AddJsonFile(Path.Combine(baseDir, "appsettings.json"),
                                                    optional: false, reloadOnChange: true);
+
+                               config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{aspNetEnv}.json"),
+                                                  optional: true, reloadOnChange: true);
                            }
 
                            config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.json"),
@@ -93,16 +95,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
 
                            // ListEnvVariables(Environment.GetEnvironmentVariables());
 
-                           string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
                            if (!string.IsNullOrWhiteSpace(aspNetEnv))
                            {
-                                // We've had issues where the default appsettings files not being loaded.
-                                if (inVScode && platform != "windows")
-                                {
-                                    config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{aspNetEnv}.json"),
-                                                       optional: true, reloadOnChange: true);
-                                }
-                                
                                 config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.{aspNetEnv}.json"),
                                                   optional: true, reloadOnChange: true);
                            }
@@ -114,6 +108,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                                               reloadOnChange: true, optional: true);
 
                            // ListConfigSources(config.Sources);
+                           LoadModulesConfiguration(config, aspNetEnv);
                        })
                        .Build()
                        ;
@@ -144,6 +139,67 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                                   "Check that another instance is not running on the same port.");
                 Console.Write("Press Enter to close.");
                 Console.ReadLine();
+            }
+        }
+
+        // TODO: This does not belong here and dhould be moved in to a Modules class.
+        // Loading of the module settings should not be done as part of the startup as this means 
+        // modulesettings files can abort the Server startup.
+        // We could:
+        //      - create a separate ConfigurationBuilder
+        //      - clear the configuration sources
+        //      - add the modulesettings files as we do now
+        //      - build a configuration from this builder
+        //      - use this configuration to load the module settings
+        // The module class will have methods and properties to get the ModuleConfigs, and other
+        // things. To be done at a later date.
+        private static void LoadModulesConfiguration(IConfigurationBuilder config, string? aspNetEnv)
+        {
+            IConfiguration configuration = config.Build();
+            var options                  = configuration.GetSection("FrontEndOptions");
+            string? rootPath             = options["ROOT_PATH"];
+            string? modulesPath          = options["MODULES_PATH"];
+
+            // Get the Modules Path
+            rootPath = Path.Combine(AppContext.BaseDirectory, rootPath);
+            rootPath = rootPath.Replace('\\', Path.DirectorySeparatorChar);
+            rootPath = Path.GetFullPath(rootPath);
+
+            if (string.IsNullOrWhiteSpace(rootPath))
+                return;
+
+            modulesPath = modulesPath.Replace("%ROOT_PATH%", rootPath);
+            modulesPath = modulesPath.Replace('\\', Path.DirectorySeparatorChar);
+            modulesPath = Path.GetFullPath(modulesPath);
+
+            if (string.IsNullOrWhiteSpace(modulesPath))
+                return;
+
+            string platform = BackendProcessRunner.Platform.ToLower();
+            aspNetEnv = aspNetEnv?.ToLower();
+
+            // Get the Modules Directories
+            // Be careful of the order.
+            var directories = Directory.GetDirectories(modulesPath);
+            foreach (string? directory in directories)
+            {
+                config.AddJsonFile(Path.Combine(directory, "modulesettings.json"),
+                                   optional: true, reloadOnChange: true);
+
+                if (!string.IsNullOrEmpty(aspNetEnv))
+                {
+                    config.AddJsonFile(Path.Combine(directory, $"modulesettings.{aspNetEnv}.json"),
+                                       optional: true, reloadOnChange: true);
+                }
+
+                config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.json"),
+                                    optional: true, reloadOnChange: true);
+
+                if (!string.IsNullOrEmpty(aspNetEnv))
+                {
+                    config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.{aspNetEnv}.json"),
+                                      optional: true, reloadOnChange: true);
+                }
             }
         }
 
@@ -193,10 +249,11 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         private static int GetServerPort(WebHostBuilderContext hostbuilderContext)
         {
             IConfiguration config = hostbuilderContext.Configuration;
-            int port = config.GetValue<int>("PORT", -1);
 
+            // REVIEW: [Matthew] These should both be PORT_CLIENT, not PORT.
+            int port = config.GetValue("PORT", -1);
             if (port < 0)
-                port = config.GetValue<int>("FrontEndOptions:BackendEnvironmentVariables:PORT", -1);
+                port = config.GetValue("FrontEndOptions:EnvironmentVariables:PORT", -1);  // TODO: PORT_CLIENT
 
             if (port < 0)
             {
@@ -206,6 +263,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     if (!int.TryParse(urls.Split(':').Last().Trim('/'), out port))
                         port = _port;
 
+                    // REVIEW: [Matthew] This should be PORT_CLIENT, not PORT.
                     config["PORT"] = port.ToString();
                 }
             }
