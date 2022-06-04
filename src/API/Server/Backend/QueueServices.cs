@@ -26,6 +26,11 @@ namespace CodeProject.SenseAI.API.Server.Backend
                             new ConcurrentDictionary<string, Channel<BackendRequestBase>>();
         private readonly ConcurrentDictionary<string, TaskCompletionSource<string?>> _pendingResponses =
                             new ConcurrentDictionary<string, TaskCompletionSource<string?>>();
+
+        /// <summary>
+        /// Creates a new instance of the <cref="QueueServices" /> object.
+        /// </summary>
+        /// <param name="options">The queue processing options.</param>
         public QueueServices(IOptions<QueueProcessingOptions> options)
         {
             _settings = options.Value;
@@ -55,7 +60,7 @@ namespace CodeProject.SenseAI.API.Server.Backend
             // that the task is not completed.
             if (!_pendingResponses.TryAdd(request.reqid, completion))
             {
-                return new BackendErrorResponse(-3, $"Unable to add pending response id = {request.reqid}.");
+                return new BackendErrorResponse(-3, $"Unable to add pending response id {request.reqid}.");
             }
 
             // setup a request timeout.

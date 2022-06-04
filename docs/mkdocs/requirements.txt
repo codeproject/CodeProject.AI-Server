@@ -1,0 +1,4 @@
+#! Python3.9
+
+mkdocs
+mkdocs-material

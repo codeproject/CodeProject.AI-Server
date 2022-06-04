@@ -11,6 +11,9 @@
             <Component Id="cmpEDF0921E0631C510C29F391754F3AA34" Directory="BackgroundRemoverInstallFolder" Guid="*">
                 <File Id="fil723BE7AFD1BB3054C6EE3589975D3F77" KeyPath="yes" Source="$(var.ModelsHarvestPath)\BackgroundRemover.pyproj" />
             </Component>
+            <Component Id="cmp07D3149B1449B5B901AD2D9D1DA4070A" Directory="BackgroundRemoverInstallFolder" Guid="*">
+                <File Id="fil00765DF7AEE6BD3147BCBCD6A36F454C" KeyPath="yes" Source="$(var.ModelsHarvestPath)\BackgroundRemover.pyproj.user" />
+            </Component>
             <Component Id="cmp9D3C3EA4344A11FC77F95140639DA674" Directory="BackgroundRemoverInstallFolder" Guid="*">
                 <File Id="filC9C43EE300575CB4F48CF54818F24416" KeyPath="yes" Source="$(var.ModelsHarvestPath)\LICENSE.txt" />
             </Component>
@@ -65,11 +68,11 @@
             <Component Id="cmpD6D0EDBDC10FB5B8EE2CB20BFEB77ABD" Directory="dirBCF6FFDABA08EFF19C345C6629725246" Guid="*">
                 <File Id="fil0DE25471D914DE1A9E3119FD083A34A5" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__init__.py" />
             </Component>
-            <Component Id="cmp69FD442FE553E686C489B25EF00ABF12" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
-                <File Id="fil5C72A13EB534EFB49D95F69AF1A39780" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\bg.cpython-38.pyc" />
-            </Component>
             <Component Id="cmp36A322097D23C26E54CD8D1B21D45FB1" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
                 <File Id="fil651CD85F747526F3A986438DCBAA7576" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\bg.cpython-39.pyc" />
+            </Component>
+            <Component Id="cmp75AE5EF88AF993CB6EC1ACAAE88C5562" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
+                <File Id="fil675D79A156CA9B19CBBE25D75AB4A58F" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\cli.cpython-39.pyc" />
             </Component>
             <Component Id="cmpC090FFB5D5EF82A79DC281421E5F33E5" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
                 <File Id="filF0B622DB4E0B236C259C1224C4735C7F" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\session_base.cpython-39.pyc" />
@@ -83,14 +86,8 @@
             <Component Id="cmp2383EC1D6871E3D65B4F842F930645F1" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
                 <File Id="filC134AC4404451702D8F3CF569BE101E1" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\session_simple.cpython-39.pyc" />
             </Component>
-            <Component Id="cmpC8131A191F768245DBE9C4C5AA6C0362" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
-                <File Id="fil20F42AEDE800A6C73F1776B49D8FD6EB" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\_version.cpython-38.pyc" />
-            </Component>
             <Component Id="cmpD2B4C421311E6F41EC75F86620135C9C" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
                 <File Id="fil9C79BAB727E402D8A12E064666D35EF2" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\_version.cpython-39.pyc" />
-            </Component>
-            <Component Id="cmp41888B963DEFF8495099B6D116C88B98" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
-                <File Id="fil1C58DD34EA2CEBB9392FA1564F762D25" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\__init__.cpython-38.pyc" />
             </Component>
             <Component Id="cmpD098D73393D326F366951C7A40C2CA15" Directory="dirAE54248ADCE66EF3063AF7E1E3FDBF9F" Guid="*">
                 <File Id="filB8885651ED8E6B152B1122CF6AE3A956" KeyPath="yes" Source="$(var.ModelsHarvestPath)\rembg\__pycache__\__init__.cpython-39.pyc" />

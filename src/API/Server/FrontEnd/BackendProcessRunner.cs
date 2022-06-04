@@ -34,7 +34,13 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         const string PythonRuntimeMarker  = "%PYTHON_RUNTIME%";
 
         private readonly FrontendOptions               _frontendOptions;
-        private readonly ModuleCollection                 _modules;
+
+        // TODO: this really should be a singleton global that is initialized
+        //       from the configuration but can be updated after.
+        private readonly ModuleCollection              _modules;
+
+        // TODO: Add Dictionary<string, ProcessStatus> _processStatuses; that tracks the status of
+        //       each module. Remove the "state" properties from ModuleConfig.
         private readonly IConfiguration                _config;
         private readonly ILogger<BackendProcessRunner> _logger;
         private readonly QueueServices                 _queueServices;
@@ -188,18 +194,21 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             }
 
             // Setup routes.  Do this first so they are active during debug without launching services.
-            foreach (var cmdInfo in _modules!.Values)
+            foreach (var entry in _modules!)
             {
+                ModuleConfig? module = entry.Value;
+                string moduleId      = entry.Key;
+
                 // setup the routes for this module.
-                if (IsEnabled(cmdInfo))
+                if (IsEnabled(module))
                 {
-                    if (!(cmdInfo.RouteMaps?.Any() ?? false))
+                    if (!(module.RouteMaps?.Any() ?? false))
                     {
-                        Logger.Log($"No routes defined for {cmdInfo.Name}");
+                        Logger.Log($"No routes defined for {module.Name}");
                     }
                     else
                     {
-                        foreach (var routeInfo in cmdInfo.RouteMaps!)
+                        foreach (var routeInfo in module.RouteMaps!)
                             _routeMap.Register(routeInfo);
                     }
                 }

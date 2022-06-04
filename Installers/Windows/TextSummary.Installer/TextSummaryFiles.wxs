@@ -26,6 +26,9 @@
             <Component Id="cmpCA040E4A81537B8D0CBC7576CC7873A5" Directory="TextSummaryInstallFolder" Guid="*">
                 <File Id="filF0CF669C56FABB990B2B5BCCB78B835F" KeyPath="yes" Source="$(var.ModelsHarvestPath)\TextSummary.pyproj" />
             </Component>
+            <Component Id="cmpEE98593F286C4BDADC3D505368F9F75D" Directory="TextSummaryInstallFolder" Guid="*">
+                <File Id="fil5884E7BC3515419A2160C26EF09EB9AA" KeyPath="yes" Source="$(var.ModelsHarvestPath)\TextSummary.pyproj.user" />
+            </Component>
             <Component Id="cmpD56480B5F8FE0D9B0780BE870B7CC292" Directory="TextSummaryInstallFolder" Guid="*">
                 <File Id="fil8BDA5C2EDB1F261458EB90A8713499E0" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__init__.py" />
             </Component>
@@ -109,12 +112,6 @@
             </Component>
             <Component Id="cmp68474069130887ACBDC35F889AF5708C" Directory="dirC3E6D955D4E088C2ECFC1CD73194099B" Guid="*">
                 <File Id="filC4D6C953767808DE8BB9FF7E179FE057" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\summarize.cpython-37.pyc" />
-            </Component>
-            <Component Id="cmp472D2C4AEEEA1C8B382B6BAC7551BA9A" Directory="dirC3E6D955D4E088C2ECFC1CD73194099B" Guid="*">
-                <File Id="fil43CF1EE082A128C83693FC0359B9C18B" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\summarize.cpython-38.pyc" />
-            </Component>
-            <Component Id="cmp41C38EDFBED2E0DC76072411D873209A" Directory="dirC3E6D955D4E088C2ECFC1CD73194099B" Guid="*">
-                <File Id="fil672A429A2947FFD380116FA4A0EE9C3C" KeyPath="yes" Source="$(var.ModelsHarvestPath)\__pycache__\summarize.cpython-39.pyc" />
             </Component>
         </ComponentGroup>
     </Fragment>

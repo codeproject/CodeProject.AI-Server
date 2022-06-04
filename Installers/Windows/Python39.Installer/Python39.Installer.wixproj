@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>0dbc85bc-52c3-491f-90f9-6d728ffa2e8f</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>Python39.Installer-1.3.0</OutputName>
+    <OutputName>Python39.Installer-1.4.0</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

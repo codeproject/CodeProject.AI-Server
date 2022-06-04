@@ -1,0 +1,66 @@
+:root > * {
+    --md-primary-fg-color: #ff9900;
+    --md-code-fg-color: #111111;
+    --md-code-bg-color: #FBEDBB;
+    --md-code-hl-number-color: Navy;
+    /*--md-code-hl-special-color*/
+    --md-code-hl-function-color: #339999;
+    --md-code-hl-constant-color: Navy;
+    --md-code-hl-keyword-color: Blue;
+    --md-code-hl-string-color: Purple;
+    --md-code-hl-name-color: Navy;
+    --md-code-hl-operator-color: Navy;
+    --md-code-hl-punctuation-color: Purple;
+    --md-code-hl-comment-color: #008000;
+    /*--md-code-hl-generic-color:*/
+    --md-code-hl-variable-color: red;
+    /*
+    .code-preprocessor color:  gray;
+    .code-macro color:         darkred;
+    .code-region  color:       gray;
+    .code-systemcall color:    fuchsia;
+    .code-pagedirective background-color: yellow;
+    .code-attribute color:     red;
+    .code-tag color:           #800000;
+    .code-leadattribute color: #800000;
+    .code-digit color:         Navy;
+    */
+}
+
+h1 .md-button {
+    font-size: 50%;
+    padding: .5em 1em !important;
+    vertical-align:text-top;
+    font-weight:500;
+    margin:0;
+}
+.middle {
+    vertical-align:bottom; /* I know, I know...*/
+}
+.md-typeset a {
+    color: darkgoldenrod;
+}
+.md-typeset pre > code::-webkit-scrollbar {
+    height: 0.4rem;
+    width: 0.4rem;
+}
+nav[data-md-level="0"] > label {
+    font-size: 110%;
+}
+nav[data-md-level="0"] > ul > li {
+    margin-top: 1rem;
+}
+    nav[data-md-level="0"] > ul > li > a, nav[data-md-level="0"] > ul > li > label {
+        font-weight: bold;
+    }
+
+.md-typeset h1 {
+    font-weight: 500 !important;
+}
+.md-typeset h2 {
+    font-weight: 400 !important;
+}
+
+.md-button.tight {
+    padding: .25rem .5rem
+}

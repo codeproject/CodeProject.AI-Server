@@ -11,6 +11,9 @@
             <Component Id="cmp776351C0FB714E88E186D7D549B3BE8A" Directory="TestDataFolder" Guid="*">
                 <File Id="filDF475BA4CAA01343A3599103A3E63F0B" KeyPath="yes" Source="$(var.TestDataHarvestPath)\bradley.jpg" />
             </Component>
+            <Component Id="cmp03AED45A676FA7CE0BE182DE4D34D107" Directory="TestDataFolder" Guid="*">
+                <File Id="fil95DBEAE3B8E06F8F06EE72295FAB9E6B" KeyPath="yes" Source="$(var.TestDataHarvestPath)\crowd.PNG" />
+            </Component>
             <Component Id="cmpE1634A0150949E7CB2402998C36AF8DF" Directory="TestDataFolder" Guid="*">
                 <File Id="fil87D44BD87BB147A5C2FE08D5807F8902" KeyPath="yes" Source="$(var.TestDataHarvestPath)\cruise.jpg" />
             </Component>
@@ -89,6 +92,9 @@
             <Component Id="cmp0A6B0BDC2442E58602A683E4A794F08F" Directory="TestDataFolder" Guid="*">
                 <File Id="filC6C22C4EB57650802C8D639644B71001" KeyPath="yes" Source="$(var.TestDataHarvestPath)\pexels-tima-miroshnichenko-6694964.jpg" />
             </Component>
+            <Component Id="cmpC994D1DD7DA7A03D500AC661E13CEC78" Directory="TestDataFolder" Guid="*">
+                <File Id="filCC8FA934A3ACC2F182EF369148CCD079" KeyPath="yes" Source="$(var.TestDataHarvestPath)\pexels-vanessa-garcia-6324469.jpg" />
+            </Component>
             <Component Id="cmpAF36A6390EDEFE2D006CD56A61CDB76D" Directory="TestDataFolder" Guid="*">
                 <File Id="filB18312AF08C5B72CAD477E63DEF4EF9B" KeyPath="yes" Source="$(var.TestDataHarvestPath)\pexels-victoria-borodinova-1648396.jpg" />
             </Component>
@@ -110,8 +116,14 @@
             <Component Id="cmpBFCF4DF43E8F5D23241527EE46150977" Directory="TestDataFolder" Guid="*">
                 <File Id="fil2F92571238397F0CFC32ACF299E87E33" KeyPath="yes" Source="$(var.TestDataHarvestPath)\Robert5.PNG" />
             </Component>
+            <Component Id="cmp89C03FE2F5E25C1999963F1762C24DC9" Directory="TestDataFolder" Guid="*">
+                <File Id="fil7A7D45086D6C575D9561526A8FC2F16A" KeyPath="yes" Source="$(var.TestDataHarvestPath)\sailors-all-hands-navy-military.jpg" />
+            </Component>
             <Component Id="cmp63AC8E7D8D7D8D345ED340999C664505" Directory="TestDataFolder" Guid="*">
                 <File Id="fil14FB9E05AC3DA3A60AFE952D0B12A356" KeyPath="yes" Source="$(var.TestDataHarvestPath)\testdata.zip" />
+            </Component>
+            <Component Id="cmp81C8A59B913C0D69E0C8EF20095ED8C5" Directory="TestDataFolder" Guid="*">
+                <File Id="fil4EA641FC2E02307F2D04A2FD0D1A8436" KeyPath="yes" Source="$(var.TestDataHarvestPath)\traffic-pexels-photo-297927.jpeg" />
             </Component>
         </ComponentGroup>
     </Fragment>

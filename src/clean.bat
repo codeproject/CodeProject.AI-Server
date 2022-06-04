@@ -12,13 +12,16 @@ setlocal enabledelayedexpansion
 set cleanBuild=false
 set cleanInstallLocal=false
 set cleanInstallAll=false
+set cleanAll=false
 
 if /i "%1" == "build"      set cleanBuild=true
 if /i "%1" == "install"    set cleanInstallLocal=true
 if /i "%1" == "installall" set cleanInstallAll=true
+if /i "%1" == "all"        set cleanAll=true
 
-if /i "%cleanInstallAll%" == "true"   set cleanInstallLocal=true
-if /i "%cleanInstallLocal%" == "true" set cleanBuild=true
+if /i "!cleanAll!" == "true"          set cleanInstallAll=true
+if /i "!cleanInstallAll!" == "true"   set cleanInstallLocal=true
+if /i "!cleanInstallLocal!" == "true" set cleanBuild=true
 
 if /i "%cleanBuild%" == "true" (
     
@@ -57,6 +60,14 @@ if /i "%cleanInstallAll%" == "true" (
     echo.
 
     call :CleanSubDirs "AnalysisLayer" "bin"
+)
+
+if /i "%cleanInstallAll%" == "true" (
+
+    echo.
+    echo Cleaning downloads
+    echo.
+    call :CleanSubDirs "..\Installers" "downloads"
 )
 
 goto:eof

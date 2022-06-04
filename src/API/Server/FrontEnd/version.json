@@ -1,14 +1,14 @@
 {
-    "versionSection": {
-        "versionInfo": {
-            "Major": 1,
-            "Minor": 3,
-            "Patch": 0,
-            "Build": 0,
-            "PreRelease": "Beta",
-            "SecurityUpdate": false,
-            "File": "CodeProject.SenseAI.Server-1.3.0.zip",
-            "ReleaseNotes": "First pass at the SDKs for developing backend AI Modules."
-        }
+  "versionSection": {
+    "versionInfo": {
+      "Major": 1,
+      "Minor": 4,
+      "Patch": 0,
+      "Build": 0,
+      "PreRelease": "Beta",
+      "SecurityUpdate": false,
+      "File": "CodeProject.SenseAI.Server-1.4.0.zip",
+      "ReleaseNotes": "Refactored Module NET SDK and added Sentiment Analysis Module."
     }
+  }
 }

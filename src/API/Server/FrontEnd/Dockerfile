@@ -13,6 +13,7 @@ COPY ["src/API/Server/Backend/Backend.csproj", "src/API/Server/Backend/"]
 COPY ["src/API/Common/Common.csproj", "src/API/Common/"]
 COPY ["src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/ObjectDetector.csproj", "src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/"]
 COPY ["src/AnalysisLayer/PortraitFilter/PortraitFilter.csproj", "src/AnalysisLayer/PortraitFilter/"]
+COPY ["src/AnalysisLayer/SentimentAnalysis/SentimentAnalysis.csproj", "src/AnalysisLayer/SentimentAnalysis/"]
 COPY ["src/AnalysisLayer/SDK/ModelRunners/Yolov5Net.Scorer/Yolov5Net.Scorer.csproj", "src/AnalysisLayer/SDK/ModelRunners/Yolov5Net.Scorer/"]
 Copy ["src/AnalysisLayer/SDK/NET/CodeProject.SenseAI.AnalysisLayer.SDK/CodeProject.SenseAI.AnalysisLayer.SDK.csproj", "src/AnalysisLayer/SDK/NET/CodeProject.SenseAI.AnalysisLayer.SDK/" ]
 
@@ -26,6 +27,9 @@ RUN dotnet build "ObjectDetector.csproj" -c Release -o /app/build/AnalysisLayer/
 WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
 RUN dotnet build "PortraitFilter.csproj" -c Release -o /app/build/AnalysisLayer/PortraitFilter
 
+WORKDIR "/src/src/AnalysisLayer/SentimentAnalysis"
+RUN dotnet build "SentimentAnalysis.csproj" -c Release -o /app/build/AnalysisLayer/SentimentAnalysis
+
 FROM build AS publish
 WORKDIR "/src/src/API/Server/FrontEnd"
 RUN dotnet publish "Frontend.csproj" -c Release -o /app/publish/server
@@ -34,6 +38,9 @@ RUN dotnet publish "ObjectDetector.csproj" -c Release -o /app/publish/AnalysisLa
 
 WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
 RUN dotnet publish "PortraitFilter.csproj" -c Release -o /app/publish/AnalysisLayer/PortraitFilter
+
+WORKDIR "/src/src/AnalysisLayer/SentimentAnalysis"
+RUN dotnet publish "SentimentAnalysis.csproj" -c Release -o /app/publish/AnalysisLayer/SentimentAnalysis
 
 # zipping up the test images and moving to the server wwwroot directory so it can be downloaded from server.
 RUN apt-get update -y && apt-get upgrade -y

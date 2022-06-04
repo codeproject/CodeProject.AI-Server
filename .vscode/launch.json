@@ -82,10 +82,10 @@
         },
 
         {
-            "name": "Launch SenseAI (Debug/Linux)",
+            "name": "Launch Server & Modules separately",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "pre-launch-server-linux-debug",
+            "preLaunchTask": "pre-launch-server-debug",
             "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.SenseAI.Server",
             "args" : [ "--LaunchAnalysisServices=false" ],
             "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/",

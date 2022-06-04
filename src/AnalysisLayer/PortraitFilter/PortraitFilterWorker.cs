@@ -16,11 +16,11 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
     public class PortraitFilterWorker : BackgroundService
     {
         private const string _modelPath = "Lib\\deeplabv3_mnv2_pascal_train_aug.onnx";
+        private string _queueName       = "portraitfilter_queue";
+        private string _moduleId        = "portrait-mode";
 
-        private string _queueName = "portraitfilter_queue";
-        private string _moduleId  = "portrait-mode";
+        private int _parallelism        = 1; // 4 also seems to be good on my machine.
 
-        private int _parallelism = 1; // 4 also seems to be good on my machine.
         private readonly ILogger<PortraitFilterWorker> _logger;
         private readonly SenseAIClient _senseAI;
         private DeepPersonLab _deepPersonLab;
@@ -76,8 +76,7 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
 #endif
             );
 
-             _deepPersonLab = new DeepPersonLab(
-                 "Lib\\deeplabv3_mnv2_pascal_train_aug.onnx".Replace('\\', Path.DirectorySeparatorChar));
+             _deepPersonLab = new DeepPersonLab(_modelPath.Replace('\\', Path.DirectorySeparatorChar));
         }
 
         /// <summary>

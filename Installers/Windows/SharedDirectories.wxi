@@ -30,6 +30,7 @@
 							<Directory Id="TextSummaryInstallFolder" Name="TextSummary" />
 							<Directory Id="PortraitFilterInstallFolder" Name="PortraitFilter" />
 							<Directory Id="BackgroundRemoverInstallFolder" Name="BackgroundRemover" />
+							<Directory Id="SentimentAnalysisInstallFolder" Name="SentimentAnalysis" />
 						</Directory>
 						<Directory Id="DesktopFolder" />
 					</Directory>

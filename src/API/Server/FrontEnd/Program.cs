@@ -1,18 +1,18 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Reflection;
 
 namespace CodeProject.SenseAI.API.Server.Frontend
 {
@@ -250,7 +250,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         {
             IConfiguration config = hostbuilderContext.Configuration;
 
-            // REVIEW: [Matthew] These should both be PORT_CLIENT, not PORT.
+            // TODO: These should both be PORT_CLIENT, not PORT, though we need to be backwards
+            //       compatible.
             int port = config.GetValue("PORT", -1);
             if (port < 0)
                 port = config.GetValue("FrontEndOptions:EnvironmentVariables:PORT", -1);  // TODO: PORT_CLIENT
@@ -263,7 +264,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     if (!int.TryParse(urls.Split(':').Last().Trim('/'), out port))
                         port = _port;
 
-                    // REVIEW: [Matthew] This should be PORT_CLIENT, not PORT.
+                    // TODO: This should be PORT_CLIENT, not PORT.
                     config["PORT"] = port.ToString();
                 }
             }

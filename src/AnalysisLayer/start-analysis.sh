@@ -27,12 +27,6 @@ else
     clear
 fi
 
-# Python 3.7
-pushd "./bin/${platform}/Python37/venv/" >/dev/null
-VIRTUAL_ENV="$(pwd)"
-export VIRTUAL_ENV
-popd >/dev/null
-
 # ===============================================================================================
 # 1. Load environment variables
 
@@ -86,11 +80,16 @@ fi
 # ===============================================================================================
 # 2. Start each module
 
-# "${VIRTUAL_ENV}/bin/python3" "${ANALYSISDIR}/TextSummary/textsummary.py" &
+# Python
+python37Path="${APPDIR}/src/AnalysisLayer/bin/${platform}/Python37/venv/bin/python3"
+python39Path="${APPDIR}/src/AnalysisLayer/bin/${platform}/Python39/venv/bin/python3"
 
-"${VIRTUAL_ENV}/bin/python3" "${APPDIR}/intelligencelayer/detection.py" &
-"${VIRTUAL_ENV}/bin/python3" "${APPDIR}/intelligencelayer/scene.py" &
-"${VIRTUAL_ENV}/bin/python3" "${APPDIR}/intelligencelayer/face.py" &
+"${python37Path}" "${APPDIR} "${ANALYSISDIR}/TextSummary/textsummary.py" &
+"${python37Path}" "${APPDIR}/BackgroundRemover/sense_rembg_adapter.py" &
+
+"${python37Path}" "${APPDIR}/intelligencelayer/detection.py" &
+"${python37Path}" "${APPDIR}/intelligencelayer/scene.py" &
+"${python37Path}" "${APPDIR}/intelligencelayer/face.py" &
 
 # Wait forever. We need these processes to stay alive
 if [ "${embedded}" == "false" ]; then

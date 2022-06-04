@@ -391,3 +391,4 @@ FodyWeavers.xsd
 /Installers/downloads
 *.DS_Store
 /src/AnalysisLayer/BackgroundRemover/models
+/docs/mkdocs/senseAI/site

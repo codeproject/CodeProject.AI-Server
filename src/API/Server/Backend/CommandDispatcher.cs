@@ -65,13 +65,13 @@ namespace CodeProject.SenseAI.API.Server.Backend
         }
         */
 
-        public async Task<Object> QueueRequest(string queueName, string command, RequestPayload payload, 
-                                                            CancellationToken token = default)
+        public async Task<Object> QueueRequest(string queueName, string command,
+                                               RequestPayload payload,
+                                               CancellationToken token = default)
         {
             var response = await _queueServices.SendRequestAsync(queueName, 
-                    new BackendRequest (command, payload),
-                    token);
-
+                                                                 new BackendRequest (command, payload),
+                                                                 token);
             return response;
         }
     }

@@ -1,312 +1,330 @@
 {
-    "Modules": {
+  "Modules": {
 
-        "FaceProcessing": {
-            "Name": "Face Processing",
-            "Activate": true,
-            "Description": "A number of Face image APIs including detect, recognize, and compare.",
-            "FilePath": "DeepStack\\intelligencelayer\\face.py",
-            "Runtime": "python38",
-            "Platforms": [ "windows", "linux", "macos", "docker" ],
-            "EnableFlags": [ "VISION-FACE" ],
+    "FaceProcessing": {
+      "Name": "Face Processing",
+      "Activate": true,
+      "Description": "A number of Face image APIs including detect, recognize, and compare.",
+      "FilePath": "DeepStack\\intelligencelayer\\face.py",
+      "Runtime": "python38",
+      "Platforms": [ "windows", "linux", "macos", "docker" ],
+      "EnableFlags": [ "VISION-FACE" ],
 
-            "EnvironmentVariables": {
-                "VISION-FACE": true,
+      "EnvironmentVariables": {
+        "VISION-FACE": true,
 
-                "PROFILE": "desktop_cpu",
-                "CUDA_MODE": "False",
-                "MODE": "MEDIUM",
-                "PORT": 5000,
+        "PROFILE": "desktop_cpu",
+        "CUDA_MODE": "False",
+        "MODE": "MEDIUM",
+        "PORT": 5000,
 
-                "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
-                "APPDIR": "%MODULES_PATH%\\DeepStack\\intelligencelayer",
-                "DATA_DIR": "%DATA_DIR%",
-                "TEMP_PATH": "%MODULES_PATH%\\DeepStack\\tempstore",
-                "MODELS_DIR": "%MODULES_PATH%\\DeepStack\\assets"
+        "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
+        "APPDIR": "%MODULES_PATH%\\DeepStack\\intelligencelayer",
+        "DATA_DIR": "%DATA_DIR%",
+        "TEMP_PATH": "%MODULES_PATH%\\DeepStack\\tempstore",
+        "MODELS_DIR": "%MODULES_PATH%\\DeepStack\\assets"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Face Detection",
+          "Path": "vision/face",
+          "Method": "POST",
+          "Queue": "face_queue",
+          "Command": "detect",
+          "Description": "Detects faces in an image and returns the coordinates of the faces.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP File Object (image) to be analyzed."
             },
-
-            "RouteMaps": [
-                {
-                    "Path": "vision/face",
-                    "Queue": "face_queue",
-                    "Command": "detect",
-                    "Description": "Detects faces in an image.",
-                    "Inputs": [
-                        {
-                            "Name": "image",
-                            "Type": "File",
-                            "Description": "The image to be analyzed."
-                        },
-                        {
-                            "Name": "min_confidence",
-                            "Type": "Float",
-                            "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
-                        }
-                    ],
-                    "Outputs": [
-                        {
-                            "Name": "success",
-                            "Type": "Boolean",
-                            "Description": "True if successful."
-                        },
-                        {
-                            "Name": "predictions",
-                            "Type": "Object",
-                            "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
-                        }
-                    ]
-                },
-                {
-                    "Path": "vision/face/match",
-                    "Queue": "face_queue",
-                    "Command": "match",
-                    "Description": "Matches faces in two images.",
-                    "Inputs": [
-                        {
-                            "Name": "image1",
-                            "Type": "File",
-                            "Description": "First image to be analyzed."
-                        },
-                        {
-                            "Name": "image2",
-                            "Type": "File",
-                            "Description": "Second image to be analyzed."
-                        }
-                    ],
-                    "Outputs": [
-                        {
-                            "Name": "success",
-                            "Type": "Boolean",
-                            "Description": "True if successful."
-                        },
-                        {
-                            "Name": "similarity",
-                            "Type": "Float",
-                            "Description": "How similar the two images are, in the range of 0.0 to 1.0."
-                        }
-                    ]
-                },
-                {
-                    "Path": "vision/face/list",
-                    "Queue": "face_queue",
-                    "Command": "list",
-                    "Description": "Lists the users that have images registered.",
-                    "Inputs": [ // no inputs
-                    ],
-                    "Outputs": [
-                        {
-                            "Name": "success",
-                            "Type": "Boolean",
-                            "Description": "True if successful."
-                        },
-                        {
-                            "Name": "faces",
-                            "Type": "Object",
-                            "Description": "An array of the userid strings for users with registered images."
-                        }
-                    ]
-                },
-                {
-                    "Path": "vision/face/register",
-                    "Queue": "face_queue",
-                    "Command": "register",
-                    "Description": "Registers one or more images for a user for recognition.",
-                    "Inputs": [
-                        {
-                            "Name": "imageN",
-                            "Type": "File",
-                            "Description": "The one or more images to be registered."
-                        },
-                        {
-                            "Name": "userid",
-                            "Type": "Text",
-                            "Description": "The identifying string for the user."
-                        }
-                    ],
-                    "Outputs": [
-                        {
-                            "Name": "success",
-                            "Type": "Boolean",
-                            "Description": "True if successful."
-                        },
-                        {
-                            "Name": "Message",
-                            "Type": "Text",
-                            "Description": "face added"
-                        }
-                    ]
-
-                },
-                {
-                    "Path": "vision/face/delete",
-                    "Queue": "face_queue",
-                    "Command": "delete",
-                    "Description": "Removes a userid and images from the Face Registration database.",
-                    "Inputs": [
-                        {
-                            "Name": "userid",
-                            "Type": "Text",
-                            "Description": "The identifying string for the user."
-                        }
-                    ],
-                    "Outputs": [
-                        {
-                            "Name": "success",
-                            "Type": "Boolean",
-                            "Description": "True if successful."
-                        }
-                    ]
-                },
-                {
-                    "Path": "vision/face/recognize",
-                    "Queue": "face_queue",
-                    "Command": "recognize",
-                    "Description": "Recognizes faces in an image.",
-                    "Inputs": [
-                        {
-                            "Name": "image",
-                            "Type": "File",
-                            "Description": "The image to be analyzed."
-                        },
-                        {
-                            "Name": "min_confidence",
-                            "Type": "Float",
-                            "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
-                        }
-                    ],
-                    "Outputs": [
-                        {
-                            "Name": "success",
-                            "Type": "Boolean",
-                            "Description": "True if successful."
-                        },
-                        {
-                            "Name": "predictions",
-                            "Type": "Object",
-                            "Description": "An array of objects with the userid, x_max, x_min, max, y_min, label and confidence."
-                        }
-                    ]
-
-                }
-            ]
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0.",
+              "DefaultValue": "0.4"
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            }
+          ]
         },
-
-        "SceneClassification": {
-            "Name": "Scene Classification",
-            "Activate": true,
-            "Description": "Classifies the scene in an image.",
-            "FilePath": "DeepStack\\intelligencelayer\\scene.py",
-            "Runtime": "python38",
-            "Platforms": [ "windows", "linux", "macos", "docker" ],
-            "EnableFlags": [ "VISION-SCENE" ],
-
-            "EnvironmentVariables": {
-                "VISION-SCENE": true,
-
-                "PROFILE": "desktop_cpu",
-                "CUDA_MODE": "False",
-                "MODE": "MEDIUM",
-                "PORT": 5000,
-
-                "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
-                "APPDIR": "%MODULES_PATH%\\DeepStack\\intelligencelayer",
-                "DATA_DIR": "%DATA_DIR%",
-                "TEMP_PATH": "%MODULES_PATH%\\DeepStack\\tempstore",
-                "MODELS_DIR": "%MODULES_PATH%\\DeepStack\\assets"
+        {
+          "Name": "Face Comparison",
+          "Path": "vision/face/match",
+          "Method": "POST",
+          "Queue": "face_queue",
+          "Command": "match",
+          "Description": "Compares two faces in two images and returns a value indicating how similar the faces are.",
+          "Inputs": [
+            {
+              "Name": "image1",
+              "Type": "File",
+              "Description": "First HTTP File Object (image) to be analyzed."
             },
-
-            "RouteMaps": [
-                {
-                    "Path": "vision/scene",
-                    "Queue": "scene_queue",
-                    "Command": "detect",
-                    "Description": "Classifies the scene in an image.",
-                    "Inputs": [
-                        {
-                            "Name": "image",
-                            "Type": "File",
-                            "Description": "The image to be analyzed."
-                        }
-                    ],
-                    "Outputs": [
-                        {
-                            "Name": "success",
-                            "Type": "Boolean",
-                            "Description": "True if successful."
-                        },
-                        {
-                            "Name": "label",
-                            "Type": "Text",
-                            "Description": "The classification of the scene such as 'conference_room'."
-                        },
-                        {
-                            "Name": "confidence",
-                            "Type": "Float",
-                            "Description": "The confidence in the classification in the range of 0.0 to 1.0."
-                        }
-                    ]
-                }
-            ]
+            {
+              "Name": "image2",
+              "Type": "File",
+              "Description": "Second HTTP File Object (image) to be analyzed."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "similarity",
+              "Type": "Float",
+              "Description": "How similar the two images are, in the range of 0.0 to 1.0."
+            }
+          ]
         },
-
-        // We've replaced this with the SenseAI Object Detection (above). We're leaving it here
-        // so you can see the effect of disabling a module.
-        "LegacyObjectDetection": {
-            "Name": "Legacy Object Detection",
-            "Activate": false,
-            "Description": "Detects multiple objects of 80 types in an image.",
-            "FilePath": "DeepStack\\intelligencelayer\\detection.py",
-            "Runtime": "python38",
-            "Platforms": [ "windows", "linux", "macos", "docker" ],
-            "EnableFlags": [ "VISION-DETECTION" ],
-
-            "EnvironmentVariables": {
-                "VISION-DETECTION": false,
-
-                "PROFILE": "desktop_cpu",
-                "CUDA_MODE": "False",
-                "MODE": "MEDIUM",
-                "PORT": 5000,
-
-                "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
-                "APPDIR": "%MODULES_PATH%\\DeepStack\\intelligencelayer",
-                "DATA_DIR": "%DATA_DIR%",
-                "TEMP_PATH": "%MODULES_PATH%\\DeepStack\\tempstore",
-                "MODELS_DIR": "%MODULES_PATH%\\DeepStack\\assets"
+        {
+          "Name": "List Registered Faces",
+          "Path": "vision/face/list",
+          "Method": "POST",
+          "Queue": "face_queue",
+          "Command": "list",
+          "Description": "Lists the users that have images registered in the Face Recognition database.",
+          "Inputs": [ // no inputs
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
             },
+            {
+              "Name": "faces",
+              "Type": "Object",
+              "Description": "An array of the userid strings for users with registered images."
+            }
+          ]
+        },
+        {
+          "Name": "Register Face",
+          "Path": "vision/face/register",
+          "Method": "POST",
+          "Queue": "face_queue",
+          "Command": "register",
+          "Description": "Registers one or more images for a user for recognition. This trains the face recognition model and allows the face recognition to report back a userId based on an image you supply that may or may not contain that user's face.",
+          "Inputs": [
+            {
+              "Name": "imageN",
+              "Type": "File",
+              "Description": "The one or more HTTP File Objects (images) to be registered."
+            },
+            {
+              "Name": "userid",
+              "Type": "Text",
+              "Description": "The identifying string for the user."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "Message",
+              "Type": "Text",
+              "Description": "face added"
+            }
+          ]
 
-            "RouteMaps": [
-                {
-                    "Path": "vision/detection",
-                    "Queue": "detection_queue",
-                    "Command": "detect",
-                    "Description": "Detects multiple objects of 80 types in an image.",
-                    "Inputs": [
-                        {
-                            "Name": "image",
-                            "Type": "File",
-                            "Description": "The image to be analyzed."
-                        },
-                        {
-                            "Name": "min_confidence",
-                            "Type": "Float",
-                            "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
-                        }
-                    ],
-                    "Outputs": [
-                        {
-                            "Name": "success",
-                            "Type": "Boolean",
-                            "Description": "True if successful."
-                        },
-                        {
-                            "Name": "predictions",
-                            "Type": "Object",
-                            "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
-                        }
-                    ]
-                }
-            ]
+        },
+        {
+          "Name": "Delete Registered Face",
+          "Path": "vision/face/delete",
+          "Method": "POST",
+          "Queue": "face_queue",
+          "Command": "delete",
+          "Description": "Removes a userid and images from the Face Registration database.",
+          "Inputs": [
+            {
+              "Name": "userid",
+              "Type": "Text",
+              "Description": "The identifying string for the user."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            }
+          ]
+        },
+        {
+          "Name": "Face Recognition",
+          "Path": "vision/face/recognize",
+          "Method": "POST",
+          "Queue": "face_queue",
+          "Command": "recognize",
+          "Description": "Recognizes all faces in an image and returns the userId and coordinates of each face in the image. If a new (unregistered) face is detected then no userid for that face will be returned.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0.",
+              "DefaultValue": "0.4"
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the userid, x_max, x_min, max, y_min, label and confidence."
+            }
+          ]
+
         }
+      ]
+    },
+
+    "SceneClassification": {
+      "Name": "Scene Classification",
+      "Activate": true,
+      "Description": "Classifies the scene in an image. It can recognise 365 different scenes.",
+      "FilePath": "DeepStack\\intelligencelayer\\scene.py",
+      "Runtime": "python38",
+      "Platforms": [ "windows", "linux", "macos", "docker" ],
+      "EnableFlags": [ "VISION-SCENE" ],
+
+      "EnvironmentVariables": {
+        "VISION-SCENE": true,
+
+        "PROFILE": "desktop_cpu",
+        "CUDA_MODE": "False",
+        "MODE": "MEDIUM",
+        "PORT": 5000,
+
+        "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
+        "APPDIR": "%MODULES_PATH%\\DeepStack\\intelligencelayer",
+        "DATA_DIR": "%DATA_DIR%",
+        "TEMP_PATH": "%MODULES_PATH%\\DeepStack\\tempstore",
+        "MODELS_DIR": "%MODULES_PATH%\\DeepStack\\assets"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Scene Classifier",
+          "Path": "vision/scene",
+          "Method": "POST",
+          "Queue": "scene_queue",
+          "Command": "detect",
+          "Description": "Classifies the scene in an image. It can recognise 365 different scenes.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "label",
+              "Type": "Text",
+              "Description": "The classification of the scene such as 'conference_room'."
+            },
+            {
+              "Name": "confidence",
+              "Type": "Float",
+              "Description": "The confidence in the classification in the range of 0.0 to 1.0."
+            }
+          ]
+        }
+      ]
+    },
+
+    // We've replaced this with the SenseAI Object Detection (above). We're leaving it here
+    // so you can see the effect of disabling a module.
+    "LegacyObjectDetection": {
+      "Name": "Legacy Object Detection",
+      "Activate": false,
+      "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects the models have been trained on. At this point there are 80 different types of objects that can be detected.",
+      "FilePath": "DeepStack\\intelligencelayer\\detection.py",
+      "Runtime": "python38",
+      "Platforms": [ "windows", "linux", "macos", "docker" ],
+      "EnableFlags": [ "VISION-DETECTION" ],
+
+      "EnvironmentVariables": {
+        "VISION-DETECTION": false,
+
+        "PROFILE": "desktop_cpu",
+        "CUDA_MODE": "False",
+        "MODE": "MEDIUM",
+        "PORT": 5000,
+
+        "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
+        "APPDIR": "%MODULES_PATH%\\DeepStack\\intelligencelayer",
+        "DATA_DIR": "%DATA_DIR%",
+        "TEMP_PATH": "%MODULES_PATH%\\DeepStack\\tempstore",
+        "MODELS_DIR": "%MODULES_PATH%\\DeepStack\\assets"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Object Detector",
+          "Path": "vision/detection",
+          "Method": "POST",
+          "Queue": "detection_queue",
+          "Command": "detect",
+          "Description": "Detects multiple objects of 80 types in an image.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            }
+          ]
+        }
+      ]
     }
+  }
 }

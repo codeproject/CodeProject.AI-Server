@@ -27,11 +27,6 @@ if "%1" == "--embedded" (
 :: Get some common env vars
 set APPDIR=%cd%
 
-:: Python 3.7
-pushd ".\bin\!platform!\Python37\venv\" >nul
-set VIRTUAL_ENV=%cd%
-popd >nul
-
 :: ===============================================================================================
 :: 1. Load environment variables
 
@@ -74,11 +69,16 @@ if "%verbosity%" == "info" (
 echo:
 echo Starting Analysis Services...
 
-START "CodeProject SenseAI" /B /i "!VIRTUAL_ENV!\Scripts\python" "!APPDIR!\TextSummary\textsummary.py"
+:: Python 3.7
+set python37Path=!APPDIR!\src\AnalysisLayer\bin\windows\Python37\venv\Scripts\Python
+set python39Path=!APPDIR!\src\AnalysisLayer\bin\windows\Python39\venv\Scripts\Python
 
-START "CodeProject SenseAI" /B /i "!VIRTUAL_ENV!\Scripts\python" "!APPDIR!\DeepStack\intelligencelayer\detection.py"
-START "CodeProject SenseAI" /B /i "!VIRTUAL_ENV!\Scripts\python" "!APPDIR!\DeepStack\intelligencelayer\face.py"
-START "CodeProject SenseAI" /B /i "!VIRTUAL_ENV!\Scripts\python" "!APPDIR!\DeepStack\intelligencelayer\scene.py"
+START "CodeProject SenseAI" /B /i "!python39Path!" "!APPDIR!\TextSummary\textsummary.py"
+START "CodeProject SenseAI" /B /i "!python39Path!" "!APPDIR!\BackgroundRemover\sense_rembg_adapter.py"
+
+START "CodeProject SenseAI" /B /i "!python37Path!" "!APPDIR!\DeepStack\intelligencelayer\detection.py"
+START "CodeProject SenseAI" /B /i "!python37Path!" "!APPDIR!\DeepStack\intelligencelayer\face.py"
+START "CodeProject SenseAI" /B /i "!python37Path!" "!APPDIR!\DeepStack\intelligencelayer\scene.py"
 
 :: Wait forever. We need these processes to stay alive
 if "%embedded%" == "false" (

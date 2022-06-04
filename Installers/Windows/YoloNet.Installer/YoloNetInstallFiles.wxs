@@ -20,18 +20,6 @@
             <Component Id="cmpE82BCE8334FCCC9E4134E778EB1A7B47" Directory="YoloNetInstallFolder" Guid="*">
                 <File Id="fil5E883BEBFD812F192326824F09FB80C0" KeyPath="yes" Source="$(var.ObjectDetector.TargetDir)\CodeProject.SenseAI.AnalysisLayer.SDK.pdb" />
             </Component>
-            <Component Id="cmpAEAD300DA943D6D18896E6D657A5964A" Directory="YoloNetInstallFolder" Guid="*">
-                <File Id="filB55083D392A50E5EBA146609D14A1806" KeyPath="yes" Source="$(var.ObjectDetector.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.deps.json" />
-            </Component>
-            <Component Id="cmp6982E5A49402782E4BA48B4AD34AFA55" Directory="YoloNetInstallFolder" Guid="*">
-                <File Id="fil43D0AAA3CB2958AA99E80E47AE47ADD6" KeyPath="yes" Source="$(var.ObjectDetector.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.dll" />
-            </Component>
-            <Component Id="cmp6D550294069171332981332EC7AD7DCD" Directory="YoloNetInstallFolder" Guid="*">
-                <File Id="fil30C0D6897D4CAA1F07F101D0DBE7A3D3" KeyPath="yes" Source="$(var.ObjectDetector.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.exe" />
-            </Component>
-            <Component Id="cmp435000F33876F6C7C5A95B1BEB027FD5" Directory="YoloNetInstallFolder" Guid="*">
-                <File Id="filADF867B679F0C7285F92DE77BB8B7185" KeyPath="yes" Source="$(var.ObjectDetector.TargetDir)\CodeProject.SenseAI.AnalysisLayer.Yolo.runtimeconfig.json" />
-            </Component>
             <Component Id="cmp6D349B4130C03BFEF42EE14641D87EB8" Directory="YoloNetInstallFolder" Guid="*">
                 <File Id="fil52E9BF1935FBA562845FADDE9458EA7D" KeyPath="yes" Source="$(var.ObjectDetector.TargetDir)\Microsoft.Extensions.Configuration.Abstractions.dll" />
             </Component>

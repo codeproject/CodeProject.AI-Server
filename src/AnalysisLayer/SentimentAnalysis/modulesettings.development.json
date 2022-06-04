@@ -1,0 +1,7 @@
+{
+  "Modules": {
+    "SentimentAnalysis": {
+      "FilePath": "SentimentAnalysis\\bin\\debug\\net6.0\\SentimentAnalysis.dll"
+    }
+  }
+}

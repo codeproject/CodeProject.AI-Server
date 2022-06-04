@@ -163,7 +163,7 @@
         },
 
         {
-            "label": "launch-analysis-linux",   // Launches ONLY the backend Python analysis services. Allows us to debug them
+            "label": "launch-analysis",   // Launches ONLY the backend Python analysis services. Allows us to debug them
             "type": "process",
             "isBackground": true,
             "group": "none",
@@ -216,14 +216,14 @@
         },
 
         {
-            "label": "pre-launch-server-linux-debug", // Builds all, then Launches only background processes, allowing Python debug 
+            "label": "pre-launch-server-debug", // Builds all, then Launches only background processes, allowing Python debug 
             "group": "none",
             "dependsOrder": "sequence",
             "dependsOn": [
                 "build-yolo",
                 "build-portraitfilter",
                 "build-server",
-                "launch-analysis-linux"
+                "launch-analysis"
             ]
         },
 

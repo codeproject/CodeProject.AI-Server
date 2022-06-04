@@ -20,8 +20,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{2379A486-0D2
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3BF27572-9D3A-497C-8375-29110EBBD3D1}"
 	ProjectSection(SolutionItems) = preProject
-		docs\Docker Hub SenesAI Server ReadMe.md = docs\Docker Hub SenesAI Server ReadMe.md
-		docs\installing on WSL.md = docs\installing on WSL.md
 		LICENCE.md = LICENCE.md
 		README.md = README.md
 		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
@@ -92,6 +90,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frontend", "src\API\Server\FrontEnd\Frontend.csproj", "{A0CF3BEE-8EE3-4B23-BEB8-9D258C0510A3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{232710A8-9180-4139-8FF2-8F21F649D927} = {232710A8-9180-4139-8FF2-8F21F649D927}
+		{6814F27C-7026-4D22-8E38-2047747495E3} = {6814F27C-7026-4D22-8E38-2047747495E3}
 		{7DC0A312-39AD-41B0-BB53-72ACACC76959} = {7DC0A312-39AD-41B0-BB53-72ACACC76959}
 		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482} = {AB47CC99-15ED-4928-A2F2-DC8F83DA9482}
 	EndProjectSection
@@ -129,7 +128,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		BuildDockerBase.bat = BuildDockerBase.bat
 		commands.json = commands.json
 		Dockerfile-Base = Dockerfile-Base
-		global.json = global.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetector", "src\AnalysisLayer\CodeProject.SenseAI.AnalysisLayer.Yolo\ObjectDetector.csproj", "{232710A8-9180-4139-8FF2-8F21F649D927}"
@@ -167,17 +165,6 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "SenseAI.BootStrapper", "Ins
 		{ED492608-6013-4552-A29B-A7E14F4BEB0B} = {ED492608-6013-4552-A29B-A7E14F4BEB0B}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Old School Scripts", "Old School Scripts", "{FDB25B74-D0CD-4665-9152-DE968A1028D8}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\Old School\create_installer_win.bat = Installers\Old School\create_installer_win.bat
-		Installers\Old School\CreateWindowsService.cmd = Installers\Old School\CreateWindowsService.cmd
-		Installers\Old School\DeleteWindowsService.cmd = Installers\Old School\DeleteWindowsService.cmd
-		Installers\Old School\load_environment.bat = Installers\Old School\load_environment.bat
-		Installers\Old School\save_environment.bat = Installers\Old School\save_environment.bat
-		Installers\Old School\Setup_SenseAI_Win.bat = Installers\Old School\Setup_SenseAI_Win.bat
-		Installers\Old School\Start_SenseAI_Win.bat = Installers\Old School\Start_SenseAI_Win.bat
-	EndProjectSection
-EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DeepStack.Installer", "Installers\Windows\DeepStack.Installer\DeepStack.Installer.wixproj", "{ED492608-6013-4552-A29B-A7E14F4BEB0B}"
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DeepStackModels.Installer", "Installers\Windows\DeepStackModels.Installer\DeepStackModels.Installer.wixproj", "{D0B74BE9-8195-4907-AEEE-45631E37251F}"
@@ -190,6 +177,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dev", "Dev", "{00BBF52C-217
 	ProjectSection(SolutionItems) = preProject
 		Installers\Dev\setup_dev_env_linux.sh = Installers\Dev\setup_dev_env_linux.sh
 		Installers\Dev\setup_dev_env_win.bat = Installers\Dev\setup_dev_env_win.bat
+		Installers\Dev\utils.bat = Installers\Dev\utils.bat
+		Installers\Dev\utils.sh = Installers\Dev\utils.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".NET 3.5.1", ".NET 3.5.1", "{8A423F72-C92C-4C8E-87D8-02849FD079E2}"
@@ -210,12 +199,20 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TextSummary", "src\Analysis
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Articles", "Articles", "{2E9D03C1-BF8F-4E3D-944A-0DDEDDE620C5}"
 	ProjectSection(SolutionItems) = preProject
-		docs\Articles\adding-a-module.md = docs\Articles\adding-a-module.md
 		docs\Articles\adding-a-net6-module.md = docs\Articles\adding-a-net6-module.md
-		docs\Articles\dog_and_man_rembg.png = docs\Articles\dog_and_man_rembg.png
-		docs\Articles\How-to-add-AI-to-an-app.md = docs\Articles\How-to-add-AI-to-an-app.md
-		docs\Articles\pexels-thirdman-7268587.jpg = docs\Articles\pexels-thirdman-7268587.jpg
+		docs\Articles\Additional Information Dialog.png = docs\Articles\Additional Information Dialog.png
+		docs\Articles\Dashboard.png = docs\Articles\Dashboard.png
+		docs\Articles\ModuleStatus.png = docs\Articles\ModuleStatus.png
+		docs\Articles\portrait-filter-example.png = docs\Articles\portrait-filter-example.png
+		docs\Articles\Project Configuration Dialog.png = docs\Articles\Project Configuration Dialog.png
+		docs\Articles\Project Structure.png = docs\Articles\Project Structure.png
+		docs\Articles\Sentiment Analysis Text Page.png = docs\Articles\Sentiment Analysis Text Page.png
+		docs\Articles\SentimentAnalysisProjectConfig.png = docs\Articles\SentimentAnalysisProjectConfig.png
+		docs\Articles\SentimentAnalysysProjectStructure.png = docs\Articles\SentimentAnalysysProjectStructure.png
+		docs\Articles\Simpler NET module creation using improved SDK.md = docs\Articles\Simpler NET module creation using improved SDK.md
 		docs\Articles\test.html.jpg = docs\Articles\test.html.jpg
+		docs\Articles\test.html.png = docs\Articles\test.html.png
+		docs\Articles\test_html.png = docs\Articles\test_html.png
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Python", "Python", "{D2B223B6-983B-4782-B231-5F481504A86F}"
@@ -239,6 +236,12 @@ EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "PortraitFilter.Installer", "Installers\Windows\PortraitFilter.Installer\PortraitFilter.Installer.wixproj", "{476475CE-3C81-446B-914E-AC472D41B82A}"
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Python39.Installer", "Installers\Windows\Python39.Installer\Python39.Installer.wixproj", "{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "mkdocs", "docs\mkdocs\mkdocs.shproj", "{343EE377-FB9C-4D81-8A17-68509C9F6659}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SentimentAnalysis", "src\AnalysisLayer\SentimentAnalysis\SentimentAnalysis.csproj", "{6814F27C-7026-4D22-8E38-2047747495E3}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "SentimentAnalysis.Installer", "Installers\Windows\SentimentAnalysis.Installer\SentimentAnalysis.Installer.wixproj", "{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -404,6 +407,22 @@ Global
 		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Release|Any CPU.Build.0 = Release|x86
 		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Release|x86.ActiveCfg = Release|x86
 		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F}.Release|x86.Build.0 = Release|x86
+		{6814F27C-7026-4D22-8E38-2047747495E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6814F27C-7026-4D22-8E38-2047747495E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6814F27C-7026-4D22-8E38-2047747495E3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6814F27C-7026-4D22-8E38-2047747495E3}.Debug|x86.Build.0 = Debug|Any CPU
+		{6814F27C-7026-4D22-8E38-2047747495E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6814F27C-7026-4D22-8E38-2047747495E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6814F27C-7026-4D22-8E38-2047747495E3}.Release|x86.ActiveCfg = Release|Any CPU
+		{6814F27C-7026-4D22-8E38-2047747495E3}.Release|x86.Build.0 = Release|Any CPU
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}.Debug|Any CPU.Build.0 = Debug|x86
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}.Debug|x86.ActiveCfg = Debug|x86
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}.Debug|x86.Build.0 = Debug|x86
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}.Release|Any CPU.ActiveCfg = Release|x86
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}.Release|Any CPU.Build.0 = Release|x86
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}.Release|x86.ActiveCfg = Release|x86
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -432,7 +451,6 @@ Global
 		{E0AEDE8A-E336-49C6-9D6A-7A05E8155AB9} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 		{5F1052CB-8586-49CB-8F46-427A5F6901C2} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 		{C04BBD0D-FD36-4FA4-805B-106BCCD9BC79} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
-		{FDB25B74-D0CD-4665-9152-DE968A1028D8} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{ED492608-6013-4552-A29B-A7E14F4BEB0B} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 		{D0B74BE9-8195-4907-AEEE-45631E37251F} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 		{3F34EAEE-8A53-40D1-8CDB-A13AE728FA06} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
@@ -452,8 +470,14 @@ Global
 		{7E70C376-7119-4C90-AC30-344EEA29594E} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 		{476475CE-3C81-446B-914E-AC472D41B82A} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 		{0DBC85BC-52C3-491F-90F9-6D728FFA2E8F} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{343EE377-FB9C-4D81-8A17-68509C9F6659} = {3BF27572-9D3A-497C-8375-29110EBBD3D1}
+		{6814F27C-7026-4D22-8E38-2047747495E3} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
+		{92208AE3-1035-4BE5-BE7F-1DDC72D0ED39} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		docs\mkdocs\mkdocs.projitems*{343ee377-fb9c-4d81-8a17-68509c9f6659}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

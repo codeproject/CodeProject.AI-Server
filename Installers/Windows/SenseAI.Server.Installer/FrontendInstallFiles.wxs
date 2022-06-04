@@ -71,6 +71,15 @@
             <Component Id="cmp5C00F8BDBA875D8EFF06A49542B239B6" Directory="ServerInstallFolder" Guid="*">
                 <File Id="fil6F9A9A5A07993739ADE267985C1CB13A" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.OpenApi.dll" />
             </Component>
+            <Component Id="cmpFF462825E8CD7A045584383974996B2E" Directory="ServerInstallFolder" Guid="*">
+                <File Id="filCB0B85DFB3271B6A90658E46A915ACCF" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Microsoft.Win32.SystemEvents.dll" />
+            </Component>
+            <Component Id="cmpF48FB72D893E9A754DFABB82BD65F8FA" Directory="ServerInstallFolder" Guid="*">
+                <File Id="fil84632508B8F4BBC94EC4DDDD20E7E8C1" KeyPath="yes" Source="$(var.Frontend.TargetDir)\SkiaSharp.dll" />
+            </Component>
+            <Component Id="cmpE81B8BA7CEECA87D0C6085384D2DDC26" Directory="ServerInstallFolder" Guid="*">
+                <File Id="filB3843702F7FF141159484E4F1A6CBADA" KeyPath="yes" Source="$(var.Frontend.TargetDir)\SkiaSharp.Views.Desktop.Common.dll" />
+            </Component>
             <Component Id="cmpF9521D9DB15FF71595AA5A12436D4F08" Directory="ServerInstallFolder" Guid="*">
                 <File Id="filEF230D20A3E8DFC46C5A02C3222407C7" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Swashbuckle.AspNetCore.Swagger.dll" />
             </Component>
@@ -79,6 +88,9 @@
             </Component>
             <Component Id="cmp5FEC9726FE5D329F8BB03DA47B9B0E11" Directory="ServerInstallFolder" Guid="*">
                 <File Id="fil8BEE8CA252B57416874B26DCBFE4318A" KeyPath="yes" Source="$(var.Frontend.TargetDir)\Swashbuckle.AspNetCore.SwaggerUI.dll" />
+            </Component>
+            <Component Id="cmpAEB210190A0B25E22492753946D0B7B6" Directory="ServerInstallFolder" Guid="*">
+                <File Id="fil3D12D2640582FB06C11EBC02D9986BE7" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.Drawing.Common.dll" />
             </Component>
             <Component Id="cmpBFCEF50372EDA428BC75380F7C54DA67" Directory="ServerInstallFolder" Guid="*">
                 <File Id="fil92DF2F54069EF1C539D1F45AF62B6982" KeyPath="yes" Source="$(var.Frontend.TargetDir)\System.ServiceProcess.ServiceController.dll" />
@@ -89,8 +101,41 @@
             <Component Id="cmp984B36F4512887BFB19046FD9C28B00D" Directory="ServerInstallFolder" Guid="*">
                 <File Id="filDA7E8C6BE9AF85F2BE9D9299ED791666" KeyPath="yes" Source="$(var.Frontend.TargetDir)\version.json" />
             </Component>
+            <Component Id="cmp49F4914358449937212A70607A1A1258" Directory="dir365E9527BA595D8375958680756186F7" Guid="*">
+                <File Id="filF594322FB8365F81AEFCA2D890B874C0" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\linux-arm\native\libSkiaSharp.so" />
+            </Component>
+            <Component Id="cmp921D1B365880A7F43131C819E184E3F0" Directory="dir9F0A67CAE515204CB07EA01026BBC98C" Guid="*">
+                <File Id="filD34430B42F192D95200229A0E8A84F87" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\linux-arm64\native\libSkiaSharp.so" />
+            </Component>
+            <Component Id="cmp97E2928ACFB1B67A5C322DCAC5360EBB" Directory="dir3825948458787EC430A3698CEE25D1B0" Guid="*">
+                <File Id="filA7BFC18AB059E59E38C05B2CB5629142" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\linux-musl-x64\native\libSkiaSharp.so" />
+            </Component>
+            <Component Id="cmp94538064C9296E43EC9DA2D630DEA4CE" Directory="dirFC7FB49F374FD1079DF038C6E8504167" Guid="*">
+                <File Id="fil15B7222F1DBF31E5D8F12F2327784EBB" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\linux-x64\native\libSkiaSharp.so" />
+            </Component>
+            <Component Id="cmp87E2115B5A25DA67DD432792E561DBB1" Directory="dir5A786B25FA51EA96531D6F78D8A513A2" Guid="*">
+                <File Id="filEC7EA486C2A5122450FF2F72A1E13370" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\osx\native\libSkiaSharp.dylib" />
+            </Component>
+            <Component Id="cmpC6D112D9944A0611200657B6B6DC7E17" Directory="dir36B66DF87E850F235A423CC24E8A6306" Guid="*">
+                <File Id="fil18E02C8B9816A8C408762FD1D22C70CB" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\unix\lib\netcoreapp2.0\System.Drawing.Common.dll" />
+            </Component>
             <Component Id="cmp5569A324BC7DB3907E6466D32850FFC4" Directory="dir247E3913CFBA78AFC18B815AA02FF95C" Guid="*">
                 <File Id="fil41A75D39D56654A242ADF09444E6CA51" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win\lib\net6.0\System.ServiceProcess.ServiceController.dll" />
+            </Component>
+            <Component Id="cmp5C8EE47D7F574B189904AE74051E6262" Directory="dir871FAF7468FD8B0DB678E6DD41D4AA19" Guid="*">
+                <File Id="fil07BF31EFCC3B5560AF850C3D1EABEB83" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win\lib\netcoreapp2.0\Microsoft.Win32.SystemEvents.dll" />
+            </Component>
+            <Component Id="cmp461524C52713E6B44F20880DE65CEC70" Directory="dir871FAF7468FD8B0DB678E6DD41D4AA19" Guid="*">
+                <File Id="fil5F2FA3DAF383740B432797DE809791B6" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win\lib\netcoreapp2.0\System.Drawing.Common.dll" />
+            </Component>
+            <Component Id="cmp3F41B7A32D225B2D95D817AAC0CD1B01" Directory="dir95E87CB3CF9C29B23FFA89A2552493E9" Guid="*">
+                <File Id="fil6A20776FB1630DAE74C6D03D94801B8B" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win-arm64\native\libSkiaSharp.dll" />
+            </Component>
+            <Component Id="cmp9727453AE5E06374AA3D4882E538A4D6" Directory="dir0C66B7BAC377FF7DA6DC0179168D2390" Guid="*">
+                <File Id="fil5F3D947BFE79ADDEE46575B07BC7D65B" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win-x64\native\libSkiaSharp.dll" />
+            </Component>
+            <Component Id="cmp1BE0CACF1AFD7615A58F98BEADE12B5A" Directory="dirA7B9C6B7060C0F078927A3FCAB1E14AA" Guid="*">
+                <File Id="fil692985390709DDA0688BF1CE56BADD7A" KeyPath="yes" Source="$(var.Frontend.TargetDir)\runtimes\win-x86\native\libSkiaSharp.dll" />
             </Component>
             <Component Id="cmpB796F046A2ED7FF521158C14BF50FF84" Directory="dir04F97EE04AE3A2707DD5BA1234DEBB1A" Guid="*">
                 <File Id="fil4EB9F993856281C04E7EB68D403A3AD6" KeyPath="yes" Source="$(var.Frontend.TargetDir)\wwwroot\index.html" />
@@ -134,6 +179,16 @@
         </ComponentGroup>
     </Fragment>
     <Fragment>
+        <DirectoryRef Id="dir3C93A43991DC14E5072B85DB3DC28D0D">
+            <Directory Id="dir0C66B7BAC377FF7DA6DC0179168D2390" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir9583AE169C4BB77D24622F84D1610A6A">
+            <Directory Id="dir2428B1196800B82E09EE4724D4E00D1F" Name="lib" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
         <DirectoryRef Id="dir2963589D3C2C182ACEFA7D6A1ECB98FF">
             <Directory Id="dir247E3913CFBA78AFC18B815AA02FF95C" Name="net6.0" />
         </DirectoryRef>
@@ -144,13 +199,103 @@
         </DirectoryRef>
     </Fragment>
     <Fragment>
+        <DirectoryRef Id="dirDB7F57F64D009FB6D09CE271439B354C">
+            <Directory Id="dir365E9527BA595D8375958680756186F7" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2428B1196800B82E09EE4724D4E00D1F">
+            <Directory Id="dir36B66DF87E850F235A423CC24E8A6306" Name="netcoreapp2.0" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir8FF3B3B6E060144B7370515896339EF4">
+            <Directory Id="dir3825948458787EC430A3698CEE25D1B0" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dir3C93A43991DC14E5072B85DB3DC28D0D" Name="win-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
         <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
             <Directory Id="dir49D5A84485AC33DCB0B441EB104CAA92" Name="win" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dir4CE198693F2EC473AAE684F8EB482960" Name="linux-arm64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir6F12CDE757F6EEC609F8C52A566BBBEF">
+            <Directory Id="dir5A786B25FA51EA96531D6F78D8A513A2" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dir6F12CDE757F6EEC609F8C52A566BBBEF" Name="osx" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2963589D3C2C182ACEFA7D6A1ECB98FF">
+            <Directory Id="dir871FAF7468FD8B0DB678E6DD41D4AA19" Name="netcoreapp2.0" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dir8B4E805817985B80D11D81DF8E863E58" Name="win-x86" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dir8FF3B3B6E060144B7370515896339EF4" Name="linux-musl-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dir9583AE169C4BB77D24622F84D1610A6A" Name="unix" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirD808311AE3E00B8AF4804BAD601005AA">
+            <Directory Id="dir95E87CB3CF9C29B23FFA89A2552493E9" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir4CE198693F2EC473AAE684F8EB482960">
+            <Directory Id="dir9F0A67CAE515204CB07EA01026BBC98C" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir8B4E805817985B80D11D81DF8E863E58">
+            <Directory Id="dirA7B9C6B7060C0F078927A3FCAB1E14AA" Name="native" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dirAB4E7297B0DE99375555C20AD437D066" Name="linux-x64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
         <DirectoryRef Id="dir04F97EE04AE3A2707DD5BA1234DEBB1A">
             <Directory Id="dirB77721C42B3E60B4E319181AAFD28D2C" Name="assets" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dirD808311AE3E00B8AF4804BAD601005AA" Name="win-arm64" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirB9CC55BA1200054F12A954C2A12BF774">
+            <Directory Id="dirDB7F57F64D009FB6D09CE271439B354C" Name="linux-arm" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirAB4E7297B0DE99375555C20AD437D066">
+            <Directory Id="dirFC7FB49F374FD1079DF038C6E8504167" Name="native" />
         </DirectoryRef>
     </Fragment>
 </Wix>

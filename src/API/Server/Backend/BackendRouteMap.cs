@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 
 namespace CodeProject.SenseAI.Server.Backend
@@ -28,28 +24,46 @@ namespace CodeProject.SenseAI.Server.Backend
         /// <summary>
         /// Gets the type of the parameter.
         /// </summary>
-        public RouteParameterType Type { get; set; }
+        public string Type { get; set; }
 
         /// <summary>
         /// Get the description of the parameter.
         /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// Gets the default value for this parameter if not provided to or returned from a process.
+        /// </summary>
+        public string? DefaultValue { get; set; }
     }
 
     /// <summary>
     /// Holds the queue and command associated with a url.
     /// </summary>
     // TODO: this should be a Record.
-    public struct BackendRouteInfo
+    public struct ModuleRouteInfo
     {
+        /// <summary>
+        /// Gets the name for this endpoint.
+        /// </summary>
+        public string Name { get; set; }
+
         /// <summary>
         /// Gets the Path for the endpoint.
         /// </summary>
         public string Path { get; set; }
 
         /// <summary>
+        /// Gets or sets the HTTP method to use when calling this endpoint
+        /// </summary>
+        public string Method { get; set; }
+
+        /// <summary>
         /// Gets the name of the queue used by this endpoint.
         /// </summary>
+        /// TODO: Move this up to the ModuleConfig class. A module should get all of its commands 
+        ///       from one queue with the commands distinguished by the Command property in the
+        ///       request.
         public string Queue { get; set; }
 
         /// <summary>
@@ -75,70 +89,113 @@ namespace CodeProject.SenseAI.Server.Backend
         /// <summary>
         /// Initializes a new instance of the BackendRouteInfo struct.
         /// </summary>
-        /// <param name="Path">The relative path of the endpoint.</param>
-        /// <param name="Queue">THe name of the Queue that the route will use.</param>
-        /// <param name="Command">The command string that will be passed as part of the data
+        /// <param name="name">The name of this endpoint.</param>
+        /// <param name="path">The relative path of the endpoint.</param>
+        /// <param name="method">The HTTP Method used to call the path/command</param>
+        /// <param name="queue">THe name of the Queue that the route will use.</param>
+        /// <param name="command">The command string that will be passed as part of the data
         /// sent to the queue.</param>
-        /// <param name="Description">A Description of the endpoint.</param>
-        /// <param name="Inputs">The input parameters information.</param>
-        /// <param name="Outputs">The output parameters information.</param>
-        public BackendRouteInfo(string Path, string Queue, string Command, 
-                                string? Description = null,
-                                RouteParameterInfo[]? Inputs = null,
-                                RouteParameterInfo[]? Outputs = null)
+        /// <param name="description">A Description of the endpoint.</param>
+        /// <param name="inputs">The input parameters information.</param>
+        /// <param name="outputs">The output parameters information.</param>
+        public ModuleRouteInfo(string name, string path, string method, string queue, string command, 
+                                string? description = null,
+                                RouteParameterInfo[]? inputs = null,
+                                RouteParameterInfo[]? outputs = null)
         {
-            this.Path        = Path.ToLower();
-            this.Queue       = Queue;
-            this.Command     = Command;
-            this.Description = Description;
-            this.Inputs      = Inputs;
-            this.Outputs     = Outputs;
+            Name        = name;
+            Path        = path.ToLower();
+            Method      = method.ToUpper();
+            Queue       = queue;
+            Command     = command;
+            Description = description;
+            Inputs      = inputs;
+            Outputs     = outputs;
         }
     }
 
+    /// <summary>
+    /// Defines the destination queue information that is required to
+    /// queue the frontend endpoint data for processing by the backend
+    /// Module.
+    /// </summary>
+    public class RouteQueueInfo
+    {
+        /// <summary>
+        /// Gets the name of the Queue.
+        /// </summary>
+        public string QueueName { get; private set; }
+
+        /// <summary>
+        /// Gets the command identifier which distiguishes the backend
+        /// operations to perform based on the frontend endpoint.
+        /// </summary>
+        public string Command { get; private set; }
+
+        /// <summary>
+        /// Initializes a new instance of the RouteQueueInfo class.
+        /// </summary>
+        /// <param name="queueName">The name of the Queue.</param>
+        /// <param name="command">The backend operation identifier.</param>
+        public RouteQueueInfo(string queueName, string command)
+        {
+            QueueName = queueName;
+            Command = command;
+        }
+    }
+
+    /// <summary>
+    /// Map for front end endpoints to backend queues.
+    /// </summary>
+    // TODO: this does not require the whole RouteQueueInfo, just the Queue and Command
+    //       and possibly the Method.
     public class BackendRouteMap
     {
         /// <summary>
         /// Maps a url to the queue and command associated with it.
         /// </summary>
-        private ConcurrentDictionary<string, BackendRouteInfo> _urlCommandMap = new();
+        private ConcurrentDictionary<string, RouteQueueInfo> _routeQueueMap = new();
 
         /// <summary>
         /// Tries to get the route information for a path.
         /// </summary>
         /// <param name="path">The path to get the information for.</param>
-        /// <param name="routeInfo">The BackendRouteInfo instance to store the save the info to.</param>
+        /// <param name="method">The HTTP Method used by the frontend endpoint.</param>
+        /// <param name="queueInfo">The BackendRouteInfo instance to store the save the info to.</param>
         /// <returns>True if the path is in the Route Map, false otherwise.</returns>
-        public bool TryGetValue(string path, out BackendRouteInfo routeInfo)
+        public bool TryGetValue(string path, string method, out RouteQueueInfo queueInfo)
         {
-            var key = path.ToLower();
-            return _urlCommandMap.TryGetValue(key, out routeInfo);
+            string key = MakeKey(path, method);
+            return _routeQueueMap.TryGetValue(key, out queueInfo!);
+        }
+
+        private static string MakeKey(string path, string method)
+        {
+            return $"{method.ToLower()}_{path.ToLower()}";
         }
 
         /// <summary>
         /// Associates a url and command with a queue.
         /// </summary>
+        /// <param name="name">The name of the route.</param>
         /// <param name="path">The relative path to use for the request.</param>
+        /// <param name="method">The HTTP Method used to call the path/command</param>
         /// <param name="queueName">The name of the queue that the request will be associated with.</param>
         /// <param name="command">The command that will be passed with the payload.</param>
-        public void Register(string path, string queueName, string command)
+        public void Register(string path, string method, string queueName, string command)
         {
-            BackendRouteInfo backendRouteInfo     = new BackendRouteInfo(path, queueName, command);
-            Register(backendRouteInfo);
-        }
-
-        public void Register(BackendRouteInfo info)
-        {
-            _urlCommandMap[info.Path] = info;
+            string key                      = MakeKey(path, method);
+            RouteQueueInfo backendRouteInfo = new RouteQueueInfo(queueName, command);
+            _routeQueueMap[key]             = backendRouteInfo;
         }
 
         /// <summary>
-        /// Gets a list of the url registrations.
+        /// Associates a url and command with a queue.
         /// </summary>
-        /// <returns>An IEnumerable<KeyValuePair<string, BackendRouteInfo>> of the registrations.</returns>
-        public IEnumerable<BackendRouteInfo> List()
+        /// <param name="info">A <cref="ModuleRouteInfo"> structure containing the info to register.
+        public void Register(/*string moduleName,*/ ModuleRouteInfo info)
         {
-            return _urlCommandMap.Values.OrderBy(x => x.Path);
+            Register(info.Path, info.Method, info.Queue, info.Command);
         }
     }
 }

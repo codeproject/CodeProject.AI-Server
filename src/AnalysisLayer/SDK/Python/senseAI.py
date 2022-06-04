@@ -125,11 +125,11 @@ class SenseAIBackend:
                 return [content]
             else:
                 return []
-
+        
         except Exception as ex:
 
             err_msg = "Error retrieving command: Is the API Server running?"
-            if verboseExceptionMsg:
+            if self.verboseExceptionMsg:
                 err_msg = str(ex)
 
             self.log(LogMethod.Error|LogMethod.Cloud, {
@@ -170,7 +170,7 @@ class SenseAIBackend:
 
         except:
             err_msg = "Unable to get image from request"
-            if verboseExceptionMsg:
+            if self.verboseExceptionMsg:
                 err_msg = str(ex)
 
             self.log(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
@@ -198,7 +198,7 @@ class SenseAIBackend:
             return len(files)
 
         except Exception as ex:
-            if verboseExceptionMsg:
+            if self.verboseExceptionMsg:
                 print(f"Error getting getRequestImageCount: {str(ex)}")
             return 0
 
@@ -263,7 +263,7 @@ class SenseAIBackend:
         except Exception as ex:
             time.sleep(self.errorPause)
 
-            if verboseExceptionMsg:
+            if self.verboseExceptionMsg:
                 print(f"Error sending response: {str(ex)}")
             else:
                 print(f"Error sending response: Is the API Server running?")
@@ -344,7 +344,7 @@ class SenseAIBackend:
             return True
 
         except Exception as ex:
-            if verboseExceptionMsg:
+            if self.verboseExceptionMsg:
                 print(f"Error posting log: {str(ex)}")
             else:
                 print(f"Error posting log: Is the API Server running?")
@@ -384,7 +384,7 @@ class SenseAIBackend:
         try:
             response = requests.post(url, data = obj, headers = headers)
         except Exception as ex:
-            if verboseExceptionMsg:
+            if self.verboseExceptionMsg:
                 print(f"Error posting server log: {str(ex)}")
             else:
                 print(f"Error posting server log: Do you have interwebz?")

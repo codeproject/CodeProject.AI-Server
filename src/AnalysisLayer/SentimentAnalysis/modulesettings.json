@@ -1,0 +1,48 @@
+{
+  // The processes (typically the backend analysis processes) that are to be started when the
+  // server starts. They will be started in order of appearance.
+  "Modules": {
+    "SentimentAnalysis": {
+      "Name": "Sentiment Analysis",
+      "Activate": true,
+      "Description": "Determines if a comment is positive or negative",
+      "FilePath": "SentimentAnalysis\\SentimentAnalysis.dll",
+      "Runtime": "dotnet",
+      "Platforms": [ "windows", "linux", "docker" ],
+      "RouteMaps": [
+        {
+          "Name": "Sentiment Analysis",
+          "Path": "text/sentiment",
+          "Method": "POST",
+          "Queue": "sentimentanalysis_queue",
+          "Command": "sentiment",
+          "Description": "Determines if the supplied text has a positive or negative sentiment",
+          "Inputs": [
+            {
+              "Name": "text",
+              "Type": "Text",
+              "Description": "The text to be analyzed."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "is_positive",
+              "Type": "Boolean",
+              "Description": "Whether the input text had a positive sentiment."
+            },
+            {
+              "Name": "positive_probability",
+              "Type": "Float",
+              "Description": "The probability the input text has a positive sentiment."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

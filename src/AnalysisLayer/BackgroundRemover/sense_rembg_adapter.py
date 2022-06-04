@@ -12,7 +12,7 @@ To call:
 
     model can be: 'u2net', 'u2netp', 'u2net_human_seg', 'u2net_cloth_seg'
 
-"""
+""" 
 
 #!/usr/bin/env python
 # coding: utf-8

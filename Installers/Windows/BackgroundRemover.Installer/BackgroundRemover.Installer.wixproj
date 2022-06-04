@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>7e70c376-7119-4c90-ac30-344eea29594e</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>BackgroundRemover.Installer-1.3.0</OutputName>
+    <OutputName>BackgroundRemover.Installer-1.4.0</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

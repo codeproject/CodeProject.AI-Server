@@ -6,6 +6,10 @@
     <meta name="theme-color" content="#eeeeee" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="dark light">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
+
     <title>CodeProject.SenseAI Server</title>
 
     <link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
@@ -14,27 +18,53 @@
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
     <style>
         .header {
-            background: rgb(255,153,0);
-            background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, rgb(255 181 0) 78%, rgba(255,208,0,1) 100%);
+            font-family: Inter, Helvetica, Arial, sans-serif;
+            /*background: #ad7000;
+            background: #008772;*/
+            background: rgb(255,153,0);*/
+            /*background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, #5b5644 50%, #303030 100%);*/
+            /*background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, rgb(255 181 0) 78%, rgba(255,208,0,1) 100%);*/
+            /*border-bottom: 1px solid #f90;*/
+            padding: 10px 0;
+            margin-bottom: 25px;
         }
+
         .logs {
-            text-indent:-2em;
-            padding-left:2em;
-            font-size:x-small;
+            text-indent: -2em;
+            padding-left: 2em;
+            font-size: x-small;
         }
+
+        .site-title {
+            text-decoration: none !important;
+            font-size: 2.7rem;
+            color: white;
+            display: inline-block;
+            text-transform: uppercase;
+            vertical-align: middle;
+            letter-spacing: -3px;
+        }
+
+            .site-title .front {
+                font-weight: 200;
+            }
+
+            .site-title .end {
+                font-weight: 600;
+            }
     </style>
     <script type="text/javascript">
 
-        const apiServiceUrl        = "http://localhost";
+        const apiServiceUrl = "http://localhost";
 
-        const pingFrequency        = 2000;    // milliseconds
-        const logFrequency         =  500;    // milliseconds
-        const statusFrequency      = 3000;    // milliseconds
+        const pingFrequency = 2000;    // milliseconds
+        const logFrequency = 500;    // milliseconds
+        const statusFrequency = 3000;    // milliseconds
         const checkUpdateFrequency = 24 * 3600 * 1000; // 24hr in milliseconds
 
-        let _lastLogId      = 0;
+        let _lastLogId = 0;
         let _serverIsOnline = false;
-        let _version        = null;
+        let _version = null;
 
         window.addEventListener('DOMContentLoaded', function (event) {
 
@@ -58,7 +88,7 @@
         }
 
         async function callStatus(method, callback) {
-            
+
             let url = serviceUrl.value.trim() + '/v1/status/' + method;
 
             await fetch(url, { method: "GET" })
@@ -67,12 +97,12 @@
                         setStatus('Error contacting API server', "danger");
                     else
                         response.json()
-                                .then(data => callback(data))
-                                .catch(error => setStatus('Unable to contact API server', "warning"));
-                  })
-                  .catch(error => {
-                      setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
-                  });
+                            .then(data => callback(data))
+                            .catch(error => setStatus('Unable to contact API server', "warning"));
+                })
+                .catch(error => {
+                    setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
+                });
         }
 
         async function ping() {
@@ -114,13 +144,13 @@
                         if (data.version.releaseNotes)
                             message += "<div class='mt-2 text-white-50'>" + data.version.releaseNotes + "</div>";
 
-                        update.innerHTML      = message;
+                        update.innerHTML = message;
                         update.styles.display = '';
                     }
                     else if (showResult) {
 
                         update.styles.display = '';
-                        update.innerHTML      = "You have the latest version of SenseAI";
+                        update.innerHTML = "You have the latest version of SenseAI";
                     }
 
                 }
@@ -147,42 +177,43 @@
             fetch(url, {
                 method: "GET"
             })
-            .then(response => {
+                .then(response => {
 
-                if (response.ok) {
-                    response.json().then(data => {
+                    if (response.ok) {
+                        response.json().then(data => {
 
-                        if (data && data.statuses) {
+                            if (data && data.statuses) {
 
-                            let results = "<div id='serviceStatus' class='d-flex flex-wrap w-100 mt-3'>";
+                                let results = "<div id='serviceStatus' class='d-flex flex-wrap w-100 mt-3'>";
 
-                            for (let i = 0; i < data.statuses.length; i++) {
+                                for (let i = 0; i < data.statuses.length; i++) {
 
-                                let running    = data.statuses[i].running;
-                                let moduleName = data.statuses[i].name;
-                                let started    = data.statuses[i].started;
-                                let lastSeen   = data.statuses[i].lastSeen;
-                                let processed  = data.statuses[i].processed;
+                                    let running = data.statuses[i].running;
+                                    let moduleName = data.statuses[i].name;
+                                    let started = data.statuses[i].started;
+                                    let lastSeen = data.statuses[i].lastSeen;
+                                    let processed = data.statuses[i].processed;
 
-                                let className = running ? "success" : (started? "warning" : "muted");
-                                let status    = running ? "Enabled" : (started? "Not Running" : "Not Started");
+                                    let className = running ? "success" : (started ? "warning" : "muted");
+                                    let status = running ? "Enabled" : (started ? "Not Running" : "Not Started");
 
-                                results +=
-                                    "<div class='mx-1 alert alert-" + className + "' style='width:10em;height:8rem'>"
+                                    results +=
+                                        "<div class='mx-1 alert alert-" + className + "' style='width:10em;height:8rem'>"
                                         + "<b>" + moduleName + "</b>"
                                         + "<div class='small'>" + status + "</div>"
                                         + "<div style='position:absolute;bottom:0rem' class='d-flex justify-content-between small'>"
-                                            // + "<div>Last: " + lastSeen + "</div>"
-                                            + "<div>Processed: " + processed + "</div>"
+                                        // + "<div>Last: " + lastSeen + "</div>"
+                                        + "<div>Processed: " + processed + "</div>"
                                         + "</div>"
-                                    + "</div>";
-                            }
-                            results += "</div>";
+                                        + "</div>";
+                                }
+                                results += "</div>";
 
-                            serviceStatus.outerHTML = results;
-                        }
-                    })
-                }})
+                                serviceStatus.outerHTML = results;
+                            }
+                        })
+                    }
+                })
         }
 
         /**
@@ -196,33 +227,40 @@
             fetch(url, {
                 method: "GET"
             })
-            .then(response => {
+                .then(response => {
 
-                if (response.ok) {
-                    response.json().then(data => {
-                        if (data && data.entries) {
+                    if (response.ok) {
+                        response.json().then(data => {
+                            if (data && data.entries) {
 
-                            let newLogs = "";
-                            for (let i = 0; i < data.entries.length; i++) {
-                                let logEntry = data.entries[i];
-                                let logText = logEntry.entry.replace("\n", "<br>");
-                                let date = new Date(logEntry.timestamp).toLocaleTimeString();
-                                newLogs += "<div>" + date + ": " + logText + "</div>";
-                                _lastLogId = logEntry.id;
+                                let newLogs = "";
+                                for (let i = 0; i < data.entries.length; i++) {
+                                    let logEntry = data.entries[i];
+                                    let logText = logEntry.entry.replace("\n", "<br>");
+                                    let date = new Date(logEntry.timestamp).toLocaleTimeString();
+                                    newLogs += `<div id='log${i + 1}>${date}: ${logText}</div>`;
+                                    _lastLogId = logEntry.id;
+                                }
+
+                                if (newLogs) {
+
+                                    let log = logs.innerHTML + newLogs;
+                                    if (log.length > 10000)
+                                        log = log.substring(log.length - 10000);
+                                    logs.innerHTML = log;
+
+                                    // let logList = document.getElementById('logs');
+                                    // logList.parentNode.scrollTop = logList.offsetHeight - logList.parentNode.offsetHeight;
+
+                                    // TODO: We should suppress the scroll into view if the user has
+                                    // scrolled up. If we detect a scroll up, set "autoscroll" to false
+                                    // and if they then scroll to the bottom, turn autoscroll back on
+                                    logs.scrollIntoView(false);
+                                }
                             }
-
-                            if (newLogs) {
-
-                                let log = logs.innerHTML + newLogs;
-                                if (log.length > 10000)
-                                    log = log.substring(0, 10000);
-                                logs.innerHTML = log;
-
-                                logs.scrollIntoView(false);
-                            }
-                        }
-                    })
-                }})
+                        })
+                    }
+                })
         }
     </script>
 
@@ -245,16 +283,93 @@
           </div>
         </div>
 
-	    <div class="w-100 header d-flex">
-            <a href="https://www.codeproject.com">
-            <img tabindex="1" title="CodeProject" src="assets/codeproject60x60.png" 
-                alt="Home" style="width:60px;height:60px;border-width:0px;"></a>
-            <span class="fs-2 mt-2 d-inline-block">CODE<b>PROJECT</b> SenseAI Server</span>
+        <div class="w-100 header d-flex justify-content-between">
+            <a href="https://www.codeproject.com" style="margin:2px 0 2px 5px">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+                     xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" role="img"
+                     style="height: 60px; margin-right: -12px;">
+                    <title>CodeProject Icon</title>
+                    <path id="svg_2" d="M9.052,21.798c-0.236,0-0.459-0.905-0.463-1.145c-0.007-0.356,0.038-0.755,0.473-0.755
+		c0.436,0,0.47,0.398,0.473,0.755C9.542,20.982,9.288,21.798,9.052,21.798z M10.903,23.985c0.729,0.004,3.677,0.151,3.715-0.847
+		c0.041-0.998-1.401-1.525-2.234-1.563c-0.837-0.037-2.143,0.467-2.431,0.209c-0.377-0.339,0.281-1.882,0.531-2.188
+		c0.172-0.205,0.453-0.524,0.606-0.664c0.594-0.553,0.967-1.32,0.964-2.178c-0.004-0.939-0.281-1.278,0.658-0.531
+		c0.325,0.257,0.768,0.59,1.336,0.854c1.139,0.524-1.319-1.68-1.789-2.102c-0.788-0.699-1.045-1.08-0.609-1.354
+		c0.346-0.216,0.672-0.459,0.977-0.723c1.196-1.035,2.046-2.605,1.878-4.896C14.354,5.911,10.416,0.024,9.364,0
+		c-0.85-0.017-2.578,2.108-3.527,3.257C4.809,4.505,3.201,6.665,2.879,7.934C2.783,8.311,2.746,8.708,2.746,9.113
+		c0,1.44,0.75,2.784,1.898,3.744c0.703,0.586,1.481,1.039,0.237,2.311c-0.74,0.758-2.434,2.361-1.453,1.909
+		c0.572-0.264,1-0.614,1.34-0.854c0.709-0.504,0.99-0.669,0.833-0.031c-0.034,0.134-0.028,0.274-0.028,0.411
+		c0,0.892,0.37,1.69,0.95,2.277c0.151,0.154,0.586,0.486,0.833,0.699c0.586,0.507,1.196,1.865,0.816,2.204
+		c-0.288,0.258-1.594-0.246-2.427-0.209c-0.836,0.038-2.275,0.565-2.238,1.563s3.17,0.851,3.9,0.857
+		c1.645,0.013,1.09-0.642,1.645-0.631C9.607,23.379,9.052,23.976,10.903,23.985z" />
+                    <path id="svg_3" fill="#C3DE6C" d="M9.802,1.187c-0.668-0.017-1.686,1.878-2.43,2.863C6.567,5.115,5.354,7.004,5.1,8.091
+		C5.025,8.414,4.997,8.753,4.997,9.099c0,2.51,2.481,4.608,4.792,4.608c1.155,0,2.132-0.604,2.938-1.368
+		c0.935-0.888,1.597-2.232,1.47-4.193C14.076,6.36,10.622,1.207,9.802,1.187z" />
+                    <path id="svg_4" d="M10.649,10.378c0.336,0.456,0.716,0.775,1.172,0.775c0.919,0,1.662-1.187,1.662-2.646
+		c0-1.464-0.743-2.65-1.662-2.65c-0.456,0-0.85,0.309-1.172,0.775C10.491,6.86,10.2,7.042,9.823,6.401
+		c-0.35-0.593-0.918-0.922-1.508-0.922c-1.179,0-2.135,1.412-2.135,3.154s0.956,3.154,2.135,3.154c0.737,0,1.371-0.556,1.769-1.389
+		C10.238,10.073,10.47,10.135,10.649,10.378z" />
+                    <path id="svg_5" fill="#FFFFFF" d="M9.812,8.633c0,1.221-0.671,2.211-1.497,2.211c-0.826,0-1.498-0.991-1.498-2.211
+		c0-1.224,0.672-2.215,1.498-2.215C9.141,6.418,9.812,7.409,9.812,8.633z" />
+                    <path id="svg_6" fill="#FFFFFF" d="M12.987,8.506c0,1.025-0.521,1.854-1.166,1.854c-0.641,0-1.162-0.83-1.162-1.854
+		c0-1.029,0.521-1.858,1.162-1.858C12.465,6.648,12.987,7.478,12.987,8.506z" />
+                    <path id="svg_7" fill="#C3DE6C" d="M11.564,16.813c0,1.217-0.99,2.201-2.218,2.201c-1.227,0-2.221-0.984-2.221-2.201
+		s0.994-2.205,2.221-2.205C10.574,14.608,11.564,15.597,11.564,16.813z" />
+                    <path id="svg_8" d="M9.877,17.434c0,0.229-0.188,0.415-0.418,0.415s-0.418-0.186-0.418-0.415S9.23,17.02,9.459,17.02
+		S9.877,17.204,9.877,17.434z" />
+                    <path id="svg_9" d="M2.311,17.358c-0.165,0-1.687,0.021-2.163,0.227c-0.473,0.209,0.285,0.507,0.929,0.545
+		c0.322,0.021,0.219,0.257,0.075,0.452c-1.155,1.581-0.264,1.262,0.514,0.565c0.192-0.171,0.264,0.056,0.284,0.265
+		c0.018,0.206,0.511,1.749,0.665-0.209c0.062-0.81,0.113-1.241,0.076-1.525C2.653,17.396,2.499,17.358,2.311,17.358z" />
+                    <path id="svg_10" fill="#C3DE6C" d="M8.037,22.837c-0.284-0.527-1.063-0.452-1.422-0.395c-0.36,0.056-1.724,0.374-1.498,0.771
+		c0.229,0.395,1.1,0.433,1.765,0.151C7.543,23.08,8.37,23.451,8.037,22.837z" />
+                    <path id="svg_11" d="M15.169,17.358c0.161,0,1.686,0.021,2.163,0.227c0.473,0.209-0.285,0.507-0.933,0.545
+		c-0.319,0.021-0.216,0.257-0.075,0.452c1.158,1.581,0.267,1.262-0.511,0.565c-0.192-0.171-0.264,0.056-0.284,0.265
+		c-0.021,0.206-0.515,1.749-0.665-0.209c-0.063-0.81-0.113-1.241-0.076-1.525C14.827,17.396,14.977,17.358,15.169,17.358z" />
+                    <path id="svg_12" fill="#C3DE6C" d="M10.086,22.837c0.284-0.527,1.063-0.452,1.423-0.395c0.359,0.056,1.728,0.374,1.497,0.771
+		c-0.226,0.395-1.1,0.433-1.765,0.151C10.581,23.08,9.754,23.451,10.086,22.837z" />
+                    <path id="svg_13" d="M8.915,8.547c0,0.607-0.236,1.101-0.524,1.101c-0.288,0-0.521-0.494-0.521-1.101S8.103,7.447,8.39,7.447
+		C8.678,7.447,8.915,7.94,8.915,8.547z" />
+                    <path id="svg_14" d="M12.291,8.455c0,0.483-0.188,0.877-0.418,0.877s-0.418-0.394-0.418-0.877c0-0.487,0.188-0.881,0.418-0.881
+		S12.291,7.968,12.291,8.455z" />
+                </svg><span class="site-title"><span class="front">Code</span><span class="end">Project</span></span>
+            </a>
+            <a href="https://www.codeproject.com/ai" style="margin:5px 5px 0 0">
+                <svg id="Layer_2" data-name="Layer 2" viewBox="0 0 360.7 157.9" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com" style="height:60px">
+                    <defs>
+                        <style>
+                            .cls-1 {
+                                fill: white;
+                            }
+
+                            .cls-2 {
+                                fill: #b3ddca;
+                            }
+                        </style>
+                        <bx:grid x="0" y="0" width="19.8" height="11.5" />
+                    </defs>
+                    <path class="cls-1" d="M62.51,166.83a14.44,14.44,0,0,1-5.68-11.47h4.38a11.07,11.07,0,0,0,4.37,8.75,16.23,16.23,0,0,0,10.53,3.55q7.1,0,11.47-3.2a10.43,10.43,0,0,0,4.25-8.63q0-4-4.49-6.86t-12.06-3.43q-8-.71-12.77-4.49a11.44,11.44,0,0,1-4.85-9.34,11.17,11.17,0,0,1,4.85-9.7q4.84-3.44,13.6-3.43,8.39,0,13.36,3.67a11.49,11.49,0,0,1,5.08,9.81H90.06a10.83,10.83,0,0,0-4.49-7.21,16,16,0,0,0-9.46-2.6q-6.39,0-10.17,2.6a8,8,0,0,0-3.79,6.86q0,4,4.61,6.85T78.82,142c5.29.48,9.54,2.06,12.78,4.73a13.13,13.13,0,0,1-.83,20.82q-5.44,4-14.66,4A20.26,20.26,0,0,1,62.51,166.83Z" transform="translate(-56.83 -53.06)" />
+                    <path class="cls-1" d="M108.49,164.7q-6.15-7.45-6.15-19.63t6.15-19.63q6.15-7.34,16.32-7.33t16.32,6.74q6.15,6.74,6.15,18v2.25H107.07q0,10.29,4.85,16.43a15.6,15.6,0,0,0,12.89,6.16,19.34,19.34,0,0,0,10.88-3.2,17,17,0,0,0,6.86-8.63h4.73a17.66,17.66,0,0,1-7.57,11.59,24.8,24.8,0,0,1-14.9,4.61Q114.64,172,108.49,164.7Zm34.06-24.12V138.8A18,18,0,0,0,136.87,127a17.39,17.39,0,0,0-12.06-4.72,16.74,16.74,0,0,0-11.94,4.84,18.42,18.42,0,0,0-5.8,12.18v1.31Z" transform="translate(-56.83 -53.06)" />
+                    <path class="cls-1" d="M156.49,170.26V119.88h4.73v8.51a16.18,16.18,0,0,1,6.5-7.09,18.81,18.81,0,0,1,22.35,2.13,15.63,15.63,0,0,1,5.33,11.82v35h-4.73v-35a11.69,11.69,0,0,0-3.91-8.86,13.13,13.13,0,0,0-9.34-3.67,15.55,15.55,0,0,0-10.52,4A17.42,17.42,0,0,0,161.22,137v33.23Z" transform="translate(-56.83 -53.06)" />
+                    <path class="cls-1" d="M209.34,166.83a14.44,14.44,0,0,1-5.68-11.47H208a11.07,11.07,0,0,0,4.37,8.75,16.23,16.23,0,0,0,10.53,3.55q7.09,0,11.47-3.2a10.43,10.43,0,0,0,4.25-8.63q0-4-4.49-6.86t-12.06-3.43q-8-.71-12.77-4.49a11.44,11.44,0,0,1-4.85-9.34,11.17,11.17,0,0,1,4.85-9.7q4.84-3.44,13.6-3.43,8.38,0,13.36,3.67a11.49,11.49,0,0,1,5.08,9.81h-4.49a10.83,10.83,0,0,0-4.49-7.21,16,16,0,0,0-9.46-2.6q-6.39,0-10.17,2.6a8,8,0,0,0-3.79,6.86q0,4,4.61,6.85T225.65,142c5.29.48,9.54,2.06,12.78,4.73a13.15,13.15,0,0,1-.83,20.82q-5.44,4-14.66,4A20.28,20.28,0,0,1,209.34,166.83Z" transform="translate(-56.83 -53.06)" />
+                    <path class="cls-1" d="M255.32,164.7q-6.15-7.45-6.14-19.63t6.14-19.63q6.15-7.34,16.32-7.33T288,124.85q6.15,6.74,6.15,18v2.25h-40.2q0,10.29,4.84,16.43a15.6,15.6,0,0,0,12.89,6.16,19.32,19.32,0,0,0,10.88-3.2,17,17,0,0,0,6.86-8.63h4.73a17.66,17.66,0,0,1-7.57,11.59,24.78,24.78,0,0,1-14.9,4.61Q261.47,172,255.32,164.7Zm34.06-24.12V138.8A18,18,0,0,0,283.71,127a17.42,17.42,0,0,0-12.07-4.72,16.74,16.74,0,0,0-11.94,4.84,18.36,18.36,0,0,0-5.79,12.18v1.31Z" transform="translate(-56.83 -53.06)" />
+                    <path class="cls-1" d="M 244.2 118.9 L 272.8 31.2 L 286.9 31.2 L 315.5 118.9 L 304.5 118.9 L 295.7 92.7 L 264 92.7 L 255.2 118.9 L 244.2 118.9 Z M 267.2 82.9 L 292.6 82.9 L 279.9 44.9 L 267.2 82.9 Z" />
+                    <path class="cls-1" d="M 316.7 118.9 L 316.7 31.2 L 327.7 31.2 L 327.7 118.9 L 316.7 118.9 Z" />
+                    <polygon class="cls-2" points="231.2 54 219.7 54 219.7 0 250.7 0 250.7 11.5 231.2 11.5 231.2 54" />
+                    <polygon class="cls-2" points="273.7 157.9 219.7 157.9 219.7 127 231.2 127 231.2 146.4 273.7 146.4 273.7 157.9" />
+                    <polygon class="cls-2" points="360.6 157.9 329.7 157.9 329.7 146.4 349.1 146.4 349.1 103.9 360.6 103.9 360.6 157.9" />
+                    <polygon class="cls-2" points="360.6 31 349.1 31 349.1 11.5 306.6 11.5 306.6 0 360.6 0 360.6 31" />
+                    <rect x="250.7" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" />
+                    <rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 316.649994, 397.350006)" />
+                    <rect x="307.6" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="146.3" />
+                    <rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 187.309998, 471.269989)" />
+                </svg>
+            </a>
         </div>
 
         <div class="my-3 d-flex justify-content-between w-100">
             <div id="version" class="mt-1"></div>
-            <div><button class="btn btn-info small" onclick="checkForUpdates()">Check for Updates</button></div>
+            <div><a class="btn btn-info  small" href="vision.html" target="_blank">Open SenseAI Explorer</a></div>
+
+            <div><button class="btn btn-outline-info small" onclick="checkForUpdates()">Check for Updates</button></div>
         </div>
 
         <div class="alert alert-info" id="update" style="display:none"></div>

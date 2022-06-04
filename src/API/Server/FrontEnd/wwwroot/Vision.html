@@ -5,25 +5,76 @@
 	<meta charset="utf-8" />
 	<title>CodeProject SenseAI Demos</title>
 
+	<!-- If you use this, ensure the body has class "dark-mode" -->
 	<link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
+	<!-- for light mode should you wish it
+	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" />
+	-->
+	<!-- Will only be effective if you're connected to the internet -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
 
 	<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
 	<style>
 		.header {
+			font-family: Inter, Arial, Helvetica, Arial, sans-serif;
 			background: rgb(255,153,0);
-			background: linear-gradient( 132deg, rgba(255,153,0,1) 0%, rgb(255 181 0) 78%, rgba(255,208,0,1) 100%);
+			padding: 10px 0;
+			margin-bottom: 25px;
 		}
 
-		#faces::file-selector-button { width:10rem; }
+		.site-title {
+			text-decoration: none !important;
+			font-size: 2.7rem;
+			color: white;
+			display: inline-block;
+			text-transform: uppercase;
+			vertical-align: middle;
+			letter-spacing: -3px;
+		}
+
+			.site-title .front {
+				font-weight: 200;
+			}
+
+			.site-title .end {
+				font-weight: 600;
+			}
+
+		#faces::file-selector-button {
+			width: 10rem;
+		}
+
+		input[type="range"]::-webkit-slider-thumb {
+			margin-top: -7px;
+		}
+
+		.dark-mode .nav-tabs {
+			background-color: #4b4b4b;
+		}
+
+			.dark-mode .nav-tabs .nav-link.active {
+				background-color: #808080;
+			}
+
+		.dark-mode input[type=range]::-webkit-slider-runnable-track {
+			background-color: lightgray;
+			height: 2px;
+		}
+
+		.dark-mode input[type="range"] {
+			background-color: grey;
+		}
 	</style>
 
 	<script type="text/javascript">
 
-		const useSVG        = true;
+		const useSVG = true;
 		const pingFrequency = 1000; // milliseconds
-		let   apiServiceUrl = "http://localhost:5000";
-		var   serverOnline    = false;
+		let apiServiceUrl = "http://localhost:5000";
+		var serverOnline = false;
 
 		if (navigator.platform.toUpperCase().indexOf('MAC') >= 0)
 			apiServiceUrl = "http://localhost:5500";
@@ -38,13 +89,13 @@
 		function adjustForImageSize() {
 
 			if (useSVG) {
-				clearCanvas();
+				// clearCanvas();
 				imageMask.style.height = this.height + 'px';
-                imageMask.style.width  = this.width  + 'px';
+				imageMask.style.width = this.width + 'px';
 			}
 			else {
 				annotations.height = this.height;
-				annotations.width  = this.width;
+				annotations.width = this.width;
 			}
 
 			return true;
@@ -52,18 +103,23 @@
 
 		function previewImage(fileChooser) {
 
-			if (fileChooser.files) {
-				img.onload           = adjustForImageSize;
-				img.src              = URL.createObjectURL(fileChooser.files[0]);
-				img.style.height     = "auto";
-				img.style.visibility = "visible";
-			}
+			if (fileChooser.files)
+				setImage(fileChooser.files[0]);
+		}
+
+		function setImage(imageToSet) {
+
+			clearCanvas();
+			img.onload = adjustForImageSize;
+			img.src = URL.createObjectURL(imageToSet);
+			img.style.height = "auto";
+			img.style.visibility = "visible";
 		}
 
 		function clearCanvas() {
 			if (useSVG) {
 				imageMask.innerHTML = '';
-                img.style.visibility = "visible";
+				img.style.visibility = "hidden";
 			}
 			else {
 				var context = annotations.getContext("2d");
@@ -87,20 +143,20 @@
 				return;
 
 			// Sort descending
-			predictions.sort(function(a, b) {
+			predictions.sort(function (a, b) {
 				return b.confidence - a.confidence;
 			});
 
 			let svg = null;
-            let xRatio = img.width * 1.0 / img.naturalWidth;
-            let yRatio = img.height * 1.0 / img.naturalHeight;
+			let xRatio = img.width * 1.0 / img.naturalWidth;
+			let yRatio = img.height * 1.0 / img.naturalHeight;
 
 			if (useSVG) {
 				svg = `
-				<svg viewBox="0 0 ${img.width} ${img.height}">
-					<defs>
-						<mask id="mask">
-							<rect fill="#999" x="0" y="0" width="${img.width}" height="${img.height}"></rect>`;
+										<svg viewBox="0 0 ${img.width} ${img.height}">
+											<defs>
+												<mask id="mask">
+													<rect fill="#999" x="0" y="0" width="${img.width}" height="${img.height}"></rect>`;
 			}
 			else {
 				let context = annotations.getContext("2d");
@@ -128,27 +184,85 @@
 
 			if (useSVG) {
 				svg += `
-						</mask>
-					</defs>
-					<image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
-						   xlink:href="${img.src}" width="${img.width}" height="${img.height}"></image>`;
+												</mask>
+											</defs>
+											<image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
+												   xlink:href="${img.src}" width="${img.width}" height="${img.height}"></image>`;
 
+				let colors = ["179,221,202", "204,223,120", "164,221,239"];
+				let colorIndex = 0;
+
+				let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 2 : 5) : 15;
 				for (var i = 0; i < predictions.length; i++) {
-					let rect = predictions[i];
+
+					let rect   = predictions[i];
 					let left   = Math.min(rect.x_min, rect.x_max) * xRatio;
 					let top    = Math.min(rect.y_min, rect.y_max) * yRatio;
 					let width  = Math.abs(rect.x_min - rect.x_max) * xRatio;
 					let height = Math.abs(rect.y_min - rect.y_max) * yRatio;
 
-					svg += `<text x="${left}" y="${top-5}" style="stroke: none; fill: #FFF;font-size:12px">${rect.label || ""}</text>`;
-                    svg += `<rect stroke="red" stroke-width="2px" fill="transparent" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
+					let right = left + width;
+					let bottom = top + height;
+
+
+					// senseAI style
+					let lineWidth = Math.min(maxLineWidth, width / 10);
+					let blockWidth = (width - lineWidth) / 5;
+					let blockHeight = (height - lineWidth) / 5;
+					let color = colors[colorIndex++ % colors.length];
+					let styleSolid = `style="stroke:rgba(${color}, 1);stroke-width:${lineWidth}"`;
+					let styleTrans = `style="stroke:rgba(${color}, 0.5);stroke-width:${lineWidth}"`;
+
+					// label
+					let label = rect.label || rect.userid;
+					if (label)
+						svg += `<text x="${left}" y="${top - lineWidth}" style="stroke: none; fill:rgba(${color}, 1);font-size:12px">${label || ""}</text>`;
+
+					// Shortcut if there are just too many items
+					if (predictions.length > 15) {
+						// Solid rectangle
+						svg += `<rect stroke="rgb(${color})" stroke-width="1px" fill="transparent" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
+						continue;
+					}
+
+					// Top (left to right)
+					let x = left - lineWidth / 2;
+					svg += `<line ${styleSolid} x1="${x}" y1="${top}" x2="${x + blockWidth + lineWidth}" y2="${top}"/>`;
+					x += blockWidth + lineWidth;
+					svg += `<line ${styleTrans} x1="${x}" y1="${top}" x2="${x + blockWidth}" y2="${top}"/>`;
+					x += 2 * blockWidth; // skip a section
+					svg += `<line ${styleSolid} x1="${x}" y1="${top}" x2="${x + 2 * blockWidth + lineWidth}" y2="${top}"/>`;
+
+					// Right (top to bottom)
+					let y = top - lineWidth / 2;
+					svg += `<line ${styleSolid} x1="${right}" y1="${y}" x2="${right}" y2="${y + blockHeight + lineWidth}"/>`;
+					y += blockHeight + lineWidth;
+					svg += `<line ${styleTrans}  x1="${right}" y1="${y}" x2="${right}" y2="${y + blockHeight}"/>`;
+					y += 2 * blockHeight; // skip a section
+					svg += `<line ${styleSolid} x1="${right}" y1="${y}" x2="${right}" y2="${y + 2 * blockHeight + lineWidth}"/>`;
+
+					// Bottom (left to right)
+					x = left - lineWidth / 2;
+					svg += `<line ${styleSolid} x1="${x}" y1="${bottom}" x2="${x + 2 * blockWidth + lineWidth}" y2="${bottom}"/>`;
+					x += 3 * blockWidth + lineWidth; // Skip a section
+					svg += `<line ${styleTrans}  x1="${x}" y1="${bottom}" x2="${x + blockWidth}" y2="${bottom}"/>`;
+					x += blockWidth;
+					svg += `<line ${styleSolid} x1="${x}" y1="${bottom}" x2="${x + blockWidth + lineWidth}" y2="${bottom}"/>`;
+
+					// Left (top to bottom)
+					y = top - lineWidth / 2;
+					svg += `<line ${styleSolid} x1="${left}" y1="${y}" x2="${left}" y2="${y + 2 * blockHeight + lineWidth}"/>`;
+					y += 3 * blockHeight + lineWidth; // skip a section
+					svg += `<line ${styleTrans}  x1="${left}" y1="${y}" x2="${left}" y2="${y + blockHeight}"/>`;
+					y += blockHeight;
+					svg += `<line ${styleSolid} x1="${left}" y1="${y}" x2="${left}" y2="${y + blockHeight + lineWidth}"/>`;
 				}
 
 				svg += `
-				</svg>`;
+										</svg>`;
 
-				imageMask.innerHTML  = svg;
-                img.style.visibility = "hidden";
+				imageMask.innerHTML = svg;
+				img.style.visibility = "hidden";
 			}
 		}
 
@@ -160,7 +274,7 @@
 			}
 
 			// Sort descending
-			predictions.sort(function(a, b) {
+			predictions.sort(function (a, b) {
 				return b.confidence - a.confidence;
 			});
 
@@ -168,7 +282,7 @@
 			for (var i = 0; i < predictions.length; i++) {
 				var pred = predictions[i];
 				html += "<tr><td>" + i + "</td><td>" + (pred.label || "Face")
-					  + "</td><td>" + confidence(pred.confidence) + "</td></tr>";
+					+ "</td><td>" + confidence(pred.confidence) + "</td></tr>";
 			}
 			html += "</table>";
 			result.innerHTML = html;
@@ -182,7 +296,7 @@
 			}
 
 			// Sort descending
-			recognitions.sort(function(a, b) {
+			recognitions.sort(function (a, b) {
 				return b.confidence - a.confidence;
 			});
 
@@ -190,13 +304,14 @@
 			for (var i = 0; i < recognitions.length; i++) {
 				var recog = recognitions[i];
 				html += "<tr><td>" + i + "</td><td>" + (recog.userid || "Face")
-					  + "</td><td>" + confidence(recog.confidence) + "</td></tr>";
+					+ "</td><td>" + confidence(recog.confidence) + "</td></tr>";
 			}
 			html += "</table>";
 			result.innerHTML = html;
 		}
 
 		function displayMatchResults(match) {
+
 			if (!match) {
 				result.innerHTML = "No matches returned";
 				return;
@@ -259,104 +374,105 @@
 							else
 								setStatus('Unable to contact API server', "red");
 						})
-						.catch(error => {
-							setStatus('Unable to contact API server: ' + error, "red")
-						});
-				  })
+							.catch(error => {
+								setStatus('Unable to contact API server: ' + error, "red")
+							});
+				})
 				.catch(error => {
-					  serverOnline = false;
-					  setStatus(/*error.message*/ "Unable to contact AI Server", "red");
-				  });
+					serverOnline = false;
+					setStatus(/*error.message*/ "Unable to contact AI Server", "red");
+				});
 		}
 
 		async function getAnalysisStatus() {
 
-            // In the future we will ask for "logs since log ID 'x'" so we have
-            // a full history. For now, a simple "last 10".
-            let url = serviceUrl.value.trim() + '/v1/status/analysis/list';
+			// In the future we will ask for "logs since log ID 'x'" so we have
+			// a full history. For now, a simple "last 10".
+			let url = serviceUrl.value.trim() + '/v1/status/analysis/list';
 
-            fetch(url, {
-                method: "GET"
-            })
-            .then(response => {
+			fetch(url, {
+				method: "GET"
+			})
+				.then(response => {
 
-                if (response.ok) {
-                    response.json().then(data => {
+					if (response.ok) {
+						response.json().then(data => {
 
-                        if (data && data.statuses) {
+							if (data && data.statuses) {
 
-                            // disable all first
-                            var cards = document.getElementsByClassName('card');
-                            for (const card of cards)
-                                card.classList.replace('d-flex', 'd-none');
+								// disable all first
+								var cards = document.getElementsByClassName('card');
+								for (const card of cards)
+									card.classList.replace('d-flex', 'd-none');
 
-							for (let i = 0; i < data.statuses.length; i++) {
+								for (let i = 0; i < data.statuses.length; i++) {
 
-								let moduleId = data.statuses[i].moduleId.replace(" ", "-");
-								let running = data.statuses[i].running;
+									let moduleId = data.statuses[i].moduleId.replace(" ", "-");
+									let running = data.statuses[i].running;
 
-								// enable those that need enabling. Note that some cards will be
-								// shared among modules, so we need to ensure we're not disabling
-								// a card that was just enabled by a different module
-								var cards = document.getElementsByClassName('card ' + moduleId);
-								for (const card of cards) {
-									if (running)
-										card.classList.replace('d-none', 'd-flex');
+									// enable those that need enabling. Note that some cards will be
+									// shared among modules, so we need to ensure we're not disabling
+									// a card that was just enabled by a different module
+									var cards = document.getElementsByClassName('card ' + moduleId);
+									for (const card of cards) {
+										if (running)
+											card.classList.replace('d-none', 'd-flex');
+									}
 								}
 							}
-						}
-                    })
-                }})
-        }
+						})
+					}
+				})
+		}
 
-        function submitRequest(controller, apiName, images, parameters, doneFunc) {
+		function submitRequest(controller, apiName, images, parameters, doneFunc) {
 
-            setStatus("Sending request to AI server", "blue");
+			setStatus("Sending request to AI server", "blue");
 
-            var formData = new FormData();
+			var formData = new FormData();
 
-            // Check file selected or not
-            if (images && images.length > 0) {
-                for (var i = 0; i < images.length; i++) {
-                    file = images[i];
-                    formData.append('image' + (i + 1), file);
-                }
-            }
+			// Check file selected or not
+			if (images && images.length > 0) {
+				for (var i = 0; i < images.length; i++) {
+					file = images[i];
+					formData.append('image' + (i + 1), file);
+				}
+			}
 
-            if (parameters && parameters.length > 0) {
-                for (var i = 0; i < parameters.length; i++) {
-                    keypair = parameters[i];
-                    formData.append(keypair[0], keypair[1]);
-                }
-            }
+			if (parameters && parameters.length > 0) {
+				for (var i = 0; i < parameters.length; i++) {
+					keypair = parameters[i];
+					formData.append(keypair[0], keypair[1]);
+				}
+			}
 
-            var url = serviceUrl.value.trim() + '/v1/' + controller + '/' + apiName;
+			var url = serviceUrl.value.trim() + '/v1/' + controller + '/' + apiName;
 
-            result.innerHTML = "";
+			result.innerHTML = "";
 
-            fetch(url, {
-                method: "POST",
-                body: formData
-            })
-                .then(response => {
-                    if (!response.ok)
-                        setStatus('Error contacting API server', "red");
-                    else {
-                        response.json().then(data => {
-                            if (data) {
-                                doneFunc(data)
-                                setStatus("Call to " + apiName + " complete", "green");
-                            } else
-                                setStatus('No data was returned', "red");
-                        })
-                            .catch(error => {
-                                setStatus("Unable to read response: " + error, "red");
-                            })
-                    }
-                })
-                .catch(error => {
-                    setStatus('Unable to complete API call: ' + error, "red")
-                });
+			fetch(url, {
+				method: "POST",
+				body: formData
+			})
+				.then(response => {
+					if (!response.ok)
+						setStatus('Error contacting API server', "red");
+					else {
+						response.json().then(data => {
+							if (data) {
+								doneFunc(data)
+								setStatus("Call to " + apiName + " complete", "green");
+							} else
+								setStatus('No data was returned', "red");
+						})
+							.catch(error => {
+								setStatus("Unable to read response: " + error, "red");
+							})
+					}
+				})
+				.catch(error => {
+					setStatus('Unable to complete API call: ' + error, "red")
+				});
 		}
 
 		function onDetectScene(fileChooser) {
@@ -368,14 +484,15 @@
 				return;
 			}
 
-			var images = [fileChooser.files[0]];
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
 
 			submitRequest('vision', 'scene', images, null, function (data) {
 				result.innerHTML = "<table style='width:100%'>" +
-									"<tr><th>Label</th><th>Confidence</th></tr><tr>" +
-									"<tr><td> " + data.label + "</td>" +
-									"<td> " + confidence(data.confidence) + "</td ></tr> " +
-									"<table>";
+					"<tr><th>Label</th><th>Confidence</th></tr><tr>" +
+					"<tr><td> " + data.label + "</td>" +
+					"<td> " + confidence(data.confidence) + "</td ></tr> " +
+					"<table>";
 			});
 		}
 
@@ -388,7 +505,8 @@
 				return;
 			}
 
-			var images = [fileChooser.files[0]];
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
 
 			submitRequest('vision', 'face', images, null, function (data) {
 				drawRectangles(data.predictions);
@@ -405,7 +523,8 @@
 				return;
 			}
 
-			var images = [fileChooser.files[0]];
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
 
 			submitRequest('vision', 'detection', images, null, function (data) {
 				drawRectangles(data.predictions);
@@ -414,6 +533,7 @@
 		}
 
 		function onCompareFaces(face1Ctrl, face2Ctrl) {
+
 			clearCanvas();
 
 			if (face1Ctrl.files.length == 0 || face2Ctrl.files.length == 0) {
@@ -421,7 +541,8 @@
 				return;
 			}
 
-			var images = [face1Ctrl.files[0], face2Ctrl.files[0]];
+            setImage(face1Ctrl.files[0]);
+			let images = [face1Ctrl.files[0], face2Ctrl.files[0]];
 
 			submitRequest('vision', 'face/match', images, null, function (data) {
 				displayMatchResults(data);
@@ -429,6 +550,7 @@
 		}
 
 		function onRegisterFaces(userId, faceCtrl) {
+
 			clearCanvas();
 
 			if (faceCtrl.files.length == 0) {
@@ -440,6 +562,8 @@
 				alert("No name supplied");
 				return;
 			}
+
+			setImage(faceCtrl.files[0]);
 
 			var images = [];
 			for (var i = 0; i < faceCtrl.files.length; i++)
@@ -467,6 +591,7 @@
 			clearCanvas();
 
 			submitRequest('vision', 'face/delete', null, [["userid", userId]], function (data) {
+				result.innerText = "Face deleted";
 			});
 		}
 
@@ -479,7 +604,8 @@
 				return;
 			}
 
-			var images = [fileChooser.files[0]];
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
 
 			var params = []
 			var minConfidence = parseFloat(minimumConfidence);
@@ -492,7 +618,7 @@
 			});
 		}
 
-        function onRemoveBackground(fileChooser, use_alphamatting) {
+		function onRemoveBackground(fileChooser, use_alphamatting) {
 
 			clearCanvas();
 
@@ -501,32 +627,40 @@
 				return;
 			}
 
-			var images = [fileChooser.files[0]];
-			var params = [["use_alphamatting", use_alphamatting]]
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
+			let params = [["use_alphamatting", use_alphamatting]]
 
 			submitRequest('image', 'removebackground', images, params, function (data) {
-                img.src = "data:image/png;base64," + data.imageBase64;
+				result.innerText = "Background Removal complete";
+				img.src = "data:image/png;base64," + data.imageBase64;
+				img.style.visibility = "visible";
 			});
 		}
 
-        function onBlurBackground(fileChooser, strength) {
+		function onBlurBackground(fileChooser, strength) {
 
-            clearCanvas();
+			clearCanvas();
 
-            if (fileChooser.files.length == 0) {
-                alert("No file was selected for scene detection");
-                return;
-            }
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for scene detection");
+				return;
+			}
 
-            var images = [fileChooser.files[0]];
-            var params = [["strength", strength]]
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
+			let params = [["strength", strength]]
 
-            submitRequest('image', 'portraitfilter', images, params, function (data) {
-                img.src = "data:image/png;base64," + data.filtered_image;
-            });
+			submitRequest('image', 'portraitfilter', images, params, function (data) {
+				result.innerText = "Portrait mode complete";
+				img.src = "data:image/png;base64," + data.filtered_image;
+				img.style.visibility = "visible";
+			});
 		}
 
 		function onSummarizeText(articleText, numberOfSentences) {
+
+			clearCanvas();
 
 			if (!articleText) {
 				alert("No text was provided for text summary");
@@ -534,12 +668,36 @@
 			}
 
 			var numberOfSentences = !isNaN(numberOfSentences) ? parseInt(numberOfSentences) : 2;
-			var params            = [['text', articleText], ["num_sentences", numberOfSentences]]
+			var params = [['text', articleText], ["num_sentences", numberOfSentences]]
 
 			submitRequest('text', 'summarize', null, params, function (data) {
-				showSummaryText(data.summary || "No summary was returned");
+				showSummaryText(data.summary || "No summary  was returned");
 			});
 		}
+
+		function onAnalyzeSentiment(articleText) {
+
+			clearCanvas();
+
+			if (!articleText) {
+				alert("No text was provided for sentiment analysis");
+				return;
+			}
+
+			var params = [['text', articleText]]
+
+			submitRequest('text', 'sentiment', null, params, function (data) {
+				if (!data.success) {
+					result.innerText = "Sentiment analysis failed";
+				}
+				else {
+					result.innerText = "Probability that text is positive is " +
+						+ (data.positive_probability * 100).toFixed(1) + "%. "
+						+ "Text sentiment is " + (data.is_positive ? "positive" : "negative");
+				}
+			});
+		}
+
 
 		var isBenchmarkCancelled;
 		function onBenchmark(fileChooser, resultElm) {
@@ -551,257 +709,413 @@
 				return;
 			}
 
-			var images = [fileChooser.files[0]];
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
 			let startMilliseconds = performance.now();
-			
+
 			isBenchmarkCancelled = false;
-            let nResponses = 0;
+			let nResponses = 0;
 
 			for (let i = 0; i < 50 && !isBenchmarkCancelled; i++) {
 				// Funny thing about the cancellation bit. These requests are sent to the API
 				// server which queues them up for processing. Sending is fast. Processing takes
 				// longer. By the time you've cancelled the benchmark loop all requests have
 				// already been queued and what you're seeing are the result of the requests coming
-				// back. So not much point having a cancellation feature here. But the guts are 
+				// back. So not much point having a cancellation feature here. But the guts are
 				// included for grins.
 				submitRequest('vision', 'detection', images, null, function (data) {
 					let currentMilliseconds = performance.now();
 					nResponses++;
-                    let opsPerSecond = (nResponses * 1000) / (currentMilliseconds - startMilliseconds);
+					let opsPerSecond = (nResponses * 1000) / (currentMilliseconds - startMilliseconds);
 					resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second - " + nResponses + "/50";
 				});
 			}
 		}
 
-   </script>
+	</script>
 
 </head>
 
 <body class="dark-mode">
-<div>
-	<div class="bg-dark mx-auto p-3" style="max-width:1100px;">
+	<div>
+		<div class=" mx-auto p-3" style="max-width:1100px;">
 
-		<div class="w-100 header d-flex">
-			<a href="https://www.codeproject.com">
-			<img tabindex="1" title="CodeProject" src="assets/codeproject60x60.png" 
-				alt="Home" style="width:60px;height:60px;border-width:0px;"></a>
-			<span class="fs-2 mt-2 d-inline-block">CODE<b>PROJECT</b> SenseAI Playground</span>
-		</div>
+			<div class="w-100 header d-flex justify-content-between">
+				<a href="https://www.codeproject.com" style="margin:2px 0 2px 5px">
+					<svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+						 xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" role="img"
+						 style="height: 60px; margin-right: -12px;">
+						<title>CodeProject Icon</title>
+						<path id="svg_2" d="M9.052,21.798c-0.236,0-0.459-0.905-0.463-1.145c-0.007-0.356,0.038-0.755,0.473-0.755
+		c0.436,0,0.47,0.398,0.473,0.755C9.542,20.982,9.288,21.798,9.052,21.798z M10.903,23.985c0.729,0.004,3.677,0.151,3.715-0.847
+		c0.041-0.998-1.401-1.525-2.234-1.563c-0.837-0.037-2.143,0.467-2.431,0.209c-0.377-0.339,0.281-1.882,0.531-2.188
+		c0.172-0.205,0.453-0.524,0.606-0.664c0.594-0.553,0.967-1.32,0.964-2.178c-0.004-0.939-0.281-1.278,0.658-0.531
+		c0.325,0.257,0.768,0.59,1.336,0.854c1.139,0.524-1.319-1.68-1.789-2.102c-0.788-0.699-1.045-1.08-0.609-1.354
+		c0.346-0.216,0.672-0.459,0.977-0.723c1.196-1.035,2.046-2.605,1.878-4.896C14.354,5.911,10.416,0.024,9.364,0
+		c-0.85-0.017-2.578,2.108-3.527,3.257C4.809,4.505,3.201,6.665,2.879,7.934C2.783,8.311,2.746,8.708,2.746,9.113
+		c0,1.44,0.75,2.784,1.898,3.744c0.703,0.586,1.481,1.039,0.237,2.311c-0.74,0.758-2.434,2.361-1.453,1.909
+		c0.572-0.264,1-0.614,1.34-0.854c0.709-0.504,0.99-0.669,0.833-0.031c-0.034,0.134-0.028,0.274-0.028,0.411
+		c0,0.892,0.37,1.69,0.95,2.277c0.151,0.154,0.586,0.486,0.833,0.699c0.586,0.507,1.196,1.865,0.816,2.204
+		c-0.288,0.258-1.594-0.246-2.427-0.209c-0.836,0.038-2.275,0.565-2.238,1.563s3.17,0.851,3.9,0.857
+		c1.645,0.013,1.09-0.642,1.645-0.631C9.607,23.379,9.052,23.976,10.903,23.985z" />
+						<path id="svg_3" fill="#C3DE6C" d="M9.802,1.187c-0.668-0.017-1.686,1.878-2.43,2.863C6.567,5.115,5.354,7.004,5.1,8.091
+		C5.025,8.414,4.997,8.753,4.997,9.099c0,2.51,2.481,4.608,4.792,4.608c1.155,0,2.132-0.604,2.938-1.368
+		c0.935-0.888,1.597-2.232,1.47-4.193C14.076,6.36,10.622,1.207,9.802,1.187z" />
+						<path id="svg_4" d="M10.649,10.378c0.336,0.456,0.716,0.775,1.172,0.775c0.919,0,1.662-1.187,1.662-2.646
+		c0-1.464-0.743-2.65-1.662-2.65c-0.456,0-0.85,0.309-1.172,0.775C10.491,6.86,10.2,7.042,9.823,6.401
+		c-0.35-0.593-0.918-0.922-1.508-0.922c-1.179,0-2.135,1.412-2.135,3.154s0.956,3.154,2.135,3.154c0.737,0,1.371-0.556,1.769-1.389
+		C10.238,10.073,10.47,10.135,10.649,10.378z" />
+						<path id="svg_5" fill="#FFFFFF" d="M9.812,8.633c0,1.221-0.671,2.211-1.497,2.211c-0.826,0-1.498-0.991-1.498-2.211
+		c0-1.224,0.672-2.215,1.498-2.215C9.141,6.418,9.812,7.409,9.812,8.633z" />
+						<path id="svg_6" fill="#FFFFFF" d="M12.987,8.506c0,1.025-0.521,1.854-1.166,1.854c-0.641,0-1.162-0.83-1.162-1.854
+		c0-1.029,0.521-1.858,1.162-1.858C12.465,6.648,12.987,7.478,12.987,8.506z" />
+						<path id="svg_7" fill="#C3DE6C" d="M11.564,16.813c0,1.217-0.99,2.201-2.218,2.201c-1.227,0-2.221-0.984-2.221-2.201
+		s0.994-2.205,2.221-2.205C10.574,14.608,11.564,15.597,11.564,16.813z" />
+						<path id="svg_8" d="M9.877,17.434c0,0.229-0.188,0.415-0.418,0.415s-0.418-0.186-0.418-0.415S9.23,17.02,9.459,17.02
+		S9.877,17.204,9.877,17.434z" />
+						<path id="svg_9" d="M2.311,17.358c-0.165,0-1.687,0.021-2.163,0.227c-0.473,0.209,0.285,0.507,0.929,0.545
+		c0.322,0.021,0.219,0.257,0.075,0.452c-1.155,1.581-0.264,1.262,0.514,0.565c0.192-0.171,0.264,0.056,0.284,0.265
+		c0.018,0.206,0.511,1.749,0.665-0.209c0.062-0.81,0.113-1.241,0.076-1.525C2.653,17.396,2.499,17.358,2.311,17.358z" />
+						<path id="svg_10" fill="#C3DE6C" d="M8.037,22.837c-0.284-0.527-1.063-0.452-1.422-0.395c-0.36,0.056-1.724,0.374-1.498,0.771
+		c0.229,0.395,1.1,0.433,1.765,0.151C7.543,23.08,8.37,23.451,8.037,22.837z" />
+						<path id="svg_11" d="M15.169,17.358c0.161,0,1.686,0.021,2.163,0.227c0.473,0.209-0.285,0.507-0.933,0.545
+		c-0.319,0.021-0.216,0.257-0.075,0.452c1.158,1.581,0.267,1.262-0.511,0.565c-0.192-0.171-0.264,0.056-0.284,0.265
+		c-0.021,0.206-0.515,1.749-0.665-0.209c-0.063-0.81-0.113-1.241-0.076-1.525C14.827,17.396,14.977,17.358,15.169,17.358z" />
+						<path id="svg_12" fill="#C3DE6C" d="M10.086,22.837c0.284-0.527,1.063-0.452,1.423-0.395c0.359,0.056,1.728,0.374,1.497,0.771
+		c-0.226,0.395-1.1,0.433-1.765,0.151C10.581,23.08,9.754,23.451,10.086,22.837z" />
+						<path id="svg_13" d="M8.915,8.547c0,0.607-0.236,1.101-0.524,1.101c-0.288,0-0.521-0.494-0.521-1.101S8.103,7.447,8.39,7.447
+		C8.678,7.447,8.915,7.94,8.915,8.547z" />
+						<path id="svg_14" d="M12.291,8.455c0,0.483-0.188,0.877-0.418,0.877s-0.418-0.394-0.418-0.877c0-0.487,0.188-0.881,0.418-0.881
+		S12.291,7.968,12.291,8.455z" />
+					</svg><span class="site-title"><span class="front">Code</span><span class="end">Project</span></span>
+				</a>
 
-		<div class="card mt-3">
-		<div class="card-body bg-secondary">
+				<div style="font-size: 2.1rem; margin-top: 12px;">senseAI Explorer</div>
 
-			<div class="form-group row">
-				<label class="col-form-label col-2 text-end">Service API URL</label>
-				<input class="form-control" type="text" id="serviceUrl" style="width:25rem;"/>
-				<label id="status" class="col-form-label col bg-white fw-bold ms-4"></label>
+				<a href="https://www.codeproject.com/ai" style="margin:5px 5px 0 0">
+					<svg id="Layer_2" data-name="Layer 2" viewBox="0 0 360.7 157.9" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com" style="height:60px">
+						<defs>
+							<style type="text/css">
+								.cls-1 {
+									fill: white;
+								}
 
-			</div>
-		</div>
-		</div>
-
-		<form method="post" action="" enctype="multipart/form-data" id="myform">
-		<div class="d-flex align-content-between">
-
-			<div style="width:600px">
-
-				<div class="card mt-3 d-none FaceProcessing ObjectDetection SceneClassification LegacyObjectDetection">
-					<div class="card-header h3">Object Detection</div>
-					<div class="card-body bg-secondary">
-
-						<div class="form-group row">
-							<label class="col-form-label col-3">Image</label>
-							<input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
-						</div>
-						<div class="form-group row mt-2 flex-nowrap">
-							<label class="col-form-label col-3">Operation</label>
-							<input class="col form-control btn-success" type="button" value="Detect Scene" id="scene" onclick="onDetectScene(image)" />
-							<input class="col form-control btn-info" type="button" value="Detect Face" id="face" onclick="onDetectFaces(image)" />
-							<input class="col form-control btn-warning" type="button" value="Detect Things" id="things" onclick="onDetectThings(image)" />
-						</div>
-					</div>
-				</div>
-
-				<!-- Hidden. Later visibility will be caclulated based on the status.-->
-				<div class="card mt-3 d-none BackgroundRemoval">
-					<div class="card-header h3">Background Removal</div>
-					<div class="card-body bg-secondary">
-
-						<div class="form-group row">
-							<label class="col-form-label col-2">Image</label>
-							<input class="col form-control btn-light" id="removeBgInput" type="file" style="width:17rem"
-								   onchange="return previewImage(this)" />
-							<input class="form-control btn-success" type="button" value="Remove Background"
-								   style="width:11rem" id="recognise"
-								   onclick="onRemoveBackground(removeBgInput, use_alphamatting.checked)" />
-						</div>
-
-						<div class="form-group row mt-1">
-							<div class="checkbox checkbox-primary">
-								<input id="use_alphamatting" class="styled" type="checkbox" checked>
-								<label for="use_alphamatting">Use Alpha matting</label>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Hidden. Later visibility will be caclulated based on the status.-->
-				<div class="card mt-3 d-none PortraitFilter">
-					<div class="card-header h3">Background blurring</div>
-					<div class="card-body bg-secondary">
-
-						<div class="form-group row">
-							<label class="col-form-label col-2">Image</label>
-							<input class="col form-control btn-light" id="blurBgInput" type="file" style="width:17rem"
-								   onchange="return previewImage(this)" />
-							<input class="form-control btn-success" type="button" value="Blur Background" style="width:10rem"
-								   id="recognise" onclick="onBlurBackground(blurBgInput, strength.value)" />
-						</div>
-
-						<div class="form-group row mt-1">
-							<label class="col-7 col-form-label text-end">Blur Strength</label>
-							<input class="form-control" id="strength" style="width:5rem"
-								   type="number" min="0.0" max="1.0" step="0.1" value="1.0" />
-						</div>
-					</div>
-				</div>
-
-				<div class="card mt-3 d-none FaceProcessing">
-					<div class="card-header h3">Face Comparison</div>
-					<div class="card-body bg-secondary">
-						<div class="d-flex align-items-center">
-							<div class="w-75">
-								<div class="form-group row">
-									<label class="col-form-label col-3">Image 1</label>
-									<input class="col form-control btn-light" id="face1" type="file" onchange="return previewImage(this)" />
-								</div>
-								<div class="form-group row">
-									<label class="col-form-label col-3">Image 2</label>
-									<input class="col form-control btn-light" id="face2" type="file" onchange="return previewImage(this)" />
-								</div>
-							</div>
-							<div style="width:10rem" class="text-end">
-								<input type="button" value="Compare" class="btn btn-success" onclick="onCompareFaces(face1, face2)" />
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="card mt-3 d-none FaceProcessing">
-					<div class="card-header h3">Face Registration</div>
-					<div class="card-body bg-secondary">
-
-						<div>
-							<div class="form-group row">
-								<label class="col-form-label col-4">1. Person's name</label>
-								<input class="form-control" style="width:12rem" id="userId" type="text"
-									   placeholder="Enter name" />
-							</div>
-							<div class="form-group row my-3">
-								<label class="col-form-label col-4">2. Select images</label>
-								<input class="btn-light col form-control" style="width:8rem" id="faces" multiple="multiple" type="file" />
-							</div>
-							<div class="form-group row">
-								<label class="col-form-label col-4">3. Final step</label>
-								<input class="form-control btn-success" style="width:12rem;" id="register" type="button"
-									   value="Register Faces" onclick="onRegisterFaces(userId.value, faces)" />
-							</div>
-						</div>
-
-						<div class="mt-4 text-center">
-							<input style="width:12rem" id="listfaces" type="button" class="btn  btn-primary ml-3``"
-								   value="List Registered Faces" onclick="onListRegisteredFaces()" />
-							<input style="width:12rem;" class="btn btn-danger" id="deleteFaces" type="button"
-								   value="Delete Person's Images" onclick="onDeleteFace(userId.value)" />
-						</div>
-
-					</div>
-				</div>
-
-				<div class="card mt-3 d-none FaceProcessing">
-					<div class="card-header h3">Face Recognition</div>
-					<div class="card-body bg-secondary">
-
-						<div class="form-group row">
-							<label class="col-form-label col-2">Image</label>
-							<input class="col form-control btn-light" id="faceInput" type="file" style="width:17rem"
-								   onchange="return previewImage(this)" />
-							<input class="form-control btn-success" type="button" value="Recognise" style="width:7rem"
-								   id="recognise" onclick="onRecogniseFace(faceInput, minRecogConfidence.value)" />
-						</div>
-
-						<div class="form-group row mt-1">
-							<label class="col-7 col-form-label text-end">Minimum Recognition Confidence</label>
-							<input class="form-control" value="0.6" id="minRecogConfidence" type="text"
-								   style="width:5rem" />
-						</div>
-					</div>
-				</div>
-
-				<div class="card mt-3 d-none TextSummary">
-					<div class="card-header h3">Text Summary</div>
-					<div class="card-body bg-secondary">
-
-						<div class="form-group mt-1">
-							<textarea id="articleText" class="w-100" style="height:200px"></textarea>
-							<input class="btn-success" type="button" value="Summarize"
-								   id="summarize" onclick="onSummarizeText(articleText.value, numSentences.value)" />
-						</div>
-
-						<div class="form-group row mt-1">
-							<label class="col-7 col-form-label text-end">Sentences to produce</label>
-							<input class="form-control" value="2" id="numSentences" type="number"
-								   style="width:5rem" />
-						</div>
-					</div>
-
-				</div>
-
+								.cls-2 {
+									fill: #b3ddca;
+								}
+							</style>
+							<bx:grid x="0" y="0" width="19.8" height="11.5" />
+						</defs>
+						<path class="cls-1" d="M62.51,166.83a14.44,14.44,0,0,1-5.68-11.47h4.38a11.07,11.07,0,0,0,4.37,8.75,16.23,16.23,0,0,0,10.53,3.55q7.1,0,11.47-3.2a10.43,10.43,0,0,0,4.25-8.63q0-4-4.49-6.86t-12.06-3.43q-8-.71-12.77-4.49a11.44,11.44,0,0,1-4.85-9.34,11.17,11.17,0,0,1,4.85-9.7q4.84-3.44,13.6-3.43,8.39,0,13.36,3.67a11.49,11.49,0,0,1,5.08,9.81H90.06a10.83,10.83,0,0,0-4.49-7.21,16,16,0,0,0-9.46-2.6q-6.39,0-10.17,2.6a8,8,0,0,0-3.79,6.86q0,4,4.61,6.85T78.82,142c5.29.48,9.54,2.06,12.78,4.73a13.13,13.13,0,0,1-.83,20.82q-5.44,4-14.66,4A20.26,20.26,0,0,1,62.51,166.83Z" transform="translate(-56.83 -53.06)" />
+						<path class="cls-1" d="M108.49,164.7q-6.15-7.45-6.15-19.63t6.15-19.63q6.15-7.34,16.32-7.33t16.32,6.74q6.15,6.74,6.15,18v2.25H107.07q0,10.29,4.85,16.43a15.6,15.6,0,0,0,12.89,6.16,19.34,19.34,0,0,0,10.88-3.2,17,17,0,0,0,6.86-8.63h4.73a17.66,17.66,0,0,1-7.57,11.59,24.8,24.8,0,0,1-14.9,4.61Q114.64,172,108.49,164.7Zm34.06-24.12V138.8A18,18,0,0,0,136.87,127a17.39,17.39,0,0,0-12.06-4.72,16.74,16.74,0,0,0-11.94,4.84,18.42,18.42,0,0,0-5.8,12.18v1.31Z" transform="translate(-56.83 -53.06)" />
+						<path class="cls-1" d="M156.49,170.26V119.88h4.73v8.51a16.18,16.18,0,0,1,6.5-7.09,18.81,18.81,0,0,1,22.35,2.13,15.63,15.63,0,0,1,5.33,11.82v35h-4.73v-35a11.69,11.69,0,0,0-3.91-8.86,13.13,13.13,0,0,0-9.34-3.67,15.55,15.55,0,0,0-10.52,4A17.42,17.42,0,0,0,161.22,137v33.23Z" transform="translate(-56.83 -53.06)" />
+						<path class="cls-1" d="M209.34,166.83a14.44,14.44,0,0,1-5.68-11.47H208a11.07,11.07,0,0,0,4.37,8.75,16.23,16.23,0,0,0,10.53,3.55q7.09,0,11.47-3.2a10.43,10.43,0,0,0,4.25-8.63q0-4-4.49-6.86t-12.06-3.43q-8-.71-12.77-4.49a11.44,11.44,0,0,1-4.85-9.34,11.17,11.17,0,0,1,4.85-9.7q4.84-3.44,13.6-3.43,8.38,0,13.36,3.67a11.49,11.49,0,0,1,5.08,9.81h-4.49a10.83,10.83,0,0,0-4.49-7.21,16,16,0,0,0-9.46-2.6q-6.39,0-10.17,2.6a8,8,0,0,0-3.79,6.86q0,4,4.61,6.85T225.65,142c5.29.48,9.54,2.06,12.78,4.73a13.15,13.15,0,0,1-.83,20.82q-5.44,4-14.66,4A20.28,20.28,0,0,1,209.34,166.83Z" transform="translate(-56.83 -53.06)" />
+						<path class="cls-1" d="M255.32,164.7q-6.15-7.45-6.14-19.63t6.14-19.63q6.15-7.34,16.32-7.33T288,124.85q6.15,6.74,6.15,18v2.25h-40.2q0,10.29,4.84,16.43a15.6,15.6,0,0,0,12.89,6.16,19.32,19.32,0,0,0,10.88-3.2,17,17,0,0,0,6.86-8.63h4.73a17.66,17.66,0,0,1-7.57,11.59,24.78,24.78,0,0,1-14.9,4.61Q261.47,172,255.32,164.7Zm34.06-24.12V138.8A18,18,0,0,0,283.71,127a17.42,17.42,0,0,0-12.07-4.72,16.74,16.74,0,0,0-11.94,4.84,18.36,18.36,0,0,0-5.79,12.18v1.31Z" transform="translate(-56.83 -53.06)" />
+						<path class="cls-1" d="M 244.2 118.9 L 272.8 31.2 L 286.9 31.2 L 315.5 118.9 L 304.5 118.9 L 295.7 92.7 L 264 92.7 L 255.2 118.9 L 244.2 118.9 Z M 267.2 82.9 L 292.6 82.9 L 279.9 44.9 L 267.2 82.9 Z" />
+						<path class="cls-1" d="M 316.7 118.9 L 316.7 31.2 L 327.7 31.2 L 327.7 118.9 L 316.7 118.9 Z" />
+						<polygon class="cls-2" points="231.2 54 219.7 54 219.7 0 250.7 0 250.7 11.5 231.2 11.5 231.2 54" />
+						<polygon class="cls-2" points="273.7 157.9 219.7 157.9 219.7 127 231.2 127 231.2 146.4 273.7 146.4 273.7 157.9" />
+						<polygon class="cls-2" points="360.6 157.9 329.7 157.9 329.7 146.4 349.1 146.4 349.1 103.9 360.6 103.9 360.6 157.9" />
+						<polygon class="cls-2" points="360.6 31 349.1 31 349.1 11.5 306.6 11.5 306.6 0 360.6 0 360.6 31" />
+						<rect x="250.7" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" />
+						<rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 316.649994, 397.350006)" />
+						<rect x="307.6" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="146.3" />
+						<rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 187.309998, 471.269989)" />
+					</svg>
+				</a>
 			</div>
 
-			<div class="ms-4 mt-3 position-sticky" style="width:475px;">
-			   
-				<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black"
-					style="height: 195px; overflow-y: auto;"></div>
-
-				<div class="w-100 position-relative border-1 border-light">
-
-					<canvas id="annotations" class="position-absolute"
-							style="left:0;top:0;pointer-events:none;z-index:10"></canvas>
-
-					<div id="imageMask" class="position-absolute"
-						 style="left:0;top:0;pointer-events:none;z-index:10"></div>
-
-					<img src="" id="img" class="w-100" style="height:250px;visibility:hidden">
-				</div>
-
-				<div class="card mt-3">
-				<div class="card-header h3">Benchmark</div>
+			<div class="card mt-3">
 				<div class="card-body bg-secondary">
 
 					<div class="form-group row">
-						<label class="col-form-label col-2">Image</label>
-						<input class="col form-control btn-light" id="benchmarkInput" type="file" style="width:17rem"
-							onchange="return previewImage(this)" />
-						<input class="form-control btn-success" type="button" value="Go" style="width:7rem"
-							   id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkResult)" />
-
-						<!-- See note above on how this button isn't currently that useful
-						<input type="button" value="Stop" class="styleD" style="margin-left:1em"
-							   onclick="isBenchmarkCancelled = true;" />
-						 -->
-					</div>
-					<div class="form-group row mt-1">
-						<span id="benchmarkResult"></span>
+						<label class="col-form-label col-2 text-end">Service API URL</label>
+						<input class="form-control" type="text" id="serviceUrl" style="width:25rem;" />
+						<label id="status" class="col-form-label col bg-white fw-bold ms-4"></label>
 					</div>
 				</div>
-				</div>
-
 			</div>
 
+			<form method="post" action="" enctype="multipart/form-data" id="myform">
+				<div class="d-flex align-content-between mt-4">
+
+					<div style="width:600px">
+
+						<ul class="nav nav-tabs d-flex" id="DemoTabs" role="tablist">
+							<li class="nav-item">
+								<button class="nav-link active" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-panel" type="button" role="tab" aria-controls="image" aria-selected="true">Image</button>
+							</li>
+							<li class="nav-item">
+								<button class="nav-link" id="vision-tab" data-bs-toggle="tab" data-bs-target="#vision-panel" type="button" role="tab" aria-controls="vision" aria-selected="true">Vision</button>
+							</li>
+							<li class="nav-item">
+								<button class="nav-link" id="face-tab" data-bs-toggle="tab" data-bs-target="#face-panel" type="button" role="tab" aria-controls="face" aria-selected="false">Face</button>
+							</li>
+							<li class="nav-item">
+								<button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-panel" type="button" role="tab" aria-controls="text" aria-selected="false">Text</button>
+							</li>
+
+							<li class="nav-item ms-auto">
+								<button class="nav-link" id="benchmark-tab" data-bs-toggle="tab" data-bs-target="#benchmark-panel" type="button" role="tab" aria-controls="benchmark" aria-selected="false">Benchmark</button>
+							</li>
+						</ul>
+
+						<div class="tab-content" id="DemoTabsContent">
+
+							<div class="tab-pane fade show active" id="image-panel" role="tabpanel" aria-labelledby="image-tab">
+
+								<div class="card mt-3 d-none BackgroundRemoval">
+									<div class="card-header h3">Background Removal</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="removeBgInput" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Remove Background"
+												   style="width:11rem" id="recognise"
+												   onclick="onRemoveBackground(removeBgInput, use_alphamatting.checked)" />
+										</div>
+
+										<div class="form-group row mt-1 justify-content-end">
+											<div class="checkbox checkbox-primary col-4">
+												<input id="use_alphamatting" class="styled" type="checkbox" checked>
+												<label for="use_alphamatting">Use Alpha matting</label>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="card mt-3 d-none PortraitFilter">
+									<div class="card-header h3">Background blurring</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="blurBgInput" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Blur Background" style="width:10rem"
+												   id="recognise" onclick="onBlurBackground(blurBgInput, strength.value)" />
+										</div>
+
+										<div class="form-group row mt-1 justify-content-end">
+											<label class="col-3 col-form-label text-end">Blur Strength</label>
+											<input class="form-control" id="strength" style="width:15rem"
+												   type="range" min="0.0" max="1.0" step="0.1" value="1.0"
+												   oninput="document.getElementById('strengthLabel').innerHTML=this.value;">
+											<span id="strengthLabel" class="col-form-label col-1">1.0</span>
+										</div>
+									</div>
+								</div>
+
+							</div>
+
+							<div class="tab-pane fade show" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
+
+								<div class="card mt-3 d-none FaceProcessing ObjectDetection SceneClassification LegacyObjectDetection">
+									<div class="card-header h3">Object Detection</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group row">
+											<label class="col-form-label col-3">Image</label>
+											<input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
+										</div>
+										<div class="form-group row mt-2 flex-nowrap">
+											<label class="col-form-label col-3">Operation</label>
+											<input class="col form-control btn-success" type="button" value="Detect Scene" id="scene" onclick="onDetectScene(image)" />
+											<input class="col form-control btn-info" type="button" value="Detect Face" id="face" onclick="onDetectFaces(image)" />
+											<input class="col form-control btn-warning" type="button" value="Detect Things" id="things" onclick="onDetectThings(image)" />
+										</div>
+									</div>
+								</div>
+
+							</div>
+
+							<div class="tab-pane fade show" id="face-panel" role="tabpanel" aria-labelledby="face-tab">
+
+								<div class="card mt-3 d-none FaceProcessing">
+									<div class="card-header h3">Face Comparison</div>
+									<div class="card-body bg-secondary">
+										<div class="d-flex align-items-center">
+											<div class="w-75">
+												<div class="form-group row">
+													<label class="col-form-label col-3">Image 1</label>
+													<input class="col form-control btn-light" id="face1" type="file" onchange="return previewImage(this)" />
+												</div>
+												<div class="form-group row">
+													<label class="col-form-label col-3">Image 2</label>
+													<input class="col form-control btn-light" id="face2" type="file" onchange="return previewImage(this)" />
+												</div>
+											</div>
+											<div style="width:10rem" class="text-end">
+												<input type="button" value="Compare" class="btn btn-success" onclick="onCompareFaces(face1, face2)" />
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="card mt-3 d-none FaceProcessing">
+									<div class="card-header h3">Face Registration</div>
+									<div class="card-body bg-secondary">
+
+										<div>
+											<div class="form-group row">
+												<label class="col-form-label col-4">1. Person's name</label>
+												<input class="form-control" style="width:12rem" id="userId" type="text"
+													   placeholder="Enter name" />
+											</div>
+											<div class="form-group row my-3">
+												<label class="col-form-label col-4">2. Select images</label>
+												<input class="btn-light col form-control" style="width:8rem" id="faces" multiple="multiple" type="file" />
+											</div>
+											<div class="form-group row">
+												<label class="col-form-label col-4">3. Final step</label>
+												<input class="form-control btn-success" style="width:12rem;" id="register" type="button"
+													   value="Register Faces" onclick="onRegisterFaces(userId.value, faces)" />
+											</div>
+										</div>
+
+										<div class="mt-4 text-center">
+											<input style="width:12rem" id="listfaces" type="button" class="btn  btn-primary ml-3``"
+												   value="List Registered Faces" onclick="onListRegisteredFaces()" />
+											<input style="width:12rem;" class="btn btn-danger" id="deleteFaces" type="button"
+												   value="Delete Person's Images" onclick="onDeleteFace(userId.value)" />
+										</div>
+
+									</div>
+								</div>
+
+								<div class="card mt-3 d-none FaceProcessing">
+									<div class="card-header h3">Face Recognition</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="faceInput" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Recognise" style="width:7rem"
+												   id="recognise" onclick="onRecogniseFace(faceInput, minRecogConfidence.value)" />
+										</div>
+
+										<div class="form-group row mt-1">
+											<label class="col-7 col-form-label text-end">Minimum Recognition Confidence</label>
+											<input class="form-control" value="0.6" id="minRecogConfidence" type="text"
+												   style="width:5rem" />
+										</div>
+									</div>
+								</div>
+
+							</div>
+
+							<div class="tab-pane fade show" id="text-panel" role="tabpanel" aria-labelledby="text-tab">
+
+								<div class="card mt-3 d-none TextSummary">
+									<div class="card-header h3">Text Summary</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group mt-1">
+											<textarea id="articleText" class="w-100" style="height:200px"></textarea>
+										</div>
+
+										<div class="form-group row mt-1">
+											<div class="col-2">
+												<input class="btn-success col-form-label" type="button" value="Summarize"
+													   id="summarize" onclick="onSummarizeText(articleText.value, numSentences.value)" />
+											</div>
+
+											<label class="col-5 col-form-label text-end">Sentences to produce</label>
+											<input class="form-control" value="2" id="numSentences" type="number"
+												   style="width:5rem" />
+										</div>
+									</div>
+
+								</div>
+
+								<div class="card mt-3 d-none SentimentAnalysis">
+									<div class="card-header h3">Sentiment Analysis</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group mt-1">
+											<textarea id="sentimentText" class="w-100" style="height:200px"></textarea>
+										</div>
+
+										<div class="form-group row mt-1">
+											<div class="col-2">
+												<input class="btn-success col-form-label" type="button" value="Sentiment"
+													   id="sentiment" onclick="onAnalyzeSentiment(sentimentText.value)" />
+											</div>
+										</div>
+									</div>
+
+								</div>
+
+							</div>
+
+							<div class="tab-pane fade show" id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-tab">
+
+								<div class="card mt-3">
+									<div class="card-header h3">Benchmark</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="benchmarkInput" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Go" style="width:7rem"
+												   id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkResult)" />
+
+											<!-- See note above on how this button isn't currently that useful
+									<input type="button" value="Stop" class="styleD" style="margin-left:1em"
+										onclick="isBenchmarkCancelled = true;" />
+									-->
+										</div>
+										<div class="form-group row mt-1">
+											<span id="benchmarkResult"></span>
+										</div>
+									</div>
+								</div>
+
+							</div>
+
+						</div>
+
+					</div>
+
+					<div class="ms-4 mt-3 position-sticky" style="width:475px;">
+
+						<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black"
+							 style="height: 195px; overflow-y: auto;"></div>
+
+						<div class="w-100 position-relative border-1 border-light">
+
+							<canvas id="annotations" class="position-absolute"
+									style="left:0;top:0;pointer-events:none;z-index:10"></canvas>
+
+							<div id="imageMask" class="position-absolute"
+								 style="left:0;top:0;pointer-events:none;z-index:10"></div>
+
+							<img src="" id="img" class="w-100" style="height:250px;visibility:hidden">
+						</div>
+
+					</div>
+
+				</div>
+			</form>
 		</div>
-		</form>
 	</div>
-</div>
+
+	<script src="assets/bootstrap.bundle.min.js"></script>
+	<script>
+        var triggerTabList = [].slice.call(document.querySelectorAll('#DemoTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        })
+	</script>
+
 </body>
 </html>

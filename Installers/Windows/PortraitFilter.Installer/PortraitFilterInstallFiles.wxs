@@ -107,9 +107,6 @@
             <Component Id="cmpD693451EA2F83ED2D2221290D8EC117E" Directory="PortraitFilterInstallFolder" Guid="*">
                 <File Id="filE952C28EFE3E8AD1BBF6EF135E368FA0" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\modulesettings.json" />
             </Component>
-            <Component Id="cmp9755C679391D86CC7D2E1B033129B721" Directory="PortraitFilterInstallFolder" Guid="*">
-                <File Id="fil48DE7CED9C864C3120A1F57352BDF247" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\modulesettings.windows.development.json" />
-            </Component>
             <Component Id="cmp34A331EDC8C891756D0F3E8A11A758CE" Directory="PortraitFilterInstallFolder" Guid="*">
                 <File Id="filCB3ACADFD1E79125614818D347E7BF6F" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\PortraitFilter.deps.json" />
             </Component>
@@ -161,11 +158,8 @@
             <Component Id="cmpEDA1AEE30E7E9CDBE2847E6AAE581CBD" Directory="dir99689028FB11E3DC4E72D1DEB7A50102" Guid="*">
                 <File Id="fil7F1E6DE76B6C7C777CA62D22D3F1371E" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\osx\native\libSkiaSharp.dylib" />
             </Component>
-            <Component Id="cmpBF0AA37E960A7728616E9D83D0744720" Directory="dir132E57F2B0EA52B9C7F7BA4E2463D714" Guid="*">
-                <File Id="fil9C1E75CCAFAEC77CDC33E96E1A0AFA1E" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\unix\lib\net6.0\System.Drawing.Common.dll" />
-            </Component>
-            <Component Id="cmpB96C2B91B3278D6FD770459F31E63D57" Directory="dirA95E167063962C751C878175C6F0C8AE" Guid="*">
-                <File Id="fil634CEF446CFA3C2CD665A0DC8D5D5FE2" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll" />
+            <Component Id="cmp914596F1F9350D94851B964804441F1A" Directory="dir8BC4172FDB347B2CB15E9B0FBC285F9D" Guid="*">
+                <File Id="fil10D3438E82D174EC3D48B058B36F3568" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\unix\lib\netcoreapp3.0\System.Drawing.Common.dll" />
             </Component>
             <Component Id="cmpE3C5FDA5DF45B38BA9649A35388CC3F4" Directory="dirA95E167063962C751C878175C6F0C8AE" Guid="*">
                 <File Id="fil0EC0593D9115307012EBC34DC9ED5F63" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\net6.0\System.Diagnostics.EventLog.dll" />
@@ -173,8 +167,11 @@
             <Component Id="cmp01AC99FBA18A3F6413C1B4D0BC671F39" Directory="dirA95E167063962C751C878175C6F0C8AE" Guid="*">
                 <File Id="fil2B083CB859060B656313F8AAAD2B755E" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\net6.0\System.Diagnostics.EventLog.Messages.dll" />
             </Component>
-            <Component Id="cmpE2BDA64ABED650449C11CD5D3765DE6A" Directory="dirA95E167063962C751C878175C6F0C8AE" Guid="*">
-                <File Id="fil63D613634A7FBB034EF898C5CEFD62F0" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\net6.0\System.Drawing.Common.dll" />
+            <Component Id="cmp73359CAD2DE00632CF63D817B1B964A4" Directory="dir1B84520C953D9529B17941C2375E9EE8" Guid="*">
+                <File Id="filB7153C1981600FDC4D33CF9B343A2EC8" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll" />
+            </Component>
+            <Component Id="cmpC0371F733C07C633CD0C0CF15C8893BE" Directory="dir1B84520C953D9529B17941C2375E9EE8" Guid="*">
+                <File Id="fil38A7333BEDFE3926CD6BAAF091535E31" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win\lib\netcoreapp3.0\System.Drawing.Common.dll" />
             </Component>
             <Component Id="cmpE864BA471F93357CB9CE6062A815A403" Directory="dir97F3372FD2A4325D6A34D0C819A31566" Guid="*">
                 <File Id="fil26CB7DE993AFDC406DF975556C60CB95" KeyPath="yes" Source="$(var.PortraitFilter.TargetDir)\runtimes\win-arm\native\onnxruntime.dll" />
@@ -217,8 +214,8 @@
         </DirectoryRef>
     </Fragment>
     <Fragment>
-        <DirectoryRef Id="dir2DF83170CC4F140DC7F03429D98063B3">
-            <Directory Id="dir132E57F2B0EA52B9C7F7BA4E2463D714" Name="net6.0" />
+        <DirectoryRef Id="dirF13D5B493D828E1BFF055B9F8086985C">
+            <Directory Id="dir1B84520C953D9529B17941C2375E9EE8" Name="netcoreapp3.0" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
@@ -274,6 +271,11 @@
     <Fragment>
         <DirectoryRef Id="dir453F12E89CCF1A6EDF9D8D5E68572768">
             <Directory Id="dir87089D4DC4483E78802A58464DF9014D" Name="unix" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir2DF83170CC4F140DC7F03429D98063B3">
+            <Directory Id="dir8BC4172FDB347B2CB15E9B0FBC285F9D" Name="netcoreapp3.0" />
         </DirectoryRef>
     </Fragment>
     <Fragment>

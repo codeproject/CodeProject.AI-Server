@@ -98,8 +98,15 @@
 						Compressed="no"
 						ForcePerMachine="yes"
 			/>
-			
-			<!-- REVIEW: add version number to filename -->
+
+
+			<MsiPackage Id="SENTIMENTANALYSIS"
+						SourceFile="$(var.SentimentAnalysis.Installer.TargetPath)"
+						DownloadUrl="$(var.AwsVerionDirectory)$(var.SentimentAnalysis.Installer.TargetFileName)"
+						Compressed="no"
+						ForcePerMachine="yes"
+			/>
+			<!-- TODO: add version number to filename -->
 			<MsiPackage Id="SENSEAISERVER"
 						SourceFile="$(var.SenseAI.Server.Installer.TargetPath)"
 						DownloadUrl="$(var.AwsVerionDirectory)$(var.SenseAI.Server.Installer.TargetFileName)"
