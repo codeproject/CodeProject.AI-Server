@@ -103,7 +103,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{8C92DC
 	ProjectSection(SolutionItems) = preProject
 		docs\images\Choose-launch.png = docs\images\Choose-launch.png
 		docs\images\docker.svg = docs\images\docker.svg
-		docs\images\example-detect.png = docs\images\example-detect.png
 		docs\images\macos.svg = docs\images\macos.svg
 		docs\images\Mulitple-Project-Toolbar.png = docs\images\Mulitple-Project-Toolbar.png
 		docs\images\RaspberryPi.svg = docs\images\RaspberryPi.svg

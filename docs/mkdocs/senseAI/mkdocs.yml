@@ -25,7 +25,7 @@ nav:
             - 'Adding new modules to SenseAI': 'devguide/module_examples/adding_new_modules.md'
             - 'Adding your own Python module': 'devguide/module_examples/add_python_module.md'
             - 'Adding your own .NET module':   'devguide/module_examples/add_net_module.md'
-        - 'Integrating with your application': 'devguide/integration.md'
+        # - 'Integrating with your application': 'devguide/integration.md'
         - 'Common Errors': 'devguide/common_errors.md'
     - 'About':
         # - 'About SenseAI': 'about/about.md'

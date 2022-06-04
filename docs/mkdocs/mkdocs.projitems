@@ -51,8 +51,7 @@
     <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\Choose-launch.png" />
     <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\CRLF.png" />
     <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\Dashboard.png" />
-    <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\DetectThings.PNG" />
-    <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\example-detect.png" />
+    <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\DetectThings.png" />
     <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\ModuleStatus.png" />
     <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\Mulitple-Project-Toolbar.png" />
     <Content Include="$(MSBuildThisFileDirectory)senseAI\docs\img\Project-Configuration-Dialog.png" />
