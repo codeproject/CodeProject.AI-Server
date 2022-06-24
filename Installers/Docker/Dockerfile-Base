@@ -1,6 +1,6 @@
 ################################################################################
 ##
-## The CodeProject SenseAI Server base Docker image                          
+## The CodeProject.AI Server base Docker image                          
 ## 
 ## Based on the Microsoft ASP.NET / .NET6 image. See https://aka.ms/containerfastmode
 ## for indo on how Visual Studio uses this Dockerfile to build your images for faster

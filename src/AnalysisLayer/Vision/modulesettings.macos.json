@@ -1,0 +1,24 @@
+{
+  "Modules": {
+    // Port 5000 is reserved on macOS, and we need to override what .NET thinks is a good place
+    // for data on a mac. 
+    "FaceProcessing": {
+      "EnvironmentVariables": {
+        "PORT": 5500,
+        "DATA_DIR": "/Library/Application Support/CodeProject/AI"
+      }
+    },
+    "SceneClassification": {
+      "EnvironmentVariables": {
+        "PORT": 5500,
+        "DATA_DIR": "/Library/Application Support/CodeProject/AI"
+      }
+    },
+    "VisionObjectDetection": {
+      "EnvironmentVariables": {
+        "PORT": 5500,
+        "DATA_DIR": "/Library/Application Support/CodeProject/AI"
+      }
+    }
+  }
+}

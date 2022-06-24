@@ -1,36 +1,18 @@
 ﻿#!/bin/bash
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
-# CodeProject SenseAI Server 
+# CodeProject.AI Server 
 # 
 # Unix/Linux/macOS Development Environment install script
 # 
 # We assume we're in the source code /Installers/Dev directory.
 # 
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
 # import the utilities
 source $(dirname "$0")/utils.sh
 
 useColor="true"
-darkmode=$(isDarkMode)
-
-# Setup some predefined colours. Note that we can't reliably determine the background 
-# color of the terminal so we avoid specifically setting black or white for the foreground
-# or background. You can always just use "White" and "Black" if you specifically want
-# this combo, but test thoroughly
-if [ "$darkmode" == "true" ]; then
-    color_primary='White'
-    color_mute='Gray'
-    color_info='Yellow'
-    color_success='Green'
-    color_warn='DarkYellow'
-    color_error='Red'
-else
-    color_primary='Black'
-    color_mute='Gray'
-    color_info='Magenta'
-    color_success='DarkGreen'
-    color_warn='DarkYellow'
-    color_error='Red'
-fi
 
 clear
 
@@ -40,12 +22,6 @@ verbosity="quiet"
 # If files are already present, then don't overwrite if this is false
 forceOverwrite=false
 
-# Platform can define where things are located
-if [[ $OSTYPE == 'darwin'* ]]; then
-    platform='macos'
-else
-    platform='linux'
-fi
 
 
 # Basic locations
@@ -53,11 +29,10 @@ fi
 # The location of the solution root directory relative to this script
 rootPath='../..'
 
-# SenseAI Server specific ::::::::::::::::::::::::::::::::::::::::::::::::::::
+# CodeProject.AI Server specific ::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # The name of the dir holding the frontend API server
-senseAPIDir='API'
-
+APIDir='API'
 
 # Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -65,7 +40,7 @@ senseAPIDir='API'
 # a. From AWS
 storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/'
 # b. Use a local directory rather than from online. Handy for debugging.
-# storageUrl='/mnt/c/dev/CodeProject/CodeProject.SenseAI/install/cached_downloads/'
+# storageUrl='/mnt/c/dev/CodeProject/CodeProject.AI/install/cached_downloads/'
 
 # The name of the source directory
 srcDir='src'
@@ -78,7 +53,7 @@ downloadDir='downloads'
 analysisLayerDir='AnalysisLayer'
 
 # Absolute paths :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# The absolute path to the root directory of CodeProject.SenseAI
+# The absolute path to the root directory of CodeProject.AI
 currentDir="$(pwd)"
 cd $rootPath
 absoluteRootDir="$(pwd)"
@@ -91,14 +66,14 @@ downloadPath="${absoluteRootDir}/Installers/${downloadDir}"
 # Set Flags
 
 wgetFlags='-q --no-check-certificate'
-pipFlags='-q'
+pipFlags='--quiet --quiet'
 copyFlags='/NFL /NDL /NJH /NJS /nc /ns  >/dev/null'
 unzipFlags='-qq'
 tarFlags='xf'
 
 if [ $verbosity == "info" ]; then
     wgetFlags='--no-verbose --no-check-certificate'
-    pipFlags='-q'
+    pipFlags='--quiet'
     rmdirFlags='/q'
     copyFlags='/NFL /NDL /NJH'
     unzipFlags='-q'
@@ -112,11 +87,19 @@ elif [ $verbosity == "loud" ]; then
     tarFlags='xvf'
 fi
 
-writeLine '        Setting up CodeProject.SenseAI Development Environment          ' 'DarkYellow'
+if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
+    pipFlags="${pipFlags} --no-cache-dir"
+fi
+
+if [ "$useColor" != "true" ]; then
+    pipFlags="${pipFlags} --no-color"
+fi
+
+writeLine '          Setting up CodeProject.AI Development Environment             ' 'DarkCyan'
 writeLine '                                                                        ' 'DarkGreen'
 writeLine '========================================================================' 'DarkGreen'
 writeLine '                                                                        ' 'DarkGreen'
-writeLine '                 CodeProject SenseAI Installer                          ' 'DarkGreen'
+writeLine '                   CodeProject.AI Installer                             ' 'DarkGreen'
 writeLine '                                                                        ' 'DarkGreen'
 writeLine '========================================================================' 'DarkGreen'
 writeLine '                                                                        ' 'DarkGreen'
@@ -132,11 +115,11 @@ if [ "$platform" == "linux" ] && [ "$EUID" -ne 0 ]; then
     exit
 fi
 
-# ============================================================================
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # 1. Ensure directories are created and download required assets
 
 writeLine
-writeLine 'General SenseAI setup                                                   ' "White" "Blue"
+writeLine 'CodeProject.AI setup                                                        ' "White" "Blue"
 
 # Create some directories
 
@@ -145,9 +128,11 @@ write "Creating Directories..." $color_primary
 if [ $verbosity == "loud" ]; then writeLine "downloadPath is ${downloadPath}"; fi;
 
 mkdir -p "${downloadPath}"
-if [ "$platform" == "macos" ]; then 
-    write "We'll need to run under root to set permissions. " $color_warn
-    sudo chmod 777 "${downloadPath}"
+if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then 
+    if [[ ! -w "${downloadPath}" ]]; then
+        write "We'll need to run under root to set permissions. " $color_warn
+        sudo chmod 777 "${downloadPath}"
+    fi
 else
     write "Creating Directories..." $color_primary
 fi
@@ -161,7 +146,7 @@ writeLine "Done" $color_success
 setupPython 3.9
 
 write "Installing MKDocs..." 
-installPythonPackages 3.9 "../../docs/mkdocs/requirements.txt" "mkdocs"
+installPythonPackages 3.9 "${absoluteRootDir}/docs/mkdocs" "mkdocs"
 writeLine "Done" "DarkGreen" 
 
 
@@ -177,7 +162,7 @@ moduleDir='TextSummary'
 modulePath="${analysisLayerPath}/${moduleDir}"
 
 setupPython 3.8
-installPythonPackages 3.8 "${modulePath}/requirements.txt" "nltk"
+installPythonPackages 3.8 "${modulePath}" "nltk"
 
 
 # Background Remover :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -198,7 +183,7 @@ moduleAssetsDir='models'
 modelsAssetFilename='rembg-models.zip'
 
 setupPython 3.9
-installPythonPackages 3.9 "${modulePath}/requirements.txt" "onnxruntime"
+installPythonPackages 3.9 "${modulePath}" "onnxruntime"
 
 # Clean up directories to force a re-copy if necessary
 if [ "${forceOverwrite}" == "true" ]; then
@@ -214,13 +199,13 @@ if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
 fi
 
 
-# DeepStack specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# DeepStack Vision modules specific :::::::::::::::::::::::::::::::::::::::::::::::::::
 
 writeLine
 writeLine 'Vision toolkit setup                                                    ' "White" "Blue"
 
 # The name of the dir containing the background remover module
-moduleDir='DeepStack'
+moduleDir='Vision'
 
 # The name of the dir containing the background remover models
 modulePath="${analysisLayerPath}/${moduleDir}"
@@ -232,11 +217,7 @@ moduleAssetsDir='assets'
 modelsAssetFilename='models.zip'
 
 setupPython 3.8
-if [ "$platform" == "macos" ]; then
-    installPythonPackages 3.8 "${modulePath}/intelligencelayer/requirements.macos.txt" "torch"
-else
-    installPythonPackages 3.8 "${modulePath}/intelligencelayer/requirements.txt" "torch"
-fi
+installPythonPackages 3.8 "${modulePath}/intelligencelayer/" "torchvision"
 
 # Clean up directories to force a re-copy if necessary
 if [ "${forceOverwrite}" == "true" ]; then
@@ -252,17 +233,17 @@ if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
 fi
 
 # Deepstack needs these to store temp and pesrsisted data
-mkdir -p "${deepStackPath}/${tempstoreDir}"
+mkdir -p "${modulePath}/${tempstoreDir}"
 
 # To do this properly we're going to use the standard directories for common application data
-# mkdir -p "${deepStackPath}/${datastoreDir}"
-commonDataDir='/usr/share/CodeProject/SenseAI'
-if [ "$platform" == "macos" ]; then 
-    commonDataDir="/Library/Application Support/CodeProject/SenseAI"
+# mkdir -p "${modulePath}/${datastoreDir}"
+commonDataDir='/usr/share/CodeProject/AI'
+if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then 
+    commonDataDir="/Library/Application Support/CodeProject/AI"
 fi
 
 if [ ! -d "${commonDataDir}" ]; then
-    if [ "$platform" == "macos" ]; then 
+    if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then 
         if [[ $EUID > 0 ]]; then
             writeLine "Creating data directory at ${commonDataDir}. We'll need admin access..." $color_info
         fi
@@ -283,7 +264,7 @@ writeLine
 writeLine 'Object Detector setup                                                   ' "White" "Blue"
 
 # The name of the dir containing the background remover module
-moduleDir='CodeProject.SenseAI.AnalysisLayer.Yolo'
+moduleDir='CodeProject.AI.AnalysisLayer.Yolo'
 
 # The name of the dir containing the background remover models
 modulePath="${analysisLayerPath}/${moduleDir}"
@@ -323,11 +304,13 @@ else
     if [ "${verbosity}" == "quiet" ]; then
         brew install fontconfig  >/dev/null 2>/dev/null &
         spin $!
-        brew install mono-libgdiplus  >/dev/null 2>/dev/null &
+        # brew install mono-libgdiplus  >/dev/null 2>/dev/null &
+        brew install libomp  >/dev/null 2>/dev/null &
         spin $!
     else
         brew install fontconfig
-        brew install mono-libgdiplus
+        # brew install mono-libgdiplus
+        brew install libomp
     fi
 fi
 writeLine "Done" $color_success

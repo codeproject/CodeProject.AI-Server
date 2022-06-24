@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 using System.Text.Json;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// Disables response chunking on an Action or Controller.

@@ -1,8 +1,8 @@
-﻿using CodeProject.SenseAI.Server.Backend;
+﻿using CodeProject.AI.Server.Backend;
 
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CodeProject.SenseAI.API.Server.Backend
+namespace CodeProject.AI.API.Server.Backend
 {
     public static class QueueProcessingExtensions
     {

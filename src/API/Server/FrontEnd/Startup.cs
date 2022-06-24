@@ -16,9 +16,9 @@ using System.Collections.Generic;
 using Microsoft.OpenApi.Models;
 #endif
 
-using CodeProject.SenseAI.API.Server.Backend;
+using CodeProject.AI.API.Server.Backend;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// The Startup class
@@ -67,8 +67,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version        = "v1",
-                    Title          = "CodeProject SenseAI API",
-                    Description    = "Provides a HTTP REST interface for the CodeProject SenseAI server.",
+                    Title          = "CodeProject.AI API",
+                    Description    = "Provides a HTTP REST interface for the CodeProject.AI server.",
                     TermsOfService = new Uri("https://www.codeproject.com/info/TermsOfUse.aspx"),
                     Contact        = new OpenApiContact
                     {
@@ -95,9 +95,6 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             // Configure application services and DI
             services.Configure<QueueProcessingOptions>(Configuration.GetSection(nameof(QueueProcessingOptions)))
                     .AddQueueProcessing();
-
-            // Moved into its own file
-            // services.Configure<VersionInfo>(Configuration.GetSection(nameof(VersionInfo)));
 
             services.Configure<InstallConfig>(Configuration.GetSection(InstallConfig.InstallCfgSection));
             services.Configure<VersionConfig>(Configuration.GetSection(VersionConfig.VersionCfgSection));
@@ -131,7 +128,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 app.UseDeveloperExceptionPage();
 #if Windows                
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject SenseAI API v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject.AI API v1"));
 #endif
             }
 

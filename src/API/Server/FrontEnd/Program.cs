@@ -14,7 +14,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// The Application Entry Class.
@@ -32,7 +32,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         {
             // TODO: Pull these from the correct location
             const string company = "CodeProject";
-            const string product = "SenseAI";
+            const string product = "AI";
 
             var assembly           = Assembly.GetExecutingAssembly();
             var assemblyName       = assembly.GetName().Name ?? String.Empty;
@@ -65,7 +65,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
 
             // .NET's suggestion for macOS isn't great. Let's do something different.
-            if (platform == "macos")
+            if (platform == "macos" || platform == "macos-arm")
                 applicationDataDir = $"~/Library/Application Support/{company}/{product}";
 
             // Store this dir in the config settings so we can get to it later.
@@ -131,6 +131,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             try
             {
                 await hostTask;
+
+                Console.WriteLine("Shutting down");
             }
             catch (Exception ex)
             {

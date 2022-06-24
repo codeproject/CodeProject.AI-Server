@@ -1,0 +1,9 @@
+{
+  "Modules": {
+    "CustomObjectDetection": {
+      "EnvironmentVariables": {
+        "PORT": 5500
+      }
+    }
+  }
+}

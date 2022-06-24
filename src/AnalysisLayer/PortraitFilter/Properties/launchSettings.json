@@ -1,11 +1,12 @@
-﻿{
+{
   "profiles": {
     "PortraitFilter": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "environmentVariables": {
+        "CUDA_MODE": "TRUE",
         "DOTNET_ENVIRONMENT": "Development"
-      }
+      },
+      "dotnetRunMessages": true
     }
   }
 }

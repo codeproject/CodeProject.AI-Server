@@ -1,0 +1,7 @@
+{
+  "Modules": {
+    "CustomObjectDetection": {
+      "Runtime": "python37"
+    }
+  }
+}

@@ -4,15 +4,16 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>CodeProject.SenseAI.Server.Backend</AssemblyName>
+    <AssemblyName>CodeProject.AI.Server.Backend</AssemblyName>
 	  <Version>1.2.2.0</Version>
-	  <RootNamespace>CodeProject.SenseAI.Server.Backend</RootNamespace>
+	  <RootNamespace>CodeProject.AI.Server.Backend</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <NoWarn>1701;1702;</NoWarn>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -30,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\AnalysisLayer\SDK\NET\CodeProject.SenseAI.AnalysisLayer.SDK\CodeProject.SenseAI.AnalysisLayer.SDK.csproj" />
+    <ProjectReference Include="..\..\..\AnalysisLayer\SDK\NET\CodeProject.AI.AnalysisLayer.SDK\CodeProject.AI.AnalysisLayer.SDK.csproj" />
     <ProjectReference Include="..\..\Common\Common.csproj" />
   </ItemGroup>
 

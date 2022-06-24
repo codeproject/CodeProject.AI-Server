@@ -1,4 +1,4 @@
-using CodeProject.SenseAI.AnalysisLayer.PortraitFilter;
+using CodeProject.AI.AnalysisLayer.PortraitFilter;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>

@@ -9,10 +9,10 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-using CodeProject.SenseAI.AnalysisLayer.SDK;
-using CodeProject.SenseAI.API.Common;
+using CodeProject.AI.AnalysisLayer.SDK;
+using CodeProject.AI.API.Common;
 
-namespace CodeProject.SenseAI.API.Server.Backend
+namespace CodeProject.AI.API.Server.Backend
 {
     /// <summary>
     /// Manages the Concurrent Queues

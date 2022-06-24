@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -10,10 +9,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using CodeProject.SenseAI.AnalysisLayer.SDK;
-using CodeProject.SenseAI.API.Server.Backend;
+using CodeProject.AI.AnalysisLayer.SDK;
+using CodeProject.AI.API.Server.Backend;
 
-namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
+namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
     /// <summary>
     /// Handles pulling requests from the Command Queue and returning reponses to the calling method.
@@ -38,35 +37,37 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
         /// </summary>
         /// <param name="name">The name of the Queue.</param>
         /// <param name="moduleId">The ID of the module making the request</param>
+        /// <param name="executionProvider">The excution provider, typically the GPU library in use</param>
         /// <param name="token">The aborted request token.</param>
         /// <returns>The Request Object.</returns>
         [HttpGet("{name}", Name = "GetRequestFromQueue")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<OkObjectResult> GetQueue([FromRoute] string name, [FromQuery] string moduleId,
-                                                    CancellationToken token)
+        public async Task<OkObjectResult> GetQueue([FromRoute] string name,
+                                                   [FromQuery] string moduleId,
+                                                   [FromQuery] string executionProvider,
+                                                   CancellationToken token)
         {
-            // TODO: Get the id of the module that made this request from the 'moduleId' querystring
-            // parameter and store the current time in a map of {moduleId : report_time} for health
-            // reporting.
-            // string? moduleId = Request.QueryString.Value["moduleId"];
-            UpdateProcessStatus(moduleId);
+            UpdateProcessStatus(moduleId, executionProvider: executionProvider);
 
             BackendRequestBase? response = await _queueService.DequeueRequestAsync(name, token);
             return new OkObjectResult(response);
         }
 
         /// <summary>
-        /// Sets the response for a command from the named queue if available.
+        /// Sets the response that will be sent back to the caller of the API, for a command for
+        /// the named queue if available.
         /// </summary>
         /// <param name="reqid">The id of the request the response is for.</param>
         /// <param name="moduleId">The ID of the module making the request</param>
+        /// <param name="executionProvider">The hardware accelerator execution provider.</param>
         /// <returns>The Request Object.</returns>
         [HttpPost("{reqid}", Name = "SetResponseInQueue")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ObjectResult> SetResponse(string reqid, [FromQuery] string moduleId)
+        public async Task<ObjectResult> SetResponse(string reqid, [FromQuery] string moduleId,
+                                                    [FromQuery] string? executionProvider = null)
         {
             string? response     = null;
             using var bodyStream = HttpContext.Request.Body;
@@ -76,16 +77,17 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
                 response = await textreader.ReadToEndAsync();
             }
 
-            UpdateProcessStatus(moduleId, true);
+            UpdateProcessStatus(moduleId, true, executionProvider: executionProvider);
 
             var success = _queueService.SetResult(reqid, response);
             if (!success)
                 return BadRequest("failure to set response.");
-            else
-                return Ok("Response saved.");
+
+            return Ok("Response saved.");
         }
 
-        private void UpdateProcessStatus(string moduleId, bool incrementProcessCount = false)
+        private void UpdateProcessStatus(string moduleId, bool incrementProcessCount = false,
+                                         string? executionProvider = null)
         {
             if (string.IsNullOrEmpty(moduleId))
                 return;
@@ -100,9 +102,29 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
 
             if (backend.StartupProcesses.ContainsKey(moduleId))
             {
-                backend.StartupProcesses[moduleId].LastSeen = DateTime.UtcNow;
+                ModuleConfig moduleConfig = backend.StartupProcesses[moduleId];
+                moduleConfig.LastSeen = DateTime.UtcNow;
+
                 if (incrementProcessCount)
-                    backend.StartupProcesses[moduleId].Processed++;
+                    moduleConfig.Processed++;
+
+                if (string.IsNullOrWhiteSpace(executionProvider))
+                {
+                    moduleConfig.HardwareId        = "CPU";
+                    moduleConfig.ExecutionProvider = string.Empty;
+                }
+                // Note that executionProvider will be "CPU" if not using a GPU enabled OnnxRuntime 
+                //  or the GPU for the runtime is not available.
+                else if (string.Compare(executionProvider, "CPU", true) == 0)
+                {
+                    moduleConfig.HardwareId        = "CPU";
+                    moduleConfig.ExecutionProvider = string.Empty;
+                }
+                else
+                {
+                    moduleConfig.HardwareId        = "GPU";
+                    moduleConfig.ExecutionProvider = executionProvider;
+                }
             }
         }
     }

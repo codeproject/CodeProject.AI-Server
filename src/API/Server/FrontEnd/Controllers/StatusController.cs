@@ -7,9 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
 
-using CodeProject.SenseAI.API.Common;
+using CodeProject.AI.API.Common;
 
-namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
+namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
     /// <summary>
     /// For status updates on the server itself.

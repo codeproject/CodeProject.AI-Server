@@ -1,28 +1,28 @@
-[![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://open.vscode.dev/codeproject/CodeProject.SenseAI/) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/license-SSPL-green)](https://www.mongodb.com/licensing/server-side-public-license) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+[![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://open.vscode.dev/codeproject/CodeProject.AI-Server/) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/license-SSPL-green)](https://www.mongodb.com/licensing/server-side-public-license) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
-# CodeProject SenseAI Server
+# CodeProject.AI Server
 
- [**Download the latest version**](https://www.codeproject.com/ai/sense/latest.aspx)
+ [**Download the latest version**](https://www.codeproject.com/ai/latest.aspx)
 
 A standalone, self-hosted, fast, free and Open Source Artificial Intelligence microserver for any 
 platform, any language. It can be installed locally, required no off-device or out of network data
 transfer, and is easy to use.
 
-![Object detection](docs/mkdocs/senseAI/docs/img/DetectThings.PNG)
+![Object detection](docs/mkdocs/CodeProject.AI/docs/img/DetectThings.PNG)
 
 # Supported Platforms
 
 <div style="width:75%;min-width:700px;margin:30px auto">
 
-|   <img src="docs/images/windows.svg" title="Windows" style="width:64px">  |  <img src="docs/images/macos.svg" title="macOS" style="width:64px">|   <img src="docs/images/Ubuntu.svg" title="Ubuntu" style="width:64px">  |   <img src="docs/images/docker.svg" title="Docker" style="width:64px">  |         <img src="docs/images/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="docs/images/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
+|   <img src="docs/images/windows.svg" title="Windows" style="width:64px">  |  <img src="docs/images/macos.svg" title="macOS" style="width:72px"> | <img src="docs/images/apple-silicon.svg" title="Apple Silicon" style="width:64px"> |  <img src="docs/images/Ubuntu.svg" title="Ubuntu" style="width:64px">  |   <img src="docs/images/docker.svg" title="Docker" style="width:64px">  |  <img src="docs/images/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="docs/images/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
 |:-------:|:-----:|:------:|:------:|:-------------------:|:------------------:|
-| Windows | macOS | Ubuntu | Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
+| Windows | macOS | Apple<br>Silicon | Ubuntu | Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
 
 </div>
 
 # Why
 
-1. AI programming is something every single developer should be aware of. We wanted a fun project we could use to help teach developers and get them involved in AI. We'll be using SenseAI as a focus for articles and exploration to make it fun and painless to learn AI programming.
+1. AI programming is something every single developer should be aware of. We wanted a fun project we could use to help teach developers and get them involved in AI. We'll be using CodeProject.AI as a focus for articles and exploration to make it fun and painless to learn AI programming.
 
 3. We got sick of fighting versions and libraries and models and being blocked by tiny annoying things every step of the way. So we put put this together so we could save you the frustation. We'll take care of the housekeeping, you focus on the code.
   
@@ -32,12 +32,12 @@ transfer, and is easy to use.
 
 ### 1: Running and playing with the features
 
-1. [**Download the latest version**](https://www.codeproject.com/ai/sense/latest.aspx), install, and launch the shortcut to the server's dashboard on your desktop.
-2. On the dashboard, top and centre, is a link to the senseAI Explorer. Open that and play!
+1. [**Download the latest version**](https://www.codeproject.com/ai/latest.aspx), install, and launch the shortcut to the server's dashboard on your desktop.
+2. On the dashboard, top and centre, is a link to the CodeProject.AI Explorer. Open that and play!
 
 ### 2: Running and debugging the code
 
-1. Clone the CodeProject SenseAI reposotory.
+1. Clone the CodeProject.AI repository.
 2. Make sure you have Visual Studio Code or Visual Studio 2019+ installed.
 3. Run the setup script in /Installers/Dev
 4. Debug the front-end server application (see notes below, but it's easy)
@@ -73,12 +73,12 @@ function detectScene(fileChooser) {
 </html>
 ```
 
-You can include the CodeProject SenseAI installer (or just a link to the latest version of the installer) in your own apps and installers and voila, you have an AI enabled app.
+You can include the CodeProject.AI installer (or just a link to the latest version of the installer) in your own apps and installers and voila, you have an AI enabled app.
 
 
 ## What does it include?
 
-CodeProject SenseAI includes
+CodeProject.AI includes
 
 1. **A HTTP REST API Server.** The server listens for requests from other apps, passes them to the backend analysis services for processing, and then passes the results back to the caller. It runs as a simple self contained web service on your device.
 2. **Backend Analysis services**.  The brains of the operation is in the analysis services sitting behind the front end API. All processing of data is done on the current machine. No calls to the cloud and no data leaving the device.
@@ -88,7 +88,7 @@ CodeProject SenseAI includes
 
 It can detect stuff!
 
-CodeProject SenseAI can currently
+CodeProject.AI can currently
 
 - Detect objects in images
 - Detect faces in images
@@ -103,10 +103,10 @@ We will be constantly expanding the feature list.
 
 ## Our Goals
 
-1. **To promote AI development** and inspire the AI developer community to dive in and have a go. AI is here, it's in demand, and it's a huge paradigm change in the industry. Whether you like AI or not, developers owe it to themselves to experiment in and familiarise themselves with the  technology. This is CodeProject SenseAI: a demonstration, a playground, a learning tool, and a library and service that can be used out of the box.
+1. **To promote AI development** and inspire the AI developer community to dive in and have a go. AI is here, it's in demand, and it's a huge paradigm change in the industry. Whether you like AI or not, developers owe it to themselves to experiment in and familiarise themselves with the  technology. This is CodeProject.AI: a demonstration, an explorer, a learning tool, and a library and service that can be used out of the box.
 2. **To make AI development *easy***. It's not that AI development is that hard. It's that there are so, so many options. Our architecture is designed to allow any AI implementation to find a home in our system, and for our service to be callable from any language.
 3. **To focus on core use-cases**. We're deliberately not a solution for everyone. Instead we're a solution for common day-to-day needs. We will be adding dozens of modules and scores of AI capabilities to our system, but our goal is always clarity and simplicity over a 100% solution.
-4. **To tap the expertise of the Developer Community**. We're not experts but we know a developer or two out there who are. The true power of CodeProject SenseAI comes from the contributions and improvements from our AI community.
+4. **To tap the expertise of the Developer Community**. We're not experts but we know a developer or two out there who are. The true power of CodeProject.AI comes from the contributions and improvements from our AI community.
 
 
 #### Supported Development Environments
@@ -116,8 +116,8 @@ This current release works in Visual Studio 2019+ on Windows 10+, and Visual Stu
 
 ## How to Guides
 
- - [Installing senseAI on your machine](https://www.codeproject.com/ai/senseai/why/install_on_windows.html). For those who have senseAI integrated with HomeAssist or Blue Iris
- - [Setting up the development environment](https://www.codeproject.com/ai/senseai/devguide/install_dev.html) (spoiler: it's easy!)
- - [Running in Docker](https://www.codeproject.com/ai/senseai/why/running_in_docker.html)
- - Setup or install issues? See [Common Errors](https://www.codeproject.com/ai/senseai/devguide/common_errors.html)
+ - [Installing CodeProject.AI on your machine](https://www.codeproject.com/ai/docs/why/install_on_windows.html). For those who have CodeProject.AI integrated with Home Assist or Blue Iris
+ - [Setting up the development environment](https://www.codeproject.com/ai/docs/devguide/install_dev.html) (spoiler: it's easy!)
+ - [Running in Docker](https://www.codeproject.com/ai/docs/why/running_in_docker.html)
+ - Setup or install issues? See [Common Errors](https://www.codeproject.com/ai/docs/devguide/common_errors.html)
 

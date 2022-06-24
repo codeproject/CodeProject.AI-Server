@@ -1,4 +1,4 @@
-:: CodeProject SenseAI Analysis services (DeepStack module) startup script for Windows
+:: CodeProject.AI Analysis services (DeepStack module) startup script for Windows
 ::
 :: Usage:
 ::   start.bat
@@ -43,9 +43,9 @@ set APPDIR=%cd%
     set NLTK_DATA=!APPDIR!\TextSummary\nltk_data
 
     REM Deepstack stuff
-    set DATA_DIR=!APPDIR!\DeepStack\datastore
-    set TEMP_PATH=!APPDIR!\DeepStack\tempstore
-    set MODELS_DIR=!APPDIR!\DeepStack\assets
+    set DATA_DIR=!APPDIR!\Vision\datastore
+    set TEMP_PATH=!APPDIR!\Vision\tempstore
+    set MODELS_DIR=!APPDIR!\Vision\assets
     set PROFILE=desktop_cpu
     set CUDA_MODE=False
     set MODE=Medium
@@ -73,12 +73,12 @@ echo Starting Analysis Services...
 set python37Path=!APPDIR!\src\AnalysisLayer\bin\windows\Python37\venv\Scripts\Python
 set python39Path=!APPDIR!\src\AnalysisLayer\bin\windows\Python39\venv\Scripts\Python
 
-START "CodeProject SenseAI" /B /i "!python39Path!" "!APPDIR!\TextSummary\textsummary.py"
-START "CodeProject SenseAI" /B /i "!python39Path!" "!APPDIR!\BackgroundRemover\sense_rembg_adapter.py"
+START "CodeProject.AI" /B /i "!python39Path!" "!APPDIR!\TextSummary\textsummary.py"
+START "CodeProject.AI" /B /i "!python39Path!" "!APPDIR!\BackgroundRemover\rembg_adapter.py"
 
-START "CodeProject SenseAI" /B /i "!python37Path!" "!APPDIR!\DeepStack\intelligencelayer\detection.py"
-START "CodeProject SenseAI" /B /i "!python37Path!" "!APPDIR!\DeepStack\intelligencelayer\face.py"
-START "CodeProject SenseAI" /B /i "!python37Path!" "!APPDIR!\DeepStack\intelligencelayer\scene.py"
+START "CodeProject.AI" /B /i "!python37Path!" "!APPDIR!\Vision\intelligencelayer\detection.py"
+START "CodeProject.AI" /B /i "!python37Path!" "!APPDIR!\Vision\intelligencelayer\face.py"
+START "CodeProject.AI" /B /i "!python37Path!" "!APPDIR!\Vision\intelligencelayer\scene.py"
 
 :: Wait forever. We need these processes to stay alive
 if "%embedded%" == "false" (

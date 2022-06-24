@@ -1,18 +1,23 @@
-using CodeProject.SenseAI.AnalysisLayer.SDK;
+using System.Drawing;
+using System.Net.Http.Json;
+using CodeProject.AI.AnalysisLayer.SDK;
+
+using Microsoft.ML.OnnxRuntime;
 
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
 
-using System.Drawing;
-using System.Net.Http.Json;
 
-namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
     class PortraitResponse : BackendSuccessResponse
     {
         public byte[]? filtered_image { get; set; }
     }
 
+    /// <summary>
+    /// TODO: Derive this from CommandQueueWorker
+    /// </summary>
     public class PortraitFilterWorker : BackgroundService
     {
         private const string _modelPath = "Lib\\deeplabv3_mnv2_pascal_train_aug.onnx";
@@ -22,8 +27,18 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
         private int _parallelism        = 1; // 4 also seems to be good on my machine.
 
         private readonly ILogger<PortraitFilterWorker> _logger;
-        private readonly SenseAIClient _senseAI;
-        private DeepPersonLab _deepPersonLab;
+        private readonly BackendClient _codeprojectAI;
+        private DeepPersonLab? _deepPersonLab;
+
+        /// <summary>
+        /// Gets or sets the name of the hardware acceleration execution provider
+        /// </summary>
+        public string? ExecutionProvider { get; set; } = "CPU";
+
+        /// <summary>
+        /// Gets or sets the hardware accelerator ID that's in use
+        /// </summary>
+        public string? HardwareId { get; set; } = "CPU";
 
         /// <summary>
         /// Initializes a new instance of the PortraitFilterWorker.
@@ -31,7 +46,7 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
         /// <param name="logger">The Logger.</param>
         /// <param name="configuration">The app configuration values.</param>
         public PortraitFilterWorker(ILogger<PortraitFilterWorker> logger,
-                             IConfiguration configuration)
+                                    IConfiguration configuration)
         {
             _logger = logger;
 
@@ -70,13 +85,97 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
             if (_moduleId == default)
                 _moduleId = "PortraitFilter";
 
-            _senseAI = new SenseAIClient($"http://localhost:{port}/"
+            _codeprojectAI = new BackendClient($"http://localhost:{port}/"
 #if DEBUG
                 , TimeSpan.FromMinutes(1)
 #endif
             );
 
-             _deepPersonLab = new DeepPersonLab(_modelPath.Replace('\\', Path.DirectorySeparatorChar));
+            var sessionOptions = GetHardwareInfo();
+
+            try // if the support is not available for the Execution Provider DeepPersonLab will throw
+            {
+                _deepPersonLab = new DeepPersonLab(_modelPath.Replace('\\', Path.DirectorySeparatorChar), sessionOptions);
+            }
+            catch
+            {
+                // use the defaults
+                _deepPersonLab = new DeepPersonLab(_modelPath.Replace('\\', Path.DirectorySeparatorChar));
+                ExecutionProvider = "CPU";
+                HardwareId = "CPU";
+
+            }
+        }
+
+        private SessionOptions GetHardwareInfo()
+        {
+            var sessionOpts = new SessionOptions();
+
+            bool useGPU = (Environment.GetEnvironmentVariable("CUDA_MODE") ?? "False").ToLower() == "true";
+
+            if (useGPU)
+            {
+                ///* -- work in progress
+                var onnxRuntimeEnv = OrtEnv.Instance();
+                var providers = onnxRuntimeEnv.GetAvailableProviders();
+
+                // Enable CUDA  -------------------
+                if (providers?.Any(p => p.StartsWith("CUDA", StringComparison.OrdinalIgnoreCase)) ?? false)
+                {
+                    try
+                    {
+                        sessionOpts.AppendExecutionProvider_CUDA();
+
+                        ExecutionProvider = "CUDA";
+                        HardwareId = "GPU";
+                    }
+                    catch
+                    {
+                        // do nothing, the provider didn't work so keep going
+                    }
+                }
+
+                // Enable OpenVINO -------------------
+                if (providers?.Any(p => p.StartsWith("OpenVINO", StringComparison.OrdinalIgnoreCase)) ?? false)
+                {
+                    try
+                    {
+                        sessionOpts.AppendExecutionProvider_OpenVINO("AUTO:GPU,CPU");
+                        //sessionOpts.EnableMemoryPattern = false;
+                        //sessionOpts.ExecutionMode = ExecutionMode.ORT_PARALLEL;
+
+                        ExecutionProvider = "OpenVINO";
+                        HardwareId = "GPU";
+                    }
+                    catch
+                    {
+                        // do nothing, the provider didn't work so keep going
+                    }
+                }
+
+                // Enable DirectML -------------------
+                if (providers?.Any(p => p.StartsWith("DML", StringComparison.OrdinalIgnoreCase)) ?? false)
+                {
+                    try
+                    {
+                        sessionOpts.AppendExecutionProvider_DML();
+                        sessionOpts.EnableMemoryPattern = false;
+
+                        ExecutionProvider = "DirectML";
+                        HardwareId = "GPU";
+                    }
+                    catch
+                    {
+                        // do nothing, the provider didn't work so keep going
+                    }
+                }
+            }
+
+            // ------------------------------------------------
+            //*/
+
+            sessionOpts.AppendExecutionProvider_CPU();
+            return sessionOpts;
         }
 
         /// <summary>
@@ -89,7 +188,7 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
             _logger.LogInformation("Background Portrait Filter Task Started.");
-            await _senseAI.LogToServer("SenseAI Portrait Filter module started.", token);
+            await _codeprojectAI.LogToServer("CodeProject.AI Portrait Filter module started.", token);
 
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < _parallelism; i++)
@@ -104,12 +203,15 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
             while (!token.IsCancellationRequested)
             {
                 // _logger.LogInformation("Checking Portrait Filter queue.");
+                if (_deepPersonLab == null)
+                    continue;
 
                 BackendResponseBase response;
                 BackendRequest? request = null;
                 try
                 {
-                    request = await _senseAI.GetRequest(_queueName, _moduleId, token);
+                    request = await _codeprojectAI.GetRequest(_queueName, _moduleId, token,
+                                                              ExecutionProvider);
                 }
                 catch (Exception ex)
                 {
@@ -133,7 +235,7 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
 
                 if (file?.data is null)
                 {
-                    await _senseAI.LogToServer("Portrait Filter File or file data is null.", token);
+                    await _codeprojectAI.LogToServer("Portrait Filter File or file data is null.", token);
                     response = new BackendErrorResponse(-1, "Portrait Filter Invalid File.");
                 }
                 else
@@ -165,7 +267,7 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
                     }
                     catch (Exception ex)
                     {
-                        await _senseAI.LogToServer($"Portrait Filter Error for {file.filename}.", token);
+                        await _codeprojectAI.LogToServer($"Portrait Filter Error for {file.filename}.", token);
                         _logger.LogError(ex, "Portrait Filter Exception");
                         result = null;
                     }
@@ -189,7 +291,8 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
                 else
                     content = JsonContent.Create(response as BackendErrorResponse);
 
-                await _senseAI.SendResponse(request.reqid, _moduleId, content, token);
+                await _codeprojectAI.SendResponse(request.reqid, _moduleId, content, token,
+                                                  executionProvider: ExecutionProvider);
             }
         }
 

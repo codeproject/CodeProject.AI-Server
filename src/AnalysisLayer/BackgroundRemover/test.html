@@ -46,7 +46,7 @@
             var url = apiServiceUrl + '/v1/' + controller + '/' + apiName;
 
             //result.innerHTML = "";
-
+            const start = performance.now();
             fetch(url, {
                 method: "POST",
                 body: formData
@@ -57,8 +57,9 @@
                     else {
                         response.json().then(data => {
                             if (data) {
-                                doneFunc(data)
-                                setStatus("Call to " + apiName + " complete", "green");
+                                doneFunc(data);
+                                const stop = performance.now();
+                                setStatus(`Call to ${apiName} completed in ${stop - start} mS.`, "green");
                             } else
                                 setStatus('No data was returned', "red");
                         })

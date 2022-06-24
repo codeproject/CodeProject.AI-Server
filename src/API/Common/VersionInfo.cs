@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace CodeProject.SenseAI.API.Common
+namespace CodeProject.AI.API.Common
 {
     /// <summary>
     /// The current version of the FrontEnd.

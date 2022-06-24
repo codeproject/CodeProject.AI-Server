@@ -20,18 +20,18 @@ DEFAULT_IMAGES_FOLDER = cfg.imageDir
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Perform benchmarking of DeepStack modules in CodeProject.SenseAI")
+    parser = argparse.ArgumentParser(description="Perform benchmarking of DeepStack modules in CodeProject.AI")
     parser.add_argument(
         "--ip",
         default=DEFAULT_IP_ADDRESS,
         type=str,
-        help="CodeProject Sense Server IP address",
+        help="CodeProject.AI Server IP address",
     )
     parser.add_argument(
         "--port",
         default=DEFAULT_PORT,
         type=int,
-        help="CodeProject Sense Server Port",
+        help="CodeProject.AI Server Port",
     )
     parser.add_argument(
         "--api_key", default=DEFAULT_API_KEY, type=str, help="Deepstack API key"

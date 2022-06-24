@@ -1,6 +1,6 @@
 REM Assuming we're in the /docs/mkdocs directory
 
-pushd senseAI\docs
+pushd CodeProject.AI\docs
 
 REM Recursively the files from .html to .aspx
  cd site

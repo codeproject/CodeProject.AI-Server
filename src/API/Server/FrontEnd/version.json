@@ -2,13 +2,13 @@
   "versionSection": {
     "versionInfo": {
       "Major": 1,
-      "Minor": 4,
+      "Minor": 5,
       "Patch": 0,
       "Build": 0,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
-      "File": "CodeProject.SenseAI.Server-1.4.0.zip",
-      "ReleaseNotes": "Refactored Module NET SDK and added Sentiment Analysis Module."
+      "File": "CodeProject.AI.Server-1.5.0.zip",
+      "ReleaseNotes": "Custom Object detection models and a cleaner leaner installer."
     }
   }
 }

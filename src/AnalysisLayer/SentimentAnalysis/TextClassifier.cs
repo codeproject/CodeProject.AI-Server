@@ -1,6 +1,6 @@
 ﻿/* -------------------------------------------------------------------------------------------------
  * This code is based on the code from the machine-learning\TextClassificationTF sample
- * found in the https://github.com/dotnet/samples repository. The accompaning tutorial is found at 
+ * found in the https://github.com/dotnet/samples repository. The accompanying tutorial is found at 
  * https://docs.microsoft.com/en-us/dotnet/machine-learning/tutorials/text-classification-tf
  * 
  * Basically, converted the Program class Program.cs file into the TextClassifier class for general use.
@@ -15,9 +15,20 @@ namespace SentimentAnalysis
     public class TextClassifier
     {
         public const int FeatureLength = 600;
-        static readonly string _modelPath = Path.Combine(Environment.CurrentDirectory, "sentiment_model");
-        private readonly MLContext _mlContext;
+
+        static readonly string        _modelPath = Path.Combine(Environment.CurrentDirectory, "sentiment_model");
+        private readonly MLContext    _mlContext;
         private readonly ITransformer _model;
+
+        /// <summary>
+        /// Gets or sets the execution provider.
+        /// </summary>
+        public string ExecutionProvider { get; set; } = "CPU";
+
+        /// <summary>
+        /// Gets or sets the hardware ID.
+        /// </summary>
+        public string HardwareId { get; set; } = "CPU";
 
         public TextClassifier()
         {

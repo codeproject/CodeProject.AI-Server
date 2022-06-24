@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CodeProject.SenseAI.API.Server.Backend
+namespace CodeProject.AI.API.Server.Backend
 {
     /// <summary>
     /// Options for Queue Processing
@@ -16,10 +16,10 @@ namespace CodeProject.SenseAI.API.Server.Backend
         /// <summary>
         /// Get or set the max number of requests that can be queued.
         /// </summary>
-        public int MaxQueueLength { get; set; } = 20;
+        public int MaxQueueLength { get; set; } = 32;
 
         /* Currently unused, but we'll keep the code for the future just in case
-        public string ImageTempDir { get; set; } = "CodeProject.SenseAI.TempImages";
+        public string ImageTempDir { get; set; } = "CodeProject.AI.TempImages";
         */
     }
 }

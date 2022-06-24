@@ -27,12 +27,18 @@
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Optimize>false</Optimize>
+        <DebugType>portable</DebugType>
     </PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Linux'))" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('OSX'))" />
-		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Windows'))" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Windows'))" />
+		<!--<PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.11.0-dev-20220408-0636-1aca08028" />-->
+		<!--<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Windows'))" />-->
+		<!-- Until this is publicly available on NuGet.org and I figure out how to get both the Windows and Linux versions,
+		     and maybe the Mac versions as well...
+		-->
         <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
     </ItemGroup>
 

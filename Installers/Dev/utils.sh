@@ -1,11 +1,12 @@
-﻿#!/bin/bash
-#
-# CodeProject SenseAI Server Utilities
+﻿# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# CodeProject.AI Server Utilities
 #
 # Utilities for use with Linux/macOS Development Environment install scripts
 # 
 # We assume we're in the source code /Installers/Dev directory.
 # 
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # Returns a color code for the given foreground/background colors
 # This code is echoed to the terminal before outputing text in
@@ -242,7 +243,7 @@ function checkForTool () {
     writeLine "------------------------------------------------------------------------"
     writeLine "Error: ${name} is not installed on your system" $color_error
 
-    if [ "$platform" == "macos" ]; then
+    if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
         writeLine "       Please run 'brew install ${name}'" $color_error
 
         if ! command -v brew &> /dev/null; then
@@ -264,14 +265,14 @@ function checkForTool () {
 function setupPython () {
 
     # M1 macs are trouble for python
-    if [ "$platform" == "macos" ] && [[ $(uname -p) == 'arm' ]]; then
-        write "ARM (Apple silicon) Mac detected, but we are not running under Rosetta. " $color_warn
+    if [ "$platform" == "macos-arm" ]; then
+        writeLine "ARM (Apple silicon) Mac detected, but we are not running under Rosetta. " $color_warn
         if [ $(/usr/bin/pgrep oahd >/dev/null 2>&1; echo $?) -gt 0 ]; then
         #if [ "$(pkgutil --files com.apple.pkg.RosettaUpdateAuto)" == "" ]; then 
     	    writeLine 'Rosetta is not installed' $color_error
             needRosettaAndiBrew
         else
-    	    writeLine 'Rosetta is installed. We can continue.' $color_success
+    	    writeLine 'All Good! Rosetta is installed. We can continue.' $color_success
         fi
     fi
 
@@ -308,7 +309,7 @@ function setupPython () {
      fi
 
      if [ ! -d "${installPath}" ]; then
-        if [ "$platform" == "macos" ]; then
+        if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
             mkdir -p "${installPath}"
         else
             mkdir -p "${installPath}"
@@ -321,11 +322,21 @@ function setupPython () {
      else
 
         # For macOS we'll use brew to install python
-        if [ "$platform" == "macos" ]; then
+        if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
+
+            # We first need to ensure GCC is installed. 
+            write "Checking for GCC and xcode tools..." $color_primary
+            xcode-select -p >/dev/null  2>/dev/null
+            if [ $? -ne 0 ]; then
+                writeLine "Requesting install." $color_info
+                xcode-select --install
+            else
+                writeLine "present" $color_success
+            fi
 
             write "Installing Python ${pythonVersion}..." $color_primary
 
-            if [[ $(uname -p) == 'arm' ]]; then
+            if [ "$platform" == "macos-arm" ]; then
 
                 # Apple silicon requires Rosetta2 for python to run, so use the x86 version of Brew
                 # we installed earlier
@@ -418,21 +429,22 @@ function setupPython () {
     else
 
         # Make sure we have pythonNN-env installed
-        if [ "$platform" == "macos" ]; then
+        if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
             if [ "${verbosity}" == "quiet" ]; then
                 write "Installing Virtual Environment tools for mac..." $color_primary
-                pip3 install virtualenv virtualenvwrapper >/dev/null 2>/dev/null &
+                pip3 $pipFlags install virtualenv virtualenvwrapper >/dev/null &
                 spin $!
                 writeLine "Done" $color_success
+
             else
                 writeLine "Installing Virtual Environment tools for mac..." $color_primary
         
                 # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
-                if [ "$platform" == "macos" ] && [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
+                if [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
                     writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
                 fi
 
-                pip3 install virtualenv virtualenvwrapper
+                pip3 $pipFlags install virtualenv virtualenvwrapper
             fi
         else
             if [ "${verbosity}" == "quiet" ]; then
@@ -459,7 +471,7 @@ function setupPython () {
             writeLine "Install path is ${installPath}"
         fi
 
-        if [ "$platform" == "macos" ]; then
+        if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
             ${pythonCmd} -m venv "${installPath}/venv"
         else
             ${pythonCmd} -m venv "${installPath}/venv" &
@@ -488,16 +500,18 @@ function setupPython () {
 function installPythonPackages () {
 
     # Whether or not to install all python packages in one step (-r requirements.txt) or step by step
-    oneStepPIP="true"
+    oneStepPIP="false"
 
     pythonVersion=$1
+    requirementsDir=$2
+    testForPipExistanceName=$3
+
     # Version with ".'s removed
     local pythonName="python${pythonVersion/./}"
-
     pythonCmd="python${pythonVersion}"
 
     # Brew doesn't set PATH by default (nor do we need it to) which means we just have to be careful
-    if [ "$platform" == "macos" ]; then
+    if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
         
         # If running "PythonX.Y" doesn't actually work, then let's adjust the python command
         # to point to where we think the python launcher should be
@@ -508,30 +522,43 @@ function installPythonPackages () {
         fi
     fi
 
+    # Check for requirements.platform.txt first, then fall back to requirements.txt
+    requirementsFilename="requirements.${platform}.txt"
+    requirementsPath=${requirementsDir}/${requirementsFilename}
+    if [ ! -f "${requirementsPath}" ]; then
+        requirementsFilename="requirements.txt"
+        requirementsPath=${requirementsDir}/${requirementsFilename}
+    fi
+ 
+    virtualEnv="${analysisLayerPath}/bin/${platform}/${pythonName}/venv"
+
     # Quick check to ensure PIP is upo to date
+    pushd "${virtualEnv}/bin"  >/dev/null
     if [ "${verbosity}" == "quiet" ]; then
         write "Updating Python PIP..."
-        ${pythonCmd} -m pip install --upgrade pip >/dev/null 2>/dev/null &
+        ./pip install --upgrade pip >/dev/null 2>/dev/null &
         spin $!
         writeLine "Done" $color_success
     else
         writeLine "Updating Python PIP..."
-        # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
-        if [ "$platform" == "macos" ] && [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
-            writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
+    
+       if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
+            # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
+            if [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
+                writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
+            fi
         fi
-        ${pythonCmd} -m pip install --upgrade pip
-    fi
-
-    requirementsPath=$2
-
-    testForPipExistanceName=$3
-
-    virtualEnv="${analysisLayerPath}/bin/${platform}/${pythonName}/venv"
+    
+        ./pip install --upgrade pip
+    fi 
+    popd  >/dev/null
 
     # ============================================================================
     # Install PIP packages
 
+    # writeLine "Installing PIP from ${requirementsPath}" $color_error
+
+    # writeLine "Checking ${packagesPath}/${testForPipExistanceName}" $color_error
     write "Checking for required packages..." $color_primary
 
     # ASSUMPTION: If a folder by the name of "testForPipExistanceName" exists in the site-packages
@@ -541,20 +568,19 @@ function installPythonPackages () {
 
     if [ ! -d "${packagesPath}/${testForPipExistanceName}" ]; then
 
-        if [ ! "${verbosity}" == "quiet" ]; then
-            writeLine "Installing packages from ${requirementsPath}" $color_info
-        fi
-        writeLine "Packages missing. Installing..." $color_info
+        writeLine "Installing packages in ${requirementsFilename}" $color_info
 
+        pushd "${virtualEnv}/bin"  >/dev/null
         if [ "${oneStepPIP}" == "true" ]; then
 
             # Install the Python Packages in one fell swoop. Not much feedback, but it works
             write "Installing Packages into Virtual Environment..." $color_primary
             if [ "${verbosity}" == "quiet" ]; then
-                ${pythonCmd} -m pip install -r ${requirementsPath} --target ${packagesPath} > /dev/null &
+                # writeLine "${pythonCmd} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}" $color_info
+                ./pip install $pipFlags -r ${requirementsPath} --target ${packagesPath} > /dev/null &
                 spin $!
             else
-                ${pythonCmd} -m pip install -r ${requirementsPath} --target ${packagesPath}
+                ./pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}
             fi
             writeLine "Success" $color_success
 
@@ -576,13 +602,13 @@ function installPythonPackages () {
                     currentOption=""
                 elif [ "${line:0:2}" == "#!" ]; then
                     currentOption=""
-                elif [ "${line:0:12}" == "--find-links" ]; then
+                elif [ "${line:0:1}" == "-" ]; then
                     currentOption="${line}"
                 else
             
-                    module="${line}"
+                    module="${line/ /}"
                     description=""
-        
+
                     # breakup line into module name and description
                     IFS='#'; tokens=($module); IFS=$'\n';
 
@@ -594,35 +620,30 @@ function installPythonPackages () {
                     if [ "${description}" == "" ]; then
                         description="Installing ${module}"
                     fi
-
+        
                     if [ "${module}" != "" ]; then
 
-                        # Some packages have a version nunber after a "==". We need to trim that here.
-                        # ... or lets not trim versions...
-                        # IFS='='; tokens=($module); IFS=$'\n';
-                        # if [ ${#tokens[*]} -gt 1 ]; then
-                        #      module="${tokens[0]}"
-                        # fi
-                        # currentOption=""    # Given that we're stripping versions, ignore this too
-
+                        # writeLine "./pip install ${pipFlags} $module ${currentOption}" $color_error
                         write "  -${description}..." $color_primary
 
                         # TODO: We should test first. Alter the requirements file to provide the 
                         # name of a module (module_import) to be tested before we import
                         # if python3 -c "import ${module_import}"; then echo "Found ${module}. Skipping."; fi;
 
-                        pushd "${virtualEnv}/bin" > /dev/null
                         if [ "${verbosity}" == "quiet" ]; then
-                            ./python${pythonVersion} -m pip install $module $currentOption $pipFlags >/dev/null 2>/dev/null &
+                            # writeLine "./pip install ${currentOption} ${module}" $color_error
+                            ./pip3 install ${currentOption} ${module}  >/dev/null 2>/dev/null &
                             spin $!
                         else
-                            # echo python3 -m pip install $module $currentOption $pipFlags
-                            ./python${pythonVersion} -m pip install $module $currentOption $pipFlags
+                            ./pip3 install ${currentOption} $module
                         fi
-                        popd > /dev/null
 
-                        writeLine "Done" $color_success
-
+                        status=$?    
+                        if [ $status -eq 0 ]; then
+                            writeLine "Done" $color_success
+                        else
+                            writeLine "Failed" $color_error
+                        fi
                     fi
 
                     currentOption=""
@@ -632,8 +653,10 @@ function installPythonPackages () {
             done
             unset IFS
         fi
+        popd  >/dev/null
+
     else
-        writeLine "present." $color_success
+        writeLine "${testForPipExistanceName} present." $color_success
     fi
 }
 
@@ -868,3 +891,37 @@ function quit () {
     fi
     exit
 }
+
+
+# Platform can define where things are located
+if [[ $OSTYPE == 'darwin'* ]]; then
+    if [[ $(uname -p) == 'arm' ]]; then
+        platform='macos-arm'
+    else
+        platform='macos'
+    fi
+else
+    platform='linux'
+fi
+
+darkmode=$(isDarkMode)
+
+# Setup some predefined colours. Note that we can't reliably determine the background 
+# color of the terminal so we avoid specifically setting black or white for the foreground
+# or background. You can always just use "White" and "Black" if you specifically want
+# this combo, but test thoroughly
+if [ "$darkmode" == "true" ]; then
+    color_primary='White'
+    color_mute='Gray'
+    color_info='Yellow'
+    color_success='Green'
+    color_warn='DarkYellow'
+    color_error='Red'
+else
+    color_primary='Black'
+    color_mute='Gray'
+    color_info='Magenta'
+    color_success='DarkGreen'
+    color_warn='DarkYellow'
+    color_error='Red'
+fi

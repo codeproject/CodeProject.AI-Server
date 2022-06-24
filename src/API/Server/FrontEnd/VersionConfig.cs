@@ -1,6 +1,6 @@
-﻿using CodeProject.SenseAI.API.Common;
+﻿using CodeProject.AI.API.Common;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// Version instance config values.

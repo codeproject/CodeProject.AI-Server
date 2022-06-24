@@ -6,7 +6,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 
-namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
     /// <summary>
     /// Defines deep person lab.
@@ -24,11 +24,13 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
         /// Initializes deep person lab.
         /// </summary>
         /// <param name="modelPath">Model path</param>
-        public DeepPersonLab(string modelPath)
+        public DeepPersonLab(string modelPath, SessionOptions? sessionOptions = null)
         {
+            sessionOptions = sessionOptions ?? new SessionOptions();
+
             var tic = Environment.TickCount;
             Console.WriteLine("Starting inference session...");
-            _session = new InferenceSession(modelPath);
+            _session = new InferenceSession(modelPath, sessionOptions);
             Console.WriteLine($"Session started in {Environment.TickCount - tic} mls.");
         }
         /// <summary>

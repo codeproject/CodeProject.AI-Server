@@ -4,20 +4,20 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<AssemblyName>CodeProject.SenseAI.Server</AssemblyName>
-		<Version>1.4.0.0</Version>
-		<RootNamespace>CodeProject.SenseAI.API.Server.Frontend</RootNamespace>
+		<AssemblyName>CodeProject.AI.Server</AssemblyName>
+		<Version>1.5.0.0</Version>
+		<RootNamespace>CodeProject.AI.API.Server.Frontend</RootNamespace>
 		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<DockerfileContext>..\..\..\..</DockerfileContext>
-		<DockerfileTag>codeproject/senseai-server</DockerfileTag>
+		<DockerfileTag>codeproject/ai-server</DockerfileTag>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
 		<DeleteExistingFiles>true</DeleteExistingFiles>
 		<Company>CodeProject</Company>
 		<Authors>CodeProject</Authors>
-		<Product>CodeProject SenseAI Server</Product>
+		<Product>CodeProject.AI Server</Product>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -25,7 +25,7 @@
 		<IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
 		<IsOsx Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOsx>
 		<PackageLicenseExpression>SSPL-1.0</PackageLicenseExpression>
-		<Description>A Service hosting the CodeProject SenseAI WebAPI for face detection and recognition, object detection, and scene classification, and other AI operations.</Description>
+		<Description>A Service hosting the CodeProject.AI WebAPI for face detection and recognition, object detection, and scene classification, and other AI operations.</Description>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(IsWindows)'=='true'">
 		<DefineConstants>Windows</DefineConstants>
@@ -47,6 +47,7 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
+		<DebugType>portable</DebugType>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -56,6 +57,13 @@
 
 	<ItemGroup>
 		<Content Remove="installconfig.json" />
+		<Content Remove="wwwroot\assets\codeprojectAI-black.svg" />
+		<Content Remove="wwwroot\assets\codeprojectAI-white.svg" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="wwwroot\assets\codeprojectAI-white.svg" />
+	  <None Include="wwwroot\assets\codeprojectAI-black.svg" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -70,12 +78,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Update="wwwroot\assets\apexcharts.css">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Update="wwwroot\assets\apexcharts.min.js">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
 		<Content Update="wwwroot\assets\bootstrap.bundle.min.js">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>

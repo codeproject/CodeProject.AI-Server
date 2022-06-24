@@ -392,3 +392,10 @@ FodyWeavers.xsd
 *.DS_Store
 /src/AnalysisLayer/BackgroundRemover/models
 /docs/mkdocs/senseAI/site
+/src/AnalysisLayer/Vision/assets
+/src/AnalysisLayer/CustomDetection/assets/openlogo.pt
+/src/AnalysisLayer/CustomDetection/assets/actionnetv2.pt
+/src/AnalysisLayer/CustomDetection/assets/license-plate.pt
+/src/AnalysisLayer/CustomDetection/assets/yolov5m.pt
+/docs/mkdocs/CodeProject.AI/site
+/src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo/assets

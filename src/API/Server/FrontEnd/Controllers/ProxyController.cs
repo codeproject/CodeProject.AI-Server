@@ -11,14 +11,15 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Options;
 
-using CodeProject.SenseAI.AnalysisLayer.SDK;
-using CodeProject.SenseAI.API.Server.Backend;
-using CodeProject.SenseAI.Server.Backend;
+using CodeProject.AI.AnalysisLayer.SDK;
+using CodeProject.AI.API.Server.Backend;
+using CodeProject.AI.Server.Backend;
+using System;
 
-namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
+namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
     // ------------------------------------------------------------------------------
-    // When a backend process starts it will register itself with the main SenseAI Server.
+    // When a backend process starts it will register itself with the main CodeProject.AI Server.
     // It does this by Posting as Register request to the Server which
     //  - provides the end part of url for the request
     //  - the name of the queue that the request will be sent to.
@@ -67,10 +68,10 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
         [HttpPost("{**path}")]
         public async Task<IActionResult> Post(string path)
         {
-            if (_routeMap.TryGetValue(path, "POST", out RouteQueueInfo routeInfo))
+            if (_routeMap.TryGetValue(path, "POST", out RouteQueueInfo? routeInfo))
             {
-                RequestPayload payload  = CreatePayload(routeInfo);
-                var response = await _dispatcher.QueueRequest(routeInfo.QueueName, routeInfo.Command,
+                RequestPayload payload  = CreatePayload(path, routeInfo!);
+                var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, routeInfo!.Command,
                                                               payload);
 
                 // if the response is a string, it was returned from the backend.
@@ -125,7 +126,8 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
                     string category = index > 0 ? routeInfo.Path.Substring(0, index) : routeInfo.Path;
                     string route    = index > 0 ? routeInfo.Path.Substring(index + 1) : string.Empty;
 
-                    string path     = $"/{version}/{category}/{route}";
+                    // string path     = $"/{version}/{category}/{route}";
+                    string path     = $"{version}/{routeInfo.Path}";
 
                     if (category != currentCategory)
                     {
@@ -203,23 +205,56 @@ namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
             return new ObjectResult(summary.ToString());
         }
 
-        private RequestPayload CreatePayload(RouteQueueInfo routeInfo)
+        private RequestPayload CreatePayload(string path, RouteQueueInfo routeInfo)
         {
-            // TODO: Include querystring parameters as well.
-            IFormCollection form = Request.Form;
-            var requestValues = form.Select(x => new KeyValuePair<string, string[]?>(x.Key, x.Value.ToArray())).ToList();
-            var payload       = new RequestPayload
+            // TODO: Add Segment list (string[]) and params (map of name/value)
+            var endOfUrl = path.Remove(0, routeInfo.Path.Length);
+
+            var segments    = new List<string>();
+            var queryParams = new List<KeyValuePair<string, string[]?>>();
+            var formFiles   = new List<RequestFormFile>();
+
+            if (endOfUrl.StartsWith("/"))
+                endOfUrl = endOfUrl.Substring(1);
+
+
+            // handle extra segments
+            if (endOfUrl.Length > 0)
+                segments.AddRange(endOfUrl.Split('/', StringSplitOptions.TrimEntries));
+
+            // and the QueryString parameters
+            var queryParts = Request.Query;
+            if (queryParts?.Any() ?? false)
             {
-                command = routeInfo.Command,
-                queue   = routeInfo.QueueName,
-                values  = requestValues,
-                files   = form.Files.Select(x => new RequestFormFile
+                foreach (var param in queryParts)
+                    queryParams.Add(new KeyValuePair<string, string[]?>(param.Key, param.Value.ToArray()));
+            }
+
+            try // if there is no Form values, then Request.Form throws.
+            {
+                IFormCollection form = Request.Form;
+                // Add any Form values.
+                queryParams.AddRange(form.Select(x => new KeyValuePair<string, string[]?>(x.Key, x.Value.ToArray())));
+                formFiles.AddRange(form.Files.Select(x => new RequestFormFile
                 {
                     name        = x.Name,
                     filename    = x.FileName,
                     contentType = x.ContentType,
                     data        = GetFileData(x)
-                })
+                }));
+            }
+            catch
+            {
+                // nothing to do here, just no Form available
+            }
+
+            var payload = new RequestPayload
+            {
+                urlSegments = segments.ToArray(),
+                command     = routeInfo.Command,
+                queue       = routeInfo.QueueName,
+                values      = queryParams,
+                files       = formFiles
             };
 
             return payload;

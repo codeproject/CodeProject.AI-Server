@@ -1,4 +1,4 @@
-:: CodeProject SenseAI Server Utilities
+:: CodeProject.AI Server Utilities
 ::
 :: Utilities for use with Windows Development Environment install scripts
 ::
@@ -100,6 +100,7 @@ shift & goto :%~1
     if /i "!foreground!"=="Magenta"     set currentColor=!ESC![95m
     if /i "!foreground!"=="Cyan"        set currentColor=!ESC![96m
     if /i "!foreground!"=="White"       set currentColor=!ESC![97m
+
     if "!currentColor!"=="" set currentColor=!ESC![97m
 	
     if /i "!background!"=="Black"       set currentColor=!currentColor!!ESC![40m
@@ -322,13 +323,49 @@ shift & goto :%~1
     set pythonVersion=%1
     set pythonName=python!pythonVersion:.=!
 
-    set requirementsPath=%~2
+    set requirementsDir=%~2
     set testForPipExistanceName=%~3
 
     set virtualEnv=!analysisLayerPath!\bin\!platform!\!pythonName!\venv
 
     rem This will be the python interpreter in the virtual env
     set pythonPath=!virtualEnv!\Scripts\python
+
+    call :Write "Checking for CUDA..."
+    set hasCUDA=false
+    wmic PATH Win32_VideoController get Name | find "NVIDIA" > NUL
+    if errorlevel 0 (
+        set hasCUDA=true
+        call :WriteLine "Present" "Green"
+    ) else (
+        call :WriteLine "Not found" "Gray"
+    )
+
+
+    REM Check for requirements.platform.[CUDA].txt first, then fall back to requirements.txt
+
+    if "!hasCUDA!" == "true" (
+        set requirementsFilename=requirements.windows.cuda.txt
+        set requirementsPath="!requirementsDir!\!requirementsFilename!"
+
+        if not exist "!requirementsPath!" (
+            set requirementsFilename=requirements.cuda.txt
+            set requirementsPath="!requirementsDir!\!requirementsFilename!"
+
+            if not exist "!requirementsPath!" (
+                set requirementsFilename=requirements.windows.txt
+                set requirementsPath="!requirementsDir!\!requirementsFilename!"
+            )
+        )
+    ) else (
+        set requirementsFilename=requirements.windows.txt
+        set requirementsPath="!requirementsDir!\!requirementsFilename!"
+    )
+
+    if not exist "!requirementsPath!" (
+        set requirementsFilename=requirements.txt
+        set requirementsPath="!requirementsDir!\!requirementsFilename!"
+    )
 
     rem ============================================================================
     rem 3a. Install PIP packages for Python analysis services
@@ -344,7 +381,7 @@ shift & goto :%~1
     rem ASSUMPTION: If venv\Lib\site-packages\<test name> exists then no need to check further
     if not exist "!virtualEnv!\Lib\site-packages\!testForPipExistanceName!" (
 
-        call :WriteLine "Packages missing. Installing..." "Yellow"
+        call :WriteLine "Packages missing. Installing from !requirementsFilename!..." "Yellow"
 
         if "!oneStepPIP!" == "true" (
             

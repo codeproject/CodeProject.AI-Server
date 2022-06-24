@@ -7,9 +7,9 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.SenseAI.API.Common;
-using CodeProject.SenseAI.API.Server.Backend;
-using CodeProject.SenseAI.Server.Backend;
+using CodeProject.AI.API.Common;
+using CodeProject.AI.API.Server.Backend;
+using CodeProject.AI.Server.Backend;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +17,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// This background process manages the startup and shutdown of the backend processes.
@@ -57,6 +57,9 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         {
             get
             {
+                // TODO: Docker is an environment in which we're running Linux. We probably need to have
+                //       OS, Environment (Docker, VSCode), Platform (x86-64, Arm64),
+                //       Accelerator (CPU, GPU-Gen5, nVidia)
                 bool inDocker = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
                 if (inDocker)
                     return "Docker";  // which in our case implies that we are running in Linux
@@ -67,7 +70,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     return "Windows";
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    return "macOS";
+                    return RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "macOS-Arm" : "macOS";
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                     return "Linux";
@@ -96,12 +99,14 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             {
                 return StartupProcesses.Select(entry => new ProcessStatus()
                 {
-                    ModuleId  = entry.Key ?? "Unknown",
-                    Name      = entry.Value.Name,
-                    Started   = entry.Value.Started,
-                    LastSeen  = entry.Value.LastSeen,
-                    Running   = entry.Value.Running,
-                    Processed = entry.Value.Processed ?? 0
+                    ModuleId          = entry.Key ?? "Unknown",
+                    Name              = entry.Value.Name,
+                    Started           = entry.Value.Started,
+                    LastSeen          = entry.Value.LastSeen,
+                    Running           = entry.Value.Running,
+                    Processed         = entry.Value.Processed ?? 0,
+                    ExecutionProvider = entry.Value.ExecutionProvider ?? string.Empty,
+                    HardwareId        = entry.Value.HardwareId ?? "CPU"
                 }).ToList();
             }
         }
@@ -163,6 +168,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
             // Doing the above in Parallel speeds things up
             Parallel.ForEach(_runningProcesses.Where(x => !x.HasExited), process =>
             {
+                Console.WriteLine($"Shutting down {process.ProcessName}");
                 // TODO: First send a "Shutdown" message to each process and wait a second or two.
                 //       If the process continues to run, then we get serious.
                 process.Kill(true);
@@ -274,19 +280,40 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                         process.EnableRaisingEvents = true;
                         process.OutputDataReceived += (sender, data) =>
                         {
+                            string message = data.Data ?? string.Empty;
+
                             string filename = string.Empty;
                             if (sender is Process process)
+                            {
                                 filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"", ""));
+                                if (process.HasExited && message == string.Empty)
+                                    message = "has exited";
+                            }
 
-                            Logger.Log(string.IsNullOrEmpty(filename) ? data.Data : filename + ": " + data.Data);
+                            if (string.IsNullOrEmpty(filename))
+                                filename = "Process";
+
+                            Logger.Log(filename + ": " + message);
                         };
                         process.ErrorDataReceived += (sender, data) =>
                         {
+                            string error = data.Data ?? string.Empty;
+
                             string filename = string.Empty;
                             if (sender is Process process)
-                                filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"",""));
+                            {
+                                filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"", ""));
+                                if (process.HasExited && error == string.Empty)
+                                    error = "has exited";
+                            }
 
-                            Logger.Log(string.IsNullOrEmpty(filename) ? data.Data : filename + ": " + data.Data);
+                            if (string.IsNullOrEmpty(filename))
+                                filename = "Process";
+
+                            if (string.IsNullOrEmpty(error))
+                                error = "No error provided";
+
+                            Logger.Log(filename + ": " + error);
                         };
 
                         if (!process.Start())
@@ -332,7 +359,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                             Logger.Log($"    In /Installers/Dev/, run 'bash setup_dev_env_linux.sh'");
                         Logger.Log($" ** Did you setup the Development environment?");
 #else
-                        Logger.Log($"Please check the SenseAI installation completed successfully");
+                        Logger.Log($"Please check the CodeProject.AI installation completed successfully");
 #endif
                     }
                 }
@@ -383,9 +410,12 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                     enabled = enabled || _config.GetValue(envVar, false);
 
             // If the platform list doesn't include the current platform, then veto the activation
-            if (enabled && !module.Platforms!.Any(platform => platform.ToLower() == Platform.ToLower()))
+            if (enabled && !module.Platforms!.Any(p => p.ToLower() == Platform.ToLower()))
                 enabled = false;
-   
+
+            if (!enabled && module.Platforms!.Any(p => p.ToLower() == "all"))
+                enabled = true;
+
             return enabled;
         }
 

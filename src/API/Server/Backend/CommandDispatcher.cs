@@ -8,9 +8,9 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.SenseAI.AnalysisLayer.SDK;
+using CodeProject.AI.AnalysisLayer.SDK;
 
-namespace CodeProject.SenseAI.API.Server.Backend
+namespace CodeProject.AI.API.Server.Backend
 {
     /// <summary>
     /// Creates and Dispatches commands appropriately.

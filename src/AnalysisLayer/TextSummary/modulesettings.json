@@ -6,7 +6,7 @@
       "Description": "Summarizes some content by selecting a number of sentences that are most representitive of the content.",
       "FilePath": "TextSummary\\textsummary.py",
       "Runtime": "python38",
-      "Platforms": [ "windows", "linux", "macos", "docker" ],
+      "Platforms": [ "windows", "linux", "macos", "macos-arm", "docker" ],
 
       "EnvironmentVariables": {
         "NLTK_DATA": "%MODULES_PATH%\\TextSummary\\nltk_data"

@@ -1,4 +1,4 @@
-:: CodeProject SenseAI Server 
+:: CodeProject.AI Server 
 ::
 :: Windows Development Environment install script
 ::
@@ -27,10 +27,10 @@ set platform=windows
 :: The location of the solution root directory relative to this script
 set rootPath=../..
 
-:: SenseAI Server specific ::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: CodeProject.AI Server specific :::::::::::::::::::::::::::::::::::::::::::::
 
 :: The name of the dir holding the frontend API server
-set senseAPIDir=API
+set APIDirName=API
 
 
 :: Shared :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -39,7 +39,7 @@ set senseAPIDir=API
 :: a. From AWS
 set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/
 :: b. Use a local directory rather than from online. Handy for debugging.
-rem set storageUrl=C:\Dev\CodeProject\CodeProject.SenseAI\install\cached_downloads\
+rem set storageUrl=C:\Dev\CodeProject\CodeProject.AI\install\cached_downloads\
 
 :: The name of the source directory
 set srcDir=src
@@ -52,7 +52,7 @@ set downloadDir=downloads
 set analysisLayerDir=AnalysisLayer
 
 :: Absolute paths :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:: The absolute path to the root directory of CodeProject.SenseAI
+:: The absolute path to the root directory of CodeProject.AI
 set currentDir=%cd%
 cd %rootPath%
 set absoluteRootDir=%cd%
@@ -83,11 +83,11 @@ if /i "%verbosity%"=="loud" (
     set roboCopyFlags=
 )
 
-call utils.bat WriteLine "        Setting up CodeProject.SenseAI Development Environment          " "DarkYellow" 
+call utils.bat WriteLine "          Setting up CodeProject.AI Development Environment             " "DarkYellow" 
 call utils.bat WriteLine "                                                                        " "DarkGreen" 
 call utils.bat WriteLine "========================================================================" "DarkGreen" 
 call utils.bat WriteLine "                                                                        " "DarkGreen" 
-call utils.bat WriteLine "                 CodeProject SenseAI Installer                          " "DarkGreen" 
+call utils.bat WriteLine "                   CodeProject.AI Installer                             " "DarkGreen" 
 call utils.bat WriteLine "                                                                        " "DarkGreen"
 call utils.bat WriteLine "========================================================================" "DarkGreen" 
 call utils.bat WriteLine "                                                                        " "DarkGreen"
@@ -96,7 +96,7 @@ call utils.bat WriteLine "                                                      
 :: 1. Ensure directories are created and download required assets
 
 call utils.bat WriteLine
-call utils.bat WriteLine "General SenseAI setup" "DarkGreen" 
+call utils.bat WriteLine "General CodeProject.AI setup" "DarkGreen" 
 
 :: Create some directories
 call utils.bat Write "Creating Directories..."
@@ -108,15 +108,18 @@ call utils.bat WriteLine "Done" "Green"
 
 :: The Docs ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: 
 
+call utils.bat WriteLine
+call utils.bat WriteLine "Installing MKDocs" "DarkGreen" 
+call utils.bat WriteLine
+
 :: Currently 3.9 is the latest python version our modules are using, so we'll just use this to 
 :: save installing a one-off (but potentially better) version. It's just docs. Nothing crazy.
 call utils.bat SetupPython 3.9
 
 :: pythonInterpreterPath will contain the path to the latest installed Python VENV interpreter
-call utils.bat Write "Installing MKDocs..." 
 :: !pythonInterpreterPath! -m pip install mkdocs
 :: !pythonInterpreterPath! -m mkdocs
-call utils.bat InstallPythonPackages 3.9 "..\..\docs\mkdocs\requirements.txt" "mkdocs"
+call utils.bat InstallPythonPackages 3.9 "..\..\docs\mkdocs" "mkdocs"
 call utils.bat WriteLine "Done" "DarkGreen" 
 
 
@@ -124,6 +127,7 @@ call utils.bat WriteLine "Done" "DarkGreen"
 
 call utils.bat WriteLine
 call utils.bat WriteLine "TextSummary setup" "DarkGreen" 
+call utils.bat WriteLine
 
 :: The name of the dir containing the TextSummary module
 set moduleDir=TextSummary
@@ -132,13 +136,14 @@ set moduleDir=TextSummary
 set modulePath=%analysisLayerPath%\%moduleDir%
 
 call utils.bat SetupPython 3.7
-call utils.bat InstallPythonPackages 3.7 "%modulePath%\requirements.txt" "nltk"
+call utils.bat InstallPythonPackages 3.7 "%modulePath%" "nltk"
 
 
 :: Background Remover :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 call utils.bat WriteLine
 call utils.bat WriteLine "Background Remover setup" "DarkGreen" 
+call utils.bat WriteLine
 
 :: The name of the dir containing the Background Remover module
 set moduleDir=BackgroundRemover
@@ -154,7 +159,7 @@ set modelsAssetFilename=rembg-models.zip
 
 :: Install python and the required dependencies
 call utils.bat SetupPython 3.9
-call utils.bat InstallPythonPackages 3.9 "%modulePath%\requirements.txt" "onnxruntime"
+call utils.bat InstallPythonPackages 3.9 "%modulePath%" "onnxruntime"
 
 :: Clean up directories to force a download and re-copy if necessary
 if /i "%forceOverwrite%" == "true" (
@@ -181,9 +186,10 @@ if not exist "%modulePath%\%moduleAssetsDir%" (
 
 call utils.bat WriteLine
 call utils.bat WriteLine "Vision toolkit setup" "DarkGreen" 
+call utils.bat WriteLine
 
 :: The name of the dir containing the Deepstack Vision modules
-set moduleDir=DeepStack
+set moduleDir=Vision
 
 :: The full path of the Deepstack Vision modules
 set modulePath=%analysisLayerPath%\%moduleDir%
@@ -196,7 +202,7 @@ set modelsAssetFilename=models.zip
 
 :: Install python and the required dependencies
 call utils.bat SetupPython 3.7
-call utils.bat InstallPythonPackages 3.7 "%modulePath%\intelligencelayer\requirements.txt" "torch"
+call utils.bat InstallPythonPackages 3.7 "%modulePath%\intelligencelayer" "torch"
 
 :: Clean up directories to force a download and re-copy if necessary
 if /i "%forceOverwrite%" == "true" (
@@ -222,9 +228,10 @@ if not exist "%modulePath%\datastore\" mkdir "%modulePath%\datastore"
 
 call utils.bat WriteLine
 call utils.bat WriteLine "Object Detector setup" "DarkGreen" 
+call utils.bat WriteLine
 
 :: The name of the dir containing the Object Detector module. Yes, some brevity here would be good
-set moduleDir=CodeProject.SenseAI.AnalysisLayer.Yolo
+set moduleDir=CodeProject.AI.AnalysisLayer.Yolo
 
 :: The full path of the Object Detector module
 set modulePath=%analysisLayerPath%\%moduleDir%

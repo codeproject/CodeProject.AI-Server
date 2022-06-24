@@ -33,7 +33,7 @@
     <Compile Include="rembg\session_simple.py" />
     <Compile Include="rembg\_version.py" />
     <Compile Include="rembg\__init__.py" />
-    <Compile Include="sense_rembg_adapter.py" />
+    <Compile Include="rembg_adapter.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>

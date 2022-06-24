@@ -1,6 +1,6 @@
 #!/bin/sh
 
-## CodeProject SenseAI Analysis services startup script for Linux and macOS
+## CodeProject.AI Analysis services startup script for Linux and macOS
 ##
 ## Usage:
 ##   . ./start.sh
@@ -50,7 +50,7 @@ if [ "${embedded}" == "false" ] || [ "$DATA_DIR" == "" ]; then
     NLTK_DATA="${ANALYSISDIR}/TextSummary/nltk_data"
 
     # Deepstack stuff
-    APPDIR="${ANALYSISDIR}/DeepStack/"
+    APPDIR="${ANALYSISDIR}/Vision/"
     DATA_DIR="${APPDIR}datastore/"
     TEMP_PATH="${APPDIR}tempstore/"
     MODELS_DIR="${APPDIR}assets/"
@@ -85,7 +85,7 @@ python37Path="${APPDIR}/src/AnalysisLayer/bin/${platform}/Python37/venv/bin/pyth
 python39Path="${APPDIR}/src/AnalysisLayer/bin/${platform}/Python39/venv/bin/python3"
 
 "${python37Path}" "${APPDIR} "${ANALYSISDIR}/TextSummary/textsummary.py" &
-"${python37Path}" "${APPDIR}/BackgroundRemover/sense_rembg_adapter.py" &
+"${python37Path}" "${APPDIR}/BackgroundRemover/rembg_adapter.py" &
 
 "${python37Path}" "${APPDIR}/intelligencelayer/detection.py" &
 "${python37Path}" "${APPDIR}/intelligencelayer/scene.py" &

@@ -1,0 +1,64 @@
+site_name: CodeProject.AI Server
+site_description: A Guide to using and developing with CodeProject.AI Server
+copyright: CodeProject Solutions Inc
+
+use_directory_urls: false
+
+theme:
+    name: material
+    custom_dir: 'aspx_override'
+#   palette:
+#        primary: #f90   See https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/
+#                        Currently we're overriding colours using the site.css file
+
+nav:
+    - Home: index.md
+    - 'CodeProject.AI: Start here':
+        - 'Installing CodeProject.AI on Windows' : 'why/install_on_windows.md'
+        - 'Running CodeProject.AI in Docker' : 'why/running_in_docker.md'
+        - 'How to add AI to an Application': 'why/how_to_add_AI_to_an_app.md'
+        - 'How to configure modules': 'why/module_configuration.md'
+        - 'Who is using CodeProject.AI?': 'why/integrations.md'
+    - 'API Reference':
+        - 'API Reference': 'api/api_reference.md'
+    - 'Development Guide':
+        - 'Setting up the Dev Environment': 'devguide/install_dev.md'
+        - Adding New Modules:
+            - 'Adding new modules to CodeProject.AI': 'devguide/module_examples/adding_new_modules.md'
+            - 'Adding your own Python module': 'devguide/module_examples/add_python_module.md'
+            - 'Adding your own .NET module':   'devguide/module_examples/add_net_module.md'
+        # - 'Integrating with your application': 'devguide/integration.md'
+        - 'Common Errors': 'devguide/common_errors.md'
+    - 'About':
+        # - 'About CodeProject.AI': 'about/about.md'
+        - 'License': 'about/license.md'
+        # - 'Release Notes': 'about/release-notes.md'
+
+extra_css:
+    - css/site.css
+
+# plugins:
+#    - tags
+
+extra:
+  analytics:
+    provider: google
+    property: G-YZNPNQ0F2S
+
+markdown_extensions:
+    - meta
+    - attr_list
+    - tables
+    - admonition
+    - pymdownx.inlinehilite
+    - pymdownx.snippets
+    - pymdownx.superfences
+    - pymdownx.details
+    - pymdownx.tabbed:
+        alternate_style: true 
+    - pymdownx.highlight:
+        anchor_linenums: true
+        auto_title: true
+
+# add   - pymdownx.caret and - pymdownx.tilde for super- and sub-script support
+# Comment system:  https://squidfunk.github.io/mkdocs-material/setup/adding-a-comment-system/

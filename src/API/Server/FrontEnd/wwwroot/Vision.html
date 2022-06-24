@@ -3,7 +3,7 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<meta charset="utf-8" />
-	<title>CodeProject SenseAI Demos</title>
+	<title>CodeProject.AI Explorer</title>
 
 	<!-- If you use this, ensure the body has class "dark-mode" -->
 	<link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
@@ -84,6 +84,7 @@
 			setStatus("Searching for API Server...", "orange");
 			setInterval(ping, pingFrequency);
 			setInterval(getAnalysisStatus, pingFrequency);
+			setTimeout(setCustomModelList, 5000);
 		});
 
 		function adjustForImageSize() {
@@ -205,7 +206,7 @@
 					let bottom = top + height;
 
 
-					// senseAI style
+					// CodeProject.AI style
 					let lineWidth = Math.min(maxLineWidth, width / 10);
 					let blockWidth = (width - lineWidth) / 5;
 					let blockHeight = (height - lineWidth) / 5;
@@ -514,12 +515,43 @@
 			});
 		}
 
+		function setCustomModelList() {
+			submitRequest('vision', 'custom/list', null, null, function (data) {
+
+                while (customModel.options.length)
+                    customModel.remove(0);
+
+				for (let i = 0; i < data.models.length; i++) {
+                    var model = new Option(data.models[i]);
+                    customModel.options.add(model);
+				}
+            });
+		}
+
+        function onCustomDetect(model_name, fileChooser) {
+
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for custom object detection");
+                return;
+            }
+
+            setImage(fileChooser.files[0]);
+            let images = [fileChooser.files[0]];
+
+            submitRequest('vision', 'custom/' + model_name, images, null, function (data) {
+                drawRectangles(data.predictions);
+                displayPredictionResults(data.predictions)
+            });
+        }
+
 		function onDetectThings(fileChooser) {
 
 			clearCanvas();
 
 			if (fileChooser.files.length == 0) {
-				alert("No file was selected for scene detection");
+				alert("No file was selected for vision detection");
 				return;
 			}
 
@@ -698,7 +730,6 @@
 			});
 		}
 
-
 		var isBenchmarkCancelled;
 		function onBenchmark(fileChooser, resultElm) {
 
@@ -790,7 +821,7 @@
 					</svg><span class="site-title"><span class="front">Code</span><span class="end">Project</span></span>
 				</a>
 
-				<div style="font-size: 2.1rem; margin-top: 12px;">senseAI Explorer</div>
+				<div style="font-size: 2.1rem; margin-top: 12px;">CodeProject.AI Explorer</div>
 
 				<a href="https://www.codeproject.com/ai" style="margin:5px 5px 0 0">
 					<svg id="Layer_2" data-name="Layer 2" viewBox="0 0 360.7 157.9" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com" style="height:60px">
@@ -851,9 +882,10 @@
 							<li class="nav-item">
 								<button class="nav-link" id="face-tab" data-bs-toggle="tab" data-bs-target="#face-panel" type="button" role="tab" aria-controls="face" aria-selected="false">Face</button>
 							</li>
-							<li class="nav-item">
+							<!--Commented out to remove Text tab-->
+							<!--<li class="nav-item">
 								<button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-panel" type="button" role="tab" aria-controls="text" aria-selected="false">Text</button>
-							</li>
+							</li>-->
 
 							<li class="nav-item ms-auto">
 								<button class="nav-link" id="benchmark-tab" data-bs-toggle="tab" data-bs-target="#benchmark-panel" type="button" role="tab" aria-controls="benchmark" aria-selected="false">Benchmark</button>
@@ -929,6 +961,28 @@
 									</div>
 								</div>
 
+								<div class="card mt-3 d-none CustomObjectDetection">
+									<div class="card-header h3">Custom Object Detection</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group row">
+											<label class="col-form-label col-3">Image</label>
+											<input class="col form-control btn-light" id="customimage" type="file"
+												   onchange="return previewImage(this)" />
+										</div>
+										<div class="form-group d-flex justify-content-end mt-2">
+											<select id="customModel" class="form-select me-5">
+												<option value="general">YOLO Objects</option>
+												<option value="license-plate">License Plates v2</option>
+												<option value="openlogo">Open Logo</option>
+												<option value="actionnetv2">(Human) ActionNet v2</option>
+											</select>
+											<input class="btn btn-warning" type="button" 
+												   value="Run Detection" id="customthings"
+												   onclick="onCustomDetect(customModel.value, customimage)" />
+										</div>
+									</div>
+								</div>
 							</div>
 
 							<div class="tab-pane fade show" id="face-panel" role="tabpanel" aria-labelledby="face-tab">

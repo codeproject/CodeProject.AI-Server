@@ -1,5 +1,5 @@
 ## Introduction
-As we dog food the **CodeProject SenseAI Server** and Modules we look for ways to improve the experience for Module developers. While working on a Module for doing Sentiment Analyis in NET6, we realized that there was a lot of boiler plate code that could be moved to the SenseAI Module NET SDK. Doing so would:
+As we dog food the **CodeProject.AI Server** and Modules we look for ways to improve the experience for Module developers. While working on a Module for doing Sentiment Analyis in NET6, we realized that there was a lot of boiler plate code that could be moved to the CodeProject.AI Module NET SDK. Doing so would:
 
 - reduce the amount and complexity of code required to create a module
 - improve error handling and general reliablity
@@ -34,35 +34,35 @@ public override BackendResponseBase ProcessRequest(BackendRequest request)
 }
 ```
 
-This article will discuss how to use the updated **SenseAI Module NET SDK** to create a Module for the **CodeProjectSenseAI Server** from an existing online sample's code. We hope that this may inspire you to develop and share Modules that provide other interesting functionality.
+This article will discuss how to use the updated **CodeProject.AI Module NET SDK** to create a Module for the **CodeProject.AI Server** from an existing online sample's code. We hope that this may inspire you to develop and share Modules that provide other interesting functionality.
 
-This article is focused on the process of creating a Module, not how the details of the operation of the **CodeProject SenseAI Server** or the Sentiment Analysis code. These details can be found in the reference documents and code. The code for this article can be found in the `src/AnalysisLayer/SentimentAnlysis` directory of the CodeProject SenseAI GitHub repository (TODO: Create Link).
+This article is focused on the process of creating a Module, not how the details of the operation of the **CodeProject.AI Server** or the Sentiment Analysis code. These details can be found in the reference documents and code. The code for this article can be found in the `src/AnalysisLayer/SentimentAnlysis` directory of the CodeProject.AI GitHub repository [Link].
 
 This article builds on the concepts found in previous articles:
 
-* <a href="https://www.codeproject.com/ai/Senseai/devguide/module_examples/adding_new_modules.html" target="_blank">Adding new modules to SenseAI</a>
-* <a href="https://www.codeproject.com/ai/Senseai/devguide/module_examples/add_python_module.html" target="_blank">Adding your own Python module</a>
-* <a href="https://www.codeproject.com/ai/Senseai/devguide/module_examples/add_net_module.html" target="_blank">Adding you own .NET module</a>. 
+* <a href="https://www.codeproject.com/ai/docs/devguide/module_examples/adding_new_modules.html">Adding new modules to CodeProject.AI</a>
+* <a href="https://www.codeproject.com/ai/docs/devguide/module_examples/add_python_module.html">Adding your own Python module</a>
+* <a href="https://www.codeproject.com/ai/docs/devguide/module_examples/add_net_module.html">Adding you own .NET module</a>. 
 
 ## Developing the Module
-This tutorial assumes that you have already cloned the **CodeProject SenseAI** repository from GitHub. This is located at <a href="https://github.com/codeproject/CodeProject.SenseAI" target="_blank">https://github.com/codeproject/CodeProject.SenseAI</a>.
+This tutorial assumes that you have already cloned the **CodeProject.AI** repository from GitHub. This is located at <a href="https://github.com/codeproject/CodeProject.AI-Server">https://github.com/codeproject/CodeProject.AI-Server</a>.
 
-After dertermining that you want to add some functionality to the **CodeProject SenseAI Server** so that you use it in your other projects and applications the steps for creating a the required Module are:
+After dertermining that you want to add some functionality to the **CodeProject.AI Server** so that you use it in your other projects and applications the steps for creating a the required Module are:
 
 1. Locate code or library that be dropped in or easily modified to perform the processing you require. Samples tend to require some refactoring to make useable in a general solution, while library code and be dropped in, or incorporated as a NuGet package.
-1. Create a Module project in the CodeProject SenseAI solution.  
-1. Create a modulesettings.json file to configure the endpoint that will be exposed by the CodeProject SenseAI Server for this Module. The **CodeProject SenseAI Server** will discover this file on startup, configure the defined endpoints, and start the module's executable.
+1. Create a Module project in the CodeProject.AI solution.  
+1. Create a modulesettings.json file to configure the endpoint that will be exposed by the CodeProject.AI Server for this Module. The **CodeProject.AI Server** will discover this file on startup, configure the defined endpoints, and start the module's executable.
 1. Reference the NuGet package(s), or copy the code from the repo, that provide the required functionality.
 1. If required, refactor the copied code for general use.  
-1. Derive a class to process the requests receive from the SenseAI Server and return the response. You will derive from an abstract base class and only have to provide a method that processes the request. All the boilerplate Server/Module communication and error handling is taken care of for you.
+1. Derive a class to process the requests receive from the CodeProject.AI Server and return the response. You will derive from an abstract base class and only have to provide a method that processes the request. All the boilerplate Server/Module communication and error handling is taken care of for you.
 1. Make minor changes to the `Program.cs` file to configure the program to run the above code.
-1. Test. This can be done by using tools such as Postman or writing a simple web page to call the new endpoint on the **CodeProject SenseAI Server**.
+1. Test. This can be done by using tools such as Postman or writing a simple web page to call the new endpoint on the **CodeProject.AI Server**.
 
 ### Locate code or library to use
 Having determined that Sentiment Analysis of comments and messages is something we wish to evaluate for our website, we found a tutorial <a href="https://docs.microsoft.com/en-us/dotnet/machine-learning/tutorials/text-classification-tf" target="_blank">Analyze sentiment of movie reviews using a pre-trained TensorFlow model in ML.NET</a> with code for doing just that in the <a href="https://github.com/dotnet/samples/tree/main/machine-learning/tutorials/TextClassificationTF" target="_blank">TextClassificationTF</a> sample in the <a href="https://github.com/dotnet/samples" target="_blank">DotNet Samples</a> repository.
 
 ### Create Module Project
-When you write a SenseAI Module in NET 6, you are creating something that polls the CodeProject SenseAI Server for commands from a queue created for the module. The easiest way to do this is to create a **Worker Service** project in a folder under the `src/AnalysisLayer`. The **CodeProject SenseAI Server** scans the directories in this folder for Module metadata which allows the server to start the Modules.
+When you write a CodeProject.AI Module in NET 6, you are creating something that polls the CodeProject.AI Server for commands from a queue created for the module. The easiest way to do this is to create a **Worker Service** project in a folder under the `src/AnalysisLayer`. The **CodeProject.AI Server** scans the directories in this folder for Module metadata which allows the server to start the Modules.
 
 The steps to do this are:
 
@@ -73,7 +73,7 @@ The steps to do this are:
 - This will open the `Project Configuration` dialog  
 ![Configuration Dialog](SentimentAnalysisProjectConfig.png)
     - Set the `Project Name` to **SentimentAnalysis**
-    - Set the `Location` to the **src\AnalysisLayer** directory in your copy of the CodeProject SenseAI solution.
+    - Set the `Location` to the **src\AnalysisLayer** directory in your copy of the CodeProject.AI solution.
     - click `Next`. 
 - This will open the `Additional Information` dialog  
 
@@ -87,7 +87,7 @@ The `modulesettings.json` files configure the Module for
 - whether it should be started
 - how to start it
 - what platforms it runs on
-- the endpoint(s) that will be exposed by the CodeProject SenseAI Server for this Module.  In this case we will be 
+- the endpoint(s) that will be exposed by the CodeProject.AI Server for this Module.  In this case we will be 
     - exposing `http://localhost:5000/v1/txt/sentiment`
     - using a the HTTP POST method
     - sending one form variable `text` that will contain the text to be analyzed
@@ -182,17 +182,17 @@ In order to build this project, there are a few dependencies that must be includ
     - `Microsoft.ML.SampleUtils`
     - `Microsoft.ML.TensorFlow`
     - `SciScharp.TensorFlow.Redist`
-- Projects to use the SenseAI NET SDK
-    - `CodeProject.SenseAI.AnalsisLayer.SDK`
+- Projects to use the CodeProject.AI NET SDK
+    - `CodeProject.AI.AnalsisLayer.SDK`
 
 ### Create the Request Processor class
-The next to last coding step is to create the background worker that will retreive requests from the CodeProject SenseAI Server, process the request, and return the result. With the updated SDK, most of this has been encapsulated in an abstract class `CommandQueueWorker`. All we have to do is create a new class file `SentimentAnalysisWorker.cs` and in this file
+The next to last coding step is to create the background worker that will retreive requests from the CodeProject.AI Server, process the request, and return the result. With the updated SDK, most of this has been encapsulated in an abstract class `CommandQueueWorker`. All we have to do is create a new class file `SentimentAnalysisWorker.cs` and in this file
 - create a response class `SentimentAnalysisResponse`, derived from `BackendSuccessResponse` which defines the structure of the modules response.
 - override the `SentimentAnalysisWorker.ProcessRequest` method and 
 - create the `SentimentAnalysisWorker` constructor to initialize the functionality specific to the Module.
 The completed SentimentAnalysisWorker.cs file is
 ```csharp
-using CodeProject.SenseAI.AnalysisLayer.SDK;
+using CodeProject.AI.AnalysisLayer.SDK;
 
 namespace SentimentAnalysis
 {
@@ -283,10 +283,10 @@ IHost host = Host.CreateDefaultBuilder(args)
 await host.RunAsync();
 ```
 
-You will want to make the SentimentAnalysis a Build Dependency of the Frontend projects so that it is built when the **CodeProject SenseAI Server** is built.
+You will want to make the SentimentAnalysis a Build Dependency of the Frontend projects so that it is built when the **CodeProject.AI Server** is built.
 
 ### Test it.
-To test this, I created a simple `test.html` page that takes some text, sends it to the **CodeProject SenseAI Server**, and handles and displays the result. Is's as bare bones as I could make it to show how easy it is to use the new feature.
+To test this, I created a simple `test.html` page that takes some text, sends it to the **CodeProject.AI Server**, and handles and displays the result. Is's as bare bones as I could make it to show how easy it is to use the new feature.
 
 ```html
 <!DOCTYPE html>
@@ -340,7 +340,7 @@ To test this, I created a simple `test.html` page that takes some text, sends it
 </html>
 ```
 
-To see this in action, run the `Frontend` project (SenseAI Server) in the Debugger in Debug configuration and then open the `test.html` file in the browser of choice. Copy some text into the text box and press submit. I used text from an Amazon review. You should see something similar to this:
+To see this in action, run the `Frontend` project (CodeProject.AI Server) in the Debugger in Debug configuration and then open the `test.html` file in the browser of choice. Copy some text into the text box and press submit. I used text from an Amazon review. You should see something similar to this:
 
 ![](Sentiment%20Analysis%20Text%20Page.png)
 

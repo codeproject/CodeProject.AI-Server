@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using CodeProject.SenseAI.Server.Backend;
+using CodeProject.AI.Server.Backend;
 
 // TODO: This needs to be available to both the frontend and backend modules so that a single
 // version of truth for the module configuration can be read an parsed. Probably should go in the
 // Backend library next to the BackendRouteMap class, or possibly in Common.
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// The set of modules for backend processing.
@@ -117,5 +117,15 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         /// Gets or sets the platforms on which this module is supported.
         /// </summary>
         public string[] Platforms { get; set; } = Array.Empty<string>();
+
+        /// <summary>
+        /// Gets or sets the name of the hardware acceleration provider.
+        /// </summary>
+        public string? ExecutionProvider { get; set; }
+
+        /// <summary>
+        /// Gets or sets the hardware (chip) identifier
+        /// </summary>
+        public string? HardwareId { get; set; }
     }
 }

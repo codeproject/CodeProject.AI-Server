@@ -1,9 +1,9 @@
-﻿using CodeProject.SenseAI.Server.Backend;
+﻿using CodeProject.AI.Server.Backend;
 
 using System.Linq;
 using System.Text;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// Sample code generator
@@ -63,7 +63,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 }
             }
            
-            sample.AppendLine($"\nvar url = 'http://localhost:5000/v1{routeInfo.Path}';\n");
+            sample.AppendLine($"\nvar url = 'http://localhost:5000/v1/{routeInfo.Path}';\n");
 
             sample.AppendLine("fetch(url, { method: \"POST\", body: formData})");
             sample.AppendLine("      .then(response => {");

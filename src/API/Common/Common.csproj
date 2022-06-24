@@ -4,8 +4,8 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>CodeProject.SenseAI.API.Common</RootNamespace>
-    <AssemblyName>CodeProject.SenseAI.API.Common</AssemblyName>
+    <RootNamespace>CodeProject.AI.API.Common</RootNamespace>
+    <AssemblyName>CodeProject.AI.API.Common</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -13,6 +13,13 @@
     <DebugSymbols>false</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
+  </PropertyGroup>
+ 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <NoWarn>1701;1702;</NoWarn>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

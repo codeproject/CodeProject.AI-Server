@@ -1,7 +1,10 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace CodeProject.SenseAI.Server.Backend
+namespace CodeProject.AI.Server.Backend
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum RouteParameterType
@@ -122,6 +125,16 @@ namespace CodeProject.SenseAI.Server.Backend
     public class RouteQueueInfo
     {
         /// <summary>
+        /// Gets the path for this route
+        /// </summary>
+        public string Path { get; private set; }
+
+        /// <summary>
+        /// Gets the HTTP Method for the route,
+        /// </summary>
+        public string Method { get; private set; }
+
+        /// <summary>
         /// Gets the name of the Queue.
         /// </summary>
         public string QueueName { get; private set; }
@@ -135,12 +148,16 @@ namespace CodeProject.SenseAI.Server.Backend
         /// <summary>
         /// Initializes a new instance of the RouteQueueInfo class.
         /// </summary>
+        /// <param name="path">The URL path for this route.</param>
+        /// <param name="method">The HTTP Method for the route.</param>
         /// <param name="queueName">The name of the Queue.</param>
         /// <param name="command">The backend operation identifier.</param>
-        public RouteQueueInfo(string queueName, string command)
+        public RouteQueueInfo(string path, string method, string queueName, string command)
         {
+            Path      = path.ToLower();
+            Method    = method.ToUpper();
             QueueName = queueName;
-            Command = command;
+            Command   = command;
         }
     }
 
@@ -158,15 +175,29 @@ namespace CodeProject.SenseAI.Server.Backend
 
         /// <summary>
         /// Tries to get the route information for a path.
+        /// TODO: Update this so it iterates to find the best (longest?) match of a given request path
         /// </summary>
         /// <param name="path">The path to get the information for.</param>
         /// <param name="method">The HTTP Method used by the frontend endpoint.</param>
         /// <param name="queueInfo">The BackendRouteInfo instance to store the save the info to.</param>
         /// <returns>True if the path is in the Route Map, false otherwise.</returns>
-        public bool TryGetValue(string path, string method, out RouteQueueInfo queueInfo)
+        public bool TryGetValue(string path, string method, out RouteQueueInfo? queueInfo)
         {
             string key = MakeKey(path, method);
-            return _routeQueueMap.TryGetValue(key, out queueInfo!);
+            
+            // check for an exact match
+            if (_routeQueueMap.TryGetValue(key, out queueInfo!))
+                return true;
+
+            //find the best match
+            // longest route the has the correct Method and starts the path.
+            queueInfo = _routeQueueMap!.Values
+                    .Where(x => string.Compare(method, x.Method, true) == 0
+                             && path.StartsWith(x.Path, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(x => x.Path.Length)
+                    .FirstOrDefault();
+
+            return queueInfo is not null;        
         }
 
         private static string MakeKey(string path, string method)
@@ -185,7 +216,7 @@ namespace CodeProject.SenseAI.Server.Backend
         public void Register(string path, string method, string queueName, string command)
         {
             string key                      = MakeKey(path, method);
-            RouteQueueInfo backendRouteInfo = new RouteQueueInfo(queueName, command);
+            RouteQueueInfo backendRouteInfo = new RouteQueueInfo(path, method, queueName, command);
             _routeQueueMap[key]             = backendRouteInfo;
         }
 

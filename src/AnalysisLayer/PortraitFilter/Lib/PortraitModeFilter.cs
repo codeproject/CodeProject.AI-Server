@@ -3,7 +3,7 @@ using System.Drawing;
 using UMapx.Core;
 using UMapx.Imaging;
 
-namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
     /// <summary>
     /// Defines "portrait mode" filter.

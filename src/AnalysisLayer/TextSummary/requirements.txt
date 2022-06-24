@@ -1,6 +1,6 @@
 #! Python3.7
 
-## SenseAI
+## CodeProject.AI
 requests		# Installing Requests, the HTTP library
 Pillow			# Installing Pillow, a Python Image Library
 

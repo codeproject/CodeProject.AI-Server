@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// Installation instance config values.

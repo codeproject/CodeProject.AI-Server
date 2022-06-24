@@ -1,0 +1,87 @@
+{
+  "Modules": {
+
+    "CustomObjectDetection": {
+      "Name": "Custom Object Detection",
+      "Activate": true,
+      "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects that the custom models have been trained on.",
+      "FilePath": "CustomDetection\\detection.py",
+      "Runtime": "python38",
+      "Platforms": [ "all" ],
+      "EnableFlags": [ ],
+
+      "EnvironmentVariables": {
+        "PORT": 5000,
+
+        "MODEL_SIZE": "Medium", // small, medium, large, x-large
+        "RESOLUTION": "Medium", // low, medium, high
+        "USE_CUDA":   "False",
+
+        "APPDIR": "%MODULES_PATH%\\CustomDetection",
+        "DATA_DIR": "%DATA_DIR%",
+        "MODELS_DIR": "%MODULES_PATH%\\CustomDetection\\assets",
+
+        // Legacy
+        "PROFILE": "desktop_cpu", // maps to MODEL_SIZE
+        "MODE": "Medium", // Corresponds to RESOLUTION
+        "CUDA_MODE": "False"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Custom Object Detector",
+          "Path": "vision/custom",
+          "Method": "POST",
+          "Queue": "customdetection_queue",
+          "Command": "detect",
+          "Description": "Detects objects based on a custom model. Models are stored as .pt files in /CustomDetection/assets directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's .pt file",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            }
+          ]
+        },
+        {
+          "Name": "Custom Object Detector List Models",
+          "Path": "vision/custom/list",
+          "Method": "POST",
+          "Queue": "customdetection_queue",
+          "Command": "list",
+          "Description": "Returns a list of models available.",
+          "Inputs": [ ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "models",
+              "Type": "String",
+              "Description": "An array of strings containing the names of the models installed."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

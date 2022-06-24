@@ -1,4 +1,4 @@
-:: CodeProject SenseAI Server and Analysis modules startup script for Windows
+:: CodeProject.AI Server and Analysis modules startup script for Windows
 ::
 :: Usage:
 ::   start.bat
@@ -20,19 +20,19 @@ set ASPNETCORE_ENVIRONMENT=Development
 if "%separate_analysis%" == "true" (
 
 	pushd .\API\Server\Frontend\bin\Debug\net6.0\
-	START "CodeProject SenseAI Server" CodeProject.SenseAI.Server.exe --LaunchAnalysisServices=false
+	START "CodeProject.AI Server" CodeProject.AI.Server.exe --LaunchAnalysisServices=false
 	popd
 
 	REM Start analysis services
 
 	pushd .\AnalysisLayer
 	REM NOTE: Environment variables aren't being passed into this script
-	START "CodeProject SenseAI Analysis" /i /B "start-analysis.bat" --embedded
+	START "CodeProject.AI Analysis" /i /B "start-analysis.bat" --embedded
 	popd
 
 ) else (
 	cd .\API\Server\Frontend\bin\Debug\net6.0\
-	CodeProject.SenseAI.Server.exe
+	CodeProject.AI.Server.exe
 )
 
 :: Wait forever. We need these processes to stay alive

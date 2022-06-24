@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 
-using CodeProject.SenseAI.Server.Backend;
+using CodeProject.AI.Server.Backend;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// Options used by the FrontEnd.
@@ -49,7 +49,7 @@ namespace CodeProject.SenseAI.API.Server.Frontend
         public string? PYTHON_PATH { get; set; }
 
         /// <summary>
-        /// Gets or sets the environment variables, common to the SenseAI Server ecosystem, to set.
+        /// Gets or sets the environment variables, common to the CodeProject.AI Server ecosystem.
         /// </summary>
         public Dictionary<string, object>? EnvironmentVariables { get; set; }
     }

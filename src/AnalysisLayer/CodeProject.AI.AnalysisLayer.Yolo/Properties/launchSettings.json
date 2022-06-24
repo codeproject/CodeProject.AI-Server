@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "CodeProject.AI.AnalysisLayer.Yolo": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": "true"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

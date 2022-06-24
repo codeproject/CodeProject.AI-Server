@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
 
-namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
     /// <summary>
     /// Uses for onnx transformations.

@@ -3,10 +3,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-using CodeProject.SenseAI.API.Common;
+using CodeProject.AI.API.Common;
 using System;
 
-namespace CodeProject.SenseAI.API.Server.Frontend.Controllers
+namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
     /// <summary>
     /// For status updates on the server itself.

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-## CodeProject SenseAI Server and Analysis modules startup script for Linux and macOS
+## CodeProject.AI Server and Analysis modules startup script for Linux and macOS
 ##
 ## Usage:
 ##   . ./start.sh
@@ -9,9 +9,9 @@
 
 clear
 
-# Do we want the SenseAI server to start the backebnd analysis services, or have the services
+# Do we want the CodeProject.AI server to start the backebnd analysis services, or have the services
 # be started separately (aids in debugging)
-senseAI_starts_analysis="true"
+codeprojectAI_starts_analysis="true"
 
 # Move into the working directory
 if [ "$1" != "" ]; then
@@ -21,21 +21,21 @@ fi
 ASPNETCORE_ENVIRONMENT=Development
 export ASPNETCORE_ENVIRONMENT
 
-if [ "${senseAI_starts_analysis}" == "true" ]; then
+if [ "${codeprojectAI_starts_analysis}" == "true" ]; then
 
     echo "Starting API Server (with analysis)"
     cd ./API/Server/Frontend/bin/Debug/net6.0/
-    ./CodeProject.SenseAI.Server
+    ./CodeProject.AI.Server
 
 else
 
     echo "Starting API Server (no analysis)"
-    ./API/Server/Frontend/bin/Debug/net6.0/CodeProject.SenseAI.Server --LaunchAnalysisServices=false &
+    ./API/Server/Frontend/bin/Debug/net6.0/CodeProject.AI.Server --LaunchAnalysisServices=false &
 
     # Start analysis services
-    # ISSUE: Environment variables that are set in SenseAI Server are not being exposed / made available
-    #        to other processes. start-analysis.sh will run properly, but the processes it launches do
-    #        not have access to the variables that were set.
+    # ISSUE: Environment variables that are set in CodeProject.AI Server are not being exposed / 
+    #        made available to other processes. start-analysis.sh will run properly, but the 
+    #        processes it launches do not have access to the variables that were set.
 
     echo "Starting Analysis"
     pushd ./AnalysisLayer >/dev/null

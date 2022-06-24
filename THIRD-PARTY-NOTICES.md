@@ -1,4 +1,4 @@
-# CodeProject SenseAI Server
+# CodeProject.AI Server
 ## Third Party Notices
 
 This project incorporates components from the projects listed below

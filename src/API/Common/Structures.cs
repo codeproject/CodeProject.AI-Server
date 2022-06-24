@@ -1,4 +1,4 @@
-﻿namespace CodeProject.SenseAI.API.Common
+﻿namespace CodeProject.AI.API.Common
 {
 #pragma warning disable IDE1006 // Naming Styles
 

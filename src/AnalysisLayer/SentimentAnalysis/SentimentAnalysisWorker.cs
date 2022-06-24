@@ -1,4 +1,4 @@
-using CodeProject.SenseAI.AnalysisLayer.SDK;
+using CodeProject.AI.AnalysisLayer.SDK;
 
 namespace SentimentAnalysis
 {
@@ -17,7 +17,7 @@ namespace SentimentAnalysis
 
     public class SentimentAnalysisWorker : CommandQueueWorker
     {
-        private const string _defaultModuleId  = "sentiment-analysis";
+        private const string _defaultModuleId  = "SentimentAnalysis";
         private const string _defaultQueueName = "sentimentanalysis_queue";
         private const string _moduleName       = "Sentiment Analysis";
 
@@ -60,6 +60,12 @@ namespace SentimentAnalysis
             };
 
             return response;
+        }
+
+        protected override void GetHardwareInfo()
+        {
+            HardwareId        = _textClassifier.HardwareId;
+            ExecutionProvider = _textClassifier.ExecutionProvider;
         }
     }
 }

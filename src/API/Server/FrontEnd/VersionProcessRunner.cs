@@ -2,12 +2,12 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.SenseAI.API.Common;
+using CodeProject.AI.API.Common;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// This background process manages the startup and shutdown of the backend processes.

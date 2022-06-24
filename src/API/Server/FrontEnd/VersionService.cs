@@ -1,13 +1,13 @@
 ﻿using System;
 using Microsoft.Extensions.Configuration;
 
-using CodeProject.SenseAI.API.Common;
+using CodeProject.AI.API.Common;
 using System.Net.Http;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// The Startup class
@@ -62,12 +62,12 @@ namespace CodeProject.SenseAI.API.Server.Frontend
                 // SECURITY: Always ensure that InstallConfig.Id does NOT contain personally
                 //           identifiable information. It should be a random GUID that can be wiped
                 //           or replaced on the installation side without issue.
-                _client.DefaultRequestHeaders.Add("X-CPSense-Install", InstallConfig.Id.ToString());
+                _client.DefaultRequestHeaders.Add("X-CP-AI-Server-Install", InstallConfig.Id.ToString());
 
                 // Handy to allow the checkee to return emergency info if the current installed
                 // version has issues
                 string currentVersion = VersionConfig.VersionInfo?.Version ?? string.Empty;
-                _client.DefaultRequestHeaders.Add("X-CPSense-Version", currentVersion);
+                _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);
             }
 
             string updateCheckUrl = Configuration.GetValue<string>("UpdateCheckUrl");

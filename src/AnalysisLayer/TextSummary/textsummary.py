@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 # coding: utf-8
+
 import sys
 sys.path.append("../SDK/Python")
-from senseAI import SenseAIBackend, LogMethod
-from summarize import Summarize
+from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
+module = ModuleWrapper()
 
+from summarize import Summarize
 import json
 import traceback
 
-
-senseAI = SenseAIBackend()
+# Hack for debug mode
+if module.moduleId == "CodeProject.AI":
+    module.moduleId = "TextSummary";
 
 def textsummary(thread_name):
 
@@ -17,10 +20,10 @@ def textsummary(thread_name):
     summary = Summarize()
 
     while True:
-        queue_entries: list = senseAI.getCommand(TEXT_QUEUE)
+        queue_entries: list = module.get_command(TEXT_QUEUE)
 
         if len(queue_entries) > 0:
-            timer: tuple = senseAI.startTimer("Text Summary")
+            timer: tuple = module.start_timer("Text Summary")
 
             for queue_entry in queue_entries:
 
@@ -37,8 +40,8 @@ def textsummary(thread_name):
 
                 req_id: str        = req_data.get("reqid", "")
                 req_type: str      = req_data.get("reqtype", "")
-                req_text: str      = senseAI.getRequestValue(req_data, "text")
-                num_sentences: int = int(senseAI.getRequestValue(req_data, "num_sentences"))
+                req_text: str      = module.get_request_value(req_data, "text")
+                num_sentences: int = int(module.get_request_value(req_data, "num_sentences"))
 
                 output: any = {}
 
@@ -59,7 +62,7 @@ def textsummary(thread_name):
 
                     output = {"success": False, "error": "unable to summarize", "code": 500}
 
-                    senseAI.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                    module.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
                                { "process": "textsummary",
                                  "file": "textsummary.py",
                                  "method": "textsummary",
@@ -67,10 +70,10 @@ def textsummary(thread_name):
                                  "exception_type": "Exception"})
 
                 finally:
-                    senseAI.endTimer(timer)
+                    module.end_timer(timer)
 
                     try:
-                        senseAI.sendResponse(req_id, json.dumps(output))
+                        module.send_response(req_id, json.dumps(output))
                     except Exception:
                         print("An exception occured")
 
@@ -79,5 +82,5 @@ def textsummary(thread_name):
 
 
 if __name__ == "__main__":
-    senseAI.log(LogMethod.Info | LogMethod.Server, {"message":"TextSummary module started."})
+    module.log(LogMethod.Info | LogMethod.Server, {"message":"TextSummary module started."})
     textsummary("main_textsummary")

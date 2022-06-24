@@ -5,8 +5,8 @@
       "Name": "Background Removal",
       "Activate": true,
       "Description": "Removes backgrounds from images.",
-      "FilePath": "BackgroundRemover\\sense_rembg_adapter.py",
-      "Platforms": [ "windows", "linux", "docker" ],
+      "FilePath": "BackgroundRemover\\rembg_adapter.py",
+      "Platforms": [ "windows", "linux", "docker", "macos", "macos-arm" ],
       "Runtime": "python39",
       // Alternatively: "Command": "%MODULES_PATH%\\bin\\windows\\python39\\venv\\Scripts\\python",
 

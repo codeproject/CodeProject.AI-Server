@@ -1,9 +1,9 @@
 ## Introduction
-CodeProject's SenseAI project's goal is to make using AI easy for the average user and developer. We do this by providing a Server which presents a common HTTP service that exposes endpoints that are defined and procesessed by backend Modules. This system runs entirely locally, so you do not need to pay of cloud services or expose your data and images to the Internet. Since the Server exposes an HTTP interface, the functionality can be used by almost any platform or language.
+The goal of CodeProject.AI is to make using AI easy for the average user and developer. We do this by providing a Server which presents a common HTTP service that exposes endpoints that are defined and procesessed by backend Modules. This system runs entirely locally, so you do not need to pay of cloud services or expose your data and images to the Internet. Since the Server exposes an HTTP interface, the functionality can be used by almost any platform or language.
 
-The backend Modules provide the functionality to perform some analysis on the provided inputs and return a result. The format of the inputs and outputs is defined by the module. Our plan is to build up a catalog of useful and fun modules that can be installed with the SenseAI server to provide a locally customizable system of AI functionality.
+The backend Modules provide the functionality to perform some analysis on the provided inputs and return a result. The format of the inputs and outputs is defined by the module. Our plan is to build up a catalog of useful and fun modules that can be installed with the AI server to provide a locally customizable system of AI functionality.
 
-This article will show how to create a Module for the CodeProject SenseAI Server. It is one of a number of planned articles documenting using our preliminary SDKs for various programming languages and platforms. We will show how to wrap existing code or library with an adapter so that the functionality is expose as an HTTP endpoint by the CodeProject SenseAI Server. Chris Maunder has written a similar article showing how to create a Module in Python. This article will be using Microsoft's .NET 6 Framework. An example of writing a module using in Python can be found at <a href="https://www.codeproject.com/Articles/5332075/Adding-a-new-module-to-CodeProject-SenseAI-Server" target="_blank">Adding a new module to CodeProject SenseAI Server</a> by Chris Maunder.
+This article will show how to create a Module for the CodeProject.AI Server. It is one of a number of planned articles documenting using our preliminary SDKs for various programming languages and platforms. We will show how to wrap existing code or library with an adapter so that the functionality is expose as an HTTP endpoint by the CodeProject.AI Server. Chris Maunder has written a similar article showing how to create a Module in Python. This article will be using Microsoft's .NET 6 Framework. An example of writing a module using in Python can be found at <a href="https://www.codeproject.com/Articles/5332075/Adding-a-new-module-to-CodeProjectAI-Server">Adding a new module to CodeProject.AI Server</a> by Chris Maunder.
 
 We hope this information will inspire the Community to create new Modules and suggest enhancements and other feedback.
 
@@ -11,20 +11,20 @@ Currently, to use most AI you are required to understand Python and/or C++ and a
 
 Fortunately, there are a large number of Open Source projects available that provide libraries and code to do the heavy lifting for the performing the Machine Learning inferencing on the input data to generate the desired outputs. The hard part is choosing one to use due to the large number of choices and very interesting applications.
 
-For this article I chose the <a href="https://github.com/asiryan/Portrait-mode" target="_blank">`Portrait Mode`</a> project on from GitHub, written by Valery Asiryan. This project takes an image as an input, detects the people in it, and blur the background behind them, and returns the filtered image. This effect is quite impressive and really ups your selfie game.
+For this article I chose the <a href="https://github.com/asiryan/Portrait-mode">`Portrait Mode`</a> project on from GitHub, written by Valery Asiryan. This project takes an image as an input, detects the people in it, and blur the background behind them, and returns the filtered image. This effect is quite impressive and really ups your selfie game.
 
 An example of the `Portrait Mode` in action from the GitHub repository with the original (left) and result (right)
 ![Portrait Mode Example](portrait-filter-example.png)
 
 ## Writing the Module
-This tutorial assumes that you have already cloned the CodeProject SenseAI repository from GitHub. This is located at <a href="https://github.com/codeproject/CodeProject.SenseAI" target="_blank">https://github.com/codeproject/CodeProject.SenseAI</a>.
+This tutorial assumes that you have already cloned the CodeProject.AI repository from GitHub. This is located at <a href="https://github.com/codeproject/CodeProject.AI-Server">https://github.com/codeproject/CodeProject.AI-Server</a>.
 
 ### Clone the Repository
-To get the code we are going to include in our module, clone the <a href="https://github.com/asiryan/Portrait-mode" target="_blank">`Portrait Mode`</a> project on from GitHub to a directory of your choice.
+To get the code we are going to include in our module, clone the <a href="https://github.com/asiryan/Portrait-mode">`Portrait Mode`</a> project on from GitHub to a directory of your choice.
 ### Review the Repository Code
 Looking at the code, we see that the project consists of a Windows Form, Form1.cs, and the code to perform the background blurring. For our purposes, we do not need the Form. All we need are the 3 files located in the `cscharp\Lib` directory and the ONNX model file located in the `deeplabv3_mnv2_pascal_train_aug_2018_01_29` directory
 ### Create a new Module Project
-When you write a SenseAI Module in NET 6, you are creating something that polls the CodeProject SenseAI Server for commands from a queue created for the module. The easiest way to do this is to create a **Worker Service** project in a folder under the `src/AnalysisLayer`. The **CodeProject SenseAI Server** scans the directories in this folder for Module metadata which allows the server to start the Modules.
+When you write a CodeProject.AI Module in NET 6, you are creating something that polls the CodeProject.AI Server for commands from a queue created for the module. The easiest way to do this is to create a **Worker Service** project in a folder under the `src/AnalysisLayer`. The **CodeProject.AI Server** scans the directories in this folder for Module metadata which allows the server to start the Modules.
 
 The steps to do this are:
 
@@ -35,7 +35,7 @@ The steps to do this are:
 - This will open the `Project Configuration` dialog  
 ![Project Configuration Dialog](Project%20Configuration%20Dialog.png)
     - Set the `Project Name` to **PortrailFilter**
-    - Set the `Location` to the **src\AnalysisLayer** directory in your copy of the CodeProject SenseAI solution.
+    - Set the `Location` to the **src\AnalysisLayer** directory in your copy of the CodeProject.AI solution.
     - click `Next`. 
 - This will open the `Additional Information` dialog
 ![Additional Information Sialog](Additional%20Information%20Dialog.png)
@@ -126,18 +126,18 @@ Building now should result in no errors.
 
 ### Define the modulesettings.json file
 
-When the **CodeProject SenseAI Server** starts up, one of the things is does is scan the directories in the `src\AnalysisLayer` directory for `modulesettings.json` files and its variants. These files are read by the NET Configuration system in the following order for configuration metadata, last file read wins.
+When the **CodeProject.AI Server** starts up, one of the things is does is scan the directories in the `src\AnalysisLayer` directory for `modulesettings.json` files and its variants. These files are read by the NET Configuration system in the following order for configuration metadata, last file read wins.
 - `modulesettings.json` - common and default configuration values
 - `modulesettings.<production|development>.json` - production or development values
-- `modulesettings.<platform>.json` - values specific to the runtime OS (<platform>). This includes `windows`, `linux`, `docker`, and `macos`.
+- `modulesettings.<platform>.json` - values specific to the runtime OS (<platform>). This includes `windows`, `linux`, `docker`, `macos` and `macos-arm`.
 - `modulesettings.<platform>.<production|development>.json` - values specific to a platform and environment.
 
 The `modulesettings.json` file defines the common metadata for the module in a `Modules` section. This metadata include information about 
 - the name of the module,
 - whether it should be actived (run) at startup,
-- how to run the modules's executable by specifying the `FilePath` to the executable and the `Runtime` used to ececute it. Currently Runtime can have values of `dotnet`, `python37`, `python38`, and `python39`. Python versions are dependent on having the verions installed in CodeProject SenseAI environment.
-- a list of the Platorms that the module can be run under. This includes `windows`, `linux`, `docker`, and `macos`. 
-- the enpoints, `RouteMaps`,  that the **CodeProject SenseAI Server** will expose for this module. In this case we will expose
+- how to run the modules's executable by specifying the `FilePath` to the executable and the `Runtime` used to ececute it. Currently Runtime can have values of `dotnet`, `python37`, `python38`, and `python39`. Python versions are dependent on having the verions installed in the CodeProject.AI environment.
+- a list of the Platorms that the module can be run under. This includes `windows`, `linux`, `docker`, `macos` and `macos-arm`. 
+- the enpoints, `RouteMaps`,  that the **CodeProject.AI Server** will expose for this module. In this case we will expose
     - the endpoint /v1/image/portraitfilter,
     - that has two inputs, a File with an named "image", and Float value with a named "strength"
     - and has two outputs, a Boolean value named "success", and the resulting image File named "filtered_image".
@@ -206,9 +206,9 @@ Because the location of the executable in the Development environment is differe
 ```
 
 ### Create the Background Worker
-The next step is to create the Background Worker. This will poll the **CodeProject SenseAI Server** for commands, process any commands it finds, and return the result to the **CodeProject SenseAI Server**.
+The next step is to create the Background Worker. This will poll the **CodeProject.AI Server** for commands, process any commands it finds, and return the result to the **CodeProject.AI Server**.
 
-The Worker will use the SenseAI AnalysisLayer .NET SDK to communicate with the **CodeProject SenseAI Server** and process the request and response values.  Add a Project Reference to the `CodeProject.SenseAI.AnalysisLayer.SDK` project. This is a preliminary implementation and will change in the future, mainly to add features, so this code will require minimal changes going forward.
+The Worker will use the CodeProject.AI AnalysisLayer .NET SDK to communicate with the **CodeProject.AI Server** and process the request and response values.  Add a Project Reference to the `CodeProject.AI.AnalysisLayer.SDK` project. This is a preliminary implementation and will change in the future, mainly to add features, so this code will require minimal changes going forward.
 #### Add required references ####
 In addition, we will be using the SkiaSharp library to provide cross platform graphics support as well as support for images not supported by the Windows `System.Drawing` library. Add the following NuGet packages to the project:
 - `SkiaSharp.Views.Desktop.Common` to include the SkiaSharp core and interoperability with System.Drawing.
@@ -218,7 +218,7 @@ In addition, we will be using the SkiaSharp library to provide cross platform gr
 Open the Worker.cs file and to the following:
 - rename the class to `PortraitFilterWorker`. The file should now look like  
 ```csharp
-namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
     public class PortraitFilterWorker : BackgroundService
     {
@@ -242,7 +242,7 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
 ```
 - Ensure that the `Program.cs` file has also been updated
 ```csharp
-using CodeProject.SenseAI.AnalysisLayer.PortraitFilter;
+using CodeProject.AI.AnalysisLayer.PortraitFilter;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -255,7 +255,7 @@ await host.RunAsync();
 ```
 - Add the following using statements at the top of the file to reference the libraries and projects this class needs.
 ```csharp
-using CodeProject.SenseAI.AnalysisLayer.SDK;
+using CodeProject.AI.AnalysisLayer.SDK;
 
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
@@ -263,9 +263,9 @@ using SkiaSharp.Views.Desktop;
 using System.Drawing;
 using System.Net.Http.Json;
 ```
-- At the top of the namespace add a definition for the response that will be returned to the `CodeProject SenseAI Server`. The BackendSuccessResponse base class is defined in the SDK and provides the boolean "success" property. The JSON serializer will encode the byte[] filtered_image value to Base64.
+- At the top of the namespace add a definition for the response that will be returned to the `CodeProject.AI Server`. The BackendSuccessResponse base class is defined in the SDK and provides the boolean "success" property. The JSON serializer will encode the byte[] filtered_image value to Base64.
 ```csharp
-namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
     class PortraitResponse : BackendSuccessResponse
     {
@@ -278,7 +278,8 @@ namespace CodeProject.SenseAI.AnalysisLayer.PortraitFilter
     - `_modelId` which is a unique identifier for this module.
     - `_parallelism` which defines how many Tasks will be created to process requests. I am setting this to 1 initially.
     - `_logger` a Logger for this class.
-    - `_senseAI` which will hold an instance of the SenseAIClient class used to communicate with the **CodeProject SenseAI Server**.
+    - `_codeprojectAI` which will hold an instance of the CodeProjectAIClient class used to 
+    communicate with the **CodeProject.AI Server**.
     - `_deepPersonLab` which will hold a reference to the code we imported from the `Portrait Mode` repo.
 ```csharp
 public class PortraitFilterWorker : BackgroundService
@@ -290,7 +291,7 @@ public class PortraitFilterWorker : BackgroundService
     private int _parallelism = 1; // 4 also seems to be good on my machine.
 
     private readonly ILogger<PortraitFilterWorker> _logger;
-    private readonly SenseAIClient                 _senseAI;
+    private readonly CodeProjectAIClient           _codeprojectAI;
     private readonly DeepPersonLab                 _deepPersonLab;
 ```
 - Create the class constructor to initialize the fields. Note that when creating the `DeepPersonLab` instance, the `_modulePath` has the directory separater characters adjusted for the platform on which we are running.
@@ -309,7 +310,7 @@ public class PortraitFilterWorker : BackgroundService
             if (port == default)
                 port = 5000;
 
-            _senseAI = new SenseAIClient($"http://localhost:{port}/"
+            _codeprojectAI = new CodeProjectAIClient($"http://localhost:{port}/"
 #if DEBUG
                 , TimeSpan.FromMinutes(1)
 #endif
@@ -318,7 +319,7 @@ public class PortraitFilterWorker : BackgroundService
             _deepPersonLab = new DeepPersonLab(_modelPath.Replace('\\', Path.DirectorySeparatorChar));
         }
 ```
-- When the `PortraitFilterWorker` is run, the `ExecuteAsync` method will be called. Our `ExecuteAsync` method will create one or more Tasks that pull requests from the **CodeProject SenseAI Server**, process them, and return the results. Replace the existing `ExecuteAsync` method with
+- When the `PortraitFilterWorker` is run, the `ExecuteAsync` method will be called. Our `ExecuteAsync` method will create one or more Tasks that pull requests from the **CodeProject.AI Server**, process them, and return the results. Replace the existing `ExecuteAsync` method with
 ```csharp
 /// <summary>
 /// Start the process.
@@ -330,7 +331,7 @@ protected override async Task ExecuteAsync(CancellationToken token)
     await Task.Delay(1_000, token).ConfigureAwait(false);
 
     _logger.LogInformation("Background Portrait Filter Task Started.");
-    await _senseAI.LogToServer("SenseAI Portrait Filter module started.", token);
+    await _codeprojectAI.LogToServer("CodeProject.AI Portrait Filter module started.", token);
 
     List<Task> tasks = new List<Task>();
     for (int i = 0; i < _parallelism; i++)
@@ -343,8 +344,8 @@ protected override async Task ExecuteAsync(CancellationToken token)
     - how to get the requests
     - how to get the data from the request
     - calls the code imported from the `Portrait Mode` repo.
-    - sends the appropriate response to the **CodeProject SenseAI Server**.
-    - the loop is terminate by the cancellation of the token parameter when the **CodeProject SenseAI Server** is shut down.
+    - sends the appropriate response to the **CodeProject.AI Server**.
+    - the loop is terminate by the cancellation of the token parameter when the **CodeProject.AI Server** is shut down.
 ```csharp
 private async Task ProcessQueue(CancellationToken token)
 {
@@ -356,10 +357,10 @@ private async Task ProcessQueue(CancellationToken token)
         BackendResponseBase response;
         BackendRequest? request = null;
 
-        // Get the request from the SenseAI server
+        // Get the request from the CodeProject.AI server
         try
         {
-            request = await _senseAI.GetRequest(_queueName, _moduleId, token);
+            request = await codeprojectAI.GetRequest(_queueName, _moduleId, token);
         }
         catch (Exception ex)
         {
@@ -381,7 +382,7 @@ private async Task ProcessQueue(CancellationToken token)
 
         if (file?.data is null)
         {
-            await _senseAI.LogToServer("Portrait Filter File or file data is null.", token);
+            await _codeprojectAI.LogToServer("Portrait Filter File or file data is null.", token);
             response = new BackendErrorResponse(-1, "Portrait Filter Invalid File.");
         }
         else
@@ -409,7 +410,7 @@ private async Task ProcessQueue(CancellationToken token)
             }
             catch (Exception ex)
             {
-                await _senseAI.LogToServer($"Portrait Filter Error for {file.filename}.", token);
+                await _codeprojectAI.LogToServer($"Portrait Filter Error for {file.filename}.", token);
                 _logger.LogError(ex, "Portrait Filter Exception");
                 result = null;
             }
@@ -433,7 +434,7 @@ private async Task ProcessQueue(CancellationToken token)
         else
             content = JsonContent.Create(response as BackendErrorResponse);
 
-        await _senseAI.SendResponse(request.reqid, _moduleId, content, token);
+        await _codeprojectAI.SendResponse(request.reqid, _moduleId, content, token);
     }
 }
 ```
@@ -486,9 +487,9 @@ private async Task ProcessQueue(CancellationToken token)
             return stream.ToArray();
         }
 ```
-That's all the code that is needed to get a fully functional AI Module created for **CodeProject SenseAI Server.**  This code is included in the public <a href="https://github.com/codeproject/CodeProject.SenseAI" target="_blank">https://github.com/codeproject/CodeProject.SenseAI</a> GitHub repo.
+That's all the code that is needed to get a fully functional AI Module created for **CodeProject.AI Server.**  This code is included in the public <a href="https://github.com/codeproject/CodeProject.AI-Server">GitHub repo</a>.
 ### Testing with the Debugger
-When you run the **CodeProject SenseAI Server** in the debugger, the Server will detect the module because:
+When you run the **CodeProject.AI Server** in the debugger, the Server will detect the module because:
 - it is in a subdirectory of src\AnalysisLayer
 - it has a modulesettings.json file
 The Server will start all the modules it finds and have Active=true in the configuration. The Dashboard will start and after a few seconds you should see  
@@ -513,7 +514,7 @@ Then you need to install the missing dependencies
 `apt-get install -y libgdiplus`
 
 ### Create a test.html file.
-While this module is currently included in the install as of v1.3.0 with support in the **CodeProject SenseAI Playground** page, for new modules you would create a simple test page to send a request to the CodeProject SenseAI Server and display the response.
+While this module is currently included in the install as of v1.3.0 with support in the **CodeProject.AI Explorer** page, for new modules you would create a simple test page to send a request to the CodeProject.AI Server and display the response.
 
 I have include one such file, test.html, in the project. I displays a simple form the allows the user to select an image, set the blur strength and submit the form. The returned response is displayed. It include all the JavaScript code required to send the form to the Server and display the Base64 encoded image response. This is listed below.
 
@@ -667,8 +668,8 @@ Just start the Server in the debugger and open the test.html file.
 And it will look something like this
 ![](test_html.png)
 ## Added Bonus - Bin deploy Module on Windows.
-NET 6 modules do not depend on the installation of any runtimes or the setup of virtual environments the same way Python modules are. The NET 6 runtime is already installed by the **CodeProject SenseAI Server** installer. Because of this, the Release version of the build can be bin deployed into an existing Windows installation of the **CodeProject SenseAI Server**. The steps to do this are:
+NET 6 modules do not depend on the installation of any runtimes or the setup of virtual environments the same way Python modules are. The NET 6 runtime is already installed by the **CodeProject.AI Server** installer. Because of this, the Release version of the build can be bin deployed into an existing Windows installation of the **CodeProject.AI Server**. The steps to do this are:
 - Build the module project in `Release` mode.
-- Create a folder in the `c:\Program Files\CodeProject\SenseAI\AnalysisLayer` directory. This directory should have the same name as the FilePath's directory in the `modulesettings.json` file. For this example that would be "PortraitFilter".
+- Create a folder in the `c:\Program Files\CodeProject\AI\AnalysisLayer` directory. This directory should have the same name as the FilePath's directory in the `modulesettings.json` file. For this example that would be "PortraitFilter".
 - Copy the contents of the project's bin\Release\net6.0 directory to the directory created in the previous step.
-- Using the `Service` app, restart the **CodeProject SenseAI Server** service. The new module will now be expose on the endpoint defined in the modulesettings.json file.
+- Using the `Service` app, restart the **CodeProject.AI Server** service. The new module will now be expose on the endpoint defined in the modulesettings.json file.

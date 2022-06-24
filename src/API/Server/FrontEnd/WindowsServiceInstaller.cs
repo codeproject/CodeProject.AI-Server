@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 // based on https://github.com/microsoft/installer-project-samples/blob/main/NET_Core/WindowsService/NetCoreWinService/Program.cs
 // should be extended to handle the equivalent in Linux and OSX.
-namespace CodeProject.SenseAI.API.Server.Frontend
+namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
     /// Allows Windows Services to be installed and uninstalled

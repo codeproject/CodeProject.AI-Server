@@ -8,7 +8,9 @@
             "request": "launch",
             "preLaunchTask": "build-all-win",
             "program": "dotnet",
-            "args": [ "--version" ],
+            "args": [
+                "--version"
+            ],
             "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
             "stopAtEntry": false,
             "env": {
@@ -22,30 +24,31 @@
             "request": "launch",
             "preLaunchTask": "build-all-linux",
             "program": "dotnet",
-            "args": [ "--version" ],
+            "args": [
+                "--version"
+            ],
             "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
             "stopAtEntry": false,
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
-        },        
+        },
 
         {
-            "name": "Launch SenseAI (Win)",
+            "name": "Launch CodeProject.AI (Win)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-all-win",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.SenseAI.Server.exe",
-            "args" : [ ],
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server.exe",
+            "args": [],
             "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
             "stopAtEntry": false,
- 
             "serverReadyAction": {
                 "action": "openExternally",
                 "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
- 
+
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true"
@@ -53,21 +56,21 @@
         },
 
         {
-            "name": "Launch SenseAI (Linux)",
+            "name": "Launch CodeProject.AI (Linux/macOS)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-all-linux",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.SenseAI.Server",
-            "args" : [ ],
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
+            "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
- 
+
             "serverReadyAction": {
                 "action": "openExternally",
                 "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
- 
+
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true"
@@ -78,7 +81,7 @@
                 "moduleLoad": false,
                 "exceptions": false,
                 "browserStdOut": false
-            },            
+            },
         },
 
         {
@@ -86,17 +89,19 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "pre-launch-server-debug",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.SenseAI.Server",
-            "args" : [ "--LaunchAnalysisServices=false" ],
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
+            "args": [
+                "--LaunchAnalysisServices=false"
+            ],
             "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/",
             "stopAtEntry": false,
- 
+
             "serverReadyAction": {
                 "action": "openExternally",
                 "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
- 
+
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true"
@@ -107,18 +112,18 @@
                 "moduleLoad": false,
                 "exceptions": true,
                 "browserStdOut": false
-            },            
+            },
         },
 
         {
-            "name": "Launch SenseAI Playground (Win)",
+            "name": "Launch CodeProject.AI Explorer (Win)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "launch-server-win",
             // "windows": { - VS Code linter gets all upset at this
-                "program": "${workspaceFolder}/demos/dotNet/CodeProject.SenseAI.Playground/bin/Debug/net5.0-windows/win-x64/CodeProject.SenseAI.Demo.Playground.exe",
+            "program": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/bin/Debug/net5.0-windows/win-x64/CodeProject.AI.Demo.Explorer.exe",
             // },
-            "args": [ ],
+            "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole",
@@ -127,6 +132,18 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true"
             }
+        },
+
+        // See https://code.visualstudio.com/docs/editor/variables-reference#_settings-command-variables-and-input-variables
+        // For variables that can be used
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}",
+            "justMyCode": true
         }
     ]
 }

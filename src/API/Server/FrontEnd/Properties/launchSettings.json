@@ -1,8 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "CodeProject.SenseAI Server (Debug)": {
+    "CodeProject.AI Server (Debug)": {
       "commandName": "Project",
+      // "commandLineArgs": "--MODE=Medium",
       "launchUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
@@ -10,7 +11,7 @@
       "applicationUrl": "http://localhost:5000",
       "dotnetRunMessages": true
     },
-    "CodeProject.SenseAI Server (Release,SSL)": {
+    "CodeProject.AI Server (Release,SSL)": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "http://localhost:5000",
@@ -32,7 +33,7 @@
       "publishAllPorts": true,
       "useSSL": false
     },
-    "CodeProject.SenseAI Server Install (Debug)": {
+    "CodeProject.AI Server Install (Debug)": {
       "commandName": "Project",
       "commandLineArgs": "/install",
       "launchBrowser": true,
@@ -42,7 +43,7 @@
       "applicationUrl": "",
       "dotnetRunMessages": true
     },
-    "CodeProject.SenseAI Server unInstall (Debug)": {
+    "CodeProject.AI Server unInstall (Debug)": {
       "commandName": "Project",
       "commandLineArgs": "/uninstall",
       "launchBrowser": true,

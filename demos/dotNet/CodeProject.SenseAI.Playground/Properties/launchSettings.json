@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "CodeProject.SenseAI.Playground": {
-      "commandName": "Project",
-      "commandLineArgs": "--MODE=high"
-    }
-  }
-}

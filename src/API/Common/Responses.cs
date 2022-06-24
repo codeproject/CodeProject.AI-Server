@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace CodeProject.SenseAI.API.Common
+namespace CodeProject.AI.API.Common
 {
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -105,6 +105,16 @@ namespace CodeProject.SenseAI.API.Common
         /// Gets or sets the number of requests processed
         /// </summary>
         public int Processed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the hardware acceleration provider.
+        /// </summary>
+        public string? ExecutionProvider { get; set; }
+
+        /// <summary>
+        /// Gets or sets the hardware (chip) identifier
+        /// </summary>
+        public string? HardwareId { get; set; }
     }
 
     /// <summary>

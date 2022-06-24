@@ -1,1 +1,1 @@
-docker image build  --tag codeproject/senseai-base:focal -f Dockerfile-Base .
+docker image build  --tag codeproject/ai-base:focal -f Dockerfile-Base .

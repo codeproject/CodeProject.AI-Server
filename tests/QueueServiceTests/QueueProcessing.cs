@@ -6,8 +6,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.SenseAI.API.Server.Backend;
-using CodeProject.SenseAI.AnalysisLayer.SDK;
+using CodeProject.AI.API.Server.Backend;
+using CodeProject.AI.AnalysisLayer.SDK;
 using Xunit;
 
 namespace QueueServiceTests

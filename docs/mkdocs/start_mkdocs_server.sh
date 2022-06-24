@@ -6,7 +6,7 @@ else
     bash ../../src/AnalysisLayer/bin/linux/python39/venv/bin/activate
 fi
 
-cd senseAI
+pushd CodeProject.AI
 
 if [[ $OSTYPE == 'darwin'* ]]; then
     open http://127.0.0.1:8000/ &
@@ -15,3 +15,5 @@ else
     xdg-open http://127.0.0.1:8000/ &
     ../../../src/AnalysisLayer/bin/linux/python39/venv/bin/python3 -m mkdocs serve
 fi
+
+popd

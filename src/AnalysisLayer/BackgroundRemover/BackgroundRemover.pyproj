@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{470d3417-36a4-49a4-b719-496466fa92fc}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>sense_rembg_adapter.py</StartupFile>
+    <StartupFile>rembg_adapter.py</StartupFile>
     <SearchPath>..\SDK\Python</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -36,7 +36,7 @@
     <Compile Include="rembg\session_simple.py" />
     <Compile Include="rembg\_version.py" />
     <Compile Include="rembg\__init__.py" />
-    <Compile Include="sense_rembg_adapter.py" />
+    <Compile Include="rembg_adapter.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
