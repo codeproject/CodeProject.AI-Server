@@ -1,5 +1,4 @@
 ﻿---
----
 title: Running CodeProject.AI Server in Docker
 tags:
   - CodeProject.AI
@@ -14,13 +13,13 @@ Internally, CodeProject.AI server runs on port 5000.  You can expose this to the
 === "Windows"
 
 	``` batch title='Command line'
-	docker run -p 5000:5000 --name CodeProject.AI-Server -d -v c:\ProgramData\CodeProject\AI:/usr/share/CodeProject/AI codeproject/codeprojectai-server
+	docker run -p 5000:5000 --name CodeProject.AI-Server -d -v c:\ProgramData\CodeProject\AI:/usr/share/CodeProject/AI codeproject/ai-server
 	```
 
 === "Linux"
 
 	``` shell
-	docker run -p 5000:5000 --name CodeProject.AI-Server -d -v /usr/share/CodeProject/AI:/usr/share/CodeProject/AI codeproject/codeprojectai-server 
+	docker run -p 5000:5000 --name CodeProject.AI-Server -d -v /usr/share/CodeProject/AI:/usr/share/CodeProject/AI codeproject/ai-server 
 	```
 
 === "macOS"
@@ -29,7 +28,7 @@ Internally, CodeProject.AI server runs on port 5000.  You can expose this to the
 	we'll use port 5500:
 
 	``` shell
-	docker run -p 5500:5000 --name CodeProject.AI-Server -d -v /usr/share/CodeProject/AI:/usr/share/CodeProject/AI codeproject/codeprojectai-server
+	docker run -p 5500:5000 --name CodeProject.AI-Server -d -v /usr/share/CodeProject/AI:/usr/share/CodeProject/AI codeproject/ai-server
 	```
 
 

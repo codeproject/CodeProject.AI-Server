@@ -66,24 +66,25 @@
     </style>
     <script type="text/javascript">
 
-        const apiServiceUrl = "http://localhost";
+        const apiServiceUrl        = "http://" + (window.location.hostname || "localhost");
 
-        const pingFrequency = 2000;    // milliseconds
-        const logFrequency = 500;    // milliseconds
-        const statusFrequency = 3000;    // milliseconds
-        const checkUpdateFrequency = 24 * 3600 * 1000; // 24hr in milliseconds
+        const pingFrequency        = 2000;    // milliseconds
+        const logFrequency         = 500;    // milliseconds
+        const statusFrequency      = 3000;    // milliseconds
+        const checkUpdateFrequency = 1 * 3600 * 1000; // 1hr in milliseconds
 
-        let _lastLogId = 0;
-        let _serverIsOnline = false;
-        let _version = null;
+        let _lastLogId             = 0;
+        let _serverIsOnline        = false;
+        let _version               = null;
 
         window.addEventListener('DOMContentLoaded', function (event) {
 
-            serviceUrl.value = apiServiceUrl + ":" + window.location.port;
+            serviceUrl.value = apiServiceUrl + ":" + (window.location.port || 5000);
 
             setStatus("Searching for API Server...", "warning");
 
             getVersion();
+            checkForUpdates(false);
 
             setInterval(ping, pingFrequency);
             setInterval(getLogs, logFrequency);
@@ -109,7 +110,9 @@
                     else
                         response.json()
                             .then(data => callback(data))
-                            .catch(error => setStatus('Unable to contact API server', "warning"));
+                            .catch(error => {
+                                setStatus('Unable to contact API server', "warning")
+                            });
                 })
                 .catch(error => {
                     setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
@@ -156,11 +159,11 @@
                             message += "<div class='mt-2 text-white-50'>" + data.version.releaseNotes + "</div>";
 
                         update.innerHTML = message;
-                        update.styles.display = '';
+                        update.style.display = '';
                     }
                     else if (showResult) {
 
-                        update.styles.display = '';
+                        update.style.display = '';
                         update.innerHTML = "You have the latest version of CodeProject.AI";
                     }
 
@@ -188,53 +191,56 @@
             fetch(url, {
                 method: "GET"
             })
-                .then(response => {
+            .then(response => {
 
-                    if (response.ok) {
-                        response.json().then(data => {
+                if (response.ok) {
+                    response.json().then(data => {
 
-                            if (data && data.statuses) {
+                        if (data && data.statuses) {
 
-                                let results = "<div id='serviceStatus' class='d-flex flex-wrap w-100 mt-3'>";
+                            let results = "<div id='serviceStatus' class='d-flex flex-wrap w-100 mt-3'>";
 
-                                for (let i = 0; i < data.statuses.length; i++) {
-                                    let moduleStatus      = data.statuses[i];
-                                    let running           = moduleStatus.running;
-                                    let moduleName        = moduleStatus.name;
-                                    let started           = moduleStatus.started;
-                                    let lastSeen          = moduleStatus.lastSeen;
-                                    let processed         = moduleStatus.processed;
-                                    let hardwareId        = moduleStatus.hardwareId;
-                                    let executionProvider = moduleStatus.executionProvider;
+                            for (let i = 0; i < data.statuses.length; i++) {
+                                let moduleStatus      = data.statuses[i];
+                                let running           = moduleStatus.running;
+                                let moduleName        = moduleStatus.name;
+                                let started           = moduleStatus.started;
+                                let lastSeen          = moduleStatus.lastSeen;
+                                let processed         = moduleStatus.processed;
+                                let hardwareId        = moduleStatus.hardwareId;
+                                let executionProvider = moduleStatus.executionProvider;
                                     
-                                    let className = running ? "success" : (started ? "warning" : "light");
-                                    let status    = running ? "Running" : (started ? "Not Running" : "Not Enabled");
+                                let className = running ? "success" : (started ? "warning" : "light");
+                                let status    = running ? "Running" : (started ? "Not Running" : "Not Enabled");
 
-                                    let gpu       = hardwareId && hardwareId.toLowerCase() !== "cpu";
-                                    let gpuClass  = "hardware" + (gpu ? " active" : "");
-                                    let cpuClass  = "hardware" + (!gpu ? " active" : "");
-                                    if (executionProvider)
-                                        executionProvider = " <span class='hardware active'>(" + executionProvider + ")</span>";
+                                let gpu       = hardwareId && hardwareId.toLowerCase() !== "cpu";
+                                let gpuClass  = "hardware" + (gpu ? " active" : "");
+                                let cpuClass  = "hardware" + (!gpu ? " active" : "");
+                                if (executionProvider)
+                                    executionProvider = " <span class='hardware active'>(" + executionProvider + ")</span>";
 
-                                    results +=
-                                        "<div class='mx-1 alert alert-" + className + "' style='width:10em;height:8rem'>"
-                                        + "<b>" + moduleName + "</b>"
-                                        + "<div class='small'>" + status + "</div>"
-                                        + `<div><span class='${cpuClass}'>CPU</span>`
-                                        + `<span class='${gpuClass}'>GPU</span> ${executionProvider}</div>`
-                                        + "<div style='position:absolute;bottom:0rem' class='d-flex justify-content-between small'>"
-                                        // + "<div>Last: " + lastSeen + "</div>"
-                                        + "<div>Processed: " + processed + "</div>"
-                                        + "</div>"
-                                        + "</div>";
-                                }
-                                results += "</div>";
-
-                                serviceStatus.outerHTML = results;
+                                results +=
+                                    "<div class='mx-1 alert alert-" + className + "' style='width:10em;height:8rem'>"
+                                    + "<b>" + moduleName + "</b>"
+                                    + "<div class='small'>" + status + "</div>"
+                                    + `<div><span class='${cpuClass}'>CPU</span>`
+                                    + `<span class='${gpuClass}'>GPU</span> ${executionProvider}</div>`
+                                    + "<div style='position:absolute;bottom:0rem' class='d-flex justify-content-between small'>"
+                                    // + "<div>Last: " + lastSeen + "</div>"
+                                    + "<div>Processed: " + processed + "</div>"
+                                    + "</div>"
+                                    + "</div>";
                             }
-                        })
-                    }
-                })
+                            results += "</div>";
+
+                            serviceStatus.outerHTML = results;
+                        }
+                    })
+                }
+            })
+            .catch(error => {
+                setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
+            });
         }
 
         /**
@@ -248,40 +254,44 @@
             fetch(url, {
                 method: "GET"
             })
-                .then(response => {
+            .then(response => {
 
-                    if (response.ok) {
-                        response.json().then(data => {
-                            if (data && data.entries) {
+                if (response.ok) {
+                    response.json().then(data => {
+                        if (data && data.entries) {
 
-                                let newLogs = "";
-                                for (let i = 0; i < data.entries.length; i++) {
-                                    let logEntry = data.entries[i];
-                                    let logText = logEntry.entry.replace("\n", "<br>");
-                                    let date = new Date(logEntry.timestamp).toLocaleTimeString();
-                                    newLogs += `<div id='log${i + 1}>${date}: ${logText}</div>`;
-                                    _lastLogId = logEntry.id;
-                                }
-
-                                if (newLogs) {
-
-                                    let log = logs.innerHTML + newLogs;
-                                    if (log.length > 10000)
-                                        log = log.substring(log.length - 10000);
-                                    logs.innerHTML = log;
-
-                                    // let logList = document.getElementById('logs');
-                                    // logList.parentNode.scrollTop = logList.offsetHeight - logList.parentNode.offsetHeight;
-
-                                    // TODO: We should suppress the scroll into view if the user has
-                                    // scrolled up. If we detect a scroll up, set "autoscroll" to false
-                                    // and if they then scroll to the bottom, turn autoscroll back on
-                                    logs.scrollIntoView(false);
-                                }
+                            let newLogs = "";
+                            for (let i = 0; i < data.entries.length; i++) {
+                                let logEntry = data.entries[i];
+                                let logText = logEntry.entry.replace("\n", "<br>");
+                                let date = new Date(logEntry.timestamp).toLocaleTimeString();
+                                newLogs += `<div id='log${i + 1}>${date}: ${logText}</div>`;
+                                _lastLogId = logEntry.id;
                             }
-                        })
-                    }
-                })
+
+                            if (newLogs) {
+
+                                let log = logs.innerHTML + newLogs;
+                                if (log.length > 10000)
+                                    log = log.substring(log.length - 10000);
+                                logs.innerHTML = log;
+
+                                // let logList = document.getElementById('logs');
+                                // logList.parentNode.scrollTop = logList.offsetHeight - logList.parentNode.offsetHeight;
+
+                                // TODO: We should suppress the scroll into view if the user has
+                                // scrolled up. If we detect a scroll up, set "autoscroll" to false
+                                // and if they then scroll to the bottom, turn autoscroll back on
+                                logs.scrollIntoView(false);
+                            }
+                        }
+                    })
+                }
+            })
+            .catch(error => {
+                setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
+            });
+
         }
     </script>
 
@@ -384,10 +394,10 @@
             <div id="version" class="mt-1"></div>
             <div><a class="btn btn-info  small" href="vision.html" target="_blank">Open CodeProject.AI Explorer</a></div>
 
-            <div><button class="btn btn-outline-info small" onclick="checkForUpdates()">Check for Updates</button></div>
+            <div><button class="btn btn-outline-info small" onclick="checkForUpdates(true)">Check for Updates</button></div>
         </div>
 
-        <div class="alert alert-info" id="update" style="display:none"></div>
+        <div class="alert alert-success" id="update" style="display:none"></div>
 
         <div class="card mt-3">
             <div class="card-body bg-secondary">

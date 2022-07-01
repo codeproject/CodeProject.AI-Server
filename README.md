@@ -8,15 +8,15 @@ A standalone, self-hosted, fast, free and Open Source Artificial Intelligence mi
 platform, any language. It can be installed locally, required no off-device or out of network data
 transfer, and is easy to use.
 
-![Object detection](docs/mkdocs/CodeProject.AI/docs/img/DetectThings.PNG)
+![Object detection](https://www.codeproject.com/ai/docs/img/DetectThings.png)
 
 # Supported Platforms
 
 <div style="width:75%;min-width:700px;margin:30px auto">
 
-|   <img src="docs/images/windows.svg" title="Windows" style="width:64px">  |  <img src="docs/images/macos.svg" title="macOS" style="width:72px"> | <img src="docs/images/apple-silicon.svg" title="Apple Silicon" style="width:64px"> |  <img src="docs/images/Ubuntu.svg" title="Ubuntu" style="width:64px">  |   <img src="docs/images/docker.svg" title="Docker" style="width:64px">  |  <img src="docs/images/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="docs/images/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
-|:-------:|:-----:|:------:|:------:|:-------------------:|:------------------:|
-| Windows | macOS | Apple<br>Silicon | Ubuntu | Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
+| <img src="docs/images/windows.svg" title="Windows" style="width:64px">  | <img src="docs/images/macos.svg" title="macOS" style="width:72px">  | <img src="docs/images/apple-silicon.svg" title="Apple Silicon" style="width:64px"> | <img src="docs/images/Ubuntu.svg" title="Ubuntu" style="width:64px">  |   <img src="docs/images/docker.svg" title="Docker" style="width:64px">  |  <img src="docs/images/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="docs/images/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
+| :------: |  :---: | :---------: | :-----: | :----: | :--------------------: | :-------------------: |
+| Windows  | macOS  | macOS-arm64 |  Ubuntu | Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
 
 </div>
 

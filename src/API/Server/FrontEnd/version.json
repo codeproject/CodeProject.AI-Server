@@ -3,11 +3,11 @@
     "versionInfo": {
       "Major": 1,
       "Minor": 5,
-      "Patch": 0,
+      "Patch": 1,
       "Build": 0,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI.Server-1.5.0.zip",
+      "File": "CodeProject.AI.Server-1.5.1.zip",
       "ReleaseNotes": "Custom Object detection models and a cleaner leaner installer."
     }
   }

@@ -21,6 +21,8 @@ set useColor=true
 :: Platform can define where things are located
 set platform=windows
 
+:: are we ready to support CUDA enabled GPUs?
+set supportCUDA=false
 
 :: Basic locations
 

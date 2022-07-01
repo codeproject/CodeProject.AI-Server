@@ -331,16 +331,18 @@ shift & goto :%~1
     rem This will be the python interpreter in the virtual env
     set pythonPath=!virtualEnv!\Scripts\python
 
-    call :Write "Checking for CUDA..."
     set hasCUDA=false
-    wmic PATH Win32_VideoController get Name | find "NVIDIA" > NUL
-    if errorlevel 0 (
-        set hasCUDA=true
-        call :WriteLine "Present" "Green"
-    ) else (
-        call :WriteLine "Not found" "Gray"
-    )
 
+    if "!supportCUDA!" == "true" (
+        call :Write "Checking for CUDA..."
+        wmic PATH Win32_VideoController get Name | find "NVIDIA" > NUL
+        if errorlevel 0 (
+            set hasCUDA=true
+            call :WriteLine "Present" "Green"
+        ) else (
+            call :WriteLine "Not found" "Gray"
+        )
+    )
 
     REM Check for requirements.platform.[CUDA].txt first, then fall back to requirements.txt
 

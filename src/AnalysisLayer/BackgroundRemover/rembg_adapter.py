@@ -18,12 +18,7 @@ To call:
 # coding: utf-8
 
 import sys
-
 sys.path.append("../SDK/Python")
-
-#gpu_id = "CPU"
-
-
 from CodeProjectAI import ModuleWrapper, LogMethod
 
 from rembg.bg import remove

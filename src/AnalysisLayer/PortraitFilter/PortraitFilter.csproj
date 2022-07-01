@@ -7,7 +7,7 @@
 	  <ImplicitUsings>enable</ImplicitUsings>
 	  <RootNamespace>CodeProject.AI.AnalysisLayer.PortraitFilter</RootNamespace>
 	  <AssemblyName>PortraitFilter</AssemblyName>
-	  <Version>1.5.0.0</Version>
+	  <Version>1.5.1.0</Version>
 	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	  <DockerfileContext>..\..\..</DockerfileContext>
 	  <ApplicationIcon>favicon.ico</ApplicationIcon>
