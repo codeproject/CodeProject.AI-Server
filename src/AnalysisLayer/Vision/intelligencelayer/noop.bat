@@ -1,1 +1,0 @@
-:: Empty NOOP script, used so launch.json has something to chew on when launching a background task.

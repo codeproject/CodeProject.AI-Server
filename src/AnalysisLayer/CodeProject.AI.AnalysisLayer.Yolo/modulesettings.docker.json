@@ -1,0 +1,8 @@
+{
+  "Modules": {
+    "ObjectDetection": {
+      "FilePath": "CodeProject.AI.AnalysisLayer.Yolo\\ObjectDetector.dll",
+      "Runtime": "dotnet"
+    }
+  }
+}

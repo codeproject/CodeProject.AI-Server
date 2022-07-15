@@ -17,10 +17,12 @@ To call:
 #!/usr/bin/env python
 # coding: utf-8
 
+# Import the CodeProject.AI helper
 import sys
 sys.path.append("../SDK/Python")
 from CodeProjectAI import ModuleWrapper, LogMethod
 
+# Import the rembg method we need to call
 from rembg.bg import remove
 
 import base64
@@ -29,7 +31,7 @@ import json
 import traceback
 import onnxruntime as ort
 
-ai_module = ModuleWrapper()
+ai_module = ModuleWrapper("removebackground_queue")
 
 useOpenVino = False
 
@@ -44,16 +46,14 @@ if useOpenVino:
         ai_module.executionProvider = str(providers[0]).removesuffix("ExecutionProvider")
         ai_module.hardwareId        = "GPU"
 
-def remove_background(thread_name):
-
-    QUEUE_NAME = "removebackground_queue"
+def remove_background():
 
     # Hack for debug mode
     if ai_module.moduleId == "CodeProject.AI":
         ai_module.moduleId = "BackgroundRemoval";
 
     while True:
-        queue_entries: list = ai_module.get_command(QUEUE_NAME)
+        queue_entries: list = ai_module.get_command()
 
         if len(queue_entries) > 0:
             timer: tuple = ai_module.start_timer("Remove Background")
@@ -104,4 +104,4 @@ def remove_background(thread_name):
 
 if __name__ == "__main__":
     ai_module.log(LogMethod.Info | LogMethod.Server, {"message":"RemoveBackground module started."})
-    remove_background("main_removebackground")
+    remove_background()

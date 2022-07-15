@@ -532,15 +532,23 @@ function installPythonPackages () {
  
     virtualEnv="${analysisLayerPath}/bin/${platform}/${pythonName}/venv"
 
-    # Quick check to ensure PIP is upo to date
     pushd "${virtualEnv}/bin"  >/dev/null
+
+    # Quick check to ensure PIP is installed and up to date
     if [ "${verbosity}" == "quiet" ]; then
-        write "Updating Python PIP..."
+
+        # Ensure we have pip (no internet access - ensures we have the current python compatible version.
+        write "Ensuring PIP is installed..."
+        ./python3 -m ensurepip  >/dev/null 2>/dev/null &
+        spin $!
+        writeLine "Done" $color_success
+
+        write "Updating PIP..."
         ./pip install --upgrade pip >/dev/null 2>/dev/null &
         spin $!
         writeLine "Done" $color_success
     else
-        writeLine "Updating Python PIP..."
+        writeLine "Ensuring PIP is installed and up to date..."
     
        if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
             # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
@@ -549,6 +557,7 @@ function installPythonPackages () {
             fi
         fi
     
+        ./python3 -m ensurepip
         ./pip install --upgrade pip
     fi 
     popd  >/dev/null

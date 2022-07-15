@@ -18,28 +18,28 @@ class Options:
             RESOLUTION_HIGH   = 416,
             RESOLUTION_MEDIUM = 320,
             RESOLUTION_LOW    = 256,
-            MODEL_NAME        = "yolov5s.pt",
+            MODEL_NAME        = "ipcam-general.pt" # "yolov5s.pt",
         ),
 
         "medium": Settings(
             RESOLUTION_HIGH   = 640,
             RESOLUTION_MEDIUM = 416,
             RESOLUTION_LOW    = 256,
-            MODEL_NAME        = "yolov5m.pt",
+            MODEL_NAME        = "ipcam-general.pt" # "yolov5m.pt",
         ),
 
         "large": Settings(
             RESOLUTION_HIGH   = 640,
             RESOLUTION_MEDIUM = 416,
             RESOLUTION_LOW    = 256,
-            MODEL_NAME        = "yolov5l.pt",
+            MODEL_NAME        = "ipcam-general.pt" # "yolov5l.pt",
         ),
 
         "x-large": Settings(
             RESOLUTION_HIGH   = 640,
             RESOLUTION_MEDIUM = 416,
             RESOLUTION_LOW    = 256,
-            MODEL_NAME        = "yolov5x.pt",
+            MODEL_NAME        = "ipcam-general.pt" # "yolov5x.pt",
         ),
     }
 
@@ -56,7 +56,6 @@ class Options:
     print(f"Custom Object detection services setup: Retrieving environment variables...")
 
     app_dir          = os.path.normpath(get_env_variable("APPDIR", os.getcwd()))
-    data_dir        = os.path.normpath(get_env_variable("DATA_DIR",   f"{app_dir}/datastore"))
     models_dir      = os.path.normpath(get_env_variable("MODELS_DIR", f"{app_dir}/assets"))
     port            = get_env_variable("PORT",       "5000")
 
@@ -65,16 +64,6 @@ class Options:
     model_size      = get_env_variable("MODEL_SIZE", "Medium")   # small, medium, large, x-large
     use_CUDA        = get_env_variable("USE_CUDA", "False")      # True / False
     resolution      = get_env_variable("RESOLUTION", "Medium")   # low, medium, high
-
-    # Legacy overrides
-    if "MODE" in os.environ:
-        resolution = os.environ["MODE"]
-
-    if "CUDE_MODE" in os.environ:
-        use_CUDA = os.environ["CUDE_MODE"]
-
-    if "PROFILE" in os.environ and os.environ["PROFILE"].lower() == 'jetson':
-        model_size = 'Small'
 
     # Normalise input
     use_CUDA   = use_CUDA.lower() == "true" and torch.cuda.is_available()
@@ -98,4 +87,3 @@ class Options:
         print(f"MODELS_DIR:   {models_dir}")
         print(f"PORT:         {port}")
         print(f"APPDIR:       {app_dir}")
-        print(f"DATA_DIR:     {data_dir}")

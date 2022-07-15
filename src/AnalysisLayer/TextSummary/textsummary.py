@@ -4,23 +4,23 @@
 import sys
 sys.path.append("../SDK/Python")
 from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
-module = ModuleWrapper()
 
 from summarize import Summarize
 import json
 import traceback
 
+module = ModuleWrapper("summary_queue")
+
 # Hack for debug mode
 if module.moduleId == "CodeProject.AI":
     module.moduleId = "TextSummary";
 
-def textsummary(thread_name):
+def textsummary():
 
-    TEXT_QUEUE = "summary_queue"
     summary = Summarize()
 
     while True:
-        queue_entries: list = module.get_command(TEXT_QUEUE)
+        queue_entries: list = module.get_command()
 
         if len(queue_entries) > 0:
             timer: tuple = module.start_timer("Text Summary")
@@ -83,4 +83,4 @@ def textsummary(thread_name):
 
 if __name__ == "__main__":
     module.log(LogMethod.Info | LogMethod.Server, {"message":"TextSummary module started."})
-    textsummary("main_textsummary")
+    textsummary()

@@ -3,7 +3,6 @@
   "profiles": {
     "CodeProject.AI Server (Debug)": {
       "commandName": "Project",
-      // "commandLineArgs": "--MODE=Medium",
       "launchUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

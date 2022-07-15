@@ -7,14 +7,14 @@
       "Activate": true,
       "Name": "CodeProject.AI Object Detection",
       "Description": "Detects multiple objects of 80 types in an image.",
-      "FilePath": "CodeProject.AI.AnalysisLayer.Yolo\\ObjectDetector.dll",
-      "Runtime": "dotnet",
+      "FilePath": "CodeProject.AI.AnalysisLayer.Yolo\\ObjectDetector.exe",
+      "Runtime": "execute",
       "Platforms": [ "windows", "linux", "docker" ],
+      "EnableFlags": [ "VISION-DETECTION" ],
 
       "EnvironmentVariables": {
-        "VISION-FACE": true,
+        "VISION-DETECTION": true,
 
-        "PROFILE": "desktop_cpu",
         "CUDA_MODE": "False",
         "MODE": "MEDIUM",
         "PORT": 5000

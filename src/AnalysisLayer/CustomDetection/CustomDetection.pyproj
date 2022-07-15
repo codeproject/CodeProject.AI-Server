@@ -21,41 +21,57 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="assets\license-plate.pt" />
-    <Content Include="assets\yolov5m.pt" />
-    <Content Include="modulesettings.docker.json" />
+    <Content Include="assets\IPcam-general.pt" />
+    <Content Include="assets\resources.txt" />
     <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.macos-arm.json" />
-    <Content Include="modulesettings.macos.json" />
-    <Content Include="modulesettings.windows.json" />
-    <Content Include="requirements.macos-arm.txt" />
-    <Content Include="requirements.macos.txt" />
-    <Content Include="requirements.txt" />
-    <Content Include="requirements.windows.cuda.txt" />
+    <Content Include="modulesettings.docker.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.macos-arm.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.macos.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.windows.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="commons\utils.py" />
-    <Compile Include="detection.py" />
+    <Content Include="requirements.txt" />
+    <Content Include="requirements.macos-arm.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.macos.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="__init__.py" />
     <Compile Include="init.py" />
+    <Compile Include="process.py" />
+    <Compile Include="detection.py" />
+    <Compile Include="options.py" />
+    <Compile Include="commons\utils.py" />
     <Compile Include="models\common.py" />
     <Compile Include="models\experimental.py" />
     <Compile Include="models\yolo.py" />
     <Compile Include="models\__init__.py" />
-    <Compile Include="process.py" />
     <Compile Include="recognition\networks.py" />
     <Compile Include="recognition\process.py" />
     <Compile Include="recognition\__init__.py" />
-    <Compile Include="options.py" />
     <Compile Include="utils\activations.py" />
     <Compile Include="utils\datasets.py" />
     <Compile Include="utils\general.py" />
     <Compile Include="utils\google_utils.py" />
     <Compile Include="utils\torch_utils.py" />
     <Compile Include="utils\__init__.py" />
-    <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="assets\" />
+    <Folder Include="assets" />
     <Folder Include="commons" />
     <Folder Include="models" />
     <Folder Include="recognition" />

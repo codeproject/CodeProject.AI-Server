@@ -1,22 +1,11 @@
 import sys
 sys.path.append("../../SDK/Python")
 from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
-module = ModuleWrapper()
-
-# Hack for debug mode
-if module.moduleId == "CodeProject.AI":
-    module.moduleId = "VisionObjectDetection";
-
 
 import os
 import json
-import threading
 
 from shared import SharedOptions
-
-if SharedOptions.CUDA_MODE:
-    module.hardwareId = "GPU"
-    module.executionProvider = "CUDA"
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
 sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
@@ -61,11 +50,22 @@ elif MODE == "Low":
 
 detector = YOLODetector(model_path, reso, cuda=CUDA_MODE)
 
-def objectdetection(thread_name: str, delay: float):
+
+module = ModuleWrapper(IMAGE_QUEUE)
+
+# Hack for debug mode
+if module.moduleId == "CodeProject.AI":
+    module.moduleId = "VisionObjectDetection";
+
+if SharedOptions.CUDA_MODE:
+    module.hardwareId        = "GPU"
+    module.executionProvider = "CUDA"
+
+def objectdetection():
 
     while True:
 
-        queue = module.get_command(IMAGE_QUEUE);
+        queue = module.get_command();
 
         if len(queue) > 0:
 
@@ -148,10 +148,4 @@ def objectdetection(thread_name: str, delay: float):
 
 if __name__ == "__main__":
     module.log(LogMethod.Info | LogMethod.Server, {"message": "Object Detection module started."})
-    objectdetection("", SharedOptions.SLEEP_TIME)
-
-    # for x in range(1, 4):
-    #     thread = threading.Thread(None, objectdetection, args = ("", SharedOptions.SLEEP_TIME))
-    #     thread.start();
-    # 
-    # thread.join();
+    objectdetection()

@@ -6,8 +6,8 @@
       "Name": "Sentiment Analysis",
       "Activate": true,
       "Description": "Determines if a comment is positive or negative",
-      "FilePath": "SentimentAnalysis\\SentimentAnalysis.dll",
-      "Runtime": "dotnet",
+      "FilePath": "SentimentAnalysis\\SentimentAnalysis.exe",
+      "Runtime": "execute",
       "Platforms": [ "windows", "linux", "macos", "docker" ], // No "macos-arm" because ML.NET doesn't yet work on M1 chips 
       "RouteMaps": [
         {

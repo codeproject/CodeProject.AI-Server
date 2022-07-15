@@ -18,7 +18,6 @@
         "MODE": "MEDIUM",
         "PORT": 5000,
 
-        "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",
         "TEMP_PATH": "%MODULES_PATH%\\Vision\\tempstore",
@@ -222,7 +221,6 @@
         "MODE": "MEDIUM",
         "PORT": 5000,
 
-        "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",
         "TEMP_PATH": "%MODULES_PATH%\\Vision\\tempstore",
@@ -282,7 +280,6 @@
         "MODE": "MEDIUM",
         "PORT": 5000,
 
-        "VIRTUAL_ENV": "%PYTHON_BASEPATH%",
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",
         "TEMP_PATH": "%MODULES_PATH%\\Vision\\tempstore",

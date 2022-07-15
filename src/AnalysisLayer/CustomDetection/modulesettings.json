@@ -18,13 +18,7 @@
         "USE_CUDA":   "False",
 
         "APPDIR": "%MODULES_PATH%\\CustomDetection",
-        "DATA_DIR": "%DATA_DIR%",
-        "MODELS_DIR": "%MODULES_PATH%\\CustomDetection\\assets",
-
-        // Legacy
-        "PROFILE": "desktop_cpu", // maps to MODEL_SIZE
-        "MODE": "Medium", // Corresponds to RESOLUTION
-        "CUDA_MODE": "False"
+        "MODELS_DIR": "%MODULES_PATH%\\CustomDetection\\assets"
       },
 
       "RouteMaps": [

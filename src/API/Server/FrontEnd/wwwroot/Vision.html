@@ -71,20 +71,18 @@
 
 	<script type="text/javascript">
 
-		const useSVG = true;
+		const useSVG        = true;
 		const pingFrequency = 1000; // milliseconds
-		let apiServiceUrl = "http://localhost:5000";
-		var serverOnline = false;
-
-		if (navigator.platform.toUpperCase().indexOf('MAC') >= 0)
-			apiServiceUrl = "http://localhost:5500";
+        const apiServiceUrl = "http://" + (window.location.hostname || "localhost")
+                            + ":" + (window.location.port || 5000);
+		var serverOnline    = false;
 
 		window.addEventListener('DOMContentLoaded', function (event) {
 			serviceUrl.value = apiServiceUrl;
 			setStatus("Searching for API Server...", "orange");
 			setInterval(ping, pingFrequency);
 			setInterval(getAnalysisStatus, pingFrequency);
-			setTimeout(setCustomModelList, 5000);
+			setTimeout(setCustomModelLists, 5000);
 		});
 
 		function adjustForImageSize() {
@@ -366,8 +364,8 @@
 						setStatus('Error contacting API server', "red");
 					else
 						response.json().then(data => {
-							if (serverOnline == data.success)
-								return;
+							// if (serverOnline == data.success)
+							//	return;
 
 							serverOnline = data.success;
 							if (serverOnline)
@@ -524,15 +522,34 @@
 			});
 		}
 
-		function setCustomModelList() {
+		function setCustomModelLists() {
+			setCustomModelList(customModel);
+			setCustomModelList(benchmarkModel, true);
+		}
+
+		function setCustomModelList(selectList, add_standard) {
+
 			submitRequest('vision', 'custom/list', null, null, function (data) {
 
-                while (customModel.options.length)
-                    customModel.remove(0);
+                while (selectList.options.length)
+                    selectList.remove(0);
 
+				if (add_standard)
+                    selectList.options.add(new Option("Standard model", ""));
+		
 				for (let i = 0; i < data.models.length; i++) {
-                    var model = new Option(data.models[i]);
-                    customModel.options.add(model);
+
+					let title;
+					switch (data.models[i].toLowerCase()) {
+						case 'ipcam-general': title = 'General IP Cam'; break;
+						case 'license-plate': title = 'License Plates v2'; break;
+						case 'openlogo': title = 'Open Logo'; break;
+						case 'actionnetv2': title = '(Human) ActionNet v2'; break;
+						default: title = data.models[i];
+					}
+
+                    var model = new Option(title, data.models[i]);
+                    selectList.options.add(model);
 				}
             });
 		}
@@ -740,7 +757,7 @@
 		}
 
 		var isBenchmarkCancelled;
-		function onBenchmark(fileChooser, resultElm) {
+		function onBenchmark(fileChooser, model_name, resultElm) {
 
 			clearCanvas();
 
@@ -757,13 +774,16 @@
 			let nResponses = 0;
 
 			for (let i = 0; i < 50 && !isBenchmarkCancelled; i++) {
+
 				// Funny thing about the cancellation bit. These requests are sent to the API
 				// server which queues them up for processing. Sending is fast. Processing takes
 				// longer. By the time you've cancelled the benchmark loop all requests have
 				// already been queued and what you're seeing are the result of the requests coming
 				// back. So not much point having a cancellation feature here. But the guts are
 				// included for grins.
-				submitRequest('vision', 'detection', images, null, function (data) {
+
+				let route = model_name? 'custom/' + model_name : 'detection';
+	            submitRequest('vision', route, images, null, function (data) {
 					let currentMilliseconds = performance.now();
 					nResponses++;
 					let opsPerSecond = (nResponses * 1000) / (currentMilliseconds - startMilliseconds);
@@ -974,7 +994,7 @@
 										</div>
 										<div class="form-group d-flex justify-content-end mt-2">
 											<select id="customModel" class="form-select me-5">
-												<option value="general">YOLO Objects</option>
+												<option value="IPcam-general">General IP Cam</option>
 												<option value="license-plate">License Plates v2</option>
 												<option value="openlogo">Open Logo</option>
 												<option value="actionnetv2">(Human) ActionNet v2</option>
@@ -1117,13 +1137,22 @@
 											<label class="col-form-label col-2">Image</label>
 											<input class="col form-control btn-light" id="benchmarkInput" type="file" style="width:17rem"
 												   onchange="return previewImage(this)" />
+										</div>
+										<div class="form-group d-flex justify-content-end mt-2">
+											<select id="benchmarkModel" class="form-select me-5">
+												<option value="">Standard model</option>
+												<option value="IPcam-general">General IP Cam</option>
+												<option value="license-plate">License Plates v2</option>
+												<option value="openlogo">Open Logo</option>
+												<option value="actionnetv2">(Human) ActionNet v2</option>
+											</select>
 											<input class="form-control btn-success" type="button" value="Go" style="width:7rem"
-												   id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkResult)" />
+												   id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkModel.value, benchmarkResult)" />
 
 											<!-- See note above on how this button isn't currently that useful
-									<input type="button" value="Stop" class="styleD" style="margin-left:1em"
-										onclick="isBenchmarkCancelled = true;" />
-									-->
+											<input type="button" value="Stop" class="styleD" style="margin-left:1em"
+																 onclick="isBenchmarkCancelled = true;" />
+											-->
 										</div>
 										<div class="form-group row mt-1">
 											<span id="benchmarkResult"></span>

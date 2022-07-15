@@ -66,7 +66,8 @@
     </style>
     <script type="text/javascript">
 
-        const apiServiceUrl        = "http://" + (window.location.hostname || "localhost");
+        const apiServiceUrl        = "http://" + (window.location.hostname || "localhost")
+                                   + ":" + (window.location.port || 5000);
 
         const pingFrequency        = 2000;    // milliseconds
         const logFrequency         = 500;    // milliseconds
@@ -79,7 +80,7 @@
 
         window.addEventListener('DOMContentLoaded', function (event) {
 
-            serviceUrl.value = apiServiceUrl + ":" + (window.location.port || 5000);
+            serviceUrl.value = apiServiceUrl;
 
             setStatus("Searching for API Server...", "warning");
 

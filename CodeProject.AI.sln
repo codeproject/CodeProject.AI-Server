@@ -5,7 +5,6 @@ VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A8B76501-496A-4011-9C37-8308A1EBDFA7}"
 	ProjectSection(SolutionItems) = preProject
-		src\clean.bat = src\clean.bat
 		src\start.bat = src\start.bat
 		src\start.sh = src\start.sh
 	EndProjectSection
@@ -17,13 +16,6 @@ EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Python", "demos\Python\Python.pyproj", "{25750BF1-1502-4F65-8D69-CEA8C87D6446}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{2379A486-0D28-4CAD-BB13-E77FBA538E0D}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3BF27572-9D3A-497C-8375-29110EBBD3D1}"
-	ProjectSection(SolutionItems) = preProject
-		LICENCE.md = LICENCE.md
-		README.md = README.md
-		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AnalysisLayer", "AnalysisLayer", "{156BFEDA-D477-43B2-92DA-FCC9BAF1F893}"
 	ProjectSection(SolutionItems) = preProject
@@ -96,24 +88,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frontend", "src\API\Server\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend", "src\API\Server\Backend\Backend.csproj", "{C93C22D7-4EB2-4EC0-A7F0-FBCFB9F6F72D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.API.Server.Backend.Tests", "tests\QueueServiceTests\CodeProject.AI.API.Server.Backend.Tests.csproj", "{F9430C77-589D-4C56-8458-2DF7E344C0FC}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{8C92DCAE-EDE7-4DEC-A5CB-BB2388905064}"
-	ProjectSection(SolutionItems) = preProject
-		docs\images\apple-silicon.svg = docs\images\apple-silicon.svg
-		docs\images\Choose-launch.png = docs\images\Choose-launch.png
-		docs\images\docker.svg = docs\images\docker.svg
-		docs\images\example-detect.png = docs\images\example-detect.png
-		docs\images\macos.svg = docs\images\macos.svg
-		docs\images\Mulitple-Project-Toolbar.png = docs\images\Mulitple-Project-Toolbar.png
-		docs\images\RaspberryPi.svg = docs\images\RaspberryPi.svg
-		docs\images\Set-Startup_Projects.png = docs\images\Set-Startup_Projects.png
-		docs\images\Ubuntu.svg = docs\images\Ubuntu.svg
-		docs\images\VisualStudio.svg = docs\images\VisualStudio.svg
-		docs\images\VisualStudioCode.svg = docs\images\VisualStudioCode.svg
-		docs\images\windows.svg = docs\images\windows.svg
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB5B-DB85-4A59-A3AE-FA55A35D05B0}"
 	ProjectSection(SolutionItems) = preProject
 		demos\Javascript\assets\favicon-16x16.png = demos\Javascript\assets\favicon-16x16.png
@@ -125,10 +99,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{460DB5C8-46F3-4407-A2DF-D9063D14493A}"
 	ProjectSection(SolutionItems) = preProject
-		BuildDockerBase.bat = BuildDockerBase.bat
-		commands.json = commands.json
+		src\endtimer.bat = src\endtimer.bat
 		kill_dotnet.bat = kill_dotnet.bat
 		kill_dotnet.sh = kill_dotnet.sh
+		src\starttimer.bat = src\starttimer.bat
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetector", "src\AnalysisLayer\CodeProject.AI.AnalysisLayer.Yolo\ObjectDetector.csproj", "{232710A8-9180-4139-8FF2-8F21F649D927}"
@@ -151,32 +125,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dev", "Dev", "{00BBF52C-217
 		Installers\Dev\utils.sh = Installers\Dev\utils.sh
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\Docker\BuildDockerBase.bat = Installers\Docker\BuildDockerBase.bat
-		Installers\Docker\Dockerfile-Base = Installers\Docker\Dockerfile-Base
-		Installers\Docker\README = Installers\Docker\README
-	EndProjectSection
-EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TextSummary", "src\AnalysisLayer\TextSummary\TextSummary.pyproj", "{470D3417-36A4-49A4-B719-496466FA92FB}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Articles", "Articles", "{2E9D03C1-BF8F-4E3D-944A-0DDEDDE620C5}"
-	ProjectSection(SolutionItems) = preProject
-		docs\Articles\adding-a-net6-module.md = docs\Articles\adding-a-net6-module.md
-		docs\Articles\Additional Information Dialog.png = docs\Articles\Additional Information Dialog.png
-		docs\Articles\Dashboard.png = docs\Articles\Dashboard.png
-		docs\Articles\ModuleStatus.png = docs\Articles\ModuleStatus.png
-		docs\Articles\portrait-filter-example.png = docs\Articles\portrait-filter-example.png
-		docs\Articles\Project Configuration Dialog.png = docs\Articles\Project Configuration Dialog.png
-		docs\Articles\Project Structure.png = docs\Articles\Project Structure.png
-		docs\Articles\Sentiment Analysis Text Page.png = docs\Articles\Sentiment Analysis Text Page.png
-		docs\Articles\SentimentAnalysisProjectConfig.png = docs\Articles\SentimentAnalysisProjectConfig.png
-		docs\Articles\SentimentAnalysysProjectStructure.png = docs\Articles\SentimentAnalysysProjectStructure.png
-		docs\Articles\Simpler NET module creation using improved SDK.md = docs\Articles\Simpler NET module creation using improved SDK.md
-		docs\Articles\test.html.jpg = docs\Articles\test.html.jpg
-		docs\Articles\test.html.png = docs\Articles\test.html.png
-		docs\Articles\test_html.png = docs\Articles\test_html.png
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Python", "Python", "{D2B223B6-983B-4782-B231-5F481504A86F}"
 	ProjectSection(SolutionItems) = preProject
@@ -193,8 +142,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.AnalysisLayer.SDK", "src\AnalysisLayer\SDK\NET\CodeProject.AI.AnalysisLayer.SDK\CodeProject.AI.AnalysisLayer.SDK.csproj", "{56DFAAD2-2E14-45D8-8BC9-D171785235E9}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Vision", "src\AnalysisLayer\Vision\intelligencelayer\Vision.pyproj", "{E5D27495-EE4F-4AAF-8749-A6BA848111E2}"
-EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "mkdocs", "docs\mkdocs\mkdocs.shproj", "{343EE377-FB9C-4D81-8A17-68509C9F6659}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SentimentAnalysis", "src\AnalysisLayer\SentimentAnalysis\SentimentAnalysis.csproj", "{6814F27C-7026-4D22-8E38-2047747495E3}"
 EndProject
@@ -244,14 +191,6 @@ Global
 		{C93C22D7-4EB2-4EC0-A7F0-FBCFB9F6F72D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C93C22D7-4EB2-4EC0-A7F0-FBCFB9F6F72D}.Release|x86.ActiveCfg = Release|Any CPU
 		{C93C22D7-4EB2-4EC0-A7F0-FBCFB9F6F72D}.Release|x86.Build.0 = Release|Any CPU
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Debug|x86.Build.0 = Debug|Any CPU
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Release|x86.ActiveCfg = Release|Any CPU
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC}.Release|x86.Build.0 = Release|Any CPU
 		{232710A8-9180-4139-8FF2-8F21F649D927}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{232710A8-9180-4139-8FF2-8F21F649D927}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{232710A8-9180-4139-8FF2-8F21F649D927}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -324,8 +263,6 @@ Global
 		{93A23681-E9E8-4381-9EB5-8D178A0EE785} = {2379A486-0D28-4CAD-BB13-E77FBA538E0D}
 		{A0CF3BEE-8EE3-4B23-BEB8-9D258C0510A3} = {93A23681-E9E8-4381-9EB5-8D178A0EE785}
 		{C93C22D7-4EB2-4EC0-A7F0-FBCFB9F6F72D} = {93A23681-E9E8-4381-9EB5-8D178A0EE785}
-		{F9430C77-589D-4C56-8458-2DF7E344C0FC} = {D982BD8C-2257-413B-8513-8043AB3035F3}
-		{8C92DCAE-EDE7-4DEC-A5CB-BB2388905064} = {3BF27572-9D3A-497C-8375-29110EBBD3D1}
 		{CB26AB5B-DB85-4A59-A3AE-FA55A35D05B0} = {3A860CDD-94B9-4002-BA08-87E8822DDE50}
 		{232710A8-9180-4139-8FF2-8F21F649D927} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{FF0C329F-41E8-4540-BCDB-97690911077D} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
@@ -333,23 +270,17 @@ Global
 		{7E981C51-DADD-4047-AF5B-21B0E3442B99} = {55C41D48-17AC-4ED5-9440-B42AF65CCE4E}
 		{7DC0A312-39AD-41B0-BB53-72ACACC76959} = {7E981C51-DADD-4047-AF5B-21B0E3442B99}
 		{00BBF52C-217D-421F-BEAF-918C167D4C20} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
-		{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{470D3417-36A4-49A4-B719-496466FA92FB} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
-		{2E9D03C1-BF8F-4E3D-944A-0DDEDDE620C5} = {3BF27572-9D3A-497C-8375-29110EBBD3D1}
 		{D2B223B6-983B-4782-B231-5F481504A86F} = {FF0C329F-41E8-4540-BCDB-97690911077D}
 		{11F66210-D711-4A0A-AE3A-8AC11432CDC3} = {FF0C329F-41E8-4540-BCDB-97690911077D}
 		{AB47CC99-15ED-4928-A2F2-DC8F83DA9482} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{470D3417-36A4-49A4-B719-496466FA92FC} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{56DFAAD2-2E14-45D8-8BC9-D171785235E9} = {11F66210-D711-4A0A-AE3A-8AC11432CDC3}
 		{E5D27495-EE4F-4AAF-8749-A6BA848111E2} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
-		{343EE377-FB9C-4D81-8A17-68509C9F6659} = {3BF27572-9D3A-497C-8375-29110EBBD3D1}
 		{6814F27C-7026-4D22-8E38-2047747495E3} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{FE2DAAFA-29D6-4842-8999-1776F320DEE4} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}
-	EndGlobalSection
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		docs\mkdocs\mkdocs.projitems*{343ee377-fb9c-4d81-8a17-68509c9f6659}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

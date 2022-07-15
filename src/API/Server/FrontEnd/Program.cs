@@ -34,11 +34,14 @@ namespace CodeProject.AI.API.Server.Frontend
             const string company = "CodeProject";
             const string product = "AI";
 
-            var assembly           = Assembly.GetExecutingAssembly();
-            var assemblyName       = assembly.GetName().Name ?? String.Empty;
-            var servicePath        = assembly.Location.Remove(Assembly.GetExecutingAssembly().Location.Length - 4) + ".exe";
-            var serviceName        = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
-                                   ?? assemblyName.Replace(".", " ");
+            var assembly         = Assembly.GetExecutingAssembly();
+            var assemblyName     = assembly.GetName().Name ?? String.Empty;
+            var servicePath      = Path.Combine(System.AppContext.BaseDirectory, $"{assemblyName}.exe");
+            var serviceName      = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
+                                 ?? assemblyName.Replace(".", " ");
+
+            Console.WriteLine($"Service Path: {servicePath}");
+
             var serviceDescription = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? string.Empty;
 
             if (args.Length == 1)
@@ -51,6 +54,11 @@ namespace CodeProject.AI.API.Server.Frontend
                 else if (args[0].Equals("/Uninstall", StringComparison.OrdinalIgnoreCase))
                 {
                     WindowsServiceInstaller.Uninstall(serviceName);
+                    return;
+                }
+                else if (args[0].Equals("/Stop", StringComparison.OrdinalIgnoreCase))
+                {
+                    WindowsServiceInstaller.Stop(serviceName);
                     return;
                 }
             }
@@ -93,22 +101,37 @@ namespace CodeProject.AI.API.Server.Frontend
                            config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.json"),
                                               optional: true, reloadOnChange: true);
 
-                           // ListEnvVariables(Environment.GetEnvironmentVariables());
-
+                           // Load appsettings.platform.env.json files to allow slightly more
+                           // convenience for settings on other platforms
                            if (!string.IsNullOrWhiteSpace(aspNetEnv))
                            {
                                 config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.{aspNetEnv}.json"),
                                                   optional: true, reloadOnChange: true);
                            }
 
+                           // This allows us to add ad-hoc settings such as ApplicationDataDir
                            config.AddInMemoryCollection(inMemoryConfigData);
+
+                           // Load the installconfig.json file so we have access to the install ID
                            config.AddJsonFile(Path.Combine(applicationDataDir, InstallConfig.InstallCfgFilename),
                                               reloadOnChange: true, optional: true);
+
+                           // Load the version.json file so we have access to the Version info
                            config.AddJsonFile(Path.Combine(baseDir, VersionConfig.VersionCfgFilename), 
                                               reloadOnChange: true, optional: true);
 
-                           // ListConfigSources(config.Sources);
+                           // Load the modulesettings.json files to get analysis module settings
                            LoadModulesConfiguration(config, aspNetEnv);
+
+                           // Add command line back in to force it to have full override powers.
+                           // TODO: Clear the config loaders and add them back in this section
+                           //       properly.
+                           if (args != null)
+                               config.AddCommandLine(args);
+
+                           // For debug
+                           // ListConfigSources(config.Sources);
+                           // ListEnvVariables(Environment.GetEnvironmentVariables());
                        })
                        .Build()
                        ;
@@ -163,19 +186,35 @@ namespace CodeProject.AI.API.Server.Frontend
             string? modulesPath          = options["MODULES_PATH"];
 
             // Get the Modules Path
-            rootPath = Path.Combine(AppContext.BaseDirectory, rootPath);
-            rootPath = rootPath.Replace('\\', Path.DirectorySeparatorChar);
-            rootPath = Path.GetFullPath(rootPath);
+            rootPath= BackendProcessRunner.GetRootPath(rootPath);
 
             if (string.IsNullOrWhiteSpace(rootPath))
+            {
+                Console.WriteLine("No root path provided");
                 return;
+            }
+
+            if (!Directory.Exists(rootPath))
+            {
+                Console.WriteLine($"The provided root path '{rootPath}' doesn't exist");
+                return;
+            }
 
             modulesPath = modulesPath.Replace("%ROOT_PATH%", rootPath);
             modulesPath = modulesPath.Replace('\\', Path.DirectorySeparatorChar);
             modulesPath = Path.GetFullPath(modulesPath);
 
             if (string.IsNullOrWhiteSpace(modulesPath))
+            {
+                Console.WriteLine("No modules path provided");
                 return;
+            }
+
+            if (!Directory.Exists(modulesPath))
+            {
+                Console.WriteLine($"The provided modules path '{modulesPath}' doesn't exist");
+                return;
+            }
 
             string platform = BackendProcessRunner.Platform.ToLower();
             aspNetEnv = aspNetEnv?.ToLower();

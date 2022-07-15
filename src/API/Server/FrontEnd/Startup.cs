@@ -90,6 +90,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 c.IncludeXmlComments(xmlPath);
             });
 #endif
+            PassThroughLegacyCommandLineParams();
             // ListConfigValues();
 
             // Configure application services and DI
@@ -180,6 +181,125 @@ namespace CodeProject.AI.API.Server.Frontend
                     _logger?.LogError($"Exception updating Install Config: {ex.Message}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Sniff the configuration values for root level values that we should pass on for
+        /// backwards compatibility with legacy modules.
+        /// 
+        /// Here's how it works:
+        /// 
+        /// Command line values are available via the Configuration object.
+        /// 
+        /// Environment variables that an analysis module would typically access are set in 
+        /// BackendProcessRunner.CreateProcessStartInfo. The values that CreateProcessStartInfo
+        /// gets are from the server's appsettings.json in the EnvironmentVariables section, or
+        /// from the backend analysis service's modulesettings.json file in its
+        /// EnvironmentVariables section. These two sets of variables are combined into one set and
+        /// then used to set the Environment variables for the backend analysis process being
+        /// launched.
+        /// 
+        /// To override these values you just set the value of the environment variable using its
+        /// name. The "name" is the tricky bit. In the appsettings.json file you have "PORT" in the
+        /// EnvironmentVariable section, but its fully qualified name is 
+        /// FrontEndOptions:EnvironmentVariables:PORT. In the custom object detection's variables
+        /// in modulesettings.json, PORT is Modules:CustomObjectDetection:EnvironmentVariables:PORT.
+        /// 
+        /// So, to override these values at the command line is ludicrously verbose. Instead we
+        /// will choose a subset of these variables that we know are in use in the wild and provide
+        /// simple names that are mapped to the complicated names.
+        /// 
+        /// This is all horribly hardcoded, but the point here is that over time this list will
+        /// disappear.
+        /// </summary>
+        public void PassThroughLegacyCommandLineParams()
+        {
+            var keyValues = new Dictionary<string, string>();
+
+            // Go through the configuration looking for root level keys that could have been passed
+            // via command line or otherwise. For the ones we find, convert them to value or values
+            // that should be stored in configuration in a way that modules can access.
+            foreach (KeyValuePair<string, string> pair in Configuration.AsEnumerable())
+            {
+                // Port. The big one
+                if (pair.Key.Equals("PORT", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    keyValues["FrontEndOptions:EnvironmentVariables:PORT"]               = pair.Value;
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:PORT"]        = pair.Value;
+                    keyValues["Modules:ObjectDetection:EnvironmentVariables:PORT"]       = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:PORT"] = pair.Value;
+                    keyValues["Modules:CustomObjectDetection:EnvironmentVariables:PORT"] = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:PORT"]   = pair.Value;
+                    keyValues["Modules:PortraitFilter:EnvironmentVariables:PORT"]        = pair.Value;
+                }
+
+                // Activation
+                if (pair.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase))
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:VISION-FACE"] = pair.Value;
+
+                if (pair.Key.Equals("VISION-SCENE", StringComparison.InvariantCultureIgnoreCase))
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:VISION-SCENE"] = pair.Value;
+
+                if (pair.Key.Equals("VISION-DETECTION", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:VISION-DETECTION"] = pair.Value;
+                    keyValues["Modules:ObjectDetection:EnvironmentVariables:VISION-DETECTION"]       = pair.Value;
+                }
+
+                // Mode, which really comes down to resolution
+                if (pair.Key.Equals("MODE", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:MODE"]        = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:MODE"] = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:MODE"]   = pair.Value;
+                    keyValues["Modules:ObjectDetection:EnvironmentVariables:MODE"]       = pair.Value;
+
+                    switch (pair.Value.ToLower())
+                    {
+                        case "low": 
+                            keyValues["Modules:CustomObjectDetection:EnvironmentVariables:RESOLUTION"] = "Small";
+                            break;
+                        case "medium":
+                            keyValues["Modules:CustomObjectDetection:EnvironmentVariables:RESOLUTION"] = "medium";
+                            break;
+                        case "high":
+                            keyValues["Modules:CustomObjectDetection:EnvironmentVariables:RESOLUTION"] = "high";
+                            break;
+                    }
+                }
+
+                // Using CUDA?
+                if (pair.Key.Equals("CUDA_MODE", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:CUDA_MODE"]        = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:CUDA_MODE"] = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:CUDA_MODE"]   = pair.Value;
+
+                    keyValues["Modules:ObjectDetection:EnvironmentVariables:CUDA_MODE"]       = pair.Value;
+                    keyValues["Modules:CustomObjectDetection:EnvironmentVariables:USE_CUDA"]  = pair.Value;
+                }
+
+                // Model Directories
+                if (pair.Key.Equals("DATA_DIR", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:DATA_DIR"]        = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:DATA_DIR"] = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:DATA_DIR"]   = pair.Value;
+                    keyValues["Modules:ObjectDetection:EnvironmentVariables:DATA_DIR"]       = pair.Value;
+                }
+
+                // Custom Model Directories. Deepstack compatibility and thge docs are ambiguous
+                if (pair.Key.Equals("MODELSTORE-DETECTION", StringComparison.InvariantCultureIgnoreCase))
+                    keyValues["Modules:CustomObjectDetection:EnvironmentVariables:MODELS_DIR"] = pair.Value;
+
+                // Temp Directories
+                if (pair.Key.Equals("TEMP_PATH", StringComparison.InvariantCultureIgnoreCase))
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:TEMP_PATH"] = pair.Value;
+            }
+
+            // Now update the Configuration
+            foreach (var pair in keyValues)
+                Configuration[pair.Key] = pair.Value;
         }
 
         /// <summary>

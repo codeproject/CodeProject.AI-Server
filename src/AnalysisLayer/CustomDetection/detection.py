@@ -1,16 +1,17 @@
 import sys
-sys.path.append("../SDK/Python")
-from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
-module = ModuleWrapper()
-
-# Hack for debug mode
-if module.moduleId == "CodeProject.AI":
-    module.moduleId = "CustomObjectDetection";
-
 import os
 import json
 
 from options import Options
+
+sys.path.append("../SDK/Python")
+from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
+
+module = ModuleWrapper("customdetection_queue")
+
+# Hack for debug mode
+if module.moduleId == "CodeProject.AI":
+    module.moduleId = "CustomObjectDetection";
 
 if Options.use_CUDA:
     module.hardwareId        = "GPU"
@@ -27,18 +28,18 @@ from process import YOLODetector
 
 models_dir = Options.models_dir
    
-queue_name = "customdetection_queue"
-
 model_path = os.path.join(models_dir, Options.model_name)
 detectors = {
-    'general' : YOLODetector(model_path, reso=Options.resolution_pizels, cuda=Options.use_CUDA)
+    'ipcam-general' : YOLODetector(model_path, reso=Options.resolution_pizels, cuda=Options.use_CUDA)
 }
 
 def customObjectDetection():
 
+    module.log(LogMethod.Info|LogMethod.Server, {"message": f"Custom Models in {models_dir}"})
+
     while True:
 
-        queue = module.get_command(queue_name);
+        queue = module.get_command();
 
         if len(queue) > 0:
 
@@ -60,18 +61,20 @@ def customObjectDetection():
                     threshold  = float(module.get_request_value(req_data, "min_confidence", "0.4"))
                     img        = module.get_image_from_request(req_data, 0)
 
-                    # The route to here is /v1/vision/custom/<model-name>
+                    # The route to here is /v1/vision/custom/<model-name>. if mode-name = general,
+                    # or no model provided, then a built-in general purpose mode will be used.
                     if segments is None or len(segments) == 0 or segments[0] is None or segments[0] == "":
-                        model_name = "yolov5m"
+                        model_name = "general"
                     else:
                         model_name = segments[0]
 
+                    # Mhe "general" model to our current "general" model (currently a trimmed down
+                    # YOLOv5 with a reduced model set specifically for webcam applications)
                     if model_name == "general":
-                        model_name = "yolov5m"
+                        model_name = "ipcam-general"
 
                     do_detection(req_id, model_name, img, threshold)
 
-        # time.sleep(delay)
 
 def list_models(req_id, models_path):
     model_names = [entry.name[:-3] for entry in os.scandir(models_path) if entry.is_file() and entry.name.endswith(".pt") ]
@@ -80,14 +83,29 @@ def list_models(req_id, models_path):
 
 def do_detection(req_id, model_name, img, threshold):
     
+    module.log(LogMethod.Info | LogMethod.Cloud | LogMethod.Server,
+                { "process": "customObjectDetection", 
+                  "file": "detection.py",
+                  "method": "do_detection",
+                  "message": f"Detecting using {model_name}"})
+
     # We have a detector for each custom model. Lookup the detector, or if it's not
     # found, create a new one and add it to our lookup.
     detector = detectors.get(model_name, None)
     if detector is None:
         model_path = os.path.join(models_dir, model_name + ".pt")
-        #print(f"Model Path is {model_path}")
-        detector = YOLODetector(model_path, reso=Options.resolution_pizels, cuda=Options.use_CUDA)
-        detectors[model_name] = detector
+        print(f"Model Path is {model_path}")
+
+        try:
+            detector = YOLODetector(model_path, reso=Options.resolution_pizels, cuda=Options.use_CUDA)
+            detectors[model_name] = detector
+        except Exception as ex:
+            module.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                { "process": "customObjectDetection", 
+                  "file": "detection.py",
+                  "method": "do_detection",
+                  "message": ex})
+            return
     
     timer = module.start_timer(f"Custom Object Detection:{model_name}")
 

@@ -10,7 +10,7 @@ cls
 setlocal enabledelayedexpansion
 
 :: verbosity can be: quiet | info | loud
-set verbosity=info
+set verbosity=quiet
 
 :: If files are already present, then don't overwrite if this is false
 set forceOverwrite=false
@@ -69,18 +69,15 @@ if /i "%useColor%" == "true" call utils.bat setESC
 
 :: Set Flags
 
-set pipFlags=-q -q
 set rmdirFlags=/q
 set roboCopyFlags=/NFL /NDL /NJH /NJS /nc /ns  >nul 2>nul
 
 if /i "%verbosity%"=="info" (
-    set pipFlags=-q
     set rmdirFlags=/q
     set roboCopyFlags=/NFL /NDL /NJH
 )
 
 if /i "%verbosity%"=="loud" (
-    set pipFlags=
     set rmdirFlags=
     set roboCopyFlags=
 )
@@ -106,23 +103,6 @@ call utils.bat Write "Creating Directories..."
 :: For downloading assets
 if not exist "%downloadPath%\" mkdir "%downloadPath%"
 call utils.bat WriteLine "Done" "Green"
-
-
-:: The Docs ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: 
-
-call utils.bat WriteLine
-call utils.bat WriteLine "Installing MKDocs" "DarkGreen" 
-call utils.bat WriteLine
-
-:: Currently 3.9 is the latest python version our modules are using, so we'll just use this to 
-:: save installing a one-off (but potentially better) version. It's just docs. Nothing crazy.
-call utils.bat SetupPython 3.9
-
-:: pythonInterpreterPath will contain the path to the latest installed Python VENV interpreter
-:: !pythonInterpreterPath! -m pip install mkdocs
-:: !pythonInterpreterPath! -m mkdocs
-call utils.bat InstallPythonPackages 3.9 "..\..\docs\mkdocs" "mkdocs"
-call utils.bat WriteLine "Done" "DarkGreen" 
 
 
 :: TextSummary specific ::::::::::::::::::::::::::::::::::::::::::::::::::::::: 

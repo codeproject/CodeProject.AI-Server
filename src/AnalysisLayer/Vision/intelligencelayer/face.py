@@ -4,29 +4,28 @@
 import sys
 sys.path.append("../../SDK/Python")
 from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
-module = ModuleWrapper()
+
+import threading
+
+import ast
+import json
+import os
+import sqlite3
+import time
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
+from shared import SharedOptions
+
+module = ModuleWrapper("face_queue")
 
 # Hack for debug mode
 if module.moduleId == "CodeProject.AI":
     module.moduleId = "FaceProcessing";
 
-
-import threading
-
-import ast
-import io
-import json
-import os
-import sqlite3
-import time
-import warnings
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-from shared import SharedOptions
-
 if SharedOptions.CUDA_MODE:
-    module.hardwareId = "GPU"
+    module.hardwareId        = "GPU"
     module.executionProvider = "CUDA"
+
 
 # TODO: Currently doesn't exist. The Python venv is setup at install time for a single platform in
 # order to reduce downloads. Having the ability to switch profiles at runtime will be added, but
@@ -34,13 +33,12 @@ if SharedOptions.CUDA_MODE:
 # place, though it needs to be adjusted.
 sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
 
-import numpy as np
 import torch
 
 # import cv2
 import torch.nn.functional as F
 import torchvision.transforms as transforms
-from PIL import Image, UnidentifiedImageError
+from PIL import UnidentifiedImageError
 from process import YOLODetector
 from recognition import FaceRecognitionModel
 import traceback
@@ -126,7 +124,7 @@ def load_faces():
             "exception_type": "Exception"
         })
 
-def face(thread_name, delay):
+def face():
 
     if SharedOptions.MODE == "High":
 
@@ -165,11 +163,9 @@ def face(thread_name, delay):
         ]
     )
 
-    IMAGE_QUEUE = "face_queue"
-
     while True:
 
-        queue = module.get_command(IMAGE_QUEUE);
+        queue = module.get_command();
 
         if len(queue) > 0:
 
@@ -766,16 +762,8 @@ def face(thread_name, delay):
                         module.end_timer(timer)
                         module.send_response(req_id, json.dumps(output))
 
-                        #if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , user_images[0])):
-                        #    os.remove(os.path.join(SharedOptions.TEMP_PATH , user_images[0]))
 
-                        #if os.path.exists(os.path.join(SharedOptions.TEMP_PATH , user_images[1])):
-                        #    os.remove(os.path.join(SharedOptions.TEMP_PATH , user_images[1]))
-
-        # time.sleep(delay)
-
-
-def update_faces(thread_name, delay):
+def update_faces(delay):
     while True:
         load_faces()
         time.sleep(delay)
@@ -785,8 +773,8 @@ if __name__ == "__main__":
     init_db()
     load_faces()
 
-    faceupdate_thread = threading.Thread(None, update_faces, args = ("", 1))
-    face_thread       = threading.Thread(None, face,         args = ("", SharedOptions.SLEEP_TIME))
+    faceupdate_thread = threading.Thread(group = None, target = update_faces, args = (1,))
+    face_thread       = threading.Thread(group = None, target = face,         args = ())
     faceupdate_thread.start()
     face_thread.start()
 

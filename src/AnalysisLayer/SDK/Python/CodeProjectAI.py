@@ -41,31 +41,38 @@ class LogMethod(Flag):
     Error   = 2   # Standard error output
     Server  = 4   # Send the log to the front end API server
     Cloud   = 8   # Send the log to a cloud provider such as errlog.io
-    All     = 15  # It's a job lot
+    File    = 16  # Send the log to a cloud provider such as errlog.io
+    All     = 31  # It's a job lot
 
 class ModuleWrapper:
     """
     A thin abstraction + helper methods to allow python modules to communicate with the
     backend of main API Server
     """
-    _execution_provider  = "CPU"
 
-    python_dir          = current_python_dir
-    virtual_env         = os.getenv("VIRTUAL_ENV",   f"{python_dir}/venv")
-    errLog_APIkey       = os.getenv("ERRLOG_APIKEY", "")
-    port                = os.getenv("PORT",          "5000")
 
-    moduleId            = os.getenv("MODULE_ID",     "CodeProject.AI")
-    hardwareId          = "CPU"
+    # Constructor
+    def __init__(self, queue_name):
+        self.queue_name          = queue_name
+        self.python_dir          = current_python_dir
+        self.errLog_APIkey       = os.getenv("ERRLOG_APIKEY", "")
+        self.port                = os.getenv("PORT",          "5000")
+        self.server_root_path    = os.getenv("CPAI_APPROOTPATH", "")
+        self.moduleId            = os.getenv("MODULE_ID",     "CodeProject.AI")
+        self.hardwareId          = "CPU"
+
+        self._execution_provider = "CPU"
+
+        self._error_pause_secs   = 1.0
+        self._log_timing_events  = True
+        self._verbose_exceptions = True
+        self._defaultLogging     = LogMethod.File
+
+        self._base_queue_url     = f"http://localhost:{self.port}/v1/queue/"
+        self._base_log_url       = f"http://localhost:{self.port}/v1/log/"
+
+        self._request_session    = requests.Session()
     
-    _error_pause_secs   = 1.0
-    _log_timing_events  = True
-    _verbose_exceptions = True
-
-    _base_queue_url     = f"http://localhost:{port}/v1/queue/"
-    _base_log_url       = f"http://localhost:{port}/v1/log/"
-
-
     @property
     def executionProvider(self):
         return self._execution_provider
@@ -76,8 +83,6 @@ class ModuleWrapper:
             self._execution_provider = "CPU"
         else:
             self._execution_provider = execution_provider
-
-    _request_session = requests.Session()
 
     # Performance timer ===========================================================================
 
@@ -99,19 +104,20 @@ class ModuleWrapper:
         elapsedSeconds = time.perf_counter() - startTime
     
         if (self._log_timing_events):
-            self.log(LogMethod.Info, {"message": f"{desc} took {elapsedSeconds:.3} seconds"})
+            self.log(LogMethod.Info|LogMethod.Server, {"message": f"{desc} took {elapsedSeconds:.3} seconds"})
 
 
     # Service Commands and Responses ==============================================================
 
-    def get_command(self, queueName : str) -> "list[str]":
+    def get_command(self) -> "list[str]":
 
         """
-        Gets a command from the given queue. CodeProject.AI works on the basis of having a client
-        pass requests to the frontend server, which in turns places each request into various command
-        queues. The backend analysis services continually pull requests from the queue that they
-        can service. Each request for a queued command is done via a long poll HTTP request.
-        Param: queueName - the name of the queue from which the command should be retrieved.
+        Gets a command from the queue associated with this object. CodeProject.AI works on the 
+        basis of having a client pass requests to the frontend server, which in turns places each 
+        request into various command queues. The backend analysis services continually pull 
+        requests from the queue that they can service. Each request for a queued command is done 
+        via a long poll HTTP request.
+
         Returns the Json package containing the raw request from the client that was sent to the
         server
 
@@ -124,21 +130,25 @@ class ModuleWrapper:
 
         success = False
         try:
-            cmdTimer = self.start_timer(f"Getting Command from {queueName}")
+            # Turning off timing since it doesn't make a lot of sense given we're long-polling
+            cmdTimer = self.start_timer(f"Waiting on queue {self.queue_name} for a Command")
 
-            url      = self._base_queue_url + queueName + "?moduleId=" + self.moduleId
+            url = self._base_queue_url + self.queue_name + "?moduleId=" + self.moduleId
             if self.executionProvider is not None :
                 url += "&executionProvider=" + self.executionProvider
 
+            # Send the request to query the queue and wait up to 30 seconds for a response. We're
+            # basically long-polling here
             response = self._request_session.get(
                 url,
                 timeout=30,
                 verify=False
             )
-            if (response.ok and len(response.content) > 2):
+
+            if response.ok and len(response.content) > 0:
                 success = True
                 content = response.text
-                self.log(LogMethod.Info, {"message": "retrieved TextSummary command"})
+                self.log(LogMethod.Info|LogMethod.Server, {"message": f"retrieved {self.queue_name} command"})
 
                 return [content]
             else:
@@ -150,10 +160,10 @@ class ModuleWrapper:
             if self._verbose_exceptions:
                 err_msg = str(ex)
 
-            self.log(LogMethod.Error|LogMethod.Cloud, {
+            self.log(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
                 "message": err_msg,
                 "method": "get_command",
-                "process": queueName,
+                "process": self.queue_name,
                 "file": "CodeProjectAI.py",
                 "exception_type": "Exception"
             })
@@ -176,7 +186,7 @@ class ModuleWrapper:
         payload = None
         try:
             payload     = req_data["payload"]
-            queueName   = payload.get("queue","N/A")
+            queue_name  = payload.get("queue","N/A")
             files       = payload["files"]
             img_file    = files[index]
             img_dataB64 = img_file["data"]
@@ -194,7 +204,7 @@ class ModuleWrapper:
             self.log(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
                 "message": err_msg,
                 "method": "getImageFromRequest",
-                "process": queueName,
+                "process": queue_name,
                 "file": "CodeProjectAI.py",
                 "exception_type": "Exception"
             })
@@ -220,7 +230,7 @@ class ModuleWrapper:
                 print(f"Error getting getRequestImageCount: {str(ex)}")
             return 0
 
-    def get_request_value(self, req_data, key : str, defaultValue : str = None):
+    def get_request_value(self, req_data : JSON, key : str, defaultValue : str = None):
         """
         Gets a value from the HTTP request Form send by the client
         Param: req_data - the request data from the HTTP form
@@ -259,15 +269,15 @@ class ModuleWrapper:
         into various command queues. The backend analysis services continually pull requests from 
         the queue that they can service, process each request, and then send the results back to
         the server.
-        Param: req_id - the ID of the request that was originally pulled from the command queue.
-        Param: body: - the Json result (as a string) from the analysis of the request.
-        Returns True on success; False otherwise
+
+        Param: req_id     - the ID of the request that was originally pulled from the command queue.
+        Param: body:      - the Json result (as a string) from the analysis of the request.
+
+        Returns:          - True on success; False otherwise
         """
 
-        # self.log(LogMethod.Info, {"message": f"Sending response for module {self.moduleId}"})
-
         success       = False
-        responseTimer = self.start_timer("Sending Response")
+        responseTimer = self.start_timer(f"Sending response for request from {self.queue_name}")
 
         try:
             url = self._base_queue_url + req_id + "?moduleId=" + self.moduleId
@@ -329,21 +339,28 @@ class ModuleWrapper:
         if data.get("message", "") != "":
             message += message + data["message"]
 
-        if logMethod & LogMethod.Error:
+        if logMethod & LogMethod.Error or self._defaultLogging & LogMethod.Error:
             print(message, file=sys.stderr, flush=True)
 
-        if logMethod & LogMethod.Info:
+        if logMethod & LogMethod.Info or self._defaultLogging & LogMethod.Info:
             print(message, file=sys.stdout, flush=True)
 
-        if logMethod & LogMethod.Server:
+        if logMethod & LogMethod.Server or self._defaultLogging & LogMethod.Server:
             self._server_log(message)
 
-        if logMethod & LogMethod.Cloud:
+        if logMethod & LogMethod.Cloud or self._defaultLogging & LogMethod.Cloud:
             self._cloud_log(data.get("process", ""),
                             data.get("method", ""),
                             data.get("file", ""),
                             data.get("message", ""),
                             data.get("exception_type", ""))
+
+        if logMethod & LogMethod.File or self._defaultLogging & LogMethod.File:
+            self._file_log(data.get("process", ""),
+                           data.get("method", ""),
+                           data.get("file", ""),
+                           data.get("message", ""),
+                           data.get("exception_type", ""))
    
     def _server_log(self, entry : str) -> bool:
 
@@ -413,3 +430,40 @@ class ModuleWrapper:
             return False
 
         return response.status_code == 200
+
+    def _file_log(self, process: str, method: str, file: str, message: str, exception_type: str) -> bool:
+        """
+        Logs an error to a file
+        Param: process - The name of the current process
+        Param: method - The name of the current method
+        Param: file - The name of the current file
+        Param: message - The message to log
+        Param: exception_type - The exception type if this logging is the result of an exception
+        """
+
+        line = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if len(exception_type) > 0:
+            line += ' [Exception: ' + exception_type + ']'      
+        line += ': ' + message
+       
+        if len(file) > 0:
+            line += '(file: ' + file
+            if len(process) > 0:
+                line += ' in ' + process + "." + method
+            line += ')'
+
+        line += '\n'
+
+        try:
+            directory = self.server_root_path + os.sep + 'logs'
+            if not os.path.isdir(directory):
+                os.mkdir(directory)
+
+            filepath = directory + os.sep + 'log-' + datetime.now().strftime("%Y-%m-%d") + '.txt'
+            with open(filepath, 'a') as file_object:
+                file_object.write(line)
+
+            return True
+        except Exception as ex:
+            print(f"Unable to write to the file log")
+            return False

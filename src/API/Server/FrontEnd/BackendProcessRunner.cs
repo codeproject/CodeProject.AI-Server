@@ -112,16 +112,59 @@ namespace CodeProject.AI.API.Server.Frontend
         }
 
         /// <summary>
-        /// Gets the backend process status for a queue.
+        /// Gets the directory that is the root of this system. 
         /// </summary>
-        /// <param name="queueName">The Queue Name.</param>
-        /// <returns>The status for the backend process, or false if the queue is invalid.</returns>
-        public bool GetStatusForQueue(string queueName)
+        /// <param name="configRootPath">The root path specified in the config file.
+        /// assumptions</param>
+        /// <returns>A string for the adjusted path</returns>
+        public static string GetRootPath(string? configRootPath)
         {
-            return StartupProcesses.FirstOrDefault(entry => 
-                                                        entry.Value.RouteMaps!
-                                                             .Any(x => string.Compare(x.Queue, queueName, true) == 0)
-                                                  ).Value?.Running ?? false;
+            string defaultPath = configRootPath ?? AppContext.BaseDirectory;
+            // Correct for cross platform (win = \, linux = /)
+            defaultPath = defaultPath.Replace('\\', Path.DirectorySeparatorChar);
+
+            // Either the config file or lets assume it's the current dir if all else fails
+            string rootPath = defaultPath;
+
+            // If the config value is a relative path then add it to the current dir. This is where
+            // we have to trust the config values are right, and we also have to trust that when
+            // this server is called the "ASPNETCORE_ENVIRONMENT" flag is set as necessary in order
+            // to ensure the appsettings.Development.json config files are includwed
+            if (rootPath.StartsWith(".."))
+                rootPath = Path.Combine(AppContext.BaseDirectory, rootPath!);
+
+            // converts relative URLs and squashes the path to he correct absolute path
+            rootPath = Path.GetFullPath(rootPath);
+
+            /*
+            // HACK: If we're running this server from the build output dir in development, and 
+            // we haven't set the environment var ASPNETCORE_ENVIRONMENT=Development, then the path
+            // will be wrong.
+            bool devBuild = false;
+            DirectoryInfo? info = new DirectoryInfo(rootPath);
+            if (info.Name.ToLower() == "debug" || info.Name.ToLower() == "release")
+            {
+                while (info != null)
+                {
+                    // Console.WriteLine($"info.FullName = {info.FullName}");
+
+                    info = info.Parent;
+                    if (info?.Name.ToLower() == "src")
+                    {
+                        info = info.Parent;
+                        break;
+                    }
+                }
+
+                if (info != null)
+                {
+                    rootPath       = info.FullName;
+                    devBuild = true;
+                }
+            }
+            */
+
+            return rootPath;
         }
 
         /// <summary>
@@ -151,6 +194,19 @@ namespace CodeProject.AI.API.Server.Frontend
             _appDataDirectory = config.GetValue<string>("ApplicationDataDir");
 
             ExpandMacros();
+        }
+
+        /// <summary>
+        /// Gets the backend process status for a queue.
+        /// </summary>
+        /// <param name="queueName">The Queue Name.</param>
+        /// <returns>The status for the backend process, or false if the queue is invalid.</returns>
+        public bool GetStatusForQueue(string queueName)
+        {
+            return StartupProcesses.FirstOrDefault(entry => 
+                                                        entry.Value.RouteMaps!
+                                                             .Any(x => string.Compare(x.Queue, queueName, true) == 0)
+                                                  ).Value?.Running ?? false;
         }
 
         /// <inheritdoc></inheritdoc>
@@ -378,14 +434,23 @@ namespace CodeProject.AI.API.Server.Frontend
             string? workingDirectory = Path.GetDirectoryName(filePath);
 
             // Setup the process we're going to launch
-            ProcessStartInfo? procStartInfo = new ProcessStartInfo($"{command}", $"\"{filePath}\"")
-            {
-                UseShellExecute        = false,
-                WorkingDirectory       = workingDirectory,
-                CreateNoWindow         = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError  = true
-            };
+            ProcessStartInfo? procStartInfo = (command == "execute")
+                ? new ProcessStartInfo($"\"{filePath}\"")
+                {
+                    UseShellExecute = false,
+                    WorkingDirectory = workingDirectory,
+                    CreateNoWindow = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+                : new ProcessStartInfo($"{command}", $"\"{filePath}\"")
+                {
+                    UseShellExecute = false,
+                    WorkingDirectory = workingDirectory,
+                    CreateNoWindow = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
 
             // Set the environment variables
             Dictionary<string, string?> environmentVars = BuildBackendEnvironmentVar(module);
@@ -463,6 +528,7 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 case ".py": return GetCommandByRuntime("python");
                 case ".dll": return "dotnet";
+                case ".exe": return "execute";
                 default:
                     throw new Exception("If neither Runtime nor Command is specified then FilePath must have an extension of '.py' or '.dll'.");
             }
@@ -496,33 +562,6 @@ namespace CodeProject.AI.API.Server.Frontend
             Console.WriteLine($"Expanded PYTHON_BASEPATH = {_frontendOptions.PYTHON_BASEPATH}");
             Console.WriteLine($"Expanded PYTHON_PATH     = {_frontendOptions.PYTHON_PATH}");
             Console.WriteLine("------------------------------------------------------------------");
-        }
-
-        /// <summary>
-        /// Gets the directory that is the root of this system. 
-        /// </summary>
-        /// <param name="configRootPath">The root path specified in the config file.
-        /// assumptions</param>
-        /// <returns>A string</returns>
-        private string GetRootPath(string? configRootPath)
-        {
-            string defaultPath = configRootPath ?? AppContext.BaseDirectory;
-            // Correct for cross platform (win = \, linux = /)
-            defaultPath = defaultPath.Replace('\\', Path.DirectorySeparatorChar);
-
-            // Either the config file or lets assume it's the current dir if all else fails
-            string rootPath = defaultPath;
-
-            // If the config value is a relative path then add it to the current dir. This is where
-            // we have to trust the config values are right, and we also have to trust that when
-            // this server is called the "ASPNETCORE_ENVIRONMENT" flag is set as necessary in order
-            // to ensure the appsettings.Development.json config files are includwed
-            if (rootPath.StartsWith(".."))
-                rootPath = Path.Combine(AppContext.BaseDirectory, rootPath!);
-
-            // converts relative URLs and squashes the path to he correct absolute path
-            rootPath = Path.GetFullPath(rootPath); 
-            return rootPath;
         }
 
         /// <summary>
@@ -573,6 +612,7 @@ namespace CodeProject.AI.API.Server.Frontend
                         processEnvironmentVars.Add(entry.Key, ExpandOption(entry.Value.ToString()));
                 }
 
+            Console.WriteLine();
             Console.WriteLine($"Setting Environment variables for {module.Name}");
             Console.WriteLine("------------------------------------------------------------------");
             foreach (var envVar in processEnvironmentVars)

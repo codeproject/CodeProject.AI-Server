@@ -20,27 +20,27 @@ Copy ["src/AnalysisLayer/SDK/NET/CodeProject.AI.AnalysisLayer.SDK/CodeProject.AI
 RUN dotnet restore "src/API/Server/FrontEnd/Frontend.csproj"
 COPY . .
 WORKDIR "/src/src/API/Server/FrontEnd"
-RUN dotnet build "Frontend.csproj" -c Release -o /app/build/server
+RUN dotnet build "Frontend.csproj" -c Release --no-self-contained -o /app/build/server
 WORKDIR "/src/src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo"
-RUN dotnet build "ObjectDetector.csproj" -c Release -o /app/build/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo
+RUN dotnet build "ObjectDetector.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo
 
 WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
-RUN dotnet build "PortraitFilter.csproj" -c Release -o /app/build/AnalysisLayer/PortraitFilter
+RUN dotnet build "PortraitFilter.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/PortraitFilter
 
 #WORKDIR "/src/src/AnalysisLayer/SentimentAnalysis"
-#RUN dotnet build "SentimentAnalysis.csproj" -c Release -o /app/build/AnalysisLayer/SentimentAnalysis
+#RUN dotnet build "SentimentAnalysis.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/SentimentAnalysis
 
 FROM build AS publish
 WORKDIR "/src/src/API/Server/FrontEnd"
-RUN dotnet publish "Frontend.csproj" -c Release -o /app/publish/server
+RUN dotnet publish "Frontend.csproj" -c Release --no-self-contained -o /app/publish/server
 WORKDIR "/src/src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo"
-RUN dotnet publish "ObjectDetector.csproj" -c Release -o /app/publish/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo
+RUN dotnet publish "ObjectDetector.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo
 
 WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
-RUN dotnet publish "PortraitFilter.csproj" -c Release -o /app/publish/AnalysisLayer/PortraitFilter
+RUN dotnet publish "PortraitFilter.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/PortraitFilter
 
 #WORKDIR "/src/src/AnalysisLayer/SentimentAnalysis"
-#RUN dotnet publish "SentimentAnalysis.csproj" -c Release -o /app/publish/AnalysisLayer/SentimentAnalysis
+#RUN dotnet publish "SentimentAnalysis.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/SentimentAnalysis
 
 # zipping up the test images and moving to the server wwwroot directory so it can be downloaded from server.
 RUN apt-get update -y && apt-get upgrade -y
@@ -80,9 +80,10 @@ RUN apt-get install python3.9 -y
 RUN python3.8 -m pip install --upgrade pip
 RUN python3.9 -m pip install --upgrade pip
 
-RUN python3.8 -m pip install -r /app/AnalysisLayer/Vision/intelligencelayer/requirements.txt
-#RUN python3.8 -m pip install -r /app/AnalysisLayer/TextSummary/requirements.txt
-RUN python3.9 -m pip install -r /app/AnalysisLayer/BackgroundRemover/requirements.txt
+# CM: Added --no-cache-dir here to reduce the size of the image
+RUN python3.8 -m pip --no-cache-dir install -r /app/AnalysisLayer/Vision/intelligencelayer/requirements.txt
+#RUN python3.8 -m pip --no-cache-dir install -r /app/AnalysisLayer/TextSummary/requirements.txt
+RUN python3.9 -m pip --no-cache-dir install -r /app/AnalysisLayer/BackgroundRemover/requirements.txt
 
 WORKDIR /app/server
 ENTRYPOINT ["dotnet", "CodeProject.AI.Server.dll"]

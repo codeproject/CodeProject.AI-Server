@@ -11,6 +11,11 @@
 :: to the left, meaning the called subroutine will get the arguments it expects in order
 shift & goto :%~1
 
+set pipFlags=-q -q
+if /i "%verbosity%"=="info" set pipFlags=-q
+if /i "%verbosity%"=="loud" set pipFlags=
+
+
 :: sub-routines
 
 :: Sets up the ESC string for use later in this script
@@ -372,16 +377,37 @@ shift & goto :%~1
     rem ============================================================================
     rem 3a. Install PIP packages for Python analysis services
 
-    call :Write "Installing Python package manager..."
-    !pythonPath! -m pip install --trusted-host pypi.python.org ^
-                 --trusted-host files.pythonhosted.org ^
-                 --trusted-host pypi.org --upgrade pip !pipFlags!
+    rem Ensure we have pip (no internet access - ensures we have the current python compatible version.
+    call :Write "Ensuring Python package manager (pip) is installed..."
+    if /i "%verbosity%" == "quiet" (
+        !pythonPath! -m ensurepip !pipFlags!  >nul 2>nul 
+    ) else (
+        !pythonPath! -m ensurepip !pipFlags!
+    )
+    call :WriteLine "Done" "Green"
+
+    call :Write "Ensuring Python package manager (pip) is up to date..."
+
+    rem Upgrade to the latest pip
+    if /i "%verbosity%" == "quiet" (
+        !pythonPath! -m pip install --trusted-host pypi.python.org ^
+                     --trusted-host files.pythonhosted.org ^
+                     --trusted-host pypi.org --upgrade pip !pipFlags!  >nul 2>nul 
+    ) else (
+        !pythonPath! -m pip install --trusted-host pypi.python.org ^
+                     --trusted-host files.pythonhosted.org ^
+                     --trusted-host pypi.org --upgrade pip !pipFlags!
+    )
+    
     call :WriteLine "Done" "Green"
 
     call :Write "Checking for required packages..."
 
     rem ASSUMPTION: If venv\Lib\site-packages\<test name> exists then no need to check further
-    if not exist "!virtualEnv!\Lib\site-packages\!testForPipExistanceName!" (
+
+    set packagesPath="!virtualEnv!\Lib\site-packages"
+
+    if not exist "!packagesPath!\testForPipExistanceName!" (
 
         call :WriteLine "Packages missing. Installing from !requirementsFilename!..." "Yellow"
 
@@ -389,7 +415,11 @@ shift & goto :%~1
             
             call :Write "Installing Packages into Virtual Environment..."
             REM pip install -r !requirementsPath! !pipFlags!
-            !pythonPath! -m pip install -r !requirementsPath! !pipFlags!
+            if /i "%verbosity%" == "quiet" (
+                !pythonPath! -m pip install -r !requirementsPath! --target "!packagesPath!" !pipFlags!   >nul 2>nul 
+            ) else (
+                !pythonPath! -m pip install -r !requirementsPath! --target "!packagesPath!" !pipFlags! 
+            )
             call :WriteLine "Success" "Green"
 
         ) else (
@@ -423,9 +453,9 @@ shift & goto :%~1
                         call :Write "  -!description!..."
 
                         if /i "%verbosity%" == "quiet" (
-                            !pythonPath! -m pip install !module! !currentOption! !pipFlags! >nul 2>nul 
+                            !pythonPath! -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags! >nul 2>nul 
                         ) else (
-                            !pythonPath! -m pip install !module! !currentOption! !pipFlags!
+                            !pythonPath! -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags!
                         )
 
                         call :WriteLine "Done" "Green"

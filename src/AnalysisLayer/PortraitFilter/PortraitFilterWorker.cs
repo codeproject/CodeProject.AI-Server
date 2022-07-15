@@ -102,8 +102,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                 // use the defaults
                 _deepPersonLab = new DeepPersonLab(_modelPath.Replace('\\', Path.DirectorySeparatorChar));
                 ExecutionProvider = "CPU";
-                HardwareId = "CPU";
-
+                HardwareId        = "CPU";
             }
         }
 
@@ -127,7 +126,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                         sessionOpts.AppendExecutionProvider_CUDA();
 
                         ExecutionProvider = "CUDA";
-                        HardwareId = "GPU";
+                        HardwareId        = "GPU";
                     }
                     catch
                     {
@@ -145,7 +144,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                         //sessionOpts.ExecutionMode = ExecutionMode.ORT_PARALLEL;
 
                         ExecutionProvider = "OpenVINO";
-                        HardwareId = "GPU";
+                        HardwareId        = "GPU";
                     }
                     catch
                     {
@@ -162,7 +161,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                         sessionOpts.EnableMemoryPattern = false;
 
                         ExecutionProvider = "DirectML";
-                        HardwareId = "GPU";
+                        HardwareId        = "GPU";
                     }
                     catch
                     {

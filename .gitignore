@@ -393,6 +393,15 @@ FodyWeavers.xsd
 /src/AnalysisLayer/BackgroundRemover/models
 /docs/mkdocs/senseAI/site
 /src/AnalysisLayer/Vision/assets
-/src/AnalysisLayer/CustomDetection/assets
+/src/AnalysisLayer/CustomDetection/assets/openlogo.pt
+/src/AnalysisLayer/CustomDetection/assets/actionnetv2.pt
+/src/AnalysisLayer/CustomDetection/assets/license-plate.pt
+/src/AnalysisLayer/CustomDetection/assets/yolov5m.pt
 /docs/mkdocs/CodeProject.AI/site
+/Installers/Windows/Thumbs.db
 /src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo/assets
+/src/AnalysisLayer/CustomDetection/assets/IPcam-general.pt
+/src/AnalysisLayer/CustomDetection/assets/IPcam-dark.pt
+/src/AnalysisLayer/CustomDetection/assets/IPcam-combined.pt
+/src/AnalysisLayer/CustomDetection/assets/IPcam-animal.pt
+/src/AnalysisLayer/Vision/datastore

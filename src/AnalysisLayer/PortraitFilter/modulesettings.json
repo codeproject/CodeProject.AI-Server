@@ -6,16 +6,11 @@
       "Name": "Portrait Filter",
       "Activate": true,
       "Description": "Blurs the background behind people in an image.",
-      "FilePath": "PortraitFilter\\PortraitFilter.dll",
-      "Runtime": "dotnet",
+      "FilePath": "PortraitFilter\\PortraitFilter.exe",
+      "Runtime": "execute",
       "Platforms": [ "windows", "linux", "docker", "macos" ], // No "macos-arm" because of Gdip intitialiser issue. Move to Maui graphics
 
       "EnvironmentVariables": {
-        "VISION-FACE": true,
-
-        "PROFILE": "desktop_cpu",
-        "CUDA_MODE": "False",
-        "MODE": "MEDIUM",
         "PORT": 5000
       },
 

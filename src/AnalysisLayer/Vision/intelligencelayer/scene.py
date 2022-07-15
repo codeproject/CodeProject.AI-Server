@@ -3,25 +3,21 @@
 import sys
 sys.path.append("../../SDK/Python")
 from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
-module = ModuleWrapper()
+
+import json
+import os
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
+from shared import SharedOptions
+
+module = ModuleWrapper("scene_queue")
 
 # Hack for debug mode
 if module.moduleId == "CodeProject.AI":
     module.moduleId = "SceneClassification";
 
-import ast
-import io
-import json
-import os
-import sqlite3
-import time
-import warnings
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-from shared import SharedOptions
-
 if SharedOptions.CUDA_MODE:
-    module.hardwareId = "GPU"
+    module.hardwareId        = "GPU"
     module.executionProvider = "CUDA"
 
 # TODO: Currently doesn't exist. The Python venv is setup at install time for a single platform in
@@ -30,10 +26,9 @@ if SharedOptions.CUDA_MODE:
 # place, though it needs to be adjusted.
 sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
 
-import numpy as np
 import torch
 import torch.nn.functional as F
-from PIL import Image, UnidentifiedImageError
+from PIL import UnidentifiedImageError
 
 import traceback
 
@@ -41,6 +36,7 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet50
 
 class SceneModel(object):
+
     def __init__(self, model_path, cuda=False):
 
         self.cuda = cuda
@@ -64,7 +60,7 @@ class SceneModel(object):
         return out.argmax(), out.max().item()
 
 
-def scenerecognition(thread_name, delay):
+def scenerecognition():
 
     classes = list()
     with open(
@@ -75,14 +71,13 @@ def scenerecognition(thread_name, delay):
 
     placesnames = tuple(classes)
 
-    IMAGE_QUEUE = "scene_queue"
     classifier = SceneModel(
         os.path.join(SharedOptions.SHARED_APP_DIR, "scene.pt"),
         SharedOptions.CUDA_MODE,
     )
 
     while True:
-        queue = module.get_command(IMAGE_QUEUE);
+        queue = module.get_command();
 
         if len(queue) > 0:           
             timer = module.start_timer("Scene Classification")
@@ -167,4 +162,4 @@ def scenerecognition(thread_name, delay):
 
 if __name__ == "__main__":
     module.log(LogMethod.Info | LogMethod.Server, {"message": "Scene Detection module started."})
-    scenerecognition("", SharedOptions.SLEEP_TIME)
+    scenerecognition()

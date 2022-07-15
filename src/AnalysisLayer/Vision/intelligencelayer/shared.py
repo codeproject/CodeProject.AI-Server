@@ -130,4 +130,3 @@ class SharedOptions:
         print(f"MODELS_DIR:   {MODELS_DIR}")
         print(f"PORT:         {PORT}")
         print(f"MODE:         {MODE}")
-        # print(f"VIRTUAL_ENV:  {VIRTUAL_ENV}")

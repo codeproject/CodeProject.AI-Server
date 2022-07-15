@@ -19,7 +19,7 @@
         },
 
         {
-            "name": "Build All (Linux)",
+            "name": "Build All (Linux/macOS)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-all-linux",

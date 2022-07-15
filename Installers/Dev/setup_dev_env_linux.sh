@@ -119,7 +119,7 @@ fi
 # 1. Ensure directories are created and download required assets
 
 writeLine
-writeLine 'CodeProject.AI setup                                                        ' "White" "Blue"
+writeLine 'CodeProject.AI setup                                                    ' "White" "Blue"
 
 # Create some directories
 
@@ -137,18 +137,6 @@ else
     write "Creating Directories..." $color_primary
 fi
 writeLine "Done" $color_success
-
-
-# The Docs ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: 
-
-# Currently 3.9 is the latest python version our modules are using, so we'll just use this to 
-# save installing a one-off (but potentially better) version. It's just docs. Nothing crazy.
-setupPython 3.9
-
-write "Installing MKDocs..." 
-installPythonPackages 3.9 "${absoluteRootDir}/docs/mkdocs" "mkdocs"
-writeLine "Done" "DarkGreen" 
-
 
 # TextSummary specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::
 

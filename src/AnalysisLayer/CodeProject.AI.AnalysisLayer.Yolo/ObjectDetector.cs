@@ -65,6 +65,10 @@ namespace CodeProject.AI.Analysis.Yolo
                 path = Path.Combine(path, "..\\..\\..");
             }
 #endif
+            // TODO: MODE is actually meant to be resolution, not model size. PROFILE sets the
+            //       model size. For CustomDetection we've switched to MODEL_SIZE and RESOLUTION,
+            //       but we've kept this here for compatibility with Blue Iris and Home Assist that
+            //       have DeepStack integrations.
             string mode = config.GetValue<string>("MODE");
             string modelPath = (mode ?? string.Empty.ToLower()) switch
             {
@@ -93,7 +97,7 @@ namespace CodeProject.AI.Analysis.Yolo
                         _scorer = new YoloScorer<YoloCocoP5Model>(modelFilePath);
 
                         ExecutionProvider = "CPU";
-                        HardwareId = "CPU";
+                        HardwareId        = "CPU";
                     }
                 }
                 else
@@ -125,7 +129,7 @@ namespace CodeProject.AI.Analysis.Yolo
                         sessionOpts.AppendExecutionProvider_CUDA();
 
                         ExecutionProvider = "CUDA";
-                        HardwareId = "GPU";
+                        HardwareId        = "GPU";
                     }
                     catch
                     {
@@ -143,7 +147,7 @@ namespace CodeProject.AI.Analysis.Yolo
                         //sessionOpts.ExecutionMode = ExecutionMode.ORT_PARALLEL;
 
                         ExecutionProvider = "OpenVINO";
-                        HardwareId = "GPU";
+                        HardwareId        = "GPU";
                     }
                     catch
                     {
@@ -160,7 +164,7 @@ namespace CodeProject.AI.Analysis.Yolo
                         sessionOpts.EnableMemoryPattern = false;
 
                         ExecutionProvider = "DirectML";
-                        HardwareId = "GPU";
+                        HardwareId        = "GPU";
                     }
                     catch
                     {

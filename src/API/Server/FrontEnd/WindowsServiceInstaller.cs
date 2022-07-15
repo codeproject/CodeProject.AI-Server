@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.ServiceProcess;
 
 // based on https://github.com/microsoft/installer-project-samples/blob/main/NET_Core/WindowsService/NetCoreWinService/Program.cs
 // should be extended to handle the equivalent in Linux and OSX.
@@ -10,6 +12,11 @@ namespace CodeProject.AI.API.Server.Frontend
     /// </summary>
     public static class WindowsServiceInstaller
     {
+        /// <summary>
+        /// Max time to wait for Service to shut down.
+        /// </summary>
+        static readonly TimeSpan _stopTimeout = new TimeSpan(0, 5, 0);
+
         /// <summary>
         /// Installs a Windows Service
         /// </summary>
@@ -35,11 +42,61 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                RunSc($"stop \"{serviceName}\"");
+                Stop(serviceName);
+
                 RunSc($"delete \"{serviceName}\"");
             }
         }
 
+        /// <summary>
+        /// Stops the named Windows Service.
+        /// </summary>
+        /// <param name="serviceName">The name of the Windows Service</param>
+        public static void Stop(string serviceName)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Console.WriteLine($"Stopping the '{serviceName}' Windows Service");
+                try
+                {
+                    //RunSc($"stop \"{serviceName}\"");
+                    var (found, sc) = FindService(serviceName);
+                    if (found)
+                    {
+                        if (sc!.Status == ServiceControllerStatus.Running)
+                            sc.Stop();
+                        sc.WaitForStatus(ServiceControllerStatus.Stopped, _stopTimeout);
+                    }
+                }
+                catch (System.ServiceProcess.TimeoutException)
+                {
+                    // TODO: log unable to stop the service
+                }
+                catch (Exception)
+                {
+                    // TODO: something else happened, log it
+                    // The service might not be installed, which is ok.
+                }
+            }
+        }
+
+        /// <summary>
+        /// Finds a Service by name.
+        /// </summary>
+        /// <param name="serviceName">The name of the service.</param>
+        /// <returns>The related ServiceController, or null if not found.</returns>
+        private static (bool found, ServiceController? service) FindService(string serviceName)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var services = ServiceController.GetServices();
+                foreach (var service in services)
+                    if (service.ServiceName == serviceName)
+                        return (true, service);
+            }
+
+            return (false, null);
+        }
         /// <summary>
         /// Executes the sc command.
         /// </summary>
@@ -49,14 +106,12 @@ namespace CodeProject.AI.API.Server.Frontend
             var psi = new ProcessStartInfo()
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
-                FileName = "sc.exe",
-                Arguments = args,
+                FileName    = "sc.exe",
+                Arguments   = args,
             };
 
             var process = Process.Start(psi);
             process?.WaitForExit();
         }
     }
-
-
 }

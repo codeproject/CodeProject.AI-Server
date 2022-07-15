@@ -1,0 +1,2 @@
+﻿Just a file to add for the CodeProject.AI.Server.Starter 'installer'.
+MSI doesn't like installers without content.

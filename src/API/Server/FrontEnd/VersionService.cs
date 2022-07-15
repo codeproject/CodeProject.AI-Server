@@ -62,7 +62,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 // SECURITY: Always ensure that InstallConfig.Id does NOT contain personally
                 //           identifiable information. It should be a random GUID that can be wiped
                 //           or replaced on the installation side without issue.
-                _client.DefaultRequestHeaders.Add("X-CP-AI-Server-Install", InstallConfig.Id.ToString());
+                _client.DefaultRequestHeaders.Add("X-CPAI-Server-Install", InstallConfig.Id.ToString());
 
                 // Handy to allow the checkee to return emergency info if the current installed
                 // version has issues
