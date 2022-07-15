@@ -1,1 +1,0 @@
-docker image build  --tag codeproject/ai-base:focal -f Dockerfile-Base .
