@@ -4,15 +4,27 @@
 requests					# Installing Requests, the HTTP library
 Pillow						# Installing Pillow, a Python Image Library
 
-## Background Remover
-filetype==1.0.9				# Installing FileType, a package to infer file types and MIME types
-gdown==4.4.0				# Installing gdown, a package for downloading from Google Drive folders
-numpy<=1.21.6				# Installing the required version of numpy of pymatting - numba
-pymatting==1.1.5			# Installing pymatting, a Python Library for Alpha Matting
+## Background Remover - original, but have a security issue
+## filetype==1.0.9			# Installing FileType, a package to infer file types and MIME types
+## gdown==4.4.0				# Installing gdown, a package for downloading from Google Drive folders
+## numpy<=1.21.6			# Installing the required version of numpy of pymatting - numba
+## pymatting==1.1.5			# Installing pymatting, a Python Library for Alpha Matting
 
-## For Running on Intel Processors
+## Background Remover - tested and working
+## filetype==1.1.0			# Installing FileType, a package to infer file types and MIME types
+## gdown==4.5.1				# Installing gdown, a package for downloading from Google Drive folders
+## numpy==1.22.4			# Installing the required version of numpy of pymatting - numba
+## pymatting==1.1.8			# Installing pymatting, a Python Library for Alpha Matting
+
+## Background Remover - latest
+filetype					# Installing FileType, a package to infer file types and MIME types
+gdown						# Installing gdown, a package for downloading from Google Drive folders
+numpy						# Installing the required version of numpy of pymatting - numba
+pymatting					# Installing pymatting, a Python Library for Alpha Matting
+
+## For GPU, including embedded Intel GPUs
 ## openvino					# need the OpenVino Execution Provider
-# #onnxruntime-openvino		# Installing the ONNX runtime
+## onnxruntime-openvino		# Installing the ONNX runtime
 
 ## For CPU
 onnxruntime				    # Installing the ONNX runtime
