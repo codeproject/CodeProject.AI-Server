@@ -4,11 +4,11 @@
       "Major": 1,
       "Minor": 5,
       "Patch": 5,
-      "Build": 0,
+      "Build": 1,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
       "File": "CodeProject.AI.Server-1.5.5.zip",
-      "ReleaseNotes": "Small patch to correct an installation issue."
+      "ReleaseNotes": "Patch to 1.5.5 that fixes a problem with registered face listings being out of date. Recommended only for those who make use of face recognition."
     }
   }
 }
