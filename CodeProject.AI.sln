@@ -71,12 +71,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		src\starttimer.bat = src\starttimer.bat
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_PRIVATE REPO", "_PRIVATE REPO", "{78509730-6FBA-44E5-98C0-083DB7F52027}"
-	ProjectSection(SolutionItems) = preProject
-		README.txt = README.txt
-		rebrand.txt = rebrand.txt
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{FF0C329F-41E8-4540-BCDB-97690911077D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ModelRunners", "ModelRunners", "{55C41D48-17AC-4ED5-9440-B42AF65CCE4E}"
@@ -257,6 +251,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetectionNet", "src\AnalysisLayer\ObjectDetectionNet\ObjectDetectionNet.csproj", "{25D75AFE-BEC9-43BF-BE44-B9068FF8E395}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CudaVersionCustomAction", "Installers\Windows\CudaVersionCustomAction\CudaVersionCustomAction.csproj", "{214949E0-B56C-4F23-809A-07DA4DBDF925}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.API.Server.Backend.Tests", "tests\QueueServiceTests\CodeProject.SenseAI.API.Server.Backend.Tests.csproj", "{BF307B78-E985-4787-A1FC-41D860650F39}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -471,6 +467,14 @@ Global
 		{214949E0-B56C-4F23-809A-07DA4DBDF925}.Release|Any CPU.Build.0 = Release|x86
 		{214949E0-B56C-4F23-809A-07DA4DBDF925}.Release|x86.ActiveCfg = Release|x86
 		{214949E0-B56C-4F23-809A-07DA4DBDF925}.Release|x86.Build.0 = Release|x86
+		{BF307B78-E985-4787-A1FC-41D860650F39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF307B78-E985-4787-A1FC-41D860650F39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF307B78-E985-4787-A1FC-41D860650F39}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BF307B78-E985-4787-A1FC-41D860650F39}.Debug|x86.Build.0 = Debug|Any CPU
+		{BF307B78-E985-4787-A1FC-41D860650F39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF307B78-E985-4787-A1FC-41D860650F39}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF307B78-E985-4787-A1FC-41D860650F39}.Release|x86.ActiveCfg = Release|Any CPU
+		{BF307B78-E985-4787-A1FC-41D860650F39}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -529,6 +533,7 @@ Global
 		{4ED567B5-C28D-48BB-AEDC-864E2B2C7204} = {B10B59B5-9F63-41C2-BFBB-6C7311DC4E99}
 		{25D75AFE-BEC9-43BF-BE44-B9068FF8E395} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
 		{214949E0-B56C-4F23-809A-07DA4DBDF925} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
+		{BF307B78-E985-4787-A1FC-41D860650F39} = {D982BD8C-2257-413B-8513-8043AB3035F3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using CodeProject.AI.API.Server.Backend;
 using CodeProject.AI.AnalysisLayer.SDK;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace QueueServiceTests
 {
@@ -40,7 +41,8 @@ namespace QueueServiceTests
                 MaxQueueLength  = 10,
                 ResponseTimeout = TimeSpan.FromSeconds(10)
             };
-        private QueueServices _queueServices = new(new TestOptions(queueOptions));
+        private QueueServices _queueServices = new QueueServices(new TestOptions(queueOptions),
+                                                                 new NullLogger<QueueServices>());
 
         [Fact]
         public async void RequestTimesOutIfNotHandled()
