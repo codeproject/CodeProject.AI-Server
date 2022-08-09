@@ -36,7 +36,7 @@ namespace CodeProject.AI.API.Server.Backend
                              ILogger<QueueServices> logger)
         {
             _settings = options.Value;
-            _logger = logger;
+            _logger   = logger;
         }
 
         public bool EnsureQueueExists(string queueName)

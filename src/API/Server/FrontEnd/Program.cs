@@ -85,7 +85,11 @@ namespace CodeProject.AI.API.Server.Frontend
             };
 
             bool inVScode = (Environment.GetEnvironmentVariable("RUNNING_IN_VSCODE") ?? "") == "true";
+            bool reloadConfigOnChange = !inDocker;
 
+            // TODO: 1. Reorder the config loading so that command line is last
+            //       2. Stop appsettings being reloaded on change when in docker for the default
+            //          appsettings.json files
             IHost? host = CreateHostBuilder(args)
                        .ConfigureAppConfiguration((hostingContext, config) =>
                        {
@@ -95,24 +99,24 @@ namespace CodeProject.AI.API.Server.Frontend
                            if (inVScode && platform != "windows")
                            {
                                config.AddJsonFile(Path.Combine(baseDir, "appsettings.json"),
-                                                   optional: false, reloadOnChange: true);
+                                                   optional: false, reloadOnChange: reloadConfigOnChange);
 
                                if (!string.IsNullOrWhiteSpace(aspNetEnv))
                                {
                                    config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{aspNetEnv}.json"),
-                                                   optional: true, reloadOnChange: true);
+                                                   optional: true, reloadOnChange: reloadConfigOnChange);
                                }
                            }
 
                            config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.json"),
-                                              optional: true, reloadOnChange: true);
+                                              optional: true, reloadOnChange: reloadConfigOnChange);
 
                            // Load appsettings.platform.env.json files to allow slightly more
                            // convenience for settings on other platforms
                            if (!string.IsNullOrWhiteSpace(aspNetEnv))
                            {
                                 config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.{aspNetEnv}.json"),
-                                                  optional: true, reloadOnChange: true);
+                                                  optional: true, reloadOnChange: reloadConfigOnChange);
                            }
 
                            // This allows us to add ad-hoc settings such as ApplicationDataDir
@@ -120,11 +124,11 @@ namespace CodeProject.AI.API.Server.Frontend
 
                            // Load the installconfig.json file so we have access to the install ID
                            config.AddJsonFile(Path.Combine(applicationDataDir, InstallConfig.InstallCfgFilename),
-                                              reloadOnChange: true, optional: true);
+                                              reloadOnChange: reloadConfigOnChange, optional: true);
 
                            // Load the version.json file so we have access to the Version info
                            config.AddJsonFile(Path.Combine(baseDir, VersionConfig.VersionCfgFilename), 
-                                              reloadOnChange: true, optional: true);
+                                              reloadOnChange: reloadConfigOnChange, optional: true);
 
                            // Load the modulesettings.json files to get analysis module settings
                            LoadModulesConfiguration(config, aspNetEnv);
@@ -198,6 +202,8 @@ namespace CodeProject.AI.API.Server.Frontend
         // things. To be done at a later date.
         private static void LoadModulesConfiguration(IConfigurationBuilder config, string? aspNetEnv)
         {
+            bool reloadOnChange = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") != "true";
+
             IConfiguration configuration = config.Build();
             var options                  = configuration.GetSection("FrontEndOptions");
             string? rootPath             = options["ROOT_PATH"];
@@ -243,21 +249,21 @@ namespace CodeProject.AI.API.Server.Frontend
             foreach (string? directory in directories)
             {
                 config.AddJsonFile(Path.Combine(directory, "modulesettings.json"),
-                                   optional: true, reloadOnChange: true);
+                                   optional: true, reloadOnChange: reloadOnChange);
 
                 if (!string.IsNullOrEmpty(aspNetEnv))
                 {
                     config.AddJsonFile(Path.Combine(directory, $"modulesettings.{aspNetEnv}.json"),
-                                       optional: true, reloadOnChange: true);
+                                       optional: true, reloadOnChange: reloadOnChange);
                 }
 
                 config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.json"),
-                                    optional: true, reloadOnChange: true);
+                                    optional: true, reloadOnChange: reloadOnChange);
 
                 if (!string.IsNullOrEmpty(aspNetEnv))
                 {
                     config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.{aspNetEnv}.json"),
-                                      optional: true, reloadOnChange: true);
+                                      optional: true, reloadOnChange: reloadOnChange);
                 }
             }
         }

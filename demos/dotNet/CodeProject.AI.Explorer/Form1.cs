@@ -504,7 +504,7 @@ namespace CodeProject.AI.Demo.Explorer
                 ShowError("Image must be selected.");
                 return;
             }
-            var nIterations = 512;
+            var nIterations = 100;
             var taskList = new List<Task<ResponseBase>>();
             Stopwatch sw = Stopwatch.StartNew();
             for (int i = 0; i < nIterations; i++){

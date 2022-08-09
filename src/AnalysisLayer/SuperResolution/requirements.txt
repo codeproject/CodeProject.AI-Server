@@ -2,7 +2,10 @@
 
 ONNX                # Installing ONNX, the Open Neural Network Exchange library
 ONNXRuntime         # Installing ONNX runtime, the scoring engine for ONNX models
-numpy			    # Installing NumPy, a package for scientific computing
+## numpy			    # Installing NumPy, a package for scientific computing
 torch               # Installing PyTorch, for Tensor computation and Deep neural networks
 python-resize-image # Installing resizeimage, which provides functions for easily resizing images
 Pillow			    # Installing Pillow, a Python Image Library
+
+numpy==1.22.4				# Installing NumPy, a package for scientific computing
+## pymatting==1.1.8			# Installing pymatting, a Python Library for Alpha Matting

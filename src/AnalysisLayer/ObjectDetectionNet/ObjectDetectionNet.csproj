@@ -98,13 +98,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Update="runtimeconfig.template.json">
-			<Generator>SettingsSingleFileGenerator</Generator>
-			<LastGenOutput>runtimeconfig.template.Designer.cs</LastGenOutput>
-		</Content>
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Update="assets\yolov5m.onnx">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>

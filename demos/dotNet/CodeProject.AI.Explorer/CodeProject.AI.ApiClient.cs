@@ -26,7 +26,7 @@ namespace CodeProject.AI.Demo.Explorer
         /// <summary>
         /// Gets or sets the timeout in seconds for making calls to the API
         /// </summary>
-        public int Timeout { get; set; } = 120;
+        public int Timeout { get; set; } = 300;
 
         /// <summary>
         /// Gets the HttpClient
@@ -49,7 +49,7 @@ namespace CodeProject.AI.Demo.Explorer
                     _client = new HttpClient
                     {
                         BaseAddress = new Uri($"http://localhost:{Port}/v1/"),
-                        Timeout     = new TimeSpan(0, 0, Timeout)
+                        Timeout = TimeSpan.FromSeconds(Timeout)
                     };
                 }
 

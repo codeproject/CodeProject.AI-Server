@@ -39,7 +39,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo",
+                "${workspaceFolder}/src/AnalysisLayer/ObjectDetectionNet",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -47,7 +47,7 @@
         },   
 
         {
-            "label": "build-portraitfilter",      // Builds ONLY the Yolo .NET analysis module
+            "label": "build-portraitfilter",      // Builds ONLY the .NET portrait filter  module
             "type": "process",
             "group": "build",
             "command": "dotnet",
@@ -61,7 +61,7 @@
         },   
 
         {
-            "label": "build-sentimentanalysis",      // Builds ONLY the Yolo .NET analysis module
+            "label": "build-sentimentanalysis",      // Builds ONLY the the .NET sentiment analysis module
             "type": "process",
             "group": "build",
             "command": "dotnet",
@@ -75,7 +75,7 @@
         },   
 
         {
-            "label": "build-explorer",      // Builds ONLY the Yolo .NET analysis module
+            "label": "build-explorer",      // Builds ONLY the Yolo .NET demo explorer
             "type": "process",
             "group": "build",
             "command": "dotnet",
@@ -99,7 +99,7 @@
         },
 
         {
-            "label": "build-all-win",         // Builds all projects that can be built for Linux (ie not any Windows Forms apps)
+            "label": "build-all-win",         // Builds all projects that can be built for Windows (ie everything)
             "group": "build",
             "dependsOrder": "sequence",
             "dependsOn": [

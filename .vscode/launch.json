@@ -3,68 +3,42 @@
     "configurations": [
 
         {
-            "name": "Build All (Win)",
+            "name": "Build All",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-all-win",
-            "program": "dotnet",
-            "args": [
-                "--version"
-            ],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
-            "stopAtEntry": false,
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            }
-        },
-
-        {
-            "name": "Build All (Linux/macOS)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-all-linux",
-            "program": "dotnet",
-            "args": [
-                "--version"
-            ],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
-            "stopAtEntry": false,
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            }
-        },
-
-        {
-            "name": "Launch CodeProject.AI (Win)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-all-win",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server.exe",
-            "args": [],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
-            "stopAtEntry": false,
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
-                "uriFormat": "http://localhost:%s/swagger"
+            "linux": {
+                "preLaunchTask": "build-all-linux",
             },
-
+            "osx": {
+                "preLaunchTask": "build-all-linux",
+            },
+            "program": "dotnet",
+            "args": [
+                "--version"
+            ],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "stopAtEntry": false,
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "RUNNING_IN_VSCODE": "true"
+                "ASPNETCORE_ENVIRONMENT": "Development"
             }
         },
 
         {
-            "name": "Launch CodeProject.AI (Linux/macOS)",
+            "name": "Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-all-linux",
+            "preLaunchTask": "build-all-win",
+            "linux": {
+                "preLaunchTask": "build-all-linux",
+            },
+            "osx": {
+                "preLaunchTask": "build-all-linux",
+            },
             "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
             "args": [],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
             "stopAtEntry": false,
-
             "serverReadyAction": {
                 "action": "openExternally",
                 "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
@@ -74,14 +48,15 @@
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true"
-            },
-
+            }
+            /*
             "logging": {
                 "engineLogging": false,
                 "moduleLoad": false,
                 "exceptions": false,
                 "browserStdOut": false
-            },
+            }
+            */
         },
 
         {
@@ -116,7 +91,7 @@
         },
 
         {
-            "name": "Launch CodeProject.AI Explorer (Win)",
+            "name": "[Win] Explorer App",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "launch-server-win",

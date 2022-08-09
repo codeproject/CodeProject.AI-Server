@@ -3,13 +3,13 @@
 ## Using the latest
 filetype					# Installing FileType, a package to infer file types and MIME types
 gdown						# Installing gdown, a package for downloading from Google Drive folders
-numpy						# Installing NumPy, a package for scientific computing
-pymatting					# Installing pymatting, a Python Library for Alpha Matting
+## numpy						# Installing NumPy, a package for scientific computing
+## pymatting					# Installing pymatting, a Python Library for Alpha Matting
 Pillow						# Installing Pillow, a Python Image Library
 
 ## IF there is an error regarding numba needing a higher version of numpy then use this
-## numpy==1.22.4				# Installing NumPy, a package for scientific computing
-## pymatting==1.1.8			# Installing pymatting, a Python Library for Alpha Matting
+numpy==1.22.4				# Installing NumPy, a package for scientific computing
+pymatting==1.1.8			# Installing pymatting, a Python Library for Alpha Matting
 
 ## For CPU
 onnxruntime				    # Installing the ONNX runtime

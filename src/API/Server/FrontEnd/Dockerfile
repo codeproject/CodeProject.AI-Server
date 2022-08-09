@@ -21,30 +21,30 @@ RUN dotnet restore "src/API/Server/FrontEnd/Frontend.csproj"
 COPY . .
 
 WORKDIR "/src/src/API/Server/FrontEnd"
-RUN dotnet build "Frontend.csproj" -c Release --no-self-contained -o /app/build/server
+RUN dotnet build "Frontend.csproj" -c Release -r linux-x64 --self-contained -o /app/build/server
 
 WORKDIR "/src/src/AnalysisLayer/ObjectDetectionNet"
-RUN dotnet build "ObjectDetectionNet.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/ObjectDetectionNet
+RUN dotnet build "ObjectDetectionNet.csproj" -c Release -r linux-x64 --self-contained  -o /app/build/AnalysisLayer/ObjectDetectionNet
 
 WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
-RUN dotnet build "PortraitFilter.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/PortraitFilter
+RUN dotnet build "PortraitFilter.csproj" -c Release -r linux-x64 --self-contained  -o /app/build/AnalysisLayer/PortraitFilter
 
 #WORKDIR "/src/src/AnalysisLayer/SentimentAnalysis"
-#RUN dotnet build "SentimentAnalysis.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/SentimentAnalysis
+#RUN dotnet build "SentimentAnalysis.csproj" -c Release -r linux-x64 --self-contained  -o /app/build/AnalysisLayer/SentimentAnalysis
 
 FROM build AS publish
 
 WORKDIR "/src/src/API/Server/FrontEnd"
-RUN dotnet publish "Frontend.csproj" -c Release --no-self-contained -o /app/publish/server
+RUN dotnet publish "Frontend.csproj" -c Release -r linux-x64 --self-contained -o /app/publish/server
 
 WORKDIR "/src/src/AnalysisLayer/ObjectDetectionNet"
-RUN dotnet publish "ObjectDetectionNet.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/ObjectDetectionNet
+RUN dotnet publish "ObjectDetectionNet.csproj" -c Release -r linux-x64 --self-contained -o /app/publish/AnalysisLayer/ObjectDetectionNet
 
 WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
-RUN dotnet publish "PortraitFilter.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/PortraitFilter
+RUN dotnet publish "PortraitFilter.csproj" -c Release -r linux-x64 --self-contained -o /app/publish/AnalysisLayer/PortraitFilter
 
 #WORKDIR "/src/src/AnalysisLayer/SentimentAnalysis"
-#RUN dotnet publish "SentimentAnalysis.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/SentimentAnalysis
+#RUN dotnet publish "SentimentAnalysis.csproj" -c Release -r linux-x64 --self-contained -o /app/publish/AnalysisLayer/SentimentAnalysis
 
 # zipping up the test images and moving to the server wwwroot directory so it can be downloaded from server.
 RUN apt-get update -y && apt-get upgrade -y
@@ -81,14 +81,20 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 RUN add-apt-repository ppa:deadsnakes/ppa -y
 RUN apt update -y
+
+#needed for opencv-python
+RUN apt-get install ffmpeg libsm6 libxext6  -y
+
 RUN apt-get install python3.9 -y
 RUN python3.8 -m pip install --upgrade pip
 RUN python3.9 -m pip install --upgrade pip
 
 # CM: Added --no-cache-dir here to reduce the size of the image
-RUN python3.8 -m pip --no-cache-dir install -r /app/AnalysisLayer/Vision/intelligencelayer/requirements.txt
+RUN python3.8 -m pip --no-cache-dir install -r /app/AnalysisLayer/Vision/requirements.txt
+RUN python3.8 -m pip --no-cache-dir install -r /app/AnalysisLayer/SDK/Python/requirements.txt
 #RUN python3.8 -m pip --no-cache-dir install -r /app/AnalysisLayer/TextSummary/requirements.txt
 RUN python3.9 -m pip --no-cache-dir install -r /app/AnalysisLayer/BackgroundRemover/requirements.txt
+RUN python3.9 -m pip --no-cache-dir install -r /app/AnalysisLayer/SDK/Python/requirements.txt
 
 WORKDIR /app/server
 ENTRYPOINT ["dotnet", "CodeProject.AI.Server.dll"]
