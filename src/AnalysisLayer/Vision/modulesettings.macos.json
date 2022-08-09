@@ -4,19 +4,19 @@
     // for data on a mac. 
     "FaceProcessing": {
       "EnvironmentVariables": {
-        "PORT": 5500,
+        "CPAI_PORT": 5500,
         "DATA_DIR": "/Library/Application Support/CodeProject/AI"
       }
     },
     "SceneClassification": {
       "EnvironmentVariables": {
-        "PORT": 5500,
+        "CPAI_PORT": 5500,
         "DATA_DIR": "/Library/Application Support/CodeProject/AI"
       }
     },
     "VisionObjectDetection": {
       "EnvironmentVariables": {
-        "PORT": 5500,
+        "CPAI_PORT": 5500,
         "DATA_DIR": "/Library/Application Support/CodeProject/AI"
       }
     }

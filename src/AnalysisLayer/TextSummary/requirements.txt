@@ -1,9 +1,5 @@
 #! Python3.7
 
-## CodeProject.AI
-requests		# Installing Requests, the HTTP library
-Pillow			# Installing Pillow, a Python Image Library
-
 ## NOTE: We don't really care about numpy here, BUT the bgrem module is a little picky. So we can
 ##       stick to the lower version of numpy instead of the 1.22.3 that currently gets installed.
 ##       However: this may not be needed if we're using pip -r requirements: it may figure out the

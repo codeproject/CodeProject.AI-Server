@@ -2,9 +2,9 @@
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 using CodeProject.AI.API.Common;
-using System;
 
 namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
@@ -15,6 +15,17 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
     [ApiController]
     public class LogController : ControllerBase
     {
+        private readonly ILogger _logger;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="logger"></param>
+        public LogController(ILogger<LogController> logger)
+        {
+            _logger = logger;
+        }
+
         /// <summary>
         /// Manages requests to log or retrieve logs. A PUT request.
         /// </summary>
@@ -23,12 +34,36 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ResponseBase AddLog([FromForm] string? entry)
+        public ResponseBase AddLog([FromForm] string? entry,
+                                   [FromForm] string? category,
+                                   [FromForm] string? label,
+                                   [FromForm] LogLevel? log_level)
         {
             if (entry == null)
                 return new ErrorResponse("No log entry provided");
 
-            Logger.Log(entry);
+            // We're using the .NET logger which means we don't have a huge amount of control
+            // when it comes to adding extra info. We'll encode category and label info in the
+            // leg message itself using special markers: [[...]] for category, {{..}} for label
+
+            string msg = string.Empty;
+            if (!string.IsNullOrWhiteSpace(category))
+                msg += "[[" + category + "]]";
+            if (!string.IsNullOrWhiteSpace(label))
+                msg += "{{" + label + "}}";
+            msg += entry;
+
+            switch (log_level)
+            {
+                case LogLevel.None:         break;
+                case LogLevel.Trace:       _logger.LogTrace(msg);       break;
+                case LogLevel.Debug:       _logger.LogDebug(msg);       break;
+                case LogLevel.Information: _logger.LogInformation(msg); break;
+                case LogLevel.Warning:     _logger.LogWarning(msg);     break;
+                case LogLevel.Error:       _logger.LogError(msg);       break;
+                case LogLevel.Critical:    _logger.LogCritical(msg);    break;
+                default:                   _logger.LogInformation(msg); break;
+            }
 
             return new ResponseBase
             {
@@ -57,10 +92,10 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (count is null)
                 count = 10;
 
-            List<LogEntry> entries = Logger.List(last_id.Value, count.Value);
+            List<LogEntry> entries = ServerLogger.List(last_id.Value, count.Value);
             var response = new LogListResponse()
             {
-                entries = entries.ToArray()
+                entries = entries.ToArray()!
             };
 
             return response;

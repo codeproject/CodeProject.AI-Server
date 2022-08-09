@@ -1,4 +1,4 @@
-﻿# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # CodeProject.AI Server Utilities
 #
@@ -6,7 +6,7 @@
 # 
 # We assume we're in the source code /Installers/Dev directory.
 # 
-# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # Returns a color code for the given foreground/background colors
 # This code is echoed to the terminal before outputing text in
@@ -149,14 +149,15 @@ function getBackground () {
     else
 
         # See https://github.com/rocky/shell-term-background/blob/master/term-background.bash
-        # for a comprehensive way to test for background colour. For now we're just going to
-        # assume that non-macOS terminals have a black background.
+        # for a comprehensive way to test for background colour. For now we're
+        # just going to assume that non-macOS terminals have a black background.
 
         echo '0,0,0' # we're making assumptions here
     fi
 }
 
-# Determines whether or not the current terminal is in dark mode (dark background, light text)
+# Determines whether or not the current terminal is in dark mode (dark 
+# background, light text). 
 # returns "true" if running in dark mode; false otherwise
 function isDarkMode () {
 
@@ -172,14 +173,15 @@ function isDarkMode () {
     fi
 }
 
-# Outputs a line, including linefeed, to the terminal using the given foreground / background
-# colors 
+# Outputs a line, including linefeed, to the terminal using the given foreground
+# / background colors 
 #
-# string The text to output. Optional if no foreground provided. Default is just a line feed.
-# string Foreground color name. Optional if no background provided. Defaults to "Default" which
-#        uses the system default
-# string Background color name.  Optional. Defaults to $color_background which is set based on the
-#        current terminal background
+# string The text to output. Optional if no foreground provided. Default is 
+#        just a line feed.
+# string Foreground color name. Optional if no background provided. Defaults to
+#        "Default" which uses the system default
+# string Background color name.  Optional. Defaults to $color_background which 
+#        is set based on the current terminal background
 function writeLine () {
 
     local resetColor='\033[0m'
@@ -193,7 +195,8 @@ function writeLine () {
         return;
     fi
 
-    # Note the use of the format placeholder %s. This allows us to pass "--" as strings without error
+    # Note the use of the format placeholder %s. This allows us to pass "--" as
+    # strings without error
     if [ "$useColor" == "true" ]; then
         local colorString=$(Color ${forecolor} ${backcolor})
         printf "${colorString}%s${resetColor}\n" "${str}"
@@ -202,13 +205,15 @@ function writeLine () {
     fi
 }
 
-# Outputs a line without a linefeed to the terminal using the given foreground / background colors 
+# Outputs a line without a linefeed to the terminal using the given foreground
+# / background colors 
 #
-# string The text to output. Optional if no foreground provided. Default is just a line feed.
-# string Foreground color name. Optional if no background provided. Defaults to "Default" which
-#        uses the system default
-# string Background color name.  Optional. Defaults to $color_background which is set based on the
-#        current terminal background
+# string The text to output. Optional if no foreground provided. Default is 
+#        just a line feed.
+# string Foreground color name. Optional if no background provided. Defaults to
+#        "Default" which uses the system default
+# string Background color name.  Optional. Defaults to $color_background which 
+#        is set based on the current terminal background
 function write () {
 
     local resetColor='\033[0m'
@@ -221,7 +226,8 @@ function write () {
         return;
     fi
 
-    # Note the use of the format placeholder %s. This allows us to pass "--" as strings without error
+    # Note the use of the format placeholder %s. This allows us to pass "--" as
+    # strings without error
     if [ "$useColor" == 'true' ]; then
         local colorString=$(Color ${forecolor} ${backcolor})
         printf "${colorString}%s${resetColor}" "${str}"
@@ -285,14 +291,15 @@ function setupPython () {
 
     if [ "${forceOverwrite}" == "true" ]; then
 
-        if [ ! $verbosity == "quiet" ]; then
-            writeLine "Cleaning download directory to force re-install of Python" $color_info
-        fi
+        writeLine "Cleaning Python directory to force re-install of Python VENV" $color_info
+        writeLine "This will mean any previous PIP installs wwill be lost." $color_error
 
-        # Force Re-download
-        if [ -d "${downloadPath}/${platform}/${pythonName}" ]; then 
-            rm -rf "${downloadPath}/${platform}/${pythonName}"
-        fi
+        # Force Re-download. Except we don't actually. We have a x64 version of
+        # python for macOS in our S3 bucket but it's easier simply to install 
+        # python natively
+        # if [ -d "${downloadPath}/${platform}/${pythonName}" ]; then 
+        #    rm -rf "${downloadPath}/${platform}/${pythonName}"
+        # fi
 
         # Force overwrite
         if [ -d "${installPath}" ]; then 
@@ -300,9 +307,9 @@ function setupPython () {
         fi
     fi
 
-    # ============================================================================
-    # 1. Install Python. Using deadsnakes for Linux (not macOS), so be aware if you have concerns
-    #                    about potential late adoption of security patches.
+    # =========================================================================
+    # 1. Install Python. Using deadsnakes for Linux (not macOS), so be aware if
+    #    you have concerns about potential late adoption of security patches.
 
      if [ $verbosity == "loud" ]; then
         writeLine "Python install path is ${installPath}" $color_info
@@ -338,8 +345,8 @@ function setupPython () {
 
             if [ "$platform" == "macos-arm" ]; then
 
-                # Apple silicon requires Rosetta2 for python to run, so use the x86 version of Brew
-                # we installed earlier
+                # Apple silicon requires Rosetta2 for python to run, so use the
+                # x86 version of Brew we installed earlier
                 if [ "${verbosity}" == "quiet" ]; then
                     arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
                     spin $!
@@ -347,17 +354,19 @@ function setupPython () {
                     arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}
                 fi
 
-                # Note that we only need the specific location of the python interpreter to setup the
-                # virtual environment. After it's setup, all python calls are relative to the same venv
-                # no matter the location of the original python interpreter
+                # Note that we only need the specific location of the python 
+                # interpreter to setup  the virtual environment. After it's 
+                # setup, all python calls are relative to the same venv no 
+                # matter the location of the original python interpreter
                 pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
 
             else
 
-                # We have a x64 version of python for macOS in our S3 bucket but it's easier simply to
-                # install python natively
+                # We have a x64 version of python for macOS in our S3 bucket
+                # but it's easier simply to install python natively
 
-                # Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" "${platform}/${pythonDir}" "Downloading Python interpreter..."
+                # Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" \
+                #                   "${platform}/${pythonDir}" "Downloading Python interpreter..."
                 # cp -R "${downloadPath}/${platform}/${pythonDir}" "${analysisLayerPath}/bin/${platform}"
 
                 if [ "${verbosity}" == "quiet" ]; then
@@ -374,8 +383,9 @@ function setupPython () {
 
             writeLine "Done" $color_success
 
-        # For Linux we'll use apt-get the deadsnakes PPA to get the old version of python. Deadsnakes?
-        # Old python? Get it? Get it?! And who said developers have no sense of humour.
+        # For Linux we'll use apt-get the deadsnakes PPA to get the old version
+        # of python. Deadsnakes? Old python? Get it? Get it?! And who said 
+        # developers have no sense of humour.
         else
 
             if [ ! "${verbosity}" == "loud" ]; then
@@ -415,20 +425,30 @@ function setupPython () {
                 apt update -y
                 writeLine "Installing Python ${pythonVersion}" $color_primary
                 apt-get install python${pythonVersion} -y
-                # apt-get install python3-pip
+                apt-get install python3-pip
                 writeLine "Done" $color_success
             fi
         fi
     fi
 
-    # ============================================================================
+    # =========================================================================
     # 2. Create Virtual Environment
 
     if [ -d  "${installPath}/venv" ]; then
         writeLine "Virtual Environment already present" $color_success
     else
 
-        # Make sure we have pythonNN-env installed
+        # Before we start we need to ensure we can create a Virtual environment
+        # that has the the correct tools, pip being the most important.
+        #
+        # The process is different between macOS and Ubuntu due to how we've 
+        # installed python, The following code is messy (sorry) in order to 
+        # handle both cases as well as quiet / not quiet output. Critical when 
+        # trying to debug issues.
+        #
+        # If venv creation fails, ensure you remove the old venv folder before 
+        # trying again
+
         if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
             if [ "${verbosity}" == "quiet" ]; then
                 write "Installing Virtual Environment tools for mac..." $color_primary
@@ -455,16 +475,18 @@ function setupPython () {
                 # writeLine "First: correcting broken installs".
                 # apt --fix-broken install
 
-                apt install python${pythonVersion}-venv >/dev/null 2>/dev/null &
+                apt install python3-pip python3-setuptools python${pythonVersion}-venv >/dev/null 2>/dev/null &
                 spin $!
                 writeLine "Done" $color_success
             else
                 writeLine "Installing Virtual Environment tools for Linux..." $color_primary
-                apt install python${pythonVersion}-venv
+                apt install python3-pip python3-setuptools python${pythonVersion}-venv
             fi
         fi
 
-        # Create the virtual env
+        # Create the virtual environments. All sorts of things can go wrong here
+        # but if you have issues, make sure you delete the venv directory before
+        # retrying.
         write "Creating Virtual Environment..." $color_primary
         
         if [ $verbosity == "loud" ]; then
@@ -473,13 +495,14 @@ function setupPython () {
 
         if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
             ${pythonCmd} -m venv "${installPath}/venv"
-        else
+        else          
             ${pythonCmd} -m venv "${installPath}/venv" &
             spin $! # process ID of the python install call
         fi
         writeLine "Done" $color_success
     fi
 
+    # our DIY version of Python 'Activate' for virtual environments
     pushd "${installPath}" >/dev/null
     venvPath="$(pwd)/venv"
     pythonInterpreterPath="${venvPath}/bin/python3"
@@ -499,7 +522,8 @@ function setupPython () {
 
 function installPythonPackages () {
 
-    # Whether or not to install all python packages in one step (-r requirements.txt) or step by step
+    # Whether or not to install all python packages in one step (ie use 
+    # -r requirements.txt) or step by step
     oneStepPIP="false"
 
     pythonVersion=$1
@@ -510,11 +534,12 @@ function installPythonPackages () {
     local pythonName="python${pythonVersion/./}"
     pythonCmd="python${pythonVersion}"
 
-    # Brew doesn't set PATH by default (nor do we need it to) which means we just have to be careful
+    # Brew doesn't set PATH by default (nor do we need it to) which means we 
+    # just have to be careful
     if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
         
-        # If running "PythonX.Y" doesn't actually work, then let's adjust the python command
-        # to point to where we think the python launcher should be
+        # If running "PythonX.Y" doesn't actually work, then let's adjust the
+        # command to point to where we think the python launcher should be
         python${pythonVersion} --version >/dev/null  2>/dev/null
         if [ $? -ne 0 ]; then
             # writeLine "Did not find python in default location"
@@ -522,29 +547,63 @@ function installPythonPackages () {
         fi
     fi
 
-    # Check for requirements.platform.txt first, then fall back to requirements.txt
-    requirementsFilename="requirements.${platform}.txt"
-    requirementsPath=${requirementsDir}/${requirementsFilename}
-    if [ ! -f "${requirementsPath}" ]; then
-        requirementsFilename="requirements.txt"
-        requirementsPath=${requirementsDir}/${requirementsFilename}
+    # Check for requirements.platform.[CUDA].txt first, then fall back to
+    # requirements.txt
+
+    requirementsFilename=""
+
+    if /i "!enableGPU!" == "true" (
+        if [ "$hasCUDA" == "true" ]; then
+            if [ ! -f "${requirementsDir}/requirements.${platform}.cuda.txt" ]; then
+                requirementsFilename="requirements.${platform}.cuda.txt"
+            elif [ ! -f "${requirementsDir}/requirements.cuda.txt" ]; then
+                requirementsFilename="requirements.cuda.txt"
+            fi
+        fi
+
+        if [ "$requirementsFilename" == "" ]; then
+            if [ ! -f "${requirementsDir}/requirements.${platform}.gpu.txt" ]; then
+                requirementsFilename="requirements.${platform}.gpu.txt"
+            elif [ ! -f "${requirementsDir}/requirements.gpu.txt" ]; then
+                requirementsFilename="requirements.gpu.txt"
+            fi
+        fi
     fi
- 
+
+    if [ "$requirementsFilename" == "" ]; then
+        if [ ! -f "${requirementsDir}/requirements.${platform}.txt" ]; then
+            requirementsFilename="requirements.${platform}.txt"
+        elif [ ! -f "${requirementsDir}/requirements.txt" ]; then
+            requirementsFilename="requirements.txt"
+        fi
+    fi
+
+    if [ "$requirementsFilename" != "" ]; then
+        requirementsPath="${requirementsDir}/${requirementsFilename}"
+    fi
+
+    if [ "$requirementsFilename" == "" ] || [ ! -f "$requirementsPath" ]; then
+        writeLine "No suitable requirements.txt file found." $color_warn
+        return
+    )
+
     virtualEnv="${analysisLayerPath}/bin/${platform}/${pythonName}/venv"
 
     pushd "${virtualEnv}/bin"  >/dev/null
 
-    # Quick check to ensure PIP is installed and up to date
+    # Before installing packages, check to ensure PIP is installed and up to 
+    # date. This slows things down a bit, but it's worth it in the end.
     if [ "${verbosity}" == "quiet" ]; then
 
-        # Ensure we have pip (no internet access - ensures we have the current python compatible version.
+        # Ensure we have pip (no internet access - ensures we have the current
+        # python compatible version.
         write "Ensuring PIP is installed..."
         ./python3 -m ensurepip  >/dev/null 2>/dev/null &
         spin $!
         writeLine "Done" $color_success
 
         write "Updating PIP..."
-        ./pip install --upgrade pip >/dev/null 2>/dev/null &
+        ./python3 -m pip install --upgrade pip >/dev/null 2>/dev/null &
         spin $!
         writeLine "Done" $color_success
     else
@@ -558,24 +617,27 @@ function installPythonPackages () {
         fi
     
         ./python3 -m ensurepip
-        ./pip install --upgrade pip
+        ./python3 -m pip install --upgrade pip
     fi 
     popd  >/dev/null
 
-    # ============================================================================
+    # =========================================================================
     # Install PIP packages
 
+    # debug
     # writeLine "Installing PIP from ${requirementsPath}" $color_error
-
     # writeLine "Checking ${packagesPath}/${testForPipExistanceName}" $color_error
+
     write "Checking for required packages..." $color_primary
 
-    # ASSUMPTION: If a folder by the name of "testForPipExistanceName" exists in the site-packages
-    # directory then we assume the requirements.txt file has already been processed.
+    # ASSUMPTION: If a folder by the name of "testForPipExistanceName" exists
+    # in the site-packages directory then we assume the requirements.txt file 
+    # has already been processed.
+    # TODO: Each module has its own venv
 
     packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
 
-    if [ ! -d "${packagesPath}/${testForPipExistanceName}" ]; then
+    if [ "${testForPipExistanceName}" == "" ] || [ ! -d "${packagesPath}/${testForPipExistanceName}" ]; then
 
         writeLine "Installing packages in ${requirementsFilename}" $color_info
 
@@ -584,7 +646,7 @@ function installPythonPackages () {
 
             # Install the Python Packages in one fell swoop. Not much feedback, but it works
             write "Installing Packages into Virtual Environment..." $color_primary
-            if [ "${verbosity}" == "quiet" ]; then
+            if [ "${verbosity}" != "loud" ]; then
                 # writeLine "${pythonCmd} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}" $color_info
                 ./pip install $pipFlags -r ${requirementsPath} --target ${packagesPath} > /dev/null &
                 spin $!
@@ -639,9 +701,9 @@ function installPythonPackages () {
                         # name of a module (module_import) to be tested before we import
                         # if python3 -c "import ${module_import}"; then echo "Found ${module}. Skipping."; fi;
 
-                        if [ "${verbosity}" == "quiet" ]; then
+                        if [ "${verbosity}" != "load" ]; then
                             # writeLine "./pip install ${currentOption} ${module}" $color_error
-                            ./pip3 install ${currentOption} ${module}  >/dev/null 2>/dev/null &
+                            ./pip3 install ${currentOption} ${module}  >/dev/null & # 2>/dev/null &
                             spin $!
                         else
                             ./pip3 install ${currentOption} $module
@@ -672,7 +734,7 @@ function installPythonPackages () {
 function errorNoPython () {
     writeLine
     writeLine
-    writeLine "------------------------------------------------------------------------" $color_primary
+    writeLine "----------------------------------------------------------------------" $color_primary
     writeLine "Error: Python not installed" $color_error
     writeLine 
     writeLine
@@ -700,11 +762,47 @@ function spin () {
     echo -ne ' \b'
 }
 
-function Download () {
+function getFromServer () {
+
+    # eg packages_for_gpu.zip
+    local fileToGet=$1
+
+    # eg assets
+    local moduleAssetsDir=$2
+
+    # output message
+    local message=$3
+
+    # Clean up directories to force a re-copy if necessary
+    if [ "${forceOverwrite}" == "true" ]; then
+        rm -rf "${downloadPath}/${moduleDir}"
+        rm -rf "${modulePath}/${moduleAssetsDir}"
+    fi
+
+    if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
+
+        # Download {storageUrl}fileToGet to downloadPath and extract into downloadPath\moduleDir
+        downloadAndExtract $storageUrl $fileToGet "${downloadPath}" "${moduleDir}" "${message}"
+
+        # Copy contents of downloadPath\moduleDir to analysisLayerPath\moduleDir\moduleAssetsDir
+        if [ -d "${downloadPath}/${moduleDir}" ]; then
+
+            if [ ! -d "${modulePath}/${moduleAssetsDir}" ]; then
+                mkdir -p "${modulePath}/${moduleAssetsDir}"
+            fi;
+
+            pushd  "${downloadPath}/${moduleDir}/" >/dev/null 2>/dev/null
+            mv * "${modulePath}/${moduleAssetsDir}/"
+            popd
+        fi
+    fi
+}
+
+function downloadAndExtract () {
 
     local storageUrl=$1
-    local downloadToDir=$2
-    local fileToGet=$3
+    local fileToGet=$2
+    local downloadToDir=$3
     local dirToSave=$4
     local message=$5
 
@@ -722,7 +820,7 @@ function Download () {
         message="Downloading ${fileToGet}..."
     fi
 
-    # writeLine "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}" $color_primary
+    # writeLine "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}" 
 
     write $message $color_primary
 
@@ -838,7 +936,7 @@ function getDisplaySize () {
     echo "Rows=$(tput lines) Cols=$(tput cols)"
 }
 
-function displayMacOSPermissionError () {
+function displayMacOSDirCreatePermissionError () {
     writeLine
     writeLine "Unable to Create a Directory"  $color_error
 

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 
 using CodeProject.AI.AnalysisLayer.SDK;
 using CodeProject.AI.API.Server.Backend;
+using CodeProject.AI.API.Common;
 
 namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
@@ -102,28 +103,29 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
             if (backend.StartupProcesses.ContainsKey(moduleId))
             {
-                ModuleConfig moduleConfig = backend.StartupProcesses[moduleId];
-                moduleConfig.LastSeen = DateTime.UtcNow;
+                ProcessStatus status = backend.ProcessStatuses[moduleId];
+                status.Status   = ProcessStatusType.Started;
+                status.LastSeen = DateTime.UtcNow;
 
                 if (incrementProcessCount)
-                    moduleConfig.Processed++;
+                    status.Processed++;
 
                 if (string.IsNullOrWhiteSpace(executionProvider))
                 {
-                    moduleConfig.HardwareId        = "CPU";
-                    moduleConfig.ExecutionProvider = string.Empty;
+                    status.HardwareId        = "CPU";
+                    status.ExecutionProvider = string.Empty;
                 }
                 // Note that executionProvider will be "CPU" if not using a GPU enabled OnnxRuntime 
                 //  or the GPU for the runtime is not available.
                 else if (string.Compare(executionProvider, "CPU", true) == 0)
                 {
-                    moduleConfig.HardwareId        = "CPU";
-                    moduleConfig.ExecutionProvider = string.Empty;
+                    status.HardwareId        = "CPU";
+                    status.ExecutionProvider = string.Empty;
                 }
                 else
                 {
-                    moduleConfig.HardwareId        = "GPU";
-                    moduleConfig.ExecutionProvider = executionProvider;
+                    status.HardwareId        = "GPU";
+                    status.ExecutionProvider = executionProvider;
                 }
             }
         }

@@ -45,7 +45,7 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AssemblyName>CodeProject.AI.Server</AssemblyName>
-		<Version>1.5.5.0</Version>
+		<Version>1.5.6.0</Version>
 		<RootNamespace>CodeProject.AI.API.Server.Frontend</RootNamespace>
 		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
@@ -152,11 +152,11 @@
 	</ItemGroup>
 
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call $(SolutionDir)\src\starttimer.bat $(ProjectName)" />
+		<Exec Command="call ..\..\..\starttimer.bat $(ProjectName)" />
 	</Target>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call $(SolutionDir)\src\endtimer.bat $(ProjectName)" />
+		<Exec Command="call ..\..\..\endtimer.bat $(ProjectName)" />
 	</Target>
 
 </Project>

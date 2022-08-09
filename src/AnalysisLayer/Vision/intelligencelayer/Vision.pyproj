@@ -14,11 +14,12 @@
 		<InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
 		<Name>Vision</Name>
 		<IsWindowsApplication>False</IsWindowsApplication>
+		<EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+		<Environment>USE_CUDA=True</Environment>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'" />
-
 	<PropertyGroup>
 		<VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
 	</PropertyGroup>
@@ -39,19 +40,29 @@
 			<DependentUpon>..\modulesettings.json</DependentUpon>
 			<Link>modulesettings.windows.json</Link>
 		</Content>
+	</ItemGroup>
 
-		<Content Include="requirements.txt" />
-		<Content Include="requirements.macos-arm.txt">
-			<DependentUpon>requirements.txt</DependentUpon>
+	<ItemGroup>
+		<Content Include="..\requirements.txt" />
+		<Content Include="..\requirements.linux.txt">
+			<DependentUpon>..\requirements.txt</DependentUpon>
 		</Content>
-		<Content Include="requirements.macos.txt">
-			<DependentUpon>requirements.txt</DependentUpon>
+		<Content Include="..\requirements.macos.txt">
+			<DependentUpon>..\requirements.txt</DependentUpon>
 		</Content>
-		<Content Include="requirements.windows.cuda.txt">
-			<DependentUpon>requirements.txt</DependentUpon>
+		<Content Include="..\requirements.macos-arm.txt">
+			<DependentUpon>..\requirements.txt</DependentUpon>
+		</Content>
+		<Content Include="..\requirements.windows.cuda.txt">
+			<DependentUpon>..\requirements.txt</DependentUpon>
 		</Content>
 	</ItemGroup>
-	
+
+	<ItemGroup>
+		<Content Include="..\install.bat" />
+		<Content Include="..\install.sh" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<Compile Include="commons\utils.py" />
 		<Compile Include="detection.py" />
@@ -77,12 +88,14 @@
 		<Compile Include="utils\__init__.py" />
 		<Compile Include="__init__.py" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<Folder Include="commons" />
 		<Folder Include="models" />
 		<Folder Include="recognition" />
 		<Folder Include="utils" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<Interpreter Include="..\..\bin\windows\python37\venv\">
 			<Id>env</Id>

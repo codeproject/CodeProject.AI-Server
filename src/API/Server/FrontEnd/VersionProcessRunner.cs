@@ -6,6 +6,7 @@ using CodeProject.AI.API.Common;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -15,14 +16,18 @@ namespace CodeProject.AI.API.Server.Frontend
     public class VersionProcessRunner : BackgroundService
     {
         private readonly VersionService _versionService;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initialises a new instance of the VersionProcessRunner.
         /// </summary>
         /// <param name="versionService">The Queue management service.</param>
-        public VersionProcessRunner(VersionService versionService)
+        /// <param name="logger">The logger</param>
+        public VersionProcessRunner(VersionService versionService, 
+                                    ILogger<VersionProcessRunner> logger)
         {
             _versionService = versionService;
+            _logger = logger;
         }
 
         /// <inheritdoc></inheritdoc>
@@ -42,20 +47,20 @@ namespace CodeProject.AI.API.Server.Frontend
                 VersionInfo? latest = await _versionService.GetLatestVersion();
                 if (latest != null && _versionService.VersionConfig?.VersionInfo != null)
                 {
-                    Logger.Log($"Version check: Current Version is {_versionService.VersionConfig.VersionInfo.Version}");
+                    _logger.LogDebug($"Current Version is {_versionService.VersionConfig.VersionInfo.Version}");
 
                     int compare = VersionInfo.Compare(_versionService.VersionConfig.VersionInfo, latest);
                     if (compare < 0)
                     {
                         if (latest.SecurityUpdate ?? false)
-                            Logger.Log($" ** A SECURITY UPDATE {latest.Version} is available ** ");
+                            _logger.LogInformation($" *** A SECURITY UPDATE {latest.Version} is available ** ");
                         else
-                            Logger.Log($" ** A new version {latest.Version} is available ** ");
+                            _logger.LogInformation($" *** A new version {latest.Version} is available ** ");
                     }
                     else if (compare == 0)
-                        Logger.Log("Version check: This is the latest version");
+                        _logger.LogInformation("Server: This is the latest version");
                     else
-                        Logger.Log("Version check: This is a new, unreleased version");
+                        _logger.LogInformation("Server: This is a new, unreleased version");
                 }
             }
         }

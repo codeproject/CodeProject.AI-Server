@@ -1,33 +1,22 @@
 #! Python3.9
 
-## CodeProject.AI
-requests					# Installing Requests, the HTTP library
-Pillow						# Installing Pillow, a Python Image Library
-
-## Background Remover - original, but have a security issue
-## filetype==1.0.9			# Installing FileType, a package to infer file types and MIME types
-## gdown==4.4.0				# Installing gdown, a package for downloading from Google Drive folders
-## numpy<=1.21.6			# Installing the required version of numpy of pymatting - numba
-## pymatting==1.1.5			# Installing pymatting, a Python Library for Alpha Matting
-
-## Background Remover - tested and working
-## filetype==1.1.0			# Installing FileType, a package to infer file types and MIME types
-## gdown==4.5.1				# Installing gdown, a package for downloading from Google Drive folders
-## numpy==1.22.4			# Installing the required version of numpy of pymatting - numba
-## pymatting==1.1.8			# Installing pymatting, a Python Library for Alpha Matting
-
-## Background Remover - latest
+## Using the latest
 filetype					# Installing FileType, a package to infer file types and MIME types
 gdown						# Installing gdown, a package for downloading from Google Drive folders
-numpy						# Installing the required version of numpy of pymatting - numba
+numpy						# Installing NumPy, a package for scientific computing
 pymatting					# Installing pymatting, a Python Library for Alpha Matting
+Pillow						# Installing Pillow, a Python Image Library
+
+## IF there is an error regarding numba needing a higher version of numpy then use this
+## numpy==1.22.4				# Installing NumPy, a package for scientific computing
+## pymatting==1.1.8			# Installing pymatting, a Python Library for Alpha Matting
+
+## For CPU
+onnxruntime				    # Installing the ONNX runtime
 
 ## For GPU, including embedded Intel GPUs
 ## openvino					# need the OpenVino Execution Provider
 ## onnxruntime-openvino		# Installing the ONNX runtime
-
-## For CPU
-onnxruntime				    # Installing the ONNX runtime
 
 ## Not needed for our usage
 ## watchdog==2.1.7			# Installing watchdog, a set of utilities to monitor file system events

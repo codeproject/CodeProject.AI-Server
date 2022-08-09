@@ -163,7 +163,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             // List them out and return the status
             var response = new AnalysisServicesStatusResponse
             {
-                statuses = backend.ProcessStatuses
+                statuses = backend.ProcessStatuses.Values.ToList()
             };
 
             return response;

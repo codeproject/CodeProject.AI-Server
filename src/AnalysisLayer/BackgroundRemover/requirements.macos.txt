@@ -1,14 +1,11 @@
 #! Python3.9
 
-## CodeProject.AI
-requests					# Installing Requests, the HTTP library
+filetype					# Installing FileType, a package to infer file types and MIME types
+gdown						# Installing gdown, a package for downloading from Google Drive folders
+numpy						# Installing NumPy, a package for scientific computing
+pymatting					# Installing pymatting, a Python Library for Alpha Matting
 Pillow						# Installing Pillow, a Python Image Library
 
-## Background Remover
-filetype    				# Installing FileType, a package to infer file types and MIME types
-gdown==4.4.0				# Installing gdown, a package for downloading from Google Drive folders
-numpy==1.21.6				# Installing the required version of numpy of pymatting - numba
-pymatting==1.1.5			# Installing pymatting, a Python Library for Alpha Matting
 onnxruntime          		# Installing the ONNX runtime
 
 # last line blank

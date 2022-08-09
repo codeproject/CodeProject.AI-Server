@@ -200,10 +200,10 @@ namespace CodeProject.AI.API.Server.Frontend
         /// launched.
         /// 
         /// To override these values you just set the value of the environment variable using its
-        /// name. The "name" is the tricky bit. In the appsettings.json file you have "PORT" in the
-        /// EnvironmentVariable section, but its fully qualified name is 
-        /// FrontEndOptions:EnvironmentVariables:PORT. In the custom object detection's variables
-        /// in modulesettings.json, PORT is Modules:CustomObjectDetection:EnvironmentVariables:PORT.
+        /// name. The "name" is the tricky bit. In the appsettings.json file you have "CPAI_PORT"
+        /// in the EnvironmentVariable section, but its fully qualified name is 
+        /// FrontEndOptions:EnvironmentVariables:CPAI_PORT. In the custom object detection's variables
+        /// in modulesettings.json, CPAI_PORT is Modules:CustomObjectDetection:EnvironmentVariables:CPAI_PORT.
         /// 
         /// So, to override these values at the command line is ludicrously verbose. Instead we
         /// will choose a subset of these variables that we know are in use in the wild and provide
@@ -224,13 +224,16 @@ namespace CodeProject.AI.API.Server.Frontend
                 // Port. The big one
                 if (pair.Key.Equals("PORT", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    keyValues["FrontEndOptions:EnvironmentVariables:PORT"]               = pair.Value;
-                    keyValues["Modules:FaceProcessing:EnvironmentVariables:PORT"]        = pair.Value;
-                    keyValues["Modules:ObjectDetection:EnvironmentVariables:PORT"]       = pair.Value;
-                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:PORT"] = pair.Value;
-                    keyValues["Modules:CustomObjectDetection:EnvironmentVariables:PORT"] = pair.Value;
-                    keyValues["Modules:SceneClassification:EnvironmentVariables:PORT"]   = pair.Value;
-                    keyValues["Modules:PortraitFilter:EnvironmentVariables:PORT"]        = pair.Value;
+                    // Front end (used by application clients)
+                    keyValues["FrontEndOptions:EnvironmentVariables:CPAI_PORT"]               = pair.Value;
+                    
+                    // Back end (used by backend analysis modules)
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:CPAI_PORT"]        = pair.Value;
+                    keyValues["Modules:ObjectDetection:EnvironmentVariables:CPAI_PORT"]       = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:CPAI_PORT"] = pair.Value;
+                    keyValues["Modules:CustomObjectDetection:EnvironmentVariables:CPAI_PORT"] = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:CPAI_PORT"]   = pair.Value;
+                    keyValues["Modules:PortraitFilter:EnvironmentVariables:CPAI_PORT"]        = pair.Value;
                 }
 
                 // Activation

@@ -38,11 +38,11 @@ if [ "${embedded}" == "false" ] || [ "$DATA_DIR" == "" ]; then
 
     # API server
     if [[ $OSTYPE == 'darwin'* ]]; then
-        PORT="5500" # Port 5000 is reserved on macOS
+        CPAI_PORT="5500" # Port 5000 is reserved on macOS
     else
-        PORT="5000"
+        CPAI_PORT="5000"
     fi
-    export PORT
+    export CPAI_PORT
 
     ANALYSISDIR="$(pwd)"
 
@@ -73,7 +73,7 @@ if [ "${verbosity}" == "info" ]; then
     echo "CUDA_MODE = ${CUDA_MODE}"
     echo "DATA_DIR  = ${DATA_DIR}"
     echo "TEMP_PATH = ${TEMP_PATH}"
-    echo "PORT      = ${PORT}"
+    echo "CPAI_PORT = ${CPAI.PORT}"
 fi
 
 

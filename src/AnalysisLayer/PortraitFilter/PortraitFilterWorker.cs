@@ -7,6 +7,7 @@ using Microsoft.ML.OnnxRuntime;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
 
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
@@ -50,7 +51,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         {
             _logger = logger;
 
-            int port = configuration.GetValue<int>("PORT");
+            int port = configuration.GetValue<int>("CPAI_PORT");
             if (port == default)
                 port = 5000;
 
@@ -77,11 +78,11 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 
             // Note that looking up MODULE_QUEUE will currently always return null. It's here as an
             // annoying reminder.
-            _queueName = configuration.GetValue<string>("MODULE_QUEUE");
+            _queueName = configuration.GetValue<string>("CPAI_MODULE_QUEUE");
             if (_queueName == default)
                 _queueName = "portraitfilter_queue";
 
-            _moduleId = configuration.GetValue<string>("MODULE_ID");
+            _moduleId = configuration.GetValue<string>("CPAI_MODULE_ID");
             if (_moduleId == default)
                 _moduleId = "PortraitFilter";
 
@@ -186,8 +187,10 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         {
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
-            _logger.LogInformation("Background Portrait Filter Task Started.");
-            await _codeprojectAI.LogToServer("CodeProject.AI Portrait Filter module started.", token);
+            _logger.LogTrace("Background Portrait Filter Task Started.");
+            await _codeprojectAI.LogToServer("CodeProject.AI Portrait Filter module started.",
+                                             "PortraitFilterWorker", LogLevel.Information,
+                                             string.Empty, token);
 
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < _parallelism; i++)
@@ -214,7 +217,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogInformation(ex, "Portrait Filter Exception");
+                    _logger.LogError(ex, "Portrait Filter Exception");
                     continue;
                 }
 
@@ -234,7 +237,9 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 
                 if (file?.data is null)
                 {
-                    await _codeprojectAI.LogToServer("Portrait Filter File or file data is null.", token);
+                    await _codeprojectAI.LogToServer("Portrait Filter File or file data is null.",
+                                                     "PortraitFilterWorker", LogLevel.Error,
+                                                     string.Empty, token);
                     response = new BackendErrorResponse(-1, "Portrait Filter Invalid File.");
                 }
                 else
@@ -266,7 +271,9 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                     }
                     catch (Exception ex)
                     {
-                        await _codeprojectAI.LogToServer($"Portrait Filter Error for {file.filename}.", token);
+                        await _codeprojectAI.LogToServer($"Portrait Filter Error for {file.filename}.",
+                                                         "PortraitFilterWorker", LogLevel.Error,
+                                                         string.Empty, token);
                         _logger.LogError(ex, "Portrait Filter Exception");
                         result = null;
                     }
@@ -302,7 +309,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         /// <returns></returns>
         public override async Task StopAsync(CancellationToken token)
         {
-            _logger.LogInformation("Background Portrait Filter Task is stopping.");
+            _logger.LogTrace("Background Portrait Filter Task is stopping.");
 
             await base.StopAsync(token);
         }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+using System.Diagnostics;
 using System.Net.Http.Json;
 
 namespace CodeProject.AI.AnalysisLayer.SDK
@@ -45,19 +46,19 @@ namespace CodeProject.AI.AnalysisLayer.SDK
             _logger    = logger;
             ModuleName = moduleName;
             
-            int port = configuration.GetValue<int>("PORT");
+            int port = configuration.GetValue<int>("CPAI_PORT");
             if (port == default)
                 port = 5000;
 
-            _queueName = configuration.GetValue<string>("MODULE_QUEUE") ?? defaultQueueName;
+            _queueName = configuration.GetValue<string>("CPAI_MODULE_QUEUE") ?? defaultQueueName;
             if (string.IsNullOrEmpty(_queueName))
                 throw new ArgumentException("QueueName not initialized");
 
-            _moduleId  = configuration.GetValue<string>("MODULE_ID") ?? defaultModuleId;
+            _moduleId  = configuration.GetValue<string>("CPAI_MODULE_ID") ?? defaultModuleId;
             if (string.IsNullOrEmpty(_moduleId))
                 throw new ArgumentException("ModuleId not initialized");
 
-            _parallelism = configuration.GetValue<int>("MODULE_TASKS", 1);
+            _parallelism = configuration.GetValue<int>("CPAI_MODULE_PROCESSCOUNT", 1);
 
             _codeprojectAI = new BackendClient($"http://localhost:{port}/"
 #if DEBUG
@@ -135,7 +136,8 @@ namespace CodeProject.AI.AnalysisLayer.SDK
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
             _logger.LogInformation($"{ModuleName} Task Started.");
-            await _codeprojectAI.LogToServer($"{ModuleName} module started.", token);
+            await _codeprojectAI.LogToServer($"{ModuleName} module started.", $"{ModuleName}",
+                                             LogLevel.Information, string.Empty, token);
 
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < _parallelism; i++)
@@ -159,15 +161,21 @@ namespace CodeProject.AI.AnalysisLayer.SDK
                     if (request is null)
                         continue;
 
+                    Stopwatch stopWatch = Stopwatch.StartNew();
                     var response = ProcessRequest(request);
+                    stopWatch.Stop();
 
                     HttpContent content = JsonContent.Create(response, response.GetType());
                     await _codeprojectAI.SendResponse(request.reqid, _moduleId!, content, token,
                                                       ExecutionProvider);
+
+                    await _codeprojectAI.LogToServer($"Command completed in {stopWatch.ElapsedMilliseconds} ms.",
+                                                     $"{ModuleName}", LogLevel.Information,
+                                                     "command timing", token);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogInformation(ex, $"{ModuleName} Exception");
+                    _logger.LogError(ex, $"{ModuleName} Exception");
                     continue;
                 }
             }
@@ -187,7 +195,7 @@ namespace CodeProject.AI.AnalysisLayer.SDK
         /// <returns></returns>
         public override async Task StopAsync(CancellationToken token)
         {
-            _logger.LogInformation($"{ModuleName} Task is stopping.");
+            _logger.LogTrace($"{ModuleName} Task is stopping.");
 
             await base.StopAsync(token);
         }

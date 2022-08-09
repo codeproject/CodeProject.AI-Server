@@ -1,40 +1,29 @@
-##import _thread as thread
-
-import sys
-sys.path.append("../../SDK/Python")
-from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
-
-import json
+# Import our general libraries
 import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-from shared import SharedOptions
-
-module = ModuleWrapper("scene_queue")
-
-# Hack for debug mode
-if module.moduleId == "CodeProject.AI":
-    module.moduleId = "SceneClassification";
-
-if SharedOptions.CUDA_MODE:
-    module.hardwareId        = "GPU"
-    module.executionProvider = "CUDA"
-
-# TODO: Currently doesn't exist. The Python venv is setup at install time for a single platform in
-# order to reduce downloads. Having the ability to switch profiles at runtime will be added, but
-# will increase downloads. Lazy loading will help, somewhat, and the infrastructure is already in
-# place, though it needs to be adjusted.
-sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
-
-import torch
-import torch.nn.functional as F
-from PIL import UnidentifiedImageError
-
+import sys
 import traceback
 
+# Import the CodeProject.AI SDK. This will add to the PATH vaar for future imports
+sys.path.append("../../SDK/Python")
+from common import JSON
+from codeprojectai import CodeProjectAIRunner
+from requestdata import AIRequestData
+from analysislogging import LogMethod
+
+from shared import SharedOptions
+
+# Set the path based on Deepstack's settings so CPU / GPU packages can be correctly loaded
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
+sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
+
+# Import libraries from the Python VENV using the correct packages dir
+from PIL import UnidentifiedImageError, Image
+import torch
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torchvision.models import resnet50
 
+   
 class SceneModel(object):
 
     def __init__(self, model_path, cuda=False):
@@ -60,106 +49,84 @@ class SceneModel(object):
         return out.argmax(), out.max().item()
 
 
-def scenerecognition():
+classes = list()
+with open(os.path.join(SharedOptions.SHARED_APP_DIR, "categories_places365.txt")) as class_file:
+    for line in class_file:
+        classes.append(line.strip().split(" ")[0][3:])
 
-    classes = list()
-    with open(
-        os.path.join(SharedOptions.SHARED_APP_DIR, "categories_places365.txt")
-    ) as class_file:
-        for line in class_file:
-            classes.append(line.strip().split(" ")[0][3:])
+placesnames = tuple(classes)
 
-    placesnames = tuple(classes)
+classifier = SceneModel(os.path.join(SharedOptions.SHARED_APP_DIR, "scene.pt"), 
+                        SharedOptions.CUDA_MODE)
 
-    classifier = SceneModel(
-        os.path.join(SharedOptions.SHARED_APP_DIR, "scene.pt"),
-        SharedOptions.CUDA_MODE,
-    )
 
-    while True:
-        queue = module.get_command();
+def main():
 
-        if len(queue) > 0:           
-            timer = module.start_timer("Scene Classification")
+    # create a CodeProject.AI module object
+    module_runner = CodeProjectAIRunner("scene_queue")
 
-            for req_data in queue:
-                req_data = json.JSONDecoder().decode(req_data)
-                req_id   = req_data["reqid"]
-                req_type = req_data["reqtype"]
-                #img_id   = req_data["imgid"]
-                #img_path = os.path.join(SharedOptions.TEMP_PATH,img_id)
+    # Hack for debug mode
+    if module_runner.module_id == "CodeProject.AI":
+        module_runner.module_id   = "SceneClassification"
+        module_runner.module_name = "Scene Classification"
 
-                payload     = req_data["payload"]
-                files       = payload["files"]
-                img_file    = files[0]
+    if SharedOptions.CUDA_MODE:
+        module_runner.hardware_id        = "GPU"
+        module_runner.execution_provider = "CUDA"
 
-                try:
-                    img = module.get_image_from_request(req_data, 0)
+    # Start the module
+    module_runner.start_loop(sceneclassification_callback)
 
-                    trans = transforms.Compose(
-                        [
-                            transforms.Resize((256, 256)),
-                            transforms.CenterCrop(224),
-                            transforms.ToTensor(),
-                            transforms.Normalize(
-                                [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
-                            ),
-                        ]
-                    )
 
-                    img = trans(img).unsqueeze(0)
+def sceneclassification_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
+
+    img: Image = data.get_image(0)
+
+    trans = transforms.Compose([
+                transforms.Resize((256, 256)),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ])
+
+    img = trans(img).unsqueeze(0)
                     
-                    #os.remove(img_path)
+    try:
+        cl, conf = classifier.predict(img)
 
-                    cl, conf = classifier.predict(img)
+        cl   = placesnames[cl]
+        conf = float(conf)
 
-                    cl = placesnames[cl]
+        return {"success": True, "label": cl, "confidence": conf}
 
-                    conf = float(conf)
+    except UnidentifiedImageError:
 
-                    output = {"success": True, "label": cl, "confidence": conf}
+        err_trace = traceback.format_exc()
+        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                          { 
+                             "filename": "scene.py",
+                             "method": "sceneclassification_callback",
+                             "loglevel": "error",
+                             "message": err_trace, 
+                             "exception_type": "UnidentifiedImageError"
+                          })
+        
+        return { "success": False, "error": "Error occured on the server", "code": 400 }
+    
+    except Exception:
 
-                except UnidentifiedImageError:
-                    err_trace = traceback.format_exc()
+        err_trace = traceback.format_exc()
+        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                          { 
+                              "filename": "scene.py",
+                              "method": "sceneclassification_callback",
+                              "loglevel": "error",
+                              "message": err_trace, 
+                              "exception_type": "Exception"
+                          })
 
-                    output = {
-                        "success": False,
-                        "error": "error occured on the server",
-                        "code": 400,
-                    }
-                    module.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
-                    { 
-                        "process": "scene recognize", 
-                        "file": "scene.py",
-                        "method": "scenerecognition",
-                        "message": err_trace, 
-                        "exception_type": "UnidentifiedImageError"
-                    })
-
-                except Exception:
-                    err_trace = traceback.format_exc()
-
-                    output = {"success": False, "error": "invalid image", "code": 500}
-
-                    module.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
-                    { 
-                        "process": "scene recognize", 
-                        "file": "scene.py",
-                        "method": "scenerecognition",
-                        "message": err_trace,
-                        "exception_type": "Exception"
-                    })
-
-                finally:
-                    module.end_timer(timer)
-                    module.send_response(req_id, json.dumps(output))
-
-                    #if os.path.exists(img_path):
-                    #    os.remove(img_path)
-
-        # time.sleep(delay)
-
+        return { "success": False, "error": "Error occured on the server", "code": 500 }
+    
 
 if __name__ == "__main__":
-    module.log(LogMethod.Info | LogMethod.Server, {"message": "Scene Detection module started."})
-    scenerecognition()
+    main()

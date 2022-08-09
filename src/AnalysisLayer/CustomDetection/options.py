@@ -55,9 +55,9 @@ class Options:
 
     print(f"Custom Object detection services setup: Retrieving environment variables...")
 
-    app_dir          = os.path.normpath(get_env_variable("APPDIR", os.getcwd()))
+    app_dir         = os.path.normpath(get_env_variable("APPDIR", os.getcwd()))
     models_dir      = os.path.normpath(get_env_variable("MODELS_DIR", f"{app_dir}/assets"))
-    port            = get_env_variable("PORT",       "5000")
+    port            = get_env_variable("CPAI_PORT",       "5000")
 
     sleep_time      = 0.01
 
@@ -85,5 +85,5 @@ class Options:
         print(f"USE_CUDA:     {use_CUDA}")
         print(f"MODEL_SIZE:   {model_size}")
         print(f"MODELS_DIR:   {models_dir}")
-        print(f"PORT:         {port}")
+        print(f"CPAI_PORT:    {port}")
         print(f"APPDIR:       {app_dir}")

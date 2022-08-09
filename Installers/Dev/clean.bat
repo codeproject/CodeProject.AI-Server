@@ -54,11 +54,11 @@ if /i "%cleanBuild%" == "true" (
     call utils.bat WriteLine 
 
     call :CleanSubDirs ".\..\..\src" "bin" "AnalysisLayer\bin"
-    call :CleanSubDirs ".\..\..\src" "obj" "AnalysisLayer\bin"
+    call :CleanSubDirs ".\..\..\src" "obj" "ObjectDetectionNet"
     call :CleanSubDirs ".\..\Windows" "bin"
     call :CleanSubDirs ".\..\Windows" "obj"
     call :CleanSubDirs ".\..\..\demos" "bin"
-    call :CleanSubDirs ".\..\..\demos" "obj"
+    call :CleanSubDirs ".\..\..\demos" "obj" "Objects"
     call :CleanSubDirs ".\..\..\tests" "bin"
     call :CleanSubDirs ".\..\..\tests" "obj"
 )
@@ -69,9 +69,9 @@ if /i "%cleanInstallLocal%" == "true" (
     call utils.bat WriteLine "Cleaning Windows Install                                            " "White" "Blue"
     call utils.bat WriteLine 
 
-    call :CleanSubDirs "..\..\src\AnalysisLayer\bin" "windows" "linux"
+    call :CleanSubDirs "..\..\src\AnalysisLayer\bin" "windows" 
     call :CleanSubDirs "..\..\src\AnalysisLayer\BackgroundRemover" "models"
-    call :CleanSubDirs "..\..\src\AnalysisLayer\CodeProject.AI.AnalysisLayer.Yolo" "assets"
+    call :CleanSubDirs "..\..\src\AnalysisLayer\ObjectDetectionNet" "assets"
     call :CleanSubDirs "..\..\src\AnalysisLayer\Vision" "assets"
     call :CleanSubDirs "..\..\src\AnalysisLayer\Vision" "datastore"
     call :CleanSubDirs "..\..\src\AnalysisLayer\Vision" "tempstore"

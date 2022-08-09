@@ -1,14 +1,28 @@
 #! Python3.9
 
-## CodeProject.AI
-requests					# Installing Requests, the HTTP library
+filetype					# Installing FileType, a package to infer file types and MIME types
+gdown						# Installing gdown, a package for downloading from Google Drive folders
 Pillow						# Installing Pillow, a Python Image Library
 
-## Background Remover
-filetype==1.0.9				# Installing FileType, a package to infer file types and MIME types
-gdown==4.4.0				# Installing gdown, a package for downloading from Google Drive folders
-numpy==1.21.6				# Installing the required version of numpy of pymatting - numba
-pymatting==1.1.5			# Installing pymatting, a Python Library for Alpha Matting
-onnxruntime-gpu			    # ==1.10.0  # Installing the ONNX runtime
+## If there is an error regarding numba needing a higher version of numpy then use this
+numpy==1.22.4				# Installing NumPy, a package for scientific computing
+pymatting==1.1.8			# Installing pymatting, a Python Library for Alpha Matting
 
-@ last line blank
+## numpy						# Installing NumPy, a package for scientific computing
+## pymatting					# Installing pymatting, a Python Library for Alpha Matting
+
+
+## GPU support. This is still in flux
+onnxruntime                 # Installing the ONNX runtime
+
+## General version for GPU. 
+## onnxruntime-gpu			# Installing the ONNX runtime with GPU support
+
+## Specific version. May not actually work
+## onnxruntime-gpu==1.10.0	# Installing the ONNX runtime with GPU support
+
+## For nightly test build
+## -i https://test.pypi.org/simple/
+## ort-nightly-gpu
+
+# last line blank

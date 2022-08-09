@@ -21,6 +21,8 @@ namespace CodeProject.AI.API.Server.Frontend
     /// </summary>
     public class Program
     {
+        static private ILogger? _logger = null;
+
         static int _port = 5000;
         // static int _sPort = 5001; - eventually for SSL
 
@@ -34,13 +36,19 @@ namespace CodeProject.AI.API.Server.Frontend
             const string company = "CodeProject";
             const string product = "AI";
 
+            // lower cased as Linux has case sensitive file names
+            string platform   = BackendProcessRunner.Platform.ToLower();
+            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                                ?.ToLower();
+            bool inDocker     = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
+
+
             var assembly         = Assembly.GetExecutingAssembly();
-            var assemblyName     = assembly.GetName().Name ?? String.Empty;
-            var servicePath      = Path.Combine(System.AppContext.BaseDirectory, $"{assemblyName}.exe");
+            var assemblyName     = (assembly.GetName().Name ?? String.Empty) 
+                                 + (platform == "windows"? ".exe" : ".dll");
             var serviceName      = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
                                  ?? assemblyName.Replace(".", " ");
-
-            Console.WriteLine($"Service Path: {servicePath}");
+            var servicePath      = Path.Combine(System.AppContext.BaseDirectory, assemblyName);
 
             var serviceDescription = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? string.Empty;
 
@@ -63,18 +71,13 @@ namespace CodeProject.AI.API.Server.Frontend
                 }
             }
 
-            // lower cased as Linux has case senitive file names
-            string platform   = BackendProcessRunner.Platform.ToLower();
-            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-                                ?.ToLower();
-
             // Get a directory for the given platform that allows momdules to store persisted data
             string programDataDir     = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
 
             // .NET's suggestion for macOS isn't great. Let's do something different.
             if (platform == "macos" || platform == "macos-arm")
-                applicationDataDir = $"~/Library/Application Support/{company}/{product}";
+                applicationDataDir = $"/Library/Application Support/{company}/{product}";
 
             // Store this dir in the config settings so we can get to it later.
             var inMemoryConfigData = new Dictionary<string, string> {
@@ -91,11 +94,14 @@ namespace CodeProject.AI.API.Server.Frontend
                            // We've had issues where the default appsettings files not being loaded.
                            if (inVScode && platform != "windows")
                            {
-                                config.AddJsonFile(Path.Combine(baseDir, "appsettings.json"),
+                               config.AddJsonFile(Path.Combine(baseDir, "appsettings.json"),
                                                    optional: false, reloadOnChange: true);
 
-                               config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{aspNetEnv}.json"),
-                                                  optional: true, reloadOnChange: true);
+                               if (!string.IsNullOrWhiteSpace(aspNetEnv))
+                               {
+                                   config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{aspNetEnv}.json"),
+                                                   optional: true, reloadOnChange: true);
+                               }
                            }
 
                            config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.json"),
@@ -136,7 +142,19 @@ namespace CodeProject.AI.API.Server.Frontend
                        .Build()
                        ;
 
-            var logger = host.Services.GetService<ILogger<Program>>();
+            _logger = host.Services.GetService<ILogger<Program>>();
+
+            if (_logger != null)
+            {
+                _logger.LogDebug($"Operating System: {RuntimeInformation.OSDescription}");
+                _logger.LogDebug($"Architecture:     {RuntimeInformation.ProcessArchitecture}");
+                _logger.LogDebug($"App assembly:     {assemblyName}");
+                _logger.LogDebug($"App DataDir:      {applicationDataDir}");
+                _logger.LogDebug($".Net Core Env:    {aspNetEnv}");
+                _logger.LogDebug($"Platform:         {platform}");
+                _logger.LogDebug($"In Docker:        {inDocker}");
+                _logger.LogDebug($"In VS Code:       {inVScode}");
+            }
 
             Task? hostTask;
             hostTask = host.RunAsync();
@@ -148,7 +166,7 @@ namespace CodeProject.AI.API.Server.Frontend
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "Unable to open Dashboard on startup.");
+                _logger?.LogError(ex, "Unable to open Dashboard on startup.");
             }
 #endif
             try
@@ -186,7 +204,7 @@ namespace CodeProject.AI.API.Server.Frontend
             string? modulesPath          = options["MODULES_PATH"];
 
             // Get the Modules Path
-            rootPath= BackendProcessRunner.GetRootPath(rootPath);
+            rootPath = BackendProcessRunner.GetRootPath(rootPath);
 
             if (string.IsNullOrWhiteSpace(rootPath))
             {
@@ -274,12 +292,18 @@ namespace CodeProject.AI.API.Server.Frontend
                             .UseStartup<Startup>();
 
                             // Keep things clean and simple for now
-                            webBuilder.ConfigureLogging(logging =>
+                            webBuilder.ConfigureLogging(builder =>
                             {
-                                logging.ClearProviders()
+                                builder.ClearProviders()
                                        .AddFilter("Microsoft", LogLevel.Warning)
                                        .AddFilter("System", LogLevel.Warning)
-                                       .AddConsole();
+                                       .AddServerLogger(configuration =>
+                                       {
+                                            // Replace warning value from appsettings.json of "Cyan"
+                                            // configuration.LogLevels[LogLevel.Warning] = ConsoleColor.DarkCyan;
+                                            // Replace warning value from appsettings.json of "Red"
+                                            // configuration.LogLevels[LogLevel.Error] = ConsoleColor.DarkRed;
+                                        });
                             });
 
                     // Or if we want to do this manually...
@@ -291,11 +315,9 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             IConfiguration config = hostbuilderContext.Configuration;
 
-            // TODO: These should both be PORT_CLIENT, not PORT, though we need to be backwards
-            //       compatible.
-            int port = config.GetValue("PORT", -1);
+            int port = config.GetValue("CPAI_PORT", -1);
             if (port < 0)
-                port = config.GetValue("FrontEndOptions:EnvironmentVariables:PORT", -1);  // TODO: PORT_CLIENT
+                port = config.GetValue("FrontEndOptions:EnvironmentVariables:CPAI_PORT", -1);  // TODO: PORT_CLIENT
 
             if (port < 0)
             {
@@ -305,8 +327,7 @@ namespace CodeProject.AI.API.Server.Frontend
                     if (!int.TryParse(urls.Split(':').Last().Trim('/'), out port))
                         port = _port;
 
-                    // TODO: This should be PORT_CLIENT, not PORT.
-                    config["PORT"] = port.ToString();
+                    config["CPAI_PORT"] = port.ToString();
                 }
             }
 

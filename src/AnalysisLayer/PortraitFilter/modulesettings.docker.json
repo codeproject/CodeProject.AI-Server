@@ -1,7 +1,7 @@
 {
   "Modules": {
     "PortraitFilter": {
-      "FilePath": "PortraitFilter\\PortraitFilter.dll",
+      "FilePath": "PortraitFilter/PortraitFilter.dll",
       "Runtime": "dotnet"
     }
   }

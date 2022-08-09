@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.Extensions.Logging;
+
 using System.Text.Json;
 
 namespace CodeProject.AI.AnalysisLayer.SDK
@@ -82,13 +84,22 @@ namespace CodeProject.AI.AnalysisLayer.SDK
         /// Logs a message to the CodeProject.AI Server.
         /// </summary>
         /// <param name="message">The Message.</param>
+        /// <param name="category">The log category</param>
+        /// <param name="logLevel">The log level.</param>
+        /// <param name="label">The label</param>
         /// <param name="token">A Cancellation Token.</param>
         /// <returns>A Task.</returns>
-        public async Task LogToServer(string message, CancellationToken token)
+        public async Task LogToServer(string message, string category, 
+                                      LogLevel logLevel, string label,
+                                      CancellationToken token)
         {
             var form = new FormUrlEncodedContent(new[]
-                { new KeyValuePair<string?, string?>("entry", message)}
-            );
+            {
+                new KeyValuePair<string?, string?>("entry", message),
+                new KeyValuePair<string?, string?>("category", category),
+                new KeyValuePair<string?, string?>("label", label),
+                new KeyValuePair<string?, string?>("log_level", logLevel.ToString())
+            });
 
             /*var response = */
             await _httpClient!.PostAsync($"v1/log", form, token)

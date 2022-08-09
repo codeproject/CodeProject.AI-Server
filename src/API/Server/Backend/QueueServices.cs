@@ -10,7 +10,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 
 using CodeProject.AI.AnalysisLayer.SDK;
-using CodeProject.AI.API.Common;
+using Microsoft.Extensions.Logging;
 
 namespace CodeProject.AI.API.Server.Backend
 {
@@ -20,6 +20,7 @@ namespace CodeProject.AI.API.Server.Backend
     public class QueueServices
     {
         private readonly QueueProcessingOptions _settings;
+        private readonly ILogger _logger;
 
         // Keeping track of the queues being used.  Will be created as needed.
         private readonly ConcurrentDictionary<string, Channel<BackendRequestBase>> _queues =
@@ -31,9 +32,11 @@ namespace CodeProject.AI.API.Server.Backend
         /// Creates a new instance of the <cref="QueueServices" /> object.
         /// </summary>
         /// <param name="options">The queue processing options.</param>
-        public QueueServices(IOptions<QueueProcessingOptions> options)
+        public QueueServices(IOptions<QueueProcessingOptions> options,
+                             ILogger<QueueServices> logger)
         {
             _settings = options.Value;
+            _logger = logger;
         }
 
         public bool EnsureQueueExists(string queueName)
@@ -80,7 +83,7 @@ namespace CodeProject.AI.API.Server.Backend
                     await queue.Writer.WriteAsync(request, theToken).ConfigureAwait(false);
 
                     if (request != null)
-                        Logger.Log($"Queued: '{request.reqtype}' request, id {request.reqid}");
+                        _logger.LogTrace($"Queued: '{request.reqtype}' request, id {request.reqid}");
                 }
                 catch (OperationCanceledException)
                 {
@@ -141,7 +144,7 @@ namespace CodeProject.AI.API.Server.Backend
                 return false;
 
             completion.SetResult(responseString);
-            Logger.Log($"Response received: id {req_id}");
+            _logger.LogTrace($"Response received (id {req_id})");
 
             return true;
         }
@@ -195,7 +198,7 @@ namespace CodeProject.AI.API.Server.Backend
                 {
                     request = await queue.Reader.ReadAsync(theToken).ConfigureAwait(false);
                     if (request != null)
-                        Logger.Log($"Dequeued: '{request.reqtype}' request, id {request.reqid}");
+                        _logger.LogTrace($"Dequeued '{request.reqtype}' request, id {request.reqid}");
                 }
                 catch
                 {

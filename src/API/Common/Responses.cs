@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
 namespace CodeProject.AI.API.Common
@@ -62,14 +63,36 @@ namespace CodeProject.AI.API.Common
         }
     }
 
-    /// <summary>
-    /// The Response when requesting the list of log entries
-    /// </summary>
-    public class LogListResponse : SuccessResponse
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum ProcessStatusType
     {
-        public LogEntry[]? entries { get; set; }
-    }
+        [EnumMember(Value = "Unknown")]
+        Unknown = 0,
 
+        [EnumMember(Value = "NotEnabled")]
+        NotEnabled,
+
+        [EnumMember(Value = "Enabled")]
+        Enabled,
+
+        [EnumMember(Value = "Starting")]
+        Starting,
+
+        [EnumMember(Value = "Started")]
+        Started,
+
+        [EnumMember(Value = "NotStarted")]
+        NotStarted,
+
+        [EnumMember(Value = "FailedStart")]
+        FailedStart,
+
+        [EnumMember(Value = "Crashed")]
+        Crashed,
+
+        [EnumMember(Value = "Stopped")]
+        Stopped
+    }
 
     /// <summary>
     /// Represents that status of a process
@@ -99,7 +122,7 @@ namespace CodeProject.AI.API.Common
         /// <summary>
         /// Gets or sets a value indicating whether or not the module is running
         /// </summary>
-        public bool Running { get; set; }
+        public ProcessStatusType Status { get; set; } = ProcessStatusType.Unknown;
 
         /// <summary>
         /// Gets or sets the number of requests processed
@@ -109,12 +132,12 @@ namespace CodeProject.AI.API.Common
         /// <summary>
         /// Gets or sets the name of the hardware acceleration provider.
         /// </summary>
-        public string? ExecutionProvider { get; set; }
+        public string? ExecutionProvider { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the hardware (chip) identifier
         /// </summary>
-        public string? HardwareId { get; set; }
+        public string? HardwareId { get; set; } = "CPU";
     }
 
     /// <summary>

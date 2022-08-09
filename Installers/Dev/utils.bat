@@ -7,14 +7,23 @@
 
 @echo off
 
-:: %1 is the name of the method to call. Shift will shuffle the arguments that were passed one spot
-:: to the left, meaning the called subroutine will get the arguments it expects in order
+set useColor=true
+
+:: %1 is the name of the method to call. Shift will shuffle the arguments that 
+:: were passed one spot to the left, meaning the called subroutine will get the
+:: arguments it expects in order
 shift & goto :%~1
 
 set pipFlags=-q -q
 if /i "%verbosity%"=="info" set pipFlags=-q
 if /i "%verbosity%"=="loud" set pipFlags=
 
+set color_primary=White
+set color_mute=DarkGray
+set color_info=Yellow
+set color_success=Green
+set color_warn=DarkYellow
+set color_error=Red
 
 :: sub-routines
 
@@ -127,11 +136,13 @@ if /i "%verbosity%"=="loud" set pipFlags=
 
     exit /B 0
 
-:: Outputs a line, including linefeed, to the terminal using the given foreground / background
-:: colors 
+:: Outputs a line, including linefeed, to the terminal using the given 
+:: foreground / background colors 
 ::
-:: string The text to output. Optional if no foreground provided. Default is just a line feed.
-:: string Foreground color name. Optional if no background provided. Defaults to "White"
+:: string The text to output. Optional if no foreground provided. Default is 
+::        just a line feed.
+:: string Foreground color name. Optional if no background provided. Defaults 
+::        to "White"
 :: string Background color name. Optional. Defaults to "Black"
 :WriteLine
     SetLocal EnableDelayedExpansion
@@ -158,10 +169,13 @@ if /i "%verbosity%"=="loud" set pipFlags=
     )
     exit /b 0
 
-:: Outputs a line without a linefeed to the terminal using the given foreground / background colors 
+:: Outputs a line without a linefeed to the terminal using the given foreground
+:: / background colors 
 ::
-:: string The text to output. Optional if no foreground provided. Default is just a line feed.
-:: string Foreground color name. Optional if no background provided. Defaults to "White"
+:: string The text to output. Optional if no foreground provided. Default is 
+::        just a line feed.
+:: string Foreground color name. Optional if no background provided. Defaults 
+::        to "White"
 :: string Background color name. Optional. Defaults to "Black"
 :Write
     SetLocal EnableDelayedExpansion
@@ -182,77 +196,116 @@ if /i "%verbosity%"=="loud" set pipFlags=
     )
     exit /b 0
 
+:GetFromServer
+    SetLocal EnableDelayedExpansion
 
-:Download
+    REM eg packages_for_gpu.zip
+    set fileToGet=%1
+    set fileToGet=!fileToGet:"=!
+
+    REM eg assets
+    set moduleAssetsDir=%2
+    set moduleAssetsDir=!moduleAssetsDir:"=!
+
+    REM output message
+    set message=%3
+    set message=!message:"=!
+
+
+    REM Clean up directories to force a download and re-copy if necessary
+    if /i "%forceOverwrite%" == "true" (
+        REM Force Re-download, then force re-copy of downloads to install dir
+        if exist "!downloadPath!\!moduleDir!"     rmdir /s %rmdirFlags% "!downloadPath!\!moduleDir!"
+        if exist "!modulePath!\!moduleAssetsDir!" rmdir /s %rmdirFlags% "!modulePath!\!moduleAssetsDir!"
+    )
+
+    if not exist "!modulePath!\!moduleAssetsDir!" (
+
+        REM Download !storageUrl!fileToGet to downloadPath and extract into downloadPath\moduleDir
+        call :DownloadAndExtract "!storageUrl!" "!fileToGet!" "!downloadPath!\" "!moduleDir!" "!message!"
+
+        REM Copy contents of downloadPath\moduleDir to analysisLayerPath\moduleDir\moduleAssetsDir
+        if exist "!downloadPath!\!moduleDir!" (
+            robocopy /e "!downloadPath!\!moduleDir! " "!modulePath!\!moduleAssetsDir! " !roboCopyFlags! > NUL
+        )
+    )
+
+    exit /b
+
+
+:DownloadAndExtract
     SetLocal EnableDelayedExpansion
 
     REM "https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/"
     set storageUrl=%1
     set storageUrl=!storageUrl:"=!
 
-    REM "downloads/" - relative to the current directory
-    set downloadToDir=%2
-    set downloadToDir=!downloadToDir:"=!
-
-    REM eg packages_for_gpu.zip
-    set fileToGet=%3
+    REM File to download eg packages_for_gpu.zip
+    set fileToGet=%2
     set fileToGet=!fileToGet:"=!
 
-    REM  eg packages
-    set dirToSave=%4
-    set dirToSave=!dirToSave:"=!
+    REM Where to store the downloade zip. eg "downloads/" - relative to the 
+    REM current directory
+    set downloadToDir=%3
+    set downloadToDir=!downloadToDir:"=!
 
-    REm output message
+    REM Whre to extract the contents eg assets
+    set dirToSaveTo=%4
+    set dirToSaveTo=!dirToSaveTo:"=!
+
+    REM output message
     set message=%5
     set message=!message:"=!
 
     if "!message!" == "" set message=Downloading !fileToGet!...
     call :Write "!message!"
 
-    if exist "!downloadToDir!!dirToSave!.zip" (
-        call :Write "already exists..." "Yellow"
+    if exist "!downloadToDir!!dirToSaveTo!.zip" (
+        call :Write "already exists..." "!color_info!"
     ) else (
 
         REM Doesn't provide progress as % 
         REM powershell Invoke-WebRequest -Uri !storageUrl: =!!fileToGet! ^
-        REM                              -OutFile !downloadPath!!dirToSave!.zip
+        REM                              -OutFile !downloadPath!!dirToSaveTo!.zip
 
         REM Be careful with the quotes so we can handle paths with spaces
-        REM call :Write "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Destination '!downloadToDir!!dirToSave!.zip' ..." "White"
-        powershell -command "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Destination '!downloadToDir!!dirToSave!.zip'"
+        REM call :Write "Start-BitsTransfer -Source '!storageUrl!!fileToGet!'"
+        REM call :WriteLine "-Destination '!downloadToDir!!dirToSaveTo!.zip' ..."
+        powershell -command "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Destination '!downloadToDir!!dirToSaveTo!.zip'"
 
         if errorlevel 1 (
-            call :WriteLine "An error occurred that could not be resolved." "Red"
+            call :WriteLine "An error occurred that could not be resolved." "!color_error!"
             exit /b
         )
 
-        if not exist "!downloadToDir!!dirToSave!.zip" (
-            call :WriteLine "An error occurred that could not be resolved." "Red"
+        if not exist "!downloadToDir!!dirToSaveTo!.zip" (
+            call :WriteLine "An error occurred that could not be resolved." "!color_error!"
             exit /b
         )
     )
 
-    call :Write "Expanding..." "Yellow"
+    call :Write "Expanding..." "!color_info!"
 
     REM Try tar first. If that doesn't work, fall back to pwershell (slow)
     set tarExists=true
     pushd "!downloadToDir!"
-    if not exist "!dirToSave!" mkdir "!dirToSave!"
-    copy "!dirToSave!.zip" "!dirToSave!" > nul 2>nul
-    pushd "!dirToSave!"
-    tar -xf "!dirToSave!.zip" > nul 2>nul
+    if not exist "!dirToSaveTo!" mkdir "!dirToSaveTo!"
+    copy "!dirToSaveTo!.zip" "!dirToSaveTo!" > nul 2>nul
+    pushd "!dirToSaveTo!"
+    tar -xf "!dirToSaveTo!.zip" > nul 2>nul
     if "%errorlevel%" == "9009" set tarExists=false
-    del /s /f /q "!dirToSave!.zip" > nul
+    del /s /f /q "!dirToSaveTo!.zip" > nul
     popd
     popd
 
     if "!tarExists!" == "false" (
-        powershell -command "Expand-Archive -Path '!downloadToDir!!dirToSave!.zip' -DestinationPath '!downloadToDir!' -Force"
+        powershell -command "Expand-Archive -Path '!downloadToDir!!dirToSaveTo!.zip' -DestinationPath '!downloadToDir!' -Force"
     )
 
-    REM del /s /f /q "!downloadToDir!!dirToSave!.zip" > nul
+    REM If we wish to remove thw downloaded zip
+    REM del /s /f /q "!downloadToDir!!dirToSaveTo!.zip" > nul
 
-    call :WriteLine "Done." "Green"
+    call :WriteLine "Done." "!color_success!"
 
     exit /b
 
@@ -267,53 +320,59 @@ if /i "%verbosity%"=="loud" set pipFlags=
 
     set installPath=!analysisLayerPath!\bin\!platform!\!pythonName!
 
+    REM For debugging, or correcting, we can force redownloads. Be careful though.
     if /i "%forceOverwrite%" == "true" (
         REM Force Re-download
+        call :WriteLine "Cleaning download directory to force re-download of Python" "!color_info!"
         if exist "!downloadPath!\!platform!\!pythonName!" (
             rmdir /s "%rmdirFlags% "!downloadPath!\!platform!\!pythonName!"
         )
 
         REM Force overwrite
+        call :WriteLine "Cleaning Python directory to force re-install of Python" "!color_info!"
+        call :WriteLine "This will mean any previous PIP installs wwill be lost." "!color_warn!"
         if exist "!installPath!" rmdir /s %rmdirFlags% "!installPath!"
     )
 
     REM Download whatever packages are missing 
     if exist "!installPath!" (
-        call :WriteLine "!pythonName! package already downloaded" "DarkGray"
+        call :WriteLine "!pythonName! package already downloaded" "!color_mute!"
     ) else (
         set baseDir=!downloadPath!\!platform!\
         if not exist "!baseDir!" mkdir "!baseDir!"
         if not exist "!installPath!" (
-            call :Download "%storageUrl%" "!baseDir!" "!pythonName!.zip" "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
+            call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!baseDir!" "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
             if exist "!downloadPath!\!platform!\!pythonName!" (
                 robocopy /e "!downloadPath!\!platform!\!pythonName! " "!installPath! " !roboCopyFlags! > NUL
             )
         )
     )
 
+    REM Create the virtual environments. All sorts of things can go wrong here
+    REM but if you have issues, make sure you delete the venv directory before
+    REM retrying.
     call :Write "Creating Virtual Environment..."
     if exist "!installPath!\venv" (
-        call :WriteLine "Python !pythonVersion! Already present" "Green"
+        call :WriteLine "Python !pythonVersion! Already present" %color_success%
     ) else (
         "!installPath!\python.exe" -m venv "!installPath!\venv"
-        call :WriteLine "Done" "Green"
+        call :WriteLine "Done" %color_success%
     )
 
+    REM our DIY version of Python 'Activate' for virtual environments
     call :Write "Enabling our Virtual Environment..."
     pushd "!installPath!"
-
     set venvPath=%cd%\venv
     set pythonInterpreterPath="!venvPath!\Scripts\python"
-
     popd
 
-    call :WriteLine "Done" "Green"
+    call :WriteLine "Done" %color_success%
 
-    rem Ensure Python Exists
+    REM Ensure Python Exists
     call :Write "Confirming we have Python !pythonVersion!..."
     !pythonInterpreterPath! --version | find "!pythonVersion!" > NUL
     if errorlevel 1 goto errorNoPython
-    call :WriteLine "present" "Green"
+    call :WriteLine "present" %color_success%
 
     exit /b
 
@@ -321,9 +380,10 @@ if /i "%verbosity%"=="loud" set pipFlags=
 
     SetLocal EnableDelayedExpansion
 
-    REM Whether or not to install all python packages in one step (-r requirements.txt) or step by
-    REM step. Doing this allows the PIP manager to handle incompatibilities better.
-    set oneStepPIP=true
+    REM Whether or not to install all python packages in one step
+    REM (-r requirements.txt) or step by step. Doing this allows the PIP manager
+    REM to handle incompatibilities better.
+    set oneStepPIP=false
 
     set pythonVersion=%1
     set pythonName=python!pythonVersion:.=!
@@ -333,7 +393,7 @@ if /i "%verbosity%"=="loud" set pipFlags=
 
     set virtualEnv=!analysisLayerPath!\bin\!platform!\!pythonName!\venv
 
-    rem This will be the python interpreter in the virtual env
+    REM This will be the python interpreter in the virtual env
     set pythonPath=!virtualEnv!\Scripts\python
 
     set hasCUDA=false
@@ -343,52 +403,71 @@ if /i "%verbosity%"=="loud" set pipFlags=
         wmic PATH Win32_VideoController get Name | find "NVIDIA" > NUL
         if errorlevel 0 (
             set hasCUDA=true
-            call :WriteLine "Present" "Green"
+            call :WriteLine "Present" %color_success%
         ) else (
-            call :WriteLine "Not found" "Gray"
+            call :WriteLine "Not found" "!color_mute!"
         )
     )
 
-    REM Check for requirements.platform.[CUDA].txt first, then fall back to requirements.txt
+    REM Check for requirements.platform.[CUDA].txt first, then fall back to
+    REM requirements.txt
 
-    if "!hasCUDA!" == "true" (
-        set requirementsFilename=requirements.windows.cuda.txt
-        set requirementsPath="!requirementsDir!\!requirementsFilename!"
+    set requirementsFilename=
 
-        if not exist "!requirementsPath!" (
-            set requirementsFilename=requirements.cuda.txt
-            set requirementsPath="!requirementsDir!\!requirementsFilename!"
+    if /i "!enableGPU!" == "true" (
+        if /i "!hasCUDA!" == "true" (
+            if exist "!requirementsDir!\requirements.windows.cuda.txt" (
+                set requirementsFilename=requirements.windows.cuda.txt
+            ) else if exist "!requirementsDir!\requirements.cuda.txt" (
+                set requirementsFilename=requirements.cuda.txt
+            )
+        ) 
 
-            if not exist "!requirementsPath!" (
-                set requirementsFilename=requirements.windows.txt
-                set requirementsPath="!requirementsDir!\!requirementsFilename!"
+        if "!requirementsFilename!" == "" (
+            if exist "!requirementsDir!\requirements.windows.gpu.txt" (
+                set requirementsFilename=requirements.windows.gpu.txt
+            ) else if exist "!requirementsDir!\requirements.gpu.txt" (
+                set requirementsFilename=requirements.gpu.txt
             )
         )
+    )
+
+    if "!requirementsFilename!" == "" (
+        if exist "!requirementsDir!\requirements.windows.txt" (
+            set requirementsFilename=requirements.windows.txt
+        ) else if exist "!requirementsDir!\requirements.txt" (
+            set requirementsFilename=requirements.txt
+        )
+    )
+    
+    if "!requirementsFilename!" == "" (
+        call :WriteLine "No suitable requirements.txt file found." "!color_warn!"
+        exit /b
     ) else (
-        set requirementsFilename=requirements.windows.txt
         set requirementsPath="!requirementsDir!\!requirementsFilename!"
     )
 
     if not exist "!requirementsPath!" (
-        set requirementsFilename=requirements.txt
-        set requirementsPath="!requirementsDir!\!requirementsFilename!"
+        call :WriteLine "No suitable requirements.txt file found." "!color_warn!"
+        exit /b
     )
 
-    rem ============================================================================
-    rem 3a. Install PIP packages for Python analysis services
+    REM =======================================================================
+    REM  3a. Install PIP packages for Python analysis services
 
-    rem Ensure we have pip (no internet access - ensures we have the current python compatible version.
+    REM Ensure we have pip (no internet access - ensures we have the current 
+    REM python compatible version.
     call :Write "Ensuring Python package manager (pip) is installed..."
     if /i "%verbosity%" == "quiet" (
         !pythonPath! -m ensurepip !pipFlags!  >nul 2>nul 
     ) else (
         !pythonPath! -m ensurepip !pipFlags!
     )
-    call :WriteLine "Done" "Green"
+    call :WriteLine "Done" %color_success%
 
     call :Write "Ensuring Python package manager (pip) is up to date..."
 
-    rem Upgrade to the latest pip
+    REM Upgrade to the latest pip
     if /i "%verbosity%" == "quiet" (
         !pythonPath! -m pip install --trusted-host pypi.python.org ^
                      --trusted-host files.pythonhosted.org ^
@@ -399,76 +478,74 @@ if /i "%verbosity%"=="loud" set pipFlags=
                      --trusted-host pypi.org --upgrade pip !pipFlags!
     )
     
-    call :WriteLine "Done" "Green"
+    call :WriteLine "Done" %color_success%
 
     call :Write "Checking for required packages..."
 
-    rem ASSUMPTION: If venv\Lib\site-packages\<test name> exists then no need to check further
+    REM ASSUMPTION: If venv\Lib\site-packages\<test name> exists then no need 
+    REM to check further
 
     set packagesPath="!virtualEnv!\Lib\site-packages"
 
-    if not exist "!packagesPath!\testForPipExistanceName!" (
-
-        call :WriteLine "Packages missing. Installing from !requirementsFilename!..." "Yellow"
-
-        if "!oneStepPIP!" == "true" (
-            
-            call :Write "Installing Packages into Virtual Environment..."
-            REM pip install -r !requirementsPath! !pipFlags!
-            if /i "%verbosity%" == "quiet" (
-                !pythonPath! -m pip install -r !requirementsPath! --target "!packagesPath!" !pipFlags!   >nul 2>nul 
-            ) else (
-                !pythonPath! -m pip install -r !requirementsPath! --target "!packagesPath!" !pipFlags! 
-            )
-            call :WriteLine "Success" "Green"
-
+    if exist "!packagesPath!\!testForPipExistanceName!" (
+        call :WriteLine "present." %color_success%
+        exit /b
+    )
+ 
+    call :WriteLine "Packages missing. Installing from !requirementsFilename!..." "!color_info!"
+    if "!oneStepPIP!" == "true" (
+        
+        call :Write "Installing Packages into Virtual Environment..."
+        REM pip install -r !requirementsPath! !pipFlags!
+        if /i "%verbosity%" == "quiet" (
+            !pythonPath! -m pip install -r !requirementsPath! --target "!packagesPath!" !pipFlags!   >nul 2>nul 
         ) else (
-
-            REM We'll do this the long way so we can see some progress
-
-            set currentOption=
-            for /f "tokens=*" %%x in (' more ^< "!requirementsPath!" ') do (
-                set line=%%x
-
-                if "!line!" == "" (
-                    set currentOption=
-                ) else if "!line:~0,2!" == "##" (
-                    set currentOption=
-                ) else if "!line:~0,8!" == "# Python" (  REM Note: It's actually #! Python in the file.
-                    set currentOption=
-                ) else if "!line:~0,12!" == "--find-links" (
-                    set currentOption=!line!
-                ) else (
-           
-                    REM  breakup line into module name and description
-                    set module=!line!
-                    for /F "tokens=1,2 delims=#" %%a in ("!line!") do (
-                        set module=%%a
-                        set description=%%b
-                    )
-
-                    if "!description!" == "" set description=Installing !module!
-
-                    if "!module!" NEQ "" (
-                        call :Write "  -!description!..."
-
-                        if /i "%verbosity%" == "quiet" (
-                            !pythonPath! -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags! >nul 2>nul 
-                        ) else (
-                            !pythonPath! -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags!
-                        )
-
-                        call :WriteLine "Done" "Green"
-                    )
-
-                    set currentOption=
-                )
-            )
-
+            !pythonPath! -m pip install -r !requirementsPath! --target "!packagesPath!" !pipFlags! 
         )
+        call :WriteLine "Success" %color_success%
 
     ) else (
-        call :WriteLine "present." "Green"
+
+        REM We'll do this the long way so we can see some progress
+
+        set currentOption=
+        for /f "tokens=*" %%x in (' more ^< "!requirementsPath!" ') do (
+            set line=%%x
+
+            if "!line!" == "" (
+                set currentOption=
+            ) else if "!line:~0,2!" == "##" (       REM Ignore comments
+                set currentOption=
+            ) else if "!line:~0,8!" == "# Python" ( REM Is "#! Python" in the file.
+                set currentOption=
+            ) else if "!line:~0,1!" == "-" (        REM For --index options etc
+                set currentOption=!line!
+            ) else (
+        
+                REM breakup line into module name and description
+                set module=!line!
+                for /F "tokens=1,2 delims=#" %%a in ("!line!") do (
+                    set module=%%a
+                    set description=%%b
+                )
+
+                if "!description!" == "" set description= Installing !module!
+
+                if "!module!" NEQ "" (
+                    call :Write "  -!description!..."
+
+                    if /i "%verbosity%" == "quiet" (
+                        !pythonPath! -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags! >nul 2>nul 
+                    ) else (
+                        !pythonPath! -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags!
+                    )
+
+                    call :WriteLine "Done" %color_success%
+                )
+
+                set currentOption=
+            )
+        )
     )
 
     exit /b
@@ -479,7 +556,7 @@ if /i "%verbosity%"=="loud" set pipFlags=
 :errorNoPython
 call :WriteLine
 call :WriteLine
-call :WriteLine "-------------------------------------------------------"
-call :WriteLine "Error: Python not installed" "Red"
+call :WriteLine "-------------------------------------------------------------"
+call :WriteLine "Error: Python not installed" "!color_error!"
 goto:EOF
 exit

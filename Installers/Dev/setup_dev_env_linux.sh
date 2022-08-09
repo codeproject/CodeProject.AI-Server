@@ -1,27 +1,68 @@
-﻿#!/bin/bash
+#!/bin/bash
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
 # CodeProject.AI Server 
 # 
-# Unix/Linux/macOS Development Environment install script
+# Linux/macOS Development Environment install script
 # 
 # We assume we're in the source code /Installers/Dev directory.
 # 
+# Notes for Windows users:
+#
+# 1. Always ensure this file is saved with line LF endings, not CRLF
+#    run: sed -i 's/\r$//' setup_dev_env_linux.sh
+# 2. If you get the error '#!/bin/bash - no such file or directory' then this
+#    file is broken. Run head -1 setup_dev_env_linux.sh | od -c
+#    You should see: 0000000   #  !  /   b   i   n   /   b   a   s   h  \n
+#    But if you see: 0000000 357 273 277   #   !   /   b   i   n   /   b   a   s   h  \n
+#    Then run: sed -i '1s/^\xEF\xBB\xBF//' setup_dev_env_linux.sh
+#    This will correct the file. And also kill the #. You'll have to add it back
+# 3. To actually run this file: bash setup_dev_env_linux.sh. In Linux/macOS,
+#    obviously.
+#
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+# A necessary evil due to cross platform editors and source control playing
+# silly buggers
+function correctLineEndings () {
+
+    local filePath=$1
+
+    # Force correct BOM and CRLF issues in the script. Just in case
+    if [ "$platform" == "linux" ]; then 
+        sed -i '1s/^\xEF\xBB\xBF//' "${filePath}" # remove BOM
+        sed -i 's/\r$//' "${filePath}"            # CRLF to LF
+    else
+         if [[ ${OSTYPE:6} -ge 13 ]]; then       # Monterry is 'darwin21' -> "21"
+            sed -i'.bak' -e '1s/^\xEF\xBB\xBF//' "${filePath}" # remove BOM
+            sed -i'.bak' -e 's/\r$//' "${filePath}"            # CRLF to LF
+            rm "${filePath}.bak"
+         fi
+    fi
+}
+
+
+clear
+
 # import the utilities
+correctLineEndings $(dirname "$0")/utils.sh
+
+# "platform" will be set by this script
 source $(dirname "$0")/utils.sh
 
 useColor="true"
 
-clear
+# should we use GPU enabled libraries?
+enableGPU="false"
+
+# are we ready to support CUDA enabled GPUs?
+ssupportCUDA="false"
 
 # verbosity can be: quiet | info | loud
 verbosity="quiet"
 
 # If files are already present, then don't overwrite if this is false
-forceOverwrite=false
-
+forceOverwrite="false"
 
 
 # Basic locations
@@ -95,14 +136,15 @@ if [ "$useColor" != "true" ]; then
     pipFlags="${pipFlags} --no-color"
 fi
 
-writeLine '          Setting up CodeProject.AI Development Environment             ' 'DarkCyan'
-writeLine '                                                                        ' 'DarkGreen'
-writeLine '========================================================================' 'DarkGreen'
-writeLine '                                                                        ' 'DarkGreen'
-writeLine '                   CodeProject.AI Installer                             ' 'DarkGreen'
-writeLine '                                                                        ' 'DarkGreen'
-writeLine '========================================================================' 'DarkGreen'
-writeLine '                                                                        ' 'DarkGreen'
+
+writeLine '          Setting up CodeProject.AI Development Environment           ' 'DarkCyan'
+writeLine '                                                                      ' 'DarkGreen'
+writeLine '======================================================================' 'DarkGreen'
+writeLine '                                                                      ' 'DarkGreen'
+writeLine '                   CodeProject.AI Installer                           ' 'DarkGreen'
+writeLine '                                                                      ' 'DarkGreen'
+writeLine '======================================================================' 'DarkGreen'
+writeLine '                                                                      ' 'DarkGreen'
 
 # ============================================================================
 # House keeping
@@ -118,166 +160,66 @@ fi
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # 1. Ensure directories are created and download required assets
 
+announcement=$(printf %-70s "                         CodeProject.AI setup")
 writeLine
-writeLine 'CodeProject.AI setup                                                    ' "White" "Blue"
+writeLine "${announcement}" "White" "DarkGreen"
+writeLine
 
 # Create some directories
 
 # For downloading assets
-write "Creating Directories..." $color_primary
 if [ $verbosity == "loud" ]; then writeLine "downloadPath is ${downloadPath}"; fi;
 
+write "Creating Directories..." $color_primary
 mkdir -p "${downloadPath}"
+writeLine "Done" $color_success
+
 if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then 
     if [[ ! -w "${downloadPath}" ]]; then
         write "We'll need to run under root to set permissions. " $color_warn
         sudo chmod 777 "${downloadPath}"
     fi
-else
-    write "Creating Directories..." $color_primary
-fi
-writeLine "Done" $color_success
-
-# TextSummary specific :::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-writeLine
-writeLine 'TextSummary setup                                                       ' "White" "Blue"
-
-# The name of the dir containing the TextSummary module
-moduleDir='TextSummary'
-
-# Full path to the TextSummary dir
-modulePath="${analysisLayerPath}/${moduleDir}"
-
-setupPython 3.8
-installPythonPackages 3.8 "${modulePath}" "nltk"
-
-
-# Background Remover :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-writeLine
-writeLine 'Background Remover setup                                                ' "White" "Blue"
-
-# The name of the dir containing the background remover module
-moduleDir='BackgroundRemover'
-
-# The name of the dir containing the background remover models
-modulePath="${analysisLayerPath}/${moduleDir}"
-
-# The name of the dir containing the background remover models
-moduleAssetsDir='models'
-
-# The name of the file in our S3 bucket containing the assets required for this module
-modelsAssetFilename='rembg-models.zip'
-
-setupPython 3.9
-installPythonPackages 3.9 "${modulePath}" "onnxruntime"
-
-# Clean up directories to force a re-copy if necessary
-if [ "${forceOverwrite}" == "true" ]; then
-    rm -rf "${downloadPath}/${moduleDir}"
-    rm -rf "${modulePath}/${moduleAssetsDir}"
 fi
 
-if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
-    Download $storageUrl "${downloadPath}" $modelsAssetFilename "${moduleDir}" "Downloading models..."
-    if [ -d "${downloadPath}/${moduleDir}" ]; then
-        mv -f "${downloadPath}/${moduleDir}" "${modulePath}/${moduleAssetsDir}"
+# source ${moduleDir}/install.sh
+
+# Walk through the modules directory and call the setup script in each dir
+for d in ${analysisLayerPath}/*/ ; do
+
+    moduleDir="$(basename $d)"
+    modulePath=$d
+
+    if [ "${modulePath: -1}" == "/" ]; then
+        modulePath="${modulePath:0:${#modulePath}-1}"
     fi
-fi
 
+    
+    # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
+    dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
+    if [ "${dirname}" != 'bin' ]; then
 
-# DeepStack Vision modules specific :::::::::::::::::::::::::::::::::::::::::::::::::::
+       if [ -f "${modulePath}/install.sh" ]; then
 
-writeLine
-writeLine 'Vision toolkit setup                                                    ' "White" "Blue"
+            # Pad right to 70 chars
+            announcement=$(printf %-70s "Processing ${moduleDir}")
 
-# The name of the dir containing the background remover module
-moduleDir='Vision'
+            writeLine
+            writeLine "${announcement}" "White" "Blue"
+            writeLine
 
-# The name of the dir containing the background remover models
-modulePath="${analysisLayerPath}/${moduleDir}"
-
-# The name of the dir containing the background remover models
-moduleAssetsDir='assets'
-
-# The name of the file in our S3 bucket containing the assets required for this module
-modelsAssetFilename='models.zip'
-
-setupPython 3.8
-installPythonPackages 3.8 "${modulePath}/intelligencelayer/" "torchvision"
-
-# Clean up directories to force a re-copy if necessary
-if [ "${forceOverwrite}" == "true" ]; then
-    rm -rf "${downloadPath}/${moduleDir}"
-    rm -rf "${modulePath}/${moduleAssetsDir}"
-fi
-
-if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
-    Download $storageUrl "${downloadPath}" $modelsAssetFilename "${moduleDir}" "Downloading models..."
-    if [ -d "${downloadPath}/${moduleDir}" ]; then
-        mv -f "${downloadPath}/${moduleDir}" "${modulePath}/${moduleAssetsDir}"
-    fi
-fi
-
-# Deepstack needs these to store temp and pesrsisted data
-mkdir -p "${modulePath}/${tempstoreDir}"
-
-# To do this properly we're going to use the standard directories for common application data
-# mkdir -p "${modulePath}/${datastoreDir}"
-commonDataDir='/usr/share/CodeProject/AI'
-if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then 
-    commonDataDir="/Library/Application Support/CodeProject/AI"
-fi
-
-if [ ! -d "${commonDataDir}" ]; then
-    if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then 
-        if [[ $EUID > 0 ]]; then
-            writeLine "Creating data directory at ${commonDataDir}. We'll need admin access..." $color_info
+            correctLineEndings "${modulePath}/install.sh"
+            source "${modulePath}/install.sh"
         fi
-
-        sudo mkdir -p "${commonDataDir}"   
-        if [ $? -ne 0 ]; then
-            displayMacOSPermissionError "${commonDataDir}"
-        fi
-        sudo chmod 777 "${commonDataDir}"
-    else
-        mkdir -p "${commonDataDir}"
     fi
-fi
-
-# For Yolo.NET :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-writeLine
-writeLine 'Object Detector setup                                                   ' "White" "Blue"
-
-# The name of the dir containing the background remover module
-moduleDir='CodeProject.AI.AnalysisLayer.Yolo'
-
-# The name of the dir containing the background remover models
-modulePath="${analysisLayerPath}/${moduleDir}"
-
-# The name of the dir containing the background remover models
-moduleAssetsDir='assets'
-
-# The name of the file in our S3 bucket containing the assets required for this module
-modelsAssetFilename='yolonet-models.zip'
-
-# Clean up directories to force a re-copy if necessary
-if [ "${forceOverwrite}" == "true" ]; then
-    rm -rf "${downloadPath}/${moduleDir}"
-    rm -rf "${modulePath}/${moduleAssetsDir}"
-fi
-
-if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
-    Download $storageUrl "${downloadPath}" $modelsAssetFilename "${moduleDir}" "Downloading models..."
-    if [ -d "${downloadPath}/${moduleDir}" ]; then
-        mv -f "${downloadPath}/${moduleDir}" "${modulePath}/${moduleAssetsDir}"
-    fi
-fi
+done
 
 # libfontconfig1 is required for SkiaSharp, libgdplus is required for System.Drawing
-write "Installing supporting image libraries..."
+if [ "${verbosity}" == "quiet" ]; then
+    write "Installing supporting image libraries..."
+else
+    writeLine "Installing supporting image libraries..."
+fi
+
 if [ "$platform" == "linux" ]; then
     if [ "${verbosity}" == "quiet" ]; then
         apt-get install libfontconfig1 -y  >/dev/null 2>/dev/null &
@@ -307,8 +249,9 @@ writeLine "Done" $color_success
 # ============================================================================
 # ...and we're done.
 
-writeLine 
-writeLine '                Development Environment setup complete                  ' 'White' 'DarkGreen'
-writeLine 
+announcement=$(printf %-70s "                Development Environment setup complete")
+writeLine
+writeLine "${announcement}" "White" "DarkGreen"
+writeLine
 
 quit

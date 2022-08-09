@@ -47,7 +47,7 @@ class SharedOptions:
     TEMP_PATH       = os.path.normpath(getEnvVariable("TEMP_PATH",  f"{APPDIR}/tempstore"))
     DATA_DIR        = os.path.normpath(getEnvVariable("DATA_DIR",   f"{APPDIR}/datastore"))
     MODELS_DIR      = os.path.normpath(getEnvVariable("MODELS_DIR", f"{APPDIR}/assets"))
-    PORT            = getEnvVariable("PORT",       "5000")
+    PORT            = getEnvVariable("CPAI_PORT", "5000")
 
     if CUDA_MODE == "True":
         CUDA_MODE   = torch.cuda.is_available()
@@ -128,5 +128,5 @@ class SharedOptions:
         print(f"TEMP_PATH:    {TEMP_PATH}")
         print(f"DATA_DIR:     {DATA_DIR}")
         print(f"MODELS_DIR:   {MODELS_DIR}")
-        print(f"PORT:         {PORT}")
+        print(f"PORT:         {CPAI_PORT}")
         print(f"MODE:         {MODE}")

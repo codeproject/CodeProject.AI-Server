@@ -5,17 +5,17 @@
       "Name": "Custom Object Detection",
       "Activate": true,
       "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects that the custom models have been trained on.",
-      "FilePath": "CustomDetection\\detection.py",
+      "FilePath": "CustomDetection\\detect_adapter.py",
       "Runtime": "python38",
       "Platforms": [ "all" ],
-      "EnableFlags": [ ],
+      "EnableFlags": [],
 
       "EnvironmentVariables": {
-        "PORT": 5000,
+        "CPAI_PORT": 5000,
 
         "MODEL_SIZE": "Medium", // small, medium, large, x-large
         "RESOLUTION": "Medium", // low, medium, high
-        "USE_CUDA":   "False",
+        "USE_CUDA": "True",
 
         "APPDIR": "%MODULES_PATH%\\CustomDetection",
         "MODELS_DIR": "%MODULES_PATH%\\CustomDetection\\assets"
@@ -61,7 +61,7 @@
           "Queue": "customdetection_queue",
           "Command": "list",
           "Description": "Returns a list of models available.",
-          "Inputs": [ ],
+          "Inputs": [],
           "Outputs": [
             {
               "Name": "success",

@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "ObjectDetectionNet": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "CUDA_MODE": "False",
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": "true"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

@@ -1,9 +1,10 @@
 
+import cv2
 import numpy as np
 import torch
 from models.experimental import attempt_load
 from PIL import Image
-from utils.datasets import letterbox
+from utils.augmentations import letterbox
 from utils.general import (
     non_max_suppression,
     scale_coords,
@@ -17,7 +18,7 @@ class YOLODetector(object):
 
         self.reso = (reso, reso)
         self.cuda = cuda
-        self.model = attempt_load(model_path, map_location=self.device)
+        self.model = attempt_load(model_path, device=self.device)
         self.names = (
             self.model.module.names
             if hasattr(self.model, "module")
@@ -30,14 +31,20 @@ class YOLODetector(object):
 
         confidence = max(0.1,confidence)
 
-        img0 = Image.open(img_path).convert("RGB")
+        img0 = Image.open(img_path)
 
         return self.predictFromImage(img0, confidence)
 
 
     def predictFromImage(self, img0: Image, confidence: float = 0.4):
+
         if img0 is None:
             return []
+
+        if (isinstance(img0, Image.Image)):
+            img0 = cv2.cvtColor(np.array(img0), cv2.COLOR_RGB2BGR)
+        else:
+            img0 = img0.convert("RGB")
 
         confidence = max(0.1,confidence)
 

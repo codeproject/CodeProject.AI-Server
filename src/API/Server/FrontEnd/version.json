@@ -3,12 +3,12 @@
     "versionInfo": {
       "Major": 1,
       "Minor": 5,
-      "Patch": 5,
-      "Build": 1,
+      "Patch": 6,
+      "Build": 0,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI.Server-1.5.5.zip",
-      "ReleaseNotes": "Patch to 1.5.5 that fixes a problem with registered face listings being out of date. Recommended only for those who make use of face recognition."
+      "File": "CodeProject.AI.Server-1.5.6.0.zip",
+      "ReleaseNotes": "nVidia GPU support! Plus: Complete rework of the Python SDK for modules, revamped dev installer, plus new module 'SuperResolution'."
     }
   }
 }

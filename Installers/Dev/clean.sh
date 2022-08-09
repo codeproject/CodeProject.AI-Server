@@ -116,12 +116,12 @@ if [ "$cleanBuild" == "true" ]; then
     writeLine "Cleaning Build                                                      " "White" "Blue"
     writeLine 
 
-    cleanSubDirs "../../src" "bin" "./AnalysisLayer/bin"
-    cleanSubDirs "../../src" "obj" "./AnalysisLayer/bin"
+    cleanSubDirs "../../src" "bin" "AnalysisLayer/bin"
+    cleanSubDirs "../../src" "obj" "ObjectDetectionNet"
     cleanSubDirs "../Windows" "bin"
     cleanSubDirs "../Windows" "obj"
     cleanSubDirs "../../demos" "bin"
-    cleanSubDirs "../../demos" "obj"
+    cleanSubDirs "../../demos" "obj" "Objects"
     cleanSubDirs "../../tests" "bin"
     cleanSubDirs "../../tests" "obj"
 fi
@@ -134,7 +134,7 @@ if [ "$cleanInstallLocal" == "true" ]; then
 
     cleanSubDirs "../../src/AnalysisLayer/bin" "${platform}"
     cleanSubDirs "../../src/AnalysisLayer/BackgroundRemover" "models"
-    cleanSubDirs "../../src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo" "assets"
+    cleanSubDirs "../../src/AnalysisLayer/ObjectDetectionNet" "assets"
     cleanSubDirs "../../src/AnalysisLayer/Vision" "assets"
     cleanSubDirs "../../src/AnalysisLayer/Vision" "datastore"
     cleanSubDirs "../../src/AnalysisLayer/Vision" "tempstore"
@@ -143,7 +143,7 @@ fi
 if [ "$cleanInstallAll" == "true" ]; then
 
     writeLine 
-    writeLine "Cleaning install for other platforms                                " "White" "Blue"
+    writeLine "Cleaning install for all platforms                                  " "White" "Blue"
     writeLine 
 
     cleanSubDirs "../../src/AnalysisLayer" "bin"

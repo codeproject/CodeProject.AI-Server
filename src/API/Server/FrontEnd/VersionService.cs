@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -15,6 +16,7 @@ namespace CodeProject.AI.API.Server.Frontend
     public class VersionService
     {
         private static HttpClient? _client;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializs a new instance of the Startup class.
@@ -22,13 +24,16 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <param name="versionOptions">The version Options instance.</param>
         /// <param name="installOptions">The install Options instance.</param>
         /// <param name="configuration">The Configuration instance</param>
+        /// <param name="logger">The logger</param>
         public VersionService(IOptions<VersionConfig> versionOptions,
                               IOptions<InstallConfig> installOptions,
-                              IConfiguration configuration)
+                              IConfiguration configuration,
+                              ILogger<VersionService> logger)
         {
             Configuration = configuration;
             VersionConfig = versionOptions.Value;
             InstallConfig = installOptions.Value;
+            _logger = logger;
         }
 
         /// <summary>
@@ -57,17 +62,22 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 _client = new HttpClient { Timeout = new TimeSpan(0, 0, 30) };
 
-                // This allows us to store some state on the server's side between status calls. 
-                // This is analogous to a session cookie.
-                // SECURITY: Always ensure that InstallConfig.Id does NOT contain personally
-                //           identifiable information. It should be a random GUID that can be wiped
-                //           or replaced on the installation side without issue.
-                _client.DefaultRequestHeaders.Add("X-CPAI-Server-Install", InstallConfig.Id.ToString());
+                try
+                {
+                    // This allows us to store some state on the server's side between status calls. 
+                    // This is analogous to a session cookie.
+                    // SECURITY: Always ensure that InstallConfig.Id does NOT contain personally
+                    //           identifiable information. It should be a random GUID that can be
+                    //            wiped or replaced on the installation side without issue.
+                    _client.DefaultRequestHeaders.Add("X-CPAI-Server-Install", InstallConfig.Id.ToString());
 
-                // Handy to allow the checkee to return emergency info if the current installed
-                // version has issues
-                string currentVersion = VersionConfig.VersionInfo?.Version ?? string.Empty;
-                _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);
+                    // Handy to allow the checkee to return emergency info if the current installed
+                    // version has issues
+                    string currentVersion = VersionConfig.VersionInfo?.Version ?? string.Empty;
+                    _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);
+                }
+                catch
+                { }
             }
 
             string updateCheckUrl = Configuration.GetValue<string>("UpdateCheckUrl");
@@ -94,13 +104,13 @@ namespace CodeProject.AI.API.Server.Frontend
                             version.File = updateDownloadUrl;
                         }
 
-                        Common.Logger.Log($"Latest version available is {version.Version}");
+                        _logger.LogInformation($"Latest version available is {version.Version}");
                     }
                 }
             }
             catch (Exception e)
             {
-                Common.Logger.Log($"Error checking for latest version: " + e.Message);
+                _logger.LogError($"Error checking for latest version: " + e.Message);
             }
 
             return version;

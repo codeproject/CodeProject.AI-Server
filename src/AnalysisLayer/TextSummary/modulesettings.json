@@ -4,7 +4,7 @@
       "Name": "Text Summary",
       "Activate": true,
       "Description": "Summarizes some content by selecting a number of sentences that are most representitive of the content.",
-      "FilePath": "TextSummary\\textsummary.py",
+      "FilePath": "TextSummary\\summary_adapter.py",
       "Runtime": "python38",
       "Platforms": [ "windows", "linux", "macos", "macos-arm", "docker" ],
 
@@ -17,7 +17,7 @@
           "Name": "Text Summary",
           "Path": "text/summarize",
           "Method": "POST",
-          "Queue": "summary_queue",
+          "Queue": "textsummary_queue",
           "Command": "summarize",
           "Description": "Summarizes some content by selecting a number of sentences that are most representitive of the content.",
           "Inputs": [

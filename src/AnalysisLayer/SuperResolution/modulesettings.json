@@ -1,0 +1,48 @@
+{
+  "Modules": {
+
+    "SuperResolution": {
+      "Name": "Super Resolution",
+      "Activate": true,
+      "Description": "Increases the resolution of an image.",
+      "FilePath": "SuperResolution\\superres_adapter.py",
+      "Platforms": [ "windows", "linux", "docker", "macos", "macos-arm" ],
+      "Runtime": "python38",
+
+      "EnvironmentVariables": {
+         // See : https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates
+        "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION": "python"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Super Resolution",
+          "Path": "image/superresolution",
+          "Method": "POST",
+          "Queue": "superresolution_queue",
+          "Command": "superresolution",
+          "Description": "Increases the resolution of an image.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The image to have its background removed."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "imageBase64",
+              "Type": "Base64ImageData",
+              "Description": "The base64 encoded image that has had its resolution increased."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

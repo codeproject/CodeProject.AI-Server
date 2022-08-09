@@ -1,18 +1,14 @@
 #! Python3.9
 
-## CodeProject.AI
-requests					                        # Installing Requests, the HTTP library
-Pillow						                        # Installing Pillow, a Python Image Library
+filetype					# Installing FileType, a package to infer file types and MIME types
+gdown						# Installing gdown, a package for downloading from Google Drive folders
+numpy						# Installing NumPy, a package for scientific computing
+pymatting					# Installing pymatting, a Python Library for Alpha Matting
+Pillow						# Installing Pillow, a Python Image Library
 
-## Background Remover
-gdown			        	                        # Installing gdown, a package for downloading from Google Drive folders
-numpy		    		                            # Installing the required version of numpy of pymatting - numba
-pymatting   			                            # Installing pymatting, a Python Library for Alpha Matting
-filetype    				                        # Installing FileType, a package to infer file types and MIME types
+flatbuffers                 # Installing FlatBuffers serialization format support
+onnxruntime                 # Installing the ONNX runtime.
 
-flatbuffers                                         # Installing FlatBuffers serialization format support
--i https://test.pypi.org/simple/
-onnxruntime                  		                # Installing a dev build of the ONNX runtime.
+## onnxruntime==1.8.2.dev169944
 
-#onnxruntime==1.8.2.dev169944
 # last line blank

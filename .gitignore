@@ -4,22 +4,16 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 /demos/Python/detected
+/docs/mkdocs/CodeProject.AI/site
+/Installers/downloads
+/Installers/Windows/Thumbs.db
 
-/install/downloads/models
-/install/downloads/assets
-/install/downloads/python37
-/install/cached_downloads
-/install/downloads/python_packages_cpu
-/install/downloads/python_packages_gpu
+/src/AnalysisLayer/BackgroundRemover/models
+/src/AnalysisLayer/CustomDetection/assets
+/src/AnalysisLayer/ObjectDetectionNet/assets/
+/src/AnalysisLayer/Vision/assets
 
-/src/CodeProject.SenseAI.config
-/src/set_environment.bat
-/src/Start_SenseAI_Win.bat
-
-/src/AnalysisLayer/DeepStack/venv
-/src/AnalysisLayer/DeepStack/datastore
-/src/AnalysisLayer/DeepStack/tempstore
-/src/AnalysisLayer/DeepStack/assets
+/src/API/Server/FrontEnd/installconfig.json
 
 # User-specific files
 *.rsuser
@@ -377,31 +371,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/src/AnalysisLayer/DeepStack/python37
-/Start_SenseAI_Win.bat
-/set_environment.bat
-/CodeProject.SenseAI.config
-/CodeProject.SenseAI.json
-/src/API/Server/FrontEnd/installconfig.json
-/install/downloads/yoloModels
-/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/weights
-/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5s.onnx
-/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5n.onnx
-/src/AnalysisLayer/CodeProject.SenseAI.AnalysisLayer.Yolo/assets/yolov5m.onnx
-/Installers/downloads
+
+
 *.DS_Store
-/src/AnalysisLayer/BackgroundRemover/models
-/docs/mkdocs/senseAI/site
-/src/AnalysisLayer/Vision/assets
-/src/AnalysisLayer/CustomDetection/assets/openlogo.pt
-/src/AnalysisLayer/CustomDetection/assets/actionnetv2.pt
-/src/AnalysisLayer/CustomDetection/assets/license-plate.pt
-/src/AnalysisLayer/CustomDetection/assets/yolov5m.pt
-/docs/mkdocs/CodeProject.AI/site
-/Installers/Windows/Thumbs.db
-/src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo/assets
-/src/AnalysisLayer/CustomDetection/assets/IPcam-general.pt
-/src/AnalysisLayer/CustomDetection/assets/IPcam-dark.pt
-/src/AnalysisLayer/CustomDetection/assets/IPcam-combined.pt
-/src/AnalysisLayer/CustomDetection/assets/IPcam-animal.pt
-/src/AnalysisLayer/Vision/datastore
+

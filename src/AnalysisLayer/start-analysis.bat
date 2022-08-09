@@ -37,7 +37,7 @@ set APPDIR=%cd%
     echo Setting Environment variables...
 
     REM API server
-    set PORT=5000
+    set CPAI_PORT=5000
 
     REM Text module
     set NLTK_DATA=!APPDIR!\TextSummary\nltk_data
@@ -53,7 +53,7 @@ set APPDIR=%cd%
 
 if "%verbosity%" == "info" (
     echo:
-    echo PORT      = !PORT!
+    echo CPAI_PORT = !CPAI_PORT!
     echo APPDIR    = !APPDIR!
     echo NLTK_DATA = !NLTK_DATA!
     echo PROFILE   = !PROFILE!

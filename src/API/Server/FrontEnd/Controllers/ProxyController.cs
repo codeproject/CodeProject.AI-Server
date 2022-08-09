@@ -217,7 +217,6 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (endOfUrl.StartsWith("/"))
                 endOfUrl = endOfUrl.Substring(1);
 
-
             // handle extra segments
             if (endOfUrl.Length > 0)
                 segments.AddRange(endOfUrl.Split('/', StringSplitOptions.TrimEntries));

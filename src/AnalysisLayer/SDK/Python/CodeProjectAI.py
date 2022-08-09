@@ -1,154 +1,254 @@
-## Trying to put this in a common place, but the import system is very strange.
 
+import json
 import os
-import io
 import sys
-import base64
 import time
-from datetime import datetime
-from enum import Flag, unique
+import traceback
 
-# The purpose of inserting the path is so the Python import system looks in the right spot for packages. 
-# ie .../pythonXX/venv/Lib/site-packages. 
-# This depends on the VENV we're actually running in. So: get the location of the current exe
-# and work from that.
+# TODO: All I/O should be async, non-blocking so that logging doesn't impact 
+# the throughput of the requests. Switching to HTTP2 or some persisting 
+# connection mechanism would speed thing up as well.
 
-# Get the location of the current python interpreter, and then add the site-packages associated
-# with that interpreter to the PATH so python will find the packages we've installed
+
+# The purpose of inserting the path is so the Python import system looks in the 
+# right spot for packages. ie .../pythonXX/venv/Lib/site-packages. 
+# This depends on the VENV we're actually running in. So: get the location of 
+# the current exe and work from that.
+
+# Get the location of the current python interpreter, and then add the 
+# site-packages associated with that interpreter to the PATH so python will find 
+# the packages we've installed
 current_python_dir = os.path.join(os.path.dirname(sys.executable))
 if current_python_dir != "":
     package_path = os.path.normpath(os.path.join(current_python_dir, '../lib/python' + sys.version[:3] + '/site-packages/'))
     sys.path.insert(0, package_path)
     # print("Adding " + package_path + " to packages search path")
 
+# We can now import these from the appropriate VENV location
 import requests
-from PIL import Image
-from typing import Dict, List, Union
+# from PIL import Image
 
-# Define a Json type to allow type hints to be sensible.
-# See https://adamj.eu/tech/2021/06/14/python-type-hints-3-somewhat-unexpected-uses-of-typing-any-in-pythons-standard-library/
-_PlainJSON = Union[
-    None, bool, int, float, str, List["_PlainJSON"], Dict[str, "_PlainJSON"]
-]
-JSON = Union[_PlainJSON, Dict[str, "JSON"], List["JSON"]]
+# CodeProject.AI SDK. Import after we've set the import path since logging 
+# requires requests
+from common import JSON
+from analysislogging import LogMethod, AnalysisLogger
+from requestdata import AIRequestData
 
 
-@unique
-class LogMethod(Flag):
-    """ The types of logging that can be done"""
-    Unknown = 0
-    Info    = 1   # Standard info output such as the console
-    Error   = 2   # Standard error output
-    Server  = 4   # Send the log to the front end API server
-    Cloud   = 8   # Send the log to a cloud provider such as errlog.io
-    File    = 16  # Send the log to a cloud provider such as errlog.io
-    All     = 31  # It's a job lot
-
-class ModuleWrapper:
+class CodeProjectAIRunner:
     """
-    A thin abstraction + helper methods to allow python modules to communicate with the
-    backend of main API Server
+    A thin abstraction + helper methods to allow python modules to communicate 
+    with the backend of main API Server
     """
-
 
     # Constructor
     def __init__(self, queue_name):
-        self.queue_name          = queue_name
-        self.python_dir          = current_python_dir
-        self.errLog_APIkey       = os.getenv("ERRLOG_APIKEY", "")
-        self.port                = os.getenv("PORT",          "5000")
-        self.server_root_path    = os.getenv("CPAI_APPROOTPATH", "")
-        self.moduleId            = os.getenv("MODULE_ID",     "CodeProject.AI")
-        self.hardwareId          = "CPU"
 
-        self._execution_provider = "CPU"
-
+        # Constants
         self._error_pause_secs   = 1.0
         self._log_timing_events  = True
         self._verbose_exceptions = True
-        self._defaultLogging     = LogMethod.File
 
+        # Backing var for property execution_provider
+        self._execution_provider = ""
+
+        # Public fields
+        self.queue_name          = os.getenv("CPAI_MODULE_QUEUENAME", queue_name)
+        self.module_name         = os.getenv("CPAI_MODULE_NAME",      queue_name)
+        self.python_dir          = current_python_dir
+        self.errLog_APIkey       = os.getenv("CPAI_ERRLOG_APIKEY",    "")
+        self.port                = os.getenv("CPAI_PORT",             "5000")
+        self.server_root_path    = os.getenv("CPAI_APPROOTPATH",      "")
+        self.module_id           = os.getenv("CPAI_MODULE_ID",        "CodeProject.AI")
+
+        self.hardware_id         = "CPU"
+        self.execution_provider  = ""
+
+        self.use_openvino        = False
+        self.use_onnxruntime     = False
+
+        # Private fields
+        # We're hardcoding localhost because we have no plans to have the 
+        # analysis services and the server on separate machines or containers.
+        # At no point should any outside app have access to the backend 
+        # services. It all must be done through the API.
         self._base_queue_url     = f"http://localhost:{self.port}/v1/queue/"
-        self._base_log_url       = f"http://localhost:{self.port}/v1/log/"
 
         self._request_session    = requests.Session()
+        self._logger             = AnalysisLogger(self.port, self.server_root_path, self.errLog_APIkey)
     
     @property
-    def executionProvider(self):
+    def execution_provider(self):
         return self._execution_provider
       
-    @executionProvider.setter
-    def executionProvider(self, execution_provider):
-        if (execution_provider is None) or (execution_provider == ""):
+    @execution_provider.setter
+    def execution_provider(self, provider):
+        if (provider is None) or (provider == ""):
             self._execution_provider = "CPU"
         else:
-            self._execution_provider = execution_provider
+            self._execution_provider = provider
 
-    # Performance timer ===========================================================================
+        if self.execution_provider != "CPU":
+            self.hardware_id = "GPU"
+
+    # Main loop
+    def start_loop(self, callback) -> None:
+
+        # Setup libraries
+        if self.use_openvino:
+            import openvino.utils as utils
+            utils.add_openvino_libs_to_path()
+
+        if self.use_onnxruntime:
+            import onnxruntime as ort
+
+            ## get the first Execution Provider Name to determine GPU/CPU type
+            providers = ort.get_available_providers()
+            if len(providers) > 0 :
+                self.execution_provider = str(providers[0]).removesuffix("ExecutionProvider")
+                self.hardware_id        = "GPU"
+
+        self.log(LogMethod.Info | LogMethod.Server, {
+                    "message": self.module_name + " started.",
+                    "loglevel": "information"
+                })
+
+        while True:
+            queue_entries: list = self.get_command()
+
+            # In theory we may get back multiple command requests. In practice
+            # it's always just 1 at a time. At the moment.
+            if len(queue_entries) > 0:
+
+                for queue_entry in queue_entries:
+
+                    data: AIRequestData = AIRequestData(queue_entry)
+
+                    proc_name = self.module_name
+                    if data.command:
+                        proc_name += f" ({data.command})"
+
+                    timer: tuple = self.start_timer(proc_name)
+
+                    output: JSON = {}
+                    try:
+                        output = callback(self, data)
+
+                    except Exception:
+                        output = {
+                           "success": False,
+                           "error":   "unable to process the request",
+                           "code":    500
+                        }
+
+                        err_trace = traceback.format_exc()
+
+                        self.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server, { 
+                            "process":        self.module_name,
+                            "filename":       "codeprojectai.py",
+                            "method":         "start_loop",
+                            "loglevel":       "error",
+                            "message":        err_trace,
+                            "exception_type": "Exception"
+                        })
+
+                    finally:
+                        self.end_timer(timer, "command timing")
+
+                        try:
+                            self.send_response(data.request_id, output)
+                        except Exception:
+                            print("An exception occured sending the inference response")
+
+
+    # Performance timer =======================================================
 
     def start_timer(self, desc: str) -> tuple:
         """
-        Starts a timer and initializes the description string that will be associated with the time
+        Starts a timer and initializes the description string that will be 
+        associated with the time
         Param: desc - the description
         Returns a tuple containing the description and the timer itself
         """
         return (desc, time.perf_counter())
 
-    def end_timer(self, timer : tuple) -> None:
+
+    def end_timer(self, timer : tuple, label: str = "timing") -> None:
         """
         Ends a timing session and logs the time taken along with the initial description if the
         variable logTimingEvents = True
         Param: timer - A tuple containing the initial description and the timer object
         """
         (desc, startTime) = timer
-        elapsedSeconds = time.perf_counter() - startTime
+        elapsedMs = (time.perf_counter() - startTime) * 1000
     
         if (self._log_timing_events):
-            self.log(LogMethod.Info|LogMethod.Server, {"message": f"{desc} took {elapsedSeconds:.3} seconds"})
+            self.log(LogMethod.Info|LogMethod.Server, {
+                        "message": f"{desc} took {elapsedMs:.0f}ms",
+                        "loglevel": "information",
+                        "label": label
+                     })
 
 
-    # Service Commands and Responses ==============================================================
+    # Service Commands and Responses ==========================================
+
+    def log(self, log_method: LogMethod, data: JSON) -> None:
+
+        if not data:
+            return
+
+        if not data.get("process"):
+            data["process"] = self.module_name 
+                            
+        self._logger.log(log_method, data)
+
 
     def get_command(self) -> "list[str]":
 
         """
-        Gets a command from the queue associated with this object. CodeProject.AI works on the 
-        basis of having a client pass requests to the frontend server, which in turns places each 
-        request into various command queues. The backend analysis services continually pull 
-        requests from the queue that they can service. Each request for a queued command is done 
-        via a long poll HTTP request.
+        Gets a command from the queue associated with this object. 
+        CodeProject.AI works on the  basis of having a client pass requests to 
+        the frontend server, which in turns places each request into various 
+        command queues. The backend analysis services continually pull requests
+        from the queue that they can service. Each request for a queued command
+        is done via a long poll HTTP request.
 
-        Returns the Json package containing the raw request from the client that was sent to the
-        server
+        Returns the Json package containing the raw request from the client 
+        that was sent to the server
 
-        Remarks: The API server will currently only return a single command, not a list, so we
-        could just as easily return a string instead of a list of strings. We return a list to
-        maintain compatibility with the old legacy modules we started with, but also to future-
-        proof the code in case we want to allow batch processing. Be aware that batch processing
-        will mean less opportunity to load balance the requests.
+        Remarks: The API server will currently only return a single command, 
+        not a list, so we could just as easily return a string instead of a 
+        list of strings. We return a list to maintain compatibility with the 
+        old legacy modules we started with, but also to future-proof the code 
+        in case we want to allow batch processing. Be aware that batch 
+        processing will mean less opportunity to load balance the requests.
         """
 
         success = False
         try:
-            # Turning off timing since it doesn't make a lot of sense given we're long-polling
-            cmdTimer = self.start_timer(f"Waiting on queue {self.queue_name} for a Command")
+            # Turning off timing since it doesn't make a lot of sense given
+            #  we're long-polling
+            cmdTimer = self.start_timer(f"Idle time on queue {self.queue_name}")
 
-            url = self._base_queue_url + self.queue_name + "?moduleId=" + self.moduleId
-            if self.executionProvider is not None :
-                url += "&executionProvider=" + self.executionProvider
+            url = self._base_queue_url + self.queue_name + "?moduleId=" + self.module_id
+            if self.execution_provider is not None :
+                url += "&executionProvider=" + self.execution_provider
 
-            # Send the request to query the queue and wait up to 30 seconds for a response. We're
-            # basically long-polling here
+            # Send the request to query the queue and wait up to 30 seconds
+            # for a response. We're basically long-polling here
             response = self._request_session.get(
                 url,
-                timeout=30,
-                verify=False
+                timeout = 30,
+                verify  = False
             )
 
             if response.ok and len(response.content) > 0:
                 success = True
                 content = response.text
-                self.log(LogMethod.Info|LogMethod.Server, {"message": f"retrieved {self.queue_name} command"})
+                self.log(LogMethod.Info|LogMethod.Server, {
+                    "message": f"retrieved {self.queue_name} command",
+                    "loglevel": "debug"
+                })
 
                 return [content]
             else:
@@ -163,8 +263,9 @@ class ModuleWrapper:
             self.log(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
                 "message": err_msg,
                 "method": "get_command",
+                "loglevel": "error",
                 "process": self.queue_name,
-                "file": "CodeProjectAI.py",
+                "filename": "codeprojectai.py",
                 "exception_type": "Exception"
             })
             time.sleep(self._error_pause_secs)
@@ -174,104 +275,21 @@ class ModuleWrapper:
             if success:
                 self.end_timer(cmdTimer)
 
-        
-    def get_image_from_request(self, req_data: JSON, index : int) -> Image:
+
+    def send_response(self, request_id : str, body : JSON) -> bool:
         """
-        Gets an image from the requests 'files' array that was passed in as part of a HTTP POST.
-        Param: req_data - the request data from the HTTP form
-        Param: index - the index of the image to return
-        Returns: An image if succesful; None otherwise.
-        """
+        Sends the result of a comment to the analysis services back to the API
+        server who will then pass this result back to the original calling 
+        client. CodeProject.AI works on the basis of having a client pass 
+        requests to the frontend server, which in turns places each request 
+        into various command queues. The backend analysis services continually 
+        pull requests from the queue that they can service, process each 
+        request, and then send the results back to the server.
 
-        payload = None
-        try:
-            payload     = req_data["payload"]
-            queue_name  = payload.get("queue","N/A")
-            files       = payload["files"]
-            img_file    = files[index]
-            img_dataB64 = img_file["data"]
-            img_bytes   = base64.b64decode(img_dataB64)
-            img_stream  = io.BytesIO(img_bytes)
-            img         = Image.open(img_stream).convert("RGB")
-
-            return img
-
-        except Exception as ex:
-            err_msg = "Unable to get image from request"
-            if self._verbose_exceptions:
-                err_msg = str(ex)
-
-            self.log(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
-                "message": err_msg,
-                "method": "getImageFromRequest",
-                "process": queue_name,
-                "file": "CodeProjectAI.py",
-                "exception_type": "Exception"
-            })
-
-            return None
-
-
-    def get_request_image_count(self, req_data: JSON) -> int:
-        """
-        Returns the number of images included in the HTTP request Form from the client
-        Param: req_data - the request data from the HTTP form
-        Returns: The number of images if successful; 0 otherwise. 
-        """
-        try:
-            # req_data is a dict
-            payload = req_data["payload"]
-            # payload is also a dict
-            files   = payload["files"]
-            return len(files)
-
-        except Exception as ex:
-            if self._verbose_exceptions:
-                print(f"Error getting getRequestImageCount: {str(ex)}")
-            return 0
-
-    def get_request_value(self, req_data : JSON, key : str, defaultValue : str = None):
-        """
-        Gets a value from the HTTP request Form send by the client
-        Param: req_data - the request data from the HTTP form
-        Param: key - the name of the key holding the data in the form collection
-        Returns: The data if successful; None otherwise.
-        Remarks: Note that HTTP forms contain multiple values per key (a string array) to allow
-        for situations like checkboxes, where a set of checkbox controls share a name but have 
-        unique IDs. The form will contain an array of values for the shared name. WE ONLY RETURN
-        THE FIRST VALUE HERE.
-        """
-
-        # self.log(LogMethod.Info, {"message": f"Getting request for module {self.moduleId}"})
-
-        try:
-            # req_data is a dict
-            payload = req_data["payload"]
-            valueList = payload["values"]
-
-            # valueList is a list. Note that in a HTML form, each element may have multiple values 
-            for value in valueList:
-                if value["key"] == key :
-                    return value["value"][0]
-        
-            return defaultValue
-
-        except Exception as ex:
-            if self._verbose_exceptions:
-                print(f"Error getting get_request_value: {str(ex)}")
-            return defaultValue
-
-    def send_response(self, req_id : str, body : str) -> bool:
-        """
-        Sends the result of a comment to the analysis services back to the API server who will
-        then pass this result back to the original calling client. CodeProject.AI works on the basis 
-        of having a client pass requests to the frontend server, which in turns places each request 
-        into various command queues. The backend analysis services continually pull requests from 
-        the queue that they can service, process each request, and then send the results back to
-        the server.
-
-        Param: req_id     - the ID of the request that was originally pulled from the command queue.
-        Param: body:      - the Json result (as a string) from the analysis of the request.
+        Param: request_id - the ID of the request that was originally pulled 
+                            from the command queue.
+        Param: body:      - the Json result (as a string) from the analysis of 
+                            the request.
 
         Returns:          - True on success; False otherwise
         """
@@ -280,15 +298,15 @@ class ModuleWrapper:
         responseTimer = self.start_timer(f"Sending response for request from {self.queue_name}")
 
         try:
-            url = self._base_queue_url + req_id + "?moduleId=" + self.moduleId
-            if self.executionProvider is not None:
-                url += "&executionProvider=" + self.executionProvider
+            url = self._base_queue_url + request_id + "?moduleId=" + self.module_id
+            if self.execution_provider is not None:
+                url += "&executionProvider=" + self.execution_provider
             
             self._request_session.post(
                 url,
-                data = body,
-                timeout=1,
-                verify=False)
+                data    = json.dumps(body),
+                timeout = 1,
+                verify  = False)
 
             success = True
 
@@ -304,166 +322,3 @@ class ModuleWrapper:
             if success:
                 self.end_timer(responseTimer)
             return success
-
-
-    # Logging and Error Reporting =================================================================
-
-    def log(self, logMethod: LogMethod, data: JSON) -> None:
-
-        """
-        Outputs a log entry to one or more logging providers
-        Param: logMethod - can be Info (console), Error (err output), Server (sends the log to the
-        API server), or Cloud (sends the log to a cloud provider such as errlog.io)
-        Param: data - a Json object (really: a dictionary) of the form:
-           { 
-              "process": "Name of process", 
-              "file": "filename.ext", 
-              "message": "The message to log",
-              "exception_type": "Exception Type"
-           }
-
-        Only "message" is required.
-        """
-
-        message = ""
-        if data.get("process", "") != "":
-            message += data["process"] + " "
-        if data.get("file", "") != "":
-            message += "(" + data["file"] + ")"
-
-        if message != "":
-            message += "\n"
-
-        if data.get("exception_type", "") != "":
-            message += data["exception_type"] + ": "
-        if data.get("message", "") != "":
-            message += message + data["message"]
-
-        if logMethod & LogMethod.Error or self._defaultLogging & LogMethod.Error:
-            print(message, file=sys.stderr, flush=True)
-
-        if logMethod & LogMethod.Info or self._defaultLogging & LogMethod.Info:
-            print(message, file=sys.stdout, flush=True)
-
-        if logMethod & LogMethod.Server or self._defaultLogging & LogMethod.Server:
-            self._server_log(message)
-
-        if logMethod & LogMethod.Cloud or self._defaultLogging & LogMethod.Cloud:
-            self._cloud_log(data.get("process", ""),
-                            data.get("method", ""),
-                            data.get("file", ""),
-                            data.get("message", ""),
-                            data.get("exception_type", ""))
-
-        if logMethod & LogMethod.File or self._defaultLogging & LogMethod.File:
-            self._file_log(data.get("process", ""),
-                           data.get("method", ""),
-                           data.get("file", ""),
-                           data.get("message", ""),
-                           data.get("exception_type", ""))
-   
-    def _server_log(self, entry : str) -> bool:
-
-        """
-        Sends a log entry to the API server. Handy if you wish to send logging info to clients
-        that are using the API server (eg any dashboard app you have in place)
-        Param: entry - The string containing the log entry
-        Returns True on success; False otherwise
-        """
-
-        payload = { "entry" : entry }
-
-        try:
-            self._request_session.post(
-                self._base_log_url, 
-                data = payload, 
-                timeout = 1, 
-                verify = False)
-
-            return True
-
-        except Exception as ex:
-            if self._verbose_exceptions:
-                print(f"Error posting log: {str(ex)}")
-            else:
-                print(f"Error posting log: Is the API Server running?")
-            return False
-
-
-    def _cloud_log(self, process: str, method: str, file: str, message: str, exception_type: str) -> bool:
-        """
-        Logs an error to our remote logging server (errLog.io)
-        Param: process - The name of the current process
-        Param: method - The name of the current method
-        Param: file - The name of the current file
-        Param: message - The message to log
-        Param: exception_type - The exception type if this logging is the result of an exception
-        """
-
-        url = 'https://relay.errlog.io/api/v1/log'
-
-        obj = {
-            'message' : message,
-            'apikey' : self.errLog_APIkey,
-            'applicationname' : 'CodeProject.AI',
-            'type' : exception_type,
-            'errordate' : datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-            'filename' : file,
-            'method' : process + "." + method,
-            'lineno' : 0,
-            'colno' : 0
-        }
-
-        # If you want to see the data you're sending:
-        # import json
-        # data = json.dumps(obj)
-        # print "Json Data: ", data
-
-        headers = {'Content-Type': 'application/json','Accept': 'application/json'}
-        try:
-            response = requests.post(url, data = obj, headers = headers)
-        except Exception as ex:
-            if self._verbose_exceptions:
-                print(f"Error posting server log: {str(ex)}")
-            else:
-                print(f"Error posting server log: Do you have interwebz?")
-            return False
-
-        return response.status_code == 200
-
-    def _file_log(self, process: str, method: str, file: str, message: str, exception_type: str) -> bool:
-        """
-        Logs an error to a file
-        Param: process - The name of the current process
-        Param: method - The name of the current method
-        Param: file - The name of the current file
-        Param: message - The message to log
-        Param: exception_type - The exception type if this logging is the result of an exception
-        """
-
-        line = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if len(exception_type) > 0:
-            line += ' [Exception: ' + exception_type + ']'      
-        line += ': ' + message
-       
-        if len(file) > 0:
-            line += '(file: ' + file
-            if len(process) > 0:
-                line += ' in ' + process + "." + method
-            line += ')'
-
-        line += '\n'
-
-        try:
-            directory = self.server_root_path + os.sep + 'logs'
-            if not os.path.isdir(directory):
-                os.mkdir(directory)
-
-            filepath = directory + os.sep + 'log-' + datetime.now().strftime("%Y-%m-%d") + '.txt'
-            with open(filepath, 'a') as file_object:
-                file_object.write(line)
-
-            return True
-        except Exception as ex:
-            print(f"Unable to write to the file log")
-            return False

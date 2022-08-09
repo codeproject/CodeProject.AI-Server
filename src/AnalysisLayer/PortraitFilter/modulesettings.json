@@ -11,7 +11,7 @@
       "Platforms": [ "windows", "linux", "docker", "macos" ], // No "macos-arm" because of Gdip intitialiser issue. Move to Maui graphics
 
       "EnvironmentVariables": {
-        "PORT": 5000
+        "CPAI_PORT": 5000
       },
 
       "RouteMaps": [

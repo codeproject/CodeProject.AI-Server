@@ -11,7 +11,7 @@ WORKDIR /src
 COPY ["src/API/Server/FrontEnd/Frontend.csproj", "src/API/Server/FrontEnd/"]
 COPY ["src/API/Server/Backend/Backend.csproj", "src/API/Server/Backend/"]
 COPY ["src/API/Common/Common.csproj", "src/API/Common/"]
-COPY ["src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo/ObjectDetector.csproj", "src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo/"]
+COPY ["src/AnalysisLayer/ObjectDetectionNet/ObjectDetectionNet.csproj", "src/AnalysisLayer/ObjectDetectionNet/"]
 COPY ["src/AnalysisLayer/PortraitFilter/PortraitFilter.csproj", "src/AnalysisLayer/PortraitFilter/"]
 #COPY ["src/AnalysisLayer/SentimentAnalysis/SentimentAnalysis.csproj", "src/AnalysisLayer/SentimentAnalysis/"]
 COPY ["src/AnalysisLayer/SDK/ModelRunners/Yolov5Net.Scorer/Yolov5Net.Scorer.csproj", "src/AnalysisLayer/SDK/ModelRunners/Yolov5Net.Scorer/"]
@@ -19,10 +19,12 @@ Copy ["src/AnalysisLayer/SDK/NET/CodeProject.AI.AnalysisLayer.SDK/CodeProject.AI
 
 RUN dotnet restore "src/API/Server/FrontEnd/Frontend.csproj"
 COPY . .
+
 WORKDIR "/src/src/API/Server/FrontEnd"
 RUN dotnet build "Frontend.csproj" -c Release --no-self-contained -o /app/build/server
-WORKDIR "/src/src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo"
-RUN dotnet build "ObjectDetector.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo
+
+WORKDIR "/src/src/AnalysisLayer/ObjectDetectionNet"
+RUN dotnet build "ObjectDetectionNet.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/ObjectDetectionNet
 
 WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
 RUN dotnet build "PortraitFilter.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/PortraitFilter
@@ -31,10 +33,12 @@ RUN dotnet build "PortraitFilter.csproj" -c Release --no-self-contained -o /app/
 #RUN dotnet build "SentimentAnalysis.csproj" -c Release --no-self-contained -o /app/build/AnalysisLayer/SentimentAnalysis
 
 FROM build AS publish
+
 WORKDIR "/src/src/API/Server/FrontEnd"
 RUN dotnet publish "Frontend.csproj" -c Release --no-self-contained -o /app/publish/server
-WORKDIR "/src/src/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo"
-RUN dotnet publish "ObjectDetector.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/CodeProject.AI.AnalysisLayer.Yolo
+
+WORKDIR "/src/src/AnalysisLayer/ObjectDetectionNet"
+RUN dotnet publish "ObjectDetectionNet.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/ObjectDetectionNet
 
 WORKDIR "/src/src/AnalysisLayer/PortraitFilter"
 RUN dotnet publish "PortraitFilter.csproj" -c Release --no-self-contained -o /app/publish/AnalysisLayer/PortraitFilter
@@ -45,10 +49,11 @@ RUN dotnet publish "PortraitFilter.csproj" -c Release --no-self-contained -o /ap
 # zipping up the test images and moving to the server wwwroot directory so it can be downloaded from server.
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y zip
+
 WORKDIR "/src/demos/TestData"
 RUN zip -r testdata.zip .
 RUN mv testdata.zip /app/publish/server/wwwroot
-#
+
 WORKDIR /src
 COPY ["src/AnalysisLayer/BackgroundRemover/", "/app/publish/AnalysisLayer/BackgroundRemover"]
 #COPY ["src/AnalysisLayer/TextSummary/", "/app/publish/AnalysisLayer/TextSummary"]

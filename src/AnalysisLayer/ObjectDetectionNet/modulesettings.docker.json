@@ -1,0 +1,8 @@
+{
+  "Modules": {
+    "ObjectDetection": {
+      "FilePath": "ObjectDetectionNet\\ObjectDetectionNet.dll",
+      "Runtime": "dotnet"
+    }
+  }
+}

@@ -42,11 +42,11 @@
 	</ItemGroup>
 
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call $(SolutionDir)\src\starttimer.bat $(ProjectName)" />
+		<Exec Command="call ..\..\..\starttimer.bat $(ProjectName)" />
 	</Target>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call $(SolutionDir)\src\endtimer.bat $(ProjectName)" />
+		<Exec Command="call ..\..\..\endtimer.bat $(ProjectName)" />
 	</Target>
 
 </Project>

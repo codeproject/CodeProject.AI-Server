@@ -19,14 +19,14 @@ namespace CodeProject.AI.Demo.Explorer
         private HttpClient? _client;
 
         /// <summary>
-        /// Gets or sets the PORT for making calls to the API
+        /// Gets or sets the port for making calls to the API
         /// </summary>
         public int Port { get; set; } = 5000;
 
         /// <summary>
         /// Gets or sets the timeout in seconds for making calls to the API
         /// </summary>
-        public int Timeout { get; set; } = 5;
+        public int Timeout { get; set; } = 120;
 
         /// <summary>
         /// Gets the HttpClient
@@ -239,6 +239,42 @@ namespace CodeProject.AI.Demo.Explorer
             return response;
         }
 
+        /// <summary>
+        /// Identify a scene in an image.
+        /// </summary>
+        /// <param name="image_path">The path to the image file.</param>
+        /// <returns>A response that has bounding rectangles and labels for the objects found, if
+        /// any.</returns>
+        public async Task<ResponseBase> CustomDetectObjects(string modelName, string image_path)
+        {
+            ResponseBase? response;
+            var fileInfo = new FileInfo(image_path);
+            if (!fileInfo.Exists)
+                return new ErrorResponse("Image does not exist");
+
+            var request = new MultipartFormDataContent();
+
+            try
+            {
+                var image_data = fileInfo.OpenRead();
+
+                request.Add(new StreamContent(image_data), "image", Path.GetFileName(image_path));
+
+                using var httpResponse = await Client.PostAsync("vision/custom", request);
+                httpResponse.EnsureSuccessStatusCode();
+
+                // response = await httpResponse.Content.ReadFromJsonAsync<DetectObjectsResponse>();
+                var json = await httpResponse.Content.ReadAsStringAsync();
+                response = System.Text.Json.JsonSerializer.Deserialize<DetectObjectsResponse>(json);
+                response ??= new ErrorResponse("No response from the server");
+            }
+            catch (Exception ex)
+            {
+                response = new ErrorResponse(ex.Message);
+            }
+
+            return response;
+        }
         /// <summary>
         /// Registers one or more face images against a user id.
         /// </summary>

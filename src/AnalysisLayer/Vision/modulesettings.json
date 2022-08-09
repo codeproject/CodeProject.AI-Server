@@ -14,9 +14,9 @@
         "VISION-FACE": true,
 
         "PROFILE": "desktop_cpu",
-        "CUDA_MODE": "False",
+        "CUDA_MODE": "True",
         "MODE": "MEDIUM",
-        "PORT": 5000,
+        "CPAI_PORT": 5000,
 
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",
@@ -217,9 +217,9 @@
         "VISION-SCENE": true,
 
         "PROFILE": "desktop_cpu",
-        "CUDA_MODE": "False",
+        "CUDA_MODE": "True",
         "MODE": "MEDIUM",
-        "PORT": 5000,
+        "CPAI_PORT": 5000,
 
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",
@@ -269,16 +269,16 @@
       "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects the models have been trained on. At this point there are 80 different types of objects that can be detected.",
       "FilePath": "Vision\\intelligencelayer\\detection.py",
       "Runtime": "python38",
-      "Platforms": [ "macos", "macos-arm" ],
+      "Platforms": [ "macos", "macos-arm" ], // only enabled for platforms which have .NET image issues
       "EnableFlags": [ "VISION-DETECTION" ],
 
       "EnvironmentVariables": {
-        "VISION-DETECTION": false,
+        "VISION-DETECTION": true,
 
         "PROFILE": "desktop_cpu",
-        "CUDA_MODE": "False",
+        "CUDA_MODE": "True",
         "MODE": "MEDIUM",
-        "PORT": 5000,
+        "CPAI_PORT": 5000,
 
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",

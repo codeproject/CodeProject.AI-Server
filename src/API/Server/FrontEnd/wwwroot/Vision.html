@@ -126,6 +126,11 @@
 			}
 		}
 
+		function setError(message) {
+			setStatus(message, "red")
+			console.log(message);
+		}
+
 		function setStatus(text, color) {
 			if (color)
 				document.getElementById("status").innerHTML = "<span style='color:" + color + "'>" + text + "</span>";
@@ -152,7 +157,7 @@
 
 			if (useSVG) {
 				svg = `
-										<svg viewBox="0 0 ${img.width} ${img.height}">
+											<svg viewBox="0 0 ${img.width} ${img.height}">
 											<defs>
 												<mask id="mask">
 													<rect fill="#999" x="0" y="0" width="${img.width}" height="${img.height}"></rect>`;
@@ -361,7 +366,7 @@
 			await fetch(url, { method: "GET" })
 				.then(response => {
 					if (!response.ok)
-						setStatus('Error contacting API server', "red");
+						setError('Error contacting API server');
 					else
 						response.json().then(data => {
 							// if (serverOnline == data.success)
@@ -371,15 +376,15 @@
 							if (serverOnline)
 								setStatus('API server is online', "green");
 							else
-								setStatus('Unable to contact API server', "red");
+								setError('Unable to contact API server');
 						})
 							.catch(error => {
-								setStatus('Unable to contact API server: ' + error, "red")
+								setError('Unable to contact API server: ' + error)
 							});
 				})
 				.catch(error => {
 					serverOnline = false;
-					setStatus(/*error.message*/ "Unable to contact AI Server", "red");
+					setError(/*error.message*/ "Unable to contact AI Server");
 				});
 		}
 
@@ -407,7 +412,7 @@
 								for (let i = 0; i < data.statuses.length; i++) {
 
 									let moduleId = data.statuses[i].moduleId.replace(" ", "-");
-									let running = data.statuses[i].running;
+									let running = data.statuses[i].status == 'Started';
 
 									// enable those that need enabling. Note that some cards will be
 									// shared among modules, so we need to ensure we're not disabling
@@ -464,22 +469,22 @@
 			})
 				.then(response => {
 					if (!response.ok)
-						setStatus('Error contacting API server', "red");
+						setError('Error contacting API server');
 					else {
 						response.json().then(data => {
 							if (data) {
 								doneFunc(data)
 								setStatus("Call to " + apiName + " complete", "green");
 							} else
-								setStatus('No data was returned', "red");
+								setError('No data was returned');
 						})
 							.catch(error => {
-								setStatus("Unable to read response: " + error, "red");
+								setError("Unable to read response: " + error);
 							})
 					}
 				})
 				.catch(error => {
-					setStatus('Unable to complete API call: ' + error, "red")
+					setError('Unable to complete API call: ' + error)
 				});
 		}
 
@@ -527,16 +532,18 @@
 			setCustomModelList(benchmarkModel, true);
 		}
 
-		function setCustomModelList(selectList, add_standard) {
+		function setCustomModelList(selectList, add_extras) {
 
 			submitRequest('vision', 'custom/list', null, null, function (data) {
 
                 while (selectList.options.length)
                     selectList.remove(0);
 
-				if (add_standard)
+				if (add_extras) {
                     selectList.options.add(new Option("Standard model", ""));
-		
+					selectList.options.add(new Option("No inference: round-trip speed test only", "round-trip"));
+				}
+
 				for (let i = 0; i < data.models.length; i++) {
 
 					let title;
@@ -716,6 +723,26 @@
 			});
 		}
 
+		function onSuperResolution(fileChooser) {
+
+			clearCanvas();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for scene detection");
+				return;
+			}
+
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
+			let params = null;
+
+			submitRequest('image', 'superresolution', images, params, function (data) {
+				result.innerText = "Resolution Improvement complete";
+				img.src = "data:image/png;base64," + data.imageBase64;
+				img.style.visibility = "visible";
+			});
+		}
+
 		function onSummarizeText(articleText, numberOfSentences) {
 
 			clearCanvas();
@@ -761,13 +788,22 @@
 
 			clearCanvas();
 
-			if (fileChooser.files.length == 0) {
-				alert("No file was selected for benchmarking");
-				return;
+			let images = null;
+			let route  = model_name? ('custom/' + model_name) : 'detection';
+
+			if (benchmarkModel.value == "round-trip") {
+				route = "custom/list";
+			}
+			else {
+				if (fileChooser.files.length == 0) {
+					alert("No file was selected for benchmarking");
+					return;
+				}
+
+				setImage(fileChooser.files[0]);
+				images = [fileChooser.files[0]];
 			}
 
-			setImage(fileChooser.files[0]);
-			let images = [fileChooser.files[0]];
 			let startMilliseconds = performance.now();
 
 			isBenchmarkCancelled = false;
@@ -782,7 +818,6 @@
 				// back. So not much point having a cancellation feature here. But the guts are
 				// included for grins.
 
-				let route = model_name? 'custom/' + model_name : 'detection';
 	            submitRequest('vision', route, images, null, function (data) {
 					let currentMilliseconds = performance.now();
 					nResponses++;
@@ -962,11 +997,26 @@
 									</div>
 								</div>
 
+								<div class="card mt-3 d-none SuperResolution">
+									<div class="card-header h3">Increase Resolution</div>
+									<div class="card-body bg-secondary">
+
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="superResInput" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Super Resolution"
+												   style="width:11rem" id="superresolution"
+												   onclick="onSuperResolution(superResInput)" />
+										</div>
+									</div>
+								</div>
+
 							</div>
 
 							<div class="tab-pane fade show" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
 
-								<div class="card mt-3 d-none FaceProcessing ObjectDetection SceneClassification LegacyObjectDetection">
+								<div class="card mt-3 d-none FaceProcessing ObjectDetection SceneClassification VisionObjectDetection">
 									<div class="card-header h3">Object Detection</div>
 									<div class="card-body bg-secondary">
 
@@ -994,7 +1044,7 @@
 										</div>
 										<div class="form-group d-flex justify-content-end mt-2">
 											<select id="customModel" class="form-select me-5">
-												<option value="IPcam-general">General IP Cam</option>
+												<option value="ipcam-general">General IP Cam</option>
 												<option value="license-plate">License Plates v2</option>
 												<option value="openlogo">Open Logo</option>
 												<option value="actionnetv2">(Human) ActionNet v2</option>
@@ -1141,7 +1191,8 @@
 										<div class="form-group d-flex justify-content-end mt-2">
 											<select id="benchmarkModel" class="form-select me-5">
 												<option value="">Standard model</option>
-												<option value="IPcam-general">General IP Cam</option>
+												<option value="round-trip">No inference: round-trip speed test only</option>
+												<option value="ipcam-general">General IP Cam</option>
 												<option value="license-plate">License Plates v2</option>
 												<option value="openlogo">Open Logo</option>
 												<option value="actionnetv2">(Human) ActionNet v2</option>

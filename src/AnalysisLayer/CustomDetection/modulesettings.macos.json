@@ -2,7 +2,7 @@
   "Modules": {
     "CustomObjectDetection": {
       "EnvironmentVariables": {
-        "PORT": 5500
+        "CPAI_PORT": 5500
       }
     }
   }

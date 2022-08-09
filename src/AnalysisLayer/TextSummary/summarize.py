@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from typing import List
 from nltk.corpus import stopwords
 from nltk.cluster.util import cosine_distance
-#import nltk
 import numpy as np
 import networkx as nx
 
@@ -57,9 +57,11 @@ class Summarize:
 
         return 1 - cosine_distance(vector1, vector2)
 
-    def remove_stop_words(self, sentences, stopwords:[str]=None):
+    def remove_stop_words(self, sentences: List, stopwords: List = None):
+
         if stopwords is None:
             stopwords = []
+
         stripped_sentences = []
         for sentence in sentences:
             stripped_sentence = []
@@ -70,13 +72,15 @@ class Summarize:
                 # and we will ignore any stop words
                 if lcword in stopwords:
                     continue
+
                 stripped_sentence.append(lcword)
 
             stripped_sentences.append(stripped_sentence)
 
         return stripped_sentences
 
-    def build_similarity_matrix(self, sentences, stop_words):
+    def build_similarity_matrix(self, sentences: List, stop_words: List):
+
         # Remove the stop words once so we don't have to check
         # when evaluating each sentence multiple times.
         stripped_sentences = self.remove_stop_words(sentences, stop_words)
@@ -97,7 +101,7 @@ class Summarize:
         return similarity_matrix
 
 
-    def generate_summary(self, sentences, top_n: int = 5):
+    def generate_summary(self, sentences: List, top_n: int = 5):
 
         if (not sentences or len(sentences) == 0):
             print("No sentences provided to generate_summary()\n")
@@ -128,14 +132,14 @@ class Summarize:
         return summary
 
 
-    def generate_summary_from_file(self, file_name:str, top_n: int = 5):
+    def generate_summary_from_file(self, file_name: str, top_n: int = 5):
 
         # Step 1 - Read file and split it into sentences
         sentences = self.read_article(file_name)
         return self.generate_summary(sentences, top_n)
 
 
-    def generate_summary_from_text(self, text, top_n=5):
+    def generate_summary_from_text(self, text: str, top_n: int = 5):
 
         if (not text or text.isspace()):
             print("No text provided to generate_summary_from_text()\n")

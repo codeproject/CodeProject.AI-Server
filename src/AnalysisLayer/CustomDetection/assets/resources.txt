@@ -1,1 +1,0 @@
-A great resource for custom models is https://github.com/MikeLud/CodeProject.AI-Custom-IPcam-Models

@@ -9,8 +9,8 @@
     <RootNamespace>CodeProject.AI.Explorer</RootNamespace>
     <AssemblyName>CodeProject.AI.Explorer</AssemblyName>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
-    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
 </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

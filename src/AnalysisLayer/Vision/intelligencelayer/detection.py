@@ -1,19 +1,27 @@
-import sys
-sys.path.append("../../SDK/Python")
-from CodeProjectAI import ModuleWrapper, LogMethod # will also set the python packages path correctly
-
+# Import our general libraries
 import os
-import json
+import sys
+import traceback
+import argparse
 
+# Import the CodeProject.AI SDK. This will add to the PATH vaar for future imports
+sys.path.append("../../SDK/Python")
+from common import JSON
+from codeprojectai import CodeProjectAIRunner
+from requestdata import AIRequestData
+from analysislogging import LogMethod
+
+# Deepstack settings
 from shared import SharedOptions
 
+# Set the path based on Deepstack's settings so CPU / GPU packages can be correctly loaded
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
 sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
 
-import argparse
-import traceback
+# Import libraries from the Python VENV using the correct packages dir
+from PIL import UnidentifiedImageError, Image
 
-from PIL import UnidentifiedImageError
+# Deepstack detector wrapper
 from process import YOLODetector
 
 parser = argparse.ArgumentParser()
@@ -33,12 +41,9 @@ else:
     IMAGE_QUEUE = opt.name + "_queue"
 
 if opt.model == None:
-    model_path = os.path.join(
-        SHARED_APP_DIR, SharedOptions.SETTINGS.DETECTION_MODEL
-    )
+    model_path = os.path.join(SHARED_APP_DIR, SharedOptions.SETTINGS.DETECTION_MODEL)
 else:
     model_path = opt.model
-#print(f"Model Path is {model_path}")
 
 reso = SharedOptions.SETTINGS.DETECTION_MEDIUM
 if MODE == "High":
@@ -51,101 +56,95 @@ elif MODE == "Low":
 detector = YOLODetector(model_path, reso, cuda=CUDA_MODE)
 
 
-module = ModuleWrapper(IMAGE_QUEUE)
+def main():
 
-# Hack for debug mode
-if module.moduleId == "CodeProject.AI":
-    module.moduleId = "VisionObjectDetection";
+    # create a CodeProject.AI module object
+    module_runner = CodeProjectAIRunner(IMAGE_QUEUE)
 
-if SharedOptions.CUDA_MODE:
-    module.hardwareId        = "GPU"
-    module.executionProvider = "CUDA"
+    # Hack for debug mode
+    if module_runner.module_id == "CodeProject.AI":
+        module_runner.module_id   = "VisionObjectDetection"
+        module_runner.module_name = "Vision Object Detection"
 
-def objectdetection():
+    if SharedOptions.CUDA_MODE:
+        module_runner.hardware_id        = "GPU"
+        module_runner.execution_provider = "CUDA"
 
-    while True:
+    # Start the module
+    module_runner.start_loop(objectdetection_callback)
 
-        queue = module.get_command();
 
-        if len(queue) > 0:
+def objectdetection_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
+    
+    threshold: float  = float(data.get_value("min_confidence", "0.4"))
+    img: Image        = data.get_image(0)
 
-            for req_data in queue:
-                timer    = module.start_timer("Object Detection")
-                req_data = json.JSONDecoder().decode(req_data)
+    try:
+        det = detector.predictFromImage(img, threshold)
 
-                #img_id    = req_data["imgid"]
-                req_id    = req_data["reqid"]
-                req_type  = req_data["reqtype"]
-                threshold = float(module.get_request_value(req_data, "min_confidence", "0.4"))
-                #img_path  = os.path.join(TEMP_PATH, img_id)
+        outputs = []
 
-                try:
-                    img = module.get_image_from_request(req_data, 0)
-                    det = detector.predictFromImage(img, threshold)
+        for *xyxy, conf, cls in reversed(det):
+            x_min = xyxy[0]
+            y_min = xyxy[1]
+            x_max = xyxy[2]
+            y_max = xyxy[3]
+            score = conf.item()
 
-                    outputs = []
+            label = detector.names[int(cls.item())]
 
-                    for *xyxy, conf, cls in reversed(det):
-                        x_min = xyxy[0]
-                        y_min = xyxy[1]
-                        x_max = xyxy[2]
-                        y_max = xyxy[3]
-                        score = conf.item()
+            detection = {
+                "confidence": score,
+                "label": label,
+                "x_min": int(x_min),
+                "y_min": int(y_min),
+                "x_max": int(x_max),
+                "y_max": int(y_max),
+            }
 
-                        label = detector.names[int(cls.item())]
+            outputs.append(detection)
 
-                        detection = {
-                            "confidence": score,
-                            "label": label,
-                            "x_min": int(x_min),
-                            "y_min": int(y_min),
-                            "x_max": int(x_max),
-                            "y_max": int(y_max),
-                        }
+        return {"success": True, "predictions": outputs}
 
-                        outputs.append(detection)
+    except UnidentifiedImageError:
 
-                    output = {"success": True, "predictions": outputs}
+        err_trace = traceback.format_exc()
+        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                          {
+                             "filename": "detect_adapter.py",
+                             "method": "do_detection",
+                             "loglevel": "error",
+                             "message": err_trace, 
+                             "exception_type": "UnidentifiedImageError"
+                          })
 
-                except UnidentifiedImageError:
-                    err_trace = traceback.format_exc()
+        return { "success": False, "error": "invalid image file", "code": 400 }
 
-                    output = {
-                        "success": False,
-                        "error":   "invalid image file",
-                        "code":    400,
-                    }
+    except Exception:
 
-                    module.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
-                               { "process": "objectdetection", 
-                                 "file": "detection.py",
-                                 "method": "objectdetection",
-                                 "message": err_trace, 
-                                 "exception_type": "UnidentifiedImageError"})
+        err_trace = traceback.format_exc()
+        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                          { 
+                              "filename": "detect_adapter.py",
+                              "method": "do_detection",
+                              "loglevel": "error",
+                              "message": err_trace, 
+                              "exception_type": "Exception"
+                          })
 
-                except Exception:
+        return { "success": False, "error": "Error occured on the server", "code": 500 }
 
-                    err_trace = traceback.format_exc()
-
-                    output = {
-                        "success": False,
-                        "error":   "error occured on the server",
-                        "code":    500,
-                    }
-
-                    module.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
-                               { "process": "objectdetection", 
-                                 "file": "detection.py",
-                                 "method": "objectdetection",
-                                 "message": err_trace, 
-                                 "exception_type": "Exception"})
-
-                finally:
-                    module.end_timer(timer)
-                    module.send_response(req_id, json.dumps(output))
-
-        # time.sleep(delay)
 
 if __name__ == "__main__":
-    module.log(LogMethod.Info | LogMethod.Server, {"message": "Object Detection module started."})
-    objectdetection()
+    #main()
+    from threading import Thread
+    nThreads = os.cpu_count() -1
+    theThreads = []
+    for i in range(nThreads):
+        t = Thread(target=main)
+        theThreads.append(t)
+        t.start()
+
+    for x in theThreads:
+        x.join()
+

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 """
 To call:
 
@@ -14,94 +17,60 @@ To call:
 
 """ 
 
-#!/usr/bin/env python
-# coding: utf-8
-
-# Import the CodeProject.AI helper
+# Import our general libraries
 import sys
-sys.path.append("../SDK/Python")
-from CodeProjectAI import ModuleWrapper, LogMethod
+import traceback
 
-# Import the rembg method we need to call
+# Import the CodeProject.AI SDK. This will add to the PATH vaar for future imports
+sys.path.append("../SDK/Python")
+from codeprojectai import CodeProjectAIRunner
+from analysislogging import LogMethod
+from requestdata import AIRequestData
+from common import JSON
+
+from PIL import Image
+
+# Import the method of the module we're wrapping
 from rembg.bg import remove
 
-import base64
-from io import BytesIO
-import json
-import traceback
-import onnxruntime as ort
 
-ai_module = ModuleWrapper("removebackground_queue")
+def main():
 
-useOpenVino = False
-
-if useOpenVino:
-    ## For OpenVino support
-    import openvino.utils as utils
-    utils.add_openvino_libs_to_path()
-
-    ## get the first Execution Provider Name to determine GPU/CPU type
-    providers = ort.get_available_providers()
-    if len(providers) > 0 :
-        ai_module.executionProvider = str(providers[0]).removesuffix("ExecutionProvider")
-        ai_module.hardwareId        = "GPU"
-
-def remove_background():
+    # create a CodeProject.AI module object
+    module_runner = CodeProjectAIRunner("removebackground_queue")
 
     # Hack for debug mode
-    if ai_module.moduleId == "CodeProject.AI":
-        ai_module.moduleId = "BackgroundRemoval";
+    if module_runner.module_id == "CodeProject.AI":
+        module_runner.module_id   = "BackgroundRemoval"
+        module_runner.module_name = "Background Removal"
 
-    while True:
-        queue_entries: list = ai_module.get_command()
+    # Start the module
+    module_runner.start_loop(remove_background)
 
-        if len(queue_entries) > 0:
-            timer: tuple = ai_module.start_timer("Remove Background")
 
-            for queue_entry in queue_entries:
+def remove_background(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
-                req_data: dict = json.JSONDecoder().decode(queue_entry)
+    try:
+        img: Image             = data.get_image(0)
+        use_alphamatting: bool = data.get_value("use_alphamatting", "false") == "true"
 
-                req_id: str            = req_data.get("reqid", "")
-                req_type: str          = req_data.get("reqtype", "")
-                use_alphamatting: bool = ai_module.get_request_value(req_data, "use_alphamatting", "false") == "true"
+        processed_img: Image   = remove(img, use_alphamatting)
 
-                output: any = {}
+        return {"success": True, "imageBase64": data.encode_image(processed_img)}
 
-                try:
-                    img = ai_module.get_image_from_request(req_data, 0)
+    except Exception:
+        err_trace = traceback.format_exc()
+        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+                    {
+                        "filename": "rembg_adapter.py",
+                        "method": "remover_background",
+                        "loglevel": "error",
+                        "message": err_trace,
+                        "exception_type": "Exception"
+                    })
 
-                    processed = remove(img, use_alphamatting)
+        return {"success": False, "error": "unable to process the image", "code": 500}
 
-                    buffered = BytesIO()
-                    processed.save(buffered, format="PNG")
-                    img_dataB64_bytes = base64.b64encode(buffered.getvalue())
-                    img_dataB64 = img_dataB64_bytes.decode("ascii");
-
-                    # img_dataB64 = base64.b64encode(processed)
-
-                    output = {"success": True, "imageBase64": img_dataB64}
-
-                except Exception:
-                    err_trace = traceback.format_exc()
-
-                    output = {"success": False, "error": "unable to process the image", "code": 500}
-
-                    ai_module.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
-                               { "process": "removebackground",
-                                 "file": "rembg_adapter.py",
-                                 "method": "remove_background",
-                                 "message": err_trace,
-                                 "exception_type": "Exception"})
-
-                finally:
-                    ai_module.end_timer(timer)
-
-                    try:
-                        ai_module.send_response(req_id, json.dumps(output))
-                    except Exception:
-                        print("An exception occured")
 
 if __name__ == "__main__":
-    ai_module.log(LogMethod.Info | LogMethod.Server, {"message":"RemoveBackground module started."})
-    remove_background()
+    main()

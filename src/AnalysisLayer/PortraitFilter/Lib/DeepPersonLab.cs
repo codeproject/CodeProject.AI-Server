@@ -1,10 +1,7 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
-using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
 
 namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
@@ -29,9 +26,9 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
             sessionOptions = sessionOptions ?? new SessionOptions();
 
             var tic = Environment.TickCount;
-            Console.WriteLine("Starting inference session...");
+            // Console.WriteLine("Starting inference session...");
             _session = new InferenceSession(modelPath, sessionOptions);
-            Console.WriteLine($"Session started in {Environment.TickCount - tic} mls.");
+            // Console.WriteLine($"Session started in {Environment.TickCount - tic} mls.");
         }
         /// <summary>
         /// Returns segmentation mask.
@@ -53,24 +50,24 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
             var resized = new Bitmap(image, size);
 
             // creating tensor
-            Console.WriteLine("Creating image tensor...");
+            // Console.WriteLine("Creating image tensor...");
             var tic = Environment.TickCount;
             var inputMeta = _session.InputMetadata;
             var name = inputMeta.Keys.ToArray()[0];
             var dimentions = new int[] { 1, size.Height, size.Width, 3 };
             var inputData = Onnx.ToTensor(resized);
             resized.Dispose();
-            Console.WriteLine($"Tensor was created in {Environment.TickCount - tic} mls.");
+            // Console.WriteLine($"Tensor was created in {Environment.TickCount - tic} mls.");
 
             // prediction
-            Console.WriteLine("Creating segmentation mask...");
+            // Console.WriteLine("Creating segmentation mask...");
             tic = Environment.TickCount;
             var t1 = new DenseTensor<byte>(inputData, dimentions);
             var inputs = new List<NamedOnnxValue>() { NamedOnnxValue.CreateFromTensor(name, t1) };
             var results = _session.Run(inputs).ToArray();
             var map = results[0].AsTensor<long>().ToArray();
             var mask = DeepPersonLab.FromSegmentationMap(map, size.Width, size.Height);
-            Console.WriteLine($"Segmentation was created in {Environment.TickCount - tic} mls.");
+            // Console.WriteLine($"Segmentation was created in {Environment.TickCount - tic} mls.");
 
             // return mask
             return new Bitmap(mask, width, height);

@@ -1,0 +1,119 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<PropertyGroup>
+		<IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
+		<IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+		<IsOsx Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOsx>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(IsWindows)'=='true'">
+		<DefineConstants>Windows</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(IsLinux)'=='true'">
+		<DefineConstants>Linux</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(IsOsx)'=='true'">
+		<DefineConstants>macOS</DefineConstants>
+	</PropertyGroup>
+	
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsWindows)'=='true'">
+		<TargetFramework>net6.0-windows</TargetFramework>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<SelfContained>True</SelfContained>
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsLinux)'=='true'">
+		<TargetFramework>net6.0</TargetFramework>
+		<RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+		<SelfContained>True</SelfContained>
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
+	</PropertyGroup>
+	
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsOsx)'=='true'">
+		<TargetFramework>net6.0</TargetFramework>
+		<RuntimeIdentifier>osx-x64</RuntimeIdentifier>
+		<SelfContained>True</SelfContained>
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<TargetFramework>net6.0</TargetFramework>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<RootNamespace>CodeProject.AI.Analysis.Yolo</RootNamespace>
+		<AssemblyName>ObjectDetectionNet</AssemblyName>
+		<Version>1.5.6.0</Version>
+		<UserSecretsId>dotnet-CodeProject.AI.AnalysisLayer.Yolo-384BE45C-AAED-42BA-9DDB-EF37356B630F</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DockerfileContext>..\..\..</DockerfileContext>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+		<Authors>CodeProject</Authors>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Include="favicon.ico" />
+	</ItemGroup>
+
+	<!--
+	<ItemGroup>
+		<Content Include="appsettings.json" />
+		<Content Include="appsettings.Development.json">
+			<DependentUpon>appsettings.json</DependentUpon>
+		</Content>
+		<Content Include="modulesettings.json" />
+		<Content Include="modulesettings.development.json">
+			<DependentUpon>modulesettings.json</DependentUpon>
+		</Content>
+	</ItemGroup>
+	-->
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.11.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\SDK\ModelRunners\Yolov5Net.Scorer\Yolov5Net.Scorer.csproj" />
+		<ProjectReference Include="..\SDK\NET\CodeProject.AI.AnalysisLayer.SDK\CodeProject.AI.AnalysisLayer.SDK.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Update="runtimeconfig.template.json">
+			<Generator>SettingsSingleFileGenerator</Generator>
+			<LastGenOutput>runtimeconfig.template.Designer.cs</LastGenOutput>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="assets\yolov5m.onnx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="assets\yolov5n.onnx">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="assets\yolov5s.onnx">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+</Project>

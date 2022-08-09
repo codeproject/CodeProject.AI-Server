@@ -4,6 +4,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using CodeProject.AI.API.Common;
@@ -24,6 +25,7 @@ namespace CodeProject.AI.Demo.Explorer
         private string                _faceImageFileName1     = string.Empty;
         private string                _faceImageFileName2     = string.Empty;
         private string                _recognizeImageFileName = string.Empty;
+        private string                _benchmarkFileName      = string.Empty;
         private readonly List<string> _registerFileNames      = new();
 
         public Form1()
@@ -461,6 +463,63 @@ namespace CodeProject.AI.Demo.Explorer
                 ProcessError(result);
         }
 
+        /* --- Benchmarking --- */
+        private void benchnarkImageSelectButton_Click(object sender, EventArgs e)
+        {
+            var fileDialogResult = openFileDialog.ShowDialog();
+            if (fileDialogResult == DialogResult.OK)
+            {
+                _benchmarkFileName = openFileDialog.FileName;
+                BenchmarkFileName.Text = _benchmarkFileName;
+
+                ClearResults();
+            }
+        }
+
+        private void BenchFileName_TextChanged(object sender, EventArgs e)
+        {
+            _benchmarkFileName = BenchmarkFileName.Text;
+
+            bool enable = !string.IsNullOrWhiteSpace(_benchmarkFileName);
+            BenchmarkRunStdBtn.Enabled = BenchmarkRunCustomBtn.Enabled = enable;
+        }
+
+        private void BenchmarkRunCustomBtn_Click(object sender, EventArgs e)
+        {
+            RunBenchmark(true);
+        }
+
+        private void BenchmarkRunStdBtn_Click(object sender, EventArgs e)
+        {
+            RunBenchmark(false);
+        }
+
+        private async void RunBenchmark(bool useCustom)
+        {
+            ClearResults();
+            SetStatus("Benchmark running");
+
+            if (string.IsNullOrWhiteSpace(_benchmarkFileName))
+            {
+                ShowError("Image must be selected.");
+                return;
+            }
+            var nIterations = 512;
+            var taskList = new List<Task<ResponseBase>>();
+            Stopwatch sw = Stopwatch.StartNew();
+            for (int i = 0; i < nIterations; i++){
+                var task = useCustom 
+                         ?_AIService.CustomDetectObjects("ipcam-general", _benchmarkFileName)
+                         : _AIService.DetectObjects(_benchmarkFileName);
+                taskList.Add(task);
+            }
+            await Task.WhenAll(taskList);
+            sw.Stop();
+
+            BenchmarkResults.Text = $"Benchmark: {Math.Round(nIterations / (sw.ElapsedMilliseconds/ 1000.0), 2)} FPS";
+            SetStatus("Benchmark complete");
+        }
+
         private void ClearResults()
         {
             pictureBox1.Image = null;
@@ -515,6 +574,5 @@ namespace CodeProject.AI.Demo.Explorer
             if (int.TryParse(textApiPort.Text, out int port))
                _AIService.Port = port;
         }
-
     }
 }

@@ -33,7 +33,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Linux'))" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('OSX'))" />
-		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Windows'))" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.11.0" />
 		<!--<PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.11.0-dev-20220408-0636-1aca08028" />-->
 		<!--<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.11.0" Condition="$([MSBuild]::IsOsPlatform('Windows'))" />-->
 		<!-- Until this is publicly available on NuGet.org and I figure out how to get both the Windows and Linux versions,

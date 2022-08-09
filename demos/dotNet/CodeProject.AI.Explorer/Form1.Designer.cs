@@ -70,11 +70,20 @@
             this.faceImageSelectBtn2 = new System.Windows.Forms.Button();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.label10 = new System.Windows.Forms.Label();
+            this.BenchmarkImageSelectButton = new System.Windows.Forms.Button();
+            this.BenchmarkRunCustomBtn = new System.Windows.Forms.Button();
+            this.BenchmarkRunStdBtn = new System.Windows.Forms.Button();
+            this.BenchmarkFileName = new System.Windows.Forms.TextBox();
+            this.BenchmarkResults = new System.Windows.Forms.TextBox();
+            this.label11 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            this.groupBox5.SuspendLayout();
             this.SuspendLayout();
             // 
             // openFileDialog
@@ -107,7 +116,7 @@
             this.Title.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.Title.Location = new System.Drawing.Point(23, 4);
             this.Title.Name = "Title";
-            this.Title.Size = new System.Drawing.Size(316, 30);
+            this.Title.Size = new System.Drawing.Size(231, 30);
             this.Title.TabIndex = 2;
             this.Title.Text = "CodeProject.AI Explorer";
             // 
@@ -507,11 +516,102 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Face Recognition";
             // 
+            // groupBox5
+            // 
+            this.groupBox5.Controls.Add(this.label10);
+            this.groupBox5.Controls.Add(this.BenchmarkImageSelectButton);
+            this.groupBox5.Controls.Add(this.BenchmarkRunCustomBtn);
+            this.groupBox5.Controls.Add(this.BenchmarkRunStdBtn);
+            this.groupBox5.Controls.Add(this.BenchmarkFileName);
+            this.groupBox5.Controls.Add(this.BenchmarkResults);
+            this.groupBox5.Controls.Add(this.label11);
+            this.groupBox5.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.groupBox5.Location = new System.Drawing.Point(26, 456);
+            this.groupBox5.Name = "groupBox5";
+            this.groupBox5.Size = new System.Drawing.Size(394, 107);
+            this.groupBox5.TabIndex = 25;
+            this.groupBox5.TabStop = false;
+            this.groupBox5.Text = "Benchmark";
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.label10.Location = new System.Drawing.Point(6, 25);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(40, 15);
+            this.label10.TabIndex = 21;
+            this.label10.Text = "Image";
+            // 
+            // BenchmarkImageSelectButton
+            // 
+            this.BenchmarkImageSelectButton.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.BenchmarkImageSelectButton.Location = new System.Drawing.Point(288, 21);
+            this.BenchmarkImageSelectButton.Name = "BenchmarkImageSelectButton";
+            this.BenchmarkImageSelectButton.Size = new System.Drawing.Size(85, 23);
+            this.BenchmarkImageSelectButton.TabIndex = 20;
+            this.BenchmarkImageSelectButton.Text = "Select Image";
+            this.BenchmarkImageSelectButton.UseVisualStyleBackColor = true;
+            this.BenchmarkImageSelectButton.Click += new System.EventHandler(this.benchnarkImageSelectButton_Click);
+            // 
+            // BenchmarkRunCustomBtn
+            // 
+            this.BenchmarkRunCustomBtn.Enabled = false;
+            this.BenchmarkRunCustomBtn.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.BenchmarkRunCustomBtn.Location = new System.Drawing.Point(309, 51);
+            this.BenchmarkRunCustomBtn.Name = "BenchmarkRunCustomBtn";
+            this.BenchmarkRunCustomBtn.Size = new System.Drawing.Size(74, 23);
+            this.BenchmarkRunCustomBtn.TabIndex = 5;
+            this.BenchmarkRunCustomBtn.Text = "Custom";
+            this.BenchmarkRunCustomBtn.UseVisualStyleBackColor = true;
+            this.BenchmarkRunCustomBtn.Click += new System.EventHandler(this.BenchmarkRunCustomBtn_Click);
+            // 
+            // BenchmarkRunStdBtn
+            // 
+            this.BenchmarkRunStdBtn.Enabled = false;
+            this.BenchmarkRunStdBtn.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.BenchmarkRunStdBtn.Location = new System.Drawing.Point(228, 51);
+            this.BenchmarkRunStdBtn.Name = "BenchmarkRunStdBtn";
+            this.BenchmarkRunStdBtn.Size = new System.Drawing.Size(74, 23);
+            this.BenchmarkRunStdBtn.TabIndex = 5;
+            this.BenchmarkRunStdBtn.Text = "Standard";
+            this.BenchmarkRunStdBtn.UseVisualStyleBackColor = true;
+            this.BenchmarkRunStdBtn.Click += new System.EventHandler(this.BenchmarkRunStdBtn_Click);
+            // 
+            // BenchmarkFileName
+            // 
+            this.BenchmarkFileName.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.BenchmarkFileName.Location = new System.Drawing.Point(51, 22);
+            this.BenchmarkFileName.Name = "BenchmarkFileName";
+            this.BenchmarkFileName.Size = new System.Drawing.Size(229, 23);
+            this.BenchmarkFileName.TabIndex = 19;
+            this.BenchmarkFileName.TextChanged += new System.EventHandler(this.BenchFileName_TextChanged);
+            // 
+            // BenchmarkResults
+            // 
+            this.BenchmarkResults.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.BenchmarkResults.Location = new System.Drawing.Point(51, 75);
+            this.BenchmarkResults.Name = "BenchmarkResults";
+            this.BenchmarkResults.ReadOnly = true;
+            this.BenchmarkResults.Size = new System.Drawing.Size(334, 23);
+            this.BenchmarkResults.TabIndex = 16;
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.label11.Location = new System.Drawing.Point(7, 78);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(39, 15);
+            this.label11.TabIndex = 17;
+            this.label11.Text = "Result";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(961, 682);
+            this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
@@ -537,6 +637,8 @@
             this.groupBox3.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            this.groupBox5.ResumeLayout(false);
+            this.groupBox5.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -584,6 +686,14 @@
         private System.Windows.Forms.TextBox FaceImageFileName2;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Button faceImageSelectBtn2;
+        private System.Windows.Forms.GroupBox groupBox5;
+        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Button BenchmarkImageSelectButton;
+        private System.Windows.Forms.Button BenchmarkRunStdBtn;
+        private System.Windows.Forms.TextBox BenchmarkFileName;
+        private System.Windows.Forms.TextBox BenchmarkResults;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.Button BenchmarkRunCustomBtn;
     }
 }
 
