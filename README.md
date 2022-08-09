@@ -96,6 +96,7 @@ CodeProject.AI can currently
 - Recognise faces that have been registered with the service
 - Remove a background from an image
 - Blur a background from an image
+- Enhance the resolution of an image
 - Pull out the most important sentences in text to generate a text summary
 - Prove sentiment analysis on text
 
@@ -111,7 +112,11 @@ We will be constantly expanding the feature list.
 
 #### Supported Development Environments
 
-This current release works in Visual Studio 2019+ on Windows 10+, and Visual Studio Code on Windows 10+. Ubuntu and macOS (both Intel and Apple Silicon). The current release focuses solely on CPU support, but future releases will include GPU support.
+
+This current release works in Visual Studio 2019+ on Windows 10+, and Visual Studio Code on Windows 10+. Ubuntu and macOS (both Intel and Apple Silicon). 
+
+The current release supports CPU on each platform, as well as nVidia CUDA GPUs on Windows. Future releases will expand GPU support to Docker and other cards.
+
 
 
 ## How to Guides

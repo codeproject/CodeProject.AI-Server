@@ -68,7 +68,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		src\endtimer.bat = src\endtimer.bat
 		src\kill_dotnet.bat = src\kill_dotnet.bat
 		src\kill_dotnet.sh = src\kill_dotnet.sh
+		LICENCE.md = LICENCE.md
+		README.md = README.md
 		src\starttimer.bat = src\starttimer.bat
+		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{FF0C329F-41E8-4540-BCDB-97690911077D}"
