@@ -36,6 +36,10 @@
 			<DependentUpon>..\modulesettings.json</DependentUpon>
 			<Link>modulesettings.macos.json</Link>
 		</Content>
+		<Content Include="..\modulesettings.macos-arm.json">
+			<DependentUpon>..\modulesettings.json</DependentUpon>
+			<Link>modulesettings.macos-arm.json</Link>
+		</Content>
 		<Content Include="..\modulesettings.windows.json">
 			<DependentUpon>..\modulesettings.json</DependentUpon>
 			<Link>modulesettings.windows.json</Link>

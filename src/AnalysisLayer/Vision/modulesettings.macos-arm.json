@@ -5,19 +5,19 @@
     "FaceProcessing": {
       "EnvironmentVariables": {
         "CPAI_PORT": 5500,
-        "DATA_DIR": "/Library/Application Support/CodeProject/SenseAI"
+        "DATA_DIR": "/Library/Application Support/CodeProject/AI"
       }
     },
     "SceneClassification": {
       "EnvironmentVariables": {
         "CPAI_PORT": 5500,
-        "DATA_DIR": "/Library/Application Support/CodeProject/SenseAI"
+        "DATA_DIR": "/Library/Application Support/CodeProject/AI"
       }
     },
     "VisionObjectDetection": {
       "EnvironmentVariables": {
         "CPAI_PORT": 5500,
-        "DATA_DIR": "/Library/Application Support/CodeProject/SenseAI"
+        "DATA_DIR": "/Library/Application Support/CodeProject/AI"
       }
     }
   }

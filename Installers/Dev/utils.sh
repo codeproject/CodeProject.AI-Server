@@ -173,6 +173,37 @@ function isDarkMode () {
     fi
 }
 
+function errorNoPython () {
+    writeLine
+    writeLine
+    writeLine "----------------------------------------------------------------------" $color_primary
+    writeLine "Error: Python not installed" $color_error
+    writeLine 
+    writeLine
+    
+    quit
+}
+
+function spin () {
+
+    local pid=$1
+
+    spin[0]='-'
+    spin[1]='\\'
+    spin[2]='|'
+    spin[3]='/'
+
+    while kill -0 $pid 2> /dev/null; do
+        for i in "${spin[@]}"
+        do
+            echo -ne "$i\b"
+            sleep 0.1
+        done
+    done
+
+    echo -ne ' \b'
+}
+
 # Outputs a line, including linefeed, to the terminal using the given foreground
 # / background colors 
 #
@@ -552,28 +583,28 @@ function installPythonPackages () {
 
     requirementsFilename=""
 
-    if /i "!enableGPU!" == "true" (
+    if [ "!enableGPU!" == "true" ]; then
         if [ "$hasCUDA" == "true" ]; then
-            if [ ! -f "${requirementsDir}/requirements.${platform}.cuda.txt" ]; then
+            if [ -f "${requirementsDir}/requirements.${platform}.cuda.txt" ]; then
                 requirementsFilename="requirements.${platform}.cuda.txt"
-            elif [ ! -f "${requirementsDir}/requirements.cuda.txt" ]; then
+            elif [ -f "${requirementsDir}/requirements.cuda.txt" ]; then
                 requirementsFilename="requirements.cuda.txt"
             fi
         fi
 
         if [ "$requirementsFilename" == "" ]; then
-            if [ ! -f "${requirementsDir}/requirements.${platform}.gpu.txt" ]; then
+            if [ -f "${requirementsDir}/requirements.${platform}.gpu.txt" ]; then
                 requirementsFilename="requirements.${platform}.gpu.txt"
-            elif [ ! -f "${requirementsDir}/requirements.gpu.txt" ]; then
+            elif [ -f "${requirementsDir}/requirements.gpu.txt" ]; then
                 requirementsFilename="requirements.gpu.txt"
             fi
         fi
     fi
 
     if [ "$requirementsFilename" == "" ]; then
-        if [ ! -f "${requirementsDir}/requirements.${platform}.txt" ]; then
+        if [ -f "${requirementsDir}/requirements.${platform}.txt" ]; then
             requirementsFilename="requirements.${platform}.txt"
-        elif [ ! -f "${requirementsDir}/requirements.txt" ]; then
+        elif [ -f "${requirementsDir}/requirements.txt" ]; then
             requirementsFilename="requirements.txt"
         fi
     fi
@@ -582,10 +613,15 @@ function installPythonPackages () {
         requirementsPath="${requirementsDir}/${requirementsFilename}"
     fi
 
-    if [ "$requirementsFilename" == "" ] || [ ! -f "$requirementsPath" ]; then
+    if [ "$requirementsFilename" == "" ]; then
         writeLine "No suitable requirements.txt file found." $color_warn
         return
-    )
+    fi
+
+    if [ ! -f "$requirementsPath" ]; then
+        writeLine "Can't find ${requirementsPath} file." $color_warn
+        return
+    fi
 
     virtualEnv="${analysisLayerPath}/bin/${platform}/${pythonName}/venv"
 
@@ -731,37 +767,6 @@ function installPythonPackages () {
     fi
 }
 
-function errorNoPython () {
-    writeLine
-    writeLine
-    writeLine "----------------------------------------------------------------------" $color_primary
-    writeLine "Error: Python not installed" $color_error
-    writeLine 
-    writeLine
-    
-    quit
-}
-
-function spin () {
-
-    local pid=$1
-
-    spin[0]='-'
-    spin[1]='\\'
-    spin[2]='|'
-    spin[3]='/'
-
-    while kill -0 $pid 2> /dev/null; do
-        for i in "${spin[@]}"
-        do
-            echo -ne "$i\b"
-            sleep 0.1
-        done
-    done
-
-    echo -ne ' \b'
-}
-
 function getFromServer () {
 
     # eg packages_for_gpu.zip
@@ -793,7 +798,7 @@ function getFromServer () {
 
             pushd  "${downloadPath}/${moduleDir}/" >/dev/null 2>/dev/null
             mv * "${modulePath}/${moduleAssetsDir}/"
-            popd
+            popd >/dev/null 2>/dev/null
         fi
     fi
 }
