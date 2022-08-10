@@ -237,13 +237,16 @@ namespace CodeProject.AI.API.Server.Frontend
                 }
 
                 // Activation
-                if (pair.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase))
+                if (pair.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase) ||
+                    pair.Key.Equals("VISION_FACE", StringComparison.InvariantCultureIgnoreCase))
                     keyValues["Modules:FaceProcessing:EnvironmentVariables:VISION-FACE"] = pair.Value;
 
-                if (pair.Key.Equals("VISION-SCENE", StringComparison.InvariantCultureIgnoreCase))
+                if (pair.Key.Equals("VISION-SCENE", StringComparison.InvariantCultureIgnoreCase) ||
+                    pair.Key.Equals("VISION_SCENE", StringComparison.InvariantCultureIgnoreCase))
                     keyValues["Modules:SceneClassification:EnvironmentVariables:VISION-SCENE"] = pair.Value;
 
-                if (pair.Key.Equals("VISION-DETECTION", StringComparison.InvariantCultureIgnoreCase))
+                if (pair.Key.Equals("VISION-DETECTION", StringComparison.InvariantCultureIgnoreCase) ||
+                    pair.Key.Equals("VISION_DETECTION", StringComparison.InvariantCultureIgnoreCase))
                 {
                     keyValues["Modules:VisionObjectDetection:EnvironmentVariables:VISION-DETECTION"] = pair.Value;
                     keyValues["Modules:ObjectDetection:EnvironmentVariables:VISION-DETECTION"]       = pair.Value;
