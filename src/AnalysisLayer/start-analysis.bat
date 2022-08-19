@@ -46,8 +46,8 @@ set APPDIR=%cd%
     set DATA_DIR=!APPDIR!\Vision\datastore
     set TEMP_PATH=!APPDIR!\Vision\tempstore
     set MODELS_DIR=!APPDIR!\Vision\assets
-    set PROFILE=desktop_cpu
-    set CUDA_MODE=False
+    set PROFILE=desktop_gpu
+    set USE_CUDA=True
     set MODE=Medium
 :: )
 
@@ -57,7 +57,7 @@ if "%verbosity%" == "info" (
     echo APPDIR    = !APPDIR!
     echo NLTK_DATA = !NLTK_DATA!
     echo PROFILE   = !PROFILE!
-    echo CUDA_MODE = !CUDA_MODE!
+    echo USE_CUDA =  !USE_CUDA!
     echo DATA_DIR  = !DATA_DIR!
     echo TEMP_PATH = !TEMP_PATH!
     echo MODE      = !MODE!

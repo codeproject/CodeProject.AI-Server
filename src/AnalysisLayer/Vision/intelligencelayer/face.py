@@ -57,10 +57,10 @@ elif SharedOptions.MODE == "Low":
     resolution = SharedOptions.SETTINGS.DETECTION_LOW
 
 model_path = os.path.join(SharedOptions.SHARED_APP_DIR, "facerec-high.model")
-faceclassifier = FaceRecognitionModel(model_path, cuda=SharedOptions.CUDA_MODE)
+faceclassifier = FaceRecognitionModel(model_path, cuda=SharedOptions.USE_CUDA)
 
 model_path = os.path.join(SharedOptions.SHARED_APP_DIR, SharedOptions.SETTINGS.FACE_MODEL)
-detector = YOLODetector(model_path, resolution, cuda=SharedOptions.CUDA_MODE)
+detector = YOLODetector(model_path, resolution, cuda=SharedOptions.USE_CUDA)
 
 trans = transforms.Compose(
     [
@@ -81,7 +81,7 @@ def main():
         module_runner.module_id   = "FaceProcessing"
         module_runner.module_name = "Face Processing"
 
-    if SharedOptions.CUDA_MODE:
+    if SharedOptions.USE_CUDA:
         module_runner.hardware_id        = "GPU"
         module_runner.execution_provider = "CUDA"
 
@@ -430,7 +430,7 @@ def recognise_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
             ]
             face_tensors = torch.cat(face_array_tensors)
 
-        if SharedOptions.CUDA_MODE and len(face_array) > 0:
+        if SharedOptions.USE_CUDA and len(face_array) > 0:
             face_tensors = face_tensors.cuda()
 
         det = detector.predictFromImage(pil_image, threshold)

@@ -56,7 +56,7 @@ useColor="true"
 enableGPU="false"
 
 # are we ready to support CUDA enabled GPUs?
-ssupportCUDA="false"
+supportCUDA="false"
 
 # verbosity can be: quiet | info | loud
 verbosity="quiet"

@@ -43,16 +43,16 @@ class SharedOptions:
     APPDIR          = os.path.normpath(getEnvVariable("APPDIR", os.path.join(os.getcwd(), "..")))
     PROFILE         = getEnvVariable("PROFILE", "desktop_cpu")
 
-    CUDA_MODE       = getEnvVariable("CUDA_MODE", "False")
+    USE_CUDA        = getEnvVariable("USE_CUDA", "False")
     TEMP_PATH       = os.path.normpath(getEnvVariable("TEMP_PATH",  f"{APPDIR}/tempstore"))
     DATA_DIR        = os.path.normpath(getEnvVariable("DATA_DIR",   f"{APPDIR}/datastore"))
     MODELS_DIR      = os.path.normpath(getEnvVariable("MODELS_DIR", f"{APPDIR}/assets"))
     PORT            = getEnvVariable("CPAI_PORT", "5000")
 
-    if CUDA_MODE == "True":
-        CUDA_MODE   = torch.cuda.is_available()
+    if USE_CUDA == "True":
+        USE_CUDA   = torch.cuda.is_available()
     else:
-        CUDA_MODE   = False
+        USE_CUDA   = False
 
     SLEEP_TIME      = 0.01
 
@@ -115,7 +115,7 @@ class SharedOptions:
 
     SETTINGS = PROFILE_SETTINGS[PROFILE]
     
-    if CUDA_MODE:
+    if USE_CUDA:
         SETTINGS.PLATFORM_PKGS = "gpufiles"
     # elif PROFILE != "windows_native":
     #    SETTINGS.PLATFORM_PKGS = "cpufiles"
@@ -124,7 +124,7 @@ class SharedOptions:
     if showEnvVariables:
         print(f"APPDIR:       {APPDIR}")
         print(f"PROFILE:      {PROFILE}")
-        print(f"CUDA_MODE:    {CUDA_MODE}")
+        print(f"USE_CUDA:     {USE_CUDA}")
         print(f"TEMP_PATH:    {TEMP_PATH}")
         print(f"DATA_DIR:     {DATA_DIR}")
         print(f"MODELS_DIR:   {MODELS_DIR}")

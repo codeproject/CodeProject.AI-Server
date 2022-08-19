@@ -265,7 +265,8 @@ namespace CodeProject.AI.API.Server.Frontend
                 loggerIsValid = false;
             }
 
-            bool launchAnalysisServices = _config.GetValue("LaunchAnalysisServices", true);
+            bool launchAnalysisServices          = _config.GetValue("LaunchAnalysisServices", true);
+            int  launchAnalysisServicesDelaySecs = _config.GetValue("LaunchAnalysisServicesDelaySecs", 3);
 
             // Setup routes.  Do this first so they are active during debug without launching services.
             foreach (var entry in _modules!)
@@ -310,7 +311,7 @@ namespace CodeProject.AI.API.Server.Frontend
 
             // Let's make sure the front end is up and running before we start the backend 
             // analysis services
-            await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(launchAnalysisServicesDelaySecs), stoppingToken);
 
             if (loggerIsValid)
             {
@@ -337,7 +338,13 @@ namespace CodeProject.AI.API.Server.Frontend
                     continue;
 
                 if (status.Status == ProcessStatusType.NotEnabled)
-                    _logger.LogWarning($"Not starting {module.Name} (Not set as enabled)");
+                {
+                    // _logger.LogWarning($"Not starting {module.Name} (Not set as enabled)");
+                }
+                else
+                {
+                    _logger.LogWarning($"Attempting to start {module.Name}, Runtime: {module.Runtime}, FilePath: {module.FilePath}");
+                }
 
                 if (status.Status == ProcessStatusType.Enabled && !string.IsNullOrEmpty(module.FilePath))
                 {
@@ -348,11 +355,11 @@ namespace CodeProject.AI.API.Server.Frontend
                         if (!string.IsNullOrWhiteSpace(routeInfo.Queue))
                             _queueServices.EnsureQueueExists(routeInfo.Queue);
 
-                    ProcessStartInfo procStartInfo = CreateProcessStartInfo(module, moduleId);
-
-                    // Start the process
                     try
                     {
+                        // Start the process
+                        ProcessStartInfo procStartInfo = CreateProcessStartInfo(module, moduleId);
+
                         if (loggerIsValid)
                             _logger.LogTrace($"Starting {ShrinkPath(procStartInfo.FileName, 50)} {ShrinkPath(procStartInfo.Arguments, 50)}");
 
@@ -404,7 +411,13 @@ namespace CodeProject.AI.API.Server.Frontend
                             if (string.IsNullOrEmpty(error))
                                 error = "No error provided";
 
-                            if (error != "info: Microsoft.Hosting.Lifetime[0]")
+                            if (error.Contains("LoadLibrary failed with error 126") &&
+                                error.Contains("onnxruntime_providers_cuda.dll"))
+                            {
+                                error = "Attempted to load ONNX runtime CUDA provider. No luck, moving on...";
+                                _logger.LogInformation(filename + error);
+                            }
+                            else if (error != "info: Microsoft.Hosting.Lifetime[0]")
                             {
                                 // TOTAL HACK. ONNX/Tensorflow output is WAY too verbose for an error
                                 if (error.Contains("I tensorflow/cc/saved_model/reader.cc:") ||
@@ -415,6 +428,7 @@ namespace CodeProject.AI.API.Server.Frontend
                             }
                         };
 
+                        status.Status = ProcessStatusType.Starting;
                         if (!process.Start())
                         {
                             process = null;
@@ -423,6 +437,7 @@ namespace CodeProject.AI.API.Server.Frontend
 
                         if (process is not null)
                         {
+                            status.Started = DateTime.UtcNow;
                             process.BeginOutputReadLine();
                             process.BeginErrorReadLine();
 
@@ -430,8 +445,12 @@ namespace CodeProject.AI.API.Server.Frontend
                                 _logger.LogInformation($"Started {module.Name} backend");
 
                             _runningProcesses.Add(process);
-                            status.Status = ProcessStatusType.Started;
-                            status.Started = DateTime.UtcNow;
+
+                            int postStartPauseSecs = 5; // module.PostStartPauseSecs ?? 5;
+
+                            // Trying to reduce startup CPU and Memory for Docker
+                            await Task.Delay(TimeSpan.FromSeconds(postStartPauseSecs));
+                            status.Status  = ProcessStatusType.Started;
                         }
                         else
                         {
@@ -446,6 +465,8 @@ namespace CodeProject.AI.API.Server.Frontend
                         if (loggerIsValid)
                         {
                             _logger.LogError(ex, $"Error trying to start { module.Name} ({module.FilePath})");
+                            _logger.LogError(ex.Message);
+                            _logger.LogError(ex.StackTrace);
                         }
 #if DEBUG
                         _logger.LogError($" *** Did you setup the Development environment?");
@@ -485,8 +506,16 @@ namespace CodeProject.AI.API.Server.Frontend
             }
 
             // Setup the process we're going to launch
+#if Windows
+            // Windows paths can have spaces so need quotes
+            var executableName = $"\"{filePath}\"";
+#else
+            // the I'm assuming the directories don't have spaces in Linux and MacOS
+            // because the Process.Start is choking on the quotes
+            var executableName = filePath;
+#endif
             ProcessStartInfo? procStartInfo = (command == "execute" || command == "launcher")
-                ? new ProcessStartInfo($"\"{filePath}\"")
+                ? new ProcessStartInfo(executableName)
                 {
                     UseShellExecute        = false,
                     WorkingDirectory       = workingDirectory,
@@ -563,8 +592,8 @@ namespace CodeProject.AI.API.Server.Frontend
                 return _frontendOptions.PYTHON_PATH?.Replace(PythonRuntimeMarker, launcher);
             }
 
-            if (runtime == "dotnet")
-                return "dotnet";
+            if (runtime == "dotnet" || runtime == "execute" || runtime == "launcher")
+                return runtime;
 
             return null;
         }

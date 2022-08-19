@@ -53,6 +53,14 @@ namespace CodeProject.AI.API.Server.Frontend
         /// </summary>
         public string? Command { get; set; }
 
+        /*
+        /// <summary>
+        /// Gets or sets the number of seconds this module should pause after starting to ensure 
+        /// any resources that require startup (eg GPUs) are fully activated before moving on.
+        /// </summary>
+        public int? PostStartPauseSecs { get; set; }
+        */
+
         /// <summary>
         /// Gets or sets the path to the startup file relative to the module directory.
         /// </summary>
@@ -96,40 +104,6 @@ namespace CodeProject.AI.API.Server.Frontend
         public string[] Platforms { get; set; } = Array.Empty<string>();
 
         /*
-        /// <summary>
-        /// Gets or sets the time this module was started.
-        /// </summary>
-        // TODO: Move the status info to another class that references or includes
-        //  the module coniguration, if needed.
-        public DateTime? Started { get; set; } = null;
-
-        /// <summary>
-        /// Gets or sets the latest time a request from this module was spotted by the queue manager.
-        /// </summary>
-        // TODO: Move the status info to another class that references or includes
-        //  the module coniguration, if needed.
-        public DateTime? LastSeen { get; set; } = null;
-
-        /// <summary>
-        /// Gets a value indicating whether this process is currently active
-        /// </summary>
-        // TODO: Move the status info to another class that references or includes
-        //  the module coniguration, if needed.
-        public bool Running
-        {
-            get
-            {
-                return LastSeen != null && (DateTime.UtcNow - LastSeen!) < TimeSpan.FromSeconds(65);
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the number of requests processed
-        /// </summary>
-        // TODO: Move the status info to another class that references or includes
-        //  the module coniguration, if needed.
-        public int? Processed { get; set; } = 0;
-
         /// <summary>
         /// Gets or sets the name of the hardware acceleration provider.
         /// </summary>

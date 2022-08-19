@@ -277,11 +277,11 @@ namespace CodeProject.AI.API.Server.Frontend
                 // Using CUDA?
                 if (pair.Key.Equals("CUDA_MODE", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    keyValues["Modules:FaceProcessing:EnvironmentVariables:CUDA_MODE"]        = pair.Value;
-                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:CUDA_MODE"] = pair.Value;
-                    keyValues["Modules:SceneClassification:EnvironmentVariables:CUDA_MODE"]   = pair.Value;
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:USE_CUDA"]        = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:USE_CUDA"] = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:USE_CUDA"]   = pair.Value;
 
-                    keyValues["Modules:ObjectDetection:EnvironmentVariables:CUDA_MODE"]       = pair.Value;
+                    keyValues["Modules:ObjectDetection:EnvironmentVariables:USE_CUDA"]        = pair.Value;
                     keyValues["Modules:CustomObjectDetection:EnvironmentVariables:USE_CUDA"]  = pair.Value;
                 }
 
@@ -295,7 +295,8 @@ namespace CodeProject.AI.API.Server.Frontend
                 }
 
                 // Custom Model Directories. Deepstack compatibility and thge docs are ambiguous
-                if (pair.Key.Equals("MODELSTORE-DETECTION", StringComparison.InvariantCultureIgnoreCase))
+                if (pair.Key.Equals("MODELSTORE-DETECTION", StringComparison.InvariantCultureIgnoreCase) ||
+                    pair.Key.Equals("MODELSTORE_DETECTION", StringComparison.InvariantCultureIgnoreCase))
                     keyValues["Modules:CustomObjectDetection:EnvironmentVariables:MODELS_DIR"] = pair.Value;
 
                 // Temp Directories

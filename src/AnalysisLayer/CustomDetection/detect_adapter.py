@@ -77,13 +77,13 @@ def custom_detect_callback(module_runner: CodeProjectAIRunner, data: AIRequestDa
         if model_name == "general":
             model_name = "ipcam-general"
 
-        module_runner.log(LogMethod.Info | LogMethod.Cloud | LogMethod.Server,
-                         { 
-                             "filename": "detect_adapter.py",
-                             "loglevel": "information",
-                             "method": "custom_detect_callback",
-                             "message": f"Detecting using {model_name}"
-                         })
+        #module_runner.log(LogMethod.Info | LogMethod.Cloud | LogMethod.Server,
+        #                 { 
+        #                     "filename": "detect_adapter.py",
+        #                     "loglevel": "information",
+        #                     "method": "custom_detect_callback",
+        #                     "message": f"Detecting using {model_name}"
+        #                 })
 
         response = do_detection(module_runner, model_name, img, threshold)
 

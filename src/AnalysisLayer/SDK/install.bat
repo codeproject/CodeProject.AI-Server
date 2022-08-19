@@ -9,7 +9,7 @@ call "%installBasePath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "req
 call "%installBasePath%\utils.bat" SetupPython 3.9
 call "%installBasePath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%" "requests"
 
-
+rem if /i "%hasCUDA%"=="true" call ../install_CUDnn.bat
 
 ::                         -- Install script cheatsheet -- 
 ::

@@ -65,9 +65,12 @@
 		<Folder Include="rembg\" />
 	</ItemGroup>
 
+	<!-- Unused
 	<ItemGroup>
-		<InterpreterReference Include="MSBuild|env|C:\Users\matth\source\repos\CodeProject.AI\src\AnalysisLayer\BackgroundRemover\BackgroundRemover.pyproj" />
+		<InterpreterReference Include="MSBuild|env|$(ProjectDir)BackgroundRemover.pyproj" />
 	</ItemGroup>
+	-->
+	
 	<ItemGroup>
 		<Interpreter Include="..\bin\windows\python39\venv\">
 			<Id>venv</Id>

@@ -57,7 +57,7 @@ with open(os.path.join(SharedOptions.SHARED_APP_DIR, "categories_places365.txt")
 placesnames = tuple(classes)
 
 classifier = SceneModel(os.path.join(SharedOptions.SHARED_APP_DIR, "scene.pt"), 
-                        SharedOptions.CUDA_MODE)
+                        SharedOptions.USE_CUDA)
 
 
 def main():
@@ -70,7 +70,7 @@ def main():
         module_runner.module_id   = "SceneClassification"
         module_runner.module_name = "Scene Classification"
 
-    if SharedOptions.CUDA_MODE:
+    if SharedOptions.USE_CUDA:
         module_runner.hardware_id        = "GPU"
         module_runner.execution_provider = "CUDA"
 

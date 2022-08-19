@@ -84,7 +84,15 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
     # Compatibility updates
     for m in model.modules():
         t = type(m)
-        if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model):
+
+        # This works around an issue for SiLU not being present
+        try:
+            if t is nn.SiLU:
+                m.inplace = inplace  # torch 1.7.0 compatibility
+        except:
+            pass
+
+        if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, Detect, Model): # nn.SiLU removed
             m.inplace = inplace  # torch 1.7.0 compatibility
             if t is Detect and not isinstance(m.anchor_grid, list):
                 delattr(m, 'anchor_grid')

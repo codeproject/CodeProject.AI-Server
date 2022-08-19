@@ -10,8 +10,24 @@ PyYAML           # Installing PyYAML, a library for reading configuration files
 torch==1.10.1		# Installing PyTorch, for Tensor computation and Deep neural networks
 torchvision==0.11.2 # Installing TorchVision, for Computer Vision based AI
 
-## These to be removed (not needed fro inference)
+## These to be removed (not needed for inference)
 #matlabplotlib
 seaborn
+
+## YOLOv5 base ----------------------------------------
+## Not used because it will load torch 1.11 which has a bug
+##
+## matplotlib>=3.2.2
+## numpy>=1.18.5
+## opencv-python>=4.1.1
+## Pillow>=7.1.2
+## PyYAML>=5.3.1
+## requests>=2.23.0
+## scipy>=1.4.1
+## torch>=1.7.0
+## torchvision>=0.8.1
+## tqdm>=4.64.0
+## protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
+
 
 ## last line empty.

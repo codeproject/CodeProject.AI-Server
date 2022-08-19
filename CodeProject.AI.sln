@@ -24,6 +24,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AnalysisLayer", "AnalysisLa
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{D885EE64-C1BD-44D6-84D8-1E46806298D9}"
+	ProjectSection(SolutionItems) = preProject
+		Installers\install_CUDnn.bat = Installers\install_CUDnn.bat
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Javascript", "Javascript", "{3A860CDD-94B9-4002-BA08-87E8822DDE50}"
 	ProjectSection(SolutionItems) = preProject
@@ -64,7 +67,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{460DB5C8-46F3-4407-A2DF-D9063D14493A}"
 	ProjectSection(SolutionItems) = preProject
-		commands.json = commands.json
 		src\endtimer.bat = src\endtimer.bat
 		src\kill_dotnet.bat = src\kill_dotnet.bat
 		src\kill_dotnet.sh = src\kill_dotnet.sh
@@ -193,7 +195,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Objects", "Objects", "{4ED5
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetectionNet", "src\AnalysisLayer\ObjectDetectionNet\ObjectDetectionNet.csproj", "{25D75AFE-BEC9-43BF-BE44-B9068FF8E395}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.SenseAI.API.Server.Backend.Tests", "tests\QueueServiceTests\CodeProject.SenseAI.API.Server.Backend.Tests.csproj", "{F94FBD1C-02FB-4169-8C26-2D52234D4311}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.API.Server.Backend.Tests", "tests\QueueServiceTests\CodeProject.AI.API.Server.Backend.Tests.csproj", "{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -299,14 +301,14 @@ Global
 		{25D75AFE-BEC9-43BF-BE44-B9068FF8E395}.Release|Any CPU.Build.0 = Release|Any CPU
 		{25D75AFE-BEC9-43BF-BE44-B9068FF8E395}.Release|x86.ActiveCfg = Release|Any CPU
 		{25D75AFE-BEC9-43BF-BE44-B9068FF8E395}.Release|x86.Build.0 = Release|Any CPU
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311}.Debug|x86.Build.0 = Debug|Any CPU
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311}.Release|x86.ActiveCfg = Release|Any CPU
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311}.Release|x86.Build.0 = Release|Any CPU
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Debug|x86.Build.0 = Debug|Any CPU
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Release|x86.ActiveCfg = Release|Any CPU
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -346,7 +348,7 @@ Global
 		{C2EFFA0A-E8EA-4AFE-8599-FC28CB7864FB} = {B10B59B5-9F63-41C2-BFBB-6C7311DC4E99}
 		{4ED567B5-C28D-48BB-AEDC-864E2B2C7204} = {B10B59B5-9F63-41C2-BFBB-6C7311DC4E99}
 		{25D75AFE-BEC9-43BF-BE44-B9068FF8E395} = {156BFEDA-D477-43B2-92DA-FCC9BAF1F893}
-		{F94FBD1C-02FB-4169-8C26-2D52234D4311} = {D982BD8C-2257-413B-8513-8043AB3035F3}
+		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B} = {D982BD8C-2257-413B-8513-8043AB3035F3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

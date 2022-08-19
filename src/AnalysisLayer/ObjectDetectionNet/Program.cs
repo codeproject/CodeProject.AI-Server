@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using System;
 using System.Threading.Tasks;
 
 namespace CodeProject.AI.Analysis.Yolo
@@ -9,6 +10,8 @@ namespace CodeProject.AI.Analysis.Yolo
     {
         public static async Task Main(string[] args)
         {
+            // Fix suggested from https://forum.stimulsoft.com/viewtopic.php?t=60022
+            AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
             await CreateHostBuilder(args).Build().RunAsync();
         }
 

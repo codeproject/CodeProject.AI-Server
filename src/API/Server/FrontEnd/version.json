@@ -4,11 +4,11 @@
       "Major": 1,
       "Minor": 5,
       "Patch": 6,
-      "Build": 0,
+      "Build": 2,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI.Server-1.5.6.0.zip",
-      "ReleaseNotes": "nVidia GPU support! Plus: Complete rework of the Python SDK for modules, revamped dev installer, plus new module 'SuperResolution'."
+      "File": "CodeProject.AI.Server-1.5.6.2.zip",
+      "ReleaseNotes": "Performance improvements, Docker GPU, and bug fixes, particularly around Face detection."
     }
   }
 }

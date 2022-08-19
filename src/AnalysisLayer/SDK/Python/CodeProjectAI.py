@@ -46,7 +46,7 @@ class CodeProjectAIRunner:
 
         # Constants
         self._error_pause_secs   = 1.0
-        self._log_timing_events  = True
+        self._log_timing_events  = False
         self._verbose_exceptions = True
 
         # Backing var for property execution_provider
@@ -108,10 +108,11 @@ class CodeProjectAIRunner:
                 self.execution_provider = str(providers[0]).removesuffix("ExecutionProvider")
                 self.hardware_id        = "GPU"
 
-        self.log(LogMethod.Info | LogMethod.Server, {
-                    "message": self.module_name + " started.",
-                    "loglevel": "information"
-                })
+        # Commenting so we don't get one message per thread
+        # self.log(LogMethod.Info | LogMethod.Server, {
+        #            "message": self.module_name + " started.",
+        #            "loglevel": "information"
+        #        })
 
         while True:
             queue_entries: list = self.get_command()

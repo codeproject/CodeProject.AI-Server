@@ -163,7 +163,10 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             // List them out and return the status
             var response = new AnalysisServicesStatusResponse
             {
-                statuses = backend.ProcessStatuses.Values.ToList()
+                statuses = backend.ProcessStatuses
+                                  .Values
+                                  .Where(module => module.Status != ProcessStatusType.NotEnabled)
+                                  .ToList()
             };
 
             return response;

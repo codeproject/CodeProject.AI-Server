@@ -17,7 +17,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
     }
 
     /// <summary>
-    /// TODO: Derive this from CommandQueueWorker
+    /// REVIEW: [Matthew] Derive this from CommandQueueWorker
     /// </summary>
     public class PortraitFilterWorker : BackgroundService
     {
@@ -111,13 +111,18 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         {
             var sessionOpts = new SessionOptions();
 
-            bool useGPU = (Environment.GetEnvironmentVariable("CUDA_MODE") ?? "False").ToLower() == "true";
-
+            bool useGPU = (Environment.GetEnvironmentVariable("USE_CUDA") ?? "false").ToLower() == "true"
+                       || (Environment.GetEnvironmentVariable("USE_GPU") ?? "false").ToLower() == "true";
             if (useGPU)
             {
-                ///* -- work in progress
-                var onnxRuntimeEnv = OrtEnv.Instance();
-                var providers = onnxRuntimeEnv.GetAvailableProviders();
+                string[]? providers = null;
+                try
+                {
+                    providers = OrtEnv.Instance().GetAvailableProviders();
+                }
+                catch
+                {
+                }
 
                 // Enable CUDA  -------------------
                 if (providers?.Any(p => p.StartsWith("CUDA", StringComparison.OrdinalIgnoreCase)) ?? false)
@@ -170,9 +175,6 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                     }
                 }
             }
-
-            // ------------------------------------------------
-            //*/
 
             sessionOpts.AppendExecutionProvider_CPU();
             return sessionOpts;

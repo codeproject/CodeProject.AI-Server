@@ -32,7 +32,7 @@ opt = parser.parse_args()
 
 MODE           = SharedOptions.MODE
 SHARED_APP_DIR = SharedOptions.SHARED_APP_DIR
-CUDA_MODE      = SharedOptions.CUDA_MODE
+USE_CUDA       = SharedOptions.USE_CUDA
 TEMP_PATH      = SharedOptions.TEMP_PATH
 
 if opt.name == None:
@@ -53,7 +53,7 @@ elif MODE == "Medium":
 elif MODE == "Low":
     reso = SharedOptions.SETTINGS.DETECTION_LOW
 
-detector = YOLODetector(model_path, reso, cuda=CUDA_MODE)
+detector = YOLODetector(model_path, reso, cuda=USE_CUDA)
 
 
 def main():
@@ -66,7 +66,7 @@ def main():
         module_runner.module_id   = "VisionObjectDetection"
         module_runner.module_name = "Vision Object Detection"
 
-    if SharedOptions.CUDA_MODE:
+    if SharedOptions.USE_CUDA:
         module_runner.hardware_id        = "GPU"
         module_runner.execution_provider = "CUDA"
 

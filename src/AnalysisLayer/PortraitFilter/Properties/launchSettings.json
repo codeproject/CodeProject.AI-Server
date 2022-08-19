@@ -3,7 +3,7 @@
     "PortraitFilter": {
       "commandName": "Project",
       "environmentVariables": {
-        "CUDA_MODE": "TRUE",
+        "USE_CUDA": "TRUE",
         "DOTNET_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true

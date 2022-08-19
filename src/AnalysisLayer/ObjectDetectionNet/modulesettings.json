@@ -4,18 +4,17 @@
 
   "Modules": {
     "ObjectDetection": {
-      "Activate": true,
-      "Name": "CodeProject.AI Object Detection",
+      "Activate": false,
+      "Name": "Object Detection (.NET)",
       "Description": "Detects multiple objects of 80 types in an image.",
       "FilePath": "ObjectDetectionNet\\ObjectDetectionNet.exe",
       "Runtime": "execute",
-      "Platforms": [ "windows", "linux", "docker" ],
+      "Platforms": [ "windows"],
       "EnableFlags": [ "VISION-DETECTION" ],
 
       "EnvironmentVariables": {
-        "VISION-DETECTION": true,
-
-        "CUDA_MODE": "True",
+        "USE_CUDA": "True",
+        // "USE_GPU":  "True",  - Alternative flag to USE_CUDA. Either works.
         "MODE": "MEDIUM",
         "CPAI_PORT": 5000
       },

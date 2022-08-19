@@ -1,0 +1,11 @@
+# Place this into /users/<username> 
+
+# Settings apply across all Linux distros running on WSL 2
+[wsl2]
+
+# Limits VM memory to use no more than 12 GB, this can be set as whole numbers using GB or MB
+# The default is 50% of available RAM and 8GB isn't (currently) enough for CodeProject AI Server GPU
+memory=12GB 
+
+# Sets amount of swap storage space to 8GB, default is 25% of available RAM
+swap=8GB

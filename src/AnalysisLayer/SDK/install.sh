@@ -10,6 +10,40 @@ installPythonPackages 3.8 "${modulePath}" "requests"
 setupPython 3.9
 installPythonPackages 3.9 "${modulePath}" "requests"
 
+# Ensure cuDNN is installed. Note this is only for linux since macs no longer support nVidia
+
+hasCUDA="false" # (disabled for now, pending testing)
+if [ "$platform" == "linux" ] && [ "hasCUDA" == "true" ]; then
+
+	# Ensure zlib is installed
+	sudo apt-get install zlib1g
+
+	# Download tar from https://developer.nvidia.com/cudnn
+	tar -xvf cudnn-linux-x86_64-8.x.x.x_cudaX.Y-archive.tar.xz
+	sudo cp cudnn-*-archive/include/cudnn*.h /usr/local/cuda/include 
+	sudo cp -P cudnn-*-archive/lib/libcudnn* /usr/local/cuda/lib64 
+	sudo chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
+
+	# Ensure nVidia Project Manager is installed
+
+	# Enable the repo
+	OS="ubuntu2004" # ubuntu1804, ubuntu2004, or ubuntu2204.
+	wget https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/cuda-${OS}.pin 
+
+	sudo mv cuda-${OS}.pin /etc/apt/preferences.d/cuda-repository-pin-600
+	sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/3bf863cc.pub
+	sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/ /"
+	sudo apt-get update
+
+	# install the cuDNN library
+	cudnn_version="8.5.0.*"
+	cuda_version="cuda11.7" # cuda10.2 or cuda11.7
+
+	sudo apt-get install libcudnn8=${cudnn_version}-1+${cuda_version}
+	sudo apt-get install libcudnn8-dev=${cudnn_version}-1+${cuda_version}
+fi
+
+
 #                         -- Install script cheatsheet -- 
 #
 # Variables available:

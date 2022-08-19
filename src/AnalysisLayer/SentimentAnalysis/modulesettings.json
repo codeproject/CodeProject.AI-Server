@@ -8,7 +8,13 @@
       "Description": "Determines if a comment is positive or negative",
       "FilePath": "SentimentAnalysis\\SentimentAnalysis.exe",
       "Runtime": "execute",
-      "Platforms": [ "windows", "linux", "macos", "docker" ], // No "macos-arm" because ML.NET doesn't yet work on M1 chips 
+      "Platforms": [ "windows", "linux", "macos", "docker" ], // No "macos-arm" because ML.NET doesn't yet work on M1 chips
+
+      "EnvironmentVariables": {
+        "CPAI_PORT": 5000,
+        "TF_CPP_MIN_LOG_LEVEL":  2 // 0=Debug, 1=Info, 2=Warning, 3=Error
+      },
+
       "RouteMaps": [
         {
           "Name": "Sentiment Analysis",

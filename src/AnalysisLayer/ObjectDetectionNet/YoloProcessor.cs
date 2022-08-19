@@ -22,7 +22,7 @@ namespace CodeProject.AI.Analysis.Yolo
     /// and send back analysis requests and responses from and to the server backend.
     /// While intended for development and tests, this also demonstrates how a backend service can
     /// be created with the .NET Core framework.
-    /// TODO: Derive this from CommandQueueWorker
+    /// REVIEW: [Matthew] Derive this from CommandQueueWorker
     /// </summary>
     public class YoloProcessor : BackgroundService
     {
@@ -113,9 +113,9 @@ namespace CodeProject.AI.Analysis.Yolo
                     request = await _codeprojectAI.GetRequest(_queueName, _moduleId, token,
                                                               ExecutionProvider);
                 }
-                catch (Exception ex)
+                catch (Exception /*ex*/)
                 {
-                    _logger.LogError(ex, "Yolo Exception");
+                    // _logger.LogError(ex, "Yolo Exception");
                     continue;
                 }
 

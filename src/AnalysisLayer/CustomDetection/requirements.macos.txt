@@ -7,15 +7,12 @@ Pillow           # Installing Pillow, a Python Image Library
 SciPy            # Installing SciPy, a library for mathematics, science, and engineering
 PyYAML           # Installing PyYAML, a library for reading configuration files
 
-## General libraries
-#ONNXRuntime      # Installing ONNX runtime, the scoring engine for ONNX models
-
 ## Specific versions that match the models we're using. 
-Torch==1.6.0        # Installing Torch, for Tensor computation and Deep neural networks
-TorchVision==0.7.0  # Installing TorchVision, for Computer Vision based AI
+Torch==1.10.2        # Installing Torch, for Tensor computation and Deep neural networks
+TorchVision==0.11.3  # Installing TorchVision, for Computer Vision based AI
 
 ## These to be removed (not needed for inference)
 #matlabplotlib
 seaborn
 
-# last line left blank
+## last line empty.

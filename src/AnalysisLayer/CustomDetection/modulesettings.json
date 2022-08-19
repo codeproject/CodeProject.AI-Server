@@ -13,6 +13,8 @@
       "EnvironmentVariables": {
         "CPAI_PORT": 5000,
 
+        "YOLOv5_VERBOSE": "false",
+
         "MODEL_SIZE": "Medium", // small, medium, large, x-large
         "RESOLUTION": "Medium", // low, medium, high
         "USE_CUDA": "True",

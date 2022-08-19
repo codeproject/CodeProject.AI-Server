@@ -3,7 +3,7 @@
 #                            .NET YOLO Object Detection
 
 
-# Download the models and store in /models
+# Download the models and store in /assets
 getFromServer "yolonet-models.zip" "assets" "Downloading YOLO ONNX models..."
 
 

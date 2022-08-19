@@ -89,12 +89,27 @@
         },   
 
         {
+            "label": "build-tests",      // Builds ONLY the .NET unit tests
+            "type": "process",
+            "group": "build",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/tests/QueueServiceTests",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },   
+
+        {
             "label": "build-all-linux",         // Builds all projects that can be built for Linux (ie not any Windows Forms apps)
             "group": "build",
             "dependsOrder": "sequence",
             "dependsOn": [
                 "build-server",
                 "build-analysisservices",
+				"build-tests"
             ]
         },
 
@@ -105,7 +120,8 @@
             "dependsOn": [
                 "build-server",
                 "build-analysisservices",
-                "build-explorer"
+                "build-explorer",
+				"build-tests"
             ]
         },
 

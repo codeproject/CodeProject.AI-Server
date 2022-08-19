@@ -20,6 +20,7 @@ transfer, and is easy to use.
 
 </div>
 
+
 # Why
 
 1. AI programming is something every single developer should be aware of. We wanted a fun project we could use to help teach developers and get them involved in AI. We'll be using CodeProject.AI as a focus for articles and exploration to make it fun and painless to learn AI programming.
@@ -90,7 +91,7 @@ It can detect stuff!
 
 CodeProject.AI can currently
 
-- Detect objects in images
+- Detect objects in images, including using custom models
 - Detect faces in images
 - Detect the type of scene represented in an image
 - Recognise faces that have been registered with the service
@@ -112,11 +113,9 @@ We will be constantly expanding the feature list.
 
 #### Supported Development Environments
 
-
 This current release works in Visual Studio 2019+ on Windows 10+, and Visual Studio Code on Windows 10+. Ubuntu and macOS (both Intel and Apple Silicon). 
 
 The current release supports CPU on each platform, as well as nVidia CUDA GPUs on Windows. Future releases will expand GPU support to Docker and other cards.
-
 
 
 ## How to Guides

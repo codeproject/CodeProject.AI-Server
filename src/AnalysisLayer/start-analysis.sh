@@ -54,15 +54,15 @@ if [ "${embedded}" == "false" ] || [ "$DATA_DIR" == "" ]; then
     DATA_DIR="${APPDIR}datastore/"
     TEMP_PATH="${APPDIR}tempstore/"
     MODELS_DIR="${APPDIR}assets/"
-    PROFILE="desktop_cpu"
-    CUDA_MODE="False"
+    PROFILE="desktop_gpu"
+    USE_CUDA="True"
     MODE="Medium"
 
     export DATA_DIR
     export TEMP_PATH
     export MODELS_DIR
     export PROFILE
-    export CUDA_MODE
+    export USE_CUDA
     export MODE
 fi
 
@@ -70,7 +70,7 @@ if [ "${verbosity}" == "info" ]; then
     echo "Starting Analysis services (in start-analysis.sh) -------"
     echo "APPDIR    = ${APPDIR}"
     echo "PROFILE   = ${PROFILE}"
-    echo "CUDA_MODE = ${CUDA_MODE}"
+    echo "USE_CUDA  = ${USE_CUDA}"
     echo "DATA_DIR  = ${DATA_DIR}"
     echo "TEMP_PATH = ${TEMP_PATH}"
     echo "CPAI_PORT = ${CPAI.PORT}"

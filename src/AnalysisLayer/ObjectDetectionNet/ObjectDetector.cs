@@ -106,13 +106,18 @@ namespace CodeProject.AI.Analysis.Yolo
         {
             var sessionOpts = new SessionOptions();
 
-            bool useGPU = (Environment.GetEnvironmentVariable("CUDA_MODE") ?? "False").ToLower() == "true";
-
+            bool useGPU = (Environment.GetEnvironmentVariable("USE_CUDA") ?? "false").ToLower() == "true"
+                       || (Environment.GetEnvironmentVariable("USE_GPU") ?? "false").ToLower() == "true";
             if (useGPU)
             {
-                ///* -- work in progress
-                var onnxRuntimeEnv = OrtEnv.Instance();
-                var providers = onnxRuntimeEnv.GetAvailableProviders();
+                string[]? providers = null;
+                try
+                {
+                    providers = OrtEnv.Instance().GetAvailableProviders();
+                }
+                catch
+                {
+                }
 
                 // Enable CUDA  -------------------
                 if (providers?.Any(p => p.StartsWith("CUDA", StringComparison.OrdinalIgnoreCase)) ?? false)
@@ -167,9 +172,6 @@ namespace CodeProject.AI.Analysis.Yolo
                     }
                 }
             }
-
-            // ------------------------------------------------
-            //*/
 
             sessionOpts.AppendExecutionProvider_CPU();
             return sessionOpts;
