@@ -103,8 +103,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Python", "Python", "{D2B223B6-983B-4782-B231-5F481504A86F}"
 	ProjectSection(SolutionItems) = preProject
 		src\AnalysisLayer\SDK\Python\analysislogging.py = src\AnalysisLayer\SDK\Python\analysislogging.py
-		src\AnalysisLayer\SDK\Python\codeprojectai.py = src\AnalysisLayer\SDK\Python\codeprojectai.py
 		src\AnalysisLayer\SDK\Python\common.py = src\AnalysisLayer\SDK\Python\common.py
+		src\AnalysisLayer\SDK\Python\codeprojectai.py = src\AnalysisLayer\SDK\Python\codeprojectai.py
 		src\AnalysisLayer\SDK\Python\requestdata.py = src\AnalysisLayer\SDK\Python\requestdata.py
 		src\AnalysisLayer\SDK\Python\requirements.txt = src\AnalysisLayer\SDK\Python\requirements.txt
 	EndProjectSection
