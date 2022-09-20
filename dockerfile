@@ -1,4 +1,0 @@
-FROM baseImage
-
-WORKDIR /app
-
