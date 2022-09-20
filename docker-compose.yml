@@ -8,7 +8,7 @@ services:
     networks:
       - all
 
-  codeprojectAI:
+  codeproject-ai:
     image: "codeproject/ai-server"
 
 networks:
