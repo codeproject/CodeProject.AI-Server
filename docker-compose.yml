@@ -9,7 +9,7 @@ services:
   #     - all
 
   codeproject-ai:
-    image: "codeproject/ai-server"
+    image: "codeproject/ai-server:gpu"
     networks:
       - all
     ports:
