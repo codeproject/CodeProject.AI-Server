@@ -1,4 +1,4 @@
-FROM --platform=arm64
+FROM baseImage
 
 WORKDIR /app
 
