@@ -485,7 +485,7 @@ def recognise_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
         if found_face == False:
 
-            output = {"success": False, "error": "No face found in image"}
+            output = {"success": True, "predictions": [], "message": "No face found in image"}
 
         elif len(facemap) == 0:
 
