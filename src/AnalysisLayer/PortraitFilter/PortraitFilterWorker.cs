@@ -17,103 +17,52 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
     }
 
     /// <summary>
-    /// REVIEW: [Matthew] Derive this from CommandQueueWorker
+    /// Implements the CommandQueueWorker for Portrait mode inference
     /// </summary>
-    public class PortraitFilterWorker : BackgroundService
+    public class PortraitFilterWorker : CommandQueueWorker
     {
         private const string _modelPath = "Lib\\deeplabv3_mnv2_pascal_train_aug.onnx";
-        private string _queueName       = "portraitfilter_queue";
-        private string _moduleId        = "portrait-mode";
 
-        private int _parallelism        = 1; // 4 also seems to be good on my machine.
+        private const string _defaultQueueName = "portraitfilter_queue";
+        private const string _defaultModuleId  = "PortraitFilter";
+        private const string _moduleName = "Portrait Filter";
 
-        private readonly ILogger<PortraitFilterWorker> _logger;
-        private readonly BackendClient _codeprojectAI;
         private DeepPersonLab? _deepPersonLab;
-
-        /// <summary>
-        /// Gets or sets the name of the hardware acceleration execution provider
-        /// </summary>
-        public string? ExecutionProvider { get; set; } = "CPU";
-
-        /// <summary>
-        /// Gets or sets the hardware accelerator ID that's in use
-        /// </summary>
-        public string? HardwareId { get; set; } = "CPU";
 
         /// <summary>
         /// Initializes a new instance of the PortraitFilterWorker.
         /// </summary>
         /// <param name="logger">The Logger.</param>
+        /// <param name="deepPersonLab">The deep Person Lab.</param>
         /// <param name="configuration">The app configuration values.</param>
         public PortraitFilterWorker(ILogger<PortraitFilterWorker> logger,
-                                    IConfiguration configuration)
+                                       IConfiguration configuration)
+            : base(logger, configuration, _moduleName, _defaultQueueName, _defaultModuleId)
         {
-            _logger = logger;
+            string modelPath = _modelPath.Replace('\\', Path.DirectorySeparatorChar);
 
-            int port = configuration.GetValue<int>("CPAI_PORT");
-            if (port == default)
-                port = 5000;
-
-            // TODO: It would be really nice to have the server tell the module the name of the
-            // queue that they should be processing. The queue name is in the RouteMap, with a
-            // different queue for each route. While this provides flexibility, it means we have to
-            // hardcode the queue into the analysis module and ensure it is always the same as the
-            // value in the modulesettings file. Maybe, for now, have the queue name be defined at
-            // the module level in modulesettings, so it's shared among all routes. If a module
-            // requires more than one queue then it's probably breaking the Single Resonsibility
-            // principle.
-            //
-            // Because the Modules are not always started by the Server, for debugging and mesh, we
-            // would need the Module to register their route info, including the queue, at startup.
-            // The frontend can still start any modules it discovers, but the registration should
-            // be done by the Module.
-            //
-            // Notes:
-            //  ModuleId: This needs to be unique across Modules, but the same for all instances of
-            //      same Module type. Because we want one Queue per Module type, this could effectively
-            //      be used as the Queue selector.  ModuleIds could become a GUID.
-            //
-            // TODO: Move the Queue name up to the Module level.
-
-            // Note that looking up MODULE_QUEUE will currently always return null. It's here as an
-            // annoying reminder.
-            _queueName = configuration.GetValue<string>("CPAI_MODULE_QUEUE");
-            if (_queueName == default)
-                _queueName = "portraitfilter_queue";
-
-            _moduleId = configuration.GetValue<string>("CPAI_MODULE_ID");
-            if (_moduleId == default)
-                _moduleId = "PortraitFilter";
-
-            _codeprojectAI = new BackendClient($"http://localhost:{port}/"
-#if DEBUG
-                , TimeSpan.FromMinutes(1)
-#endif
-            );
-
-            var sessionOptions = GetHardwareInfo();
-
-            try // if the support is not available for the Execution Provider DeepPersonLab will throw
+            // if the support is not available for the Execution Provider DeepPersonLab will throw
+            // So we try, then fall back
+            try
             {
-                _deepPersonLab = new DeepPersonLab(_modelPath.Replace('\\', Path.DirectorySeparatorChar), sessionOptions);
+                var sessionOptions = GetSessionOptions();
+                _deepPersonLab = new DeepPersonLab(modelPath, sessionOptions);
             }
             catch
             {
                 // use the defaults
-                _deepPersonLab = new DeepPersonLab(_modelPath.Replace('\\', Path.DirectorySeparatorChar));
+                _deepPersonLab = new DeepPersonLab(modelPath);
                 ExecutionProvider = "CPU";
-                HardwareId        = "CPU";
+                HardwareType      = "CPU";
             }
         }
 
-        private SessionOptions GetHardwareInfo()
+        private SessionOptions GetSessionOptions()
         {
             var sessionOpts = new SessionOptions();
 
-            bool useGPU = (Environment.GetEnvironmentVariable("USE_CUDA") ?? "false").ToLower() == "true"
-                       || (Environment.GetEnvironmentVariable("USE_GPU") ?? "false").ToLower() == "true";
-            if (useGPU)
+            bool supportGPU = (Environment.GetEnvironmentVariable("CPAI_MODULE_SUPPORT_GPU") ?? "false").ToLower() == "true";
+            if (supportGPU)
             {
                 string[]? providers = null;
                 try
@@ -132,7 +81,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                         sessionOpts.AppendExecutionProvider_CUDA();
 
                         ExecutionProvider = "CUDA";
-                        HardwareId        = "GPU";
+                        HardwareType      = "GPU";
                     }
                     catch
                     {
@@ -150,7 +99,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                         //sessionOpts.ExecutionMode = ExecutionMode.ORT_PARALLEL;
 
                         ExecutionProvider = "OpenVINO";
-                        HardwareId        = "GPU";
+                        HardwareType      = "GPU";
                     }
                     catch
                     {
@@ -167,7 +116,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                         sessionOpts.EnableMemoryPattern = false;
 
                         ExecutionProvider = "DirectML";
-                        HardwareId        = "GPU";
+                        HardwareType      = "GPU";
                     }
                     catch
                     {
@@ -181,139 +130,66 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         }
 
         /// <summary>
-        /// Start the process.
+        /// Sniff the hardware in use so we can report to the API server. This method is empty
+        /// since we already sniffed hardware in GetSessionOptions.
         /// </summary>
-        /// <param name="token">The cancellation token.</param>
-        /// <returns></returns>
-        protected override async Task ExecuteAsync(CancellationToken token)
+        protected override void GetHardwareInfo()
         {
-            await Task.Delay(1_000, token).ConfigureAwait(false);
-
-            _logger.LogTrace("Background Portrait Filter Task Started.");
-            await _codeprojectAI.LogToServer("CodeProject.AI Portrait Filter module started.",
-                                             "PortraitFilterWorker", LogLevel.Information,
-                                             string.Empty, token);
-
-            List<Task> tasks = new List<Task>();
-            for (int i = 0; i < _parallelism; i++)
-                tasks.Add(ProcessQueue(token));
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-        }
-
-        private async Task ProcessQueue(CancellationToken token)
-        {
-            PortraitModeFilter portraitModeFilter = new PortraitModeFilter(0.0f);
-            while (!token.IsCancellationRequested)
-            {
-                // _logger.LogInformation("Checking Portrait Filter queue.");
-                if (_deepPersonLab == null)
-                    continue;
-
-                BackendResponseBase response;
-                BackendRequest? request = null;
-                try
-                {
-                    request = await _codeprojectAI.GetRequest(_queueName, _moduleId, token,
-                                                              ExecutionProvider);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Portrait Filter Exception");
-                    continue;
-                }
-
-                if (request is null)
-                    continue;
-
-                // ignore the command as only one command
-
-                // ignoring the file name
-                var file        = request.payload?.files?.FirstOrDefault();
-                var strengthStr = request.payload?.values?
-                                                  .FirstOrDefault(x => x.Key == "strength")
-                                                  .Value?[0] ?? "0.5";
-
-                if (!float.TryParse(strengthStr, out var strength))
-                    strength = 0.5f;
-
-                if (file?.data is null)
-                {
-                    await _codeprojectAI.LogToServer("Portrait Filter File or file data is null.",
-                                                     "PortraitFilterWorker", LogLevel.Error,
-                                                     string.Empty, token);
-                    response = new BackendErrorResponse(-1, "Portrait Filter Invalid File.");
-                }
-                else
-                {
-                    _logger.LogInformation($"Processing {file.filename}");
-                    // Do the processing here
-
-                    // dummy result
-                    byte[]? result = null;
-
-                    try
-                    {
-                        var imageData = file.data;
-                        var image     = GetImage(imageData);
-
-                        if (image is not null)
-                        {
-                            var mask = _deepPersonLab.Fit(image);
-                            if (mask is not null)
-                            {
-                                portraitModeFilter.Strength = strength;
-                                var filteredImage = portraitModeFilter.Apply(image, mask);
-                                result = ImageToByteArray(filteredImage);
-                            }
-
-                        }
-
-                        // yoloResult = _objectDetector.Predict(imageData);
-                    }
-                    catch (Exception ex)
-                    {
-                        await _codeprojectAI.LogToServer($"Portrait Filter Error for {file.filename}.",
-                                                         "PortraitFilterWorker", LogLevel.Error,
-                                                         string.Empty, token);
-                        _logger.LogError(ex, "Portrait Filter Exception");
-                        result = null;
-                    }
-
-                    if (result is null)
-                    {
-                        response = new BackendErrorResponse(-1, "Portrait Filter returned null.");
-                    }
-                    else
-                    {
-                        response = new PortraitResponse
-                        {
-                            filtered_image = result
-                        };
-                    }
-                }
-
-                HttpContent? content = null;
-                if (response is PortraitResponse portraitResponse)
-                    content = JsonContent.Create(portraitResponse);
-                else
-                    content = JsonContent.Create(response as BackendErrorResponse);
-
-                await _codeprojectAI.SendResponse(request.reqid, _moduleId, content, token,
-                                                  executionProvider: ExecutionProvider);
-            }
         }
 
         /// <summary>
-        /// Stop the process. Does nothing.
+        /// The work happens here.
         /// </summary>
-        /// <param name="token">The stopping cancellation token.</param>
-        /// <returns></returns>
-        public override async Task StopAsync(CancellationToken token)
+        /// <param name="request">The request.</param>
+        /// <returns>The response.</returns>
+        public override BackendResponseBase ProcessRequest(BackendRequest request)
         {
-            _logger.LogTrace("Background Portrait Filter Task is stopping.");
+            if (_deepPersonLab == null)
+                return new BackendErrorResponse(-1, $"{ModuleName} missing _deepPersonLab object.");
 
-            await base.StopAsync(token);
+            // ignoring the file name
+            var file        = request.payload?.files?.FirstOrDefault();
+            var strengthStr = request.payload?.values?
+                                              .FirstOrDefault(x => x.Key == "strength")
+                                              .Value?[0] ?? "0.5";
+
+            if (!float.TryParse(strengthStr, out var strength))
+                strength = 0.5f;
+
+            if (file?.data is null)
+                return new BackendErrorResponse(-1, "Portrait Filter File or file data is null.");
+
+            Logger.LogInformation($"Processing {file.filename}");
+
+            // dummy result
+            byte[]? result = null;
+
+            try
+            {
+                var portraitModeFilter = new PortraitModeFilter(strength);
+
+                byte[]? imageData = file.data;
+                Bitmap? image     = GetImage(imageData);
+
+                if (image is null)
+                    return new BackendErrorResponse(-1, "Portrait Filter unable to get image from file data.");
+
+                Bitmap mask = _deepPersonLab.Fit(image);
+                if (mask is not null)
+                {
+                    Bitmap? filteredImage = portraitModeFilter.Apply(image, mask);
+                    result = ImageToByteArray(filteredImage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new BackendErrorResponse(-1, $"Portrait Filter Error for {file.filename}: {ex.Message}.");
+            }
+
+            if (result is null)
+                return new BackendErrorResponse(-1, "Portrait Filter returned null.");
+            
+            return new PortraitResponse { filtered_image = result };
         }
 
         // Using SkiaSharp as it handles more formats.

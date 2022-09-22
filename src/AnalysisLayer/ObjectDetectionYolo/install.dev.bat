@@ -1,16 +1,20 @@
 :: Installation script ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::
-::                           Custom Object Detection
+::                           Object Detection (YOLO)
 
 
 :: Install python and the required dependencies
 call "%installBasePath%\utils.bat" SetupPython 3.7
 call "%installBasePath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "coremltools"
 
-:: Download the YOLO models and store in /assets
-call "%installBasePath%\utils.bat" GetFromServer "custom-models-yolo5-pt.zip" "assets" "Downloading Custom YOLO models..."
+:: Download the YOLO models and custom models and store in /assets
+call "%installBasePath%\utils.bat" GetFromServer "models-yolo5-pt.zip"        "assets" "Downloading Standard YOLO models..."
 
+:: Move this to %ProgramData%\CodeProject\AI\custom-models
+call "%installBasePath%\utils.bat" GetFromServer "custom-models-yolo5-pt.zip" "custom-models" "Downloading Custom YOLO models..."
 
+:: HACK for previous Blue Iris install`
+call "%modulePath%"\Create_Custom_Folder.bat
 
 ::                         -- Install script cheatsheet -- 
 ::

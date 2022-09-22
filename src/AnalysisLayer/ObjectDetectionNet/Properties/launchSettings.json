@@ -3,7 +3,6 @@
     "ObjectDetectionNet": {
       "commandName": "Project",
       "environmentVariables": {
-        "USE_CUDA": "False",
         "DOTNET_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": "true"

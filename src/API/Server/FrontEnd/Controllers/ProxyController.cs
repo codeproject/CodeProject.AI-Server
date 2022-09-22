@@ -70,9 +70,10 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         {
             if (_routeMap.TryGetValue(path, "POST", out RouteQueueInfo? routeInfo))
             {
-                RequestPayload payload  = CreatePayload(path, routeInfo!);
-                var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, routeInfo!.Command,
-                                                              payload);
+                RequestPayload payload = CreatePayload(path, routeInfo!);
+
+                var reqid = routeInfo!.Command; // TODO: remove reqid. Not needed
+                var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, reqid, payload);
 
                 // if the response is a string, it was returned from the backend.
                 if (response is string)
@@ -115,7 +116,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
                 foreach (ModuleRouteInfo routeInfo in module.RouteMaps)
                 {
-                    string url = "http://localhost:5000";
+                    string url = "http://localhost:32168";
 
                     // string version  = routeInfo.Version;
                     // string category = routeInfo.Category;
@@ -215,7 +216,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             var formFiles   = new List<RequestFormFile>();
 
             if (endOfUrl.StartsWith("/"))
-                endOfUrl = endOfUrl.Substring(1);
+                endOfUrl = endOfUrl[1..];
 
             // handle extra segments
             if (endOfUrl.Length > 0)
@@ -232,8 +233,11 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             try // if there is no Form values, then Request.Form throws.
             {
                 IFormCollection form = Request.Form;
+                
                 // Add any Form values.
                 queryParams.AddRange(form.Select(x => new KeyValuePair<string, string[]?>(x.Key, x.Value.ToArray())));
+
+                // Add any form files
                 formFiles.AddRange(form.Files.Select(x => new RequestFormFile
                 {
                     name        = x.Name,

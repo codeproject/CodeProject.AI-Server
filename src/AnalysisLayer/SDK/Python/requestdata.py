@@ -23,7 +23,7 @@ class AIRequestData:
 
         self.request_data = json.JSONDecoder().decode(json_request_data)
         
-        self.request_id   = self.request_data.get("reqid", "")
+        self.request_id   = self.request_data.get("reqid", "") # No longer needed, and same as command
 
         self.payload      = self.request_data["payload"]
         self.queue_name   = self.payload.get("queue","N/A")

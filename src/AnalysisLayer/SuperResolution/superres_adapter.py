@@ -23,7 +23,7 @@ from superresolution import superresolution, load_pretrained_weights
 def main():
 
     # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("superresolution_queue")
+    module_runner = CodeProjectAIRunner("superresolution_queue", superresolution_callback)
 
     # Hack for debug mode
     if module_runner.module_id == "CodeProject.AI":
@@ -35,7 +35,7 @@ def main():
     load_pretrained_weights(assets_path)
 
     # Start the module
-    module_runner.start_loop(superresolution_callback)
+    module_runner.start_loop()
 
 
 def superresolution_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
@@ -46,14 +46,14 @@ def superresolution_callback(module_runner: CodeProjectAIRunner, data: AIRequest
 
         return {"success": True, "imageBase64": data.encode_image(out_img)}
 
-    except Exception:
+    except Exception as ex:
         err_trace = traceback.format_exc()
         module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
                     {
                         "filename": "superres_adapter.py",
                         "method": "superresolution",
                         "loglevel": "error",
-                        "message": err_trace,
+                        "message": ex, # err_trace,
                         "exception_type": "Exception"
                     })
 

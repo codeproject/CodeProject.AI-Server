@@ -37,11 +37,7 @@ if [ "${embedded}" == "false" ] || [ "$DATA_DIR" == "" ]; then
     echo "Setting Environment variables..."
 
     # API server
-    if [[ $OSTYPE == 'darwin'* ]]; then
-        CPAI_PORT="5500" # Port 5000 is reserved on macOS
-    else
-        CPAI_PORT="5000"
-    fi
+    CPAI_PORT="32168"
     export CPAI_PORT
 
     ANALYSISDIR="$(pwd)"

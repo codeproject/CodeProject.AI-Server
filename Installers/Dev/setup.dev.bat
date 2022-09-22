@@ -6,7 +6,7 @@
 ::
 :: To toggle GPU and CUDA support use
 ::
-::    setup_dev_env_win.bat enableGPU:true supportCUDA:true
+::    setup.dev.bat enableGPU:true supportCUDA:true
 
 @echo off
 cls
@@ -25,10 +25,10 @@ set useColor=true
 set platform=windows
 
 :: should we use GPU enabled libraries?
-set enableGPU=false
+set enableGPU=true
 
 :: are we ready to support CUDA enabled GPUs?
-set supportCUDA=false
+set supportCUDA=true
 
 :: Basic locations
 
@@ -111,7 +111,7 @@ call utils.bat WriteLine "                                                      
 
 
 call utils.bat WriteLine "                                                                        " "DarkGreen"
-call utils.bat Write "GPU Enabled: "
+call utils.bat Write "GPU Supported: "
 if "!enableGPU!" == "true" (call utils.bat WriteLine "True" !color_success!) else (call utils.bat WriteLine "False" !color_warn!)
 call utils.bat Write "CUDA Supported: "
 if "!supportCUDA!" == "true" (call utils.bat WriteLine "True" !color_success!) else (call utils.bat WriteLine "False" !color_warn!)
@@ -134,12 +134,13 @@ if not exist "%downloadPath%\" mkdir "%downloadPath%"
 call utils.bat WriteLine "Done" "Green"
 
 :: Walk through the modules directory and call the setup script in each dir
+:: TODO: This should be just a simple for /d %%D in ("%analysisLayerPath%") do (
 for /f "delims=" %%D in ('dir /a:d /b "%analysisLayerPath%"') do (
     set moduleDir=%%~nxD
     set modulePath=!analysisLayerPath!\!moduleDir!
 
     if /i "!moduleDir!" NEQ "bin" (
-        if exist "!modulePath!\install.bat" (
+        if exist "!modulePath!\install.dev.bat" (
 
             REM Pad right to 60 chars
             set announcement=Processing !moduleDir! !spaces!
@@ -149,7 +150,7 @@ for /f "delims=" %%D in ('dir /a:d /b "%analysisLayerPath%"') do (
             call utils.bat WriteLine "!announcement!" "White" "Blue"
             call utils.bat WriteLine
 
-            call "!modulePath!\install.bat"
+            call "!modulePath!\install.dev.bat"
         )
     )
 )

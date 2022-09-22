@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "CodeProject.AI.API.Server.Backend.Tests": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:55311;http://localhost:55312"
+    }
+  }
+}

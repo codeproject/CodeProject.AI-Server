@@ -4,10 +4,10 @@
 
 
 call "%installBasePath%\utils.bat" SetupPython 3.7
-call "%installBasePath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "requests"
+call "%installBasePath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%\Python" "aiofiles"
 
 call "%installBasePath%\utils.bat" SetupPython 3.9
-call "%installBasePath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%" "requests"
+call "%installBasePath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%\Python" "aiofiles"
 
 rem if /i "%hasCUDA%"=="true" call ../install_CUDnn.bat
 

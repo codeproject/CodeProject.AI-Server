@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using CodeProject.AI.AnalysisLayer.SDK;
 using CodeProject.AI.API.Common;
 using CodeProject.AI.API.Server.Backend;
 using CodeProject.AI.Server.Backend;
@@ -47,7 +49,7 @@ namespace CodeProject.AI.API.Server.Frontend
         private readonly ILogger<BackendProcessRunner> _logger;
         private readonly QueueServices                 _queueServices;
         private readonly BackendRouteMap               _routeMap;
-        private readonly List<Process>                 _runningProcesses = new();
+        private readonly Dictionary<string, Process>   _runningProcesses = new();
         private readonly string?                       _appDataDirectory;
 
         private readonly ModuleCollection _emptyModuleList = new ModuleCollection();
@@ -59,9 +61,9 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             get
             {
-                // TODO: Docker is an environment in which we're running Linux. We probably need to have
-                //       OS, Environment (Docker, VSCode), Platform (x86-64, Arm64),
-                //       Accelerator (CPU, GPU-Gen5, nVidia)
+                // TODO: Docker is an environment in which we're running Linux. We probably need to
+                // have OS, Environment (Docker, VSCode), Platform (x86-64, Arm64), Accelerator
+                // (CPU, GPU-Gen5, NVIDIA)
                 bool inDocker = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
                 if (inDocker)
                     return "Docker";  // which in our case implies that we are running in Linux
@@ -126,30 +128,55 @@ namespace CodeProject.AI.API.Server.Frontend
             rootPath = Path.GetFullPath(rootPath);
 
             /*
-            // HACK: If we're running this server from the build output dir in development, and 
-            // we haven't set the environment var ASPNETCORE_ENVIRONMENT=Development, then the path
-            // will be wrong.
-            bool devBuild = false;
+            // HACK: If we're running this server from the build output dir in  dev environment
+            // then the path will be wrong.
+
+            // 1. Scoot up the tree to check for build folders
+            bool inDevEnvironment = false;
             DirectoryInfo? info = new DirectoryInfo(rootPath);
-            if (info.Name.ToLower() == "debug" || info.Name.ToLower() == "release")
+            while (info != null)
+            {
+                if (info.Name.ToLower() == "debug" || info.Name.ToLower() == "release")
+                {
+                    inDevEnvironment = true;
+                    break;
+                }
+
+                info = info.Parent;
+            }
+
+            // 2. If we found a build folder, keep going up till we find the app root
+            if (inDevEnvironment)
             {
                 while (info != null)
                 {
-                    // Console.WriteLine($"info.FullName = {info.FullName}");
-
                     info = info.Parent;
-                    if (info?.Name.ToLower() == "src")
+                    if (info?.Name.ToLower() == "server")
                     {
-                        info = info.Parent;
+                        info = info.Parent; // This will be the root in the installed version
+
+                        // For debug / dev environment, the parent is API, followed by src
+                        if (info?.Name.ToLower() == "api")
+                        {
+                            info = info.Parent;
+                            if (info?.Name.ToLower() == "src")
+                            {
+                                info = info.Parent;
+                                // HACK. Oh Lord, save me from this awfu hack. But it's the only
+                                // way we can double-click the exe in the Release or Debug folder
+                                // and have it run. Except this bit isn't working yet.
+                                Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "development");
+                            }
+                            else
+                                info = null;
+                        }
+
                         break;
                     }
                 }
 
                 if (info != null)
-                {
-                    rootPath       = info.FullName;
-                    devBuild = true;
-                }
+                    rootPath = info.FullName;
             }
             */
 
@@ -159,7 +186,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <summary>
         /// Initialises a new instance of the BackendProcessRunner.
         /// </summary>
-        /// <param name="options">The FrontendOptions</param>
+        /// <param name="options">The Frontend Options</param>
         /// <param name="modules">The Modules configuration.</param>
         /// <param name="config">The application configuration.</param>
         /// <param name="queueServices">The Queue management service.</param>
@@ -209,15 +236,13 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <returns>The status for the backend process, or false if the queue is invalid.</returns>
         public ProcessStatusType GetStatusForQueue(string queueName)
         {
-            ModuleConfig module = StartupProcesses.FirstOrDefault(entry =>
-                                                        entry.Value.RouteMaps!
-                                                             .Any(x => string.Compare(x.Queue, queueName, true) == 0))
-                                                  .Value;
+            ModuleConfig? module = StartupProcesses.Values
+                                                   .FirstOrDefault(module => module.HasQueue(queueName));
 
-            if (module == null)
+            if (module?.ModuleId == null)
                 return ProcessStatusType.Unknown;
 
-            ProcessStatus status = _processStatuses[module.ModuleId!];
+            ProcessStatus status = _processStatuses[module.ModuleId];
             return status == null ? ProcessStatusType.Unknown : status.Status;
         }
 
@@ -233,14 +258,7 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             _logger.LogInformation("BackendProcessRunner Stop");
 
-            // Doing the above in Parallel speeds things up
-            Parallel.ForEach(_runningProcesses.Where(x => !x.HasExited), process =>
-            {
-                _logger.LogInformation($"Shutting down {process.ProcessName}");
-                // TODO: First send a "Shutdown" message to each process and wait a second or two.
-                //       If the process continues to run, then we get serious.
-                process.Kill(true);
-            });
+            Parallel.ForEach(_modules.Values, module => KillProcess(module).Wait());
 
             return base.StopAsync(cancellationToken);
         }
@@ -273,6 +291,11 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 ModuleConfig? module = entry.Value;
                 string moduleId      = entry.Key;
+
+                // create the required Queues even in debug with LaunchAnalysisServices=false
+                foreach (var routeInfo in module.RouteMaps)
+                    if (!string.IsNullOrWhiteSpace(routeInfo.Queue))
+                        _queueServices.EnsureQueueExists(routeInfo.Queue);
 
                 ProcessStatus status = _processStatuses[moduleId];
                 if (status == null)
@@ -343,148 +366,154 @@ namespace CodeProject.AI.API.Server.Frontend
                 }
                 else
                 {
-                    _logger.LogWarning($"Attempting to start {module.Name}, Runtime: {module.Runtime}, FilePath: {module.FilePath}");
+                    _logger.LogInformation($"Attempting to start {module.Name}");
+                    _logger.LogDebug($"  Runtime: {module.Runtime}, FilePath: {module.FilePath}");
                 }
 
-                if (status.Status == ProcessStatusType.Enabled && !string.IsNullOrEmpty(module.FilePath))
-                {
-                    // _logger.LogError($"Starting {cmdInfo.Command}");
-
-                    // create the required Queues
-                    foreach (var routeInfo in module.RouteMaps)
-                        if (!string.IsNullOrWhiteSpace(routeInfo.Queue))
-                            _queueServices.EnsureQueueExists(routeInfo.Queue);
-
-                    try
-                    {
-                        // Start the process
-                        ProcessStartInfo procStartInfo = CreateProcessStartInfo(module, moduleId);
-
-                        if (loggerIsValid)
-                            _logger.LogTrace($"Starting {ShrinkPath(procStartInfo.FileName, 50)} {ShrinkPath(procStartInfo.Arguments, 50)}");
-
-                        Process? process = new Process();
-                        process.StartInfo           = procStartInfo;
-                        process.EnableRaisingEvents = true;
-                        process.OutputDataReceived += (sender, data) =>
-                        {
-                            string message = data.Data ?? string.Empty;
-                            if (string.IsNullOrWhiteSpace(message))
-                                return;
-
-                            string filename = string.Empty;
-                            if (sender is Process process)
-                            {
-                                filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"", ""));
-                                if (process.HasExited && message == string.Empty)
-                                    message = "has exited";
-                            }
-
-                            // if (string.IsNullOrEmpty(filename))
-                            //    filename = "Process";
-                            if (!string.IsNullOrEmpty(filename))
-                                filename += ": ";
-
-                            // Force ditch the MS logging scoping headings
-                            if (message != "info: Microsoft.Hosting.Lifetime[0]")
-                                _logger.LogDebug(filename + message);
-                        };
-                        process.ErrorDataReceived += (sender, data) =>
-                        {
-                            string error = data.Data ?? string.Empty;
-                            if (string.IsNullOrWhiteSpace(error))
-                                return;
-
-                            string filename = string.Empty;
-                            if (sender is Process process)
-                            {
-                                filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"", ""));
-                                if (process.HasExited && error == string.Empty)
-                                    error = "has exited";
-                            }
-
-                            // if (string.IsNullOrEmpty(filename))
-                            //    filename = "Process";
-                            if (!string.IsNullOrEmpty(filename))
-                                filename += ": ";
-
-                            if (string.IsNullOrEmpty(error))
-                                error = "No error provided";
-
-                            if (error.Contains("LoadLibrary failed with error 126") &&
-                                error.Contains("onnxruntime_providers_cuda.dll"))
-                            {
-                                error = "Attempted to load ONNX runtime CUDA provider. No luck, moving on...";
-                                _logger.LogInformation(filename + error);
-                            }
-                            else if (error != "info: Microsoft.Hosting.Lifetime[0]")
-                            {
-                                // TOTAL HACK. ONNX/Tensorflow output is WAY too verbose for an error
-                                if (error.Contains("I tensorflow/cc/saved_model/reader.cc:") ||
-                                    error.Contains("I tensorflow/cc/saved_model/loader.cc:"))
-                                    _logger.LogInformation(filename + error);
-                                else
-                                    _logger.LogError(filename + error);
-                            }
-                        };
-
-                        status.Status = ProcessStatusType.Starting;
-                        if (!process.Start())
-                        {
-                            process = null;
-                            status.Status = ProcessStatusType.FailedStart;
-                        }
-
-                        if (process is not null)
-                        {
-                            status.Started = DateTime.UtcNow;
-                            process.BeginOutputReadLine();
-                            process.BeginErrorReadLine();
-
-                            if (loggerIsValid)
-                                _logger.LogInformation($"Started {module.Name} backend");
-
-                            _runningProcesses.Add(process);
-
-                            int postStartPauseSecs = 5; // module.PostStartPauseSecs ?? 5;
-
-                            // Trying to reduce startup CPU and Memory for Docker
-                            await Task.Delay(TimeSpan.FromSeconds(postStartPauseSecs));
-                            status.Status  = ProcessStatusType.Started;
-                        }
-                        else
-                        {
-                            if (loggerIsValid)
-                                _logger.LogError($"Unable to start {module.Name} backend");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        status.Status = ProcessStatusType.FailedStart;
-
-                        if (loggerIsValid)
-                        {
-                            _logger.LogError(ex, $"Error trying to start { module.Name} ({module.FilePath})");
-                            _logger.LogError(ex.Message);
-                            _logger.LogError(ex.StackTrace);
-                        }
-#if DEBUG
-                        _logger.LogError($" *** Did you setup the Development environment?");
-                        if (Platform == "Windows")
-                            _logger.LogError($"     Run /Installers/Dev/setup_dev_env_win.bat");
-                        else
-                            _logger.LogError($"     In /Installers/Dev/, run 'bash setup_dev_env_linux.sh'");
-
-                        _logger.LogError($"Exception: {ex.Message}");
-#else
-                        _logger.LogError($"*** Please check the CodeProject.AI installation completed successfully");
-#endif
-                    }
-                }
+                if (status.Status == ProcessStatusType.Enabled)
+                    await RestartProcess(module);
             }
         }
 
-        private ProcessStartInfo CreateProcessStartInfo(ModuleConfig module, string moduleId)
+        /// <summary>
+        /// Kills a process
+        /// </summary>
+        /// <param name="module">The module for the process to be killed</param>
+        /// <returns>true on success</returns>
+        public async Task<bool> KillProcess(ModuleConfig module)
+        {
+            if (module is null || string.IsNullOrWhiteSpace(module.ModuleId))
+                return false;
+
+            if (!_runningProcesses.TryGetValue(module.ModuleId, out Process? process))
+                return false;
+
+            if (!process.HasExited)
+            {
+                _logger.LogInformation($"Sending shutdown request to {process.ProcessName}/{module.ModuleId}");
+                RequestPayload payload = new RequestPayload() { command = "Quit" };
+                await _queueServices.SendRequestAsync(module.QueueName() ?? "",
+                                                      new BackendRequest("Quit", payload));
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        _logger.LogInformation($"Forcing shutdown of {process.ProcessName}/{module.ModuleId}");
+                        process.Kill(true);
+                    }
+                    else
+                        _logger.LogInformation($"{module.ModuleId} went quietly");
+                }
+                catch
+                {
+                }
+            }
+            else
+                _logger.LogInformation($"{module.ModuleId} has left the building");
+
+            return true;
+        }
+
+        /// <summary>
+        /// Starts, or restarts if necessary, a process.
+        /// </summary>
+        /// <param name="module">The module to be started</param>
+        /// <returns>True on success; false otherwise</returns>
+        public async Task<bool> RestartProcess(ModuleConfig module)
+        {
+            if (module is null || string.IsNullOrWhiteSpace(module.ModuleId))
+                return false;
+
+            if (string.IsNullOrEmpty(module.FilePath))
+                return false;
+
+            ProcessStatus status = ProcessStatuses[module.ModuleId];
+
+            // We can't reuse a process (easily). Kill the old and create a brand new one
+            if (_runningProcesses.TryGetValue(module.ModuleId, out Process? process) && process != null)
+            {
+                status.Status = ProcessStatusType.Stopping;
+                await KillProcess(module);
+                _runningProcesses.Remove(module.ModuleId);
+                status.Status = ProcessStatusType.Stopped;
+            }
+            else
+                status.Status = ProcessStatusType.Stopped;
+
+            // If we're actually meant to be killing this process, then just leave now.
+            if (!IsEnabled(module))
+                return true;
+
+            try
+            {
+                ProcessStartInfo procStartInfo = CreateProcessStartInfo(module);
+
+                process = new Process();
+                process.StartInfo = procStartInfo;
+                process.EnableRaisingEvents = true;
+                process.OutputDataReceived += SendOutputToLog;
+                process.ErrorDataReceived  += SendErrorToLog;
+
+                _runningProcesses.Add(module.ModuleId, process);
+
+                // Start the process
+                _logger.LogTrace($"Starting {ShrinkPath(process.StartInfo.FileName, 50)} {ShrinkPath(process.StartInfo.Arguments, 50)}");
+                status.Status = ProcessStatusType.Starting;
+
+                if (!process.Start())
+                {
+                    process = null;
+                    status.Status = ProcessStatusType.FailedStart;
+                }
+
+                if (process is not null)
+                {
+                    status.Started = DateTime.UtcNow;
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    _logger.LogInformation($"Started {module.Name} backend");
+
+                    int postStartPauseSecs = module.PostStartPauseSecs ?? 5;
+
+                    // Trying to reduce startup CPU and Memory for Docker
+                    await Task.Delay(TimeSpan.FromSeconds(postStartPauseSecs));
+                    status.Status = ProcessStatusType.Started;
+                }
+                else
+                {
+                     _logger.LogError($"Unable to start {module.Name} backend");
+                }
+            }
+            catch (Exception ex)
+            {
+                status.Status = ProcessStatusType.FailedStart;
+
+                _logger.LogError(ex, $"Error trying to start {module.Name} ({module.FilePath})");
+                _logger.LogError(ex.Message);
+                _logger.LogError(ex.StackTrace);
+#if DEBUG
+                _logger.LogError($" *** Did you setup the Development environment?");
+                if (Platform == "Windows")
+                    _logger.LogError($"     Run /Installers/Dev/setup.dev.bat");
+                else
+                    _logger.LogError($"     In /Installers/Dev/, run 'bash setup.dev.sh'");
+
+                _logger.LogError($"Exception: {ex.Message}");
+#else
+                _logger.LogError($"*** Please check the CodeProject.AI installation completed successfully");
+#endif
+            }
+
+            if (process is null)
+                _runningProcesses.Remove(module.ModuleId);
+
+            return process != null;
+        }
+
+        private ProcessStartInfo CreateProcessStartInfo(ModuleConfig module)
         {
             string? command = ExpandOption(module.Command) ??
                               GetCommandByRuntime(module.Runtime) ??
@@ -537,31 +566,25 @@ namespace CodeProject.AI.API.Server.Frontend
             foreach (var kv in environmentVars)
                 procStartInfo.Environment.TryAdd(kv.Key, kv.Value);
 
-            procStartInfo.Environment.TryAdd("CPAI_MODULE_ID",           moduleId);
-            procStartInfo.Environment.TryAdd("CPAI_MODULE_NAME",         module.Name);
-            // Queue is currently route specific, so we can't do this at the moment
-            // procStartInfo.Environment.TryAdd("CPAI_MODULE_QUEUENAME",    module.QueueName);
-            procStartInfo.Environment.TryAdd("CPAI_MODULE_PROCESSCOUNT", "1");
+            _logger.LogDebug("==================================================================");
+            _logger.LogDebug($"Setting Environment variables for {module.Name}");
+            _logger.LogDebug("__________________________________________________________________");
+            foreach (var envVar in environmentVars)
+                _logger.LogDebug($"{envVar.Key,-16} = {envVar.Value}");
+            _logger.LogDebug("__________________________________________________________________");
 
             return procStartInfo;
         }
 
-        private bool IsEnabled(ModuleConfig module)
+        private static bool IsEnabled(ModuleConfig module)
         {
             // Has it been explicitely activated?
             bool enabled = module.Activate ?? false;
 
-            // Check the EnableFlags as backup. TODO: remove the Enable Flags
-            if (module.EnableFlags?.Length > 0)
-                foreach (var envVar in module.EnableFlags)
-                    enabled = enabled || _config.GetValue(envVar, false);
-
             // If the platform list doesn't include the current platform, then veto the activation
-            if (enabled && !module.Platforms!.Any(p => p.ToLower() == Platform.ToLower()))
+            if (enabled && !module.Platforms!.Any(p => p.ToLower() == "all") &&
+                !module.Platforms!.Any(p => p.ToLower() == Platform.ToLower()))
                 enabled = false;
-
-            if (!enabled && module.Platforms!.Any(p => p.ToLower() == "all"))
-                enabled = true;
 
             return enabled;
         }
@@ -609,14 +632,88 @@ namespace CodeProject.AI.API.Server.Frontend
             // The "python39" runtime, for example, may want to register .py, but so would python37.
             // "dotnet" is welcome to register .dll as long as no other runtime module wants .dll too.
 
-            switch (Path.GetExtension(filename))
+            return Path.GetExtension(filename) switch
             {
-                case ".py": return GetCommandByRuntime("python");
-                case ".dll": return "dotnet";
-                case ".exe": return "execute";
-                default:
-                    throw new Exception("If neither Runtime nor Command is specified then FilePath must have an extension of '.py' or '.dll'.");
+                ".py" => GetCommandByRuntime("python"),
+                ".dll" => "dotnet",
+                ".exe" => "execute",
+                _ => throw new Exception("If neither Runtime nor Command is specified then FilePath must have an extension of '.py' or '.dll'."),
+            };
+        }
+
+        private void SendOutputToLog(object sender, DataReceivedEventArgs data)
+        {
+            string? message = data?.Data;
+
+            string filename = string.Empty;
+            if (sender is Process process)
+            {
+                filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"", ""));
+                if (string.IsNullOrWhiteSpace(filename))
+                    filename = Path.GetFileName(process.StartInfo.FileName.Replace("\"", ""));
+
+                if (process.HasExited && string.IsNullOrEmpty(message))
+                    message = "has exited";
             }
+
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            // if (string.IsNullOrEmpty(filename))
+            //    filename = "Process";
+
+            if (!string.IsNullOrEmpty(filename))
+                filename += ": ";
+
+            // Force ditch the MS logging scoping headings
+            if (!message.StartsWith("info: ") && !message.EndsWith("[0]"))
+                _logger.LogInformation(filename + message);
+
+            // Console.WriteLine("REDIRECT STDOUT: " + filename + message);
+        }
+
+        private void SendErrorToLog(object sender, DataReceivedEventArgs data)
+        {
+            string? error = data?.Data;
+
+            string filename = string.Empty;
+            /* This same logic (and output) is sent to stdout so no need to duplicate here.
+            if (sender is Process process)
+            {
+                filename = Path.GetFileName(process.StartInfo.Arguments.Replace("\"", ""));
+                if (process.HasExited && string.IsNullOrEmpty(error))
+                    error = "has exited";
+            }
+            */
+
+            if (string.IsNullOrWhiteSpace(error))
+                return;
+
+            // if (string.IsNullOrEmpty(filename))
+            //    filename = "Process";
+            if (!string.IsNullOrEmpty(filename))
+                filename += ": ";
+
+            if (string.IsNullOrEmpty(error))
+                error = "No error provided";
+
+            if (error.Contains("LoadLibrary failed with error 126") &&
+                error.Contains("onnxruntime_providers_cuda.dll"))
+            {
+                error = "Attempted to load ONNX runtime CUDA provider. No luck, moving on...";
+                _logger.LogInformation(filename + error);
+            }
+            else if (error != "info: Microsoft.Hosting.Lifetime[0]")
+            {
+                // TOTAL HACK. ONNX/Tensorflow output is WAY too verbose for an error
+                if (error.Contains("I tensorflow/cc/saved_model/reader.cc:") ||
+                    error.Contains("I tensorflow/cc/saved_model/loader.cc:"))
+                    _logger.LogInformation(filename + error);
+                else
+                    _logger.LogError(filename + error);
+            };
+
+            // Console.WriteLine("REDIRECT ERROR: " + filename + error);
         }
 
         /// <summary>
@@ -656,8 +753,8 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <returns>The expanded path.</returns>
         private string? ExpandOption(string? value)
         {
-            if (value is null)
-                return null;
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
 
             value = value.Replace(ModulesPathMarker,    _frontendOptions.MODULES_PATH);
             value = value.Replace(RootPathMarker,       _frontendOptions.ROOT_PATH);
@@ -678,35 +775,33 @@ namespace CodeProject.AI.API.Server.Frontend
         private Dictionary<string, string?> BuildBackendEnvironmentVar(ModuleConfig module)
         {
             Dictionary<string, string?> processEnvironmentVars = new();
+            _frontendOptions.AddEnvironmentVariables(processEnvironmentVars);
+            module.AddEnvironmentVariables(processEnvironmentVars);
 
-            if (_frontendOptions.EnvironmentVariables is not null)
-                foreach (var entry in _frontendOptions.EnvironmentVariables)
-                {
-                    if (processEnvironmentVars.ContainsKey(entry.Key))
-                        processEnvironmentVars[entry.Key] = ExpandOption(entry.Value.ToString());
-                    else
-                        processEnvironmentVars.Add(entry.Key, ExpandOption(entry.Value.ToString()));
-                }
+            // Now perform the macro expansions
 
-            if (module.EnvironmentVariables is not null)
-                foreach (var entry in module.EnvironmentVariables)
-                {
-                    if (processEnvironmentVars.ContainsKey(entry.Key))
-                        processEnvironmentVars[entry.Key] = ExpandOption(entry.Value.ToString());
-                    else
-                        processEnvironmentVars.Add(entry.Key, ExpandOption(entry.Value.ToString()));
-                }
+            // We could do this. But why waste the allocations...
+            // processEnvironmentVars = processEnvironmentVars.ToDictionary(kvp => kvp.Key,
+            //                                                              kvp => ExpandOption(kvp.Value));
 
-            _logger.LogDebug($"Setting Environment variables for {module.Name}");
-            _logger.LogDebug("------------------------------------------------------------------");
-            foreach (var envVar in processEnvironmentVars)
-                _logger.LogDebug($"{envVar.Key.PadRight(16)} = {envVar.Value}");
-            _logger.LogDebug("------------------------------------------------------------------");
+            var keys = processEnvironmentVars.Keys.ToList();
+            foreach (string key in keys)
+            {
+                string? value = processEnvironmentVars[key];
+                processEnvironmentVars[key] = ExpandOption(value);
+            }
+
+            // And now add general vars
+            processEnvironmentVars.TryAdd("CPAI_MODULE_ID",          module.ModuleId);
+            processEnvironmentVars.TryAdd("CPAI_MODULE_NAME",        module.Name);
+            processEnvironmentVars.TryAdd("CPAI_MODULE_PARALLELISM", module.Parallelism.ToString());
+            processEnvironmentVars.TryAdd("CPAI_MODULE_SUPPORT_GPU", module.SupportGPU.ToString());
+            processEnvironmentVars.TryAdd("CPAI_MODULE_QUEUENAME",   module.QueueName());
 
             return processEnvironmentVars;
         }
 
-        private string ShrinkPath(string path, int maxLength)
+        private static string ShrinkPath(string path, int maxLength)
         {
             if (path.Length <= maxLength)
                 return path;

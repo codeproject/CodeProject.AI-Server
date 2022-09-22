@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
@@ -102,9 +101,9 @@ namespace CodeProject.AI.Server.Backend
         /// <param name="inputs">The input parameters information.</param>
         /// <param name="outputs">The output parameters information.</param>
         public ModuleRouteInfo(string name, string path, string method, string queue, string command, 
-                                string? description = null,
-                                RouteParameterInfo[]? inputs = null,
-                                RouteParameterInfo[]? outputs = null)
+                               string? description = null,
+                               RouteParameterInfo[]? inputs = null,
+                               RouteParameterInfo[]? outputs = null)
         {
             Name        = name;
             Path        = path.ToLower();
@@ -114,6 +113,23 @@ namespace CodeProject.AI.Server.Backend
             Description = description;
             Inputs      = inputs;
             Outputs     = outputs;
+        }
+    }
+
+    /// <summary>
+    /// Extension methods for the ModuleRouteInfo class
+    /// </summary>
+    public static class ModuleRouteInfoExtensions
+    {
+        /// <summary>
+        /// Returns true if this module is running on the specified Queue
+        /// </summary>
+        /// <param name="routeInfo">This ModulkeRouteInfo object</param>
+        /// <param name="queueName">The name of the queue</param>
+        /// <returns>True if running on the queue; false otherwise</returns>
+        public static bool IsQueue(this ModuleRouteInfo routeInfo, string queueName)
+        {
+            return routeInfo.Queue.Equals(queueName, StringComparison.OrdinalIgnoreCase);
         }
     }
 

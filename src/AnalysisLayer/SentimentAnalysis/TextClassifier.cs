@@ -3,14 +3,15 @@
  * found in the https://github.com/dotnet/samples repository. The accompanying tutorial is found at 
  * https://docs.microsoft.com/en-us/dotnet/machine-learning/tutorials/text-classification-tf
  * 
- * Basically, converted the Program class Program.cs file into the TextClassifier class for general use.
+ * Basically, converted the Program class Program.cs file into the TextClassifier class for general
+ * use.
  * ------------------------------------------------------------------------------------------------- */
 
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Microsoft.ML.Transforms;
 
-namespace SentimentAnalysis
+namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
 {
     public class TextClassifier
     {
@@ -26,9 +27,9 @@ namespace SentimentAnalysis
         public string ExecutionProvider { get; set; } = "CPU";
 
         /// <summary>
-        /// Gets or sets the hardware ID.
+        /// Gets or sets the hardware type (CPU or GPU).
         /// </summary>
-        public string HardwareId { get; set; } = "CPU";
+        public string HardwareType { get; set; } = "CPU";
 
         public TextClassifier()
         {

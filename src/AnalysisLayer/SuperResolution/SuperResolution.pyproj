@@ -39,8 +39,8 @@
   <ItemGroup>
     <Content Include="assets\super-resolution-10.onnx" />
     <Content Include="assets\superres_epoch100-44c6958e.pth" />
-    <Content Include="install.bat" />
-    <Content Include="install.sh" />
+    <Content Include="install.dev.bat" />
+    <Content Include="install.dev.sh" />
     <Content Include="modulesettings.json" />
     <Content Include="requirements.txt" />
   </ItemGroup>

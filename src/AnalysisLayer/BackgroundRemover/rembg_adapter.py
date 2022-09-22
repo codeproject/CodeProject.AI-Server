@@ -37,18 +37,20 @@ from rembg.bg import remove
 def main():
 
     # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("removebackground_queue")
+    module_runner = CodeProjectAIRunner("removebackground_queue", remove_background_callback)
 
     # Hack for debug mode
     if module_runner.module_id == "CodeProject.AI":
-        module_runner.module_id   = "BackgroundRemoval"
-        module_runner.module_name = "Background Removal"
+        module_runner.module_id   = "BackgroundRemover"
+        module_runner.module_name = "Background Remover"
+
+    # TODO: Set OMP_NUM_THREADS from Parallelism
 
     # Start the module
-    module_runner.start_loop(remove_background)
+    module_runner.start_loop()
 
 
-def remove_background(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
+def remove_background_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
     try:
         img: Image             = data.get_image(0)
@@ -58,14 +60,14 @@ def remove_background(module_runner: CodeProjectAIRunner, data: AIRequestData) -
 
         return {"success": True, "imageBase64": data.encode_image(processed_img)}
 
-    except Exception:
+    except Exception as ex:
         err_trace = traceback.format_exc()
         module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
                     {
                         "filename": "rembg_adapter.py",
                         "method": "remover_background",
                         "loglevel": "error",
-                        "message": err_trace,
+                        "message": ex, # err_trace,
                         "exception_type": "Exception"
                     })
 

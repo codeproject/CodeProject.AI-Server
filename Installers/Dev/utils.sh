@@ -144,8 +144,15 @@ function getBackground () {
     if [[ $OSTYPE == 'darwin'* ]]; then
         osascript -e \
         'tell application "Terminal"
-            get background color of selected tab of window 1
+           get background color of selected tab of window 1
         end tell'
+
+        # Sure, we can ask and be polite. Or we can go in and clobber things. Except this doesn't actually work
+        # osascript -e \
+        #'tell application "Terminal"
+        #    set background color of selected tab of window 1 to {65535, 65533, 65534}
+        #end tell'        
+
     else
 
         # See https://github.com/rocky/shell-term-background/blob/master/term-background.bash
@@ -166,7 +173,7 @@ function isDarkMode () {
     IFS=','; colors=($bgColor); IFS=' ';
 
     # Is the background more or less dark?
-    if [ ${colors[0]} -lt 20000 ] && [ ${colors[1]} -lt 20000 ] && [ ${colors[2]} -lt 20000 ]; then
+    if [ ${colors[0]} -lt 2000 ] && [ ${colors[1]} -lt 2000 ] && [ ${colors[2]} -lt 2000 ]; then
         echo 'true'
     else
         echo 'false'
@@ -424,15 +431,15 @@ function setupPython () {
                 write "Installing Python ${pythonVersion}..." $color_primary
 
                 if [ "${verbosity}" == "info" ]; then writeLine "Updating apt-get" $color_info; fi;
-                apt-get update -y >/dev/null 2>/dev/null &
+                sudo apt-get update -y >/dev/null 2>/dev/null &
                 spin $!
 
                 if [ "${verbosity}" == "info" ]; then writeLine "Installing software-properties-common" $color_info; fi;
-                apt install software-properties-common -y >/dev/null 2>/dev/null &
+                sudo apt install software-properties-common -y >/dev/null 2>/dev/null &
                 spin $!
 
                 if [ "${verbosity}" == "info" ]; then writeLine "Adding deadsnakes as a Python install source (PPA)" $color_info; fi;
-                add-apt-repository ppa:deadsnakes/ppa -y >/dev/null 2>/dev/null &
+                sudo add-apt-repository ppa:deadsnakes/ppa -y >/dev/null 2>/dev/null &
                 spin $!
 
                 if [ "${verbosity}" == "info" ]; then writeLine "Updating apt" $color_info; fi;
@@ -440,23 +447,23 @@ function setupPython () {
                 spin $!
 
                 if [ "${verbosity}" == "info" ]; then writeLine "Installing Python ${pythonVersion}" $color_info; fi;
-                apt-get install python${pythonVersion} -y >/dev/null 2>/dev/null &
+                sudo apt-get install python${pythonVersion} -y >/dev/null 2>/dev/null &
                 spin $!
 
                 # apt-get install python3-pip
                 writeLine "Done" $color_success
             else
                 writeLine "Updating apt-get" $color_info
-                apt-get update -y
+                sudo apt-get update -y
                 writeLine "Installing software-properties-common" $color_info
-                apt install software-properties-common -y
+                sudo apt install software-properties-common -y
                 writeLine "Adding deadsnakes as a Python install source (PPA)" $color_info
-                add-apt-repository ppa:deadsnakes/ppa -y
+                sudo add-apt-repository ppa:deadsnakes/ppa -y
                 writeLine "Updating apt" $color_info
-                apt update -y
+                sudo apt update -y
                 writeLine "Installing Python ${pythonVersion}" $color_primary
-                apt-get install python${pythonVersion} -y
-                apt-get install python3-pip
+                sudo apt-get install python${pythonVersion} -y
+                sudo apt-get install python3-pip
                 writeLine "Done" $color_success
             fi
         fi
@@ -633,17 +640,17 @@ function installPythonPackages () {
 
         # Ensure we have pip (no internet access - ensures we have the current
         # python compatible version.
-        write "Ensuring PIP is installed..."
+        write "Ensuring PIP is installed..." $color_primary
         ./python3 -m ensurepip  >/dev/null 2>/dev/null &
         spin $!
         writeLine "Done" $color_success
 
-        write "Updating PIP..."
+        write "Updating PIP..." $color_primary
         ./python3 -m pip install --upgrade pip >/dev/null 2>/dev/null &
         spin $!
         writeLine "Done" $color_success
     else
-        writeLine "Ensuring PIP is installed and up to date..."
+        writeLine "Ensuring PIP is installed and up to date..." $color_primary
     
        if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
             # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
@@ -705,15 +712,13 @@ function installPythonPackages () {
 
                 if [ "${line}" == "" ]; then
                     currentOption=""
-                elif [ "${line:0:2}" == "##" ]; then
-                    currentOption=""
-                elif [ "${line:0:2}" == "#!" ]; then
+                elif [ "${line:0:1}" == "#" ]; then
                     currentOption=""
                 elif [ "${line:0:1}" == "-" ]; then
-                    currentOption="${line}"
+                    currentOption="${currentOption} ${line}"
                 else
             
-                    module="${line/ /}"
+                    module="${line}"
                     description=""
 
                     # breakup line into module name and description
@@ -728,6 +733,9 @@ function installPythonPackages () {
                         description="Installing ${module}"
                     fi
         
+                    # remove all whitespaces
+                    module="${module// /}"
+
                     if [ "${module}" != "" ]; then
 
                         # writeLine "./pip install ${pipFlags} $module ${currentOption}" $color_error
@@ -737,12 +745,14 @@ function installPythonPackages () {
                         # name of a module (module_import) to be tested before we import
                         # if python3 -c "import ${module_import}"; then echo "Found ${module}. Skipping."; fi;
 
-                        if [ "${verbosity}" != "load" ]; then
-                            # writeLine "./pip install ${currentOption} ${module}" $color_error
-                            ./pip3 install ${currentOption} ${module}  >/dev/null & # 2>/dev/null &
+                        if [ "${verbosity}" != "loud" ]; then
+                            # I have NO idea why it's necessary to use eval to get this to work without errors
+                            # ./pip3 install ${module} ${currentOption} >/dev/null & # 2>/dev/null &
+                            eval "./pip3 install ${module} ${currentOption}" >/dev/null &
                             spin $!
                         else
-                            ./pip3 install ${currentOption} $module
+                            # ./pip3 install $module ${currentOption}
+                            eval "./pip3 install ${module} ${currentOption}"
                         fi
 
                         status=$?    
@@ -780,26 +790,42 @@ function getFromServer () {
 
     # Clean up directories to force a re-copy if necessary
     if [ "${forceOverwrite}" == "true" ]; then
+        # if [ $verbosity -ne "quiet" ]; then echo "Forcing overwrite"; fi
+
         rm -rf "${downloadPath}/${moduleDir}"
         rm -rf "${modulePath}/${moduleAssetsDir}"
     fi
 
-    if [ ! -d  "${modulePath}/${moduleAssetsDir}" ]; then
+    # Download !$storageUrl$fileToGet to $downloadPath and extract into $downloadPath/$moduleDir
+    # Params are: S3 storage bucket | fileToGet     | downloadToDir     | dirToSaveTo | message
+    # eg           "$S3_bucket"   "rembg-models.zip" /downloads/module/"    "assets"    "Downloading Background Remover models..."
+    downloadAndExtract $storageUrl $fileToGet "${downloadPath}" "${moduleDir}" "${message}"
 
-        # Download {storageUrl}fileToGet to downloadPath and extract into downloadPath\moduleDir
-        downloadAndExtract $storageUrl $fileToGet "${downloadPath}" "${moduleDir}" "${message}"
+    # Copy contents of downloadPath\moduleDir to analysisLayerPath\moduleDir\moduleAssetsDir
+    if [ -d "${downloadPath}/${moduleDir}" ]; then
 
-        # Copy contents of downloadPath\moduleDir to analysisLayerPath\moduleDir\moduleAssetsDir
-        if [ -d "${downloadPath}/${moduleDir}" ]; then
+        if [ ! -d "${modulePath}/${moduleAssetsDir}" ]; then
+            mkdir -p "${modulePath}/${moduleAssetsDir}"
+        fi;
 
-            if [ ! -d "${modulePath}/${moduleAssetsDir}" ]; then
-                mkdir -p "${modulePath}/${moduleAssetsDir}"
-            fi;
+        # pushd then cp to stop "cannot stat" error
+        pushd "${downloadPath}/${moduleDir}/" >/dev/null 2>/dev/null
 
-            pushd  "${downloadPath}/${moduleDir}/" >/dev/null 2>/dev/null
-            mv * "${modulePath}/${moduleAssetsDir}/"
-            popd >/dev/null 2>/dev/null
-        fi
+        # This code will have issues if you download more than 1 zip to a download folder.
+        # 1. Copy *everything* over (including the downloaded zip)        
+        # 2. Remove the original download archive which was copied over along with everything else.
+        # 3. Delete all but the downloaded archive from the downloads dir
+        # cp * "${modulePath}/${moduleAssetsDir}/"
+        # rm "${modulePath}/${moduleAssetsDir}/${fileToGet}"  #>/dev/null 2>/dev/null
+        # ls | grep -xv *.zip | xargs rm
+
+        # Safer.
+        # 1. Copy all non-zip files to the module's installation dir
+        # 2. Delete all non-zip files in the download dir
+        find . -type f -not -name '*.zip' -not -name '.DS_Store' | xargs -I %f cp %f "${modulePath}/${moduleAssetsDir}/"
+        find . -type f -not -name '*.zip' | xargs rm
+
+        popd >/dev/null 2>/dev/null
     fi
 }
 
@@ -815,7 +841,7 @@ function downloadAndExtract () {
     # downloadToDir = 'downloads/' - relative to the current directory
     # fileToGet = packages_for_gpu.zip
     # dirToSave = packages
-
+   
     if [ "${fileToGet}" == "" ]; then
         writeLine 'No download file was specified' $color_error
         quit    # no point in carrying on
@@ -825,71 +851,63 @@ function downloadAndExtract () {
         message="Downloading ${fileToGet}..."
     fi
 
-    # writeLine "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}" 
-
-    write $message $color_primary
-
-    if [ -d "${downloadToDir}/${dirToSave}" ]; then
-        writeLine " Directory already exists" $color_info
-        return 0 # This is ok and assumes it's already downloaded. Whether that's true or not...
+    if [ $verbosity != "quiet" ]; then 
+        writeLine "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}" $color_info
     fi
+    
+    write "$message" $color_primary
 
     extension="${fileToGet:(-3)}"
     if [ ! "${extension}" == ".gz" ]; then
         extension="${fileToGet:(-4)}"
         if [ ! "${extension}" == ".zip" ]; then
             writeLine "Unknown and unsupported file type for file ${fileToGet}" $color_error
-
             quit    # no point in carrying on
-            # return 1
         fi
     fi
 
-    if [ ! -f  "${downloadToDir}/${fileToGet}" ]; then
+    if [ -f  "${downloadToDir}/${dirToSave}/${fileToGet}" ]; then     # To check for the download itself
+        write " already exists..." $color_info
+    else
         # writeLine "Downloading ${fileToGet} to ${dirToSave}.zip in ${downloadToDir}"  $color_warn
-        wget $wgetFlags --show-progress -O "${downloadToDir}/${fileToGet}" -P "${downloadToDir}" \
-                                           "${storageUrl}${fileToGet}"
-        
+        # wget $wgetFlags --show-progress -O "${downloadToDir}/${dirToSave}/${fileToGet}" -P "${downloadToDir}/${dirToSave}" \
+        #                                   "${storageUrl}${fileToGet}"
+
+        wget $wgetFlags --show-progress -P "${downloadToDir}/${dirToSave}" "${storageUrl}${fileToGet}"
         status=$?    
         if [ $status -ne 0 ]; then
             writeLine "The wget command failed for file ${fileToGet}." $color_error
-
             quit    # no point in carrying on
-            # return 2
         fi
     fi
 
-    if [ ! -f  "${downloadToDir}/${fileToGet}" ]; then
+    if [ ! -f  "${downloadToDir}/${dirToSave}/${fileToGet}" ]; then
         writeLine "The downloaded file '${fileToGet}' doesn't appear to exist." $color_error
-
         quit    # no point in carrying on
-        # return 3
     fi
 
     write 'Expanding...' $color_info
 
-    pushd "${downloadToDir}" >/dev/null
-
-    if [ ! -d "${dirToSave}" ]; then
-      mkdir -p "${dirToSave}"
-    fi
-
+    pushd "${downloadToDir}/${dirToSave}" >/dev/null
+  
     if [ "${extension}" == ".gz" ]; then
-        tar $tarFlags "${fileToGet}" -C "${dirToSave}" &  # execute and continue
+        tar $tarFlags "${fileToGet}" &  # execute and continue
     else
-        unzip $unzipFlags "${fileToGet}" -d "${dirToSave}" &  # execute and continue
+        unzip $unzipFlags -u "${fileToGet}" &  # execute and continue
     fi
     
     spin $! # process ID of the unzip/tar call
 
-    if [[ ! -d "${dirToSave}" ]]; then
+    if [ ! "$(ls -A .)" ]; then # Is the download dir empty?
         writeLine "Unable to extract download. Can you please check you have write permission to "${dirToSave}"." $color_error
+        popd >/dev/null
         quit    # no point in carrying on
     fi
     
-    popd >/dev/null
+    # Remove thw downloaded zip
+    # rm -f "${fileToGet}" >/dev/null
 
-    # rm /s /f /q "${downloadToDir}/${fileToGet}" >/dev/null
+    popd >/dev/null
 
     writeLine 'Done.' $color_success
 }
@@ -1017,6 +1035,7 @@ else
 fi
 
 darkmode=$(isDarkMode)
+echo "Darkmode? ${darkmode}"
 
 # Setup some predefined colours. Note that we can't reliably determine the background 
 # color of the terminal so we avoid specifically setting black or white for the foreground

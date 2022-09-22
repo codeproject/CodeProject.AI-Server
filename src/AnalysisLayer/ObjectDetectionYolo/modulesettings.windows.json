@@ -1,6 +1,6 @@
 {
   "Modules": {
-    "CustomObjectDetection": {
+    "ObjectDetectionYolo": {
       "Runtime": "python37"
     }
   }

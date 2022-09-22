@@ -13,9 +13,8 @@ import requests
 import demoConfig as cfg
 
 # deepstack credentials
-DEFAULT_IP_ADDRESS = cfg.serverHost
-DEFAULT_PORT       = cfg.serverPort
-DEFAULT_API_KEY    = ""
+DEFAULT_IP_ADDRESS    = cfg.serverHost
+DEFAULT_PORT          = cfg.serverPort
 DEFAULT_IMAGES_FOLDER = cfg.imageDir
 
 

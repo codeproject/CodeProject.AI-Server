@@ -37,7 +37,7 @@ set APPDIR=%cd%
     echo Setting Environment variables...
 
     REM API server
-    set CPAI_PORT=5000
+    set CPAI_PORT=32168
 
     REM Text module
     set NLTK_DATA=!APPDIR!\TextSummary\nltk_data

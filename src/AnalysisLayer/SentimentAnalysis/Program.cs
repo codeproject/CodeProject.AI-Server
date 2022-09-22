@@ -1,4 +1,4 @@
-using SentimentAnalysis;
+using CodeProject.AI.AnalysisLayer.SentimentAnalysis;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>

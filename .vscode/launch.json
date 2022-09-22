@@ -3,6 +3,71 @@
     "configurations": [
 
         {
+            "name": "Launch Server",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "stopAtEntry": false,
+            "requireExactSource": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "http://localhost:%s/swagger"
+            },
+
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true"
+            }
+            /*
+            "logging": {
+                "engineLogging": false,
+                "moduleLoad": false,
+                "exceptions": false,
+                "browserStdOut": false
+            }
+            */
+        },
+        
+        {
+            "name": "Build & Launch Server",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-all-win",
+            "linux": {
+                "preLaunchTask": "build-all-linux",
+            },
+            "osx": {
+                "preLaunchTask": "build-all-linux",
+            },
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "stopAtEntry": false,
+            "requireExactSource": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "http://localhost:%s/swagger"
+            },
+
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true"
+            }
+            /*
+            "logging": {
+                "engineLogging": false,
+                "moduleLoad": false,
+                "exceptions": false,
+                "browserStdOut": false
+            }
+            */
+        },
+
+        {
             "name": "Build All",
             "type": "coreclr",
             "request": "launch",
@@ -22,41 +87,6 @@
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
-        },
-
-        {
-            "name": "Launch Server",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-all-win",
-            "linux": {
-                "preLaunchTask": "build-all-linux",
-            },
-            "osx": {
-                "preLaunchTask": "build-all-linux",
-            },
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
-            "args": [],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
-            "stopAtEntry": false,
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
-                "uriFormat": "http://localhost:%s/swagger"
-            },
-
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "RUNNING_IN_VSCODE": "true"
-            }
-            /*
-            "logging": {
-                "engineLogging": false,
-                "moduleLoad": false,
-                "exceptions": false,
-                "browserStdOut": false
-            }
-            */
         },
 
         {
@@ -112,13 +142,34 @@
         // See https://code.visualstudio.com/docs/editor/variables-reference#_settings-command-variables-and-input-variables
         // For variables that can be used
         {
-            "name": "Python: Current File",
+            "name": "Python 3.7/3.8: Current File",
             "type": "python",
+            "python": "${workspaceFolder}/src/AnalysisLayer/bin/windows/python37/venv/bin/python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "cwd": "${fileDirname}",
-            "justMyCode": true
+            "justMyCode": true,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/AnalysisLayer/bin/macos-arm/python38/venv/bin/python",
+                // "env": { "CPAI_PORT": "32168" }
+            }
+        },
+        {
+            "name": "Python: Attach via ProcessID",
+            "type": "python",
+            "request": "attach",
+            "processId": "${command:pickProcess}",
+            "justMyCode": true,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True"
+            }        
         }
     ]
 }

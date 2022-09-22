@@ -2,13 +2,13 @@
   "versionSection": {
     "versionInfo": {
       "Major": 1,
-      "Minor": 5,
-      "Patch": 6,
-      "Build": 2,
+      "Minor": 6,
+      "Patch": 0,
+      "Build": 0,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI.Server-1.5.6.2.zip",
-      "ReleaseNotes": "Performance improvements, Docker GPU, and bug fixes, particularly around Face detection."
+      "File": "CodeProject.AI.Server-1.6.0.0.zip",
+      "ReleaseNotes": "API for remote module management, improved memory usage, Apple M1/M2 support."
     }
   }
 }

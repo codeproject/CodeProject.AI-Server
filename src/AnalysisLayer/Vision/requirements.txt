@@ -11,8 +11,8 @@ torch==1.10.1		# Installing PyTorch, for Tensor computation and Deep neural netw
 torchvision==0.11.2 # Installing TorchVision, for Computer Vision based AI
 
 ## These to be removed (not needed for inference)
-#matlabplotlib
-seaborn
+# matlabplotlib
+Seaborn         # Installing Seaborn, a data visualization library based on matplotlib
 
 ## YOLOv5 base ----------------------------------------
 ## Not used because it will load torch 1.11 which has a bug

@@ -1,9 +1,14 @@
 {
   "Modules": {
 
-    "BackgroundRemoval": {
-      "Name": "Background Removal",
+    "BackgroundRemover": {
+      "Name": "Background Remover",
+
       "Activate": true,
+      "Parallelism": 1,
+      "SupportGPU": false,
+      "PostStartPauseSecs": 0, // 5 if using GPU, 0 for CPU
+
       "Description": "Removes backgrounds from images.",
       "FilePath": "BackgroundRemover\\rembg_adapter.py",
       "Platforms": [ "windows", "linux", "docker", "macos", "macos-arm" ],
@@ -16,7 +21,7 @@
 
       "RouteMaps": [
         {
-          "Name":  "Background Remover",
+          "Name": "Background Remover",
           "Path": "image/removebackground",
           "Method": "POST",
           "Queue": "removebackground_queue",

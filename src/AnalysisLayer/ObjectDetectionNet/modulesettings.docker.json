@@ -1,6 +1,6 @@
 {
   "Modules": {
-    "ObjectDetection": {
+    "ObjectDetectionNet": {
       "FilePath": "ObjectDetectionNet/ObjectDetectionNet",
       "Runtime": "execute"
     }

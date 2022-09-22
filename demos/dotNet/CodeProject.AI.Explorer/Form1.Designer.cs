@@ -410,7 +410,7 @@
             this.textApiPort.Name = "textApiPort";
             this.textApiPort.Size = new System.Drawing.Size(56, 23);
             this.textApiPort.TabIndex = 21;
-            this.textApiPort.Text = "5000";
+            this.textApiPort.Text = "32168";
             this.textApiPort.TextChanged += new System.EventHandler(this.OnApiPortChanged);
             // 
             // label3

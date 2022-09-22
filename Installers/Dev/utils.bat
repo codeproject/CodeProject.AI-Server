@@ -7,13 +7,6 @@
 
 @echo off
 
-set useColor=true
-
-:: %1 is the name of the method to call. Shift will shuffle the arguments that 
-:: were passed one spot to the left, meaning the called subroutine will get the
-:: arguments it expects in order
-shift & goto :%~1
-
 set pipFlags=-q -q
 if /i "%verbosity%"=="info" set pipFlags=-q
 if /i "%verbosity%"=="loud" set pipFlags=
@@ -24,6 +17,12 @@ set color_info=Yellow
 set color_success=Green
 set color_warn=DarkYellow
 set color_error=Red
+
+:: %1 is the name of the method to call. Shift will shuffle the arguments that 
+:: were passed one spot to the left, meaning the called subroutine will get the
+:: arguments it expects in order
+shift & goto :%~1
+
 
 :: sub-routines
 
@@ -161,7 +160,7 @@ set color_error=Red
         exit /b 0
     )
 
-    if /i "%useColor%"=="true" (
+    if /i "!useColor!"=="true" (
         call :setColor %2 %3
         echo !currentColor!!str!!resetColor!
     ) else (
@@ -211,22 +210,31 @@ set color_error=Red
     set message=%3
     set message=!message:"=!
 
-
     REM Clean up directories to force a download and re-copy if necessary
     if /i "%forceOverwrite%" == "true" (
         REM Force Re-download, then force re-copy of downloads to install dir
         if exist "!downloadPath!\!moduleDir!"     rmdir /s %rmdirFlags% "!downloadPath!\!moduleDir!"
         if exist "!modulePath!\!moduleAssetsDir!" rmdir /s %rmdirFlags% "!modulePath!\!moduleAssetsDir!"
     )
+    
+    REM Download !storageUrl!fileToGet to downloadPath and extract into downloadPath\moduleDir
+    REM Params are:     S3 storage bucket |  fileToGet   | downloadToDir  | dirToSaveTo  | message
+    call :DownloadAndExtract "!storageUrl!" "!fileToGet!" "!downloadPath!\" "!moduleDir!" "!message!"
+    
+    REM Copy contents of downloadPath\moduleDir to analysisLayerPath\moduleDir\moduleAssetsDir
+    if exist "!downloadPath!\!moduleDir!" (
 
-    if not exist "!modulePath!\!moduleAssetsDir!" (
+        robocopy /e "!downloadPath!\!moduleDir! " "!modulePath!\!moduleAssetsDir! " /XF "*.zip" !roboCopyFlags! > NUL
 
-        REM Download !storageUrl!fileToGet to downloadPath and extract into downloadPath\moduleDir
-        call :DownloadAndExtract "!storageUrl!" "!fileToGet!" "!downloadPath!\" "!moduleDir!" "!message!"
+        REM Delete zip file we copied to the assets dir (No longer needed)
+        REM del "!modulePath!\!moduleAssetsDir!\!fileToGet!" rem > NUL 2>nul
 
-        REM Copy contents of downloadPath\moduleDir to analysisLayerPath\moduleDir\moduleAssetsDir
-        if exist "!downloadPath!\!moduleDir!" (
-            robocopy /e "!downloadPath!\!moduleDir! " "!modulePath!\!moduleAssetsDir! " !roboCopyFlags! > NUL
+        REM Delete all but the zip file from the downloads dir
+        FOR %%I IN ("!downloadPath!\!moduleDir!\*") DO (
+            IF /i "%%~xI" neq ".zip" (
+                DEL "%%I" rem > NUL 2>nul
+                rem echo cleaning "%%~nxI"
+            )
         )
     )
 
@@ -244,7 +252,7 @@ set color_error=Red
     set fileToGet=%2
     set fileToGet=!fileToGet:"=!
 
-    REM Where to store the downloade zip. eg "downloads/" - relative to the 
+    REM Where to store the downloade zip. eg "downloads\" - relative to the 
     REM current directory
     set downloadToDir=%3
     set downloadToDir=!downloadToDir:"=!
@@ -258,27 +266,30 @@ set color_error=Red
     set message=!message:"=!
 
     if "!message!" == "" set message=Downloading !fileToGet!...
-    call :Write "!message!"
 
-    if exist "!downloadToDir!!dirToSaveTo!.zip" (
+    if /i "%verbosity%" neq "quiet" (
+        call :WriteLine "Downloading !fileToGet! to !downloadToDir!\!dirToSave!" "!color_info!"
+    )
+
+    call :Write "!message!" "!color_primary!"
+
+    rem call :WriteLine "Checking "!downloadToDir!!dirToSaveTo!\!fileToGet!" "!color_info!"
+    if exist "!downloadToDir!!dirToSaveTo!\!fileToGet!" (
         call :Write "already exists..." "!color_info!"
     ) else (
 
-        REM Doesn't provide progress as % 
-        REM powershell Invoke-WebRequest -Uri !storageUrl: =!!fileToGet! ^
-        REM                              -OutFile !downloadPath!!dirToSaveTo!.zip
+        if not exist "!downloadToDir!"              mkdir "!downloadToDir!"
+        if not exist "!downloadToDir!!dirToSaveTo!" mkdir "!downloadToDir!!dirToSaveTo!"
 
         REM Be careful with the quotes so we can handle paths with spaces
-        REM call :Write "Start-BitsTransfer -Source '!storageUrl!!fileToGet!'"
-        REM call :WriteLine "-Destination '!downloadToDir!!dirToSaveTo!.zip' ..."
-        powershell -command "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Destination '!downloadToDir!!dirToSaveTo!.zip'"
+        powershell -command "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Destination '!downloadToDir!!dirToSaveTo!\!fileToGet!'"
 
         if errorlevel 1 (
             call :WriteLine "An error occurred that could not be resolved." "!color_error!"
             exit /b
         )
 
-        if not exist "!downloadToDir!!dirToSaveTo!.zip" (
+        if not exist "!downloadToDir!!dirToSaveTo!\!fileToGet!" (
             call :WriteLine "An error occurred that could not be resolved." "!color_error!"
             exit /b
         )
@@ -286,24 +297,21 @@ set color_error=Red
 
     call :Write "Expanding..." "!color_info!"
 
-    REM Try tar first. If that doesn't work, fall back to pwershell (slow)
+    pushd "!downloadToDir!!dirToSaveTo!"
+
+    REM Try tar first. If that doesn't work, fall back to powershell (slow)
     set tarExists=true
-    pushd "!downloadToDir!"
-    if not exist "!dirToSaveTo!" mkdir "!dirToSaveTo!"
-    copy "!dirToSaveTo!.zip" "!dirToSaveTo!" > nul 2>nul
-    pushd "!dirToSaveTo!"
-    tar -xf "!dirToSaveTo!.zip" > nul 2>nul
+
+    tar -xf "!fileToGet!" > nul 2>nul
     if "%errorlevel%" == "9009" set tarExists=false
-    del /s /f /q "!dirToSaveTo!.zip" > nul
-    popd
-    popd
 
-    if "!tarExists!" == "false" (
-        powershell -command "Expand-Archive -Path '!downloadToDir!!dirToSaveTo!.zip' -DestinationPath '!downloadToDir!' -Force"
-    )
+    REM If we don't have tar, use powershell
+    if "!tarExists!" == "false" ( powershell -command "Expand-Archive -Path '!fileToGet!' -Force" )
 
-    REM If we wish to remove thw downloaded zip
-    REM del /s /f /q "!downloadToDir!!dirToSaveTo!.zip" > nul
+    REM Remove the downloaded zip
+    REM del /s /f /q "!fileToGet!" > nul 2>nul
+
+    popd
 
     call :WriteLine "Done." "!color_success!"
 
@@ -335,13 +343,19 @@ set color_error=Red
     )
 
     REM Download whatever packages are missing 
+    rem call :WriteLine "Checking !installPath!" "!color_info!"
+
     if exist "!installPath!" (
         call :WriteLine "!pythonName! package already downloaded" "!color_mute!"
     ) else (
         set baseDir=!downloadPath!\!platform!\
         if not exist "!baseDir!" mkdir "!baseDir!"
+        if not exist "!baseDir!\!pythonName!" mkdir "!baseDir!\!pythonName!"
+
         if not exist "!installPath!" (
-            call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!baseDir!" "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
+
+            rem Params are:     S3 storage bucket |    fileToGet   | downloadToDir | dirToSaveTo  | message
+            call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!baseDir!"   "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
             if exist "!downloadPath!\!platform!\!pythonName!" (
                 robocopy /e "!downloadPath!\!platform!\!pythonName! " "!installPath! " !roboCopyFlags! > NUL
             )
@@ -514,12 +528,10 @@ set color_error=Red
 
             if "!line!" == "" (
                 set currentOption=
-            ) else if "!line:~0,2!" == "##" (       REM Ignore comments
+            ) else if "!line:~0,1!" == "#" (       REM Ignore comments
                 set currentOption=
-            ) else if "!line:~0,8!" == "# Python" ( REM Is "#! Python" in the file.
-                set currentOption=
-            ) else if "!line:~0,1!" == "-" (        REM For --index options etc
-                set currentOption=!line!
+            ) else if "!line:~0,1!" == "-" (       REM For --index options etc
+                set currentOption=!currentOption! !line!
             ) else (
         
                 REM breakup line into module name and description

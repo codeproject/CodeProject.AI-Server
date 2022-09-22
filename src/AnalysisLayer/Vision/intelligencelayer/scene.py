@@ -23,6 +23,10 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torchvision.models import resnet50
 
+# Thread locking
+from threading import Lock
+models_lock = Lock()
+
    
 class SceneModel(object):
 
@@ -32,7 +36,7 @@ class SceneModel(object):
 
         self.model = resnet50(num_classes=365)
         checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
-        state_dict = {str.replace(k,'module.',''): v for k,v in checkpoint['state_dict'].items()}
+        state_dict = { str.replace(key, 'module.', ''): value for key,value in checkpoint['state_dict'].items() }
         self.model.load_state_dict(state_dict)
         self.model.eval()
         if self.cuda:
@@ -56,14 +60,13 @@ with open(os.path.join(SharedOptions.SHARED_APP_DIR, "categories_places365.txt")
 
 placesnames = tuple(classes)
 
-classifier = SceneModel(os.path.join(SharedOptions.SHARED_APP_DIR, "scene.pt"), 
-                        SharedOptions.USE_CUDA)
+classifier = None # Lazy load later on
 
 
 def main():
 
     # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("scene_queue")
+    module_runner = CodeProjectAIRunner("scene_queue", sceneclassification_callback)
 
     # Hack for debug mode
     if module_runner.module_id == "CodeProject.AI":
@@ -71,12 +74,24 @@ def main():
         module_runner.module_name = "Scene Classification"
 
     if SharedOptions.USE_CUDA:
-        module_runner.hardware_id        = "GPU"
+        module_runner.hardware_type      = "GPU"
         module_runner.execution_provider = "CUDA"
 
     # Start the module
-    module_runner.start_loop(sceneclassification_callback)
+    module_runner.start_loop()
 
+
+def init_models() -> None:
+
+    global classifier
+
+    if classifier is not None:
+        return
+
+    with models_lock:
+        if classifier is None:
+            classifier = SceneModel(os.path.join(SharedOptions.SHARED_APP_DIR, "scene.pt"), 
+                                    SharedOptions.USE_CUDA)
 
 def sceneclassification_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
@@ -92,6 +107,9 @@ def sceneclassification_callback(module_runner: CodeProjectAIRunner, data: AIReq
     img = trans(img).unsqueeze(0)
                     
     try:
+
+        init_models()
+
         cl, conf = classifier.predict(img)
 
         cl   = placesnames[cl]
@@ -113,7 +131,7 @@ def sceneclassification_callback(module_runner: CodeProjectAIRunner, data: AIReq
         
         return { "success": False, "error": "Error occured on the server", "code": 400 }
     
-    except Exception:
+    except Exception as ex:
 
         err_trace = traceback.format_exc()
         module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
@@ -121,7 +139,7 @@ def sceneclassification_callback(module_runner: CodeProjectAIRunner, data: AIReq
                               "filename": "scene.py",
                               "method": "sceneclassification_callback",
                               "loglevel": "error",
-                              "message": err_trace, 
+                              "message": ex, # err_trace, 
                               "exception_type": "Exception"
                           })
 
