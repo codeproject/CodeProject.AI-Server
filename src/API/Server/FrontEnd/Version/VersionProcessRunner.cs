@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace CodeProject.AI.API.Server.Frontend
 {
     /// <summary>
-    /// This background process manages the startup and shutdown of the backend processes.
+    /// Runs a service at startup to check for the latest version of this application.
     /// </summary>
     public class VersionProcessRunner : BackgroundService
     {

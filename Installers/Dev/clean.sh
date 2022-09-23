@@ -20,6 +20,15 @@ function cleanSubDirs() {
         popd  >/dev/null
         return
     fi
+
+    if [ "$doDebug" == "true" ]; then
+        if [ "${excludeDirPattern}" == "" ]; then
+            writeLine "Removing folders in $(pwd) that match ${dirPattern}" $color_info
+        else
+            writeLine "Removing folders in $(pwd) that match ${dirPattern} except ${excludeDirPattern}" $color_info
+        fi
+    fi
+
     popd >/dev/null
 
     # Loop through all subdirs recursively
@@ -27,28 +36,32 @@ function cleanSubDirs() {
 
     IFS=$'\n'; set -f
 
-    for dirName in $(find "$basePath" -type d  -name "${dirPattern}" ); do    
+    for dirName in $(find "$basePath" -type d -name "${dirPattern}" ); do    
 
-        if [ "${excludeDirPattern}" == "" ]; then
+        dirMatched="true"
+        if [ "${excludeDirPattern}" != "" ]; then
+            if [[ $dirName =~ ${excludeDirPattern} ]]; then
+                dirMatched="false"
+            fi
+        fi
 
-            if [ "$doDelete" == "true" ]; then rm -r -f -d "$dirName"; fi
+        if [ "$dirMatched" == "true" ]; then
+
+            if [ "$doDebug" == "true" ]; then
+                writeLine "Marked for removal: ${dirName}" $color_error
+            else
+                rm -r -f -d "$dirName";
             
-            if [ -d "$dirName" ]; then    
-                writeLine "Removed ${dirName}" $color_success
-            else
-                writeLine "Unable to ${dirName}"  $color_warn
+                if [ -d "$dirName" ]; then    
+                    writeLine "Unable to remove ${dirName}"  $color_error
+                else
+                    writeLine "Removed ${dirName}" $color_success
+                fi
             fi
-
-        elif [[ $dirName != ${excludeDirPattern}* ]]; then
-
-            if [ "$doDelete" == "true" ]; then rm -r -f -d "$dirName"; fi
-
-            if [ -d "$dirName" ]; then    
-                writeLine "Removed ${dirName}" $color_success
-            else
-                writeLine "Unable to ${dirName}"  $color_warn
+        else
+            if [ "$doDebug" == "true" ]; then
+                writeLine "Not deleting ${dirName}" $color_success
             fi
-
         fi
 
     done
@@ -56,8 +69,68 @@ function cleanSubDirs() {
     unset IFS; set +f
 }
 
+function cleanFiles() {
+	
+    local basePath=$1
+    local excludeFilePattern=$2
+
+    pushd "${basePath}"  >/dev/null
+
+    if [ $? -ne 0 ]; then
+        writeLine "Can't navigate to $(pwd)/${basePath}" $color_error
+        popd  >/dev/null
+        return
+    fi
+
+    if [ "$doDebug" == "true" ]; then
+        if [ "${excludeFilePattern}" == "" ]; then
+            writeLine "Removing files in $(pwd)" $color_warn
+        else
+            writeLine "Removing files in $(pwd) except ${excludeFilePattern}" $color_warn
+        fi
+    fi
+
+    IFS=$'\n'; set -f
+
+    for fileName in $(find . -type f ); do    
+
+        fileMatched="true"
+        if [ "${excludeFilePattern}" != "" ]; then
+            if [[ $fileName == ${excludeFilePattern} ]]; then
+                fileMatched="false"
+            fi
+        fi
+
+        if [ "$fileMatched" == "true" ]; then
+
+            if [ "$doDebug" == "true" ]; then
+                writeLine "Marked for removal: ${fileName}" $color_error
+            else
+                rm -f "$fileName";
+            
+                if [ -f "$fileName" ]; then    
+                    writeLine "Removed ${fileName}" $color_success
+                else
+                    writeLine "Unable to remove ${fileName}" $color_error
+                fi
+            fi
+        else
+            if [ "$doDebug" == "true" ]; then
+                writeLine "Not deleting ${fileName}" $color_success
+            fi
+        fi
+
+    done
+
+    unset IFS; set +f
+
+    popd >/dev/null
+}
+
 clear
 useColor="true"
+doDebug="false"
+
 
 # Platform can define where things are located
 if [[ $OSTYPE == 'darwin'* ]]; then
@@ -73,6 +146,8 @@ if [ "$1" == "" ]; then
     writeLine  'clean.sh [build : install : installall : all]'
     writeLine  
     writeLine  '  build      - cleans build output (bin / obj)'
+    writeLine  '  assets     - removes assets to force re-copy of downloads'
+    writeLine  '  downloads  - removes downloads to force re-download'
     writeLine  '  install    - removes current OS installation stuff (PIPs, downloads etc)'
     writeLine  '  installall - removes installation stuff for all platforms'
     writeLine  '  all        - removes build and installation stuff for all platforms'
@@ -87,8 +162,8 @@ if [ "$1" == "" ]; then
     exit
 fi
 
-doDelete="false"
-
+cleanAssets='false'
+cleanDownloads='false'
 cleanBuild='false'
 cleanInstallLocal='false'
 cleanInstallAll='false'
@@ -96,6 +171,8 @@ cleanAll='false'
 cleanTools='false'
 cleanRuntimes='false'
 
+if [ "$1" == "assets" ]; then     cleanAssets='true'; fi
+if [ "$1" == "downloads" ]; then  cleanDownloads='true'; fi
 if [ "$1" == "build" ]; then      cleanBuild='true'; fi
 if [ "$1" == "install" ]; then    cleanInstallLocal='true'; fi
 if [ "$1" == "installall" ]; then cleanInstallAll='true'; fi
@@ -108,6 +185,12 @@ if [ "$1" == "runtimes" ]; then   cleanRuntimes='true'; fi
 if [ "$cleanAll" == 'true' ]; then
     cleanInstallAll='true'
     cleanBuild='true'
+    cleanAssets='true'
+    cleanDownloads='true'
+fi
+
+if [ "$cleanInstallLocal" == 'true' ] || [ "$cleanInstallAll" == 'true' ]; then
+    cleanAssets='true'
 fi
 
 if [ "$cleanBuild" == "true" ]; then
@@ -117,9 +200,9 @@ if [ "$cleanBuild" == "true" ]; then
     writeLine 
 
     cleanSubDirs "../../src" "bin" "AnalysisLayer/bin"
-    cleanSubDirs "../../src" "obj" "ObjectDetectionNet"
-    cleanSubDirs "../Windows" "bin"
-    cleanSubDirs "../Windows" "obj"
+    cleanSubDirs "../../src" "obj" "ObjectDetection"
+    cleanSubDirs "../windows" "bin"
+    cleanSubDirs "../windows" "obj"
     cleanSubDirs "../../demos" "bin"
     cleanSubDirs "../../demos" "obj" "Objects"
     cleanSubDirs "../../tests" "bin"
@@ -135,6 +218,7 @@ if [ "$cleanInstallLocal" == "true" ]; then
     cleanSubDirs "../../src/AnalysisLayer/bin" "${platform}"
     cleanSubDirs "../../src/AnalysisLayer/BackgroundRemover" "models"
     cleanSubDirs "../../src/AnalysisLayer/ObjectDetectionNet" "assets"
+    cleanSubDirs "../../src/AnalysisLayer/ObjectDetectionYolo" "assets"
     cleanSubDirs "../../src/AnalysisLayer/Vision" "assets"
     cleanSubDirs "../../src/AnalysisLayer/Vision" "datastore"
     cleanSubDirs "../../src/AnalysisLayer/Vision" "tempstore"
@@ -149,13 +233,25 @@ if [ "$cleanInstallAll" == "true" ]; then
     cleanSubDirs "../../src/AnalysisLayer" "bin"
 fi
 
-if [ "$cleanInstallAll" == "true" ]; then
+if [ "$cleanAssets" == "true" ]; then
+
+    writeLine 
+    writeLine "Cleaning assets                                                     " "White" "Blue"
+    writeLine 
+
+    cleanSubDirs "../../src/AnalysisLayer/BackgroundRemover"   "models"
+    cleanSubDirs "../../src/AnalysisLayer/ObjectDetectionNet"  "assets"
+    cleanSubDirs "../../src/AnalysisLayer/ObjectDetectionYolo" "assets"
+    cleanSubDirs "../../src/AnalysisLayer/Vision"              "assets"
+fi
+
+if [ "$cleanDownloads" == "true" ]; then
 
     writeLine 
     writeLine "Cleaning downloads                                                  " "White" "Blue"
     writeLine 
 
-    cleanSubDirs ".." "downloads"
+    cleanFiles "../downloads" "*.zip"   # keep original downloads
 fi
 
 if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then

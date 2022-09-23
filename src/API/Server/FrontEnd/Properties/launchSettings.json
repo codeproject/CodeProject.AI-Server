@@ -3,21 +3,21 @@
   "profiles": {
     "CodeProject.AI Server (Debug)": {
       "commandName": "Project",
-      "launchUrl": "http://localhost:5000",
+      "launchUrl": "http://localhost:32168",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:5000",
+      "applicationUrl": "http://localhost:32168",
       "dotnetRunMessages": true
     },
     "CodeProject.AI Server (Release,SSL)": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "http://localhost:5000",
+      "launchUrl": "http://localhost:32168",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:5000",
+      "applicationUrl": "http://localhost:32168",
       "dotnetRunMessages": true
     },
     "Docker": {
@@ -26,9 +26,9 @@
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://+:5000"
+        "ASPNETCORE_URLS": "http://+:32168"
       },
-      "httpPort": 5000,
+      "httpPort": 32168,
       "publishAllPorts": true,
       "useSSL": false
     },
@@ -55,10 +55,10 @@
     "WSL": {
       "commandName": "WSL2",
       "launchBrowser": true,
-      "launchUrl": "http://localhost:5000/",
+      "launchUrl": "http://localhost:32168/",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://localhost:5000"
+        "ASPNETCORE_URLS": "http://localhost:32168"
       },
       "distributionName": ""
     }

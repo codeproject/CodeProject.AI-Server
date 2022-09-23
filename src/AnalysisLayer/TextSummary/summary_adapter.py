@@ -25,7 +25,7 @@ summary = Summarize()
 def main():
 
     # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("textsummary_queue")
+    module_runner = CodeProjectAIRunner("textsummary_queue", textsummary_callback)
 
     # Hack for debug mode
     if module_runner.module_id == "CodeProject.AI":
@@ -33,7 +33,7 @@ def main():
         module_runner.module_name = "Text Summary"
 
     # Start the module
-    module_runner.start_loop(textsummary_callback)
+    module_runner.start_loop()
 
 
 def textsummary_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
@@ -52,14 +52,14 @@ def textsummary_callback(module_runner: CodeProjectAIRunner, data: AIRequestData
 
         return {"success": True, "summary": summary_text}
 
-    except Exception:
+    except Exception as ex:
         err_trace = traceback.format_exc()
         module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
                           {
                               "filename": "summary_adapter.py",
                               "method": "textsummary_callback",
                               "loglevel": "error",
-                              "message": err_trace,
+                              "message": ex, # err_trace,
                               "exception_type": "Exception"
                           })
 

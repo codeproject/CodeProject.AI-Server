@@ -45,7 +45,15 @@ namespace CodeProject.AI.AnalysisLayer.SDK
                 requestUri += $"&executionProvider={executionProvider}";
 
             BackendRequest? request = null;
-            var httpResponse = await _httpClient!.GetAsync(requestUri, token).ConfigureAwait(false);
+            HttpResponseMessage? httpResponse = null;
+            try
+            {
+                httpResponse = await _httpClient!.GetAsync(requestUri, token).ConfigureAwait(false);
+            }
+            catch
+            {
+                Console.WriteLine($"Unable to get request from {queueName} for {moduleId}");
+            }
 
             if (httpResponse is not null &&
                 httpResponse.StatusCode == System.Net.HttpStatusCode.OK)
@@ -76,8 +84,15 @@ namespace CodeProject.AI.AnalysisLayer.SDK
             if (executionProvider != null)
                 requestUri += $"&executionProvider={executionProvider}";
 
-            await _httpClient!.PostAsync(requestUri, content, token)
+            try
+            {
+                await _httpClient!.PostAsync(requestUri, content, token)
                               .ConfigureAwait(false);
+            }
+            catch 
+            {
+                Console.WriteLine($"Unable to sent response to request {reqid} for {moduleId}");
+            }
         }
 
         /// <summary>
@@ -102,8 +117,15 @@ namespace CodeProject.AI.AnalysisLayer.SDK
             });
 
             /*var response = */
-            await _httpClient!.PostAsync($"v1/log", form, token)
-                              .ConfigureAwait(false);
+            try
+            {
+                await _httpClient!.PostAsync($"v1/log", form, token)
+                                  .ConfigureAwait(false);
+            }
+            catch
+            {
+                Console.WriteLine($"Unable to send message \"{message}\" to API server");
+            }
         }
     }
 }

@@ -62,6 +62,7 @@ namespace CodeProject.AI.API.Server.Frontend
             services.AddControllers();
 
 #if Windows
+            // http://localhost:32168/swagger/index.html
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
@@ -200,10 +201,11 @@ namespace CodeProject.AI.API.Server.Frontend
         /// launched.
         /// 
         /// To override these values you just set the value of the environment variable using its
-        /// name. The "name" is the tricky bit. In the appsettings.json file you have "CPAI_PORT"
+        /// name. The "name" is the tricky bit. In the appsettings.json file you may have "USE_CUDA"
         /// in the EnvironmentVariable section, but its fully qualified name is 
-        /// FrontEndOptions:EnvironmentVariables:CPAI_PORT. In the custom object detection's variables
-        /// in modulesettings.json, CPAI_PORT is Modules:CustomObjectDetection:EnvironmentVariables:CPAI_PORT.
+        /// FrontEndOptions:EnvironmentVariables:CPAI_PORT. In the object detection module's 
+        /// variables in modulesettings.json, changing the value USE_CUDA is 
+        /// Modules:ObjectDetectionYolo:EnvironmentVariables:USE_CUDA.
         /// 
         /// So, to override these values at the command line is ludicrously verbose. Instead we
         /// will choose a subset of these variables that we know are in use in the wild and provide
@@ -221,68 +223,51 @@ namespace CodeProject.AI.API.Server.Frontend
             // that should be stored in configuration in a way that modules can access.
             foreach (KeyValuePair<string, string> pair in Configuration.AsEnumerable())
             {
-                // Port. The big one
+                // Port.
                 if (pair.Key.Equals("PORT", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    // Front end (used by application clients)
-                    keyValues["FrontEndOptions:EnvironmentVariables:CPAI_PORT"]               = pair.Value;
-                    
-                    // Back end (used by backend analysis modules)
-                    keyValues["Modules:FaceProcessing:EnvironmentVariables:CPAI_PORT"]        = pair.Value;
-                    keyValues["Modules:ObjectDetection:EnvironmentVariables:CPAI_PORT"]       = pair.Value;
-                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:CPAI_PORT"] = pair.Value;
-                    keyValues["Modules:CustomObjectDetection:EnvironmentVariables:CPAI_PORT"] = pair.Value;
-                    keyValues["Modules:SceneClassification:EnvironmentVariables:CPAI_PORT"]   = pair.Value;
-                    keyValues["Modules:PortraitFilter:EnvironmentVariables:CPAI_PORT"]        = pair.Value;
-                }
+                    keyValues["FrontEndOptions:EnvironmentVariables:CPAI_PORT"] = pair.Value;
 
                 // Activation
                 if (pair.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_FACE", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["Modules:FaceProcessing:EnvironmentVariables:VISION-FACE"] = pair.Value;
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:Activate"] = pair.Value;
 
                 if (pair.Key.Equals("VISION-SCENE", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_SCENE", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["Modules:SceneClassification:EnvironmentVariables:VISION-SCENE"] = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:Activate"] = pair.Value;
 
                 if (pair.Key.Equals("VISION-DETECTION", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_DETECTION", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:VISION-DETECTION"] = pair.Value;
-                    keyValues["Modules:ObjectDetection:EnvironmentVariables:VISION-DETECTION"]       = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:Activate"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:Activate"]   = pair.Value;
                 }
 
-                // Mode, which really comes down to resolution
+                // Mode, which convolutes resolution and model size
                 if (pair.Key.Equals("MODE", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    keyValues["Modules:FaceProcessing:EnvironmentVariables:MODE"]        = pair.Value;
-                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:MODE"] = pair.Value;
-                    keyValues["Modules:SceneClassification:EnvironmentVariables:MODE"]   = pair.Value;
-                    keyValues["Modules:ObjectDetection:EnvironmentVariables:MODE"]       = pair.Value;
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:MODE"]            = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:MODE"]       = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:MODE"]     = pair.Value;
 
-                    switch (pair.Value.ToLower())
-                    {
-                        case "low": 
-                            keyValues["Modules:CustomObjectDetection:EnvironmentVariables:RESOLUTION"] = "Small";
-                            break;
-                        case "medium":
-                            keyValues["Modules:CustomObjectDetection:EnvironmentVariables:RESOLUTION"] = "medium";
-                            break;
-                        case "high":
-                            keyValues["Modules:CustomObjectDetection:EnvironmentVariables:RESOLUTION"] = "high";
-                            break;
-                    }
+                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:MODEL_SIZE"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:RESOLUTION"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionNet:EnvironmentVariables:MODEL_SIZE"]  = pair.Value;
                 }
 
                 // Using CUDA?
                 if (pair.Key.Equals("CUDA_MODE", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    keyValues["Modules:FaceProcessing:EnvironmentVariables:USE_CUDA"]        = pair.Value;
-                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:USE_CUDA"] = pair.Value;
-                    keyValues["Modules:SceneClassification:EnvironmentVariables:USE_CUDA"]   = pair.Value;
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:USE_CUDA"]           = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:USE_CUDA"]      = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:USE_CUDA"]    = pair.Value;
 
-                    keyValues["Modules:ObjectDetection:EnvironmentVariables:USE_CUDA"]        = pair.Value;
-                    keyValues["Modules:CustomObjectDetection:EnvironmentVariables:USE_CUDA"]  = pair.Value;
+                    keyValues["Modules:ObjectDetectionNet:EnvironmentVariables:USE_CUDA"]       = pair.Value;
+                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:USE_CUDA"]      = pair.Value;
+
+                    keyValues["Modules:ObjectDetectionNet:EnvironmentVariables:CPAI_MODULE_SUPPORT_GPU"]    = pair.Value;
+                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:CPAI_MODULE_SUPPORT_GPU"]   = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:CPAI_MODULE_SUPPORT_GPU"] = pair.Value;
                 }
 
                 // Model Directories
@@ -297,7 +282,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 // Custom Model Directories. Deepstack compatibility and thge docs are ambiguous
                 if (pair.Key.Equals("MODELSTORE-DETECTION", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("MODELSTORE_DETECTION", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["Modules:CustomObjectDetection:EnvironmentVariables:MODELS_DIR"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:CUSTOM_MODELS_DIR"] = pair.Value;
 
                 // Temp Directories
                 if (pair.Key.Equals("TEMP_PATH", StringComparison.InvariantCultureIgnoreCase))

@@ -11,19 +11,28 @@ from utils.general import (
 )
 
 class YOLODetector(object):
-    def __init__(self, model_path: str, reso: int = 640, cuda: bool = False):
+    def __init__(self, model_path: str, reso: int = 640, cuda: bool = False, mps: bool = False):
+        """
+        Constructor
+        model_path: str - the path to the model to load
+        reso: int  - the resolution of the images
+        cuda: bool - whether or not to use teh Nvidia CUDA libraries
+        mps: bool  - whether or not to use the Apple 'Metal Performance Shaders' in the M-series chips
+        """
 
-        self.device = torch.device("cuda:0" if cuda else "cpu")
-        self.half = self.device.type != "cpu"
+        self.device_name = "cpu"
+        if cuda:
+            self.device_name = "cuda:0"
+        elif mps:
+            self.device_name = "mps"
+ 
+        self.device = torch.device(self.device_name)
+        self.half   = self.device.type != "cpu" and self.device.type != "mps"
 
         self.reso = (reso, reso)
         self.cuda = cuda
         self.model = attempt_load(model_path, device=self.device)
-        self.names = (
-            self.model.module.names
-            if hasattr(self.model, "module")
-            else self.model.names
-        )
+        self.names = ( self.model.module.names if hasattr(self.model, "module") else self.model.names )
         if self.half:
             self.model.half()
 
@@ -60,9 +69,11 @@ class YOLODetector(object):
             img = img.unsqueeze(0)
 
         pred = self.model(img, augment=False)[0]
-        pred = non_max_suppression(
-            pred, confidence, 0.45, classes=None, agnostic=False
-        )[0]
+        if self.device_name == "mps":
+            # nms not yet implemented in MPS PyTorch
+            pred = non_max_suppression(pred.cpu(), confidence, 0.45, classes=None, agnostic=False)[0]
+        else:
+            pred = non_max_suppression(pred, confidence, 0.45, classes=None, agnostic=False)[0]
 
         if pred is None:
             pred = []

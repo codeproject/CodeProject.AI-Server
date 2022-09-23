@@ -1,6 +1,6 @@
 using CodeProject.AI.AnalysisLayer.SDK;
 
-namespace SentimentAnalysis
+namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
 {
     class SentimentAnalysisResponse : BackendSuccessResponse
     {
@@ -64,7 +64,7 @@ namespace SentimentAnalysis
 
         protected override void GetHardwareInfo()
         {
-            HardwareId        = _textClassifier.HardwareId;
+            HardwareType      = _textClassifier.HardwareType;
             ExecutionProvider = _textClassifier.ExecutionProvider;
         }
     }

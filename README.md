@@ -59,7 +59,7 @@ function detectScene(fileChooser) {
     var formData = new FormData();
     formData.append('image', fileChooser.files[0]);
 
-    fetch('http://localhost:5000/v1/vision/detect/scene', {
+    fetch('http://localhost:32168/v1/vision/detect/scene', {
         method: "POST",
         body: formData
     })

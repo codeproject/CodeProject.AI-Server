@@ -50,7 +50,7 @@ namespace CodeProject.AI.API.Server.Backend
         /// <param name="queueName">The name of the queue.</param>
         /// <param name="request">The Request to be processed.</param>
         /// <returns>The response.</returns>
-        public async ValueTask<Object> SendRequestAsync(string queueName,
+        public async ValueTask<object> SendRequestAsync(string queueName,
                                                         BackendRequestBase request,
                                                         CancellationToken token = default)
         {
@@ -185,7 +185,6 @@ namespace CodeProject.AI.API.Server.Backend
             BackendRequestBase? request = null;
             do
             {
-
                 // setup a request timeout.
                 using var cancelationSource = new CancellationTokenSource(_settings.CommandDequeueTimeout);
                 var timeoutToken = cancelationSource.Token;

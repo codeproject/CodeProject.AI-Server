@@ -21,7 +21,7 @@ namespace CodeProject.AI.Demo.Explorer
         /// <summary>
         /// Gets or sets the port for making calls to the API
         /// </summary>
-        public int Port { get; set; } = 5000;
+        public int Port { get; set; } = 32168;
 
         /// <summary>
         /// Gets or sets the timeout in seconds for making calls to the API

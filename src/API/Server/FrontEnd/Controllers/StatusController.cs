@@ -74,6 +74,25 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         }
 
         /// <summary>
+        /// Allows for a client to retrieve the current API server version.
+        /// </summary>
+        /// <returns>A ResponseBase object.</returns>
+        [HttpGet("system-status", Name = "System Status")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<object> GetSystemStatus()
+        {
+            var response = new
+            {
+                GpuUsage          = await GPUInfo.Get3DGpuUsage(),
+                DedicatedRAMUsage = GPUInfo.GetGpuMemoryUsage()
+            };
+
+            return response;
+        }
+
+        /// <summary>
         /// Allows for a client to retrieve the current Paths.
         /// </summary>
         /// <returns>A ResponseBase object.</returns>
@@ -165,7 +184,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             {
                 statuses = backend.ProcessStatuses
                                   .Values
-                                  .Where(module => module.Status != ProcessStatusType.NotEnabled)
+                                  // .Where(module => module.Status != ProcessStatusType.NotEnabled)
                                   .ToList()
             };
 

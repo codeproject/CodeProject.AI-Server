@@ -3,12 +3,16 @@
 
     "FaceProcessing": {
       "Name": "Face Processing",
+
       "Activate": true,
+      "Parallelism": 0,        // Defaults to (#CPUs - 1)
+      "SupportGPU": true,
+      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
+
       "Description": "A number of Face image APIs including detect, recognize, and compare.",
       "FilePath": "Vision\\intelligencelayer\\face.py",
       "Runtime": "python38",
       "Platforms": [ "windows", "linux", "macos", "macos-arm", "docker" ],
-      "EnableFlags": [ "VISION-FACE" ],
 
       "EnvironmentVariables": {
         "VISION-FACE": true,
@@ -17,7 +21,6 @@
         "YOLOv5_VERBOSE": "false",
         "USE_CUDA": "True",
         "MODE": "MEDIUM",
-        "CPAI_PORT": 5000,
 
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",
@@ -43,7 +46,9 @@
               "Name": "min_confidence",
               "Type": "Float",
               "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0.",
-              "DefaultValue": "0.4"
+              "DefaultValue": 0.4,
+              "MinValue": 0.0,
+              "MaxValue": 1.0
             }
           ],
           "Outputs": [
@@ -185,7 +190,9 @@
               "Name": "min_confidence",
               "Type": "Float",
               "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0.",
-              "DefaultValue": "0.4"
+              "DefaultValue": 0.4,
+              "MinValue": 0.0,
+              "MaxValue": 1.0
             }
           ],
           "Outputs": [
@@ -207,12 +214,16 @@
 
     "SceneClassification": {
       "Name": "Scene Classification",
+
       "Activate": true,
+      "Parallelism": 1,
+      "SupportGPU": true,
+      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
+
       "Description": "Classifies the scene in an image. It can recognise 365 different scenes.",
       "FilePath": "Vision\\intelligencelayer\\scene.py",
       "Runtime": "python38",
       "Platforms": [ "windows", "linux", "macos", "macos-arm", "docker" ],
-      "EnableFlags": [ "VISION-SCENE" ],
 
       "EnvironmentVariables": {
         "VISION-SCENE": true,
@@ -221,7 +232,6 @@
         "YOLOv5_VERBOSE": "false",
         "USE_CUDA": "True",
         "MODE": "MEDIUM",
-        "CPAI_PORT": 5000,
 
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",
@@ -263,16 +273,22 @@
           ]
         }
       ]
-    },
+    }
+
+    /* No longer supported
 
     "VisionObjectDetection": {
       "Name": "Object Detection (Python)",
-      "Activate": true,
+
+      "Activate": false,
+      "Parallelism": 0,         // Defaults to (#CPUs - 1)
+      "SupportGPU": true,
+      "PostStartPauseSecs": 1,  // 1 if using GPU, 0 for CPU
+
       "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects the models have been trained on. At this point there are 80 different types of objects that can be detected.",
       "FilePath": "Vision\\intelligencelayer\\detection.py",
       "Runtime": "python38",
-      "Platforms": [ "windows", "linux","docker", "macos", "macos-arm" ], // only enabled for platforms which have .NET image issues
-      "EnableFlags": [ "VISION-DETECTION" ],
+      "Platforms": [ "windows", "linux", "docker", "macos", "macos-arm" ], // only enabled for platforms which have .NET image issues
 
       "EnvironmentVariables": {
         "VISION-DETECTION": true,
@@ -281,7 +297,6 @@
         "YOLOv5_VERBOSE": "false",
         "USE_CUDA": "True",
         "MODE": "MEDIUM",
-        "CPAI_PORT": 5000,
 
         "APPDIR": "%MODULES_PATH%\\Vision\\intelligencelayer",
         "DATA_DIR": "%DATA_DIR%",
@@ -307,6 +322,9 @@
               "Name": "min_confidence",
               "Type": "Float",
               "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
+              "DefaultValue": 0.4,
+              "MinValue": 0.0,
+              "MaxValue": 1.0
             }
           ],
           "Outputs": [
@@ -324,5 +342,6 @@
         }
       ]
     }
+    */
   }
 }

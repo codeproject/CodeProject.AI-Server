@@ -47,7 +47,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<OkObjectResult> GetQueue([FromRoute] string name,
                                                    [FromQuery] string moduleId,
-                                                   [FromQuery] string executionProvider,
+                                                   [FromQuery] string? executionProvider,
                                                    CancellationToken token)
         {
             UpdateProcessStatus(moduleId, executionProvider: executionProvider);
@@ -108,23 +108,23 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                 status.LastSeen = DateTime.UtcNow;
 
                 if (incrementProcessCount)
-                    status.Processed++;
+                    status.IncrementProcessedCount();
 
                 if (string.IsNullOrWhiteSpace(executionProvider))
                 {
-                    status.HardwareId        = "CPU";
+                    status.HardwareType      = "CPU";
                     status.ExecutionProvider = string.Empty;
                 }
                 // Note that executionProvider will be "CPU" if not using a GPU enabled OnnxRuntime 
                 //  or the GPU for the runtime is not available.
                 else if (string.Compare(executionProvider, "CPU", true) == 0)
                 {
-                    status.HardwareId        = "CPU";
+                    status.HardwareType      = "CPU";
                     status.ExecutionProvider = string.Empty;
                 }
                 else
                 {
-                    status.HardwareId        = "GPU";
+                    status.HardwareType      = "GPU";
                     status.ExecutionProvider = executionProvider;
                 }
             }

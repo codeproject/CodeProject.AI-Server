@@ -2,7 +2,12 @@
   "Modules": {
     "TextSummary": {
       "Name": "Text Summary",
+
       "Activate": true,
+      "Parallelism": 1,
+      "SupportGPU": false,
+      "PostStartPauseSecs": 0, // 1 if using GPU, 0 for CPU
+
       "Description": "Summarizes some content by selecting a number of sentences that are most representitive of the content.",
       "FilePath": "TextSummary\\summary_adapter.py",
       "Runtime": "python38",
@@ -29,7 +34,9 @@
             {
               "Name": "num_sentences",
               "Type": "Integer",
-              "Description": "The number of sentences to produce."
+              "Description": "The number of sentences to produce.",
+              "MinValue": 1,
+              "MaxValue": 50
             }
           ],
           "Outputs": [

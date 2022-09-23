@@ -3,10 +3,7 @@
     "SentimentAnalysis": {
       "FilePath": "SentimentAnalysis/bin/Debug/net6.0/SentimentAnalysis.dll",
       "WorkingDirectory": "SentimentAnalysis",
-      "Runtime": "dotnet",
-      "EnvironmentVariables": {
-        "CPAI_PORT": 5500
-      }
+      "Runtime": "dotnet"
     }
   }
 }

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{fe2daafa-29d6-4842-8999-1776f320dee4}</ProjectGuid>
+    <ProjectGuid>{b6a1d372-264e-4f66-b7fb-7ff19587476f}</ProjectGuid>
     <ProjectHome />
     <StartupFile>detect_adapter.py</StartupFile>
     <SearchPath />
@@ -12,10 +12,11 @@
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
-    <Name>CustomObjectDetection</Name>
+    <Name>ObjectDetectionYolo</Name>
     <IsWindowsApplication>False</IsWindowsApplication>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>USE_CUDA=True</Environment>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -23,8 +24,9 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="install.bat" />
-    <Content Include="install.sh" />
+    <Content Include="Create_Custom_Folder.bat" />
+    <Content Include="install.dev.bat" />
+    <Content Include="install.dev.sh" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="MODELS.md" />
@@ -46,16 +48,12 @@
     <Content Include="models\hub\yolov5s-transformer.yaml" />
     <Content Include="models\hub\yolov5s6.yaml" />
     <Content Include="models\hub\yolov5x6.yaml" />
+    <Content Include="models\yolov5l.yaml" />
+    <Content Include="models\yolov5m.yaml" />
+    <Content Include="models\yolov5n.yaml" />
+    <Content Include="models\yolov5s.yaml" />
+    <Content Include="models\yolov5x.yaml" />
     <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.docker.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.macos-arm.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.macos.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>

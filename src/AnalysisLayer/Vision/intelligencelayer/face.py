@@ -48,6 +48,10 @@ master_face_map = {"map": {}}
 facemap         = {}
 database_ok     = True
 
+# Will be lazy initialised
+faceclassifier = None
+detector       = None
+
 resolution = SharedOptions.SETTINGS.DETECTION_MEDIUM
 if SharedOptions.MODE == "High":
     resolution = SharedOptions.SETTINGS.DETECTION_HIGH
@@ -55,12 +59,6 @@ elif SharedOptions.MODE == "Medium":
     resolution = SharedOptions.SETTINGS.DETECTION_MEDIUM
 elif SharedOptions.MODE == "Low":
     resolution = SharedOptions.SETTINGS.DETECTION_LOW
-
-model_path = os.path.join(SharedOptions.SHARED_APP_DIR, "facerec-high.model")
-faceclassifier = FaceRecognitionModel(model_path, cuda=SharedOptions.USE_CUDA)
-
-model_path = os.path.join(SharedOptions.SHARED_APP_DIR, SharedOptions.SETTINGS.FACE_MODEL)
-detector = YOLODetector(model_path, resolution, cuda=SharedOptions.USE_CUDA)
 
 trans = transforms.Compose(
     [
@@ -70,11 +68,16 @@ trans = transforms.Compose(
     ]
 )
 
+# Thread locking
+from threading import Lock
+models_lock = Lock()
+
+
 
 def main():
 
     # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("face_queue")
+    module_runner = CodeProjectAIRunner("face_queue", face_callback)
 
     # Hack for debug mode
     if module_runner.module_id == "CodeProject.AI":
@@ -82,24 +85,40 @@ def main():
         module_runner.module_name = "Face Processing"
 
     if SharedOptions.USE_CUDA:
-        module_runner.hardware_id        = "GPU"
+        module_runner.hardware_type      = "GPU"
         module_runner.execution_provider = "CUDA"
 
     init_db(module_runner)
     load_faces(module_runner)
 
     faceupdate_thread = threading.Thread(None, update_faces,    args = (1, module_runner))
-    face_thread       = threading.Thread(None, start_face_loop, args = (module_runner,))
     faceupdate_thread.start()
-    face_thread.start()
 
-    face_thread.join();
+    module_runner.start_loop()
 
 
-def start_face_loop(module_runner: CodeProjectAIRunner) -> None:
-
-    module_runner.start_loop(face_callback)
+# No longer used
+# def start_face_loop(module_runner: CodeProjectAIRunner) -> None:
+#
+#    module_runner.start_loop(face_callback)
     
+def init_models() -> None:
+
+    global faceclassifier
+    global detector
+
+    if faceclassifier is not None and detector is not None:
+        return
+
+    with models_lock:
+        if faceclassifier is None:
+            model_path = os.path.join(SharedOptions.SHARED_APP_DIR, "facerec-high.model")
+            faceclassifier = FaceRecognitionModel(model_path, cuda=SharedOptions.USE_CUDA)
+
+        if detector is None:
+            model_path = os.path.join(SharedOptions.SHARED_APP_DIR, SharedOptions.SETTINGS.FACE_MODEL)
+            detector = YOLODetector(model_path, resolution, cuda=SharedOptions.USE_CUDA)
+
 
 # make sure the sqlLite database exists
 def init_db(module_runner: CodeProjectAIRunner) -> None:
@@ -224,6 +243,8 @@ def update_faces(delay: int, module_runner: CodeProjectAIRunner) -> None:
 def detect_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
                     
     try:
+        init_models()
+
         threshold: float  = float(data.get_value("min_confidence", "0.4"))
         img: Image = data.get_image(0)
 
@@ -258,10 +279,10 @@ def detect_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
             "code": 400,
         }
                         
-    except Exception:
+    except Exception as e:
         output = {
             "success": False,
-            "error": "An Error occured during processing",
+            "error": "An Error occured during processing: " + str(e),
             "err_trace": traceback.format_exc(),
             "code": 500,
         }
@@ -272,6 +293,8 @@ def detect_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 def register_face(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
     try:
+        init_models()
+
         user_id = data.get_value("userid")
 
         batch = None
@@ -345,10 +368,10 @@ def register_face(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JS
             "code": 400,
         }
                         
-    except Exception:
+    except Exception as e:
         output = {
             "success": False,
-            "error": "An Error occured during processing",
+            "error": "An Error occured during processing: " + str(e),
             "err_trace": traceback.format_exc(),
             "code": 500,
         }
@@ -374,10 +397,10 @@ def list_faces(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
         output = {"success": True, "faces": faces}
 
-    except Exception:
+    except Exception as e:
         output = {
             "success": False,
-            "error": "An Error occured during processing",
+            "error": "An Error occured during processing: " + str(e),
             "err_trace": traceback.format_exc(),
             "code": 500,
         }
@@ -402,10 +425,10 @@ def delete_user_faces(module_runner: CodeProjectAIRunner, data: AIRequestData) -
 
         output = {"success": True}
 
-    except Exception:
+    except Exception as e:
         output = {
             "success": False,
-            "error": "An Error occured during processing",
+            "error": "An Error occured during processing: " + str(e),
             "err_trace": traceback.format_exc(),
             "code": 500,
         }
@@ -416,6 +439,8 @@ def delete_user_faces(module_runner: CodeProjectAIRunner, data: AIRequestData) -
 def recognise_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
     try:
+
+        init_models()
 
         threshold = float(data.get_value("min_confidence", "0.4"))
         pil_image = data.get_image(0)
@@ -460,7 +485,7 @@ def recognise_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
         if found_face == False:
 
-            output = {"success": False, "error": "No face found in image"}
+            output = {"success": True, "predictions": [], "message": "No face found in image"}
 
         elif len(facemap) == 0:
 
@@ -566,10 +591,10 @@ def recognise_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
             "code": 400,
         }
 
-    except Exception:
+    except Exception as e:
         output = {
             "success": False,
-            "error": "An Error occured during processing",
+            "error": "An Error occured during processing: " + str(e),
             "err_trace": traceback.format_exc(),
             "code": 500,
         }
@@ -580,6 +605,8 @@ def recognise_face(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 def match_faces(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
 
     try:
+        init_models()
+
         image1 = data.get_image(0)
         image2 = data.get_image(1)
 
@@ -630,10 +657,10 @@ def match_faces(_: CodeProjectAIRunner, data: AIRequestData) -> JSON:
         else:
             output = {"success": False, "error": "No face found in one or both images"}
 
-    except Exception:
+    except Exception as e:
         output = {
             "success": False,
-            "error": "An Error occured during processing",
+            "error": "An Error occured during processing: " + str(e),
             "err_trace": traceback.format_exc(),
             "code": 500,
         }

@@ -7,7 +7,7 @@
 # 
 # We assume we're in the source code /Installers/Dev directory.
 # 
-# Notes for Windows users:
+# Notes for Windows (WSL) users:
 #
 # 1. Always ensure this file is saved with line LF endings, not CRLF
 #    run: sed -i 's/\r$//' setup_dev_env_linux.sh
@@ -152,10 +152,10 @@ writeLine '                                                                     
 checkForTool wget
 checkForTool unzip
 
-if [ "$platform" == "linux" ] && [ "$EUID" -ne 0 ]; then
-    writeLine "Please run this script as root: sudo bash setup_dev_env_linux.sh" $color_error
-    exit
-fi
+#if [ "$platform" == "linux" ] && [ "$EUID" -ne 0 ]; then
+#    writeLine "Please run this script as root: sudo bash setup_dev_env_linux.sh" $color_error
+#    exit
+#fi
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # 1. Ensure directories are created and download required assets
@@ -181,7 +181,7 @@ if [ "$platform" == "macos" ] || [ "$platform" == "macos-arm" ]; then
     fi
 fi
 
-# source ${moduleDir}/install.sh
+# source ${moduleDir}/install.dev.sh
 
 # Walk through the modules directory and call the setup script in each dir
 for d in ${analysisLayerPath}/*/ ; do
@@ -193,12 +193,11 @@ for d in ${analysisLayerPath}/*/ ; do
         modulePath="${modulePath:0:${#modulePath}-1}"
     fi
 
-    
     # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
     dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
     if [ "${dirname}" != 'bin' ]; then
 
-       if [ -f "${modulePath}/install.sh" ]; then
+       if [ -f "${modulePath}/install.dev.sh" ]; then
 
             # Pad right to 70 chars
             announcement=$(printf %-70s "Processing ${moduleDir}")
@@ -207,8 +206,8 @@ for d in ${analysisLayerPath}/*/ ; do
             writeLine "${announcement}" "White" "Blue"
             writeLine
 
-            correctLineEndings "${modulePath}/install.sh"
-            source "${modulePath}/install.sh"
+            correctLineEndings "${modulePath}/install.dev.sh"
+            source "${modulePath}/install.dev.sh"
         fi
     fi
 done

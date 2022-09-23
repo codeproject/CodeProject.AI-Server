@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
+using System.Threading;
 
 namespace CodeProject.AI.API.Common
 {
@@ -63,6 +64,24 @@ namespace CodeProject.AI.API.Common
         }
     }
 
+    public class SettingsResponse : ResponseBase
+    {
+        /// <summary>
+        /// Gets or sets a value indicating whether the module is active
+        /// </summary>
+        public bool activate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the module's environment variables
+        /// </summary>
+        public IDictionary<string, string?>? environmentVariables { get; set; }
+
+        /// <summary>
+        /// Gets or sets the module's settings
+        /// </summary>
+        public dynamic? settings { get; set; }
+    }
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum ProcessStatusType
     {
@@ -90,6 +109,9 @@ namespace CodeProject.AI.API.Common
         [EnumMember(Value = "Crashed")]
         Crashed,
 
+        [EnumMember(Value = "Stopping")]
+        Stopping,
+
         [EnumMember(Value = "Stopped")]
         Stopped
     }
@@ -99,6 +121,8 @@ namespace CodeProject.AI.API.Common
     /// </summary>
     public class ProcessStatus
     {
+        private int _processed;
+
         /// <summary>
         /// Gets or sets the module Id
         /// </summary>
@@ -125,9 +149,9 @@ namespace CodeProject.AI.API.Common
         public ProcessStatusType Status { get; set; } = ProcessStatusType.Unknown;
 
         /// <summary>
-        /// Gets or sets the number of requests processed
+        /// Gets the number of requests processed
         /// </summary>
-        public int Processed { get; set; }
+        public int Processed { get => _processed; }
 
         /// <summary>
         /// Gets or sets the name of the hardware acceleration provider.
@@ -135,9 +159,15 @@ namespace CodeProject.AI.API.Common
         public string? ExecutionProvider { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the hardware (chip) identifier
+        /// Gets or sets the hardware type (CPU or GPU)
         /// </summary>
-        public string? HardwareId { get; set; } = "CPU";
+        public string? HardwareType { get; set; } = "CPU";
+
+        /// <summary>
+        /// Increments the number of requests processed by 1.
+        /// </summary>
+        /// <returns>the incremented value</returns>
+        public int IncrementProcessedCount() => Interlocked.Increment(ref _processed);
     }
 
     /// <summary>

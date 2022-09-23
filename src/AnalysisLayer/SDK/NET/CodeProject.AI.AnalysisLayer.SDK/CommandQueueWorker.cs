@@ -12,10 +12,14 @@ namespace CodeProject.AI.AnalysisLayer.SDK
         private readonly string?       _queueName;
         private readonly string?       _moduleId;
 
+        private readonly bool          _supportGPU  = true;
         private readonly int           _parallelism = 1;
 
-        private readonly ILogger       _logger;
         private readonly BackendClient _codeprojectAI;
+        private readonly ILogger       _logger;
+
+        private bool _cancelled = false;
+
 
         /// <summary>
         /// Gets or sets the name of this Module
@@ -28,9 +32,14 @@ namespace CodeProject.AI.AnalysisLayer.SDK
         public string? ExecutionProvider { get; set; } = "CPU";
 
         /// <summary>
-        /// Gets or sets the hardware accelerator ID that's in use
+        /// Gets or sets the hardware type that's in use (CPU or GPU)
         /// </summary>
-        public string? HardwareId { get; set; } = "CPU";
+        public string? HardwareType { get; set; } = "CPU";
+
+        /// <summary>
+        /// Gets the logger instance.
+        /// </summary>
+        public ILogger Logger { get => _logger; }
 
         /// <summary>
         /// Initializes a new instance of the PortraitFilterWorker.
@@ -43,12 +52,13 @@ namespace CodeProject.AI.AnalysisLayer.SDK
                                   string moduleName,
                                   string defaultQueueName, string defaultModuleId)
         {
+            _cancelled = false;
             _logger    = logger;
             ModuleName = moduleName;
-            
+
             int port = configuration.GetValue<int>("CPAI_PORT");
             if (port == default)
-                port = 5000;
+                port = 32168;
 
             _queueName = configuration.GetValue<string>("CPAI_MODULE_QUEUE") ?? defaultQueueName;
             if (string.IsNullOrEmpty(_queueName))
@@ -58,13 +68,21 @@ namespace CodeProject.AI.AnalysisLayer.SDK
             if (string.IsNullOrEmpty(_moduleId))
                 throw new ArgumentException("ModuleId not initialized");
 
-            _parallelism = configuration.GetValue<int>("CPAI_MODULE_PROCESSCOUNT", 1);
+            _parallelism = configuration.GetValue<int>("CPAI_MODULE_PARALLELISM", 1);
+            _supportGPU  = configuration.GetValue<bool>("CPAI_MODULE_SUPPORT_GPU", true);
 
-            _codeprojectAI = new BackendClient($"http://localhost:{port}/"
+            if (_parallelism == 0)
+                _parallelism = Environment.ProcessorCount - 1;
 #if DEBUG
-                , TimeSpan.FromMinutes(1)
+            _codeprojectAI = new BackendClient($"http://localhost:{port}/", TimeSpan.FromSeconds(30));
+
+            _logger.LogInformation($"CPAI_PORT:               {port}");
+            _logger.LogInformation($"CPAI_MODULE_ID:          {defaultModuleId}");
+            _logger.LogInformation($"CPAI_MODULE_PARALLELISM: {_parallelism}");
+            _logger.LogInformation($"CPAI_MODULE_SUPPORT_GPU: {_supportGPU}");
+#else
+            _codeprojectAI = new BackendClient($"http://localhost:{port}/");
 #endif
-            );
         }
 
         /// <summary>
@@ -120,7 +138,7 @@ namespace CodeProject.AI.AnalysisLayer.SDK
             if (!string.IsNullOrEmpty(ExecutionProvider) &&
                 !ExecutionProvider.Equals("CPU", StringComparison.OrdinalIgnoreCase))
             {
-                HardwareId = "GPU";
+                HardwareType = "GPU";
             }
         }
 
@@ -131,11 +149,12 @@ namespace CodeProject.AI.AnalysisLayer.SDK
         /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken token)
         {
+            _cancelled = false;
+
             GetHardwareInfo();
 
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
-            _logger.LogInformation($"{ModuleName} Task Started.");
             await _codeprojectAI.LogToServer($"{ModuleName} module started.", $"{ModuleName}",
                                              LogLevel.Information, string.Empty, token);
 
@@ -148,18 +167,25 @@ namespace CodeProject.AI.AnalysisLayer.SDK
 
         private async Task ProcessQueue(CancellationToken token)
         {
-            while (!token.IsCancellationRequested)
+            while (!token.IsCancellationRequested && !_cancelled)
             {
                 // _logger.LogInformation("Checking Portrait Filter queue.");
 
-                BackendRequest? request = null;
+                BackendRequest? request;
                 try
                 {
                     request = await _codeprojectAI.GetRequest(_queueName!, _moduleId!, token,
                                                               ExecutionProvider);
-
                     if (request is null)
                         continue;
+
+                    // Special shutdown request
+                    if (request.payload.command?.Equals("Quit", StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        _cancelled = true;
+                        await StopAsync(token);
+                        return;
+                    }
 
                     Stopwatch stopWatch = Stopwatch.StartNew();
                     var response = ProcessRequest(request);
@@ -179,6 +205,9 @@ namespace CodeProject.AI.AnalysisLayer.SDK
                     continue;
                 }
             }
+
+            if (_cancelled)
+                Console.WriteLine("Shutdown signal recieved. Ending loop");
         }
 
         /// <summary>
@@ -189,13 +218,16 @@ namespace CodeProject.AI.AnalysisLayer.SDK
         public abstract BackendResponseBase ProcessRequest(BackendRequest request);
 
         /// <summary>
-        /// Stop the process. Does nothing.
+        /// Stop the process.
         /// </summary>
         /// <param name="token">The stopping cancellation token.</param>
         /// <returns></returns>
         public override async Task StopAsync(CancellationToken token)
         {
-            _logger.LogTrace($"{ModuleName} Task is stopping.");
+            _cancelled = true;
+
+            await _codeprojectAI.LogToServer($"Shutting down {_moduleId}", _moduleId!,
+                                             LogLevel.Information, string.Empty, token);
 
             await base.StopAsync(token);
         }

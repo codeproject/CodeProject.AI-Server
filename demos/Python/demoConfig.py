@@ -1,7 +1,7 @@
 import os
 
 # some thing we might want to change 
-serverPort    = 5000
+serverPort    = 32168
 serverHost    = "localhost"
 serverUrl     = f"http://{serverHost}:{serverPort}/v1/"
 verifySslCert = False # my development cert is self-signed so don't verify

@@ -16,7 +16,7 @@ using Yolov5Net.Scorer.Models;
 using CodeProject.AI.AnalysisLayer.SDK;
 using System.Linq;
 
-namespace CodeProject.AI.Analysis.Yolo
+namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
 {
     /// <summary>
     /// An Object Detection Prediction.
@@ -48,9 +48,9 @@ namespace CodeProject.AI.Analysis.Yolo
         public string ExecutionProvider { get; set; } = "CPU";
 
         /// <summary>
-        /// Gets or sets the hardware ID.
+        /// Gets or sets the hardware type (CPU or GPU).
         /// </summary>
-        public string HardwareId { get; set; } = "CPU";
+        public string HardwareType { get; set; } = "CPU";
 
         public ObjectDetector(IConfiguration config, IHostEnvironment env, ILogger<ObjectDetector> logger)
         {
@@ -65,9 +65,9 @@ namespace CodeProject.AI.Analysis.Yolo
             string mode = config.GetValue<string>("MODE");
             string modelPath = (mode ?? string.Empty.ToLower()) switch
             {
-                "low"    => "assets/yolov5n.onnx",
                 "high"   => "assets/yolov5m.onnx",
                 "medium" => "assets/yolov5s.onnx",
+                "low"    => "assets/yolov5n.onnx",
                 _        => "assets/yolov5m.onnx"
             };
 
@@ -90,7 +90,7 @@ namespace CodeProject.AI.Analysis.Yolo
                         _scorer = new YoloScorer<YoloCocoP5Model>(modelFilePath);
 
                         ExecutionProvider = "CPU";
-                        HardwareId        = "CPU";
+                        HardwareType      = "CPU";
                     }
                 }
                 else
@@ -106,9 +106,8 @@ namespace CodeProject.AI.Analysis.Yolo
         {
             var sessionOpts = new SessionOptions();
 
-            bool useGPU = (Environment.GetEnvironmentVariable("USE_CUDA") ?? "false").ToLower() == "true"
-                       || (Environment.GetEnvironmentVariable("USE_GPU") ?? "false").ToLower() == "true";
-            if (useGPU)
+            bool supportGPU = (Environment.GetEnvironmentVariable("CPAI_MODULE_SUPPORT_GPU") ?? "false").ToLower() == "true";
+            if (supportGPU)
             {
                 string[]? providers = null;
                 try
@@ -127,7 +126,7 @@ namespace CodeProject.AI.Analysis.Yolo
                         sessionOpts.AppendExecutionProvider_CUDA();
 
                         ExecutionProvider = "CUDA";
-                        HardwareId        = "GPU";
+                        HardwareType      = "GPU";
                     }
                     catch
                     {
@@ -145,7 +144,7 @@ namespace CodeProject.AI.Analysis.Yolo
                         //sessionOpts.ExecutionMode = ExecutionMode.ORT_PARALLEL;
 
                         ExecutionProvider = "OpenVINO";
-                        HardwareId        = "GPU";
+                        HardwareType      = "GPU";
                     }
                     catch
                     {
@@ -164,7 +163,7 @@ namespace CodeProject.AI.Analysis.Yolo
                         sessionOpts.GraphOptimizationLevel = GraphOptimizationLevel.ORT_DISABLE_ALL;
 
                         ExecutionProvider = "DirectML";
-                        HardwareId        = "GPU";
+                        HardwareType      = "GPU";
                     }
                     catch
                     {

@@ -1,26 +1,25 @@
-﻿
-using System.Management;
+﻿using System.Management;
 
 namespace CodeProject.AI.AnalysisLayer.SDK
 {
     public class Hardware
     {
         /// <summary>
-        /// Gets or sets the execution provider.
+        /// Gets or sets the execution provider (eg CUDA, OpenVino etc).
         /// </summary>
-        public string ExecutionProvider { get; set; } = "CPU";
+        public string ExecutionProvider { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the hardware ID.
+        /// Gets or sets the device ID.
         /// </summary>
-        public string HardwareId { get; set; } = "CPU";
+        public string DeviceId { get; set; } = "CPU";
 
         /// <summary>
         /// Queries the system for the hardware capabilities.
         /// </summary>
         /// <remarks>This is naive at best, and doesn't reflect what a given software package might
         /// actually be able to utilise, nor does it reflect what's been enabled in code, or even
-        /// the choices a given piece of code has made.</remarks>
+        /// the choices a given piece of code has made. I'm not selling this, am I?</remarks>
         public void SniffHardwareInfo()
         {
 #pragma warning disable CA1416 // Validate platform compatibility
@@ -35,9 +34,9 @@ namespace CodeProject.AI.AnalysisLayer.SDK
                 {
                     if ((string)device["DeviceID"] == "VideoController2")
                     {
-                        HardwareId  = device["DeviceID"].ToString() ?? "CPU";
+                        DeviceId    = device["DeviceID"].ToString() ?? "CPU";
                         description = device["Description"].ToString() ?? string.Empty;
-                        Console.WriteLine(HardwareId);
+                        Console.WriteLine(DeviceId);
                         Console.WriteLine(description);
                     }
                 }

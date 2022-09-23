@@ -41,18 +41,18 @@ class SharedOptions:
     print(f"Vision AI services setup: Retrieving environment variables...")
 
     APPDIR          = os.path.normpath(getEnvVariable("APPDIR", os.path.join(os.getcwd(), "..")))
-    PROFILE         = getEnvVariable("PROFILE", "desktop_cpu")
+    PROFILE         = getEnvVariable("PROFILE", "desktop_gpu")
 
-    USE_CUDA        = getEnvVariable("USE_CUDA", "False")
+    SUPPORT_GPU     = getEnvVariable("CPAI_MODULE_SUPPORT_GPU", "True")
+    USE_CUDA        = getEnvVariable("USE_CUDA", "True")
     TEMP_PATH       = os.path.normpath(getEnvVariable("TEMP_PATH",  f"{APPDIR}/tempstore"))
     DATA_DIR        = os.path.normpath(getEnvVariable("DATA_DIR",   f"{APPDIR}/datastore"))
     MODELS_DIR      = os.path.normpath(getEnvVariable("MODELS_DIR", f"{APPDIR}/assets"))
-    PORT            = getEnvVariable("CPAI_PORT", "5000")
+    PORT            = getEnvVariable("CPAI_PORT", "32168")
 
-    if USE_CUDA == "True":
-        USE_CUDA   = torch.cuda.is_available()
-    else:
-        USE_CUDA   = False
+    SUPPORT_GPU     = SUPPORT_GPU.lower() == "true"
+    USE_CUDA        = USE_CUDA.lower() == "true"
+    USE_CUDA        = SUPPORT_GPU and USE_CUDA and torch.cuda.is_available()
 
     SLEEP_TIME      = 0.01
 
@@ -128,5 +128,8 @@ class SharedOptions:
         print(f"TEMP_PATH:    {TEMP_PATH}")
         print(f"DATA_DIR:     {DATA_DIR}")
         print(f"MODELS_DIR:   {MODELS_DIR}")
-        print(f"PORT:         {CPAI_PORT}")
+        print(f"PORT:         {PORT}")
         print(f"MODE:         {MODE}")
+
+    if USE_CUDA:
+        print(f"GPU in use: {torch.cuda.get_device_name(0)}")

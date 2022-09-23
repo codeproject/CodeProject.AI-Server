@@ -3,10 +3,7 @@
     "PortraitFilter": {
       "FilePath": "PortraitFilter/bin/Debug/net6.0/PortraitFilter.dll",
       "WorkingDirectory": "PortraitFilter",
-      "Runtime": "dotnet",
-      "EnvironmentVariables": {
-        "CPAI_PORT": 5500
-      }
+      "Runtime": "dotnet"
     }
   }
 }

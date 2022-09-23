@@ -1,0 +1,123 @@
+{
+  "Modules": {
+
+    "ObjectDetectionYolo": {
+      "Name": "Object Detection (YOLO)",
+
+      "Activate": true,
+      "Parallelism": 0,        // Defaults to (#CPUs - 1)
+      "SupportGPU": true,
+      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
+
+      "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects that the custom models have been trained on.",
+      "FilePath": "ObjectDetectionYolo\\detect_adapter.py",
+      "Runtime": "python38",
+      "Platforms": [ "all" ],
+
+      "EnvironmentVariables": {
+        "YOLOv5_VERBOSE": "false",
+
+        "MODEL_SIZE": "Medium", // small, medium, large, x-large
+        "RESOLUTION": "Medium", // low, medium, high
+        "USE_CUDA": "True",
+
+        "APPDIR": "%MODULES_PATH%\\ObjectDetectionYolo",
+        "MODELS_DIR": "%MODULES_PATH%\\ObjectDetectionYolo\\assets",
+        "CUSTOM_MODELS_DIR": "%MODULES_PATH%\\ObjectDetectionYolo\\custom-models"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Object Detector (YOLO)",
+          "Path": "vision/detection",
+          "Method": "POST",
+          "Queue": "detection_queue",
+          "Command": "detect",
+          "Description": "Detects multiple objects, of 80 different possible types, in an image.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4.",
+              "DefaultValue": 0.4,
+              "MinValue": 0.0,
+              "MaxValue": 1.0
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            }
+          ]
+        },
+
+        {
+          "Name": "Custom Object Detector (YOLO)",
+          "Path": "vision/custom",
+          "Method": "POST",
+          "Queue": "detection_queue",
+          "Command": "custom",
+          "Description": "Detects objects based on YOLO PyTorch models. Models are stored as .pt files in the /ObjectDetectionYolo/assets directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's .pt file",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            }
+          ]
+        },
+
+        {
+          "Name": "Object Detector List Custom Models",
+          "Path": "vision/custom/list",
+          "Method": "POST",
+          "Queue": "detection_queue",
+          "Command": "list-custom",
+          "Description": "Returns a list of models available.",
+          "Inputs": [],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "models",
+              "Type": "String",
+              "Description": "An array of strings containing the names of the models installed."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

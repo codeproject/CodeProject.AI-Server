@@ -7,8 +7,7 @@
     <ProjectHome>.</ProjectHome>
     <StartupFile>summary_adapter.py</StartupFile>
     <SearchPath>..\SDK\Python</SearchPath>
-	<Name>TextSummary</Name>
-
+    <Name>TextSummary</Name>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
@@ -22,8 +21,8 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="install.bat" />
-    <Content Include="install.sh" />
+    <Content Include="install.dev.bat" />
+    <Content Include="install.dev.sh" />
     <Content Include="modulesettings.json" />
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>

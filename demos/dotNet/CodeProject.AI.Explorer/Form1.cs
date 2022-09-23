@@ -17,7 +17,7 @@ namespace CodeProject.AI.Demo.Explorer
     public partial class Form1 : Form
     {
         const int _pingFrequency = 2;    // seconds
-        const int _apiServerPort = 5000; // be default
+        const int _apiServerPort = 32168; // be default
 
         private readonly ApiClient    _AIService              = new(_apiServerPort);
         private bool                  _serverLive             = false;    
@@ -504,7 +504,7 @@ namespace CodeProject.AI.Demo.Explorer
                 ShowError("Image must be selected.");
                 return;
             }
-            var nIterations = 100;
+            var nIterations = 512;
             var taskList = new List<Task<ResponseBase>>();
             Stopwatch sw = Stopwatch.StartNew();
             for (int i = 0; i < nIterations; i++){

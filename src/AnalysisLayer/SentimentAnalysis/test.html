@@ -8,7 +8,7 @@
         function doAnalysis(textToSend) {
             var formData = new FormData();
             formData.append('text', textToSend);
-            fetch('http://localhost:5000/v1/text/sentiment', {
+            fetch('http://localhost:32168/v1/text/sentiment', {
                     method: 'POST',
                     body: formData,
                     cache: "no-cache"

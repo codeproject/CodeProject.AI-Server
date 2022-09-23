@@ -71,11 +71,13 @@
 
 	<script type="text/javascript">
 
-		const useSVG        = true;
-		const pingFrequency = 1000; // milliseconds
-        const apiServiceUrl = "http://" + (window.location.hostname || "localhost")
-                            + ":" + (window.location.port || 5000);
-		var serverOnline    = false;
+		const useSVG            = true;
+		const pingFrequency     = 1000; // milliseconds
+        const apiServiceUrl     = "http://" + (window.location.hostname || "localhost")
+                                + ":" + (window.location.port || 32168);
+		const serviceTimeoutSec = 20;
+		let serverOnline        = false;
+
 
 		window.addEventListener('DOMContentLoaded', function (event) {
 			serviceUrl.value = apiServiceUrl;
@@ -361,10 +363,16 @@
 
 		async function ping() {
 
-			var url = serviceUrl.value.trim() + '/v1/status/ping';
+			let url = serviceUrl.value.trim() + '/v1/status/ping';
 
-			await fetch(url, { method: "GET" })
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), serviceTimeoutSec * 1000)
+
+            await fetch(url, { method: "GET", signal: controller.signal })
 				.then(response => {
+
+					clearTimeout(timeoutId);
+
 					if (!response.ok)
 						setError('Error contacting API server');
 					else
@@ -394,10 +402,13 @@
 			// a full history. For now, a simple "last 10".
 			let url = serviceUrl.value.trim() + '/v1/status/analysis/list';
 
-			fetch(url, {
-				method: "GET"
-			})
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), serviceTimeoutSec * 1000)
+
+			await fetch(url, { method: "GET", signal: controller.signal })
 				.then(response => {
+
+                    clearTimeout(timeoutId);
 
 					if (response.ok) {
 						response.json().then(data => {
@@ -438,43 +449,56 @@
 				})
 		}
 
-		function submitRequest(controller, apiName, images, parameters, doneFunc) {
+		async function submitRequest(route, apiName, images, parameters, doneFunc) {
 
 			setStatus("Sending request to AI server", "blue");
 
-			var formData = new FormData();
+            let formData = new FormData();
 
 			// Check file selected or not
 			if (images && images.length > 0) {
-				for (var i = 0; i < images.length; i++) {
+                for (let i = 0; i < images.length; i++) {
 					file = images[i];
 					formData.append('image' + (i + 1), file);
 				}
 			}
 
 			if (parameters && parameters.length > 0) {
-				for (var i = 0; i < parameters.length; i++) {
+                for (let i = 0; i < parameters.length; i++) {
 					keypair = parameters[i];
 					formData.append(keypair[0], keypair[1]);
 				}
 			}
 
-			var url = serviceUrl.value.trim() + '/v1/' + controller + '/' + apiName;
+            let url = serviceUrl.value.trim() + '/v1/' + route + '/' + apiName;
 
 			result.innerHTML = "";
 
-			fetch(url, {
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), serviceTimeoutSec * 1000)
+
+			await fetch(url, {
 				method: "POST",
-				body: formData
+				body: formData,
+				signal: controller.signal
 			})
 				.then(response => {
+
+                    clearTimeout(timeoutId);
+
 					if (!response.ok)
 						setError('Error contacting API server');
 					else {
 						response.json().then(data => {
 							if (data) {
-								doneFunc(data)
-								setStatus("Call to " + apiName + " complete", "green");
+								if (data.success) {
+									doneFunc(data)
+									setStatus("Call to " + apiName + " complete", "green");
+								}
+								else {
+                                    result.innerHTML = data.error ?? "";
+                                    setStatus("Call to " + apiName + " failed", "red");
+								}
 							} else
 								setError('No data was returned');
 						})
@@ -484,7 +508,7 @@
 					}
 				})
 				.catch(error => {
-					setError('Unable to complete API call: ' + error)
+                    showSummaryText('Unable to complete API call: ' + error)
 				});
 		}
 
@@ -514,7 +538,7 @@
 			clearCanvas();
 
 			if (fileChooser.files.length == 0) {
-				alert("No file was selected for scene detection");
+				alert("No file was selected for face detection");
 				return;
 			}
 
@@ -548,7 +572,7 @@
 
 					let title;
 					switch (data.models[i].toLowerCase()) {
-						case 'ipcam-general': title = 'General IP Cam'; break;
+						// case 'ipcam-general': title = 'General IP Cam'; break;
 						case 'license-plate': title = 'License Plates v2'; break;
 						case 'openlogo': title = 'Open Logo'; break;
 						case 'actionnetv2': title = '(Human) ActionNet v2'; break;
@@ -602,7 +626,7 @@
 			clearCanvas();
 
 			if (face1Ctrl.files.length == 0 || face2Ctrl.files.length == 0) {
-				alert("No file was selected for scene detection");
+				alert("Please supply two faces for face comparison");
 				return;
 			}
 
@@ -665,7 +689,7 @@
 			clearCanvas();
 
 			if (fileChooser.files.length == 0) {
-				alert("No file was selected for scene detection");
+				alert("No file was selected for face recognition");
 				return;
 			}
 
@@ -688,7 +712,7 @@
 			clearCanvas();
 
 			if (fileChooser.files.length == 0) {
-				alert("No file was selected for scene detection");
+				alert("No file was selected for background removal");
 				return;
 			}
 
@@ -708,7 +732,7 @@
 			clearCanvas();
 
 			if (fileChooser.files.length == 0) {
-				alert("No file was selected for scene detection");
+				alert("No file was selected for background bluring");
 				return;
 			}
 
@@ -728,7 +752,7 @@
 			clearCanvas();
 
 			if (fileChooser.files.length == 0) {
-				alert("No file was selected for scene detection");
+				alert("No file was selected for image enhancement");
 				return;
 			}
 
@@ -805,19 +829,17 @@
 			}
 
 			let startMilliseconds = performance.now();
-
-			isBenchmarkCancelled = false;
 			let nResponses = 0;
 
-			for (let i = 0; i < 50 && !isBenchmarkCancelled; i++) {
+			// Warm up
+            for (let i = 0; i < 3; i++) {
+                submitRequest('vision', route, images, null, function (data) {
+                    resultElm.innerHTML = "Warm up " + i;
+                });
+            }
 
-				// Funny thing about the cancellation bit. These requests are sent to the API
-				// server which queues them up for processing. Sending is fast. Processing takes
-				// longer. By the time you've cancelled the benchmark loop all requests have
-				// already been queued and what you're seeing are the result of the requests coming
-				// back. So not much point having a cancellation feature here. But the guts are
-				// included for grins.
-
+			// Benchmark
+			for (let i = 0; i < 50; i++) {
 	            submitRequest('vision', route, images, null, function (data) {
 					let currentMilliseconds = performance.now();
 					nResponses++;
@@ -953,7 +975,7 @@
 
 							<div class="tab-pane fade show active" id="image-panel" role="tabpanel" aria-labelledby="image-tab">
 
-								<div class="card mt-3 d-none BackgroundRemoval">
+								<div class="card mt-3 d-none BackgroundRemover">
 									<div class="card-header h3">Background Removal</div>
 									<div class="card-body bg-secondary">
 
@@ -1016,7 +1038,7 @@
 
 							<div class="tab-pane fade show" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
 
-								<div class="card mt-3 d-none FaceProcessing ObjectDetection SceneClassification VisionObjectDetection">
+								<div class="card mt-3 d-none FaceProcessing ObjectDetectionNet SceneClassification VisionObjectDetection ObjectDetectionYolo">
 									<div class="card-header h3">Object Detection</div>
 									<div class="card-body bg-secondary">
 
@@ -1033,7 +1055,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none CustomObjectDetection">
+								<div class="card mt-3 d-none ObjectDetectionYolo">
 									<div class="card-header h3">Custom Object Detection</div>
 									<div class="card-body bg-secondary">
 

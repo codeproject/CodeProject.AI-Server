@@ -1,9 +1,0 @@
-{
-  "Modules": {
-    "CustomObjectDetection": {
-      "EnvironmentVariables": {
-        "CPAI_PORT": 5500
-      }
-    }
-  }
-}
