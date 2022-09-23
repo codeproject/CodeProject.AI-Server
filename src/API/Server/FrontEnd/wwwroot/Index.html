@@ -66,9 +66,11 @@
             }
     </style>
     <script type="text/javascript">
-
-        const apiServiceUrl        = "http://" + (window.location.hostname || "localhost")
-                                   + ":" + (window.location.port || 32168);
+        const apiServiceProtocol   = window.location.protocol;
+        const apiServiceHostname   = window.location.hostname || "localhost";
+        const apiServicePort       = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
+        
+        const apiServiceUrl        = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
 
         const pingFrequency        = 2000;    // milliseconds
         const logFrequency         = 250;     // milliseconds

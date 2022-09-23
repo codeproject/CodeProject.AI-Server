@@ -14,10 +14,14 @@
     </style>
 
     <script type="text/javascript">
-
-        const pingFrequency = 2000; // milliseconds
-        const apiServiceUrl = "http://localhost:32168";
-        var serverOnline    = false;
+        const apiServiceProtocol   = window.location.protocol;
+        const apiServiceHostname   = window.location.hostname || "localhost";
+        const apiServicePort       = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
+        
+        const apiServiceUrl        = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
+        
+        const pingFrequency        = 2000; // milliseconds
+        var serverOnline           = false;
 
         window.addEventListener('DOMContentLoaded', function (event) {
             serviceUrl.value = apiServiceUrl;
