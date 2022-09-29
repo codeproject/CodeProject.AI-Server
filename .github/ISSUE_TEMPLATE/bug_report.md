@@ -8,11 +8,12 @@ assignees: ''
 ---
 
 **Area of Concern**
-[  ] Server
-[  ] Behaviour of one or more Modules [provide name(s), e.g. ObjectDetectionYolo]
-[  ] Installer
-[  ] Runtime [e.g. Pythohn3.7, .NET]
-[  ] Module packages [e.g. PyTorch)
+- [ ] Server
+- [ ] Behaviour of one or more Modules [provide name(s), e.g. ObjectDetectionYolo]
+- [ ] Installer
+- [ ] Runtime [e.g. Pythohn3.7, .NET]
+- [ ] Module packages [e.g. PyTorch)
+- [ ] Something else
 
 **Describe the bug**
 A clear and concise description of what the bug is.
