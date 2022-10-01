@@ -37,11 +37,9 @@ namespace CodeProject.AI.API.Server.Frontend
             const string product = "AI";
 
             // lower cased as Linux has case sensitive file names
-            string platform   = BackendProcessRunner.Platform.ToLower();
-            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-                                ?.ToLower();
-            bool inDocker     = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
-
+            string  platform  = BackendProcessRunner.Platform.ToLower();
+            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.ToLower();
+            bool    inDocker  = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
 
             var assembly      = Assembly.GetExecutingAssembly();
             var assemblyName  = (assembly.GetName().Name ?? string.Empty)
@@ -191,7 +189,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 LoadModulesConfiguration(config, aspNetEnv);
 
                 // Load the last saved config values as set by the user
-                LoadUserConfiguration(config, applicationDataDir, aspNetEnv);
+                LoadUserOverrideConfiguration(config, applicationDataDir, aspNetEnv);
 
                 // Load Envinronmnet Variables into Configuration
                 config.AddEnvironmentVariables();
@@ -291,7 +289,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <param name="config"></param>
         /// <param name="applicationDataDir">The directory containing the persisted user data</param>
         /// <param name="aspNetEnv">The current ASP.NET environment (Debug or Release)</param>
-        private static void LoadUserConfiguration(IConfigurationBuilder config, 
+        private static void LoadUserOverrideConfiguration(IConfigurationBuilder config, 
                                                   string applicationDataDir, string? aspNetEnv)
         {
             bool reloadOnChange = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") != "true";

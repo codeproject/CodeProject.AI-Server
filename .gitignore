@@ -375,3 +375,4 @@ FodyWeavers.xsd
 
 *.DS_Store
 
+/demos/Python/Vision/detected

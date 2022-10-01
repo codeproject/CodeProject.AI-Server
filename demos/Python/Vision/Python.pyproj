@@ -5,7 +5,7 @@
     <ProjectGuid>25750bf1-1502-4f65-8d69-cea8c87d6446</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>registeration.py</StartupFile>
+    <StartupFile>facevideo.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -23,14 +23,8 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="detected\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="requirements.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="benchmark.py" />
-    <Compile Include="demoConfig.py" />
+    <Compile Include="options.py" />
     <Compile Include="detect.py" />
     <Compile Include="face.py" />
     <Compile Include="facevideo.py" />
@@ -40,7 +34,7 @@
     <Compile Include="scene.py" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\..\src\AnalysisLayer\bin\windows\python37\venv\">
+    <Interpreter Include="..\..\..\src\AnalysisLayer\bin\windows\python37\venv\">
       <Id>env</Id>
       <Version>3.7</Version>
       <Description>env (Python 3.7 (64-bit))</Description>

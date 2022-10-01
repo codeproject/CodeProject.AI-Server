@@ -143,6 +143,13 @@ namespace CodeProject.AI.AnalysisLayer.SDK
         }
 
         /// <summary>
+        /// Called before the main processing loops are started
+        /// </summary>
+        protected virtual void InitModule()
+        {
+        }
+
+        /// <summary>
         /// Start the process.
         /// </summary>
         /// <param name="token">The cancellation token.</param>
@@ -157,6 +164,8 @@ namespace CodeProject.AI.AnalysisLayer.SDK
 
             await _codeprojectAI.LogToServer($"{ModuleName} module started.", $"{ModuleName}",
                                              LogLevel.Information, string.Empty, token);
+
+            InitModule();
 
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < _parallelism; i++)

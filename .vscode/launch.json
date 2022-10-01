@@ -144,7 +144,7 @@
         {
             "name": "Python 3.7/3.8: Current File",
             "type": "python",
-            "python": "${workspaceFolder}/src/AnalysisLayer/bin/windows/python37/venv/bin/python",
+            "python": "${workspaceFolder}/src/AnalysisLayer/bin/windows/python37/venv/Scripts/python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",

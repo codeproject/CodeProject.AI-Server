@@ -3,12 +3,12 @@
     "versionInfo": {
       "Major": 1,
       "Minor": 6,
-      "Patch": 0,
+      "Patch": 5,
       "Build": 0,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI.Server-1.6.0.0.zip",
-      "ReleaseNotes": "API for remote module management, improved memory usage, Apple M1/M2 support."
+      "File": "CodeProject.AI.Server-1.6.5.0.zip",
+      "ReleaseNotes": "Settings API expanded to allow bulk settings updates. A must for Blue Iris users!"
     }
   }
 }

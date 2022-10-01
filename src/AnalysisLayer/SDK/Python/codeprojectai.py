@@ -255,12 +255,11 @@ class CodeProjectAIRunner:
                         self._cancelled = True
                         break
 
-                    process_name = f"Module '{self.module_name}'"
+                    process_name = f"Queue and Processing {self.module_name}"
                     if data.command:
-                        process_name += f" (command: {data.command}"
+                        process_name += f" command '{data.command}'"
                         #if data.urlSegments and len(data.urlSegments) > 0 and data.urlSegments[0]:
                         #    process_name += f"/{data.urlSegments[0]}"
-                        process_name += ")"
 
                     timer: tuple = self.start_timer(process_name)
 
@@ -420,7 +419,7 @@ class CodeProjectAIRunner:
             else:
                 return []
 
-        except TimeoutError:
+        except TimeoutError as timeout:
             await self.log_async(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
                 "message": f"Timeout retrieving command from queue {self.queue_name}",
                 "method": "get_command",
@@ -431,8 +430,14 @@ class CodeProjectAIRunner:
             })
 
         except Exception as ex:
-            err_msg = "Error retrieving command: Is the API Server running?"
-            if self._verbose_exceptions:
+            err_msg        = "Error retrieving command: Is the API Server running?"
+            exception_type = "Exception"
+
+            # Missing something here, but the above TimeoutError isn't always used
+            if ex.__class__.__name__ == "TimeoutError":
+                err_msg        = f"Timeout retrieving command from queue {self.queue_name}"
+                exception_type = "TimeoutError"
+            elif self._verbose_exceptions:
                 err_msg = str(ex)
 
             await self.log_async(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
@@ -441,7 +446,7 @@ class CodeProjectAIRunner:
                 "loglevel": "error",
                 "process": self.queue_name,
                 "filename": "codeprojectai.py",
-                "exception_type": "Exception"
+                "exception_type": exception_type
             })
             await asyncio.sleep(self._error_pause_secs)
             return []
@@ -471,7 +476,7 @@ class CodeProjectAIRunner:
         """
 
         success       = False
-        responseTimer = self.start_timer(f"Sending response for request from {self.queue_name}")
+        # responseTimer = self.start_timer(f"Sending response for request from {self.queue_name}")
 
         try:
             url = self._base_queue_url + request_id + "?moduleId=" + self.module_id
@@ -496,6 +501,6 @@ class CodeProjectAIRunner:
                 print(f"Error sending response: Is the API Server running?")
 
         finally:
-            if success:
-                self.end_timer(responseTimer)
+            #if success:
+            #    self.end_timer(responseTimer)
             return success

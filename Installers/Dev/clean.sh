@@ -77,7 +77,7 @@ function cleanFiles() {
     pushd "${basePath}"  >/dev/null
 
     if [ $? -ne 0 ]; then
-        writeLine "Can't navigate to $(pwd)/${basePath}" $color_error
+        writeLine "Can't navigate to $(pwd)/${basePath} (but that's probably OK)" $color_warn
         popd  >/dev/null
         return
     fi

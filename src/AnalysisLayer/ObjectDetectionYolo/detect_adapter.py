@@ -83,7 +83,9 @@ def object_detect_callback(module_runner: CodeProjectAIRunner, data: AIRequestDa
 
         response = do_detection(module_runner, Options.models_dir,
                                 Options.std_model_name, Options.resolution_pixels,
-                                Options.use_CUDA, Options.use_MPS, img, threshold)
+                                Options.use_CUDA, Options.cuda_device_num,
+                                Options.use_MPS, Options.half_precision,
+                                img, threshold)
 
     elif data.command == "custom":                  # Perform custom object detection
 
@@ -119,7 +121,8 @@ def object_detect_callback(module_runner: CodeProjectAIRunner, data: AIRequestDa
         use_mX_GPU = False # Options.use_MPS   - Custom models don't currently work with pyTorch on MPS
         response = do_detection(module_runner, model_dir, model_name, 
                                 Options.resolution_pixels, Options.use_CUDA,
-                                use_mX_GPU, img, threshold)
+                                Options.cuda_device_num, use_mX_GPU,
+                                Options.half_precision, img, threshold)
 
     else:
         module_runner.log(LogMethod.Info | LogMethod.Cloud | LogMethod.Server,
@@ -155,7 +158,8 @@ def list_models(module_runner, models_path):
 
 
 def get_detector(module_runner, models_dir: str, model_name: str, resolution: int,
-                 useCuda: bool, useMPS: bool) -> any:
+                 use_Cuda: bool, cuda_device_num: int, use_MPS: bool,
+                 half_precision: str) -> any:
 
     """
     We have a detector for each custom model. Lookup the detector, or if it's 
@@ -176,7 +180,9 @@ def get_detector(module_runner, models_dir: str, model_name: str, resolution: in
                 # exist. Set things up correctly at install time.
                 if exists(model_path):
                     try:
-                        detector = YOLODetector(model_path, reso=resolution, cuda=useCuda, mps=useMPS)
+                        detector = YOLODetector(model_path, resolution, 
+                                                use_Cuda, cuda_device_num,
+                                                use_MPS, half_precision)
                         detectors[model_name] = detector
 
                         module_runner.log(LogMethod.Server,
@@ -208,7 +214,8 @@ def get_detector(module_runner, models_dir: str, model_name: str, resolution: in
     return detector
 
 def do_detection(module_runner, models_dir: str, model_name: str, resolution: int,
-                 useCuda: bool, useMPS: bool, img: any, threshold: float):
+                 use_Cuda: bool, cuda_device_num: int, use_MPS: bool,
+                 half_precision: str, img: any, threshold: float):
     
     # We have a detector for each custom model. Lookup the detector, or if it's
     # not found, create a new one and add it to our lookup.
@@ -217,7 +224,8 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
 
     try:
         detector = get_detector(module_runner, models_dir, model_name,
-                                resolution, useCuda, useMPS)
+                                resolution, use_Cuda, cuda_device_num, use_MPS,
+                                half_precision)
     except Exception as ex:
         create_err_msg = f"{create_err_msg} ({str(ex)})"
 
@@ -267,12 +275,13 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
     except UnidentifiedImageError:
 
         err_trace = traceback.format_exc()
+        message = err_trace or "The image provided was of an unknown type"
         module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
                           {
                              "filename": "detect_adapter.py",
                              "method": "do_detection",
                              "loglevel": "error",
-                             "message": err_trace, 
+                             "message": message,
                              "exception_type": "UnidentifiedImageError"
                           })
 
@@ -280,13 +289,14 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
 
     except Exception as ex:
 
-        err_trace = traceback.format_exc()
+        # err_trace = traceback.format_exc()
+        message = str(ex) or f"A {ex.__class__.__name__} error occurred"
         module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
                           { 
                               "filename": "detect_adapter.py",
                               "method": "do_detection",
                               "loglevel": "error",
-                              "message": ex, # err_trace, 
+                              "message": message,
                               "exception_type": "Exception"
                           })
 

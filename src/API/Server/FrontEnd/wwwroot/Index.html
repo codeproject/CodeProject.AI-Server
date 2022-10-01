@@ -67,7 +67,8 @@
     </style>
     <script type="text/javascript">
 
-        const apiServiceUrl        = "http://" + (window.location.hostname || "localhost")
+        const apiServiceUrl        = (window.location.protocol || "http:") + "//"
+                                   + (window.location.hostname || "localhost")
                                    + ":" + (window.location.port || 32168);
 
         const pingFrequency        = 2000;    // milliseconds
@@ -121,11 +122,14 @@
                         response.json()
                             .then(data => callback(data))
                             .catch(error => {
-                                setStatus('Unable to contact API server', "warning")
+                                setStatus('Unable to process server response', "warning")
                             });
                 })
                 .catch(error => {
-                    setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
+                    if (error.name === 'AbortError')
+                        setStatus("Timed out waiting for a response.");
+                    else
+                        setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
                 });
         }
 
@@ -614,9 +618,9 @@
                 <div class="mt-3 border border-1 border-light">
                     <div id="logs" class="font-monospace text-break logs" style="height:150px;overflow-x:hidden !important"></div>
                 </div>
-                <div class="d-flex small w-50">
-                    <div id="verbosity" class="me-2 mr-2">Info</div>
-                    <input type="range" id="logSeverity" class="w-100" min="1" max="6" steps="1"
+                <div class="d-flex small">
+                    <div class="text-muted">Logging level</div>
+                    <input type="range" id="logSeverity" class="w-25 mx-2" min="1" max="6" steps="1"
                            value="4" list="steplist" onchange="updateLogVerbosity()">
                     <datalist id="steplist">
                         <option>1</option>
@@ -626,6 +630,7 @@
                         <option>5</option>
                         <option>6</option>
                     </datalist>
+                    <div id="verbosity">Info</div>
                 </div>
                 <div class="small mt-1" id="latest_timing"></div>
             </div>

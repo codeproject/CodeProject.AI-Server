@@ -38,6 +38,16 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
             _objectDetector = objectDetector;
         }
 
+        protected override void InitModule()
+        {
+            Logger.LogWarning("Please ensure you don't enable this module along side any other " +
+                              "Object Detection module using the 'vision/detection' route and " +
+                              "'detection_queue' queue (eg. ObjectDetectionYolo). " +
+                              "There will be conflicts");
+
+            base.InitModule();
+        }
+
         /// <summary>
         /// The work happens here.
         /// </summary>

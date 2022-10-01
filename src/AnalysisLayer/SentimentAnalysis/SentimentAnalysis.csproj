@@ -42,7 +42,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<Version>1.6.0.0</Version>
+		<Version>1.6.5.0</Version>
 		<Nullable>disable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UserSecretsId>dotnet-SentimentAnalysis-EBFB5149-7C8C-4D4E-96D1-6C0227E67E29</UserSecretsId>

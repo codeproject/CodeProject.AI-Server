@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,7 +51,7 @@ namespace CodeProject.AI.API.Server.Frontend
         private readonly Dictionary<string, Process>   _runningProcesses = new();
         private readonly string?                       _appDataDirectory;
 
-        private readonly ModuleCollection _emptyModuleList = new ModuleCollection();
+        private readonly ModuleCollection _emptyModuleList = new();
 
         /// <summary>
         /// Gets the current platform name
@@ -214,6 +213,9 @@ namespace CodeProject.AI.API.Server.Frontend
 
                 module.ModuleId = moduleId;
 
+                if (!module.Valid)
+                    continue;
+
                 _processStatuses.Add(moduleId, new ProcessStatus()
                 {
                     ModuleId = moduleId,
@@ -292,6 +294,9 @@ namespace CodeProject.AI.API.Server.Frontend
                 ModuleConfig? module = entry.Value;
                 string moduleId      = entry.Key;
 
+                if (!module.Valid)
+                    continue;
+
                 // create the required Queues even in debug with LaunchAnalysisServices=false
                 foreach (var routeInfo in module.RouteMaps)
                     if (!string.IsNullOrWhiteSpace(routeInfo.Queue))
@@ -351,10 +356,13 @@ namespace CodeProject.AI.API.Server.Frontend
             foreach (var entry in _modules!)
             {
                 ModuleConfig? module = entry.Value;
-                string moduleId = entry.Key;
+                string moduleId      = entry.Key;
                     
                 if (stoppingToken.IsCancellationRequested)
                     break;
+
+                if (!module.Valid)
+                    continue;
 
                 ProcessStatus status = _processStatuses[moduleId];
                 if (status == null)
@@ -391,7 +399,7 @@ namespace CodeProject.AI.API.Server.Frontend
             if (!process.HasExited)
             {
                 _logger.LogInformation($"Sending shutdown request to {process.ProcessName}/{module.ModuleId}");
-                RequestPayload payload = new RequestPayload() { command = "Quit" };
+                RequestPayload payload = new() { command = "Quit" };
                 await _queueServices.SendRequestAsync(module.QueueName() ?? "",
                                                       new BackendRequest("Quit", payload));
 
@@ -445,6 +453,18 @@ namespace CodeProject.AI.API.Server.Frontend
             // If we're actually meant to be killing this process, then just leave now.
             if (!IsEnabled(module))
                 return true;
+
+            if (module.RouteMaps?.Any() == true)
+            {
+                foreach (var routeInfo in module.RouteMaps)
+                {
+                    if (!string.IsNullOrWhiteSpace(routeInfo.Queue))
+                    {
+                        _queueServices.EnsureQueueExists(routeInfo.Queue);
+                        _routeMap.Register(routeInfo);
+                    }
+                }
+            }
 
             try
             {
@@ -566,9 +586,9 @@ namespace CodeProject.AI.API.Server.Frontend
             foreach (var kv in environmentVars)
                 procStartInfo.Environment.TryAdd(kv.Key, kv.Value);
 
-            _logger.LogDebug("==================================================================");
-            _logger.LogDebug($"Setting Environment variables for {module.Name}");
             _logger.LogDebug("__________________________________________________________________");
+            _logger.LogDebug("");
+            _logger.LogDebug($"Setting Environment variables for {module.Name?.ToUpper()}");
             foreach (var envVar in environmentVars)
                 _logger.LogDebug($"{envVar.Key,-16} = {envVar.Value}");
             _logger.LogDebug("__________________________________________________________________");
@@ -795,6 +815,7 @@ namespace CodeProject.AI.API.Server.Frontend
             processEnvironmentVars.TryAdd("CPAI_MODULE_ID",          module.ModuleId);
             processEnvironmentVars.TryAdd("CPAI_MODULE_NAME",        module.Name);
             processEnvironmentVars.TryAdd("CPAI_MODULE_PARALLELISM", module.Parallelism.ToString());
+            processEnvironmentVars.TryAdd("CPAI_CUDA_DEVICE_NUM",    module.CudaDeviceNumber.ToString());
             processEnvironmentVars.TryAdd("CPAI_MODULE_SUPPORT_GPU", module.SupportGPU.ToString());
             processEnvironmentVars.TryAdd("CPAI_MODULE_QUEUENAME",   module.QueueName());
 

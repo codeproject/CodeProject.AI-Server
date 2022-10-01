@@ -1,13 +1,10 @@
 using System.Drawing;
-using System.Net.Http.Json;
 using CodeProject.AI.AnalysisLayer.SDK;
 
 using Microsoft.ML.OnnxRuntime;
 
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
-
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace CodeProject.AI.AnalysisLayer.PortraitFilter
 {
@@ -36,7 +33,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         /// <param name="deepPersonLab">The deep Person Lab.</param>
         /// <param name="configuration">The app configuration values.</param>
         public PortraitFilterWorker(ILogger<PortraitFilterWorker> logger,
-                                       IConfiguration configuration)
+                                    IConfiguration configuration)
             : base(logger, configuration, _moduleName, _defaultQueueName, _defaultModuleId)
         {
             string modelPath = _modelPath.Replace('\\', Path.DirectorySeparatorChar);
