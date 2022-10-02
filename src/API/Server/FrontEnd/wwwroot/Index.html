@@ -67,17 +67,17 @@
     </style>
     <script type="text/javascript">
 
-        const apiServiceUrl        = (window.location.protocol || "http:") + "//"
-                                   + (window.location.hostname || "localhost")
-                                   + ":" + (window.location.port || 32168);
-
         const pingFrequency        = 2000;    // milliseconds
         const logFrequency         = 250;     // milliseconds
         const statusFrequency      = 3000;    // milliseconds
         const checkUpdateFrequency = 1 * 3600 * 1000; // 1hr in milliseconds
-
         const logLinesPerRequest   = 100;     // lines to retrieve per log request
         const maxLogStorage        = 50000;   // characters, including HTML
+
+        const apiServiceProtocol   = window.location.protocol;
+        const apiServiceHostname   = window.location.hostname || "localhost";
+        const apiServicePort       = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
+        const apiServiceUrl        = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
 
         let _usingGPU              = false;
         let _lastLogId             = 0;
