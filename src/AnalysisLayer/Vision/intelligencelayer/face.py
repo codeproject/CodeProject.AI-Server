@@ -358,7 +358,7 @@ def register_face(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JS
             output = {"success": True, "message": message}
 
         else:
-            output = { "success": False, "error": "Mo face detected", "code": 400 }
+            output = { "success": False, "error": "No face detected", "code": 400 }
 
     except UnidentifiedImageError:
         output = {
