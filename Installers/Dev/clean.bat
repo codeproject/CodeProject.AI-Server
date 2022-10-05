@@ -167,19 +167,19 @@ goto:eof
         if /i "!dirMatched!" == "true" (
 
             if /i "!doDebug!" == "true" (
-                call %pwd%\utils.bat WriteLine "Marked for removal: !dirName!" !color_error!
+                call %pwd%\utils.bat WriteLine "Marked for removal: !dirName!" "!color_error!"
             ) else (
                 rmdir /s /q "!dirName!";
             
                 if exist "!dirName!" (
-                    call %pwd%\utils.bat WriteLine "Unable to remove !dirName!"  !color_error!
+                    call %pwd%\utils.bat WriteLine "Unable to remove !dirName!"  "!color_error!"
                 ) else (
-                    call %pwd%\utils.bat WriteLine "Removed !dirName!" !color_success!
+                    call %pwd%\utils.bat WriteLine "Removed !dirName!" "!color_success!"
                 )
             )
         ) else (
             if /i "!doDebug!" == "true" (
-                call %pwd%\utils.bat WriteLine "Not deleting !dirName!" !color_success!
+                call %pwd%\utils.bat WriteLine "Not deleting !dirName!" "!color_success!"
             )
         )
     )
@@ -194,7 +194,7 @@ goto:eof
 
     pushd "!BasePath!"  >nul 2>nul
     if not "%errorlevel%" == "0" (
-        call %pwd%\utils.bat WriteLine "Can't navigate to %cd%!BasePath!" "Red"
+        call %pwd%\utils.bat WriteLine "Can't navigate to %cd%!BasePath! (but that's probably OK)" "!color_warn!"
         cd %pwd%
         exit /b %errorlevel%
     )

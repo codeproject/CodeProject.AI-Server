@@ -38,14 +38,20 @@ class AIRequestData:
         """
 
         buffered = BytesIO()
-        image.save(buffered, format=image_format)
-        img_dataB64_bytes : bytes = base64.b64encode(buffered.getvalue())
-        img_dataB64 : str = img_dataB64_bytes.decode("ascii");
+        try:
+            image.save(buffered, format=image_format)
+            img_dataB64_bytes : bytes = base64.b64encode(buffered.getvalue())
+            img_dataB64 : str = img_dataB64_bytes.decode("ascii");
 
-        # Alternative that had issues
-        # img_dataB64 = base64.b64encode(processed_img)
+            # Alternative that had issues
+            # img_dataB64 = base64.b64encode(processed_img)
 
-        return img_dataB64
+            return img_dataB64
+
+        finally:
+            # Release the buffer dummy (me)
+            buffered.close()
+
      
     def get_image(self, index : int) -> Image:
         """
@@ -63,9 +69,14 @@ class AIRequestData:
             img_dataB64 = img_file["data"]
             img_bytes   = base64.b64decode(img_dataB64)
             img_stream  = io.BytesIO(img_bytes)
-            img         = Image.open(img_stream).convert("RGB")
+            try:
+                img         = Image.open(img_stream).convert("RGB")
+                return img
 
-            return img
+            finally:
+                # Release the buffer dummy (me)
+                img_stream.close()
+
 
         except Exception as ex:
 

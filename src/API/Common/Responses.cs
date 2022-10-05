@@ -67,11 +67,6 @@ namespace CodeProject.AI.API.Common
     public class SettingsResponse : ResponseBase
     {
         /// <summary>
-        /// Gets or sets a value indicating whether the module is active
-        /// </summary>
-        public bool activate { get; set; }
-
-        /// <summary>
         /// Gets or sets the module's environment variables
         /// </summary>
         public IDictionary<string, string?>? environmentVariables { get; set; }

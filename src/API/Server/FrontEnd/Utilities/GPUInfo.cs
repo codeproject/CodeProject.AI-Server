@@ -25,34 +25,42 @@ namespace CodeProject.AI.API.Server.Frontend
         {
 #if Windows
             var info = new StringBuilder();
+
             #pragma warning disable CA1416 // Validate platform compatibility
-            using (var searcher = new ManagementObjectSearcher("select * from Win32_VideoController"))
+            try
             {
-                info.AppendLine("Video adapter info:");
-
-                foreach (ManagementObject obj in searcher.Get().Cast<ManagementObject>())
+                using (var searcher = new ManagementObjectSearcher("select * from Win32_VideoController"))
                 {
-                    if (obj is not null)
-                    {
-                        string adapterRAM = "NA";
-                        if (long.TryParse(obj["AdapterRAM"]?.ToString() ?? String.Empty, out long ram))
-                            adapterRAM = FormatSizeBytes(ram, 0);
+                    info.AppendLine("Video adapter info:");
 
-                        info.AppendLine($"Name               - {obj["Name"]}");
-                        info.AppendLine($"Device ID          - {obj["DeviceID"]}");
-                        info.AppendLine($"Adapter RAM        - {adapterRAM}");
-                        info.AppendLine($"Adapter DAC Type   - {obj["AdapterDACType"]}");
-                        // info.AppendLine($"Display Drivers - {obj["InstalledDisplayDrivers"]}");
-                        info.AppendLine($"Driver Version     - {obj["DriverVersion"]}");
-                        info.AppendLine($"Video Processor    - {obj["VideoProcessor"]}");
-                        info.AppendLine($"Video Architecture - {Architecture(obj["VideoArchitecture"]?.ToString())}");
-                        info.AppendLine($"Video Memory Type  - {MemoryType(obj["VideoMemoryType"]?.ToString())}");
-                        info.AppendLine($"GPU 3D Usage       - {await Get3DGpuUsage()}");
-                        info.AppendLine($"GPU RAM Usage      - {FormatSizeBytes((long)GetGpuMemoryUsage(), 2)}");
+                    foreach (ManagementObject obj in searcher.Get().Cast<ManagementObject>())
+                    {
+                        if (obj is not null)
+                        {
+                            string adapterRAM = "NA";
+                            if (long.TryParse(obj["AdapterRAM"]?.ToString() ?? String.Empty, out long ram))
+                                adapterRAM = FormatSizeBytes(ram, 0);
+
+                            info.AppendLine($"Name               - {obj["Name"]}");
+                            info.AppendLine($"Device ID          - {obj["DeviceID"]}");
+                            info.AppendLine($"Adapter RAM        - {adapterRAM}");
+                            info.AppendLine($"Adapter DAC Type   - {obj["AdapterDACType"]}");
+                            // info.AppendLine($"Display Drivers - {obj["InstalledDisplayDrivers"]}");
+                            info.AppendLine($"Driver Version     - {obj["DriverVersion"]}");
+                            info.AppendLine($"Video Processor    - {obj["VideoProcessor"]}");
+                            info.AppendLine($"Video Architecture - {Architecture(obj["VideoArchitecture"]?.ToString())}");
+                            info.AppendLine($"Video Memory Type  - {MemoryType(obj["VideoMemoryType"]?.ToString())}");
+                            info.AppendLine($"GPU 3D Usage       - {await Get3DGpuUsage()}");
+                            info.AppendLine($"GPU RAM Usage      - {FormatSizeBytes((long)GetGpuMemoryUsage(), 2)}");
+                        }
                     }
                 }
             }
+            catch
+            {
+            }
             #pragma warning restore CA1416 // Validate platform compatibility
+
             return info.ToString();
 #else
             return await new ValueTask<string>(string.Empty);
@@ -116,9 +124,11 @@ namespace CodeProject.AI.API.Server.Frontend
             var counterNames = perfCategory.GetInstanceNames();
 
             if (instanceEnding == null)
+            {
                 return counterNames.SelectMany(counterName => perfCategory.GetCounters(counterName))
                                    .Where(counter => counter.CounterName.Equals(metricName))
                                    .ToList();
+            }
 
             return counterNames.Where(counterName => counterName.EndsWith(instanceEnding))
                                .SelectMany(counterName => perfCategory.GetCounters(counterName))
@@ -137,17 +147,26 @@ namespace CodeProject.AI.API.Server.Frontend
 #if Windows
 #pragma warning disable CA1416 // Validate platform compatibility
 
-            List<PerformanceCounter> utilization = GetCounters("GPU Engine", "engtype_3D", "Utilization Percentage");
+            int usage = 0;
+            try
+            {
+                List<PerformanceCounter> utilization = GetCounters("GPU Engine", "engtype_3D",
+                                                                   "Utilization Percentage");
 
-            // See https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.performancecounter.nextvalue?view=dotnet-plat-ext-6.0#remarks
-            // If the calculated value of a counter depends on two counter reads, the first read operation returns 0.0.
-            // The recommended delay time between calls to the NextValue method is one second
-            utilization.ForEach(x => x.NextValue());
-            await Task.Delay(1000);
+                // See https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.performancecounter.nextvalue?view=dotnet-plat-ext-6.0#remarks
+                // If the calculated value of a counter depends on two counter reads, the first
+                // read operation returns 0.0. The recommended delay time between calls to the
+                // NextValue method is one second
+                utilization.ForEach(x => x.NextValue());
+                await Task.Delay(1000);
 
-            var usage = utilization.Sum(x => x.NextValue());
+                usage = (int)utilization.Sum(x => x.NextValue());
+            }
+            catch
+            {
+            }
 
-            return (int)usage;
+            return usage;
 
 #pragma warning restore CA1416 // Validate platform compatibility
 #else
@@ -164,12 +183,19 @@ namespace CodeProject.AI.API.Server.Frontend
 #if Windows
 #pragma warning disable CA1416 // Validate platform compatibility
 
-            List<PerformanceCounter> counters = GetCounters("GPU Process Memory", null, "Dedicated Usage");
-            // gpuCounters.ForEach(x => x.NextValue());
-            // Thread.Sleep(1000);
+            try
+            {
+                List<PerformanceCounter> counters = GetCounters("GPU Process Memory", null,
+                                                                "Dedicated Usage");
+                // gpuCounters.ForEach(x => x.NextValue());
+                // Thread.Sleep(1000);
 
-            return counters.Sum(x => x.NextValue());
-
+                return counters.Sum(x => x.NextValue());
+            }
+            catch
+            {
+                return 0;
+            }
 #pragma warning restore CA1416 // Validate platform compatibility
 #else
             return 0;

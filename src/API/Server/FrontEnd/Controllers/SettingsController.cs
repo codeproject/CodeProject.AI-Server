@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,6 +32,31 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
     }
 
     /// <summary>
+    /// A Dictionary of Dictionaries of settings.
+    /// </summary>
+    /// <remarks>
+    /// The Key in the outer dictionary is the section or module name.
+    /// The Key in the inner dictionary is the setting name.
+    /// The Value in the inner dictionary is the setting value
+    /// </remarks>
+    /// <example>
+    /// {
+    ///     "Global":{
+    ///         "USE_CUDA" : "True"
+    ///     },
+    ///     "Objectdetectionyolo": {
+    ///         "CUSTOM_MODELS_DIR" : "C:\\BlueIris\\AI",
+    ///         "MODEL_SIZE" : "Large"
+    ///     },
+    ///     "FaceProcessing": {
+    ///         "Activate" : "False"
+    ///     }
+    /// }
+    ///</example>
+    public class SettingsDict : Dictionary<string, Dictionary<string, string>>
+    { }
+
+    /// <summary>
     /// For updating the settings on the server and modules.
     /// </summary>
     [Route("v1/settings")]
@@ -40,27 +66,20 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         private readonly IConfiguration   _config;
         private readonly FrontendOptions  _frontendOptions;
 
-        // TODO: this really should be a singleton global that is initialized
-        //       from the configuration but can be updated after.
-        private readonly ModuleCollection _modules;
-
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="config">The configuration</param>
         /// <param name="options">The Frontend Options</param>
-        /// <param name="modules">The Modules configuration.</param>
         public SettingsController(IConfiguration config,
-                                  IOptions<FrontendOptions> options, 
-                                  IOptions<ModuleCollection> modules)
+                                  IOptions<FrontendOptions> options)
         {
             _config          = config;
-            _modules         = modules.Value;
             _frontendOptions = options.Value;
         }
 
         /// <summary>
-        /// Manages requests to add / update settings.
+        /// Manages requests to add / update a single setting for a specific module.
         /// </summary>
         /// <returns>A Response Object.</returns>
         [HttpPost("{moduleId}", Name = "UpsertSetting")]
@@ -73,8 +92,9 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (string.IsNullOrWhiteSpace(moduleId))
                 return new ErrorResponse("No module ID provided");
 
-            // We've been toggling between passing name/value and passing discrete params. This
-            // just normalises it for later.
+            // We've been toggling between passing a name/value structure, and passing individual
+            // params. This just normalises it and helps us switch between the two modes until we
+            // settle on one.
             var settings = new SettingsPair() { Name = name, Value = value };
             if (settings == null || string.IsNullOrWhiteSpace(settings.Name))
                return new ErrorResponse("No setting or setting name provided");
@@ -87,34 +107,24 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (backend is null)
                 return new ErrorResponse("Unable to get list of modules");
 
-            if (!backend.StartupProcesses.TryGetValue(moduleId, out ModuleConfig? module) || module == null)
+            ModuleConfig? module = backend.StartupProcesses.GetModule(moduleId);
+            if (module is null)
                 return new ErrorResponse($"No module with ID {moduleId} found");
 
+            // Make the change to the module's settings
             module.UpsertSetting(settings.Name, settings.Value);
 
+            // Restart the module and persist the settings
             bool success = false;
             if (await backend.RestartProcess(module))
             {
-                string appDataDir       = _config["ApplicationDataDir"];
-                string settingsFilePath = Path.Combine(appDataDir, "modulesettings.json");
+                var settingStore = new PersistedOverrideSettings(_config["ApplicationDataDir"]);
+                var overrideSettings = await settingStore.LoadSettings();
 
-                /* PROBLEM: This saves ALL the settings, meaning that the modulesettings files in
-                            the module's folders will no longer be effective. We save a file with
-                            all settings (basically a snapshot) then load that file last, meaning 
-                            it (the old snapshot) will override all settings in the modulesettings
-                            files. What we need to do is load the saved settings, add the new
-                            settings, then save that file. But save ONLY the setting that was just
-                            modified.
-
-                _modules.SaveAllSettings(settingsFilePath);
-                */
-
-                // Probably worth combining this into one method.
-                var allSettings = await ModuleConfigExtensions.LoadSettings(settingsFilePath);
-                if (ModuleConfigExtensions.UpsertSettings(allSettings, module.ModuleId!,
+                if (ModuleConfigExtensions.UpsertSettings(overrideSettings, module.ModuleId!,
                                                           settings.Name, settings.Value))
                 {
-                    success = await ModuleConfigExtensions.SaveSettings(allSettings, settingsFilePath);
+                    success = await settingStore.SaveSettings(overrideSettings);
                 }
             }
 
@@ -122,12 +132,94 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         }
 
         /// <summary>
-        /// Returns a list of log entries. A GET request.
+        /// Manages requests to add / update settings for one or more modules.
+        /// </summary>
+        /// <returns>A Response Object.</returns>
+        [HttpPost("", Name = "UpsertSettings")]
+        [Produces("application/json")]
+        //[Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ResponseBase> UpsertSettingsAsync([FromBody] SettingsDict settings)
+        {
+            if (!settings.Any())
+                return new ErrorResponse("No settings provided");
+
+            // Get the backend processor (DI won't work here due to the order things get fired up
+            // in Main.
+            var backend = HttpContext.RequestServices.GetServices<IHostedService>()
+                                                     .OfType<BackendProcessRunner>()
+                                                     .FirstOrDefault();
+            if (backend is null)
+                return new ErrorResponse("Unable to get list of modules");
+
+            bool restartSuccess = true;
+
+            // Load up the current persisted settings so we can update and re-save them
+            var settingStore = new PersistedOverrideSettings(_config["ApplicationDataDir"]);
+            var overrideSettings = await settingStore.LoadSettings();
+
+            // Keep tabs on which modules need to be restarted
+            List<string>? moduleIdsToRestart = new();
+
+            foreach (var moduleSetting in settings)
+            {
+                string moduleId = moduleSetting.Key;
+
+                // Special case
+                if (moduleId.Equals("Global", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Update all settings based on what's in the global settings. We'll get back a
+                    // list of affected modules that need restarting.
+                    Dictionary<string, string> globalSettings = moduleSetting.Value;
+                    ModuleCollection modules                  = backend.StartupProcesses;
+                    moduleIdsToRestart = LegacyParams.UpdateSettings(globalSettings, modules,
+                                                                     overrideSettings);
+
+                    continue;
+                }
+
+                // Targeting a specific module
+                ModuleConfig? module = backend.StartupProcesses.GetModule(moduleId);
+                if (module is null)
+                    continue;
+
+                foreach (var setting in moduleSetting.Value)
+                {
+                    // Update each setting value for this module (here and now)
+                    module.UpsertSetting(setting.Key, setting.Value);
+
+                    // Add this setting to the persisted override settings (settings will maintain
+                    // after server restart)
+                    ModuleConfigExtensions.UpsertSettings(overrideSettings, module.ModuleId!,
+                                                          setting.Key, setting.Value);
+                }
+
+                if (!moduleIdsToRestart.Contains(module.ModuleId!, StringComparer.OrdinalIgnoreCase))
+                    moduleIdsToRestart.Add(module.ModuleId!);
+            }
+
+            // Restart the modules that were updated
+            foreach (string moduleId in moduleIdsToRestart)
+            {
+                ModuleConfig? module = backend.StartupProcesses.GetModule(moduleId);
+                if (module is not null)
+                    restartSuccess = await backend.RestartProcess(module) && restartSuccess;
+            }
+
+            // Only persist these override settings if all modules restarted successfully
+            bool success = restartSuccess && await settingStore.SaveSettings(overrideSettings);
+
+            return new ResponseBase { success = success };
+        }
+
+        /// <summary>
+        /// Returns a list of module settings. A GET request.
         /// </summary>
         /// <param name="moduleId">The name of the module for which to get the settings.</param>
         /// <returns>A list of settings.</returns>
         /// <response code="200">Returns the list of detected object information, if any.</response>
-        /// <response code="400">If the image in the Form data is null.</response>            
+        /// <response code="400"></response>            
         [HttpGet("{moduleId}", Name = "List Settings")]
         [Consumes("multipart/form-data")]
         [Produces("application/json")]
@@ -138,7 +230,16 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (string.IsNullOrWhiteSpace(moduleId))
                 return new ErrorResponse("No module ID provided");
 
-            if (!_modules.TryGetValue(moduleId, out ModuleConfig? module) || module == null)
+            // Get the backend processor (DI won't work here due to the order things get fired up
+            // in Main.
+            var backend = HttpContext.RequestServices.GetServices<IHostedService>()
+                                                     .OfType<BackendProcessRunner>()
+                                                     .FirstOrDefault();
+            if (backend is null)
+                return new ErrorResponse("Unable to get list of modules");
+
+            ModuleConfig? module = backend.StartupProcesses.GetModule(moduleId);
+            if (module is null)
                 return new ErrorResponse($"No module found with ID {moduleId}");
 
             Dictionary<string, string?> processEnvironmentVars = new();

@@ -8,18 +8,19 @@ Example run: python3 benchmark.py --images_folder /Users/my/images
 import argparse
 import time
 from pathlib import Path
-
 import requests
-import demoConfig as cfg
 
-# deepstack credentials
-DEFAULT_IP_ADDRESS    = cfg.serverHost
-DEFAULT_PORT          = cfg.serverPort
-DEFAULT_IMAGES_FOLDER = cfg.imageDir
+from options import Options
 
+opts = Options()
 
 def main():
-    parser = argparse.ArgumentParser(description="Perform benchmarking of DeepStack modules in CodeProject.AI")
+
+    DEFAULT_IP_ADDRESS    = opts.serverHost
+    DEFAULT_PORT          = opts.serverPort
+    DEFAULT_IMAGES_FOLDER = opts.imageDir + "/Objects"
+
+    parser = argparse.ArgumentParser(description="Perform benchmarking of CodeProject.AI Server")
     parser.add_argument(
         "--ip",
         default=DEFAULT_IP_ADDRESS,
@@ -32,9 +33,9 @@ def main():
         type=int,
         help="CodeProject.AI Server Port",
     )
-    parser.add_argument(
-        "--api_key", default=DEFAULT_API_KEY, type=str, help="Deepstack API key"
-    )
+    # parser.add_argument(
+    #    "--api_key", default=DEFAULT_API_KEY, type=str, help="Deepstack API key"
+    #)
     parser.add_argument(
         "--images_folder",
         default=DEFAULT_IMAGES_FOLDER,
@@ -51,26 +52,20 @@ def main():
 
     for i, img_path in enumerate(images):
         with open(img_path, "rb") as image_bytes:
-            response = requests.post(
-                cfg.serverUrl + "vision/detection",
-                files={"image": image_bytes},
-                data={"api_key": args.api_key},
-            )
+            response = requests.post(opts.endpoint("vision/detection"),
+                                     files={"image": image_bytes}).json()
 
-        predictions = response.json()["predictions"]
-        if (predictions == None):
-            predictions = []
+            predictions = response["predictions"]
+            if (predictions == None):
+                predictions = []
 
         total_predictions = total_predictions + len(predictions)
-        print(
-            f"Processed image number {i} : {str(img_path)}, {len(predictions)} predictions"
-        )
+        print(f"Processed image {i} : {img_path}, {len(predictions)} predictions")
 
     end_time = time.time()
     duration = end_time - start_time
-    print(
-        f"Processing completes in {round(duration, 5)} seconds, total of {total_predictions} predictions"
-    )
+
+    print(f"Completes in {round(duration, 2)} seconds, {total_predictions} predictions, {round(total_predictions/duration,1)} ops/sec")
 
 
 if __name__ == "__main__":

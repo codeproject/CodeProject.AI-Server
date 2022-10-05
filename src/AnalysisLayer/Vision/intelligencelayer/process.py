@@ -14,7 +14,26 @@ class YOLODetector(object):
     def __init__(self, model_path: str, reso: int = 640, cuda: bool = False):
 
         self.device = torch.device("cuda:0" if cuda else "cpu")
-        self.half = self.device.type != "cpu"
+
+        # Use half-precision if possible. There's a bunch of Nvidia cards where
+        # this won't work
+        if cuda:
+            gpu_name = torch.cuda.get_device_name()
+            no_half = ["TU102","TU104","TU106","TU116", "TU117",
+                       "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080",
+                       "GeForce GTX 1650", "GeForce GTX 1660", "MX550", "MX450",
+                       "Quadro RTX 8000", "Quadro RTX 6000", "Quadro RTX 5000", "Quadro RTX 4000"
+                       "Quadro P1000", "Quadro P620", "Quadro P400",
+                       "T1000", "T600", "T400","T1200","T500","T2000",
+                       "Tesla T4"]
+            self.half = not any(check_name in gpu_name for check_name in no_half)
+
+            if self.half:
+                print(f"Using half-precision for the device '{gpu_name}'")
+            else:
+                print(f"Not using half-precision for the device '{gpu_name}'")
+        else:
+            self.half = False
 
         self.reso = (reso, reso)
         self.cuda = cuda

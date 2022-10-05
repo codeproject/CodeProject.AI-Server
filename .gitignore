@@ -375,3 +375,6 @@ FodyWeavers.xsd
 
 *.DS_Store
 
+/demos/Python/Vision/detected
+/src/AnalysisLayer/ObjectDetectionYolo/assets
+/src/AnalysisLayer/ObjectDetectionYolo/custom-models

@@ -5,10 +5,10 @@
 	<meta charset="utf-8" />
 	<title>CodeProject.AI Explorer</title>
 
-	<!-- If you use this, ensure the body has class "dark-mode" -->
+	<!-- If you use this, ensure the body has class "dark-mode"-->
 	<link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
 	<!-- for light mode should you wish it
-	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" />
+	   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" />
 	-->
 	<!-- Will only be effective if you're connected to the internet -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,20 +20,22 @@
 	<style>
 		.header {
 			font-family: Inter, Arial, Helvetica, Arial, sans-serif;
-			background: rgb(255,153,0);
 			padding: 10px 0;
 			margin-bottom: 25px;
 		}
 
-		.site-title {
-			text-decoration: none !important;
-			font-size: 2.7rem;
-			color: white;
-			display: inline-block;
-			text-transform: uppercase;
-			vertical-align: middle;
-			letter-spacing: -3px;
-		}
+        .nav-link {
+			padding:0.5rem 1rem;
+        }
+
+        .site-title {
+            text-decoration: none !important;
+            font-size: 2.7rem;
+            display: inline-block;
+            text-transform: uppercase;
+            vertical-align: middle;
+            letter-spacing: -3px;
+        }
 
 			.site-title .front {
 				font-weight: 200;
@@ -49,6 +51,19 @@
 
 		input[type="range"]::-webkit-slider-thumb {
 			margin-top: -7px;
+		}
+
+
+		.dark-mode .header {
+			background: rgb(255,153,0);
+		}
+
+		.dark-mode .card-body {
+			background-color: rgb(108,117,125);
+		}
+
+		.dark-mode .site-title {
+			color: white;
 		}
 
 		.dark-mode .nav-tabs {
@@ -71,16 +86,20 @@
 
 	<script type="text/javascript">
 
-		const useSVG            = true;
-		const pingFrequency     = 1000; // milliseconds
-        const apiServiceUrl     = "http://" + (window.location.hostname || "localhost")
-                                + ":" + (window.location.port || 32168);
-		const serviceTimeoutSec = 20;
-		let serverOnline        = false;
+		const useSVG             = true;
+		const pingFrequency      = 1000; // milliseconds
+		const serviceTimeoutSec  = 10;   // seconds
 
+        const apiServiceProtocol = window.location.protocol;
+        const apiServiceHostname = window.location.hostname || "localhost";
+        const apiServicePort     = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
+        const apiServiceUrl      = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
+
+		let serverOnline = false;
 
 		window.addEventListener('DOMContentLoaded', function (event) {
 			serviceUrl.value = apiServiceUrl;
+			serviceTimeoutSecTxt.value = serviceTimeoutSec;
 			setStatus("Searching for API Server...", "orange");
 			setInterval(ping, pingFrequency);
 			setInterval(getAnalysisStatus, pingFrequency);
@@ -159,10 +178,10 @@
 
 			if (useSVG) {
 				svg = `
-											<svg viewBox="0 0 ${img.width} ${img.height}">
-											<defs>
-												<mask id="mask">
-													<rect fill="#999" x="0" y="0" width="${img.width}" height="${img.height}"></rect>`;
+															<svg viewBox="0 0 ${img.width} ${img.height}">
+															<defs>
+																<mask id="mask">
+																	<rect fill="#999" x="0" y="0" width="${img.width}" height="${img.height}"></rect>`;
 			}
 			else {
 				let context = annotations.getContext("2d");
@@ -171,7 +190,7 @@
 			}
 
 			for (var i = 0; i < predictions.length; i++) {
-				let rect   = predictions[i];
+				let rect = predictions[i];
 				let left   = Math.min(rect.x_min, rect.x_max) * xRatio;
 				let top    = Math.min(rect.y_min, rect.y_max) * yRatio;
 				let width  = Math.abs(rect.x_min - rect.x_max) * xRatio;
@@ -190,10 +209,10 @@
 
 			if (useSVG) {
 				svg += `
-												</mask>
-											</defs>
-											<image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
-												   xlink:href="${img.src}" width="${img.width}" height="${img.height}"></image>`;
+																</mask>
+															</defs>
+															<image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
+																   xlink:href="${img.src}" width="${img.width}" height="${img.height}"></image>`;
 
 				let colors = ["179,221,202", "204,223,120", "164,221,239"];
 				let colorIndex = 0;
@@ -201,15 +220,14 @@
 				let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 2 : 5) : 15;
 				for (var i = 0; i < predictions.length; i++) {
 
-					let rect   = predictions[i];
-					let left   = Math.min(rect.x_min, rect.x_max) * xRatio;
-					let top    = Math.min(rect.y_min, rect.y_max) * yRatio;
-					let width  = Math.abs(rect.x_min - rect.x_max) * xRatio;
+					let rect = predictions[i];
+					let left = Math.min(rect.x_min, rect.x_max) * xRatio;
+					let top = Math.min(rect.y_min, rect.y_max) * yRatio;
+					let width = Math.abs(rect.x_min - rect.x_max) * xRatio;
 					let height = Math.abs(rect.y_min - rect.y_max) * yRatio;
 
 					let right = left + width;
 					let bottom = top + height;
-
 
 					// CodeProject.AI style
 					let lineWidth = Math.min(maxLineWidth, width / 10);
@@ -265,7 +283,7 @@
 				}
 
 				svg += `
-										</svg>`;
+														</svg>`;
 
 				imageMask.innerHTML = svg;
 				img.style.visibility = "hidden";
@@ -365,10 +383,11 @@
 
 			let url = serviceUrl.value.trim() + '/v1/status/ping';
 
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), serviceTimeoutSec * 1000)
+			const controller = new AbortController()
+			const timeoutSecs = parseInt(serviceTimeoutSecTxt.value);
+			const timeoutId = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
-            await fetch(url, { method: "GET", signal: controller.signal })
+			await fetch(url, { method: "GET", signal: controller.signal })
 				.then(response => {
 
 					clearTimeout(timeoutId);
@@ -387,12 +406,16 @@
 								setError('Unable to contact API server');
 						})
 							.catch(error => {
-								setError('Unable to contact API server: ' + error)
+								setError('Error processing server response: ' + error)
 							});
 				})
 				.catch(error => {
-					serverOnline = false;
-					setError(/*error.message*/ "Unable to contact AI Server");
+					if (error.name === 'AbortError') {
+						setError("Timed out waiting for a response. Maybe increase the timeout value?");
+						serverOnline = false;
+					}
+					else
+						setError(/*error.message*/ "Unable to contact AI Server");
 				});
 		}
 
@@ -402,13 +425,14 @@
 			// a full history. For now, a simple "last 10".
 			let url = serviceUrl.value.trim() + '/v1/status/analysis/list';
 
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), serviceTimeoutSec * 1000)
+			const controller = new AbortController()
+			const timeoutSecs = parseInt(serviceTimeoutSecTxt.value);
+			const timeoutId = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
 			await fetch(url, { method: "GET", signal: controller.signal })
 				.then(response => {
 
-                    clearTimeout(timeoutId);
+					clearTimeout(timeoutId);
 
 					if (response.ok) {
 						response.json().then(data => {
@@ -420,6 +444,10 @@
 								for (const card of cards)
 									card.classList.replace('d-flex', 'd-none');
 
+                                var navTabs = document.getElementsByClassName('nav-item');
+                                for (const card of cards)
+                                    card.classList.add('d-none');
+								
 								for (let i = 0; i < data.statuses.length; i++) {
 
 									let moduleId = data.statuses[i].moduleId.replace(" ", "-");
@@ -436,7 +464,7 @@
 											if (parent && parent.attributes["aria-labelledby"]) {
 												let tabListItemId = parent.attributes["aria-labelledby"].value + "-listitem";
 												let tabItem = document.getElementById(tabListItemId);
-												if (tabItem.classList) 
+												if (tabItem.classList)
 													tabItem.classList.remove('d-none');
 												card.parentNode.parentNode.classList.remove('d-none');
 											}
@@ -453,29 +481,30 @@
 
 			setStatus("Sending request to AI server", "blue");
 
-            let formData = new FormData();
+			let formData = new FormData();
 
 			// Check file selected or not
 			if (images && images.length > 0) {
-                for (let i = 0; i < images.length; i++) {
+				for (let i = 0; i < images.length; i++) {
 					file = images[i];
 					formData.append('image' + (i + 1), file);
 				}
 			}
 
 			if (parameters && parameters.length > 0) {
-                for (let i = 0; i < parameters.length; i++) {
+				for (let i = 0; i < parameters.length; i++) {
 					keypair = parameters[i];
 					formData.append(keypair[0], keypair[1]);
 				}
 			}
 
-            let url = serviceUrl.value.trim() + '/v1/' + route + '/' + apiName;
+			let url = serviceUrl.value.trim() + '/v1/' + route + '/' + apiName;
 
 			result.innerHTML = "";
 
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), serviceTimeoutSec * 1000)
+			const controller = new AbortController()
+			const timeoutSecs = parseInt(serviceTimeoutSecTxt.value);
+			const timeoutId = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
 			await fetch(url, {
 				method: "POST",
@@ -484,7 +513,7 @@
 			})
 				.then(response => {
 
-                    clearTimeout(timeoutId);
+					clearTimeout(timeoutId);
 
 					if (!response.ok)
 						setError('Error contacting API server');
@@ -496,19 +525,24 @@
 									setStatus("Call to " + apiName + " complete", "green");
 								}
 								else {
-                                    result.innerHTML = data.error ?? "";
-                                    setStatus("Call to " + apiName + " failed", "red");
+									result.innerHTML = data.error ?? "";
+									setStatus("Call to " + apiName + " failed", "red");
 								}
 							} else
 								setError('No data was returned');
 						})
 							.catch(error => {
-								setError("Unable to read response: " + error);
+								setError("Unable to process server response: " + error);
 							})
 					}
 				})
 				.catch(error => {
-                    showSummaryText('Unable to complete API call: ' + error)
+					if (error.name === 'AbortError') {
+						setError("Timed out waiting for a response. Maybe increase the timeout value?");
+						serverOnline = false;
+					}
+					else
+						showSummaryText('Unable to complete API call: ' + error)
 				});
 		}
 
@@ -560,11 +594,11 @@
 
 			submitRequest('vision', 'custom/list', null, null, function (data) {
 
-                while (selectList.options.length)
-                    selectList.remove(0);
+				while (selectList.options.length)
+					selectList.remove(0);
 
 				if (add_extras) {
-                    selectList.options.add(new Option("Standard model", ""));
+					selectList.options.add(new Option("Standard model", ""));
 					selectList.options.add(new Option("No inference: round-trip speed test only", "round-trip"));
 				}
 
@@ -579,29 +613,29 @@
 						default: title = data.models[i];
 					}
 
-                    var model = new Option(title, data.models[i]);
-                    selectList.options.add(model);
+					var model = new Option(title, data.models[i]);
+					selectList.options.add(model);
 				}
-            });
+			});
 		}
 
-        function onCustomDetect(model_name, fileChooser) {
+		function onCustomDetect(model_name, fileChooser) {
 
-            clearCanvas();
+			clearCanvas();
 
-            if (fileChooser.files.length == 0) {
-                alert("No file was selected for custom object detection");
-                return;
-            }
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for custom object detection");
+				return;
+			}
 
-            setImage(fileChooser.files[0]);
-            let images = [fileChooser.files[0]];
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
 
-            submitRequest('vision', 'custom/' + model_name, images, null, function (data) {
-                drawRectangles(data.predictions);
-                displayPredictionResults(data.predictions)
-            });
-        }
+			submitRequest('vision', 'custom/' + model_name, images, null, function (data) {
+				drawRectangles(data.predictions);
+				displayPredictionResults(data.predictions)
+			});
+		}
 
 		function onDetectThings(fileChooser) {
 
@@ -630,7 +664,7 @@
 				return;
 			}
 
-            setImage(face1Ctrl.files[0]);
+			setImage(face1Ctrl.files[0]);
 			let images = [face1Ctrl.files[0], face2Ctrl.files[0]];
 
 			submitRequest('vision', 'face/match', images, null, function (data) {
@@ -807,13 +841,155 @@
 			});
 		}
 
+        const useRequestAnimationFrame = true;
+        const framePerSecond           = 5; // Only if useRequestAnimationFrame = false
+
+		let videoProcessingActive = false;
+		let videoTimerId;
+        let lastFrameDrawTime, lastInferenceTime, framesPerSecond, processedPerSecond;
+		let rect_left, rect_top, rect_width, rect_height;
+		let processQueueLength = 0;
+		function onStartVideo(e) {
+
+			const video = document.getElementById('video');
+
+			if (navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+						video.srcObject = stream;
+						videoProcessingActive = true;
+                        lastFrameDrawTime = performance.now();
+                        if (useRequestAnimationFrame)
+							requestAnimationFrame(drawVideoDetection);
+						else
+							videoTimerId = setInterval(drawVideoDetection, 1000 / framePerSecond);
+                    })
+                    .catch(function (err0r) {
+                        console.log("Unable to capture webcam stream");
+                    });
+			}
+
+			return false;
+		}
+
+		function drawVideoDetection() {
+
+            const video  = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width  = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+			let ctx = canvas.getContext('2d');
+
+			// Draw the current image, the previous detection rect, and the stats
+			ctx.drawImage(video, 0, 0); //, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "red";
+            ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+
+			if (framesPerSecond) {
+				ctx.font         = '20px sans-serif';
+				ctx.strokeStyle  = "black";
+				ctx.fillStyle    = "white";
+				ctx.textAlign    = 'right';
+				ctx.textBaseline = 'top';
+                if (processedPerSecond)
+                    ctx.fillText(`${framesPerSecond.toFixed(1)} FPS, ${processedPerSecond.toFixed(1)} detects/sec`, canvas.width - 10, 10);
+				else
+                    ctx.fillText(`${framesPerSecond.toFixed(1)} FPS`, canvas.width - 10, 10);
+			}
+
+			let previousFrameDrawTime = lastFrameDrawTime;
+			lastFrameDrawTime = performance.now();
+
+            // Draw previous face detection and move on
+			if (processQueueLength > 0) {
+
+				if (useRequestAnimationFrame && videoProcessingActive)
+					requestAnimationFrame(drawVideoDetection);
+
+				return;
+			}
+
+            if (previousFrameDrawTime && previousFrameDrawTime < lastFrameDrawTime)
+                framesPerSecond = 1000.0 / (lastFrameDrawTime - previousFrameDrawTime);
+
+			canvas.toBlob(function (blob) {
+
+				if (blob) {
+
+					let formData = new FormData();
+					formData.append('image', blob, 'filename.png');
+
+					let url = serviceUrl.value.trim() + '/v1/vision/face';
+
+					processQueueLength++;
+
+					fetch(url, {
+						method: "POST",
+						body: formData
+					})
+					.then(response => {
+						processQueueLength--;
+						if (response.ok) response.json().then(data => {
+                            if (videoProcessingActive && data && data.success && data.predictions) {
+
+                                let previousInferenceTime = lastInferenceTime;
+								lastInferenceTime = performance.now();
+
+                                if (previousInferenceTime && previousInferenceTime < lastInferenceTime)
+                                    processedPerSecond = 1000.0 / (lastInferenceTime - previousInferenceTime);
+
+								for (var i = 0; i < data.predictions.length; i++) {
+
+                                    let rect = data.predictions[i];
+									rect_left   = Math.min(rect.x_min, rect.x_max);
+									rect_top    = Math.min(rect.y_min, rect.y_max);
+									rect_width  = Math.abs(rect.x_min - rect.x_max);
+									rect_height = Math.abs(rect.y_min - rect.y_max);
+
+									ctx.strokeStyle = "red";
+                                    ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+								}
+							}
+						})
+					});
+				}
+
+                if (useRequestAnimationFrame && videoProcessingActive)
+					requestAnimationFrame(drawVideoDetection);
+			});
+		}
+
+		function onStopVideo(e) {
+
+			videoProcessingActive = false;
+            if (!useRequestAnimationFrame)
+				clearInterval(videoTimerId);
+
+			var stream = video.srcObject;
+			try {
+				var tracks = stream.getTracks();
+
+				for (var i = 0; i < tracks.length; i++) {
+					var track = tracks[i];
+					track.stop();
+				}
+			}
+			catch { }
+
+            video.srcObject = null;
+
+			return false;
+        }
+
 		var isBenchmarkCancelled;
 		function onBenchmark(fileChooser, model_name, resultElm) {
 
 			clearCanvas();
 
 			let images = null;
-			let route  = model_name? ('custom/' + model_name) : 'detection';
+			let route = model_name ? ('custom/' + model_name) : 'detection';
 
 			if (benchmarkModel.value == "round-trip") {
 				route = "custom/list";
@@ -832,15 +1008,15 @@
 			let nResponses = 0;
 
 			// Warm up
-            for (let i = 0; i < 3; i++) {
-                submitRequest('vision', route, images, null, function (data) {
-                    resultElm.innerHTML = "Warm up " + i;
-                });
-            }
+			for (let i = 0; i < 3; i++) {
+				submitRequest('vision', route, images, null, function (data) {
+					resultElm.innerHTML = "Warm up " + i;
+				});
+			}
 
 			// Benchmark
 			for (let i = 0; i < 50; i++) {
-	            submitRequest('vision', route, images, null, function (data) {
+				submitRequest('vision', route, images, null, function (data) {
 					let currentMilliseconds = performance.now();
 					nResponses++;
 					let opsPerSecond = (nResponses * 1000) / (currentMilliseconds - startMilliseconds);
@@ -937,12 +1113,15 @@
 			</div>
 
 			<div class="card mt-3">
-				<div class="card-body bg-secondary">
+				<div class="card-body">
 
-					<div class="form-group row">
+					<div class="form-group row text-nowrap">
 						<label class="col-form-label col-2 text-end">Service API URL</label>
-						<input class="form-control" type="text" id="serviceUrl" style="width:25rem;" />
-						<label id="status" class="col-form-label col bg-white fw-bold ms-4"></label>
+						<input class="col-form-control col-2" type="text" id="serviceUrl" style="width:12.5rem"/>
+						<label class="col-form-label col-1 text-end">Timeout</label>
+						<input class="col-form-control col-1" type="number" id="serviceTimeoutSecTxt" style="width:4rem"/>
+						<label class="col-form-label col-1" style="width:3rem">sec</label>
+						<label id="status" class="col-form-label col-5 bg-white fw-bold ms-4"></label>
 					</div>
 				</div>
 			</div>
@@ -953,18 +1132,24 @@
 					<div style="width:600px">
 
 						<ul class="nav nav-tabs d-flex" id="DemoTabs" role="tablist">
-							<li class="nav-item d-none" id="image-tab-listitem">
-								<button class="nav-link active" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-panel" type="button" role="tab" aria-controls="image" aria-selected="true">Image</button>
-							</li>
+
 							<li class="nav-item d-none" id="vision-tab-listitem">
-								<button class="nav-link" id="vision-tab" data-bs-toggle="tab" data-bs-target="#vision-panel" type="button" role="tab" aria-controls="vision" aria-selected="true">Vision</button>
+								<button class="nav-link active" id="vision-tab" data-bs-toggle="tab" data-bs-target="#vision-panel" type="button" role="tab" aria-controls="vision" aria-selected="true">Vision</button>
 							</li>
+							<li class="nav-item d-none" id="image-tab-listitem">
+								<button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-panel" type="button" role="tab" aria-controls="image" aria-selected="true">Image</button>
+							</li>
+
 							<li class="nav-item d-none" id="face-tab-listitem">
 								<button class="nav-link" id="face-tab" data-bs-toggle="tab" data-bs-target="#face-panel" type="button" role="tab" aria-controls="face" aria-selected="false">Face</button>
 							</li>
-							<li class="nav-item d-none"  id="text-tab-listitem">
+							<li class="nav-item d-none" id="text-tab-listitem">
 								<button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-panel" type="button" role="tab" aria-controls="text" aria-selected="false">Text</button>
 							</li>
+
+							<li class="nav-item d-none" id="video-tab-listitem">
+								<button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#video-panel" type="button" role="tab" aria-controls="video" aria-selected="false">Video</button>
+							</li>							
 
 							<li class="nav-item ms-auto">
 								<button class="nav-link" id="benchmark-tab" data-bs-toggle="tab" data-bs-target="#benchmark-panel" type="button" role="tab" aria-controls="benchmark" aria-selected="false">Benchmark</button>
@@ -973,11 +1158,54 @@
 
 						<div class="tab-content" id="DemoTabsContent">
 
-							<div class="tab-pane fade show active" id="image-panel" role="tabpanel" aria-labelledby="image-tab">
+							<div class="tab-pane fade show active" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
+
+								<div class="card mt-3 d-none FaceProcessing ObjectDetectionNet SceneClassification VisionObjectDetection ObjectDetectionYolo">
+									<div class="card-header h3">Object Detection</div>
+									<div class="card-body">
+
+										<div class="form-group row">
+											<label class="col-form-label col-3">Image</label>
+											<input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
+										</div>
+										<div class="form-group row mt-2 flex-nowrap">
+											<label class="col-form-label col-3">Operation</label>
+											<input class="col form-control btn-success" type="button" value="Detect Scene" id="scene" onclick="onDetectScene(image)" />
+											<input class="col form-control btn-info" type="button" value="Detect Face" id="face" onclick="onDetectFaces(image)" />
+											<input class="col form-control btn-warning" type="button" value="Detect Things" id="things" onclick="onDetectThings(image)" />
+										</div>
+									</div>
+								</div>
+
+								<div class="card mt-3 d-none ObjectDetectionYolo">
+									<div class="card-header h3">Custom Object Detection</div>
+									<div class="card-body">
+
+										<div class="form-group row">
+											<label class="col-form-label col-3">Image</label>
+											<input class="col form-control btn-light" id="customimage" type="file"
+												   onchange="return previewImage(this)" />
+										</div>
+										<div class="form-group d-flex justify-content-end mt-2">
+											<select id="customModel" class="form-select me-5">
+												<option value="ipcam-general">General IP Cam</option>
+												<option value="license-plate">License Plates v2</option>
+												<option value="openlogo">Open Logo</option>
+												<option value="actionnetv2">(Human) ActionNet v2</option>
+											</select>
+											<input class="btn btn-warning" type="button"
+												   value="Run Detection" id="customthings"
+												   onclick="onCustomDetect(customModel.value, customimage)" />
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="tab-pane fade show" id="image-panel" role="tabpanel" aria-labelledby="image-tab">
 
 								<div class="card mt-3 d-none BackgroundRemover">
 									<div class="card-header h3">Background Removal</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 
 										<div class="form-group row">
 											<label class="col-form-label col-2">Image</label>
@@ -999,7 +1227,7 @@
 
 								<div class="card mt-3 d-none PortraitFilter">
 									<div class="card-header h3">Background blurring</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 
 										<div class="form-group row">
 											<label class="col-form-label col-2">Image</label>
@@ -1021,7 +1249,7 @@
 
 								<div class="card mt-3 d-none SuperResolution">
 									<div class="card-header h3">Increase Resolution</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 
 										<div class="form-group row">
 											<label class="col-form-label col-2">Image</label>
@@ -1036,54 +1264,11 @@
 
 							</div>
 
-							<div class="tab-pane fade show" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
-
-								<div class="card mt-3 d-none FaceProcessing ObjectDetectionNet SceneClassification VisionObjectDetection ObjectDetectionYolo">
-									<div class="card-header h3">Object Detection</div>
-									<div class="card-body bg-secondary">
-
-										<div class="form-group row">
-											<label class="col-form-label col-3">Image</label>
-											<input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
-										</div>
-										<div class="form-group row mt-2 flex-nowrap">
-											<label class="col-form-label col-3">Operation</label>
-											<input class="col form-control btn-success" type="button" value="Detect Scene" id="scene" onclick="onDetectScene(image)" />
-											<input class="col form-control btn-info" type="button" value="Detect Face" id="face" onclick="onDetectFaces(image)" />
-											<input class="col form-control btn-warning" type="button" value="Detect Things" id="things" onclick="onDetectThings(image)" />
-										</div>
-									</div>
-								</div>
-
-								<div class="card mt-3 d-none ObjectDetectionYolo">
-									<div class="card-header h3">Custom Object Detection</div>
-									<div class="card-body bg-secondary">
-
-										<div class="form-group row">
-											<label class="col-form-label col-3">Image</label>
-											<input class="col form-control btn-light" id="customimage" type="file"
-												   onchange="return previewImage(this)" />
-										</div>
-										<div class="form-group d-flex justify-content-end mt-2">
-											<select id="customModel" class="form-select me-5">
-												<option value="ipcam-general">General IP Cam</option>
-												<option value="license-plate">License Plates v2</option>
-												<option value="openlogo">Open Logo</option>
-												<option value="actionnetv2">(Human) ActionNet v2</option>
-											</select>
-											<input class="btn btn-warning" type="button" 
-												   value="Run Detection" id="customthings"
-												   onclick="onCustomDetect(customModel.value, customimage)" />
-										</div>
-									</div>
-								</div>
-							</div>
-
 							<div class="tab-pane fade show" id="face-panel" role="tabpanel" aria-labelledby="face-tab">
 
 								<div class="card mt-3 d-none FaceProcessing">
 									<div class="card-header h3">Face Comparison</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 										<div class="d-flex align-items-center">
 											<div class="w-75">
 												<div class="form-group row">
@@ -1104,7 +1289,7 @@
 
 								<div class="card mt-3 d-none FaceProcessing">
 									<div class="card-header h3">Face Registration</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 
 										<div>
 											<div class="form-group row">
@@ -1135,7 +1320,7 @@
 
 								<div class="card mt-3 d-none FaceProcessing">
 									<div class="card-header h3">Face Recognition</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 
 										<div class="form-group row">
 											<label class="col-form-label col-2">Image</label>
@@ -1159,7 +1344,7 @@
 
 								<div class="card mt-3 d-none TextSummary">
 									<div class="card-header h3">Text Summary</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 
 										<div class="form-group mt-1">
 											<textarea id="articleText" class="w-100" style="height:200px"></textarea>
@@ -1181,7 +1366,7 @@
 
 								<div class="card mt-3 d-none SentimentAnalysis">
 									<div class="card-header h3">Sentiment Analysis</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 
 										<div class="form-group mt-1">
 											<textarea id="sentimentText" class="w-100" style="height:200px"></textarea>
@@ -1199,16 +1384,31 @@
 
 							</div>
 
+							<div class="tab-pane fade show" id="video-panel" role="tabpanel" aria-labelledby="video-tab">
+
+								<div class="card mt-3 d-none FaceProcessing">
+
+									<div class="d-flex justify-content-start">
+										<input class="btn btn-success" type="button" value="Start"
+											   onclick="onStartVideo()" style="width:5rem">
+										<input class="btn btn-secondary " type="button" value="Stop"
+											   onclick="onStopVideo()" style="width:5rem">
+									</div>
+									<video id="video" style="width:100%;height:480px;display:none" autoplay></video>
+									<canvas id="canvas"></canvas>
+								</div>
+							</div>
+
 							<div class="tab-pane fade show" id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-tab">
 
 								<div class="card mt-3">
 									<div class="card-header h3">Benchmark</div>
-									<div class="card-body bg-secondary">
+									<div class="card-body">
 
 										<div class="form-group row">
 											<label class="col-form-label col-2">Image</label>
 											<input class="col form-control btn-light" id="benchmarkInput" type="file" style="width:17rem"
-												   onchange="return previewImage(this)" />
+													onchange="return previewImage(this)" />
 										</div>
 										<div class="form-group d-flex justify-content-end mt-2">
 											<select id="benchmarkModel" class="form-select me-5">
@@ -1220,7 +1420,7 @@
 												<option value="actionnetv2">(Human) ActionNet v2</option>
 											</select>
 											<input class="form-control btn-success" type="button" value="Go" style="width:7rem"
-												   id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkModel.value, benchmarkResult)" />
+													id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkModel.value, benchmarkResult)" />
 
 											<!-- See note above on how this button isn't currently that useful
 											<input type="button" value="Stop" class="styleD" style="margin-left:1em"
@@ -1240,9 +1440,8 @@
 					</div>
 
 					<div class="ms-4 mt-3 position-sticky" style="width:475px;">
-
 						<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black"
-							 style="height: 195px; overflow-y: auto;"></div>
+								style="height: 195px; overflow-y: auto;"></div>
 
 						<div class="w-100 position-relative border-1 border-light">
 
@@ -1250,11 +1449,10 @@
 									style="left:0;top:0;pointer-events:none;z-index:10"></canvas>
 
 							<div id="imageMask" class="position-absolute"
-								 style="left:0;top:0;pointer-events:none;z-index:10"></div>
+									style="left:0;top:0;pointer-events:none;z-index:10"></div>
 
 							<img src="" id="img" class="w-100" style="height:250px;visibility:hidden">
 						</div>
-
 					</div>
 
 				</div>
@@ -1264,15 +1462,15 @@
 
 	<script src="assets/bootstrap.bundle.min.js"></script>
 	<script>
-        var triggerTabList = [].slice.call(document.querySelectorAll('#DemoTabs button'))
-        triggerTabList.forEach(function (triggerEl) {
-            var tabTrigger = new bootstrap.Tab(triggerEl)
+		var triggerTabList = [].slice.call(document.querySelectorAll('#DemoTabs button'))
+		triggerTabList.forEach(function (triggerEl) {
+			var tabTrigger = new bootstrap.Tab(triggerEl)
 
-            triggerEl.addEventListener('click', function (event) {
-                event.preventDefault()
-                tabTrigger.show()
-            })
-        })
+			triggerEl.addEventListener('click', function (event) {
+				event.preventDefault()
+				tabTrigger.show()
+			})
+		})
 	</script>
 
 </body>

@@ -58,17 +58,14 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
 
             string path = Directory.GetCurrentDirectory(); // AppContext.BaseDirectory;
 
-            // TODO: MODE is actually meant to be resolution, not model size. PROFILE sets the
-            //       model size. For CustomDetection we've switched to MODEL_SIZE and RESOLUTION,
-            //       but we've kept this here for compatibility with Blue Iris and Home Assist that
-            //       have DeepStack integrations.
-            string mode = config.GetValue<string>("MODE");
+            string mode = config.GetValue<string>("MODEL_SIZE");
             string modelPath = (mode ?? string.Empty.ToLower()) switch
             {
-                "high"   => "assets/yolov5m.onnx",
+                "large"  => "assets/yolov5m.onnx",
                 "medium" => "assets/yolov5s.onnx",
-                "low"    => "assets/yolov5n.onnx",
-                _        => "assets/yolov5m.onnx"
+                "small"  => "assets/yolov5n.onnx",
+                "tiny"   => "assets/yolov5n.onnx",
+                _        => "assets/yolov5s.onnx"
             };
 
             try

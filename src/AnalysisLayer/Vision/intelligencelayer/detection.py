@@ -109,12 +109,13 @@ def objectdetection_callback(module_runner: CodeProjectAIRunner, data: AIRequest
     except UnidentifiedImageError:
 
         err_trace = traceback.format_exc()
+        message = err_trace or "The image provided was of an unknown type"
         module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
                           {
                              "filename": "detect_adapter.py",
                              "method": "do_detection",
                              "loglevel": "error",
-                             "message": err_trace, 
+                             "message": message,
                              "exception_type": "UnidentifiedImageError"
                           })
 
@@ -122,13 +123,14 @@ def objectdetection_callback(module_runner: CodeProjectAIRunner, data: AIRequest
 
     except Exception as ex:
 
-        err_trace = traceback.format_exc()
+        # err_trace = traceback.format_exc()
+        message = str(ex) or f"A {ex.__class__.__name__} error occurred"
         module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
                           { 
                               "filename": "detect_adapter.py",
                               "method": "do_detection",
                               "loglevel": "error",
-                              "message": ex, # err_trace, 
+                              "message": message,
                               "exception_type": "Exception"
                           })
 

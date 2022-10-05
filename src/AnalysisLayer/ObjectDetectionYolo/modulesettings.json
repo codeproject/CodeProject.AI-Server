@@ -17,13 +17,15 @@
       "EnvironmentVariables": {
         "YOLOv5_VERBOSE": "false",
 
-        "MODEL_SIZE": "Medium", // small, medium, large, x-large
-        "RESOLUTION": "Medium", // low, medium, high
+        "MODEL_SIZE": "Medium", // tiny, small, medium, large
         "USE_CUDA": "True",
 
         "APPDIR": "%MODULES_PATH%\\ObjectDetectionYolo",
         "MODELS_DIR": "%MODULES_PATH%\\ObjectDetectionYolo\\assets",
-        "CUSTOM_MODELS_DIR": "%MODULES_PATH%\\ObjectDetectionYolo\\custom-models"
+        "CUSTOM_MODELS_DIR": "%MODULES_PATH%\\ObjectDetectionYolo\\custom-models",
+
+        "CPAI_HALF_PRECISION": "Enable", // "Force", "Enable", "Disable": whether to force on, use default, or disable half-precision ops
+        "CPAI_CUDA_DEVICE_NUM": "0"
       },
 
       "RouteMaps": [

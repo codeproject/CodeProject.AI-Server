@@ -32,12 +32,23 @@ REM echo Found value %customDir%
 REM goto:eof
 
 REM Create this folder (if specified) and (if needed) copy into it empty copies of the actual custom models
+REM Just make sure we're not blowing away our real, installed custom models
 if "!customDir!" neq "" (
+    if /i "!customDir!" neq "C:\Program Files\CodeProject\AI\AnalysisLayer\ObjectDetectionYolo\custom-models" (
+        if /i "!customDir!" neq "C:\Program Files\CodeProject\AI\AnalysisLayer\ObjectDetectionYolo\custom-models\" (
 
-    if not exist "!customDir!" mkdir "!customDir!"
+            if not exist "!customDir!" mkdir "!customDir!"
 
-    for %%I in (.\custom-models\*) do (
-        set filename=%%~nxI
-        if not exist "!customDir!\!filename!" copy NUL "!customDir!\!filename!" > NUL
+            for %%I in (.\custom-models\*) do (
+                set filename=%%~nxI
+                if not exist "!customDir!\!filename!" copy NUL "!customDir!\!filename!" > NUL
+            )
+        ) else (
+            REM echo Collision with C:\Program Files\CodeProject\AI\AnalysisLayer\ObjectDetectionYolo\custom-models\
+        )
+    ) else (
+        REM echo Collision with C:\Program Files\CodeProject\AI\AnalysisLayer\ObjectDetectionYolo\custom-models
     )
+) else (
+    REM echo No customDir
 )

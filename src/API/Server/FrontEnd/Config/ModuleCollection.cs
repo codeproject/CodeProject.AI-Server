@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 
 using CodeProject.AI.Server.Backend;
 
+using SkiaSharp;
+
 // TODO: This needs to be available to both the frontend and backend modules so that a single
 // version of truth for the module configuration can be read an parsed. Probably should go in the
 // Backend library next to the BackendRouteMap class, or possibly in Common.
@@ -61,6 +63,12 @@ namespace CodeProject.AI.API.Server.Frontend
         public int? Parallelism { get; set; }
 
         /// <summary>
+        /// Gets or sets the CUDA device id (device number) to use. This must be between 0 and the
+        /// number of CUDA devices - 1. Default is 0.
+        /// </summary>
+        public int? CudaDeviceNumber { get; set; }
+
+        /// <summary>
         /// Gets or sets the number of seconds this module should pause after starting to ensure 
         /// any resources that require startup (eg GPUs) are fully activated before moving on.
         /// </summary>
@@ -89,11 +97,11 @@ namespace CodeProject.AI.API.Server.Frontend
         /// the extension. Currently this is:
         ///     .py  => it will be started with the default Python interpreter
         ///     .dll => it will be started with the .NET runtime.
+        /// 
+        /// TODO: this is currently relative to the AnalysisLayer directory but should be relative
+        /// to the directory containing the modulesettings.json file. This should be changed when
+        /// the modules read the modulesetings.json files for their configuration.
         /// </remarks>
-        // TODO: this is currently relative to the AnalysisLayer directory but 
-        //  should be relative to the directory containing the modulesettings.json file.
-        //  This should be changed when the modules read the modulesetings.json files for
-        //  their configuration.
         public string? FilePath { get; set; }
 
         /// <summary>
@@ -117,17 +125,21 @@ namespace CodeProject.AI.API.Server.Frontend
         /// </summary>
         public string[] Platforms { get; set; } = Array.Empty<string>();
 
-        /*
         /// <summary>
-        /// Gets or sets the name of the hardware acceleration provider.
+        /// Gets a value indicating whether or not this is a valid module that can actually be
+        /// started.
         /// </summary>
-        public string? ExecutionProvider { get; set; }
-
-        /// <summary>
-        /// Gets or sets the hardware (chip) identifier
-        /// </summary>
-        public string? HardwareId { get; set; }
-        */
+        public bool Valid
+        {
+            get
+            {
+                return !string.IsNullOrWhiteSpace(ModuleId) &&
+                       !string.IsNullOrWhiteSpace(Name)     &&
+                       (!string.IsNullOrWhiteSpace(Command) || !string.IsNullOrWhiteSpace(Runtime)) &&
+                       !string.IsNullOrWhiteSpace(FilePath) &&
+                       RouteMaps?.Length > 0;
+            }
+        }
     }
 
     /// <summary>
@@ -193,8 +205,7 @@ namespace CodeProject.AI.API.Server.Frontend
             else
             {
                 // with lock
-                if (module.EnvironmentVariables == null)
-                    module.EnvironmentVariables = new();
+                module.EnvironmentVariables ??= new();
 
                 if (module.EnvironmentVariables.ContainsKey(name.ToLower()))
                     module.EnvironmentVariables[name.ToUpper()] = value ?? string.Empty;
@@ -220,8 +231,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 settings["Modules"] = new JsonObject();
 
             JsonObject? allModules = settings["Modules"] as JsonObject;
-            if (allModules is null)
-                allModules = new JsonObject();
+            allModules ??= new JsonObject();
 
             if (!allModules.ContainsKey(moduleId) || allModules[moduleId] is null)
                 allModules[moduleId] = new JsonObject();
@@ -343,6 +353,26 @@ namespace CodeProject.AI.API.Server.Frontend
                 // _logger.LogError($"Exception saving module settings: {ex.Message}");
                 return false;
             }
+        }
+    }
+
+    /// <summary>
+    /// Extension methods for the ModuleCollection class
+    /// </summary>
+    public static class ModuleCollectionExtensions
+    {
+        /// <summary>
+        /// Returns a module with the given module ID, or null if none found.
+        /// </summary>
+        /// <param name="modules">This collection of modules</param>
+        /// <param name="moduleId">The module ID</param>
+        /// <returns>A ModuleConfig object, or null if non found</returns>
+        public static ModuleConfig? GetModule(this ModuleCollection modules, string moduleId)
+        {
+            if (!modules.TryGetValue(moduleId, out ModuleConfig? module))
+                return null;
+
+            return module;
         }
 
         /// <summary>
