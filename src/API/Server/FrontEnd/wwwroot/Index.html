@@ -29,13 +29,28 @@
             padding-left: 2em;
             font-size: x-small;
         }
-        .logs .trace { color: lightgray; }
-        .logs .debug { color: lightgoldenrodyellow; }
+        
+        .logs div { white-space: pre; }
+
+        .logs .trace       { color: lightgray; }
+        .logs .debug       { color: lightgoldenrodyellow; }
         .logs .information { color: white; }
-        .logs .warning { color: orange; }
-        .logs .error { color: red; }
-        .logs .critical { color:white; background-color:red;}
-        .logs .timing { font-weight: bold; }
+        .logs .warning     { color: orange; }
+        .logs .error       { color: red; }
+        .logs .critical    { color:white; background-color:red;}
+        .logs .timing      { font-weight: bold; }
+        .logs .highlight   { font-weight: bold; color: palegreen; }
+
+        .shrouded:after {
+            content: "";
+            background: rgb(60 60 60 / 79%);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
 
         .status-row {
             width: 100%;
@@ -44,8 +59,34 @@
             color: var(--bs-body-color);
             align-items: center;
         }
+            .status-row .startup-summary,
+            .status-row .current-summary {
+                color: #b6b5b5;
+                font-size: 75%;
+                white-space: pre;
+                max-width: 40rem;
+                /*overflow-x: auto;*/
+                font-family: monospace;
+                padding: 0.25rem;
+            }
+
+        .server-summary {
+            color: #b6b5b5;
+            font-size: 75%;
+            white-space: pre;
+            max-width: 30rem;
+            font-family: monospace;
+            padding: 0.25rem;
+            overflow-x: hidden;
+        }
+
         .dropdown-toggle::after {
             content: none !important;
+        }
+        li:hover .submenu {
+            display: block;
+            position: absolute;
+            transform: translate(100%,-1.5rem);
         }
         .site-title {
             text-decoration: none !important;
@@ -105,31 +146,39 @@
 
         function setStatus(text, variant) {
             if (variant)
-                document.getElementById("status").innerHTML = "<span class=' p-1 bg-" + variant + "'>" + text + "</span>";
+                document.getElementById("status").innerHTML = "<span class='p-1 bg-" + variant + "'>" + text + "</span>";
             else
-                document.getElementById("status").innerHTML = "<span>" + text + "</span>";
+                document.getElementById("status").innerHTML = "<span class='p-1'>" + text + "</span>";
         }
 
         async function callStatus(method, callback) {
 
             let url = serviceUrl.value.trim() + '/v1/status/' + method;
 
-            await fetch(url, { method: "GET" })
+            await fetch(url, {
+                method: "GET",
+                cache: "no-cache"
+            })
                 .then(response => {
+                    serviceStatus.classList.remove("shrouded");
+
                     if (!response.ok)
                         setStatus('Error contacting API server', "danger");
-                    else
+                    else {
                         response.json()
                             .then(data => callback(data))
                             .catch(error => {
                                 setStatus('Unable to process server response', "warning")
                             });
+                    }
                 })
                 .catch(error => {
                     if (error.name === 'AbortError')
                         setStatus("Timed out waiting for a response.");
-                    else
+                    else {
                         setStatus(/*error.message*/ "Unable to contact AI Server", "warning");
+                        serviceStatus.classList.add("shrouded");
+                    }
                 });
         }
 
@@ -178,14 +227,9 @@
             });
         }
 
-        async function onToggleModule(moduleId, activate) {
-            await callSettings(moduleId, "Activate", activate.toString());
-            return false;
-        }
-
-        async function onToggleGPU(moduleId, enable) {
-            await callSettings(moduleId, "SupportGPU", enable.toString());
-            return false;
+        function updateSetting(event, moduleId, setting, value) {
+            event.preventDefault();
+            callSettings(moduleId, setting, value.toString());
         }
 
         async function checkForUpdates(showResult) {
@@ -227,25 +271,25 @@
 
         async function getSystemStatus() {
 
-            if (!_usingGPU) {
-                gpuMemUsed.innerHTML = "";
-                return;
-            }
-
-            // In the future we will ask for "logs since log ID 'x'" so we have
-            // a full history. For now, a simple "last 10".
             let url = serviceUrl.value.trim() + '/v1/status/system-status';
 
             fetch(url, {
-                method: "GET"
+                method: "GET",
+                cache: "no-cache"
             })
                 .then(response => {
                     if (response.ok) {
                         response.json().then(data => {
-                            let used = (data.dedicatedRAMUsage / 1024 / 1024 / 1024).toFixed(2) + " GiB";
-                            // let used = (data.dedicatedRAMUsage / 1000 / 1000 / 1000).toFixed(2) + "GB";
-                            let proc = data.gpuUsage.toFixed(0) + " %";
-                            gpuMemUsed.innerHTML = `GPU: ${used},  ${proc}`;
+                            if (_usingGPU) {
+                                let used = (data.dedicatedRAMUsage / 1024 / 1024 / 1024).toFixed(2) + " GiB";
+                                // let used = (data.dedicatedRAMUsage / 1000 / 1000 / 1000).toFixed(2) + "GB";
+                                let proc = data.gpuUsage.toFixed(0) + " %";
+                                gpuMemUsed.innerHTML = `GPU: ${used},  ${proc}`;
+                            }
+                            else 
+                                gpuMemUsed.innerHTML = "";
+
+                            serverStatus.innerHTML = data.serverStatus.replace(/[\n\r]+/g, "<br>");
                         });
                     }
                 })
@@ -262,10 +306,11 @@
 
             // In the future we will ask for "logs since log ID 'x'" so we have
             // a full history. For now, a simple "last 10".
-            let url = serviceUrl.value.trim() + '/v1/status/analysis/list';
+            let url = serviceUrl.value.trim() + '/v1/status/analysis/list?random=' + new Date().getTime();
 
             fetch(url, {
-                method: "GET"
+                method: "GET",
+                cache: "no-cache"
             })
             .then(response => {
 
@@ -275,6 +320,9 @@
                         if (data && data.statuses) {
 
                             _usingGPU = false;
+
+                            data.statuses.sort((a, b) => a.name.localeCompare(b.name));
+
                             for (let i = 0; i < data.statuses.length; i++) {
 
                                 let moduleInfo = data.statuses[i];
@@ -282,8 +330,6 @@
                                 let moduleId          = moduleInfo.moduleId;
                                 let moduleName        = moduleInfo.name;
                                 let status            = moduleInfo.status;
-                                let started           = moduleInfo.started;
-                                let lastSeen          = moduleInfo.lastSeen;
                                 let processedCount    = moduleInfo.processed;
                                 let hardwareType      = moduleInfo.hardwareType;
                                 let executionProvider = moduleInfo.executionProvider;
@@ -311,6 +357,10 @@
                                         statusDesc = "Not Started";
                                         className = "alert-light"
                                         break;
+                                    case "NotAvailable":
+                                        statusDesc = "Not Available";
+                                        className = "alert-light"
+                                        break;
                                     case "FailedStart":
                                         statusDesc = "Failed to Start";
                                         className = "alert-danger"
@@ -336,37 +386,81 @@
                                 if (!_usingGPU && hardware == "GPU")
                                     _usingGPU = true;
 
+                                let startupSummary = moduleInfo.startupSummary.replace(/[\n\r]+/g, "<br>");
+                                let currentSummary = moduleInfo.summary.replace(/[\n\r]+/g, "<br>");
+
                                 let rowClass = `d-flex justify-content-between status-row ${className}`;
 
                                 let row = document.getElementById('module-info-' + moduleId);
                                 if (!row) {
                                     row = document.createElement("div");
                                     serviceStatus.appendChild(row);
-                                    row.outerHTML =
+
+                                    let rowHtml =
                                         `<div id='module-info-${moduleId}' class='${rowClass}'>`
                                         + `<div class='me-auto'><b>${moduleName}</b></div>`
                                         + `<div class='status me-1'>${statusDesc}</div>`
                                         + `<div class='hardware text-end me-1' style='width:10rem'>${hardware}</div>`
-                                        + `<div class='proc-count text-end' style='width:3rem'>${processedCount}</div>`
 
-                                        + "<div class='dropdown ms-2'>"
-                                        + `<button class='btn dropdown-toggle p-1' type='button' id='dropdownMenu${i}' data-bs-toggle='dropdown'>`
+                                        + `<div class='dropdown ms-2' style='width:3rem'>`
+                                        +  `<button class='btn dropdown-toggle p-1' type='button' id='dropdownMenuInfo${i}' data-bs-toggle='dropdown'>Info</button>`
+                                        +  `<ul class='dropdown-menu' aria-labelledby="dropdownMenuInfo${i}"><li>`
+                                        +   `<div class='startup-summary'>${startupSummary}</div>`
+                                        +   `<div class='current-summary'>${currentSummary}</div>`
+                                        +  `</li></ul>`
+                                        + `</div>`                                   
+
+                                        + `<div class='proc-count text-end' style='width:3rem'>${processedCount}</div>`
+                                        + "<div class='dropdown ms-2' style='width:1em'>";
+
+                                    if (status !== "NotAvailable") {
+                                        rowHtml +=
+                                          `<button class='btn dropdown-toggle p-1' type='button' id='dropdownMenu${i}' data-bs-toggle='dropdown'>`
                                         + "...</button>"
                                         + `<ul class='dropdown-menu' aria-labelledby="dropdownMenu${i}">`
-                                        + `<li><a class='dropdown-item small' href='#' onclick='return onToggleModule(\"${moduleId}\", false)'>Stop</a></li>`
-                                        + `<li><a class='dropdown-item small' href='#' onclick='return onToggleModule(\"${moduleId}\", true)'>Start</a></li>`
-                                        + `<li><a class='dropdown-item small' href='#' onclick='return onToggleGPU(\"${moduleId}\", false)'>Disable GPU</a></li>`
-                                        + `<li><a class='dropdown-item small' href='#' onclick='return onToggleGPU(\"${moduleId}\", true)'>Enable GPU</a></li>`
-                                        + "</ul>"
-                                        + "</div>"
+                                        + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'Activate',   false)\">Stop</a></li>`
+                                        + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'Activate',   true)\">Start</a></li>`
+                                        + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'SupportGPU', false)\">Disable GPU</a></li>`
+                                        + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'SupportGPU', true)\">Enable GPU</a></li>`
 
+                                        if (moduleId == "ObjectDetectionYolo") {
+                                            rowHtml +=
+                                                  "<li><a class='dropdown-item small' href='#'>Half Precision &raquo;</a>"
+                                                + " <ul class='submenu dropdown-menu'>"
+                                                + `  <li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'CPAI_HALF_PRECISION', 'force')\">Force on</a></li>`
+                                                + `  <li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'CPAI_HALF_PRECISION', 'enable')\">Use Default</a></li>`
+                                                + `  <li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'CPAI_HALF_PRECISION', 'disable')\">Disable</a></li>`
+                                                + " </ul>"
+                                                + "</li>";
+
+                                            rowHtml +=
+                                                  "<li><a class='dropdown-item small' href='#'>Model Size &raquo;</a>"
+                                                + " <ul class='submenu dropdown-menu'>"
+                                                + `  <li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'MODEL_SIZE', 'tiny')\">Tiny</a></li>`
+                                                + `  <li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'MODEL_SIZE', 'small')\">Small</a></li>`
+                                                + `  <li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'MODEL_SIZE', 'medium')\">Medium</a></li>`
+                                                + `  <li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'MODEL_SIZE', 'large')\">Large</a></li>`
+                                                + " </ul>"
+                                                + "</li>";
+                                        }
+                                        
+                                        rowHtml +=
+                                          "</ul>";
+                                    }
+
+                                    rowHtml +=
+                                          "</div>"
                                         + "</div>";
+
+                                    row.outerHTML = rowHtml;
                                 }
                                 else {
                                     row.className = rowClass;
-                                    row.querySelector("div.status").innerHTML     = statusDesc;
-                                    row.querySelector("div.hardware").innerHTML   = hardware;
-                                    row.querySelector("div.proc-count").innerHTML = processedCount;
+                                    row.querySelector("div.status").innerHTML          = statusDesc;
+                                    row.querySelector("div.hardware").innerHTML        = hardware;
+                                    row.querySelector("div.proc-count").innerHTML      = processedCount;
+                                    row.querySelector("div.startup-summary").innerHTML = startupSummary;
+                                    row.querySelector("div.current-summary").innerHTML = currentSummary;
                                 }
                             }
                         }
@@ -448,11 +542,20 @@
                             let newLogs = "";
 
                             for (let i = 0; i < data.entries.length; i++) {
-                                let logEntry = data.entries[i];
-                                let logText  = logEntry.entry.replace("\n", "<br>");
-                                let date     = new Date(logEntry.timestamp).toLocaleTimeString();
+                                let logEntry  = data.entries[i];
+                                let logText   = logEntry.entry.replace("\n", "<br>");
+                                let date      = new Date(logEntry.timestamp).toLocaleTimeString();
 
-                                newLogs += `<div id='log${i + 1}' class='${logEntry.level} ${logEntry.label}'>${date}: ${logText}</div>`;
+                                let className       = "";
+                                let specialCategory = ""; // "Server: ";
+                                let specialMarker   = "** ";
+                                if (logText.startsWith(specialCategory + specialMarker)) {
+                                    logText = specialCategory + logText.substring(specialCategory.length + specialMarker.length);
+                                    className = "highlight";
+                                }
+                                logText = logText.replace(/[\n\r]+/g, "<br>");
+
+                                newLogs += `<div id='log${i + 1}' class='${logEntry.level} ${logEntry.label} ${className}'>${date}: ${logText}</div>`;
 
                                 _lastLogId = logEntry.id;
                                 
@@ -609,10 +712,21 @@
 
         <div class="card mt-3">
             <div class="card-body bg-secondary">
-                <div>
-                    <span>Service API Url</span>
-                    <input type="text" id="serviceUrl" class="ms-2" style="width:14rem;font-size:90%" />
-                    <span id="status" class="font-weight-bold ms-2"></span>
+                <div class="d-flex justify-content-start flex-nowrap">
+                    <div>Service API Url</div>
+                    <div>
+                        <input type="text" id="serviceUrl" class="ms-2" style="width:14rem;font-size:90%;" />
+                    </div>
+                    <div id="status" class="font-weight-bold ms-2" style="margin-top: 2px"></div>
+                    <div class='dropdown ms-2'>
+                        <button class='btn dropdown-toggle p-0' type='button' id='dropdownMenuServerInfo' 
+                                data-bs-toggle='dropdown'>Info</button>
+                        <ul class='dropdown-menu' aria-labelledby="dropdownMenuServerInfo">
+                        <li><div id="serverStatus" class='server-summary'>Server summary loading...</div></li>
+                        </ul>
+                    </div>
+
+
                 </div>
 
                 <div class="mt-3 border border-1 border-light">

@@ -63,7 +63,7 @@ def remove_background_callback(module_runner: CodeProjectAIRunner, data: AIReque
     except Exception as ex:
         # err_trace = traceback.format_exc()
         message = str(ex) or f"A {ex.__class__.__name__} error occurred"
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
                     {
                         "filename": "rembg_adapter.py",
                         "method": "remover_background",

@@ -91,7 +91,7 @@ def main():
     init_db(module_runner)
     load_faces(module_runner)
 
-    faceupdate_thread = threading.Thread(None, update_faces,    args = (1, module_runner))
+    faceupdate_thread = threading.Thread(None, update_faces, args = (1, module_runner))
     faceupdate_thread.start()
 
     module_runner.start_loop()
@@ -142,7 +142,7 @@ def init_db(module_runner: CodeProjectAIRunner) -> None:
         database_ok = False
 
         # err_trace = traceback.format_exc()
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
         { 
             "filename": "face.py",
             "method": "init_db",
@@ -188,7 +188,7 @@ def load_faces(module_runner: CodeProjectAIRunner) -> None:
         database_ok = False
 
         # err_trace = traceback.format_exc()
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
         { 
             "filename": "face.py",
             "method": "load_faces",
@@ -222,7 +222,7 @@ def face_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JS
         if output.get("err_trace", ""):
             message += ': ' + output["err_trace"]
 
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
                           { 
                               "filename": "face.py",
                               "method": command,
@@ -358,7 +358,7 @@ def register_face(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JS
             output = {"success": True, "message": message}
 
         else:
-            output = { "success": False, "error": "Mo face detected", "code": 400 }
+            output = { "success": False, "error": "No face detected", "code": 400 }
 
     except UnidentifiedImageError:
         output = {

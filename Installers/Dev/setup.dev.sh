@@ -93,6 +93,9 @@ downloadDir='downloads'
 # The name of the dir holding the backend analysis services
 analysisLayerDir='AnalysisLayer'
 
+:: The name of the dir holding the downloaded/sideloaded backend analysis services
+sideloadModulesDir="modules"
+
 # Absolute paths :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # The absolute path to the root directory of CodeProject.AI
 currentDir="$(pwd)"
@@ -102,6 +105,7 @@ cd $currentDir
 
 # The location of directories relative to the root of the solution directory
 analysisLayerPath="${absoluteRootDir}/${srcDir}/${analysisLayerDir}"
+sideloadModulesPath="${absoluteRootDir}/${srcDir}/${sideloadModulesDir}"
 downloadPath="${absoluteRootDir}/Installers/${downloadDir}"
 
 # Set Flags
@@ -200,7 +204,7 @@ for d in ${analysisLayerPath}/*/ ; do
        if [ -f "${modulePath}/install.dev.sh" ]; then
 
             # Pad right to 70 chars
-            announcement=$(printf %-70s "Processing ${moduleDir}")
+            announcement=$(printf %-70s "Processing pre-installed module ${moduleDir}")
 
             writeLine
             writeLine "${announcement}" "White" "Blue"
@@ -211,6 +215,46 @@ for d in ${analysisLayerPath}/*/ ; do
         fi
     fi
 done
+
+# Walk through the sideloaded / downloaded modules directory and call the setup script in each dir
+for d in ${analysisLayerPath}/*/ ; do
+
+    moduleDir="$(basename $d)"
+    modulePath=$d
+
+    if [ "${modulePath: -1}" == "/" ]; then
+        modulePath="${modulePath:0:${#modulePath}-1}"
+    fi
+
+    # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
+    dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
+    if [ "${dirname}" != 'bin' ]; then
+
+       if [ -f "${modulePath}/install.dev.sh" ]; then
+
+            # Pad right to 70 chars
+            announcement=$(printf %-70s "Processing side-loaded module ${moduleDir}")
+
+            writeLine
+            writeLine "${announcement}" "White" "Blue"
+            writeLine
+
+            correctLineEndings "${modulePath}/install.dev.sh"
+            source "${modulePath}/install.dev.sh"
+        fi
+    fi
+done
+
+# demos
+moduleDir="demos"
+modulePath="${absoluteRootDir}/${moduleDir}"
+announcement=$(printf %-70s "Processing demos")
+writeLine
+writeLine "${announcement}" "White" "Blue"
+writeLine
+correctLineEndings "${modulePath}/install.dev.sh"
+source "${modulePath}/install.dev.sh"
+
 
 # libfontconfig1 is required for SkiaSharp, libgdplus is required for System.Drawing
 if [ "${verbosity}" == "quiet" ]; then

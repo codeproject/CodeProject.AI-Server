@@ -1,85 +1,66 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<!-- 
+To learn about what can be done with methods and variables in the project files read
+https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=vs-2022
+-->
 
+	<!-- Common properties -->
 	<PropertyGroup>
-		<IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
-		<IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
-		<IsOsx Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOsx>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(IsWindows)'=='true'">
-		<DefineConstants>Windows</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(IsLinux)'=='true'">
-		<DefineConstants>Linux</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(IsOsx)'=='true'">
-		<DefineConstants>macOS</DefineConstants>
-	</PropertyGroup>
-	
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsWindows)'=='true'">
-		<TargetFramework>net6.0-windows</TargetFramework>
-		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-		<SelfContained>True</SelfContained>
-		<!--<PublishSingleFile>true</PublishSingleFile>-->
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsLinux)'=='true'">
+		<Name>API Server</Name>
+		<RootNamespace>CodeProject.AI.API.Server.Frontend</RootNamespace>
+		<AssemblyName>CodeProject.AI.Server</AssemblyName>
+		<Version>1.6.8.0</Version>
 		<TargetFramework>net6.0</TargetFramework>
-		<RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-		<SelfContained>True</SelfContained>
-		<!--<PublishSingleFile>true</PublishSingleFile>-->
-	</PropertyGroup>
-	
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsOsx)'=='true'">
-		<TargetFramework>net6.0</TargetFramework>
-		<RuntimeIdentifier>osx-x64</RuntimeIdentifier>
-		<SelfContained>True</SelfContained>
-		<!--<PublishSingleFile>true</PublishSingleFile>-->
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<TargetFramework>net6.0</TargetFramework>
-	</PropertyGroup>
-
-	<PropertyGroup>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<AssemblyName>CodeProject.AI.Server</AssemblyName>
-		<Version>1.6.5.0</Version>
-		<RootNamespace>CodeProject.AI.API.Server.Frontend</RootNamespace>
 		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
-		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<DockerfileContext>..\..\..\..</DockerfileContext>
-		<DockerfileTag>codeproject/ai-server</DockerfileTag>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
-		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-		<DeleteExistingFiles>true</DeleteExistingFiles>
-		<Company>CodeProject</Company>
-		<Authors>CodeProject</Authors>
-		<Product>CodeProject.AI Server</Product>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<Platform>AnyCPU</Platform>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
+	<!-- Docker properties -->
 	<PropertyGroup>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DockerfileContext>..\..\..\..</DockerfileContext>
+		<DockerfileTag>codeproject/ai-server</DockerfileTag>
+	</PropertyGroup>
+
+	<!-- Package properties -->
+	<PropertyGroup>
+		<Product>CodeProject.AI Server</Product>
+		<Company>CodeProject</Company>
+		<Authors>CodeProject</Authors>
+		<DeleteExistingFiles>true</DeleteExistingFiles>
+		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
 		<PackageLicenseExpression>SSPL-1.0</PackageLicenseExpression>
 		<Description>A Service hosting the CodeProject.AI WebAPI for face detection and recognition, object detection, and scene classification, and other AI operations.</Description>
-		<PlatformTarget>AnyCPU</PlatformTarget>
 		<PackageProjectUrl>https://www.codeproject.com/ai</PackageProjectUrl>
 		<PackageIcon>codeproject125x125.png</PackageIcon>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<WarningsAsErrors />
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>True</SelfContained>
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
-		<DebugType>portable</DebugType>
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
 	</PropertyGroup>
+
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<!-- Platform, architecture, runtime target defines and overrides -->
+	<Import Project="../../../AnalysisLayer/SDK/NET/CodeProject.AI.AnalysisLayer.SDK/Common.targets"/>
 
 	<ItemGroup>
 		<Compile Remove="Controllers\TextController.cs" />
@@ -93,8 +74,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="wwwroot\assets\codeprojectAI-white.svg" />
-	  <None Include="wwwroot\assets\codeprojectAI-black.svg" />
+		<None Include="wwwroot\assets\codeprojectAI-white.svg" />
+		<None Include="wwwroot\assets\codeprojectAI-black.svg" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -146,10 +127,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="codeproject125x125.png">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
+		<None Update="codeproject125x125.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
 	</ItemGroup>
 
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(IsWindows)'=='true'">

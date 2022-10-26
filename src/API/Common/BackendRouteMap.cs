@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace CodeProject.AI.Server.Backend
+namespace CodeProject.AI.API.Common
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum RouteParameterType

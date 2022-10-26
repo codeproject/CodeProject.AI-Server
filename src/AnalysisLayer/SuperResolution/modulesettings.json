@@ -3,6 +3,8 @@
 
     "SuperResolution": {
       "Name": "Super Resolution",
+      "Version": "1.0",
+      "PreInstalled": true,
 
       "Activate": true,
       "Parallelism": 1,

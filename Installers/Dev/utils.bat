@@ -355,7 +355,7 @@ shift & goto :%~1
         if not exist "!installPath!" (
 
             rem Params are:     S3 storage bucket |    fileToGet   | downloadToDir | dirToSaveTo  | message
-            call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!baseDir!"   "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
+            call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!baseDir!"  "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
             if exist "!downloadPath!\!platform!\!pythonName!" (
                 robocopy /e "!downloadPath!\!platform!\!pythonName! " "!installPath! " !roboCopyFlags! > NUL
             )
@@ -473,9 +473,9 @@ shift & goto :%~1
     REM python compatible version.
     call :Write "Ensuring Python package manager (pip) is installed..."
     if /i "%verbosity%" == "quiet" (
-        !pythonPath! -m ensurepip !pipFlags!  >nul 2>nul 
+        !pythonPath! -m ensurepip >nul 2>nul 
     ) else (
-        !pythonPath! -m ensurepip !pipFlags!
+        !pythonPath! -m ensurepip
     )
     call :WriteLine "Done" %color_success%
 

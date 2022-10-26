@@ -22,7 +22,7 @@ function Color () {
     local foreground=$1
     local background=$2
 
-    if [ "$foreground" == "" ];  then foreground='Default'; fi
+    if [ "$foreground" == "" ]; then foreground='Default'; fi
     if [ "$background" == "" ]; then background="$color_background"; fi
 
     if [ "$foreground" == 'Contrast' ]; then
@@ -1014,7 +1014,7 @@ function needRosettaAndiBrew () {
 
 function quit () {
 
-    if [ "${useColor}" == "true" ] && "${darkmode}" == "true" ]; then
+    if [ "${useColor}" == "true" ] && [ "${darkmode}" == "true" ]; then
         # this resets the terminal, but also clears the screen which isn't great
         # tput reset
         echo

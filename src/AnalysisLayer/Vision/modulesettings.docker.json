@@ -1,10 +1,7 @@
 {
   "Modules": {
     "FaceProcessing": {
-      "Runtime": "python38",
-      "EnvironmentVariables": {
-        "USE_CUDA": "false"
-      }
+      "Runtime": "python38"
     },
     "SceneClassification": {
       "Runtime": "python38"

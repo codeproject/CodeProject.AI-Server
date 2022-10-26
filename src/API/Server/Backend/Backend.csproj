@@ -1,33 +1,40 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
+	<!-- Common properties -->
 	<PropertyGroup>
+		<Name>API Backend</Name>
+		<AssemblyName>CodeProject.AI.Server.Backend</AssemblyName>
+		<RootNamespace>CodeProject.AI.Server.Backend</RootNamespace>
+		<Version>1.6.8.0</Version>
 		<TargetFramework>net6.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<AssemblyName>CodeProject.AI.Server.Backend</AssemblyName>
-		<Version>1.2.2.0</Version>
-		<RootNamespace>CodeProject.AI.Server.Backend</RootNamespace>
+		<RunPostBuildEvent>Always</RunPostBuildEvent>
+		<Platform>AnyCPU</Platform>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
-	<PropertyGroup>
-		<IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
-		<IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
-		<IsOsx Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOsx>
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>True</SelfContained>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
 		<NoWarn>1701;1702;</NoWarn>
 		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<WarningsAsErrors />
-		<DebugType>none</DebugType>
-		<DebugSymbols>false</DebugSymbols>
-	</PropertyGroup>
+	<!-- Platform, architecture, runtime target defines and overrides -->
+	<Import Project="../../../AnalysisLayer/SDK/NET/CodeProject.AI.AnalysisLayer.SDK/Common.targets"/>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.14" />

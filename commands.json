@@ -1,0 +1,9 @@
+{
+  "commands": {
+    "BuildDockerBase": {
+      "fileName": "cmd.exe",
+      "workingDirectory": "./Installers/Docker",
+      "arguments": "/c BuildDockerBase.bat"
+    }
+  }
+}

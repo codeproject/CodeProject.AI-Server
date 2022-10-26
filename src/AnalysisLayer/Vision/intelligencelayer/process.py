@@ -20,12 +20,16 @@ class YOLODetector(object):
         if cuda:
             gpu_name = torch.cuda.get_device_name()
             no_half = ["TU102","TU104","TU106","TU116", "TU117",
+                       "GeoForce GT 1030", "GeForce GTX 1050","GeForce GTX 1060",
+                       "GeForce GTX 1060","GeForce GTX 1070","GeForce GTX 1080",
                        "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080",
                        "GeForce GTX 1650", "GeForce GTX 1660", "MX550", "MX450",
                        "Quadro RTX 8000", "Quadro RTX 6000", "Quadro RTX 5000", "Quadro RTX 4000"
-                       "Quadro P1000", "Quadro P620", "Quadro P400",
+                       # "Quadro P1000", - this works with half!
+                       "Quadro P620", "Quadro P400",
                        "T1000", "T600", "T400","T1200","T500","T2000",
                        "Tesla T4"]
+
             self.half = not any(check_name in gpu_name for check_name in no_half)
 
             if self.half:

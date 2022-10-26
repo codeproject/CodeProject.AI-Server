@@ -53,17 +53,28 @@
     <Content Include="models\yolov5n.yaml" />
     <Content Include="models\yolov5s.yaml" />
     <Content Include="models\yolov5x.yaml" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.macos-arm.json" />
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
+    <Content Include="modulesettings.macos-arm.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
   </ItemGroup>
+  
   <ItemGroup>
     <Content Include="requirements.txt" />
     <Content Include="requirements.linux.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.macos-arm.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux-arm64.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.macos.txt">

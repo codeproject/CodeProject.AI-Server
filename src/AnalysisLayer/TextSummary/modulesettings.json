@@ -2,6 +2,8 @@
   "Modules": {
     "TextSummary": {
       "Name": "Text Summary",
+      "Version": "1.0",
+      "PreInstalled": true,
 
       "Activate": true,
       "Parallelism": 1,

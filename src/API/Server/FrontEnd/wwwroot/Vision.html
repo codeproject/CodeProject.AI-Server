@@ -104,6 +104,16 @@
 			setInterval(ping, pingFrequency);
 			setInterval(getAnalysisStatus, pingFrequency);
 			setTimeout(setCustomModelLists, 5000);
+
+			// Quick check for the video demo
+            navigator.getUserMedia({ video: true }, () => {
+                console.log('Webcam detected.')
+            }, () => {
+				console.log('No webcam detected.')
+				document.getElementById('video-panel').style.display = 'none';
+                document.getElementById('video-tab').style.display = 'none';
+            });
+			onStopVideo(null);
 		});
 
 		function adjustForImageSize() {
@@ -125,6 +135,10 @@
 
 			if (fileChooser.files)
 				setImage(fileChooser.files[0]);
+		}
+
+		function loadVideoFile(fileChooser) {
+			// TBD
 		}
 
 		function setImage(imageToSet) {
@@ -383,9 +397,9 @@
 
 			let url = serviceUrl.value.trim() + '/v1/status/ping';
 
-			const controller = new AbortController()
+			const controller  = new AbortController()
 			const timeoutSecs = parseInt(serviceTimeoutSecTxt.value);
-			const timeoutId = setTimeout(() => controller.abort(), timeoutSecs * 1000)
+			const timeoutId  = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
 			await fetch(url, { method: "GET", signal: controller.signal })
 				.then(response => {
@@ -425,9 +439,9 @@
 			// a full history. For now, a simple "last 10".
 			let url = serviceUrl.value.trim() + '/v1/status/analysis/list';
 
-			const controller = new AbortController()
+			const controller  = new AbortController()
 			const timeoutSecs = parseInt(serviceTimeoutSecTxt.value);
-			const timeoutId = setTimeout(() => controller.abort(), timeoutSecs * 1000)
+			const timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
 			await fetch(url, { method: "GET", signal: controller.signal })
 				.then(response => {
@@ -445,8 +459,8 @@
 									card.classList.replace('d-flex', 'd-none');
 
                                 var navTabs = document.getElementsByClassName('nav-item');
-                                for (const card of cards)
-                                    card.classList.add('d-none');
+                                for (const tab of navTabs)
+                                    tab.classList.add('d-none');
 								
 								for (let i = 0; i < data.statuses.length; i++) {
 
@@ -475,9 +489,12 @@
 						})
 					}
 				})
+                .catch(error => {
+                    setStatus(/*error.message*/ "Unable to contact AI Server", "orange");
+                });
 		}
 
-		async function submitRequest(route, apiName, images, parameters, doneFunc) {
+		async function submitRequest(route, apiName, images, parameters, doneFunc, failFunc) {
 
 			setStatus("Sending request to AI server", "blue");
 
@@ -502,9 +519,9 @@
 
 			result.innerHTML = "";
 
-			const controller = new AbortController()
+			const controller  = new AbortController()
 			const timeoutSecs = parseInt(serviceTimeoutSecTxt.value);
-			const timeoutId = setTimeout(() => controller.abort(), timeoutSecs * 1000)
+			const timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
 			await fetch(url, {
 				method: "POST",
@@ -515,28 +532,37 @@
 
 					clearTimeout(timeoutId);
 
-					if (!response.ok)
+					if (!response.ok) {
 						setError('Error contacting API server');
-					else {
-						response.json().then(data => {
-							if (data) {
-								if (data.success) {
-									doneFunc(data)
-									setStatus("Call to " + apiName + " complete", "green");
+						if (failFunc) failFunc();
+					} else {
+						response.json()
+							.then(data => {
+								if (data) {
+									if (data.success) {
+										doneFunc(data)
+										setStatus("Call to " + apiName + " complete", "green");
+									}
+									else {
+										if (failFunc) failFunc();
+										result.innerHTML = data.error ?? "";
+										setStatus("Call to " + apiName + " failed", "red");
+									}
 								}
 								else {
-									result.innerHTML = data.error ?? "";
-									setStatus("Call to " + apiName + " failed", "red");
+									if (failFunc) failFunc();
+									setError('No data was returned');
 								}
-							} else
-								setError('No data was returned');
-						})
+							})
 							.catch(error => {
+								if (failFunc) failFunc();
 								setError("Unable to process server response: " + error);
 							})
 					}
 				})
 				.catch(error => {
+                    if (failFunc) failFunc();
+
 					if (error.name === 'AbortError') {
 						setError("Timed out waiting for a response. Maybe increase the timeout value?");
 						serverOnline = false;
@@ -781,6 +807,26 @@
 			});
 		}
 
+        function onReadLicensePlate(fileChooser, confidence) {
+
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for license plate detection");
+                return;
+            }
+
+            setImage(fileChooser.files[0]);
+            let images = [fileChooser.files[0]];
+            let params = [["confidence", confidence]]
+
+            submitRequest('image', 'alpr', images, params, function (data) {
+				result.innerText = "License plate detection complete";
+                drawRectangles(data.predictions);
+                displayPredictionResults(data.predictions)
+            });
+		}
+
 		function onSuperResolution(fileChooser) {
 
 			clearCanvas();
@@ -849,22 +895,26 @@
         let lastFrameDrawTime, lastInferenceTime, framesPerSecond, processedPerSecond;
 		let rect_left, rect_top, rect_width, rect_height;
 		let processQueueLength = 0;
+
 		function onStartVideo(e) {
 
 			const video = document.getElementById('video');
 
 			if (navigator.mediaDevices.getUserMedia) {
+
                 navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(function (stream) {
+                    .then((stream) => {
 						video.srcObject = stream;
+
 						videoProcessingActive = true;
-                        lastFrameDrawTime = performance.now();
+                        lastFrameDrawTime     = performance.now();
+
                         if (useRequestAnimationFrame)
 							requestAnimationFrame(drawVideoDetection);
 						else
 							videoTimerId = setInterval(drawVideoDetection, 1000 / framePerSecond);
                     })
-                    .catch(function (err0r) {
+                    .catch((e) => {
                         console.log("Unable to capture webcam stream");
                     });
 			}
@@ -874,8 +924,8 @@
 
 		function drawVideoDetection() {
 
-            const video  = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
+            const video   = document.getElementById('video');
+            const canvas  = document.getElementById('canvas');
             canvas.width  = video.videoWidth;
             canvas.height = video.videoHeight;
 
@@ -914,7 +964,7 @@
             if (previousFrameDrawTime && previousFrameDrawTime < lastFrameDrawTime)
                 framesPerSecond = 1000.0 / (lastFrameDrawTime - previousFrameDrawTime);
 
-			canvas.toBlob(function (blob) {
+			canvas.toBlob((blob) => {
 
 				if (blob) {
 
@@ -929,31 +979,34 @@
 						method: "POST",
 						body: formData
 					})
-					.then(response => {
-						processQueueLength--;
-						if (response.ok) response.json().then(data => {
-                            if (videoProcessingActive && data && data.success && data.predictions) {
+						.then(response => {
+							processQueueLength--;
+							if (response.ok) response.json().then(data => {
+								if (videoProcessingActive && data && data.success && data.predictions) {
 
-                                let previousInferenceTime = lastInferenceTime;
-								lastInferenceTime = performance.now();
+									let previousInferenceTime = lastInferenceTime;
+									lastInferenceTime = performance.now();
 
-                                if (previousInferenceTime && previousInferenceTime < lastInferenceTime)
-                                    processedPerSecond = 1000.0 / (lastInferenceTime - previousInferenceTime);
+									if (previousInferenceTime && previousInferenceTime < lastInferenceTime)
+										processedPerSecond = 1000.0 / (lastInferenceTime - previousInferenceTime);
 
-								for (var i = 0; i < data.predictions.length; i++) {
+									for (var i = 0; i < data.predictions.length; i++) {
 
-                                    let rect = data.predictions[i];
-									rect_left   = Math.min(rect.x_min, rect.x_max);
-									rect_top    = Math.min(rect.y_min, rect.y_max);
-									rect_width  = Math.abs(rect.x_min - rect.x_max);
-									rect_height = Math.abs(rect.y_min - rect.y_max);
+										let rect = data.predictions[i];
+										rect_left   = Math.min(rect.x_min, rect.x_max);
+										rect_top    = Math.min(rect.y_min, rect.y_max);
+										rect_width  = Math.abs(rect.x_min - rect.x_max);
+										rect_height = Math.abs(rect.y_min - rect.y_max);
 
-									ctx.strokeStyle = "red";
-                                    ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+										ctx.strokeStyle = "red";
+										ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+									}
 								}
-							}
+							})
 						})
-					});
+						.catch(e => {
+                            processQueueLength--;
+						});
 				}
 
                 if (useRequestAnimationFrame && videoProcessingActive)
@@ -964,7 +1017,7 @@
 		function onStopVideo(e) {
 
 			videoProcessingActive = false;
-            if (!useRequestAnimationFrame)
+            if (!useRequestAnimationFrame && videoTimerId)
 				clearInterval(videoTimerId);
 
 			var stream = video.srcObject;
@@ -983,7 +1036,10 @@
 			return false;
         }
 
-		var isBenchmarkCancelled;
+		const maxSimultaneous = 9;
+        const maxBenchmarkRequests = 50;
+        let totalBenchmarkRequests = 0;
+
 		function onBenchmark(fileChooser, model_name, resultElm) {
 
 			clearCanvas();
@@ -1005,7 +1061,6 @@
 			}
 
 			let startMilliseconds = performance.now();
-			let nResponses = 0;
 
 			// Warm up
 			for (let i = 0; i < 3; i++) {
@@ -1015,14 +1070,28 @@
 			}
 
 			// Benchmark
-			for (let i = 0; i < 50; i++) {
-				submitRequest('vision', route, images, null, function (data) {
-					let currentMilliseconds = performance.now();
-					nResponses++;
-					let opsPerSecond = (nResponses * 1000) / (currentMilliseconds - startMilliseconds);
-					resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second - " + nResponses + "/50";
-				});
-			}
+            totalBenchmarkRequests = 0;
+			for (let i = 0; i < maxSimultaneous; i++)
+                sendBenchmarkRequest(route, images, startMilliseconds, resultElm);
+		}
+
+        function sendBenchmarkRequest(route, images, startMilliseconds,  resultElm) {
+
+            totalBenchmarkRequests++;
+            submitRequest('vision', route, images, null,
+                (data) => {
+                    let currentMilliseconds = performance.now();
+                    let opsPerSecond = (totalBenchmarkRequests * 1000) / (currentMilliseconds - startMilliseconds);
+                    resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second - " + totalBenchmarkRequests + "/50";
+
+                    if (totalBenchmarkRequests < maxBenchmarkRequests)
+                        sendBenchmarkRequest(route, images, startMilliseconds, resultElm);
+                },
+				() => {
+                    if (totalBenchmarkRequests < maxBenchmarkRequests)
+                        sendBenchmarkRequest(route, images, startMilliseconds, resultElm);
+				}
+            );
 		}
 
 	</script>
@@ -1119,7 +1188,7 @@
 						<label class="col-form-label col-2 text-end">Service API URL</label>
 						<input class="col-form-control col-2" type="text" id="serviceUrl" style="width:12.5rem"/>
 						<label class="col-form-label col-1 text-end">Timeout</label>
-						<input class="col-form-control col-1" type="number" id="serviceTimeoutSecTxt" style="width:4rem"/>
+						<input class="col-form-control col-1" type="number" id="serviceTimeoutSecTxt" style="width:4.5rem"/>
 						<label class="col-form-label col-1" style="width:3rem">sec</label>
 						<label id="status" class="col-form-label col-5 bg-white fw-bold ms-4"></label>
 					</div>
@@ -1148,10 +1217,10 @@
 							</li>
 
 							<li class="nav-item d-none" id="video-tab-listitem">
-								<button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#video-panel" type="button" role="tab" aria-controls="video" aria-selected="false">Video</button>
+								<button class="nav-link" id="video-tab" data-bs-toggle="tab" data-bs-target="#video-panel" type="button" role="tab" aria-controls="video" aria-selected="false">Video</button>
 							</li>							
 
-							<li class="nav-item ms-auto">
+							<li class="nav-item ms-auto" id="benchmark-tab-listitem">
 								<button class="nav-link" id="benchmark-tab" data-bs-toggle="tab" data-bs-target="#benchmark-panel" type="button" role="tab" aria-controls="benchmark" aria-selected="false">Benchmark</button>
 							</li>
 						</ul>
@@ -1212,7 +1281,7 @@
 											<input class="col form-control btn-light" id="removeBgInput" type="file" style="width:17rem"
 												   onchange="return previewImage(this)" />
 											<input class="form-control btn-success" type="button" value="Remove Background"
-												   style="width:11rem" id="recognise"
+												   style="width:11rem" id="on-removebg"
 												   onclick="onRemoveBackground(removeBgInput, use_alphamatting.checked)" />
 										</div>
 
@@ -1234,7 +1303,7 @@
 											<input class="col form-control btn-light" id="blurBgInput" type="file" style="width:17rem"
 												   onchange="return previewImage(this)" />
 											<input class="form-control btn-success" type="button" value="Blur Background" style="width:10rem"
-												   id="recognise" onclick="onBlurBackground(blurBgInput, strength.value)" />
+												   id="on-blurbg" onclick="onBlurBackground(blurBgInput, strength.value)" />
 										</div>
 
 										<div class="form-group row mt-1 justify-content-end">
@@ -1244,6 +1313,22 @@
 												   oninput="document.getElementById('strengthLabel').innerHTML=this.value;">
 											<span id="strengthLabel" class="col-form-label text-nowrap col-1">1.0</span>
 										</div>
+									</div>
+								</div>
+
+								<div class="card mt-3 d-none ALPR">
+									<div class="card-header h3">License Plate reader</div>
+									<div class="card-body">
+
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="alprInput" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Read License Plates"
+												   style="width:11rem" id="on-read-license"
+												   onclick="onReadLicensePlate(alprInput, 0.4)" />
+										</div>
+
 									</div>
 								</div>
 
@@ -1388,20 +1473,25 @@
 
 								<div class="card mt-3 d-none FaceProcessing">
 
-									<div class="d-flex justify-content-start">
+									<div class="d-flex justify-content-between">
 										<input class="btn btn-success" type="button" value="Start"
 											   onclick="onStartVideo()" style="width:5rem">
-										<input class="btn btn-secondary " type="button" value="Stop"
+										<input class="btn btn-secondary me-auto" type="button" value="Stop"
 											   onclick="onStopVideo()" style="width:5rem">
+										<!--
+										<input class="btn btn-light" id="videoInput" type="file" style="width:10rem"
+											   onchange="return loadVideoFile(this)" />
+										-->
 									</div>
 									<video id="video" style="width:100%;height:480px;display:none" autoplay></video>
 									<canvas id="canvas"></canvas>
+
 								</div>
 							</div>
 
 							<div class="tab-pane fade show" id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-tab">
 
-								<div class="card mt-3">
+								<div class="card mt-3 ObjectDetectionNet VisionObjectDetection ObjectDetectionYolo">
 									<div class="card-header h3">Benchmark</div>
 									<div class="card-body">
 
@@ -1420,7 +1510,7 @@
 												<option value="actionnetv2">(Human) ActionNet v2</option>
 											</select>
 											<input class="form-control btn-success" type="button" value="Go" style="width:7rem"
-													id="recognise" onclick="onBenchmark(benchmarkInput, benchmarkModel.value, benchmarkResult)" />
+													id="on-benchmark" onclick="onBenchmark(benchmarkInput, benchmarkModel.value, benchmarkResult)" />
 
 											<!-- See note above on how this button isn't currently that useful
 											<input type="button" value="Stop" class="styleD" style="margin-left:1em"

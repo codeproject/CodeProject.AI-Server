@@ -3,6 +3,8 @@
 
     "BackgroundRemover": {
       "Name": "Background Remover",
+      "Version": "1.0",
+      "PreInstalled": true,
 
       "Activate": true,
       "Parallelism": 1,

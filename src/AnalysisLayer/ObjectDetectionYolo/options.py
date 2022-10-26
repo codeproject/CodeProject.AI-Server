@@ -1,4 +1,5 @@
 import os
+import sys
 import torch
 import cpuinfo
 
@@ -24,9 +25,9 @@ class Options:
 
     # see https://github.com/ultralytics/yolov5 for resolution data
     MODEL_SETTINGS = {
-        "tiny":   Settings(STD_MODEL_NAME = "yolov5n", RESOLUTION = 640),
-        "small":  Settings(STD_MODEL_NAME = "yolov5s", RESOLUTION = 640),
-        "medium": Settings(STD_MODEL_NAME = "yolov5m", RESOLUTION = 640),
+        "tiny":   Settings(STD_MODEL_NAME = "yolov5n", RESOLUTION = 256), # 640
+        "small":  Settings(STD_MODEL_NAME = "yolov5s", RESOLUTION = 256),
+        "medium": Settings(STD_MODEL_NAME = "yolov5m", RESOLUTION = 416),
         "large":  Settings(STD_MODEL_NAME = "yolov5l", RESOLUTION = 640),
         "huge":   Settings(STD_MODEL_NAME = "yolov5x", RESOLUTION = 640)  # Not yet included
     }
@@ -60,11 +61,10 @@ class Options:
     if half_precision not in [ "force", "enable", "disable" ]:
         half_precision = "enable"
 
-    manufacturer         = cpuinfo.get_cpu_info().get('brand_raw')
-    if manufacturer.startswith("Apple M"):
+    use_MPS           = False
+    manufacturer      = cpuinfo.get_cpu_info().get('brand_raw')
+    if manufacturer and manufacturer.startswith("Apple M"):
         use_MPS = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    else:
-        use_MPS = False
 
     if model_size not in [ "tiny", "small", "medium", "large" ]:
         model_size = "medium"

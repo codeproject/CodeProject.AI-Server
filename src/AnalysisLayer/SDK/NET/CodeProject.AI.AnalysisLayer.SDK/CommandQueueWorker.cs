@@ -76,10 +76,12 @@ namespace CodeProject.AI.AnalysisLayer.SDK
 #if DEBUG
             _codeprojectAI = new BackendClient($"http://localhost:{port}/", TimeSpan.FromSeconds(30));
 
+            /*
             _logger.LogInformation($"CPAI_PORT:               {port}");
             _logger.LogInformation($"CPAI_MODULE_ID:          {defaultModuleId}");
             _logger.LogInformation($"CPAI_MODULE_PARALLELISM: {_parallelism}");
             _logger.LogInformation($"CPAI_MODULE_SUPPORT_GPU: {_supportGPU}");
+            */
 #else
             _codeprojectAI = new BackendClient($"http://localhost:{port}/");
 #endif

@@ -3,18 +3,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
-using CodeProject.AI.Server.Backend;
-
-using SkiaSharp;
-
-// TODO: This needs to be available to both the frontend and backend modules so that a single
-// version of truth for the module configuration can be read an parsed. Probably should go in the
-// Backend library next to the BackendRouteMap class, or possibly in Common.
-namespace CodeProject.AI.API.Server.Frontend
+namespace CodeProject.AI.API.Common
 {
     /// <summary>
     /// The set of modules for backend processing.
@@ -25,6 +19,29 @@ namespace CodeProject.AI.API.Server.Frontend
         /// This constructor allows our modules collection to be case insensitive on the key.
         /// </summary>
         public ModuleCollection() : base(StringComparer.OrdinalIgnoreCase) { }
+    }
+
+    public class ModuleDescription
+    {
+        /// <summary>
+        /// Gets or sets the Id of the Module
+        /// </summary>
+        public string? ModuleId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Name to be displayed.
+        /// </summary>
+        public string? Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the platforms on which this module is supported.
+        /// </summary>
+        public string[] Platforms { get; set; } = Array.Empty<string>();
+
+        /// <summary>
+        /// Gets or sets the version of this module
+        /// </summary>
+        public string? Version { get; set; }
     }
 
     /// <summary>
@@ -90,6 +107,12 @@ namespace CodeProject.AI.API.Server.Frontend
         public string? Command { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether or not this module comes pre-installed with
+        /// this server setup.
+        /// </summary>
+        public bool PreInstalled { get; set; } = false;
+
+        /// <summary>
         /// Gets or sets the path to the startup file relative to the module directory.
         /// </summary>
         /// <remarks>
@@ -98,14 +121,14 @@ namespace CodeProject.AI.API.Server.Frontend
         ///     .py  => it will be started with the default Python interpreter
         ///     .dll => it will be started with the .NET runtime.
         /// 
-        /// TODO: this is currently relative to the AnalysisLayer directory but should be relative
+        /// TODO: this is currently relative to the modules directory but should be relative
         /// to the directory containing the modulesettings.json file. This should be changed when
         /// the modules read the modulesetings.json files for their configuration.
         /// </remarks>
         public string? FilePath { get; set; }
 
         /// <summary>
-        /// Gets or sets the path to the working directory file relative to the module directory.
+        /// Gets or sets the path to the working directory file relative to the modules directory.
         /// If this is null then the working directory will be set as the directory from FilePath.
         /// </summary>
         public string? WorkingDirectory { get; set; }
@@ -126,6 +149,11 @@ namespace CodeProject.AI.API.Server.Frontend
         public string[] Platforms { get; set; } = Array.Empty<string>();
 
         /// <summary>
+        /// Gets or sets the version of this module
+        /// </summary>
+        public string? Version { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether or not this is a valid module that can actually be
         /// started.
         /// </summary>
@@ -140,6 +168,36 @@ namespace CodeProject.AI.API.Server.Frontend
                        RouteMaps?.Length > 0;
             }
         }
+
+        /// <summary>
+        /// Gets a text summary of the settings for this module.
+        /// </summary>
+        public string SettingsSummary
+        {
+            get
+            {
+                var summary = new StringBuilder();
+                summary.AppendLine($"Module '{Name}' (ID: {ModuleId})");
+                summary.AppendLine($"Active:      {Activate}");
+                summary.AppendLine($"GPU:         Support {((SupportGPU == true)? "enabled" : "disabled")}");
+                summary.AppendLine($"Parallelism: {Parallelism}");
+                summary.AppendLine($"Platforms:   {string.Join(',', Platforms)}");
+                summary.AppendLine($"Runtime:     {Runtime}");
+                summary.AppendLine($"Queue:       {this.QueueName()}");
+                summary.AppendLine($"Start pause: {PostStartPauseSecs} sec");
+                summary.AppendLine($"Valid:       {Valid}");
+                summary.AppendLine($"Environment Variables");
+
+                if (EnvironmentVariables is not null)
+                {
+                    int maxLength = EnvironmentVariables.Max(x => x.Key.ToString().Length);
+                    foreach (var envVar in EnvironmentVariables)
+                        summary.AppendLine($"  {envVar.Key.PadRight(maxLength)} = {envVar.Value}");
+                }
+
+                return summary.ToString().Trim();
+            }
+        }
     }
 
     /// <summary>
@@ -147,6 +205,21 @@ namespace CodeProject.AI.API.Server.Frontend
     /// </summary>
     public static class ModuleConfigExtensions
     {
+        /// <summary>
+        /// Gets a value indicating whether or not this module is actually available. This depends 
+        /// on having valid commands, settings, and importantly, being supported on this platform.
+        /// </summary>
+        /// <param name="module">This module</param>
+        /// <param name="platform">The platform being tested</param>
+        public static bool Available(this ModuleConfig module, string platform)
+        {
+            if (module is null)
+                return false;
+
+            return module.Valid && (module.Platforms!.Any(p => p.ToLower() == "all") ||
+                                    module.Platforms!.Any(p => p.ToLower() == platform.ToLower()));
+        }
+
         /// <summary>
         /// Returns the first queue name in the module's route map
         /// </summary>
@@ -207,7 +280,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 // with lock
                 module.EnvironmentVariables ??= new();
 
-                if (module.EnvironmentVariables.ContainsKey(name.ToLower()))
+                if (module.EnvironmentVariables.ContainsKey(name.ToUpper()))
                     module.EnvironmentVariables[name.ToUpper()] = value ?? string.Empty;
                 else
                     module.EnvironmentVariables.TryAdd(name.ToUpper(), value ?? string.Empty);
@@ -263,7 +336,7 @@ namespace CodeProject.AI.API.Server.Frontend
                     moduleSettings["EnvironmentVariables"] = new JsonObject();
 
                 var environmentVars = (JsonObject)moduleSettings["EnvironmentVariables"]!;
-                environmentVars[name] = value;
+                environmentVars[name.ToUpper()] = value;
             }
 
             return true;
@@ -282,10 +355,11 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 foreach (var entry in module.EnvironmentVariables)
                 {
-                    if (environmentVars.ContainsKey(entry.Key))
-                        environmentVars[entry.Key] = entry.Value.ToString();
+                    string key = entry.Key.ToUpper();
+                    if (environmentVars.ContainsKey(key))
+                        environmentVars[key] = entry.Value.ToString();
                     else
-                        environmentVars.Add(entry.Key, entry.Value.ToString());
+                        environmentVars.Add(key, entry.Value.ToString());
                 }
             }
         }

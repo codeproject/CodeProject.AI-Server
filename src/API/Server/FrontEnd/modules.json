@@ -1,0 +1,16 @@
+{
+  "modules": [
+    {
+      "ModuleId": "id1",
+      "Name": "Name1",
+      "Platforms": [ "windows", "linux" ],
+      "Version": "1.0"
+    },
+    {
+      "ModuleId": "id2",
+      "Name": "Name2",
+      "Platforms": [ "macOS", "docker" ],
+      "Version": "2.0"
+    }
+  ]
+}

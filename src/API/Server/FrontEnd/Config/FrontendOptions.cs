@@ -1,9 +1,5 @@
 ﻿
-using System;
 using System.Collections.Generic;
-using System.Linq;
-
-using CodeProject.AI.Server.Backend;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -34,9 +30,14 @@ namespace CodeProject.AI.API.Server.Frontend
         */
 
         /// <summary>
-        /// Gets or sets the root directory that contains the backend modules.
+        /// Gets or sets the root directory that contains the pre-installed backend modules.
         /// </summary>
         public string? MODULES_PATH { get; set; }
+
+        /// <summary>
+        /// Gets or sets the root directory that contains the downloaded / sideloaded modules.
+        /// </summary>
+        public string? DOWNLOADED_MODULES_PATH { get; set; }
 
         /// <summary>
         /// Gets or sets the base directory for the python interpreters.
@@ -73,10 +74,11 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 foreach (var entry in frontend.EnvironmentVariables)
                 {
-                    if (environmentVars.ContainsKey(entry.Key))
-                        environmentVars[entry.Key] = entry.Value.ToString();
+                    string key = entry.Key.ToUpper();
+                    if (environmentVars.ContainsKey(key))
+                        environmentVars[key] = entry.Value.ToString();
                     else
-                        environmentVars.Add(entry.Key, entry.Value.ToString());
+                        environmentVars.Add(key, entry.Value.ToString());
                 }
             }
         }

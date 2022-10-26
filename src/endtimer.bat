@@ -13,18 +13,23 @@ setlocal EnableDelayedExpansion
     rem cleanup
     powershell -Command "& {[Environment]::SetEnvironmentVariable(\"%projectName%_BuildStartTime\", $null, \"User\")"}
 
-    rem echo [Start time: !starttime!]
+    REM echo [Start time: !starttime!]
 
     set "starttime=!starttime: =0!"
     set "endTime=%time: =0%"
+    
+    if "!starttime!" == "" set starttime=0
+    if "!endTime!" == ""   set endTime=0
 
     rem Convert times to integers for easier calculations
-    for /F "tokens=1-4 delims=:.," %%a in ("%STARTTIME%") do (
-       set /A "start=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+    for /F "tokens=1-4 delims=:.," %%a in ("%starttime%") do (
+       REM we need to remove leading 0's else CMD thinks they are octal
+       REM eg "08" -> 1"08" % 100 -> 108 % 100 = 8
+       set /A "start=((((1%%a %% 100)*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
     )
-    for /F "tokens=1-4 delims=:.," %%a in ("%ENDTIME%") do ( 
-       IF %ENDTIME% GTR %STARTTIME% set /A "end=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100" 
-       IF %ENDTIME% LSS %STARTTIME% set /A "end=((((%%a+24)*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100" 
+    for /F "tokens=1-4 delims=:.," %%a in ("%endTime%") do ( 
+       IF %endTime% GTR %starttime% set /A "end=((((1%%a %% 100)*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100" 
+       IF %endTime% LSS %starttime% set /A "end=(((((1%%a %% 100)+24)*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100" 
     )
 
     rem Calculate the elapsed time 

@@ -1,70 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
+	<!-- Common properties -->
 	<PropertyGroup>
-		<IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
-		<IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
-		<IsOsx Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOsx>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(IsWindows)'=='true'">
-		<DefineConstants>Windows</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(IsLinux)'=='true'">
-		<DefineConstants>Linux</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(IsOsx)'=='true'">
-		<DefineConstants>macOS</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsWindows)'=='true'">
-		<TargetFramework>net6.0-windows</TargetFramework>
-		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-		<SelfContained>True</SelfContained>
-		<!--<PublishSingleFile>true</PublishSingleFile>-->
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsLinux)'=='true'">
-		<TargetFramework>net6.0</TargetFramework>
-		<RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-		<SelfContained>True</SelfContained>
-		<!--<PublishSingleFile>true</PublishSingleFile>-->
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(IsOsx)'=='true'">
-		<TargetFramework>net6.0</TargetFramework>
-		<RuntimeIdentifier>osx-x64</RuntimeIdentifier>
-		<SelfContained>True</SelfContained>
-		<!--<PublishSingleFile>true</PublishSingleFile>-->
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<TargetFramework>net6.0</TargetFramework>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<Version>1.6.5.0</Version>
-		<Nullable>disable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<UserSecretsId>dotnet-SentimentAnalysis-EBFB5149-7C8C-4D4E-96D1-6C0227E67E29</UserSecretsId>
-		<SignAssembly>False</SignAssembly>
-		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<Name>SentimentAnalysis</Name>
 		<RootNamespace>CodeProject.AI.AnalysisLayer.SentimentAnalysis</RootNamespace>
+		<Version>1.6.8.0</Version>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<UserSecretsId>dotnet-SentimentAnalysis-EBFB5149-7C8C-4D4E-96D1-6C0227E67E29</UserSecretsId>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<Platform>AnyCPU</Platform>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>True</SelfContained>
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
 		<NoWarn>1701;1702;</NoWarn>
 		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
+	<!-- Platform, architecture, runtime target defines and overrides -->
+	<Import Project="../SDK/NET/CodeProject.AI.AnalysisLayer.SDK/Common.targets"/>
+
 	<ItemGroup>
-	  <Content Include="favicon.ico" />
+		<Content Include="favicon.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -78,7 +50,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\SDK\NET\CodeProject.AI.AnalysisLayer.SDK\CodeProject.AI.AnalysisLayer.SDK.csproj" />
 	</ItemGroup>
-<!--
+	<!--
 	<ItemGroup>
 		<Content Include="appsettings.json" />
 		<Content Include="appsettings.Development.json">

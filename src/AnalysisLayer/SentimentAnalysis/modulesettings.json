@@ -4,9 +4,11 @@
   "Modules": {
     "SentimentAnalysis": {
       "Name": "Sentiment Analysis",
+      "Version": "1.0",
+      "PreInstalled": true,
 
       "Activate": true,
-      "Parallelism": 0,        // Defaults to (#CPUs - 1)
+      "Parallelism": 0, // Defaults to (#CPUs - 1)
       "SupportGPU": false,
       "PostStartPauseSecs": 0, // 1 if using GPU, 0 for CPU
 

@@ -48,7 +48,7 @@ def main():
     if Options.use_CUDA and module_runner.support_GPU:
         module_runner.execution_provider = "CUDA"
     elif Options.use_MPS and module_runner.support_GPU:
-        module_runner.execution_provider = "Apple"
+        module_runner.execution_provider = "MPS"
     
     # Start the module
     module_runner.start_loop()
@@ -56,7 +56,7 @@ def main():
 
 def object_detect_init_callback (module_runner: CodeProjectAIRunner):
 
-    module_runner.log(LogMethod.Info | LogMethod.Cloud | LogMethod.Server,
+    module_runner.log(LogMethod.Info | LogMethod.Server,
                         { 
                             "filename": "detect_adapter.py",
                             "loglevel": "information",
@@ -110,7 +110,7 @@ def object_detect_callback(module_runner: CodeProjectAIRunner, data: AIRequestDa
             model_dir  = Options.custom_models_dir
             model_name = "ipcam-general" 
 
-        module_runner.log(LogMethod.Info | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Info | LogMethod.Server,
                          { 
                              "filename": "detect_adapter.py",
                              "loglevel": "information",
@@ -125,7 +125,7 @@ def object_detect_callback(module_runner: CodeProjectAIRunner, data: AIRequestDa
                                 Options.half_precision, img, threshold)
 
     else:
-        module_runner.log(LogMethod.Info | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Info | LogMethod.Server,
                          { 
                              "filename": "detect_adapter.py",
                              "loglevel": "error",
@@ -230,19 +230,14 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
         create_err_msg = f"{create_err_msg} ({str(ex)})"
 
     if detector is None:
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
                             { 
                                 "filename": "detect_adapter.py",
                                 "method":   "do_detection",
                                 "loglevel": "error",
                                 "message":   create_err_msg
                             })
-        output = {
-            "success": False,
-            "error":   create_err_msg,
-            "code":    500,
-        }
-        return output
+        return { "success": False, "error": create_err_msg, "code": 500 }
     
     # We have a detector for this model, so let's go ahead and detect
     try:
@@ -276,7 +271,7 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
 
         err_trace = traceback.format_exc()
         message = err_trace or "The image provided was of an unknown type"
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
                           {
                              "filename": "detect_adapter.py",
                              "method": "do_detection",
@@ -291,7 +286,7 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
 
         # err_trace = traceback.format_exc()
         message = str(ex) or f"A {ex.__class__.__name__} error occurred"
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
                           { 
                               "filename": "detect_adapter.py",
                               "method": "do_detection",

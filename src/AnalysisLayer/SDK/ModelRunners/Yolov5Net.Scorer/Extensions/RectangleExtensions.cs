@@ -1,12 +1,12 @@
-﻿using System.Drawing;
+﻿using SkiaSharp;
 
 namespace Yolov5Net.Scorer.Extensions
 {
     public static class RectangleExtensions
     {
-        public static float Area(this RectangleF source)
+        static public float Area(this SKRect rect)
         {
-            return source.Width * source.Height;
+            return rect.Width * rect.Height;
         }
     }
 }

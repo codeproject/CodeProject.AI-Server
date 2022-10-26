@@ -3,9 +3,11 @@
 
     "ObjectDetectionYolo": {
       "Name": "Object Detection (YOLO)",
+      "Version": "1.0",
+      "PreInstalled": true,
 
       "Activate": true,
-      "Parallelism": 0,        // Defaults to (#CPUs - 1)
+      "Parallelism": 0, // Defaults to (#CPUs - 1)
       "SupportGPU": true,
       "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
 

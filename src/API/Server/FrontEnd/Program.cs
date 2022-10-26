@@ -98,16 +98,15 @@ namespace CodeProject.AI.API.Server.Frontend
 
             if (_logger != null)
             {
-                _logger.LogDebug($"Operating System: {RuntimeInformation.OSDescription}");
-                _logger.LogDebug($"Architecture:     {RuntimeInformation.ProcessArchitecture}");
-                _logger.LogDebug($"App assembly:     {assemblyName}");
-                _logger.LogDebug($"App DataDir:      {applicationDataDir}");
-                _logger.LogDebug($".Net Core Env:    {aspNetEnv}");
-                _logger.LogDebug($"Platform:         {platform}");
-                _logger.LogDebug($"In Docker:        {inDocker}");
-                // _logger.LogDebug($"In VS Code:       {inVScode}");
+                string systemInfo = SystemInfo.GetSystemInfo();
+                foreach (string line in systemInfo.Split('\n'))
+                    _logger.LogInformation("** " + line.Trim());
 
-                _logger.LogInformation(await GPUInfo.GetGpuInfo());
+                _logger.LogInformation($"** App DataDir:      {applicationDataDir}");
+
+                string gpuInfo = await SystemInfo.GetGpuInfo();
+                foreach (string line in gpuInfo.Split('\n'))
+                    _logger.LogInformation(line.Trim());
             }
 
             Task? hostTask;
@@ -223,6 +222,7 @@ namespace CodeProject.AI.API.Server.Frontend
             var options                  = configuration.GetSection("FrontEndOptions");
             string? rootPath             = options["ROOT_PATH"];
             string? modulesPath          = options["MODULES_PATH"];
+            string? altModulesPath       = options["DOWNLOADED_MODULES_PATH"];
 
             // Get the Modules Path
             rootPath = BackendProcessRunner.GetRootPath(rootPath);
@@ -243,15 +243,19 @@ namespace CodeProject.AI.API.Server.Frontend
             modulesPath = modulesPath.Replace('\\', Path.DirectorySeparatorChar);
             modulesPath = Path.GetFullPath(modulesPath);
 
-            if (string.IsNullOrWhiteSpace(modulesPath))
+            altModulesPath = altModulesPath.Replace("%ROOT_PATH%", rootPath);
+            altModulesPath = altModulesPath.Replace('\\', Path.DirectorySeparatorChar);
+            altModulesPath = Path.GetFullPath(altModulesPath);
+
+            if (string.IsNullOrWhiteSpace(modulesPath) && string.IsNullOrWhiteSpace(altModulesPath))
             {
                 Console.WriteLine("No modules path provided");
                 return;
             }
 
-            if (!Directory.Exists(modulesPath))
+            if (!Directory.Exists(modulesPath) && !Directory.Exists(altModulesPath))
             {
-                Console.WriteLine($"The provided modules path '{modulesPath}' doesn't exist");
+                Console.WriteLine($"The provided modules paths '{modulesPath}' and '{altModulesPath}' don't exist");
                 return;
             }
 
@@ -260,25 +264,53 @@ namespace CodeProject.AI.API.Server.Frontend
 
             // Get the Modules Directories
             // Be careful of the order.
-            var directories = Directory.GetDirectories(modulesPath);
-            foreach (string? directory in directories)
+            if (!string.IsNullOrWhiteSpace(modulesPath) && Directory.Exists(modulesPath))
             {
-                config.AddJsonFile(Path.Combine(directory, "modulesettings.json"),
-                                   optional: true, reloadOnChange: reloadOnChange);
-
-                if (!string.IsNullOrEmpty(aspNetEnv))
+                var directories = Directory.GetDirectories(modulesPath);
+                foreach (string? directory in directories)
                 {
-                    config.AddJsonFile(Path.Combine(directory, $"modulesettings.{aspNetEnv}.json"),
+                    config.AddJsonFile(Path.Combine(directory, "modulesettings.json"),
                                        optional: true, reloadOnChange: reloadOnChange);
+
+                    if (!string.IsNullOrEmpty(aspNetEnv))
+                    {
+                        config.AddJsonFile(Path.Combine(directory, $"modulesettings.{aspNetEnv}.json"),
+                                           optional: true, reloadOnChange: reloadOnChange);
+                    }
+
+                    config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.json"),
+                                        optional: true, reloadOnChange: reloadOnChange);
+
+                    if (!string.IsNullOrEmpty(aspNetEnv))
+                    {
+                        config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.{aspNetEnv}.json"),
+                                          optional: true, reloadOnChange: reloadOnChange);
+                    }
                 }
+            }
 
-                config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.json"),
-                                    optional: true, reloadOnChange: reloadOnChange);
-
-                if (!string.IsNullOrEmpty(aspNetEnv))
+            if (!string.IsNullOrWhiteSpace(altModulesPath) && Directory.Exists(altModulesPath))
+            {
+                var directories = Directory.GetDirectories(altModulesPath);
+                foreach (string? directory in directories)
                 {
-                    config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.{aspNetEnv}.json"),
-                                      optional: true, reloadOnChange: reloadOnChange);
+                    config.AddJsonFile(Path.Combine(directory, "modulesettings.json"),
+                                       optional: true, reloadOnChange: reloadOnChange);
+
+                    if (!string.IsNullOrEmpty(aspNetEnv))
+                    {
+                        config.AddJsonFile(Path.Combine(directory, $"modulesettings.{aspNetEnv}.json"),
+                                           optional: true, reloadOnChange: reloadOnChange);
+                    }
+
+                    config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.json"),
+                                       optional: true, reloadOnChange: reloadOnChange);
+
+                    if (!string.IsNullOrEmpty(aspNetEnv))
+                    {
+                        config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.{aspNetEnv}.json"),
+                                           optional: true, reloadOnChange: reloadOnChange);
+                    }
                 }
             }
         }

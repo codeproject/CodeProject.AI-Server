@@ -1,8 +1,6 @@
-﻿using SkiaSharp;
-using SkiaSharp.Views.Desktop;
+﻿using System.Text.Json.Serialization;
 
-using System.Drawing;
-using System.Text.Json.Serialization;
+using SkiaSharp;
 
 namespace CodeProject.AI.AnalysisLayer.SDK
 {
@@ -170,14 +168,14 @@ namespace CodeProject.AI.AnalysisLayer.SDK
         /// Converts the RequestFormFile to an Image.
         /// </summary>
         /// <returns>The image, or null if conversion fails.</returns>
-        public Image? AsImage()
+        public SKImage? AsImage()
         {
             // Using SkiaSharp as it handles more formats and mostly cross-platform.
             if (data == null)
                 return null;
 
             var skiaImage = SKImage.FromEncodedData(data);
-            return skiaImage?.ToBitmap();
+            return skiaImage;
         }
     }
 

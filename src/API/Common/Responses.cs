@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading;
 
@@ -36,7 +37,20 @@ namespace CodeProject.AI.API.Common
 
     public class VersionUpdateResponse : VersionResponse
     {
+        /// <summary>
+        /// Whether or not a new version is available
+        /// </summary>
         public bool? updateAvailable { get; set; }
+
+        /// <summary>
+        /// The latest version available for download
+        /// </summary>
+        public VersionInfo? latest { get; set; }
+
+        /// <summary>
+        /// The current version of this server
+        /// </summary>
+        public VersionInfo? current { get; set; }
     }
 
     public class ErrorResponse : ResponseBase
@@ -77,100 +91,20 @@ namespace CodeProject.AI.API.Common
         public dynamic? settings { get; set; }
     }
 
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum ProcessStatusType
-    {
-        [EnumMember(Value = "Unknown")]
-        Unknown = 0,
-
-        [EnumMember(Value = "NotEnabled")]
-        NotEnabled,
-
-        [EnumMember(Value = "Enabled")]
-        Enabled,
-
-        [EnumMember(Value = "Starting")]
-        Starting,
-
-        [EnumMember(Value = "Started")]
-        Started,
-
-        [EnumMember(Value = "NotStarted")]
-        NotStarted,
-
-        [EnumMember(Value = "FailedStart")]
-        FailedStart,
-
-        [EnumMember(Value = "Crashed")]
-        Crashed,
-
-        [EnumMember(Value = "Stopping")]
-        Stopping,
-
-        [EnumMember(Value = "Stopped")]
-        Stopped
-    }
-
-    /// <summary>
-    /// Represents that status of a process
-    /// </summary>
-    public class ProcessStatus
-    {
-        private int _processed;
-
-        /// <summary>
-        /// Gets or sets the module Id
-        /// </summary>
-        public string? ModuleId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the module name
-        /// </summary>
-        public string? Name { get; set; }
-
-        /// <summary>
-        /// Gets or sets the UTC time the module was started
-        /// </summary>
-        public DateTime? Started { get; set; }
-
-        /// <summary>
-        /// Gets or sets the UTC time the module was last seen making a request to the backend queue
-        /// </summary>
-        public DateTime? LastSeen { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether or not the module is running
-        /// </summary>
-        public ProcessStatusType Status { get; set; } = ProcessStatusType.Unknown;
-
-        /// <summary>
-        /// Gets the number of requests processed
-        /// </summary>
-        public int Processed { get => _processed; }
-
-        /// <summary>
-        /// Gets or sets the name of the hardware acceleration provider.
-        /// </summary>
-        public string? ExecutionProvider { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the hardware type (CPU or GPU)
-        /// </summary>
-        public string? HardwareType { get; set; } = "CPU";
-
-        /// <summary>
-        /// Increments the number of requests processed by 1.
-        /// </summary>
-        /// <returns>the incremented value</returns>
-        public int IncrementProcessedCount() => Interlocked.Increment(ref _processed);
-    }
-
     /// <summary>
     /// The Response when requesting the status of the backend analysis services
     /// </summary>
     public class AnalysisServicesStatusResponse : SuccessResponse
     {
         public List<ProcessStatus>? statuses { get; set; }
+    }
+
+    /// <summary>
+    /// The Response when requesting the status of the backend analysis services
+    /// </summary>
+    public class ModuleListResponse : SuccessResponse
+    {
+        public List<ModuleDescription>? modules { get; set; }
     }
 
 #pragma warning restore IDE1006 // Naming Styles

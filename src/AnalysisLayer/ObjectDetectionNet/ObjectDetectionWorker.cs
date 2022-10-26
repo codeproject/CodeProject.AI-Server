@@ -79,10 +79,10 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
                                             {
                                                 confidence = x.Score,
                                                 label = x.Label.Name,
-                                                x_min = (int)x.Rectangle.X,
-                                                y_min = (int)x.Rectangle.Y,
-                                                x_max = (int)(x.Rectangle.X + x.Rectangle.Width),
-                                                y_max = (int)(x.Rectangle.Y + x.Rectangle.Height)
+                                                x_min = (int)x.Rectangle.Left,
+                                                y_min = (int)x.Rectangle.Top,
+                                                x_max = (int)(x.Rectangle.Right),
+                                                y_max = (int)(x.Rectangle.Bottom)
                                             })
                                         .ToArray()
             };

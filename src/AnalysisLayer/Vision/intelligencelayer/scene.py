@@ -121,7 +121,7 @@ def sceneclassification_callback(module_runner: CodeProjectAIRunner, data: AIReq
 
         err_trace = traceback.format_exc()
         message = err_trace or "The image provided was of an unknown type"
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
                           { 
                              "filename": "scene.py",
                              "method": "sceneclassification_callback",
@@ -136,7 +136,7 @@ def sceneclassification_callback(module_runner: CodeProjectAIRunner, data: AIReq
 
         # err_trace = traceback.format_exc()
         message = str(ex) or f"A {ex.__class__.__name__} error occurred"
-        module_runner.log(LogMethod.Error | LogMethod.Cloud | LogMethod.Server,
+        module_runner.log(LogMethod.Error | LogMethod.Server,
                           { 
                               "filename": "scene.py",
                               "method": "sceneclassification_callback",

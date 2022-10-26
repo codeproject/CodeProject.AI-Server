@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+﻿using SkiaSharp;
 
 namespace Yolov5Net.Scorer
 {
@@ -8,7 +8,7 @@ namespace Yolov5Net.Scorer
     public class YoloPrediction
     {
         public YoloLabel Label { get; set; }
-        public RectangleF Rectangle { get; set; }
+        public SKRect Rectangle { get; set; }
         public float Score { get; set; }
 
         public YoloPrediction() { }

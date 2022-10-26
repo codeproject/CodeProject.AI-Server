@@ -5,16 +5,18 @@
   "Modules": {
     "ObjectDetectionNet": {
       "Name": "Object Detection (.NET)",
+      "Version": "1.0",
+      "PreInstalled": true,
 
       "Activate": false,
-      "Parallelism": 0,        // Defaults to (#CPUs - 1)
+      "Parallelism": 0, // Defaults to (#CPUs - 1)
       "SupportGPU": true,
       "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
 
       "Description": "Detects multiple objects of 80 types in an image.",
       "FilePath": "ObjectDetectionNet\\ObjectDetectionNet.exe",
       "Runtime": "execute",
-      "Platforms": [ "windows" ],
+      "Platforms": [ "windows", "linux" ],
 
       "EnvironmentVariables": {
         "MODEL_SIZE": "MEDIUM"

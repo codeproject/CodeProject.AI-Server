@@ -59,6 +59,9 @@ set downloadDir=downloads
 :: The name of the dir holding the backend analysis services
 set analysisLayerDir=AnalysisLayer
 
+:: The name of the dir holding the downloaded/sideloaded backend analysis services
+set sideloadModulesDir=modules
+
 :: Absolute paths :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: The absolute path to the root directory of CodeProject.AI
 set installBasePath=%cd%
@@ -69,6 +72,7 @@ cd %installBasePath%
 
 :: The location of directories relative to the root of the solution directory
 set analysisLayerPath=%absoluteRootDir%\%srcDir%\%analysisLayerDir%
+set sideloadModulesPath=%absoluteRootDir%\%srcDir%\%sideloadModulesDir%
 set downloadPath=%absoluteRootDir%\Installers\%downloadDir%
 
 
@@ -143,7 +147,7 @@ for /f "delims=" %%D in ('dir /a:d /b "%analysisLayerPath%"') do (
         if exist "!modulePath!\install.dev.bat" (
 
             REM Pad right to 60 chars
-            set announcement=Processing !moduleDir! !spaces!
+            set announcement=Processing pre-installed module !moduleDir! !spaces!
             set announcement=!announcement:~0,70!
 
             call utils.bat WriteLine
@@ -154,6 +158,41 @@ for /f "delims=" %%D in ('dir /a:d /b "%analysisLayerPath%"') do (
         )
     )
 )
+
+:: Walk through the sideloaded / downloaded modules directory and call the setup script in each dir
+:: TODO: This should be just a simple for /d %%D in ("%sideloadModulesPath%") do (
+for /f "delims=" %%D in ('dir /a:d /b "%sideloadModulesPath%"') do (
+    set moduleDir=%%~nxD
+    set modulePath=!sideloadModulesPath!\!moduleDir!
+
+    if /i "!moduleDir!" NEQ "bin" (
+        if exist "!modulePath!\install.dev.bat" (
+
+            REM Pad right to 60 chars
+            set announcement=Processing side-loaded module !moduleDir! !spaces!
+            set announcement=!announcement:~0,70!
+
+            call utils.bat WriteLine
+            call utils.bat WriteLine "!announcement!" "White" "Blue"
+            call utils.bat WriteLine
+
+            call "!modulePath!\install.dev.bat"
+        )
+    )
+)
+
+
+:: Demos
+set announcement=Processing Demos !spaces!
+set announcement=!announcement:~0,70!
+call utils.bat WriteLine
+call utils.bat WriteLine "!announcement!" "White" "Blue"
+call utils.bat WriteLine
+
+set moduleDir=demos
+set modulePath=%absoluteRootDir%\!moduleDir!
+call "!modulePath!\install.dev.bat"
+
 
 call utils.bat WriteLine
 call utils.bat WriteLine "Modules installed" "Green"

@@ -1,0 +1,72 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	
+	<!-- Platform and architecture defines -->
+	<PropertyGroup>
+		<ShowRuntimeSettings>true</ShowRuntimeSettings>
+		<IsWindows>false</IsWindows>
+		<IsLinux>false</IsLinux>
+		<IsOsx>false</IsOsx>
+		<IsArm64>false</IsArm64>
+		<IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
+		<IsLinux   Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+		<IsOsx     Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOsx>
+		<IsArm64   Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">true</IsArm64>
+	</PropertyGroup>
+
+	<!-- Set RuntimeIdentifier, Platform and OS properties -->
+	<Choose>
+		<When Condition="'$(RuntimeIdentifier)'==''">
+			<!-- No runtime identifier supplied. Set it based on platform and OS -->
+			<PropertyGroup>
+				<RuntimeIdentifier Condition="'$(IsArm64)'!='true' And '$(IsWindows)'=='true'">win-x64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'=='true' And '$(IsWindows)'=='true'">win-arm64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'!='true' And '$(IsLinux)'=='true'">linux-x64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'=='true' And '$(IsLinux)'=='true'">linux-arm64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'!='true' And '$(IsOsx)'=='true'">osx-x64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'=='true' And '$(IsOsx)'=='true'">osx.12-arm64</RuntimeIdentifier>
+			</PropertyGroup>
+		</When>
+		<Otherwise>
+			<!-- Runtime identifier supplied via command line or env var. Reset the OS variables based on this value -->
+			<PropertyGroup>
+				<IsWindows>false</IsWindows>
+				<IsLinux>false</IsLinux>
+				<IsOsx>false</IsOsx>
+				<IsWindows Condition="'$(RuntimeIdentifier.StartsWith(`win`))'=='true'">true</IsWindows>
+				<IsLinux   Condition="'$(RuntimeIdentifier.StartsWith(`linux`))'=='true'">true</IsLinux>
+				<IsOsx     Condition="'$(RuntimeIdentifier.StartsWith(`osx`))'=='true'">true</IsOsx>
+				<IsArm64>false</IsArm64>
+				<IsArm64   Condition="'$(RuntimeIdentifier.EndsWith(`arm64`))'=='true'">true</IsArm64>
+			</PropertyGroup>
+		</Otherwise>
+	</Choose>
+
+	<!-- Some constants for conditional code -->
+	<PropertyGroup>
+		<DefineConstants Condition="'$(IsWindows)'=='true'">Windows</DefineConstants>
+		<DefineConstants Condition="'$(IsLinux)'=='true'">Linux</DefineConstants>
+		<DefineConstants Condition="'$(IsOsx)'=='true'">macOS</DefineConstants>
+		<DefineConstants Condition="'$(IsArm64)'=='true'">Arm64</DefineConstants>
+		<OSPlatform Condition="'$(IsWindows)'=='true'">Windows</OSPlatform>
+		<OSPlatform Condition="'$(IsLinux)'=='true'">Linux</OSPlatform>
+		<OSPlatform Condition="'$(IsOsx)'=='true'">Osx</OSPlatform>
+		<OSArchitecture Condition="'$(IsArm64)'=='true'">Arm64</OSArchitecture>
+		<OSArchitecture Condition="'$(IsArm64)'!='true'">x64</OSArchitecture>
+	</PropertyGroup>
+
+	<!-- Windows vs not Windows properties -->
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<!--
+		Super annoying. Means windows builds are in /Debug/net6.0-windows and all other platforms Debug/net6.0
+		<TargetFramework Condition="'$(IsWindows)'!='true'">net6.0-windows</TargetFramework>
+		-->
+	</PropertyGroup>
+
+	<!-- Out the settings based on what we've determined above -->
+	<Target Name="SettingsCheck" AfterTargets="BeforeBuild" Condition="'$(ShowRuntimeSettings)'=='true'">
+		<Message Importance="High" Text="Platform, RID and Framework for $(Name)" />
+		<Message Importance="High" Text="       Building for $(OSPlatform) $(OSArchitecture) ($(RuntimeIdentifier)) --> $(TargetFramework) " />
+	</Target>
+	
+</Project>

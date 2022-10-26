@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 
 using SkiaSharp;
-using SkiaSharp.Views.Desktop;
 using Yolov5Net.Scorer;
 using Yolov5Net.Scorer.Models;
 
@@ -184,7 +183,7 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
             if (!fi.Exists)
                 return null;
 
-            using Image? image = GetImage(filename);
+            using SKImage? image = GetImage(filename);
             List<YoloPrediction>? predictions = Predict(image);
 
             return predictions;
@@ -195,7 +194,7 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
         /// </summary>
         /// <param name="image"></param>
         /// <returns>The predicted objects with bounding boxes and confidences.</returns>
-        public List<YoloPrediction>? Predict(Image? image)
+        public List<YoloPrediction>? Predict(SKImage? image)
         {
             if (image == null)
                 return null;
@@ -238,23 +237,23 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
         /// <param name="filename">The file name.</param>
         /// <returns>The Bitmap, or null.</returns>
         /// <remarks>SkiSharp handles more image formats than System.Drawing.</remarks>
-        private Image? GetImage(string filename)
+        private SKImage? GetImage(string filename)
         {
             // TODO: Add error handling and port this to Maui
             var skiaImage = SKImage.FromEncodedData(filename);
             if (skiaImage is null)
                 return null;
 
-            return skiaImage.ToBitmap();
+            return skiaImage; //.ToBitmap();
         }
 
-        private Image? GetImage(byte[] imageData)
+        private SKImage? GetImage(byte[] imageData)
         {
             var skiaImage = SKImage.FromEncodedData(imageData);
             if (skiaImage is null)
                 return null;
 
-            return skiaImage.ToBitmap();
+            return skiaImage; //.ToBitmap();
         }
     }
 }

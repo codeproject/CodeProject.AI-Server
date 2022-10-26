@@ -1,14 +1,15 @@
-﻿using Microsoft.ML.OnnxRuntime;
-using Microsoft.ML.OnnxRuntime.Tensors;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
+using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
+
+using SkiaSharp;
+
 using Yolov5Net.Scorer.Extensions;
 using Yolov5Net.Scorer.Models.Abstract;
 
@@ -19,6 +20,7 @@ namespace Yolov5Net.Scorer
     /// </summary>
     public class YoloScorer<T> : IDisposable where T : YoloModel
     {
+        private static object _lock = new object();
         private readonly T _model;
 
         private readonly InferenceSession _inferenceSession;
@@ -55,56 +57,97 @@ namespace Yolov5Net.Scorer
         }
 
         /// <summary>
-        /// Resizes image keeping ratio to fit model input size.
+        /// Resizes image keeping ratio to fit model input size. Make sure to dispose of the returned
+        /// image!
         /// </summary>
-        private Bitmap ResizeImage(Image image)
+        private SKImage ResizeImage(SKImage image)
         {
-            PixelFormat format = image.PixelFormat;
-
-            var output = new Bitmap(_model.Width, _model.Height, format);
-
             var (w, h) = (image.Width, image.Height); // image width and height
             var (xRatio, yRatio) = (_model.Width / (float)w, _model.Height / (float)h); // x, y ratios
             var ratio = Math.Min(xRatio, yRatio); // ratio = resized / original
             var (width, height) = ((int)(w * ratio), (int)(h * ratio)); // roi width and height
             var (x, y) = ((_model.Width / 2) - (width / 2), (_model.Height / 2) - (height / 2)); // roi x and y coordinates
-            var roi = new Rectangle(x, y, width, height); // region of interest
 
-            using (var graphics = Graphics.FromImage(output))
-            {
-                graphics.Clear(Color.FromArgb(0, 0, 0, 0)); // clear canvas
+            // SKImage version
+            var destRect = new SKRectI(x, y, x + width, y + height); // region of interest
+            var imageInfo = new SKImageInfo(_model.Width, _model.Height, image.ColorType, image.AlphaType);
+            using var surface = SKSurface.Create(imageInfo);
+            using var paint = new SKPaint();
 
-                graphics.SmoothingMode     = SmoothingMode.None;         // no smoothing
-                graphics.InterpolationMode = InterpolationMode.Bilinear; // bilinear interpolation
-                graphics.PixelOffsetMode   = PixelOffsetMode.Half;       // half pixel offset
+            paint.IsAntialias   = true;
+            paint.FilterQuality = SKFilterQuality.High;
 
-                graphics.DrawImage(image, roi); // draw scaled
-            }
+            surface.Canvas.DrawImage(image, destRect, paint);
+            surface.Canvas.Flush();
+
+            return surface.Snapshot();
+
+            /* System.Drawing version
+            var regionToDraw = new Rectangle(x, y, width, height); // region of interest
+            Bitmap output    = new Bitmap(_model.Width, _model.Height, image.PixelFormat);
+            using var graphics = Graphics.FromImage(output);
+
+            graphics.Clear(Color.FromArgb(0, 0, 0, 0)); // clear canvas
+
+            graphics.SmoothingMode     = SmoothingMode.None;         // no smoothing
+            graphics.InterpolationMode = InterpolationMode.Bilinear; // bilinear interpolation
+            graphics.PixelOffsetMode   = PixelOffsetMode.Half;       // half pixel offset
+
+            graphics.DrawImage(image, regionToDraw); // draw scaled
 
             return output;
+            */
         }
 
         /// <summary>
         /// Extracts pixels into tensor for net input.
         /// </summary>
-        private Tensor<float> ExtractPixels(Image image)
+        private Tensor<float> ExtractPixels(SKImage image)
         {
-            var bitmap = (Bitmap)image;
+            var tensor = new DenseTensor<float>(new[] { 1, 3, image.Height, image.Width });
 
-            var rectangle = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-            BitmapData bitmapData = bitmap.LockBits(rectangle, ImageLockMode.ReadOnly, bitmap.PixelFormat);
-            int bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
-
-            var tensor = new DenseTensor<float>(new[] { 1, 3, _model.Height, _model.Width });
+            var    bitmap        = SKBitmap.FromImage(image);
+            IntPtr pixelsAddr    = bitmap.GetPixels();
+            int    bytesPerPixel = 4;
+            int    stride        = bytesPerPixel * image.Width;
 
             unsafe // speed up conversion by direct work with memory
             {
-                Parallel.For(0, bitmapData.Height, (y) =>
-                {
-                    byte* row = (byte*)bitmapData.Scan0 + (y * bitmapData.Stride);
+                byte* ptr = (byte*)pixelsAddr.ToPointer();
 
-                    Parallel.For(0, bitmapData.Width, (x) =>
+                Parallel.For(0, image.Height, (y) =>
+                {
+                    byte* row = ptr + (y * stride);
+
+                    Parallel.For(0, image.Width, (x) =>
                     {
+                        // alpha           = row[x * bytesPerPixel + 3] / 255.0F; // a 
+                        tensor[0, 0, y, x] = row[x * bytesPerPixel + 2] / 255.0F; // r
+                        tensor[0, 1, y, x] = row[x * bytesPerPixel + 1] / 255.0F; // g
+                        tensor[0, 2, y, x] = row[x * bytesPerPixel + 0] / 255.0F; // b
+                    });
+                });
+            }
+
+            /*
+            Bitmap bitmap = image.ToBitmap();
+
+            var rectangle = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+            BitmapData bitmapData = bitmap.LockBits(rectangle, ImageLockMode.ReadOnly, bitmap.PixelFormat);
+            int bytesPerPixel = Bitmap.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+            int stride        = bitmapData.Stride;
+
+            unsafe // speed up conversion by direct work with memory
+            {
+                byte* ptr = (byte*)bitmapData.Scan0;
+
+                Parallel.For(0, bitmap.Height, (y) =>
+                {
+                    byte* row = ptr + (y * stride);
+
+                    Parallel.For(0, bitmap.Width, (x) =>
+                    {
+                        // alpha           = row[x * bytesPerPixel + 3] / 255.0F; // a 
                         tensor[0, 0, y, x] = row[x * bytesPerPixel + 2] / 255.0F; // r
                         tensor[0, 1, y, x] = row[x * bytesPerPixel + 1] / 255.0F; // g
                         tensor[0, 2, y, x] = row[x * bytesPerPixel + 0] / 255.0F; // b
@@ -113,6 +156,7 @@ namespace Yolov5Net.Scorer
 
                 bitmap.UnlockBits(bitmapData);
             }
+            */
 
             return tensor;
         }
@@ -120,9 +164,11 @@ namespace Yolov5Net.Scorer
         /// <summary>
         /// Runs inference session.
         /// </summary>
-        private DenseTensor<float>[] Inference(Image image)
+        /// <param name="image">The input image</param>
+        /// <returns>A dense tensor containing the image pixels</returns>
+        private DenseTensor<float>[] Inference(SKImage image)
         {
-            Bitmap resized = null;
+            SKImage resized = null;
 
             if (image.Width != _model.Width || image.Height != _model.Height)
             {
@@ -134,22 +180,30 @@ namespace Yolov5Net.Scorer
                 NamedOnnxValue.CreateFromTensor("images", ExtractPixels(resized ?? image))
             };
 
-            IDisposableReadOnlyCollection<DisposableNamedOnnxValue> result = _inferenceSession.Run(inputs); // run inference
+            if (resized != null)
+                resized.Dispose();
 
             var output = new List<DenseTensor<float>>();
 
-            foreach (var item in _model.Outputs) // add outputs for processing
+            lock (_lock)
             {
-                output.Add(result.First(x => x.Name == item).Value as DenseTensor<float>);
-            };
+                IDisposableReadOnlyCollection<DisposableNamedOnnxValue> result = _inferenceSession.Run(inputs); // run inference
 
+                foreach (var item in _model.Outputs) // add outputs for processing
+                {
+                    output.Add(result.First(x => x.Name == item).Value as DenseTensor<float>);
+                };
             return output.ToArray();
+            }
         }
 
         /// <summary>
         /// Parses net output (detect) to predictions.
         /// </summary>
-        private List<YoloPrediction> ParseDetect(DenseTensor<float> output, Image image)
+        /// <param name="output">The first output from an inference call</param>
+        /// <param name="image">The original input image</param>
+        /// <returns>A list of Yolo predictions</returns>
+        private List<YoloPrediction> ParseDetect(DenseTensor<float> output, SKImage image)
         {
             var result = new ConcurrentBag<YoloPrediction>();
 
@@ -186,7 +240,7 @@ namespace Yolov5Net.Scorer
 
                     var prediction = new YoloPrediction(label, output[0, i, k])
                     {
-                        Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
+                        Rectangle = new SKRect(xMin, yMin, xMax, yMax)
                     };
 
                     result.Add(prediction);
@@ -199,7 +253,10 @@ namespace Yolov5Net.Scorer
         /// <summary>
         /// Parses net outputs (sigmoid) to predictions.
         /// </summary>
-        private List<YoloPrediction> ParseSigmoid(DenseTensor<float>[] output, Image image)
+        /// <param name="output">All outputs from an inference call</param>
+        /// <param name="image">The original input image</param>
+        /// <returns>A list of Yolo predictions</returns>
+        private List<YoloPrediction> ParseSigmoid(DenseTensor<float>[] output, SKImage image)
         {
             var result = new ConcurrentBag<YoloPrediction>();
 
@@ -248,7 +305,7 @@ namespace Yolov5Net.Scorer
 
                             var prediction = new YoloPrediction(label, mulConfidence)
                             {
-                                Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
+                                Rectangle = new SKRect(xMin, yMin, xMax, yMax)
                             };
 
                             result.Add(prediction);
@@ -263,7 +320,10 @@ namespace Yolov5Net.Scorer
         /// <summary>
         /// Parses net outputs (sigmoid or detect layer) to predictions.
         /// </summary>
-        private List<YoloPrediction> ParseOutput(DenseTensor<float>[] output, Image image)
+        /// <param name="output">The output from an inference call</param>
+        /// <param name="image">The original input image</param>
+        /// <returns>A list of Yolo predictions</returns>
+        private List<YoloPrediction> ParseOutput(DenseTensor<float>[] output, SKImage image)
         {
             return _model.UseDetect ? ParseDetect(output[0], image) : ParseSigmoid(output, image);
         }
@@ -283,11 +343,11 @@ namespace Yolov5Net.Scorer
 
                     var (rect1, rect2) = (item.Rectangle, current.Rectangle);
 
-                    RectangleF intersection = RectangleF.Intersect(rect1, rect2);
+                    var intersection = SKRect.Intersect(rect1, rect2);
 
-                    float intArea = intersection.Area(); // intersection area
+                    float intArea   = intersection.Area(); // intersection area
                     float unionArea = rect1.Area() + rect2.Area() - intArea; // union area
-                    float overlap = intArea / unionArea; // overlap ratio
+                    float overlap   = intArea / unionArea; // overlap ratio
 
                     if (overlap >= _model.Overlap)
                     {
@@ -303,9 +363,11 @@ namespace Yolov5Net.Scorer
         }
 
         /// <summary>
-        /// Runs object detection.
+        /// Runs object detection on an image
         /// </summary>
-        public List<YoloPrediction> Predict(Image image)
+        /// <param name="image">The input image</param>
+        /// <returns>A list of predictions</returns>
+        public List<YoloPrediction> Predict(SKImage image)
         {
             return Supress(ParseOutput(Inference(image), image));
         }

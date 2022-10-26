@@ -1,11 +1,12 @@
 
 import json
 import os
-from pickle import NONE
+#from pickle import NONE
 import sys
 import time
 import traceback
 import asyncio
+from typing import Coroutine
 
 # TODO: All I/O should be async, non-blocking so that logging doesn't impact 
 # the throughput of the requests. Switching to HTTP2 or some persisting 
@@ -58,12 +59,12 @@ class CodeProjectAIRunner:
         """
 
         # Constants
-        self._error_pause_secs   = 1.0
-        self._log_timing_events  = True
-        self._verbose_exceptions = True
+        self._error_pause_secs      = 1.0   # For general errors
+        self._conn_error_pause_secs = 5.0   # for connection / timeout errors
+        self._log_timing_events     = True
+        self._verbose_exceptions    = True
 
         # Private fields
-        self.hardware_type       = "CPU"
         self._execution_provider = "" # backing field for self.execution_provider
 
         self._cancelled          = False
@@ -77,7 +78,6 @@ class CodeProjectAIRunner:
         self.process_callback    = process_callback
 
         self.python_dir          = current_python_dir
-        self.errLog_APIkey       = os.getenv("CPAI_ERRLOG_APIKEY",      "")
         self.port                = os.getenv("CPAI_PORT",               "32168")
         self.server_root_path    = os.getenv("CPAI_APPROOTPATH",        os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../..")))
         self.parallelism         = os.getenv("CPAI_MODULE_PARALLELISM", "0");
@@ -85,14 +85,22 @@ class CodeProjectAIRunner:
 
         self.use_openvino        = False
         self.use_onnxruntime     = False
+
+        self.hardware_type       = "CPU"
+
+        # We're hardcoding localhost because we have no plans to have the 
+        # analysis services and the server on separate machines or containers.
+        # At no point should any outside app have access to the backend 
+        # services. It all must be done through the API.
+        self.base_api_url        = f"http://localhost:{self.port}/v1/"
         
         # Need to hold off until we're ready to create the main logging loop.
-        # self._logger           = AnalysisLogger(self.port, self.server_root_path, self.errLog_APIkey)
+        # self._logger           = AnalysisLogger(self.port, self.server_root_path)
 
         # Normalise input
-        self.port = int(self.port) if self.port.isnumeric() else 32168
+        self.port                = int(self.port) if self.port.isnumeric() else 32168
 
-        self.parallelism = int(self.parallelism) if isinstance(self.parallelism, int) else 0
+        self.parallelism         = int(self.parallelism) if isinstance(self.parallelism, int) else 0
         if self.parallelism <= 0:
             self.parallelism = os.cpu_count() - 1
 
@@ -115,18 +123,15 @@ class CodeProjectAIRunner:
         self.manufacturer = cpuinfo.get_cpu_info().get('brand_raw')
         self.cpu_arch     = cpuinfo.get_cpu_info().get('arch_string_raw')
 
-        if self.manufacturer.startswith("Apple M"):
-            self.cpu_brand          = 'Apple'
-            self.cpu_arch           = 'arm'
-        elif self.manufacturer.startswith("Intel(R)"):
-            self.cpu_brand          = 'Intel'
+        if self.manufacturer:
+            if self.manufacturer.startswith("Apple M"):
+                self.cpu_brand          = 'Apple'
+                self.cpu_arch           = 'arm'
+            elif self.manufacturer.startswith("Intel(R)"):
+                self.cpu_brand          = 'Intel'
 
         # Private fields
-        # We're hardcoding localhost because we have no plans to have the 
-        # analysis services and the server on separate machines or containers.
-        # At no point should any outside app have access to the backend 
-        # services. It all must be done through the API.
-        self._base_queue_url = f"http://localhost:{self.port}/v1/queue/"
+        self._base_queue_url = self.base_api_url + "queue/"
     
 
     @property
@@ -170,7 +175,7 @@ class CodeProjectAIRunner:
         #
         # from threading import Thread
         #
-        # self._logger = AnalysisLogger(self.port, self.server_root_path, self.errLog_APIkey)
+        # self._logger = AnalysisLogger(self.port, self.server_root_path)
         # 
         # nThreads = os.cpu_count() -1
         # theThreads = []
@@ -192,126 +197,122 @@ class CodeProjectAIRunner:
 
         This method also sets up the shared logging task.
         """
+        async with aiohttp.ClientSession() as session:
+            self._request_session = session
+            self._logger          = AnalysisLogger(self.port, self.server_root_path)
 
-        self._request_session = aiohttp.ClientSession()
-        self._logger          = AnalysisLogger(self.port, self.server_root_path, self.errLog_APIkey)
+            # Start with just running one logging loop
+            logging_task = asyncio.create_task(self._logger.logging_loop())
 
-        # Start with just running one logging loop
-        logging_task = asyncio.create_task(self._logger.logging_loop())
+            # Call the init callback if available
+            if self.init_callback:
+                loop = asyncio.get_running_loop()
+                if asyncio.iscoroutinefunction(self.init_callback):
+                    init_task = asyncio.create_task(self.init_callback(self))
+                else :
+                    init_task = loop.run_in_executor(None, self.init_callback, self)
+                await init_task
 
-        # Call the init callback if available
-        if self.init_callback:
-            loop = asyncio.get_running_loop()
-            init_task =  loop.run_in_executor(None, self.init_callback, self)
-            await init_task
+            sys.stdout.flush()
 
-        # Add main processing loop tasks
-        tasks = [ asyncio.create_task(self.main_loop()) for i in range(self.parallelism) ]
+            # Add main processing loop tasks
+            tasks = [ asyncio.create_task(self.main_loop()) for _ in range(self.parallelism) ]
 
-        # combine
-        tasks.append(logging_task)
+            sys.stdout.flush()
 
-        await self.log_async(LogMethod.Info | LogMethod.Server, {
-                    "message": self.module_name + " started.",
-                    "loglevel": "information"
-                })
+            # combine
+            tasks.append(logging_task)
 
-        [await task for task in tasks]
+            await self.log_async(LogMethod.Info | LogMethod.Server, {
+                        "message": self.module_name + " started.",
+                        "loglevel": "information"
+                    })
 
-        await self._request_session.close()
+            await asyncio.gather(*tasks)
+            self._request_session = None
 
 
     # Main loop
     async def main_loop(self) -> None:
 
-        # Commenting so we don't get one message per thread
-        #print(f"{self.module_name}#{id}: Getting first request")
         get_command_task = asyncio.create_task(self.get_command())
         send_response_task = None
 
         while not self._cancelled:
             queue_entries: list = await get_command_task
 
-            #start getting the next request
-            #print(f"{self.module_name}#{id}: Getting next request")
+            # Schedule the next get_command request
             get_command_task = asyncio.create_task(self.get_command())
+
+            if len(queue_entries) == 0:
+                continue
 
             # In theory we may get back multiple command requests. In practice
             # it's always just 1 at a time. At the moment.
-            if len(queue_entries) > 0:
+            for queue_entry in queue_entries:
+                data: AIRequestData = AIRequestData(queue_entry)
 
-                for queue_entry in queue_entries:
-                    data: AIRequestData = AIRequestData(queue_entry)
+                # Special shutdown request
+                if data.command is not None and data.command.lower() == "quit":
+                    await self.log_async(LogMethod.Info | LogMethod.File | LogMethod.Server, { 
+                        "process":        self.module_name,
+                        "filename":       "codeprojectai.py",
+                        "method":         "main_loop",
+                        "loglevel":       "info",
+                        "message":        "Shutting down"
+                    })
+                    self._cancelled = True
+                    break
 
-                    # Special shutdown request
-                    if data.command is not None and data.command.lower() == "quit":
-                        await self.log_async(LogMethod.Info | LogMethod.File | LogMethod.Server, { 
-                            "process":        self.module_name,
-                            "filename":       "codeprojectai.py",
-                            "method":         "main_loop",
-                            "loglevel":       "info",
-                            "message":        "Shutting down"
-                        })
-                        self._cancelled = True
-                        break
+                process_name = f"Queue and Processing {self.module_name}"
+                if data.command:
+                    process_name += f" command '{data.command}'"
+                    #if data.urlSegments and len(data.urlSegments) > 0 and data.urlSegments[0]:
+                    #    process_name += f"/{data.urlSegments[0]}"
 
-                    process_name = f"Queue and Processing {self.module_name}"
-                    if data.command:
-                        process_name += f" command '{data.command}'"
-                        #if data.urlSegments and len(data.urlSegments) > 0 and data.urlSegments[0]:
-                        #    process_name += f"/{data.urlSegments[0]}"
+                timer: tuple = self.start_timer(process_name)
 
-                    timer: tuple = self.start_timer(process_name)
-
-                    output: JSON = {}
-                    try:
-                        loop = asyncio.get_running_loop()
+                output: JSON = {}
+                try:
+                    loop = asyncio.get_running_loop()
+                    if asyncio.iscoroutinefunction(self.process_callback):
+                        callbacktask = asyncio.create_task(self.process_callback(self, data))
+                    else :
                         callbacktask = loop.run_in_executor(None, self.process_callback, self, data)
-                        output = await callbacktask
 
-                    except asyncio.CancelledError:
-                        print(f"The future has been cancelled. Ignoring command {data.command}")
-                        pass
+                    output = await callbacktask
 
-                    except Exception as ex:
-                        output = {
-                           "success": False,
-                           "error":   "unable to process the request",
-                           "code":    500
-                        }
+                except asyncio.CancelledError:
+                    print(f"The future has been cancelled. Ignoring command {data.command}")
 
-                        err_trace = traceback.format_exc()
+                except Exception as ex:
+                    output = {
+                        "success": False,
+                        "error":   "unable to process the request",
+                        "code":    500
+                    }
 
-                        await self.log_async(LogMethod.Error | LogMethod.Cloud | LogMethod.Server, { 
-                            "process":        self.module_name,
-                            "filename":       "codeprojectai.py",
-                            "method":         "main_loop",
-                            "loglevel":       "error",
-                            "message":        str(ex), # err_trace,
-                            "exception_type": "Exception"
-                        })
+                    await self.log_async(LogMethod.Error | LogMethod.Server, { 
+                        "process":        self.module_name,
+                        "filename":       "codeprojectai.py",
+                        "method":         "main_loop",
+                        "loglevel":       "error",
+                        "message":        str(ex), # traceback.format_exc(),
+                        "exception_type": "Exception"
+                    })
 
-                    finally:
-                        self.end_timer(timer, "command timing")
+                finally:
+                    self.end_timer(timer, "command timing")
 
-                        try:
-                            if send_response_task != None:
-                                await send_response_task
+                    try:
+                        if send_response_task != None:
+                            await send_response_task
 
-                            send_response_task = asyncio.create_task(self.send_response(data.request_id, output))
-                        except Exception:
-                            print("An exception occured sending the inference response")
-
-            #else:
-            #    print(f"{self.module_name}#{id}: No request available, will try again")
-
-            # This is (currently) superfluous but it's here as a reminder that if you add code after
-            # here then be careful: the module may be shutting down.
-            if self._cancelled:
-                break;
-            # Potential further stuff...
-
-        # method is ending. Let's clean up
+                        send_response_task = asyncio.create_task(self.send_response(data.request_id, output))
+                    except Exception:
+                        print("An exception occured sending the inference response")
+            
+        # method is ending. Let's clean up. self._cancelled == True at this point.
         self._logger.cancel_logging()
 
 
@@ -385,76 +386,103 @@ class CodeProjectAIRunner:
         in case we want to allow batch processing. Be aware that batch 
         processing will mean less opportunity to load balance the requests.
         """
+        commands = []
 
-        success = False
         try:
-            # Turning off timing since it doesn't make a lot of sense given
-            # we're long-polling
-            # cmdTimer = self.start_timer(f"Idle time on queue {self.queue_name}")
-
             url = self._base_queue_url + self.queue_name + "?moduleId=" + self.module_id
             if self.execution_provider:
                 url += "&executionProvider=" + self.execution_provider
 
             # Send the request to query the queue and wait up to 30 seconds
             # for a response. We're basically long-polling here
-            response = await self._request_session.get(
+            async with self._request_session.get(
                 url,
                 timeout = 30
                 #, verify  = False
-            )
+            ) as session_response:
 
-            if response.ok:
-                content = await response.text()
-                if (content):
-                    success = True
-                    await self.log_async(LogMethod.Info|LogMethod.Server, {
-                        "message": f"Retrieved {self.queue_name} command",
-                        "loglevel": "debug"
+                if session_response.ok:
+                    content = await session_response.text()
+                    if (content):
+                        commands = [content]
+                        await self.log_async(LogMethod.Info|LogMethod.Server, {
+                            "message": f"Retrieved {self.queue_name} command",
+                            "loglevel": "debug"
+                        })
+                else:
+                    await self.log_async(LogMethod.Error | LogMethod.Server, {
+                        "message": f"Error retrieving command from queue {self.queue_name}",
+                        "method": "get_command",
+                        "loglevel": "error",
+                        "process": self.queue_name,
+                        "filename": "codeprojectai.py",
+                        "exception_type": "TimeoutError"
                     })
 
-                    return [content]
-                else:
-                    return []
-            else:
-                return []
 
-        except TimeoutError as timeout:
-            await self.log_async(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
-                "message": f"Timeout retrieving command from queue {self.queue_name}",
-                "method": "get_command",
-                "loglevel": "error",
-                "process": self.queue_name,
-                "filename": "codeprojectai.py",
-                "exception_type": "TimeoutError"
-            })
+        except TimeoutError:
+            if not self._cancelled:
+                await self.log_async(LogMethod.Error | LogMethod.Server, {
+                    "message": f"Timeout retrieving command from queue {self.queue_name}",
+                    "method": "get_command",
+                    "loglevel": "error",
+                    "process": self.queue_name,
+                    "filename": "codeprojectai.py",
+                    "exception_type": "TimeoutError"
+                })
+
+        except ConnectionRefusedError:
+            if not self._cancelled:
+                await self.log_async(LogMethod.Error, {
+                    "message": f"Unable to check the command queue {self.queue_name}. Is the server running, and can you connect to the server?",
+                    "method": "get_command",
+                    "loglevel": "error",
+                    "process": self.queue_name,
+                    "filename": "codeprojectai.py",
+                    "exception_type": "ConnectionRefusedError"
+                })
+
+		#  except aiohttp.client_exceptions.ClientResponseError:
+        #     ...handle this directly
 
         except Exception as ex:
-            err_msg        = "Error retrieving command: Is the API Server running?"
-            exception_type = "Exception"
 
-            # Missing something here, but the above TimeoutError isn't always used
-            if ex.__class__.__name__ == "TimeoutError":
+            if hasattr(ex, "os_error") and isinstance(ex.os_error, ConnectionRefusedError):
+                err_msg = f"Unable to check the command queue {self.queue_name}. Is the server running, and can you connect to the server?"
+                exception_type = "ConnectionRefusedError"
+                pause_secs = self._conn_error_pause_secs
+
+            elif ex.__class__.__name__ == "ClientConnectorError":
+                err_msg = f"Unable to check the command queue {self.queue_name}. Is the server URL correct?"
+                exception_type = "ClientConnectorError"
+                pause_secs = self._conn_error_pause_secs
+
+            elif ex.__class__.__name__ == "TimeoutError":
                 err_msg        = f"Timeout retrieving command from queue {self.queue_name}"
                 exception_type = "TimeoutError"
-            elif self._verbose_exceptions:
-                err_msg = str(ex)
+                pause_secs     = self._conn_error_pause_secs
 
-            await self.log_async(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
-                "message": err_msg,
-                "method": "get_command",
-                "loglevel": "error",
-                "process": self.queue_name,
-                "filename": "codeprojectai.py",
-                "exception_type": exception_type
-            })
-            await asyncio.sleep(self._error_pause_secs)
-            return []
+            else:
+                # if self._verbose_exceptions:
+                #     err_msg  = str(ex)
+                err_msg        = "Error retrieving command: Is the API Server running?"
+                pause_secs     = self._error_pause_secs
+                exception_type = "Exception"
+
+            if not self._cancelled:
+                await self.log_async(LogMethod.Error|LogMethod.Server, {
+                    "message": err_msg,
+                    "method": "get_command",
+                    "loglevel": "error",
+                    "process": self.queue_name,
+                    "filename": "codeprojectai.py",
+                    "exception_type": exception_type
+                })
+
+                await asyncio.sleep(pause_secs)
 
         finally:
-            if success:
-                # self.end_timer(cmdTimer)
-                pass
+            return commands
 
 
     async def send_response(self, request_id : str, body : JSON) -> bool:
@@ -475,7 +503,7 @@ class CodeProjectAIRunner:
         Returns:          - True on success; False otherwise
         """
 
-        success       = False
+        success = False
         # responseTimer = self.start_timer(f"Sending response for request from {self.queue_name}")
 
         try:
@@ -483,14 +511,13 @@ class CodeProjectAIRunner:
             if self.execution_provider is not None:
                 url += "&executionProvider=" + self.execution_provider
             
-            await self._request_session.post(
+            async with self._request_session.post(
                 url,
                 data    = json.dumps(body),
                 timeout = 10
                 #, verify  = False
-                )
-
-            success = True
+                ):
+                success = True
 
         except Exception as ex:
             await asyncio.sleep(self._error_pause_secs)
@@ -504,3 +531,21 @@ class CodeProjectAIRunner:
             #if success:
             #    self.end_timer(responseTimer)
             return success
+
+
+    async def call_api(self, method:str, files=None, data=None) -> str:
+
+            url = self.base_api_url + method
+
+            formdata = aiohttp.FormData()
+            if data:
+                for key, value in data.items():
+                    formdata.add_field(key, str(value))
+
+            if files:
+                for key, file_info in files.items():
+                    formdata.add_field(key, file_info[1], filename=file_info[0], content_type=file_info[2])
+
+            async with self._request_session.post(url, data = formdata) as session_response:
+                return await session_response.json()
+

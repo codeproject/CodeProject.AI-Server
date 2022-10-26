@@ -107,7 +107,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (backend is null)
                 return new ErrorResponse("Unable to get list of modules");
 
-            ModuleConfig? module = backend.StartupProcesses.GetModule(moduleId);
+            ModuleConfig? module = backend.GetModule(moduleId);
             if (module is null)
                 return new ErrorResponse($"No module with ID {moduleId} found");
 
@@ -172,7 +172,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                     // Update all settings based on what's in the global settings. We'll get back a
                     // list of affected modules that need restarting.
                     Dictionary<string, string> globalSettings = moduleSetting.Value;
-                    ModuleCollection modules                  = backend.StartupProcesses;
+                    ModuleCollection modules                  = backend.Modules;
                     moduleIdsToRestart = LegacyParams.UpdateSettings(globalSettings, modules,
                                                                      overrideSettings);
 
@@ -180,7 +180,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                 }
 
                 // Targeting a specific module
-                ModuleConfig? module = backend.StartupProcesses.GetModule(moduleId);
+                ModuleConfig? module = backend.GetModule(moduleId);
                 if (module is null)
                     continue;
 
@@ -202,7 +202,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             // Restart the modules that were updated
             foreach (string moduleId in moduleIdsToRestart)
             {
-                ModuleConfig? module = backend.StartupProcesses.GetModule(moduleId);
+                ModuleConfig? module = backend.GetModule(moduleId);
                 if (module is not null)
                     restartSuccess = await backend.RestartProcess(module) && restartSuccess;
             }
@@ -238,7 +238,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (backend is null)
                 return new ErrorResponse("Unable to get list of modules");
 
-            ModuleConfig? module = backend.StartupProcesses.GetModule(moduleId);
+            ModuleConfig? module = backend.GetModule(moduleId);
             if (module is null)
                 return new ErrorResponse($"No module found with ID {moduleId}");
 

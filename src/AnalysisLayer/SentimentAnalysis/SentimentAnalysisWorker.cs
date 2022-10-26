@@ -1,5 +1,8 @@
 using CodeProject.AI.AnalysisLayer.SDK;
 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+
 namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
 {
     class SentimentAnalysisResponse : BackendSuccessResponse
@@ -44,7 +47,7 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
         /// <returns>The response.</returns>
         public override BackendResponseBase ProcessRequest(BackendRequest request)
         {
-            string text = request.payload.GetValue("text");
+            string? text = request?.payload?.GetValue("text");
             if (text is null)
                 return new BackendErrorResponse(-1, $"{ModuleName} missing 'text' parameter.");
 

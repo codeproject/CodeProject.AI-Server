@@ -63,7 +63,7 @@ if /i "%cleanBuild%" == "true" (
     call utils.bat WriteLine "Cleaning Build                                                      " "White" "Blue"
     call utils.bat WriteLine 
 
-    call :CleanSubDirs ".\..\..\src"   "bin" "\AnalysisLayer\bin\"
+    call :CleanSubDirs ".\..\..\src"   "bin" "\AnalysisLayer\bin"
     call :CleanSubDirs ".\..\..\src"   "obj"
     call :CleanSubDirs ".\..\Windows"  "bin"
     call :CleanSubDirs ".\..\Windows"  "obj"

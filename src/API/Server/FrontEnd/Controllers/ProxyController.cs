@@ -1,7 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
@@ -9,12 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 using CodeProject.AI.AnalysisLayer.SDK;
 using CodeProject.AI.API.Server.Backend;
-using CodeProject.AI.Server.Backend;
-using System;
+using CodeProject.AI.API.Common;
 
 namespace CodeProject.AI.API.Server.Frontend.Controllers
 {

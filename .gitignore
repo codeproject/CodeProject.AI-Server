@@ -13,6 +13,9 @@
 /src/AnalysisLayer/ObjectDetectionNet/assets/
 /src/AnalysisLayer/Vision/assets
 
+# Generate Wix files.
+*Files.wxs
+
 /src/API/Server/FrontEnd/installconfig.json
 
 # User-specific files
@@ -375,6 +378,12 @@ FodyWeavers.xsd
 
 *.DS_Store
 
-/demos/Python/Vision/detected
+/Installers/zlib123dllx64.zip
+/Installers/cudnn-windows-x86_64-8.5.0.96_cuda11-archive.zip
+/src/AnalysisLayer/Vision/datastore/faceembedding.db
 /src/AnalysisLayer/ObjectDetectionYolo/assets
+/src/AnalysisLayer/ObjectDetectionYolo/custom
+/src/AnalysisLayer/CustomObjectDetection/assets
 /src/AnalysisLayer/ObjectDetectionYolo/custom-models
+/demos/Python/Vision/detected
+/src/modules/ALPR/paddleocr

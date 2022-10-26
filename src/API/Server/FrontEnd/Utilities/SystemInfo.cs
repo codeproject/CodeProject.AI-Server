@@ -8,6 +8,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -16,8 +17,30 @@ namespace CodeProject.AI.API.Server.Frontend
     /// https://github.com/clSharp/Cloo, which works on AMD, Intel and Nvidia. However, it only
     /// seems to report hardware / driver config, not usage.
     /// </summary>
-    public class GPUInfo
+    public class SystemInfo
     {
+        /// <summary>
+        /// Returns basic system info
+        /// </summary>
+        /// <returns>A string object</returns>
+        public static string GetSystemInfo()
+        {
+            var info = new StringBuilder();
+
+            info.AppendLine($"Operating System: {RuntimeInformation.OSDescription}");
+            info.AppendLine($"Architecture:     {RuntimeInformation.ProcessArchitecture}");
+
+            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.ToLower();
+            bool    inDocker  = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
+            string  platform  = BackendProcessRunner.Platform.ToLower();
+
+            info.AppendLine($"Environment:      {aspNetEnv}");
+            info.AppendLine($"Platform:         {platform}");
+            info.AppendLine($"In Docker:        {inDocker}");
+
+            return info.ToString().Trim();
+        }
+
         /// <summary>
         /// Returns GPU info for the current system
         /// </summary>
@@ -50,7 +73,7 @@ namespace CodeProject.AI.API.Server.Frontend
                             info.AppendLine($"Video Processor    - {obj["VideoProcessor"]}");
                             info.AppendLine($"Video Architecture - {Architecture(obj["VideoArchitecture"]?.ToString())}");
                             info.AppendLine($"Video Memory Type  - {MemoryType(obj["VideoMemoryType"]?.ToString())}");
-                            info.AppendLine($"GPU 3D Usage       - {await Get3DGpuUsage()}");
+                            info.AppendLine($"GPU 3D Usage       - {await Get3DGpuUsage()}%");
                             info.AppendLine($"GPU RAM Usage      - {FormatSizeBytes((long)GetGpuMemoryUsage(), 2)}");
                         }
                     }
@@ -61,7 +84,7 @@ namespace CodeProject.AI.API.Server.Frontend
             }
             #pragma warning restore CA1416 // Validate platform compatibility
 
-            return info.ToString();
+            return info.ToString().Trim();
 #else
             return await new ValueTask<string>(string.Empty);
 #endif
@@ -139,7 +162,7 @@ namespace CodeProject.AI.API.Server.Frontend
         }
 
         /// <summary>
-        /// Gets the current GPU utilisation
+        /// Gets the current GPU utilisation as a %
         /// </summary>
         /// <returns>A float representing bytes</returns>
         public async static ValueTask<int> Get3DGpuUsage()

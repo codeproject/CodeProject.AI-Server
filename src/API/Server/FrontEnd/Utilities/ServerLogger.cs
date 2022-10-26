@@ -2,6 +2,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
 using Microsoft.Extensions.Options;
@@ -9,9 +10,10 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-// using System.Runtime.Versioning;
+using System.Threading;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -51,6 +53,11 @@ namespace CodeProject.AI.API.Server.Frontend
         /// provides context for whoever is consuming this entry.
         /// </summary>
         public string? label { get; set; }
+
+        /// <summary>
+        /// Gets or sets the exception info for this logging event, if any.
+        /// </summary>
+        public string? exception { get; set; }
     }
 
     /// <summary>
@@ -71,6 +78,21 @@ namespace CodeProject.AI.API.Server.Frontend
     public class ServerLoggerConfiguration
     {
         /// <summary>
+        /// Gets or sets the directory where logs are stored
+        /// </summary>
+        public string LoggingDir { get; set; } = "logs";
+
+        /// <summary>
+        /// Gets or sets the Template for daily logging filename
+        /// </summary>
+        public string FileTemplate { get; set; } = "log-%Y-%m-%d.txt";
+
+        /// <summary>
+        /// Gets or sets the max amount of logging to be stored (in Mb) before old files get dumped
+        /// </summary>
+        public int MaxLogsToStoreMB { get; set; } = 0;
+
+        /// <summary>
         /// A dictionary of colours per logging level
         /// </summary>
         public Dictionary<LogLevel, ConsoleColor> LogLevels { get; set; } = new()
@@ -87,8 +109,14 @@ namespace CodeProject.AI.API.Server.Frontend
         private const int MaxLogEntries = 5000;
 
         private static readonly List<LogEntry> _latestLogEntries = new List<LogEntry>();
-        private static readonly object _logListLock = new object();
+        
+        private static readonly object _consoleLock = new object();
+
         private static int _logEntriesRecorded = 0;
+        private static ServerLoggerConfiguration? _config;
+        private static DateTime _lastLogCapacityCheck = DateTime.MinValue;
+        
+        private readonly FrontendOptions _frontEndOptions;
 
         private readonly string _categoryName;
         private readonly Func<ServerLoggerConfiguration> _getCurrentConfig;
@@ -98,11 +126,14 @@ namespace CodeProject.AI.API.Server.Frontend
         /// </summary>
         /// <param name="categoryName">The category of the logger</param>
         /// <param name="getCurrentConfig">A method to get the logging config</param>
+        /// <param name="frontEndOptions">The frontend Options</param>
         public ServerLogger(string categoryName,
-                            Func<ServerLoggerConfiguration> getCurrentConfig)
+                            Func<ServerLoggerConfiguration> getCurrentConfig,
+                            IOptions<FrontendOptions> frontEndOptions)
         {
             _categoryName     = categoryName;
             _getCurrentConfig = getCurrentConfig;
+            _frontEndOptions  = frontEndOptions.Value;
         }
 
         /// <summary>
@@ -122,7 +153,8 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <returns>True if enabled; false otherwise</returns>
         public bool IsEnabled(LogLevel logLevel)
         {
-            return _getCurrentConfig().LogLevels.ContainsKey(logLevel);
+            _config ??= _getCurrentConfig();
+            return _config.LogLevels.ContainsKey(logLevel);
         }
 
         /// <summary>
@@ -141,46 +173,51 @@ namespace CodeProject.AI.API.Server.Frontend
             if (!IsEnabled(logLevel))
                 return;
 
-            lock (_logListLock)
+            string category = string.Empty;
+            string message  = formatter(state, exception);
+            string label    = string.Empty;
+
+            // Trim the category down a little
+            if (!string.IsNullOrEmpty(_categoryName))
             {
-                string category = "CodeProject";
-                string message  = formatter(state, exception);
-                string label    = string.Empty;
+                /*
+                var parts = _categoryName.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                category  = parts[^1];
+                if (parts.Any(p => p == "CodeProject"))
+                    category = "CodeProject." + category;
+                */
 
-                // Trim the category down a little
-                if (!string.IsNullOrEmpty(_categoryName))
-                {
-                    var parts = _categoryName.Split('.', StringSplitOptions.RemoveEmptyEntries);
-                    category  = parts[^1];
-                    if (parts.Any(p => p == "CodeProject"))
-                        category = "CodeProject." + category;
-                }
+                // if (_categoryName.StartsWith("CodeProject.", StringComparison.OrdinalIgnoreCase))
+                //   category = "Server";
+            }
 
-                // We're using the .NET logger which means we don't have a huge amount of control
-                // when it comes to adding extra info. We'll encode category and label info in the
-                // leg message itself using special markers: [[...]] for category, {{..}} for label
+            // We're using the .NET logger which means we don't have a huge amount of control
+            // when it comes to adding extra info. We'll encode category and label info in the
+            // leg message itself using special markers: [[...]] for category, {{..}} for label
 
-                MatchCollection matches = Regex.Matches(message, @"\[\[(?<cat>.*?)\]\](?<msg>.*)", 
-                                                        RegexOptions.ExplicitCapture);
-                if (matches.Count > 0 && matches[0].Groups.Count > 2)
-                {
-                    category = matches[0].Groups["cat"].Value;
-                    message = matches[0].Groups["msg"].Value;
-                }
+            MatchCollection matches = Regex.Matches(message, @"\[\[(?<cat>.*?)\]\](?<msg>.*)",
+                                                    RegexOptions.ExplicitCapture);
+            if (matches.Count > 0 && matches[0].Groups.Count > 2)
+            {
+                category = matches[0].Groups["cat"].Value;
+                message = matches[0].Groups["msg"].Value;
+            }
 
-                matches = Regex.Matches(message, @"{{(?<label>.*?)}}(?<msg>.*)",
-                                        RegexOptions.ExplicitCapture);
-                if (matches.Count > 0 && matches[0].Groups.Count > 2)
-                {
-                    label  = matches[0].Groups["label"].Value;
-                    message = matches[0].Groups["msg"].Value;
-                }
+            matches = Regex.Matches(message, @"{{(?<label>.*?)}}(?<msg>.*)",
+                                    RegexOptions.ExplicitCapture);
+            if (matches.Count > 0 && matches[0].Groups.Count > 2)
+            {
+                label = matches[0].Groups["label"].Value;
+                message = matches[0].Groups["msg"].Value;
+            }
 
-                ServerLoggerConfiguration config = _getCurrentConfig();
+            _config ??= _getCurrentConfig();
 
+            lock (_consoleLock)
+            {
                 ConsoleColor originalColor = Console.ForegroundColor;
 
-                Console.ForegroundColor = config.LogLevels[logLevel];
+                Console.ForegroundColor = _config.LogLevels[logLevel];
                 // Console.WriteLine($"[{eventId.Id,2}: {logLevel,-12}]");
                 Console.Write($"{logLevel.ToString()[..5]} ");
                 Console.ForegroundColor = originalColor;
@@ -188,32 +225,123 @@ namespace CodeProject.AI.API.Server.Frontend
                 if (!string.IsNullOrWhiteSpace(category))
                     Console.Write($"{category}: ");
 
-                Console.ForegroundColor = config.LogLevels[logLevel];
+                Console.ForegroundColor = _config.LogLevels[logLevel];
                 Console.Write($"{message.Trim()}");
 
                 Console.ForegroundColor = originalColor;
                 Console.WriteLine();
 
                 Console.ResetColor();
+            }
 
-                AggregateLog(new LogEntry()
+            StoreLogEntry(new LogEntry()
+            {
+                id        = ++_logEntriesRecorded,
+                timestamp = DateTime.UtcNow,
+                entry     = string.IsNullOrWhiteSpace(category)? message : $"{category}: {message}",
+                level     = logLevel.ToString().ToLower(),
+                category  = category,
+                label     = label,
+                exception = exception?.ToString() ?? string.Empty
+            });
+        }
+
+        /// <summary>
+        /// Stores a log entry. Currently this means "adds to a limited, quick access list" and
+        /// "writes to file".
+        /// </summary>
+        /// <param name="entry"></param>
+        private void StoreLogEntry(LogEntry entry)
+        {
+            // This used to be locked, but Lists are *so* fast that we're not going to be able to
+            // cause lock contention. Even if we do, it's non critical. Just move on.
+            try
+            {
+                while (_latestLogEntries.Count > MaxLogEntries)
+                    _latestLogEntries.RemoveAt(0);
+
+                _latestLogEntries.Add(entry);
+            }
+            catch { }
+
+            StoreInFile(entry);
+        }
+
+        private void StoreInFile(LogEntry logEntry)
+        {
+            string line = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            if (!string.IsNullOrWhiteSpace(logEntry.exception))
+                line += $" [{logEntry.exception}]";
+            
+            line += ": " + logEntry.entry;
+
+            if (!string.IsNullOrWhiteSpace(logEntry.label))
+                line += $" ({logEntry.label})";
+
+            if (!string.IsNullOrWhiteSpace(logEntry.category))
+                line += $" in {logEntry.category}";
+
+            _config ??= _getCurrentConfig();
+            string logpath  = _config.LoggingDir;
+            string filename = _config.FileTemplate  // log-%Y-%m-%d.txt
+                                     .Replace("%Y", DateTime.Today.Year.ToString("D4"))
+                                     .Replace("%m", DateTime.Today.Month.ToString("D2"))
+                                     .Replace("%d", DateTime.Today.Day.ToString("D2"));
+
+            logpath = Path.Combine(BackendProcessRunner.GetRootPath(_frontEndOptions.ROOT_PATH),
+                                   logpath);
+
+            try
+            {
+                if (!Directory.Exists(logpath))
                 {
-                    id        = ++_logEntriesRecorded,
-                    timestamp = DateTime.UtcNow,
-                    entry     = string.IsNullOrWhiteSpace(category)? message : $"{category}: {message}",
-                    level     = logLevel.ToString().ToLower(),
-                    category  = category,
-                    label     = label
-                });
+                    Directory.CreateDirectory(logpath);
+                    // TODO: Add header with current startup settings for each module.
+                }
+                else
+                {
+                    PruneLogDirectory(logpath);
+                }
+
+                logpath = Path.Combine(logpath, filename);
+                using StreamWriter sw = File.AppendText(logpath);
+                sw.WriteLine(line);
+            }
+            catch
+            {
             }
         }
 
-        private static void AggregateLog(LogEntry entry)
+        private void PruneLogDirectory(string logpath)
         {
-            while (_latestLogEntries.Count > MaxLogEntries)
-                _latestLogEntries.RemoveAt(0);
+            // First check we don't need to trim (check every hour, or on startup)
+            if (_lastLogCapacityCheck < DateTime.Now.AddHours(-1))
+            {
+                _lastLogCapacityCheck = DateTime.Now;
 
-            _latestLogEntries.Add(entry);
+                DirectoryInfo dirInfo = new DirectoryInfo(logpath);
+
+                var fileList = dirInfo.EnumerateFiles("*.txt", SearchOption.TopDirectoryOnly)
+                                      .ToList();
+                long dirSize = fileList.Sum(file => file.Length);
+
+                _config ??= _getCurrentConfig();
+                long maxBytes = _config.MaxLogsToStoreMB * 1024 * 1024;
+
+                if (dirSize > maxBytes)
+                {
+                    // Sorted from oldest to newest
+                    fileList.Sort((file1, file2) => file1.CreationTimeUtc.CompareTo(file2.CreationTimeUtc));
+
+                    while (dirSize > maxBytes && fileList.Count > 0)
+                    {
+                        fileList[0].Delete();
+                        fileList.RemoveAt(0);
+                        dirSize = fileList.Sum(file => file.Length);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -230,7 +358,9 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             List<LogEntry> entries = new List<LogEntry>();
 
-            lock (_logListLock)
+            // This used to be locked, but Lists are *so* fast that we're not going to be able to
+            // cause lock contention. Even if we do, it's non critical. Just move on.
+            try
             {
                 if (_latestLogEntries.Count > 0 && _latestLogEntries[^1].id > lastId)
                 {
@@ -244,6 +374,7 @@ namespace CodeProject.AI.API.Server.Frontend
                         entries = _latestLogEntries.GetRange(i, numItems);
                 }
             }
+            catch { }
 
             return entries;
         }
@@ -258,17 +389,21 @@ namespace CodeProject.AI.API.Server.Frontend
     {
         private readonly IDisposable _onChangeToken;
         private ServerLoggerConfiguration _currentConfig;
+        private readonly IOptions<FrontendOptions> _frontEndOptions;
         private readonly ConcurrentDictionary<string, ServerLogger> _loggers =
                                                             new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Creates a new instance of the ServerLoggerProvider class
         /// </summary>
-        /// <param name="config"></param>
-        public ServerLoggerProvider(IOptionsMonitor<ServerLoggerConfiguration> config)
+        /// <param name="config">The server logger config</param>
+        /// <param name="frontEndOptions">The front end options</param>
+        public ServerLoggerProvider(IOptionsMonitor<ServerLoggerConfiguration> config,
+                                    IOptions<FrontendOptions> frontEndOptions)
         {
-            _currentConfig = config.CurrentValue;
-            _onChangeToken = config.OnChange(updatedConfig => _currentConfig = updatedConfig);
+            _currentConfig   = config.CurrentValue;
+            _frontEndOptions = frontEndOptions;
+            _onChangeToken   = config.OnChange(updatedConfig => _currentConfig = updatedConfig);
         }
 
         /// <summary>
@@ -278,7 +413,8 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <returns></returns>
         public ILogger CreateLogger(string categoryName)
         {
-            return _loggers.GetOrAdd(categoryName, name => new ServerLogger(name, GetCurrentConfig));
+            return _loggers.GetOrAdd(categoryName, name => new ServerLogger(name, GetCurrentConfig,
+                                                                            _frontEndOptions));
         }
 
         private ServerLoggerConfiguration GetCurrentConfig()

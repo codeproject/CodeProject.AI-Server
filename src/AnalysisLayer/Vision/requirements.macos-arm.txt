@@ -12,13 +12,13 @@ PyYAML          # Installing PyYAML, a library for reading configuration files
 # TorchVision==0.11.3  # Installing TorchVision, for Computer Vision based AI
 
 ## Bleeding edge versions of torch for Apple Silicon.
+## --force-reinstall
 --pre
---force-reinstall
 --extra-index-url https://download.pytorch.org/whl/nightly/cpu
 torch           # Installing PyTorch, for Tensor computation and Deep neural networks
 
+## --force-reinstall
 --pre
---force-reinstall
 --extra-index-url https://download.pytorch.org/whl/nightly/cpu
 torchvision     # Installing TorchVision, for Computer Vision based AI
 

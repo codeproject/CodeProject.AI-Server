@@ -11,6 +11,10 @@ using Microsoft.ML;
 using Microsoft.ML.Data;
 using Microsoft.ML.Transforms;
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+
 namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
 {
     public class TextClassifier
@@ -106,7 +110,7 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
         /// </summary>
         public class MovieReview
         {
-            public string ReviewText { get; set; }
+            public string? ReviewText { get; set; }
         }
 
         /// <summary>
@@ -115,7 +119,7 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
         public class MovieReviewSentimentPrediction
         {
             [VectorType(2)]
-            public float[] Prediction { get; set; }
+            public float[]? Prediction { get; set; }
         }
 
         /// <summary>
@@ -130,7 +134,7 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
             /// resulting in vectors of tokens of variable lengths.
             /// </summary>
             [VectorType]
-            public int[] VariableLengthFeatures { get; set; }
+            public int[]? VariableLengthFeatures { get; set; }
         }
 
         /// <summary>
@@ -143,7 +147,7 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
             /// This is a fixed length vector designated by VectorType attribute.
             /// </summary>
             [VectorType(FeatureLength)]
-            public int[] Features { get; set; }
+            public int[]? Features { get; set; }
         }
     }
 }

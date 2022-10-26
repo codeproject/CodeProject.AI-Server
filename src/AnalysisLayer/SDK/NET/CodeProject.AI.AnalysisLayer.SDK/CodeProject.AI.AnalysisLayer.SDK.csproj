@@ -1,46 +1,44 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+	<!-- Common properties -->
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<Name>AnalysisLayer SDK</Name>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<Platform>AnyCPU</Platform>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>True</SelfContained>
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
 	</PropertyGroup>
-  
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
 		<NoWarn>1701;1702;</NoWarn>
-    	<DebugType>portable</DebugType>
-    </PropertyGroup>
-
-	<PropertyGroup>
-		<IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
-		<IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
-		<IsOsx Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOsx>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(IsWindows)'=='true'">
-		<DefineConstants>Windows</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(IsLinux)'=='true'">
-		<DefineConstants>Linux</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(IsOsx)'=='true'">
-		<DefineConstants>macOS</DefineConstants>
-	</PropertyGroup>
+	<!-- Platform, architecture, runtime target defines and overrides -->
+	<Import Project="./Common.targets"/>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-		<PackageReference Include="SkiaSharp" Version="2.88.1-preview.1" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.1-preview.1" />
-		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.1-preview.1" />
+		<PackageReference Include="SkiaSharp" Version="2.88.3" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.3" />
+		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.3" />
 		<PackageReference Include="System.Management" Version="6.0.0" />
 	</ItemGroup>
 

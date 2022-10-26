@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using CodeProject.AI.AnalysisLayer.SDK;
 using CodeProject.AI.API.Common;
 using CodeProject.AI.API.Server.Backend;
-using CodeProject.AI.Server.Backend;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +50,8 @@ namespace CodeProject.AI.API.Server.Frontend
         private readonly Dictionary<string, Process>   _runningProcesses = new();
         private readonly string?                       _appDataDirectory;
 
+        // REVIEW: [Chris] this gets returned by the Modules property so could end up non-empty.
+        //  From the use here, I think there is no issue, but the name maybe should be changed.
         private readonly ModuleCollection _emptyModuleList = new();
 
         /// <summary>
@@ -86,9 +87,17 @@ namespace CodeProject.AI.API.Server.Frontend
         }
 
         /// <summary>
+        /// Gets the environment variables applied to all processes.
+        /// </summary>
+        public Dictionary<string, object>? GlobalEnvironmentVariables
+        {
+            get { return _frontendOptions?.EnvironmentVariables; }
+        }
+
+        /// <summary>
         /// Gets a list of the startup processes.
         /// </summary>
-        public ModuleCollection StartupProcesses
+        public ModuleCollection Modules
         {
             get { return _modules ?? _emptyModuleList; }
         }
@@ -100,6 +109,13 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             get { return _processStatuses; }
         }
+
+        /// <summary>
+        /// Returns a module with the given module ID, or null if none found.
+        /// </summary>
+        /// <param name="moduleId">The module ID</param>
+        /// <returns>A ModuleConfig object, or null if non found</returns>
+        public ModuleConfig? GetModule(string moduleId) => Modules.GetModule(moduleId);
 
         /// <summary>
         /// Gets the directory that is the root of this system. 
@@ -135,7 +151,8 @@ namespace CodeProject.AI.API.Server.Frontend
             DirectoryInfo? info = new DirectoryInfo(rootPath);
             while (info != null)
             {
-                if (info.Name.ToLower() == "debug" || info.Name.ToLower() == "release")
+                if (info.Name.Equals("debug", StringComparison.OrdinalIgnoreCase) || 
+                    info.Name.Equals("release", StringComparison.OrdinalIgnoreCase))
                 {
                     inDevEnvironment = true;
                     break;
@@ -216,12 +233,16 @@ namespace CodeProject.AI.API.Server.Frontend
                 if (!module.Valid)
                     continue;
 
+                var status = module.Available(Platform)
+                           ? (module.Activate == true ? ProcessStatusType.Enabled 
+                                                      : ProcessStatusType.NotEnabled)
+                           : ProcessStatusType.NotAvailable;
+
                 _processStatuses.Add(moduleId, new ProcessStatus()
                 {
                     ModuleId = moduleId,
                     Name     = module.Name,
-                    Status   = module.Activate == true
-                             ? ProcessStatusType.Enabled : ProcessStatusType.NotEnabled,
+                    Status   = status
                 });
             }
 
@@ -238,9 +259,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <returns>The status for the backend process, or false if the queue is invalid.</returns>
         public ProcessStatusType GetStatusForQueue(string queueName)
         {
-            ModuleConfig? module = StartupProcesses.Values
-                                                   .FirstOrDefault(module => module.HasQueue(queueName));
-
+            ModuleConfig? module = Modules.Values.FirstOrDefault(module => module.HasQueue(queueName));
             if (module?.ModuleId == null)
                 return ProcessStatusType.Unknown;
 
@@ -261,6 +280,9 @@ namespace CodeProject.AI.API.Server.Frontend
             _logger.LogInformation("BackendProcessRunner Stop");
 
             Parallel.ForEach(_modules.Values, module => KillProcess(module).Wait());
+
+            int shutdownServerDelaySecs = _config.GetValue("ShutdownServerDelaySecs", 3);
+            Task.Delay(TimeSpan.FromSeconds(shutdownServerDelaySecs), cancellationToken);
 
             return base.StopAsync(cancellationToken);
         }
@@ -309,13 +331,13 @@ namespace CodeProject.AI.API.Server.Frontend
                     continue;
                 }
 
-                status.Status = ProcessStatusType.NotEnabled;
-
                 // setup the routes for this module.
-                if (IsEnabled(module))
+                if (module.Available(Platform))
                 {
                     if (launchAnalysisServices)
                         status.Status = ProcessStatusType.Enabled;
+                    else if (!module.Activate == true)
+                        status.Status = ProcessStatusType.NotEnabled;
                     else
                         status.Status = ProcessStatusType.NotStarted;
 
@@ -329,6 +351,8 @@ namespace CodeProject.AI.API.Server.Frontend
                             _routeMap.Register(routeInfo);
                     }
                 }
+                else
+                    status.Status = ProcessStatusType.NotAvailable;
             }
 
             if (!launchAnalysisServices)
@@ -345,12 +369,10 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 _logger.LogDebug($"Root Path:   {_frontendOptions.ROOT_PATH}");
                 _logger.LogDebug($"Module Path: {_frontendOptions.MODULES_PATH}");
+                _logger.LogDebug($"      (alt): {_frontendOptions.DOWNLOADED_MODULES_PATH}");
                 _logger.LogDebug($"Python Path: {_frontendOptions.PYTHON_PATH}");
                 _logger.LogDebug($"Temp Dir:    {Path.GetTempPath()}");
                 _logger.LogDebug($"Data Dir:    {_appDataDirectory}");
-
-                _logger.LogDebug($"App directory {_frontendOptions.ROOT_PATH}");
-                _logger.LogDebug($"Analysis modules in {_frontendOptions.MODULES_PATH}");
             }
 
             foreach (var entry in _modules!)
@@ -451,7 +473,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 status.Status = ProcessStatusType.Stopped;
 
             // If we're actually meant to be killing this process, then just leave now.
-            if (!IsEnabled(module))
+            if (module.Activate == false || !module.Available(Platform))
                 return true;
 
             if (module.RouteMaps?.Any() == true)
@@ -480,6 +502,15 @@ namespace CodeProject.AI.API.Server.Frontend
 
                 // Start the process
                 _logger.LogTrace($"Starting {ShrinkPath(process.StartInfo.FileName, 50)} {ShrinkPath(process.StartInfo.Arguments, 50)}");
+
+                string summary = module.SettingsSummary;
+                string[] lines = summary.Split('\n');
+
+                _logger.LogInformation("");
+                foreach (string line in lines)
+                    _logger.LogInformation($"** {line.Trim()}");
+                _logger.LogInformation("");
+
                 status.Status = ProcessStatusType.Starting;
 
                 if (!process.Start())
@@ -540,19 +571,17 @@ namespace CodeProject.AI.API.Server.Frontend
                               GetCommandByExtension(module.FilePath);
 
             // Correcting for cross platform (win = \, linux = /)
-            string filePath = Path.Combine(_frontendOptions.MODULES_PATH!,
-                                           module.FilePath!.Replace('\\', Path.DirectorySeparatorChar));
+            char separator = Path.DirectorySeparatorChar;
+            string modulesPath = module.PreInstalled 
+                               ? _frontendOptions.MODULES_PATH! : _frontendOptions.DOWNLOADED_MODULES_PATH!;
+            modulesPath        = modulesPath!.Replace('\\', separator);
+            string filePath    = Path.Combine(modulesPath, module.FilePath!.Replace('\\', separator));
+            string? workingDir = module.WorkingDirectory?.Replace('\\', separator);
 
-            string? workingDirectory = module.WorkingDirectory;
-            if (string.IsNullOrWhiteSpace(workingDirectory))
-            {
-                workingDirectory = Path.GetDirectoryName(filePath);
-            }
+            if (string.IsNullOrWhiteSpace(workingDir))
+                workingDir = Path.GetDirectoryName(filePath);
             else
-            {
-                workingDirectory = Path.Combine(_frontendOptions.MODULES_PATH!,
-                                                workingDirectory!.Replace('\\', Path.DirectorySeparatorChar));
-            }
+                workingDir = Path.Combine(modulesPath, workingDir);
 
             // Setup the process we're going to launch
 #if Windows
@@ -567,7 +596,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 ? new ProcessStartInfo(executableName)
                 {
                     UseShellExecute        = false,
-                    WorkingDirectory       = workingDirectory,
+                    WorkingDirectory       = workingDir,
                     CreateNoWindow         = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError  = true
@@ -575,7 +604,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 : new ProcessStartInfo($"{command}", $"\"{filePath}\"")
                 {
                     UseShellExecute        = false,
-                    WorkingDirectory       = workingDirectory,
+                    WorkingDirectory       = workingDir,
                     CreateNoWindow         = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError  = true
@@ -584,29 +613,9 @@ namespace CodeProject.AI.API.Server.Frontend
             // Set the environment variables
             Dictionary<string, string?> environmentVars = BuildBackendEnvironmentVar(module);
             foreach (var kv in environmentVars)
-                procStartInfo.Environment.TryAdd(kv.Key, kv.Value);
-
-            _logger.LogDebug("__________________________________________________________________");
-            _logger.LogDebug("");
-            _logger.LogDebug($"Setting Environment variables for {module.Name?.ToUpper()}");
-            foreach (var envVar in environmentVars)
-                _logger.LogDebug($"{envVar.Key,-16} = {envVar.Value}");
-            _logger.LogDebug("__________________________________________________________________");
+                procStartInfo.Environment.TryAdd(kv.Key.ToUpper(), kv.Value);
 
             return procStartInfo;
-        }
-
-        private static bool IsEnabled(ModuleConfig module)
-        {
-            // Has it been explicitely activated?
-            bool enabled = module.Activate ?? false;
-
-            // If the platform list doesn't include the current platform, then veto the activation
-            if (enabled && !module.Platforms!.Any(p => p.ToLower() == "all") &&
-                !module.Platforms!.Any(p => p.ToLower() == Platform.ToLower()))
-                enabled = false;
-
-            return enabled;
         }
 
         private string? GetCommandByRuntime(string? runtime)
@@ -750,6 +759,7 @@ namespace CodeProject.AI.API.Server.Frontend
 
             _frontendOptions.ROOT_PATH       = GetRootPath(_frontendOptions.ROOT_PATH);
             _frontendOptions.MODULES_PATH    = Path.GetFullPath(ExpandOption(_frontendOptions.MODULES_PATH)!);
+            _frontendOptions.DOWNLOADED_MODULES_PATH = Path.GetFullPath(ExpandOption(_frontendOptions.DOWNLOADED_MODULES_PATH)!);
 
             _frontendOptions.PYTHON_BASEPATH = Path.GetFullPath(ExpandOption(_frontendOptions.PYTHON_BASEPATH)!);
             _frontendOptions.PYTHON_PATH     = ExpandOption(_frontendOptions.PYTHON_PATH);
@@ -759,10 +769,11 @@ namespace CodeProject.AI.API.Server.Frontend
                 _frontendOptions.PYTHON_PATH = Path.GetFullPath(_frontendOptions.PYTHON_PATH);
 
             _logger.LogDebug("------------------------------------------------------------------");
-            _logger.LogDebug($"Expanded ROOT_PATH       = {_frontendOptions.ROOT_PATH}");
-            _logger.LogDebug($"Expanded MODULES_PATH    = {_frontendOptions.MODULES_PATH}");
-            _logger.LogDebug($"Expanded PYTHON_BASEPATH = {_frontendOptions.PYTHON_BASEPATH}");
-            _logger.LogDebug($"Expanded PYTHON_PATH     = {_frontendOptions.PYTHON_PATH}");
+            _logger.LogDebug($"Expanded ROOT_PATH         = {_frontendOptions.ROOT_PATH}");
+            _logger.LogDebug($"Expanded MODULES_PATH      = {_frontendOptions.MODULES_PATH}");
+            _logger.LogDebug($"Expanded Alt. MODULES_PATH = {_frontendOptions.DOWNLOADED_MODULES_PATH}");
+            _logger.LogDebug($"Expanded PYTHON_BASEPATH   = {_frontendOptions.PYTHON_BASEPATH}");
+            _logger.LogDebug($"Expanded PYTHON_PATH       = {_frontendOptions.PYTHON_PATH}");
             _logger.LogDebug("------------------------------------------------------------------");
         }
 
@@ -801,14 +812,14 @@ namespace CodeProject.AI.API.Server.Frontend
             // Now perform the macro expansions
 
             // We could do this. But why waste the allocations...
-            // processEnvironmentVars = processEnvironmentVars.ToDictionary(kvp => kvp.Key,
+            // processEnvironmentVars = processEnvironmentVars.ToDictionary(kvp => kvp.Key.ToUpper(),
             //                                                              kvp => ExpandOption(kvp.Value));
 
             var keys = processEnvironmentVars.Keys.ToList();
             foreach (string key in keys)
             {
-                string? value = processEnvironmentVars[key];
-                processEnvironmentVars[key] = ExpandOption(value);
+                string? value = processEnvironmentVars[key.ToUpper()];
+                processEnvironmentVars[key.ToUpper()] = ExpandOption(value);
             }
 
             // And now add general vars

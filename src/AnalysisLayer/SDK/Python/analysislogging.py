@@ -19,9 +19,8 @@ class LogMethod(Flag):
     Info    = 1   # Standard info output such as the console
     Error   = 2   # Standard error output
     Server  = 4   # Send the log to the front end API server
-    Cloud   = 8   # Send the log to a cloud provider such as errlog.io
-    File    = 16  # Send the log to a cloud provider such as errlog.io
-    All     = 31  # It's a job lot
+    File    = 8   # Store the logs directly in a file
+    All     = 15  # It's a job lot
 
 class LogItem:
     def __init__(self, logMethod: LogMethod, data: JSON):
@@ -30,7 +29,7 @@ class LogItem:
 
 class AnalysisLogger():
 
-    def __init__(self, server_port: str, log_dir: str, errLog_APIkey: str):
+    def __init__(self, server_port: str, log_dir: str):
 
         """
         Constructor
@@ -40,12 +39,12 @@ class AnalysisLogger():
         # backend analysis servers NOT on the same machine as the server
         self.base_log_url        = f"http://localhost:{server_port}/v1/log/"
         self.log_dir             = log_dir
-        self.errLog_APIkey       = errLog_APIkey
         self.defaultLogging      = LogMethod.File | LogMethod.Info   # Always included
         self._sync_log_lock      = Lock()
         self._verbose_exceptions = True
         self._logging_queue      = Queue(1024)
         self._cancelled          = False
+        self._server_healthy     = True # We'll be optimistic to start
 
 
     async def logging_loop(self):
@@ -54,18 +53,17 @@ class AnalysisLogger():
         Runs the main logging loop which queries the logging queue and then
         forwards each logging request to the logging methods themselves.
         """
+        async with aiohttp.ClientSession() as session:
+            self._request_session = session
 
-        self._request_session = aiohttp.ClientSession()
+            while not self._cancelled:
+                try:
+                    log_item: LogItem = await self._logging_queue.get()
+                    await self.do_log(log_item.method, log_item.data)
+                except Exception as ex:
+                    print(f"Exception while logging: {ex}")
 
-        while not self._cancelled:
-            try:
-                log_item: LogItem = await self._logging_queue.get()
-                await self.do_log(log_item.method, log_item.data)
-            except Exception as ex:
-                print(f"Exception while logging: {ex}")
-
-        await self._request_session.close()
-
+            self._request_session = None
 
     async def log_async (self, logMethod: LogMethod, data: JSON) -> None:
 
@@ -115,8 +113,7 @@ class AnalysisLogger():
         Outputs a log entry to one or more logging providers
 
         Param: logMethod - can be Info (console), Error (err output), Server 
-        (sends the log to the API server), or Cloud (sends the log to a cloud 
-        provider such as errlog.io)
+               (sends the log to the API server), or File (write to file)
         Param: data - a Json object (really: a dictionary) of the form:
            { 
               "process": "Name of process", 
@@ -164,6 +161,11 @@ class AnalysisLogger():
         if message:
             entry += message
 
+        # HACK: if we're out of memory we may want to disable CUDA for 10 seconds 
+        # until the GC has cleaned up and recovered memory. 
+        # if (message == "cuDNN error: CUDNN_STATUS_NOT_INITIALIZED")
+        #    ... 
+
         # HACK to trim superfluous logs
         unimportant = message.startswith("Cannot connect to host")
 
@@ -172,29 +174,30 @@ class AnalysisLogger():
         logged_to_server = False
         if logMethod & LogMethod.Server or self.defaultLogging & LogMethod.Server:
             loggingTasks.append( asyncio.create_task(self._server_log(entry, process, label, loglevel)) )
-            logged_to_server = True
-
-        # The server already captures stdout and stderr so no sense in logging
-        # to those and then also logging to the server
+            logged_to_server = True # May not actually be logged to server. Check self._server_healthy
 
         if process:
            entry += process + ": " + entry
 
+        # The server already captures stdout and stderr so we only log to those
+        # if no server logging was done (either not requested or server failed)
+        no_server_log = not self._server_healthy or not logged_to_server
+
         if logMethod & LogMethod.Error or self.defaultLogging & LogMethod.Error:
-            if not logged_to_server:
+            if no_server_log:
                 print(entry, file=sys.stderr, flush=True)
 
         if logMethod & LogMethod.Info or self.defaultLogging & LogMethod.Info:
-            if not logged_to_server:
+            if no_server_log:
                 print(entry, file=sys.stdout, flush=True)
 
         if not unimportant:
-            if logMethod & LogMethod.Cloud or self.defaultLogging & LogMethod.Cloud:
-                loggingTasks.append( asyncio.create_task(self._cloud_log(process, method, filename, message, exception)) )
-
-            if logMethod & LogMethod.File or self.defaultLogging & LogMethod.File:
-                loggingTasks.append( asyncio.create_task(self._file_log(process, method, filename, message, exception)) )
+            if no_server_log and (logMethod & LogMethod.File or self.defaultLogging & LogMethod.File):
+                loggingTasks.append( asyncio.create_task(self._file_log(process, method, 
+                                                                        filename, message,
+                                                                        exception)) )
    
+        # Wait for all the tasks that have now on the list of logging tasks
         [await task for task in loggingTasks]
 
 
@@ -216,76 +219,47 @@ class AnalysisLogger():
         }
 
         try:
-            await self._request_session.post(
-                self.base_log_url, 
-                data    = payload, 
-                timeout = 1)
+            async with self._request_session.post(self.base_log_url, 
+                                                  data = payload,
+                                                  timeout = 1) as resp:
+                self._server_healthy = resp.status == 200
 
-            return True
+            return self._server_healthy
 
         except TimeoutError:
             print(f"Timeout posting log")
+            self._server_healthy = False
             return False
 
         except Exception as ex:
-            if self._verbose_exceptions:
-                print(f"Error posting log: {str(ex)}")
+
+            if hasattr(ex, "os_error") and isinstance(ex.os_error, ConnectionRefusedError):
+                err_msg        = f"Server connection refused. Is the server running, and can you connect to the server?"
+                exception_type = "ConnectionRefusedError"
+            elif ex.__class__.__name__ == "ClientConnectorError":
+                err_msg        = f"Server connection error. Is the server URL correct?"
+                exception_type = "ClientConnectorError"
+            elif ex.__class__.__name__ == "TimeoutError":
+                err_msg        = f"Timeout connecting to the server"
+                exception_type = "TimeoutError"
             else:
-                print(f"Error posting log: Is the API Server running?")
+                err_msg = f"Error posting log [{exception_type}]: {str(ex)}"
+                exception_type = ex.__class__.__name__
+
+            print(f"{err_msg}\n")
+
+            self._server_healthy = False
             return False
-
-
-    async def _cloud_log(self, process: str, method: str, filename: str, message: str,
-                         exception_type: str) -> bool:
-        """
-        Logs an error to our remote logging server (errLog.io)
-        Param: process - The name of the current process
-        Param: method - The name of the current method
-        Param: filename - The name of the current file
-        Param: message - The message to log
-        Param: exception_type - The exception type if this logging is the result
-                                of an exception
-        """
-
-        if not self.errLog_APIkey:
-            return
-
-        url = 'https://relay.errlog.io/api/v1/log'
-
-        obj = {
-            'message' : message,
-            'apikey' : self.errLog_APIkey,
-            'applicationname' : 'CodeProject.AI',
-            'type' : exception_type,
-            'errordate' : datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-            'filename' : filename,
-            'method' : process + "." + method,
-            'lineno' : 0,
-            'colno' : 0
-        }
-
-        # If you want to see the data you're sending:
-        # import json
-        # data = json.dumps(obj)
-        # print "Json Data: ", data
-
-        headers = {'Content-Type': 'application/json','Accept': 'application/json'}
-        try:
-            response = await self._request_session.post(url, data = obj, headers = headers)
-        except Exception as ex:
-            if self._verbose_exceptions:
-                print(f"Error posting server log: {str(ex)}")
-            else:
-                print(f"Error posting server log: Do you have interwebz?")
-            return False
-
-        return hasattr(response, 'status_code') and response.status_code == 200
 
 
     async def _file_log(self, process: str, method: str, filename: str, message: str,
                         exception_type: str) -> bool:
         """
-        Logs an error to a file
+        Logs an error to a file. In a perfect world we'd send all logs to the default system logger
+        and the server would catch these and process them. Or we'd send logs to the server directly
+        so we had a single system handling logging. Except if the server fails we then have no 
+        logging, so we do it ourselves here just in case.
+
         Param: process - The name of the current process
         Param: method - The name of the current method
         Param: filename - The name of the current file

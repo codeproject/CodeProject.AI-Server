@@ -42,10 +42,13 @@ class YOLODetector(object):
             device_name = torch.cuda.get_device_name(self.device)
 
             no_half = ["TU102","TU104","TU106","TU116", "TU117",
+                       "GeoForce GT 1030", "GeForce GTX 1050","GeForce GTX 1060",
+                       "GeForce GTX 1060","GeForce GTX 1070","GeForce GTX 1080",
                        "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080",
                        "GeForce GTX 1650", "GeForce GTX 1660", "MX550", "MX450",
                        "Quadro RTX 8000", "Quadro RTX 6000", "Quadro RTX 5000", "Quadro RTX 4000"
-                       "Quadro P1000", "Quadro P620", "Quadro P400",
+                       # "Quadro P1000", - this works with half!
+                       "Quadro P620", "Quadro P400",
                        "T1000", "T600", "T400","T1200","T500","T2000",
                        "Tesla T4"]
 
@@ -70,7 +73,10 @@ class YOLODetector(object):
         self.cuda = cuda
         self.model = attempt_load(model_path, device=self.device)
         self.names = ( self.model.module.names if hasattr(self.model, "module") else self.model.names )
+        
         if self.half:
+            # Multi-GPU untested: use all GPUs for inference
+            # self.model = torch.nn.DataParallel(model) #, device_ids=[0, 1, 2])
             self.model.half()
 
     def predict(self, img_path: str, confidence: float = 0.4):
@@ -117,5 +123,8 @@ class YOLODetector(object):
         else:
             # Rescale boxes from img_size to im0 size
             pred[:, :4] = scale_coords(img.shape[2:], pred[:, :4], img0.shape).round()
+
+        del img
+        del img0
 
         return pred

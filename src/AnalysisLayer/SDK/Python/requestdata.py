@@ -37,21 +37,12 @@ class AIRequestData:
         Encodes an Image as a base64 encoded string
         """
 
-        buffered = BytesIO()
-        try:
+        with BytesIO() as buffered:
             image.save(buffered, format=image_format)
             img_dataB64_bytes : bytes = base64.b64encode(buffered.getvalue())
             img_dataB64 : str = img_dataB64_bytes.decode("ascii");
 
-            # Alternative that had issues
-            # img_dataB64 = base64.b64encode(processed_img)
-
             return img_dataB64
-
-        finally:
-            # Release the buffer dummy (me)
-            buffered.close()
-
      
     def get_image(self, index : int) -> Image:
         """
@@ -68,15 +59,9 @@ class AIRequestData:
             img_file    = self.files[index]
             img_dataB64 = img_file["data"]
             img_bytes   = base64.b64decode(img_dataB64)
-            img_stream  = io.BytesIO(img_bytes)
-            try:
-                img         = Image.open(img_stream).convert("RGB")
+            with io.BytesIO(img_bytes) as img_stream:
+                img     = Image.open(img_stream).convert("RGB")
                 return img
-
-            finally:
-                # Release the buffer dummy (me)
-                img_stream.close()
-
 
         except Exception as ex:
 
@@ -88,7 +73,7 @@ class AIRequestData:
             if self._verbose_exceptions:
                 err_msg = str(ex)
 
-            self.log(LogMethod.Error|LogMethod.Server|LogMethod.Cloud, {
+            self.log(LogMethod.Error|LogMethod.Server, {
                 "message": err_msg,
                 "method": "get_image",
                 "process": self.queue_name,

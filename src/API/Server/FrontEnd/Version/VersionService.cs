@@ -1,12 +1,13 @@
 ﻿using System;
-using Microsoft.Extensions.Configuration;
-
-using CodeProject.AI.API.Common;
 using System.Net.Http;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
+
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+using CodeProject.AI.API.Common;
 
 namespace CodeProject.AI.API.Server.Frontend
 {

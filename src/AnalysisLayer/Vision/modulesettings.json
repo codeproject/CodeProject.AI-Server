@@ -3,11 +3,13 @@
 
     "FaceProcessing": {
       "Name": "Face Processing",
+      "Version": "2.0",
+      "PreInstalled": true,
 
       "Activate": true,
-      "Parallelism": 0,        // Defaults to (#CPUs - 1)
+      "Parallelism": 0, // Defaults to (#CPUs - 1)
       "SupportGPU": true,
-      "CUDADeviceNumber": 0,   // 
+      "CUDADeviceNumber": 0, // 0 = default
       "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
 
       "Description": "A number of Face image APIs including detect, recognize, and compare.",
@@ -215,6 +217,8 @@
 
     "SceneClassification": {
       "Name": "Scene Classification",
+      "Version": "2.0",
+      "PreInstalled": true,
 
       "Activate": true,
       "Parallelism": 1,
@@ -280,6 +284,8 @@
 
     "VisionObjectDetection": {
       "Name": "Object Detection (Python)",
+      "Version": "2.0",
+      "PreInstalled": true,
 
       "Activate": false,
       "Parallelism": 0,         // Defaults to (#CPUs - 1)
