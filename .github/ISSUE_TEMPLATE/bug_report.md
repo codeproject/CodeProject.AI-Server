@@ -11,7 +11,7 @@ assignees: ''
 - [ ] Server
 - [ ] Behaviour of one or more Modules [provide name(s), e.g. ObjectDetectionYolo]
 - [ ] Installer
-- [ ] Runtime [e.g. Pythohn3.7, .NET]
+- [ ] Runtime [e.g. Python3.7, .NET]
 - [ ] Module packages [e.g. PyTorch)
 - [ ] Something else
 
