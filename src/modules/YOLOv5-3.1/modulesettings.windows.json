@@ -1,0 +1,9 @@
+{
+  // We don't have a Python3.8 installer for windows, so let's use the existing Python3.7 that
+  // we know works
+  "Modules": {
+    "YOLOv5-3.1": {
+      "Command": "%CURRENT_MODULE_PATH%/bin/%OS%/python37/venv/Scripts/python"
+    }
+  }
+}

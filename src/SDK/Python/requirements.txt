@@ -1,0 +1,8 @@
+#! Python3
+
+## CodeProject.AI
+aiohttp            # Installing aiohttp, the Async IO HTTP library
+aiofiles           # Installing aiofiles, the Async IO Files library
+py-cpuinfo         # Installing py-cpuinfo to allow us to query CPU info
+requests           # Installing Requests, the HTTP library
+Pillow             # Installing Pillow, a Python Image Library

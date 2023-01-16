@@ -4,30 +4,38 @@
 
   "Modules": {
     "ObjectDetectionNet": {
-      "Name": "Object Detection (.NET)",
+      "Name": "Object Detection (YOLOv5 .NET)",
+      "Activate": false,
+      "Platforms": [ "windows", "linux", "linux-arm64" , "macos", "macos-arm64"],
+
+      "Description": "Provides Object Detection using YOLOv5 ONNX models with DirectML. This module is best for those on Windows and Linux without CUDA enabled GPUs", 
       "Version": "1.0",
+      "ReleaseDate": "2022-06-01",
+      "LastUpdated": "2022-06-01",
+      "License": "MIT",
+      "LicenseUrl": "https://opensource.org/licenses/MIT",
       "PreInstalled": true,
 
-      "Activate": false,
       "Parallelism": 0, // Defaults to (#CPUs - 1)
       "SupportGPU": true,
       "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
 
-      "Description": "Detects multiple objects of 80 types in an image.",
-      "FilePath": "ObjectDetectionNet\\ObjectDetectionNet.exe",
+      "Queue": "objectdetection_queue",
+      "ModulePath": "ObjectDetectionNet",
+      "FilePath": "ObjectDetectionNet.exe",
       "Runtime": "execute",
-      "Platforms": [ "windows", "linux" ],
 
       "EnvironmentVariables": {
-        "MODEL_SIZE": "MEDIUM"
+        "MODEL_SIZE": "MEDIUM",
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets",
+        "CUSTOM_MODELS_DIR": "%CURRENT_MODULE_PATH%\\custom-models"
       },
 
       "RouteMaps": [
         {
-          "Name": "Object Detection",
+          "Name": "Object Detection (YOLOv5 .NET)",
           "Path": "vision/detection",
           "Method": "POST",
-          "Queue": "detection_queue",
           "Command": "detect",
           "Description": "The object detection module uses ML.NET and YOLO (You Only Look Once) to locate and classify the objects the models have been trained on. At this point there are 80 different types of objects that can be detected.",
           "Inputs": [
@@ -57,7 +65,62 @@
               "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
             }
           ]
+        },
+
+        {
+          "Name": "Custom Object Detector (YOLOv5 .NET)",
+          "Path": "vision/custom",
+          "Method": "POST",
+          "Command": "custom",
+          "Description": "Detects objects based on YOLO PyTorch models. Models are stored as .pt files in the /ObjectDetectionYolo/assets directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's .pt file",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            }
+          ]
+        },
+
+        {
+          "Name": "Object Detector List Custom Models (YOLOv5 .NET)",
+          "Path": "vision/custom/list",
+          "Method": "POST",
+          "Command": "list-custom",
+          "Description": "Returns a list of models available.",
+          "Inputs": [],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "models",
+              "Type": "String",
+              "Description": "An array of strings containing the names of the models installed."
+            }
+          ]
         }
+
+
       ]
     }
   }

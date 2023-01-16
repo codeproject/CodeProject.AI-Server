@@ -1,0 +1,67 @@
+{
+  "Modules": {
+    "TextSummary": {
+      "Name": "Text Summary",
+      "Activate": true,
+      "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+
+
+      "Description": "Summarizes text content by selecting a number of sentences that are most representitive of the content.",
+      "Version": "1.1",
+      "ReleaseDate": "2022-03-01",
+      "LastUpdated": "2022-03-10",
+      "License": "No License",
+      "LicenseUrl": "https://github.com/edubey/text-summarizer",
+      "PreInstalled": false,
+
+      "Parallelism": 1,
+      "SupportGPU": false,
+      "PostStartPauseSecs": 0, // 1 if using GPU, 0 for CPU
+
+      "Queue": "textsummary_queue",
+      "ModulePath": "TextSummary",
+      "FilePath": "summary_adapter.py",
+      "Runtime": "python38",
+
+      "EnvironmentVariables": {
+        "NLTK_DATA": "%CURRENT_MODULE_PATH%\\nltk_data"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Text Summary",
+          "Path": "text/summarize",
+          "Method": "POST",
+          "Command": "summarize",
+          "Description": "Summarizes some content by selecting a number of sentences that are most representitive of the content.",
+          "Inputs": [
+            {
+              "Name": "text",
+              "Type": "Text",
+              "Description": "The text to be summarized"
+            },
+            {
+              "Name": "num_sentences",
+              "Type": "Integer",
+              "Description": "The number of sentences to produce.",
+              "MinValue": 1,
+              "MaxValue": 50
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "summary",
+              "Type": "Text",
+              "Description": "The summarized text."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

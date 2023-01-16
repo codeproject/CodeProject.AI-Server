@@ -4,29 +4,32 @@ import sys
 import traceback
 import time
 from os.path import exists
+from typing import Tuple
 
 # Hacky VS Code debug stuff
 # if os.getenv("DEBUG_IN_VSCODE", "") == "True":
 #    ...
 
 # Import the CodeProject.AI SDK. This will add to the PATH vaar for future imports
-sys.path.append("../SDK/Python")
+sys.path.append("../../SDK/Python")
 from common import JSON
-from codeprojectai import CodeProjectAIRunner
-from requestdata import AIRequestData
-from analysislogging import LogMethod
+from analysis.codeprojectai import CodeProjectAIRunner
+from analysis.requestdata import AIRequestData
+from analysis.analysislogging import LogMethod
 
 # Import the method of the module we're wrapping
 from options import Options
 from PIL import UnidentifiedImageError, Image
-from process import YOLODetector
+
+#from detector import YOLODetector
+
+import torch
+from yolov5.models.common import DetectMultiBackend, AutoShape
+
 from threading import Lock
 
+# Thread locking
 models_lock = Lock()
-
-# Don't see that this is needed. Maybe for data dirs?
-# sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-
 
 # Setup a global bucket of YOLO detectors. One for each model
 models_last_checked = None
@@ -36,7 +39,7 @@ detectors      = {}  # We'll use this to cache the detectors based on models
 def main():
 
     # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("detection_queue", object_detect_callback, 
+    module_runner = CodeProjectAIRunner("objectdetection_queue", object_detect_callback, 
                                         object_detect_init_callback)
 
     # Hack for debug mode
@@ -68,6 +71,8 @@ def object_detect_init_callback (module_runner: CodeProjectAIRunner):
 
 def object_detect_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
     
+    response = None
+
     if data.command == "list-custom":               # list all models available
 
         # The route to here is /v1/vision/custom/list
@@ -170,19 +175,73 @@ def get_detector(module_runner, models_dir: str, model_name: str, resolution: in
     if detector is None:
         with models_lock:
             detector = detectors.get(model_name, None)
+
             if detector is None:
                 model_path = os.path.join(models_dir, model_name + ".pt")
+                if use_Cuda:
+                    device_type = "cuda"
+                elif use_MPS:
+                    device_type = "mps"
+                else:
+                    device_type = "cpu"
 
-                # YOLOv5 will check for the existence of files and attempt to 
-                # download missing files from the cloud. Let's not do that: it's
-                # unexpected, can fail if no internet, and slows things down if
-                # a system is constantly asking for a model that simply doens't
-                # exist. Set things up correctly at install time.
+                # Use half-precision if possible. There's a bunch of Nvidia cards where
+                # this won't work
+                if use_Cuda:
+                    if cuda_device_num >= 0 and cuda_device_num < torch.cuda.device_count():
+                        device = torch.device(f"cuda:{cuda_device_num}")
+                    else:
+                        device = torch.device("cuda")
+
+                    device_name = torch.cuda.get_device_name(device)
+
+                    no_half = ["TU102","TU104","TU106","TU116", "TU117",
+                               "GeoForce GT 1030", "GeForce GTX 1050","GeForce GTX 1060",
+                               "GeForce GTX 1060","GeForce GTX 1070","GeForce GTX 1080",
+                               "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080",
+                               "GeForce GTX 1650", "GeForce GTX 1660", "MX550", "MX450",
+                               "Quadro RTX 8000", "Quadro RTX 6000", "Quadro RTX 5000", "Quadro RTX 4000"
+                               # "Quadro P1000", - this works with half!
+                               "Quadro P620", "Quadro P400",
+                               "T1000", "T600", "T400","T1200","T500","T2000",
+                               "Tesla T4"]
+
+                    if half_precision == 'disable':
+                        half = False
+                    else:
+                        half = half_precision == 'force' or \
+                                    not any(check_name in device_name for check_name in no_half)
+
+                    if half:
+                        print(f"Using half-precision for the device '{device_name}'")
+                    else:
+                        print(f"Not using half-precision for the device '{device_name}'")
+                else:
+                    device = torch.device(device_type)
+                    device_name = "Apple Silicon GPU" if use_MPS else "CPU"
+                    half = False
+
+                print(f"Inference processing will occur on device '{device_name}'")
+      
+                # YOLOv5 will check for the existence of files and attempt to download
+                # missing files from the cloud. Let's not do that: it's unexpected, 
+                # can fail if no internet, and slows things down if a system is constantly
+                # asking for a model that simply doens't exist. Ensure we set things up
+                # correctly at install time.
                 if exists(model_path):
                     try:
-                        detector = YOLODetector(model_path, resolution, 
-                                                use_Cuda, cuda_device_num,
-                                                use_MPS, half_precision)
+                        # this will throw an exception when an old YoloV5 model
+                        # is loaded and it does not have 80 classes. This exception
+                        # is handled in the YoloV5 code: Ignore the exception.
+
+                        # We're not using the hub.load as it will attempt to load 
+                        # packages and weights from the Internet. We can't create the
+                        # DetectionModel directly easily so leverageing the 
+                        # DetectMultiBackend class. The magic sauce is to wrap that
+                        # in AutoShape as that does the pre and post processing. 
+                        detector = DetectMultiBackend(model_path, device=device, fp16=half)
+                        detector = AutoShape(detector)
+
                         detectors[model_name] = detector
 
                         module_runner.log(LogMethod.Server,
@@ -222,6 +281,8 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
 
     create_err_msg = f"Unable to create YOLO detector for model {model_name}"
 
+    start_process_time = time.perf_counter()
+
     try:
         detector = get_detector(module_runner, models_dir, model_name,
                                 resolution, use_Cuda, cuda_device_num, use_MPS,
@@ -241,36 +302,46 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
     
     # We have a detector for this model, so let's go ahead and detect
     try:
-        det = detector.predictFromImage(img, threshold)
+        # the default resolution for YoloV5? is 640
+        #  YoloV5?6 is 1280
+
+        start_inference_time = time.perf_counter()
+        det = detector(img, size=640)
+        inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
         outputs = []
 
-        for *xyxy, conf, cls in reversed(det):
-            x_min = xyxy[0]
-            y_min = xyxy[1]
-            x_max = xyxy[2]
-            y_max = xyxy[3]
+        for *xyxy, conf, cls in reversed(det.xyxy[0]):
             score = conf.item()
+            if score >= threshold:
+                x_min = xyxy[0].item()
+                y_min = xyxy[1].item()
+                x_max = xyxy[2].item()
+                y_max = xyxy[3].item()
 
-            label = detector.names[int(cls.item())]
+                label = detector.names[int(cls.item())]
 
-            detection = {
-                "confidence": score,
-                "label": label,
-                "x_min": int(x_min),
-                "y_min": int(y_min),
-                "x_max": int(x_max),
-                "y_max": int(y_max),
-            }
+                detection = {
+                    "confidence": score,
+                    "label": label,
+                    "x_min": int(x_min),
+                    "y_min": int(y_min),
+                    "x_max": int(x_max),
+                    "y_max": int(y_max),
+                }
 
-            outputs.append(detection)
+                outputs.append(detection)
 
-        return {"success": True, "predictions": outputs}
+        return {
+            "success": True,
+            "predictions" : outputs,
+            "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
+            "inferenceMs" : inferenceMs
+        }
 
     except UnidentifiedImageError:
-
-        err_trace = traceback.format_exc()
-        message = err_trace or "The image provided was of an unknown type"
+        # message = "".join(traceback.TracebackException.from_exception(ex).format())
+        message = "The image provided was of an unknown type"
         module_runner.log(LogMethod.Error | LogMethod.Server,
                           {
                              "filename": "detect_adapter.py",
@@ -283,9 +354,9 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
         return { "success": False, "error": "invalid image file", "code": 400 }
 
     except Exception as ex:
+        #message = str(ex) or f"A {ex.__class__.__name__} error occurred"
+        message = "".join(traceback.TracebackException.from_exception(ex).format())
 
-        # err_trace = traceback.format_exc()
-        message = str(ex) or f"A {ex.__class__.__name__} error occurred"
         module_runner.log(LogMethod.Error | LogMethod.Server,
                           { 
                               "filename": "detect_adapter.py",

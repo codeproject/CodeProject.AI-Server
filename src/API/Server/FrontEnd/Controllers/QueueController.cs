@@ -1,15 +1,13 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
-using CodeProject.AI.AnalysisLayer.SDK;
+using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.Common;
 using CodeProject.AI.API.Server.Backend;
 using CodeProject.AI.API.Common;
 
@@ -23,14 +21,18 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
     public class QueueController : ControllerBase
     {
         private readonly QueueServices _queueService;
+        private readonly ModuleRunner  _moduleRunner;
 
         /// <summary>
         /// Initializes a new instance of the QueueController class.
         /// </summary>
         /// <param name="queueService">The QueueService.</param>
-        public QueueController(QueueServices queueService)
+        /// <param name="moduleRunner">The module runner instance</param>
+        public QueueController(QueueServices queueService,
+                               ModuleRunner moduleRunner)
         {
             _queueService = queueService;
+            _moduleRunner = moduleRunner;
         }
 
         /// <summary>
@@ -53,8 +55,21 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
             BackendRequestBase? response = await _queueService.DequeueRequestAsync(name, token);
 
-            UpdateProcessStatus(moduleId, executionProvider: executionProvider,
-                                shuttingDown: response?.reqtype?.ToLower() == "quit");
+            bool shuttingDown = false;
+
+            if (response != null)
+            {
+                // We're going to sniff the request to see if it's a Quit command. If so it allows us
+                // to update the status of the process. If it's a quit command then the process will
+                // shut down and no longer updating its status via the queue. This is our last chance.
+                if (response.reqtype?.ToLower() == "quit" && response is BackendRequest origRequest)
+                {
+                    string? requestModuleId = origRequest.payload?.GetValue("moduleId");
+                    shuttingDown = moduleId.EqualsIgnoreCase(requestModuleId);
+                }
+            }
+
+            UpdateProcessStatus(moduleId, incrementProcessCount: false, executionProvider, shuttingDown);
 
             return new OkObjectResult(response);
         }
@@ -96,17 +111,9 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (string.IsNullOrEmpty(moduleId))
                 return;
 
-            // Get the backend processor (DI won't work here due to the order things get fired up
-            // in Main.
-            var backend = HttpContext.RequestServices.GetServices<IHostedService>()
-                                                     .OfType<BackendProcessRunner>()
-                                                     .FirstOrDefault();
-            if (backend is null)
-                return;
-
-            if (backend.Modules.ContainsKey(moduleId))
+            if (_moduleRunner.HasModule(moduleId))
             {
-                ProcessStatus status = backend.ProcessStatuses[moduleId];
+                ProcessStatus status = _moduleRunner.ProcessStatuses[moduleId];
                 if (status.Status != ProcessStatusType.Stopping)
                     status.Status = shuttingDown? ProcessStatusType.Stopping : ProcessStatusType.Started;
                 status.Started ??= DateTime.UtcNow;

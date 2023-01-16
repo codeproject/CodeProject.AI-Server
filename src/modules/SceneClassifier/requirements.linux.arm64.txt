@@ -1,0 +1,24 @@
+#! Python3.7
+
+Pandas           # Installing Pandas, a data analysis / data manipulation tool
+CoreMLTools      # Installing CoreMLTools, for working with .mlmodel format models
+OpenCV-Python    # Installing OpenCV, the Open source Computer Vision library
+Pillow           # Installing Pillow, a Python Image Library
+SciPy            # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML           # Installing PyYAML, a library for reading configuration files
+
+# Specific versions that match the models we're using. This requires <= Python 3.9. Any
+# version higher can use Python 3.10
+# Torch==1.10.2        # Installing Torch, for Tensor computation and Deep neural networks
+# TorchVision==0.11.3  # Installing TorchVision, for Computer Vision based AI
+
+# This is annoying.
+# https://discuss.pytorch.org/t/failed-to-load-image-python-extension-could-not-find-module/140278/15
+torch==1.9.0
+torchvision==0.10.0
+
+## These to be removed (not needed for inference)
+# matlabplotlib
+Seaborn         # Installing Seaborn, a data visualization library based on matplotlib
+
+# last line left blank

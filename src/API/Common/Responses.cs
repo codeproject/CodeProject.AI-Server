@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using System.Threading;
 
 namespace CodeProject.AI.API.Common
 {
@@ -92,7 +88,7 @@ namespace CodeProject.AI.API.Common
     }
 
     /// <summary>
-    /// The Response when requesting the status of the backend analysis services
+    /// The Response when requesting the status of the backend analysis modules
     /// </summary>
     public class AnalysisServicesStatusResponse : SuccessResponse
     {
@@ -100,7 +96,7 @@ namespace CodeProject.AI.API.Common
     }
 
     /// <summary>
-    /// The Response when requesting the status of the backend analysis services
+    /// The Response when requesting the status of the backend analysis modules
     /// </summary>
     public class ModuleListResponse : SuccessResponse
     {

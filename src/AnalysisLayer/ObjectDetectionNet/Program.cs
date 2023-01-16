@@ -6,7 +6,8 @@ using Microsoft.Extensions.Hosting;
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
-        services.AddSingleton<ObjectDetector>();
+        // Can no longer be injected due to change in constructor signature
+        // services.AddSingleton<ObjectDetector>();
         services.AddHostedService<ObjectDetectionWorker>();
     })
     .Build();

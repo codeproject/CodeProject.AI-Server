@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 #if Windows
 using System.Reflection;
@@ -11,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Collections.Generic;
 #if Windows
 using Microsoft.OpenApi.Models;
 #endif
@@ -102,9 +102,11 @@ namespace CodeProject.AI.API.Server.Frontend
             services.Configure<InstallConfig>(Configuration.GetSection(InstallConfig.InstallCfgSection));
             services.Configure<VersionConfig>(Configuration.GetSection(VersionConfig.VersionCfgSection));
 
-            services.AddBackendProcessRunner(Configuration);
+            services.AddModuleRunner(Configuration);
 
-            services.AddSingleton<VersionService, VersionService>();
+            services.AddSingleton<VersionService,  VersionService>();
+            services.AddSingleton<ModuleSettings,  ModuleSettings>();
+            services.AddSingleton<ModuleInstaller, ModuleInstaller>();
             services.AddVersionProcessRunner();
         }
 
@@ -160,6 +162,8 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             if (_installConfig is null || _installConfig.Id == Guid.Empty)
             {
+                ModuleInstaller.QueueInitialModulesInstallation();
+
                 try
                 {
                     _installConfig  ??= new InstallConfig();
@@ -167,7 +171,9 @@ namespace CodeProject.AI.API.Server.Frontend
 
                     var configValues = new { install = _installConfig };
 
-                    string appDataDir     = Configuration["ApplicationDataDir"];
+                    string appDataDir     = Configuration["ApplicationDataDir"] 
+                                          ?? throw new ArgumentNullException("ApplicationDataDir is not defined in configuration");
+
                     string configFilePath = Path.Combine(appDataDir, InstallConfig.InstallCfgFilename);
 
                     if (!Directory.Exists(appDataDir))
@@ -190,9 +196,9 @@ namespace CodeProject.AI.API.Server.Frontend
         /// </summary>
         public void ListConfigValues()
         {
-            foreach (KeyValuePair<string, string> pair in Configuration.AsEnumerable())
+            foreach (KeyValuePair<string, string?> pair in Configuration.AsEnumerable())
             {
-                Console.WriteLine($"{pair.Key}: {pair.Value}");
+                Console.WriteLine($"{pair.Key}: {pair.Value ?? "<null>"}");
             }
         }
     }

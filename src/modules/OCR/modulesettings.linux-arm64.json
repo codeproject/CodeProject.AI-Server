@@ -1,0 +1,8 @@
+{
+  "Modules": {
+    "OCR": {
+      "SupportGPU": false, // see requirements.linux.cuda.txt for discussion
+      "Command": "%CURRENT_MODULE_PATH%/bin/%OS%/python39/venv/bin/python" // Paddle requires Python 3.9 on Raspberry Pi
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "Modules": {
+    "ALPR": {
+      "SupportGPU": false
+    }
+  }
+}

@@ -1,7 +1,5 @@
 import os
-import sys
 import torch
-import cpuinfo
 
 class Settings:
 
@@ -62,9 +60,14 @@ class Options:
         half_precision = "enable"
 
     use_MPS           = False
-    manufacturer      = cpuinfo.get_cpu_info().get('brand_raw')
-    if manufacturer and manufacturer.startswith("Apple M"):
-        use_MPS = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+
+    try:
+        import cpuinfo
+        manufacturer = cpuinfo.get_cpu_info().get('brand_raw')
+        if manufacturer and manufacturer.startswith("Apple M"):
+            use_MPS = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    except Exception as ex:
+        print("Unable to import cpuinfo and test for hardware:" + str(ex))
 
     if model_size not in [ "tiny", "small", "medium", "large" ]:
         model_size = "medium"

@@ -3,10 +3,12 @@
     "configurations": [
 
         {
-            "name": "Launch Server",
+            "name": "Build All & Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
+            "preLaunchTask": "build-all", 
+            "postDebugTask": "stop-all",
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server",
             "args": [],
             "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
             "stopAtEntry": false,
@@ -35,14 +37,9 @@
             "name": "Build & Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-all-win",
-            "linux": {
-                "preLaunchTask": "build-all-linux",
-            },
-            "osx": {
-                "preLaunchTask": "build-all-linux",
-            },
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
+            "preLaunchTask": "build-server", 
+            "postDebugTask": "stop-all",
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server",
             "args": [],
             "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
             "stopAtEntry": false,
@@ -68,16 +65,63 @@
         },
 
         {
-            "name": "Build All",
+            "name": "Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-all-win",
-            "linux": {
-                "preLaunchTask": "build-all-linux",
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "stopAtEntry": false,
+            "requireExactSource": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "http://localhost:%s/swagger"
             },
-            "osx": {
-                "preLaunchTask": "build-all-linux",
-            },
+
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true"
+            }
+            /*
+            "logging": {
+                "engineLogging": false,
+                "moduleLoad": false,
+                "exceptions": false,
+                "browserStdOut": false
+            }
+            */
+        },
+        
+        {
+            "name": "Stop all Processes",
+            "type": "clr",
+            "request": "launch",
+            "preLaunchTask": "stop-all",
+            "program": "dotnet",     // dummy command
+            "args": [ "--version" ], // dummy command
+            "stopAtEntry": false,
+        },
+
+        {
+            "name": "Build Server only",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-server",
+            "program": "dotnet",     // dummy command
+            "args": [ "--version" ], // dummy command
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+
+        {
+            "name": "Build All for x64",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-all",
             "program": "dotnet",
             "args": [
                 "--version"
@@ -90,15 +134,31 @@
         },
 
         {
-            "name": "Launch Server & Modules separately",
+            "name": "Build All for Arm64",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "pre-launch-server-debug",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/CodeProject.AI.Server",
+            "preLaunchTask": "build-all-arm64",
+            "program": "dotnet",
             "args": [
-                "--LaunchAnalysisServices=false"
+                "--version"
             ],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net6.0/",
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+
+        {
+            "name": "Launch Server without Modules",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-server",
+            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server.exe",
+            "args": [
+                "--ModuleOptions:LaunchModules=false"
+            ],
+            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/",
             "stopAtEntry": false,
 
             "serverReadyAction": {
@@ -125,9 +185,10 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "launch-server-win",
-            // "windows": { - VS Code linter gets all upset at this
-            "program": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/bin/Debug/net5.0-windows/win-x64/CodeProject.AI.Demo.Explorer.exe",
-            // },
+            "windows": 
+            {
+                "program": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/win-x64/CodeProject.AI.Demo.Explorer.exe",
+            },
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
@@ -139,27 +200,168 @@
             }
         },
 
+        // Useful for individual debugging. These two are typical problem-child examples
+        /*
+        {
+            "name": "SentimentAnalysis",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-sentimentanalysis",
+            "program": "${workspaceFolder}/src/modules/SentimentAnalysis/bin/Debug/net7.0/SentimentAnalysis",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            // "cwd": "${workspaceFolder}/src/modules/SentimentAnalysis", - causes an exception. WTF. See HACK.
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                // "LAUNCHED_SEPARATELY_IN_VSCODE": "true" // HACK
+                "MODELS_DIR": "${workspaceFolder}/src/modules/SentimentAnalysis/sentiment_model",
+            }
+        },
+        {
+            "name": "ObjectDetectionNet",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-yolo-net",
+            "program": "${workspaceFolder}/src/AnalysisLayer/ObjectDetectionNet/bin/Debug/net7.0/ObjectdetectionNet",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            // "cwd": "${workspaceFolder}/src/AnalysisLayer/ObjectDetectionNet", - causes an exception. WTF. See HACK.
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "LAUNCHED_SEPARATELY_IN_VSCODE": "true" // HACK
+            }
+        },
+
+        {
+            "name": "OCR",
+            "type": "python",
+            "python": "${workspaceFolder}/src/modules/OCR/bin/linux/python38/venv/bin/python",
+            "request": "launch",
+            "program": "OCR_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/modules/OCR",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python37/venv/Scripts/python"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/modules/OCR/bin/linux/python38/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/modules/OCR/bin/macos/python38/venv/bin/python",
+            }
+        },
+        */
+
         // See https://code.visualstudio.com/docs/editor/variables-reference#_settings-command-variables-and-input-variables
         // For variables that can be used
         {
-            "name": "Python 3.7/3.8: Current File",
+            "name": "Shared Python 3.7/3.8: Current File",
             "type": "python",
             "python": "${workspaceFolder}/src/AnalysisLayer/bin/windows/python37/venv/Scripts/python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "cwd": "${fileDirname}",
-            "justMyCode": true,
+            "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168"
             },
+            "linux": {
+                "python": "${workspaceFolder}/src/AnalysisLayer/bin/linux/python38/venv/bin/python",
+            },
             "osx": {
-                "python": "${workspaceFolder}/src/AnalysisLayer/bin/macos-arm/python38/venv/bin/python",
-                // "env": { "CPAI_PORT": "32168" }
+                "python": "${workspaceFolder}/src/AnalysisLayer/bin/macos/python38/venv/bin/python",
             }
         },
+        {
+            "name": "Local Python 3.7/3.8: Current File",
+            "type": "python",
+            "python": "${fileDirname}/bin/linux/python38/venv/bin/python3.8",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            },
+            "windows": {
+                "python": "${fileDirname}/bin/windows/python37/venv/Scripts/python"
+            },
+            "linux": {
+                "python": "${fileDirname}/bin/linux/python38/venv/bin/python3.8"
+            },
+            "osx": {
+                "python": "${fileDirname}/bin/macos/python38/venv/bin/python"
+            }
+        },
+        {
+            "name": "Shared Python 3.9: Current File",
+            "type": "python",
+            "python": "${workspaceFolder}/src/AnalysisLayer/bin/windows/python39/venv/Scripts/python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/AnalysisLayer/bin/linux/python39/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/AnalysisLayer/bin/macos/python39/venv/bin/python",
+            }
+        },        
+        {
+            "name": "Local Python 3.9: Current File",
+            "type": "python",
+            "python": "${fileDirname}/bin/linux/python39/venv/bin/python3.9",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            },
+            "windows": {
+                "python": "${fileDirname}/bin/windows/python39/venv/Scripts/python"
+            },
+            "linux": {
+                "python": "${fileDirname}/bin/linux/python39/venv/bin/python3.9"
+            },
+            "osx": {
+                "python": "${fileDirname}/bin/macos/python39/venv/bin/python"
+            }
+        },
+   
+        /*
         {
             "name": "Python: Attach via ProcessID",
             "type": "python",
@@ -171,5 +373,6 @@
                 "RUNNING_IN_VSCODE": "True"
             }        
         }
+        */
     ]
 }

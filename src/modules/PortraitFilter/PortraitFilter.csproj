@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<!-- Platform, architecture, runtime target defines -->
+	<Import Project="../../SDK/NET/Common.targets" />
+
+	<!-- Common properties -->
+	<PropertyGroup>
+		<Name>PortraitFilter</Name>
+		<RootNamespace>CodeProject.AI.AnalysisLayer.PortraitFilter</RootNamespace>
+		<AssemblyName>PortraitFilter</AssemblyName>
+		<Version>2.0.5</Version>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<UserSecretsId>dotnet-PortraitFilter-C4FF0E02-9BBA-46BE-B89E-9C2DA88576BD</UserSecretsId>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<!--<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>-->
+		<Authors>CodeProject</Authors>
+		<Platform>AnyCPU</Platform>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<TargetFramework>net7.0</TargetFramework>
+	</PropertyGroup>
+
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>True</SelfContained>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
+	</PropertyGroup>
+
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Include="favicon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.13.1" Condition="'$(IsWindows)'=='true'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.12.1" Condition="'$(IsLinux)'=='true' and '$(IsArm64)'!='true'" />
+		<!-- Note that  Microsoft.ML.OnnxRuntime only supports the AnyCPU, x64, and x86 platforms at this time. -->
+		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.12.1" Condition="'$(IsLinux)'=='true' and '$(IsArm64)'=='true'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.12.1" Condition="'$(IsOsx)'=='true'" />
+
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
+		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.3" />
+		<PackageReference Include="UMapx" Version="5.2.4.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\API\Common\Common.csproj" />
+		<ProjectReference Include="..\..\SDK\NET\NET.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Lib\deeplabv3_mnv2_pascal_train_aug.onnx">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+</Project>

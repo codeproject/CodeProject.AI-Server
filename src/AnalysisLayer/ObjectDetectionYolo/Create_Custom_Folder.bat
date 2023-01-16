@@ -21,6 +21,10 @@ set RegKey=HKLM\SOFTWARE\Perspective Software\Blue Iris\Options\AI
 set RegValue=deepstack_custompath
 set RegType=REG_SZ
 
+REM Check the key exists before we go further
+reg query "%RegKey%" /V %RegValue% > /dev/null 2>/dev/null
+if errorlevel 1 goto:eof 
+
 FOR /F "usebackq tokens=1,2*" %%A in (`reg query "%RegKey%" /V %RegValue% ^|findstr /ri "%RegType%"`) do (
     set KeyName=%%A
     set ValueType=%%B

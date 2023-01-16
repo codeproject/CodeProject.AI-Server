@@ -1,0 +1,9 @@
+{
+  "Modules": {
+    "SceneClassifier": {
+      "EnvironmentVariables": {
+        "USE_CUDA": "False"
+      }
+    }
+  }
+}

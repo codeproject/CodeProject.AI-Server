@@ -3,7 +3,7 @@
 namespace CodeProject.AI.API.Common
 {
     /// <summary>
-    /// The current version of the FrontEnd.
+    /// The current version of the server.
     /// </summary>
     public class VersionInfo
     {
@@ -91,11 +91,52 @@ namespace CodeProject.AI.API.Common
             return Version;
         }
 
+        public static VersionInfo Parse(string? versionString)
+        {
+            var version = new VersionInfo();
+            if (string.IsNullOrEmpty(versionString))
+                return version;
+
+            // Extract and remove build
+            string[] parts = versionString.Split('+');
+            if (parts.Length > 1)
+                version.Build = int.Parse(parts[1]);
+
+            // Extract and remove PreRelease from LHS of Build split
+            parts = parts[0].Split('-');
+            if (parts.Length > 1)
+                version.PreRelease = parts[1];
+
+            // Extract versions from LHS of PreRelease split
+            parts = parts[0].Split('.');
+
+            if (parts.Length > 0)
+                version.Major = int.Parse(parts[0]);
+            if (parts.Length > 1)
+                version.Minor = int.Parse(parts[1]);
+            if (parts.Length > 2)
+                version.Patch = int.Parse(parts[2]);
+
+            return version;
+        }
+
         /// <summary>
         /// Compares two versions. If versionA &lt; versionB then this method returns &lt; 0. If
         /// the two versions are equal it returns 0. Otherwise this method returns %gt; 0. 
         /// Comparison order is Major, Minor, Patch, Build, PreRelease then Security.
-        /// 
+        /// </summary>
+        /// <param name="versionA">The first version to compare</param>
+        /// <param name="versionB">The second version to compare</param>
+        /// <returns></returns>
+        public static int Compare(string? versionA, string? versionB)
+        {
+            return Compare(Parse(versionA), Parse(versionB));
+        }
+
+        /// <summary>
+        /// Compares two versions. If versionA &lt; versionB then this method returns &lt; 0. If
+        /// the two versions are equal it returns 0. Otherwise this method returns %gt; 0. 
+        /// Comparison order is Major, Minor, Patch, Build, PreRelease then Security.
         /// </summary>
         /// <param name="versionA">The first version to compare</param>
         /// <param name="versionB">The second version to compare</param>

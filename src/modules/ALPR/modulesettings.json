@@ -1,0 +1,62 @@
+{
+  "Modules": {
+
+    "ALPR": {
+      "Name": "License Plate Reader",
+      "Activate": true,
+      "Platforms": [ "windows", "linux", "macos", "macos-arm64" ], // Issues installing PaddlePaddle on linux-arm64
+
+      "Description": "Detects and readers licence plates using YOLO object detection and the PaddleOCR toolkit", 
+      "Version": "1.0",
+      "ReleaseDate": "2022-11-01",
+      "LastUpdated": "2022-11-10",
+      "License": "SSPL",
+      "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+      "PreInstalled": false,
+
+      "Parallelism": 0, // Defaults to (#CPUs - 1)
+      "SupportGPU": true,
+      "CUDADeviceNumber": 0, // 0 = default
+      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
+
+      "Queue": "ALPR_queue",
+      "ModulePath": "ALPR",
+      "FilePath": "ALPR_adapter.py",
+      "Command": "%CURRENT_MODULE_PATH%/bin/%OS%/python38/venv/bin/python", // Paddle requires Python <= 3.8
+
+      "EnvironmentVariables": {
+        "PLATE_CONFIDENCE": 0.4
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "License Plate Reader",
+          "Path": "image/alpr",
+          "Method": "POST",
+          "Command": "alpr",
+          "Description": "Detects the characters in license plates detected within an image",
+          "Inputs": [
+            {
+              "Name": "upload",
+              "Type": "File",
+              "Description": "The image to ALPR."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "return": "alpr_result",
+              "Name": "alpr_result",
+              "Type": "Object",
+              "Description": "ALPR result."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

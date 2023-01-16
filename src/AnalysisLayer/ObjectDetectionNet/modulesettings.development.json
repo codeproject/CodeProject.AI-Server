@@ -1,7 +1,7 @@
 {
   "Modules": {
     "ObjectDetectionNet": {
-      "FilePath": "ObjectDetectionNet\\bin\\Debug\\net6.0\\ObjectDetectionNet.exe",
+      "FilePath": "bin\\Debug\\net7.0\\ObjectDetectionNet.exe",
       "WorkingDirectory": "ObjectDetectionNet"
     }
   }

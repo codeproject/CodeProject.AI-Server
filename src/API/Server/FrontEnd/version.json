@@ -1,14 +1,14 @@
 {
   "versionSection": {
     "versionInfo": {
-      "Major": 1,
-      "Minor": 6,
-      "Patch": 7,
+      "Major": 2,
+      "Minor": 0,
+      "Patch": 5,
       "Build": 0,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI.Server-1.6.8.0.zip",
-      "ReleaseNotes": "Addressed potential resource leaks, updated version API"
+      "File": "CodeProject.AI.Server-2.0.5.zip",
+      "ReleaseNotes": "New module architecture, downloadable modules, RaspberryPi support and assorted memory leaks fixed."
     }
   }
 }

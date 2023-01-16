@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using CodeProject.AI.API.Common;
+using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -18,22 +19,26 @@ namespace CodeProject.AI.API.Server.Frontend
     {
         private static HttpClient? _client;
         private readonly ILogger _logger;
+        private readonly ServerOptions _serverOptions;
 
         /// <summary>
         /// Initializs a new instance of the Startup class.
         /// </summary>
         /// <param name="versionOptions">The version Options instance.</param>
         /// <param name="installOptions">The install Options instance.</param>
+        /// <param name="serverOptions">The module options instance</param>
         /// <param name="configuration">The Configuration instance</param>
         /// <param name="logger">The logger</param>
         public VersionService(IOptions<VersionConfig> versionOptions,
                               IOptions<InstallConfig> installOptions,
+                              IOptions<ServerOptions> serverOptions,
                               IConfiguration configuration,
                               ILogger<VersionService> logger)
         {
             Configuration = configuration;
             VersionConfig = versionOptions.Value;
             InstallConfig = installOptions.Value;
+            _serverOptions = serverOptions.Value;
             _logger = logger;
         }
 
@@ -76,16 +81,18 @@ namespace CodeProject.AI.API.Server.Frontend
                     // version has issues
                     string currentVersion = VersionConfig.VersionInfo?.Version ?? string.Empty;
                     _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);
+
+                    var sysProperties = SystemProperties.Summary;
+                    var systemInfoJson = JsonSerializer.Serialize(sysProperties);
+                    _client.DefaultRequestHeaders.Add("X-CPAI-Server-SystemInfo", systemInfoJson);
                 }
                 catch
                 { }
             }
 
-            string updateCheckUrl = Configuration.GetValue<string>("UpdateCheckUrl");
-
             try
             {
-                string data = await _client.GetStringAsync(updateCheckUrl);
+                string data = await _client.GetStringAsync(_serverOptions.ServerVersionCheckUrl);
                 if (!string.IsNullOrWhiteSpace(data))
                 {
                     var options = new JsonSerializerOptions
@@ -101,8 +108,8 @@ namespace CodeProject.AI.API.Server.Frontend
                         // local config settings.
                         if (!string.IsNullOrWhiteSpace(version.File))
                         {
-                            string updateDownloadUrl = Configuration.GetValue<string>("UpdateDownloadUrl");
-                            version.File = updateDownloadUrl;
+                            string serverDownloadUrl = _serverOptions.ServerDownloadUrl!;
+                            version.File = serverDownloadUrl;
                         }
 
                         _logger.LogInformation($"Latest version available is {version.Version}");

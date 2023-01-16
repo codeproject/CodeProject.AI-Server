@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
     "CodeProject.AI Server (Debug)": {
       "commandName": "Project",
@@ -18,14 +17,14 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "http://localhost:32168",
-      "dotnetRunMessages": true
+      "dotnetRunMessages": true,
+      "hotReloadEnabled": false
     },
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "http://+:32168"
       },
       "httpPort": 32168,
@@ -62,5 +61,6 @@
       },
       "distributionName": ""
     }
-  }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json"
 }

@@ -1,7 +1,7 @@
 """
-Script to time how long it takes the DeepStack modules to process a set of images. 
-The purpose is to allow comparison of speed on different hosts. We also count the
-total number of predictions as a quality check.
+Script to time how long it takes the Object Detection modules to process a set 
+of images. The purpose is to allow comparison of speed on different hosts. We 
+also count the total number of predictions as a quality check.
 
 Example run: python3 benchmark.py --images_folder /Users/my/images
 """
@@ -33,9 +33,7 @@ def main():
         type=int,
         help="CodeProject.AI Server Port",
     )
-    # parser.add_argument(
-    #    "--api_key", default=DEFAULT_API_KEY, type=str, help="Deepstack API key"
-    #)
+
     parser.add_argument(
         "--images_folder",
         default=DEFAULT_IMAGES_FOLDER,

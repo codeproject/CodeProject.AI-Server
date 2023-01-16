@@ -1,0 +1,61 @@
+{
+  "Modules": {
+
+    "SuperResolution": {
+      "Name": "Super Resolution",
+      "Activate": true,
+      "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+
+      "Description": "Increases the resolution of an image using AI", 
+      "Version": "1.1",
+      "ReleaseDate": "2022-03-01",
+      "LastUpdated": "2022-03-10",
+      "License": "Apache 2.0",
+      "LicenseUrl": "http://www.apache.org/licenses/",
+      "PreInstalled": false,      
+      
+      "Parallelism": 1,
+      "SupportGPU": false,
+      "PostStartPauseSecs": 0, // 1 if using GPU, 0 for CPU
+
+      "Queue": "superresolution_queue",
+      "ModulePath": "SuperResolution",
+      "FilePath": "superres_adapter.py",
+      "Runtime": "python38",
+
+      "EnvironmentVariables": {
+        // See : https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates
+        "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION": "python"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Super Resolution",
+          "Path": "image/superresolution",
+          "Method": "POST",
+          "Command": "superresolution",
+          "Description": "Increases the resolution of an image using AI to ensure no bluriness is introduced.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The image to have its resolution increased."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "imageBase64",
+              "Type": "Base64ImageData",
+              "Description": "The base64 encoded image that has had its resolution increased."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

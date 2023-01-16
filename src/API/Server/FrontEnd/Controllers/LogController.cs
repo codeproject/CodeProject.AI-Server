@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -58,6 +59,9 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                 entry = "Attempted to load ONNX runtime CUDA provider. No luck, moving on...";
                 log_level = LogLevel.Information;
             }
+
+            // strip out any terminal colourisation
+            entry = Regex.Replace(entry, "\\[\\d+(;\\d+)\\d+m", string.Empty);
 
             msg += entry;
 

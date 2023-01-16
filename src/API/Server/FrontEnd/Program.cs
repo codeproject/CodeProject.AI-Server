@@ -1,9 +1,3 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,6 +7,15 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+
+using CodeProject.AI.API.Common;
+using CodeProject.AI.SDK.Common;
+
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -37,32 +40,34 @@ namespace CodeProject.AI.API.Server.Frontend
             const string product = "AI";
 
             // lower cased as Linux has case sensitive file names
-            string  platform  = BackendProcessRunner.Platform.ToLower();
-            string? aspNetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.ToLower();
-            bool    inDocker  = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") == "true";
+            string  os           = SystemInfo.OperatingSystem.ToLower();
+            string  architecture = SystemInfo.Architecture.ToLower();
+            string? runtimeEnv   = SystemInfo.RuntimeEnvironment == SDK.Common.RuntimeEnvironment.Development ||
+                                   SystemInfo.IsDevelopment ? "development" : string.Empty;
 
-            var assembly      = Assembly.GetExecutingAssembly();
-            var assemblyName  = (assembly.GetName().Name ?? string.Empty)
-                              + (platform == "windows" ? ".exe" : ".dll");
-            var serviceName   = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
-                              ?? assemblyName.Replace(".", " ");
-            var servicePath   = Path.Combine(AppContext.BaseDirectory, assemblyName);
+            var assembly         = Assembly.GetExecutingAssembly();
+            var assemblyName     = (assembly.GetName().Name ?? string.Empty)
+                                 + (os == "windows" ? ".exe" : ".dll");
+            var serviceName      = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
+                                ?? assemblyName.Replace(".", " ");
+            var servicePath      = Path.Combine(AppContext.BaseDirectory, assemblyName);
 
-            var serviceDescription = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? string.Empty;
+            var serviceDescription = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description
+                                  ?? string.Empty;
 
             if (args.Length == 1)
             {
-                if (args[0].Equals("/Install", StringComparison.OrdinalIgnoreCase))
+                if (args[0].EqualsIgnoreCase("/Install"))
                 {
                     WindowsServiceInstaller.Install(servicePath, serviceName, serviceDescription);
                     return;
                 }
-                else if (args[0].Equals("/Uninstall", StringComparison.OrdinalIgnoreCase))
+                else if (args[0].EqualsIgnoreCase("/Uninstall"))
                 {
                     WindowsServiceInstaller.Uninstall(serviceName);
                     return;
                 }
-                else if (args[0].Equals("/Stop", StringComparison.OrdinalIgnoreCase))
+                else if (args[0].EqualsIgnoreCase("/Stop"))
                 {
                     WindowsServiceInstaller.Stop(serviceName);
                     return;
@@ -74,21 +79,20 @@ namespace CodeProject.AI.API.Server.Frontend
             string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
 
             // .NET's suggestion for macOS isn't great. Let's do something different.
-            if (platform == "macos" || platform == "macos-arm")
+            if (os == "macos")
                 applicationDataDir = $"/Library/Application Support/{company}/{product}";
 
             // Store this dir in the config settings so we can get to it later.
-            var inMemoryConfigData = new Dictionary<string, string> {
+            var inMemoryConfigData = new Dictionary<string, string?> {
                 { "ApplicationDataDir", applicationDataDir }
             };
 
-            // bool inVScode = (Environment.GetEnvironmentVariable("RUNNING_IN_VSCODE") ?? "") == "true";
-            bool reloadConfigOnChange = !inDocker;
+            bool reloadConfigOnChange = SystemInfo.ExecutionEnvironment != ExecutionEnvironment.Docker;
 
             // Setup our custom Configuration Loader pipeline and build the configuration.
             IHost? host = CreateHostBuilder(args)
-                       .ConfigureAppConfiguration(SetupConfigurationLoaders(args, platform, aspNetEnv,
-                                                                            applicationDataDir,
+                       .ConfigureAppConfiguration(SetupConfigurationLoaders(args, os, architecture,
+                                                                            runtimeEnv, applicationDataDir,
                                                                             inMemoryConfigData,
                                                                             reloadConfigOnChange))
                        .Build()
@@ -100,13 +104,13 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 string systemInfo = SystemInfo.GetSystemInfo();
                 foreach (string line in systemInfo.Split('\n'))
-                    _logger.LogInformation("** " + line.Trim());
+                    _logger.LogInformation("** " + line.TrimEnd());
 
                 _logger.LogInformation($"** App DataDir:      {applicationDataDir}");
 
-                string gpuInfo = await SystemInfo.GetGpuInfo();
+                string gpuInfo = await SystemInfo.GetVideoAdapterInfo();
                 foreach (string line in gpuInfo.Split('\n'))
-                    _logger.LogInformation(line.Trim());
+                    _logger.LogInformation(line.TrimEnd());
             }
 
             Task? hostTask;
@@ -138,12 +142,20 @@ namespace CodeProject.AI.API.Server.Frontend
             }
         }
 
-        // Sets up our custom Configuration Loader Pipeline.
-        private static Action<HostBuilderContext, IConfigurationBuilder> 
-            SetupConfigurationLoaders(string[] args, string platform, string? aspNetEnv, 
-                                      string applicationDataDir,
-                                      Dictionary<string, string> inMemoryConfigData, 
-                                      bool reloadConfigOnChange)
+        /// <summary>
+        /// Sets up our custom Configuration Loader Pipeline
+        /// </summary>
+        /// <param name="args">The command line arguments</param>
+        /// <param name="os">The operating system</param>
+        /// <param name="architecture">The architecture (x86, arm64 etc)</param>
+        /// <param name="runtimeEnv">Whether this is development or production</param>
+        /// <param name="applicationDataDir">The path to the folder containing application data</param>
+        /// <param name="inMemoryConfigData">The in-memory config data</param>
+        /// <param name="reloadConfigOnChange">Whether to reload files if they are saved during runtime</param>
+        /// <returns></returns>
+        private static Action<HostBuilderContext, IConfigurationBuilder> SetupConfigurationLoaders(string[] args,
+            string os, string architecture, string? runtimeEnv, string applicationDataDir,
+            Dictionary<string, string?> inMemoryConfigData, bool reloadConfigOnChange)
         {
             return (hostingContext, config) =>
             {
@@ -153,24 +165,60 @@ namespace CodeProject.AI.API.Server.Frontend
                 config.Sources.Clear(); 
 
                 // add in the default appsetting.json file and its variants
-                config.AddJsonFile(Path.Combine(baseDir, "appsettings.json"),
-                                    optional: false, reloadOnChange: reloadConfigOnChange);
+                // In order
+                // appsettings.json
+                // appsettings.development.json
+                // appsettings.os.json
+                // appsettings.os.development.json
+                // appsettings.os.architecture.json
+                // appsettings.os.architecture.development.json
+                // appsettings.docker.json
+                // appsettings.docker.development.json
 
-                if (!string.IsNullOrWhiteSpace(aspNetEnv))
+                string settingsFile = Path.Combine(baseDir, "appsettings.json");
+                config.AddJsonFile(settingsFile, optional: false, reloadOnChange: reloadConfigOnChange);
+
+                if (!string.IsNullOrWhiteSpace(runtimeEnv))
                 {
-                    config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{aspNetEnv}.json"),
-                                    optional: true, reloadOnChange: reloadConfigOnChange);
+                    settingsFile = Path.Combine(baseDir, $"appsettings.{runtimeEnv}.json");
+                    if (File.Exists(settingsFile))                
+                        config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
                 }
 
-                config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.json"),
-                                   optional: true, reloadOnChange: reloadConfigOnChange);
+                settingsFile = Path.Combine(baseDir, $"appsettings.{os}.json");
+                if (File.Exists(settingsFile))                
+                    config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
 
-                // Load appsettings.platform.env.json files to allow slightly more
-                // convenience for settings on other platforms
-                if (!string.IsNullOrWhiteSpace(aspNetEnv))
+                if (!string.IsNullOrWhiteSpace(runtimeEnv))
                 {
-                    config.AddJsonFile(Path.Combine(baseDir, $"appsettings.{platform}.{aspNetEnv}.json"),
-                                      optional: true, reloadOnChange: reloadConfigOnChange);
+                    settingsFile = Path.Combine(baseDir, $"appsettings.{os}.{runtimeEnv}.json");
+                    if (File.Exists(settingsFile))                
+                        config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
+                }
+
+                settingsFile = Path.Combine(baseDir, $"appsettings.{os}.{architecture}.json");
+                if (File.Exists(settingsFile))                
+                    config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
+
+                if (!string.IsNullOrWhiteSpace(runtimeEnv))
+                {
+                    settingsFile = Path.Combine(baseDir, $"appsettings.{os}.{architecture}.{runtimeEnv}.json");
+                    if (File.Exists(settingsFile))                
+                        config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
+                }
+
+                if (SystemInfo.ExecutionEnvironment == ExecutionEnvironment.Docker)
+                {
+                    settingsFile = Path.Combine(baseDir, $"appsettings.docker.json");
+                    if (File.Exists(settingsFile))                
+                        config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
+
+                    if (!string.IsNullOrWhiteSpace(runtimeEnv))
+                    {
+                        settingsFile = Path.Combine(baseDir, $"appsettings.docker.{runtimeEnv}.json");
+                        if (File.Exists(settingsFile))                
+                            config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
+                    }                        
                 }
 
                 // This allows us to add ad-hoc settings such as ApplicationDataDir
@@ -185,10 +233,10 @@ namespace CodeProject.AI.API.Server.Frontend
                                    reloadOnChange: reloadConfigOnChange, optional: true);
 
                 // Load the modulesettings.json files to get analysis module settings
-                LoadModulesConfiguration(config, aspNetEnv);
+                LoadModulesConfiguration(config);
 
                 // Load the last saved config values as set by the user
-                LoadUserOverrideConfiguration(config, applicationDataDir, aspNetEnv);
+                LoadUserOverrideConfiguration(config, applicationDataDir, runtimeEnv, reloadConfigOnChange);
 
                 // Load Envinronmnet Variables into Configuration
                 config.AddEnvironmentVariables();
@@ -214,18 +262,16 @@ namespace CodeProject.AI.API.Server.Frontend
         //      - use this configuration to load the module settings
         // The module class will have methods and properties to get the ModuleConfigs, and other
         // things. To be done at a later date.
-        private static void LoadModulesConfiguration(IConfigurationBuilder config, string? aspNetEnv)
+        private static void LoadModulesConfiguration(IConfigurationBuilder config)
         {
-            bool reloadOnChange = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") != "true";
+            bool reloadOnChange = SystemInfo.ExecutionEnvironment != ExecutionEnvironment.Docker;
 
             IConfiguration configuration = config.Build();
-            var options                  = configuration.GetSection("FrontEndOptions");
-            string? rootPath             = options["ROOT_PATH"];
-            string? modulesPath          = options["MODULES_PATH"];
-            string? altModulesPath       = options["DOWNLOADED_MODULES_PATH"];
+            var serverOptions = configuration.GetSection("ServerOptions");
+            string? rootPath  = serverOptions["ApplicationRootPath"];
 
-            // Get the Modules Path
-            rootPath = BackendProcessRunner.GetRootPath(rootPath);
+            // Get the Application root Path
+            rootPath = ModuleSettings.GetRootPath(rootPath);
 
             if (string.IsNullOrWhiteSpace(rootPath))
             {
@@ -239,79 +285,43 @@ namespace CodeProject.AI.API.Server.Frontend
                 return;
             }
 
-            modulesPath = modulesPath.Replace("%ROOT_PATH%", rootPath);
-            modulesPath = modulesPath.Replace('\\', Path.DirectorySeparatorChar);
-            modulesPath = Path.GetFullPath(modulesPath);
+            var moduleOptions = configuration.GetSection("ModuleOptions");
+            string? preInstalledModulesPath = moduleOptions["PreInstalledModulesPath"];
+            string? downloadedModulesPath   = moduleOptions["DownloadedModulesPath"];
 
-            altModulesPath = altModulesPath.Replace("%ROOT_PATH%", rootPath);
-            altModulesPath = altModulesPath.Replace('\\', Path.DirectorySeparatorChar);
-            altModulesPath = Path.GetFullPath(altModulesPath);
-
-            if (string.IsNullOrWhiteSpace(modulesPath) && string.IsNullOrWhiteSpace(altModulesPath))
+            if (string.IsNullOrWhiteSpace(preInstalledModulesPath) && string.IsNullOrWhiteSpace(downloadedModulesPath))
             {
                 Console.WriteLine("No modules path provided");
                 return;
             }
 
-            if (!Directory.Exists(modulesPath) && !Directory.Exists(altModulesPath))
+            preInstalledModulesPath = Text.FixSlashes(preInstalledModulesPath?.Replace("%ROOT_PATH%",
+                                                                                       rootPath));
+            preInstalledModulesPath = Path.GetFullPath(preInstalledModulesPath);
+
+            downloadedModulesPath   = Text.FixSlashes(downloadedModulesPath?.Replace("%ROOT_PATH%", rootPath));
+            downloadedModulesPath   = Path.GetFullPath(downloadedModulesPath);
+
+            if (!Directory.Exists(preInstalledModulesPath) && !Directory.Exists(downloadedModulesPath))
             {
-                Console.WriteLine($"The provided modules paths '{modulesPath}' and '{altModulesPath}' don't exist");
+                Console.WriteLine($"The provided modules paths '{preInstalledModulesPath}' and '{downloadedModulesPath}' don't exist");
                 return;
             }
 
-            string platform = BackendProcessRunner.Platform.ToLower();
-            aspNetEnv = aspNetEnv?.ToLower();
-
-            // Get the Modules Directories
-            // Be careful of the order.
-            if (!string.IsNullOrWhiteSpace(modulesPath) && Directory.Exists(modulesPath))
+            // Get the installed Modules' directories, then the downloaded/sideloaded, and add the
+            // modulesettings files to the config
+            if (!string.IsNullOrWhiteSpace(preInstalledModulesPath) && Directory.Exists(preInstalledModulesPath))
             {
-                var directories = Directory.GetDirectories(modulesPath);
+                var directories = Directory.GetDirectories(preInstalledModulesPath);
                 foreach (string? directory in directories)
-                {
-                    config.AddJsonFile(Path.Combine(directory, "modulesettings.json"),
-                                       optional: true, reloadOnChange: reloadOnChange);
-
-                    if (!string.IsNullOrEmpty(aspNetEnv))
-                    {
-                        config.AddJsonFile(Path.Combine(directory, $"modulesettings.{aspNetEnv}.json"),
-                                           optional: true, reloadOnChange: reloadOnChange);
-                    }
-
-                    config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.json"),
-                                        optional: true, reloadOnChange: reloadOnChange);
-
-                    if (!string.IsNullOrEmpty(aspNetEnv))
-                    {
-                        config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.{aspNetEnv}.json"),
-                                          optional: true, reloadOnChange: reloadOnChange);
-                    }
-                }
+                    ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
             }
 
-            if (!string.IsNullOrWhiteSpace(altModulesPath) && Directory.Exists(altModulesPath))
+            if (!string.IsNullOrWhiteSpace(downloadedModulesPath) && Directory.Exists(downloadedModulesPath))
             {
-                var directories = Directory.GetDirectories(altModulesPath);
+                var directories = Directory.GetDirectories(downloadedModulesPath);
                 foreach (string? directory in directories)
-                {
-                    config.AddJsonFile(Path.Combine(directory, "modulesettings.json"),
-                                       optional: true, reloadOnChange: reloadOnChange);
-
-                    if (!string.IsNullOrEmpty(aspNetEnv))
-                    {
-                        config.AddJsonFile(Path.Combine(directory, $"modulesettings.{aspNetEnv}.json"),
-                                           optional: true, reloadOnChange: reloadOnChange);
-                    }
-
-                    config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.json"),
-                                       optional: true, reloadOnChange: reloadOnChange);
-
-                    if (!string.IsNullOrEmpty(aspNetEnv))
-                    {
-                        config.AddJsonFile(Path.Combine(directory, $"modulesettings.{platform}.{aspNetEnv}.json"),
-                                           optional: true, reloadOnChange: reloadOnChange);
-                    }
-                }
+                    ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
             }
         }
 
@@ -320,12 +330,12 @@ namespace CodeProject.AI.API.Server.Frontend
         /// </summary>
         /// <param name="config"></param>
         /// <param name="applicationDataDir">The directory containing the persisted user data</param>
-        /// <param name="aspNetEnv">The current ASP.NET environment (Debug or Release)</param>
+        /// <param name="runtimeEnv">The current runtime environment (production or development)</param>
+        /// <param name="reloadOnChange">Whether to reload the config files if they change</param>
         private static void LoadUserOverrideConfiguration(IConfigurationBuilder config, 
-                                                  string applicationDataDir, string? aspNetEnv)
+                                                          string applicationDataDir, 
+                                                          string? runtimeEnv, bool reloadOnChange)
         {
-            bool reloadOnChange = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?? "") != "true";
-
             if (string.IsNullOrWhiteSpace(applicationDataDir))
             {
                 Console.WriteLine("No application data directory path provided");
@@ -338,15 +348,15 @@ namespace CodeProject.AI.API.Server.Frontend
                 return;
             }
 
-            aspNetEnv = aspNetEnv?.ToLower();
+            runtimeEnv = runtimeEnv?.ToLower();
 
             // For now, we'll store ALL module settings in the same file
             config.AddJsonFile(Path.Combine(applicationDataDir, "modulesettings.json"),
                                optional: true, reloadOnChange: reloadOnChange);
 
-            if (!string.IsNullOrEmpty(aspNetEnv))
+            if (!string.IsNullOrEmpty(runtimeEnv))
             {
-                config.AddJsonFile(Path.Combine(applicationDataDir, $"modulesettings.{aspNetEnv}.json"),
+                config.AddJsonFile(Path.Combine(applicationDataDir, $"modulesettings.{runtimeEnv}.json"),
                                    optional: true, reloadOnChange: reloadOnChange);
             }
         }
@@ -421,12 +431,12 @@ namespace CodeProject.AI.API.Server.Frontend
 
             int port = config.GetValue("CPAI_PORT", -1);
             if (port < 0)
-                port = config.GetValue("FrontEndOptions:EnvironmentVariables:CPAI_PORT", -1);  // TODO: PORT_CLIENT
+                port = config.GetValue("ServerOptions:EnvironmentVariables:CPAI_PORT", -1);  // TODO: PORT_CLIENT
 
             if (port < 0)
             {
                 // urls will be a string in format <url>:port[;<url>:port_n]*;
-                string urls = config.GetValue<string>("urls");
+                string? urls = config.GetValue<string>("urls");
                 if (!string.IsNullOrWhiteSpace(urls))
                 {
                     var urlList = urls.Split(';');
@@ -489,7 +499,8 @@ namespace CodeProject.AI.API.Server.Frontend
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    Process.Start("sensible-browser", url);
+                    Process.Start("open", url);
+                    // Process.Start("sensible-browser", url);
                 }
             }
             catch
@@ -505,7 +516,9 @@ namespace CodeProject.AI.API.Server.Frontend
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    Process.Start("open", url);
+                    // Process.Start("open", url);
+                    Process.Start("sensible-browser", url);
+
                 }
                 else
                 {

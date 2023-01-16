@@ -1,17 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+	<!-- Platform, architecture, runtime target defines -->
+	<Import Project="../../../SDK/NET/Common.targets" />
+
 	<!-- Common properties -->
 	<PropertyGroup>
 		<Name>API Backend</Name>
 		<AssemblyName>CodeProject.AI.Server.Backend</AssemblyName>
 		<RootNamespace>CodeProject.AI.Server.Backend</RootNamespace>
-		<Version>1.6.8.0</Version>
-		<TargetFramework>net6.0</TargetFramework>
+		<Version>2.0.5</Version>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<RunPostBuildEvent>Always</RunPostBuildEvent>
 		<Platform>AnyCPU</Platform>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<TargetFramework>net7.0</TargetFramework>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->
@@ -33,27 +36,24 @@
 		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
-	<!-- Platform, architecture, runtime target defines and overrides -->
-	<Import Project="../../../AnalysisLayer/SDK/NET/CodeProject.AI.AnalysisLayer.SDK/Common.targets"/>
-
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.14" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-		<PackageReference Include="System.Text.Json" Version="6.0.2" />
-		<PackageReference Include="System.Threading.Channels" Version="6.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="7.0.0" />
+		<PackageReference Include="System.Text.Json" Version="7.0.0" />
+		<PackageReference Include="System.Threading.Channels" Version="7.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\AnalysisLayer\SDK\NET\CodeProject.AI.AnalysisLayer.SDK\CodeProject.AI.AnalysisLayer.SDK.csproj" />
+		<ProjectReference Include="..\..\..\SDK\NET\NET.csproj" />
 		<ProjectReference Include="..\..\Common\Common.csproj" />
 	</ItemGroup>
 
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call ..\..\..\starttimer.bat $(ProjectName)" />
+		<Exec Command="call ..\..\..\SDK\Scripts\starttimer.bat $(ProjectName)" />
 	</Target>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call ..\..\..\endtimer.bat $(ProjectName)" />
+		<Exec Command="call ..\..\..\SDK\Scripts\endtimer.bat $(ProjectName)" />
 	</Target>
 
 </Project>

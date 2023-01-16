@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Linq;
 using System.Text.Json.Serialization;
+
+using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.API.Common
 {
@@ -40,9 +41,10 @@ namespace CodeProject.AI.API.Common
     }
 
     /// <summary>
-    /// Holds the queue and command associated with a url.
+    /// Holds the route and command associated with a url.
     /// </summary>
     // TODO: this should be a Record.
+    // TODO: Rename to CommandRouteInfo
     public struct ModuleRouteInfo
     {
         /// <summary>
@@ -59,14 +61,6 @@ namespace CodeProject.AI.API.Common
         /// Gets or sets the HTTP method to use when calling this endpoint
         /// </summary>
         public string Method { get; set; }
-
-        /// <summary>
-        /// Gets the name of the queue used by this endpoint.
-        /// </summary>
-        /// TODO: Move this up to the ModuleConfig class. A module should get all of its commands 
-        ///       from one queue with the commands distinguished by the Command property in the
-        ///       request.
-        public string Queue { get; set; }
 
         /// <summary>
         /// Gets the name of the command.
@@ -94,13 +88,12 @@ namespace CodeProject.AI.API.Common
         /// <param name="name">The name of this endpoint.</param>
         /// <param name="path">The relative path of the endpoint.</param>
         /// <param name="method">The HTTP Method used to call the path/command</param>
-        /// <param name="queue">THe name of the Queue that the route will use.</param>
         /// <param name="command">The command string that will be passed as part of the data
-        /// sent to the queue.</param>
+        /// sent to the server.</param>
         /// <param name="description">A Description of the endpoint.</param>
         /// <param name="inputs">The input parameters information.</param>
         /// <param name="outputs">The output parameters information.</param>
-        public ModuleRouteInfo(string name, string path, string method, string queue, string command, 
+        public ModuleRouteInfo(string name, string path, string method, string command, 
                                string? description = null,
                                RouteParameterInfo[]? inputs = null,
                                RouteParameterInfo[]? outputs = null)
@@ -108,7 +101,6 @@ namespace CodeProject.AI.API.Common
             Name        = name;
             Path        = path.ToLower();
             Method      = method.ToUpper();
-            Queue       = queue;
             Command     = command;
             Description = description;
             Inputs      = inputs;
@@ -116,27 +108,28 @@ namespace CodeProject.AI.API.Common
         }
     }
 
+    /*
     /// <summary>
     /// Extension methods for the ModuleRouteInfo class
     /// </summary>
-    public static class ModuleRouteInfoExtensions
+    public static class CommandRouteInfoExtensions
     {
         /// <summary>
         /// Returns true if this module is running on the specified Queue
         /// </summary>
-        /// <param name="routeInfo">This ModulkeRouteInfo object</param>
+        /// <param name="routeInfo">This ModuleRouteInfo object</param>
         /// <param name="queueName">The name of the queue</param>
         /// <returns>True if running on the queue; false otherwise</returns>
         public static bool IsQueue(this ModuleRouteInfo routeInfo, string queueName)
         {
-            return routeInfo.Queue.Equals(queueName, StringComparison.OrdinalIgnoreCase);
+            return routeInfo.Queue.EqualsIgnoreCase(queueName);
         }
     }
+    */
 
     /// <summary>
-    /// Defines the destination queue information that is required to
-    /// queue the frontend endpoint data for processing by the backend
-    /// Module.
+    /// Defines the destination route information that is required to send a command to
+    /// the front end server for processing by the backend analysis Modules.
     /// </summary>
     public class RouteQueueInfo
     {
@@ -156,13 +149,13 @@ namespace CodeProject.AI.API.Common
         public string QueueName { get; private set; }
 
         /// <summary>
-        /// Gets the command identifier which distiguishes the backend
-        /// operations to perform based on the frontend endpoint.
+        /// Gets the command identifier which distiguishes the backend operations to perform based 
+        /// on the frontend endpoint.
         /// </summary>
         public string Command { get; private set; }
 
         /// <summary>
-        /// Initializes a new instance of the RouteQueueInfo class.
+        /// Initializes a new instance of the CommandRouteInfo class.
         /// </summary>
         /// <param name="path">The URL path for this route.</param>
         /// <param name="method">The HTTP Method for the route.</param>
@@ -180,8 +173,9 @@ namespace CodeProject.AI.API.Common
     /// <summary>
     /// Map for front end endpoints to backend queues.
     /// </summary>
-    // TODO: this does not require the whole RouteQueueInfo, just the Queue and Command
-    //       and possibly the Method.
+    // TODO: this does not require the whole RouteQueueInfo, just the Queue and Command and
+    //       possibly the Method.
+    // TODO: Rename to CommandRouteMap
     public class BackendRouteMap
     {
         /// <summary>
@@ -191,11 +185,12 @@ namespace CodeProject.AI.API.Common
 
         /// <summary>
         /// Tries to get the route information for a path.
-        /// TODO: Update this so it iterates to find the best (longest?) match of a given request path
+        /// TODO: Update this so it iterates to find the best (longest?) match of a given request
+        ///       path
         /// </summary>
         /// <param name="path">The path to get the information for.</param>
-        /// <param name="method">The HTTP Method used by the frontend endpoint.</param>
-        /// <param name="queueInfo">The BackendRouteInfo instance to store the save the info to.</param>
+        /// <param name="method">The HTTP Method used by the frontend server endpoint.</param>
+        /// <param name="queueInfo">The CommandRouteInfo instance to store the save the info to.</param>
         /// <returns>True if the path is in the Route Map, false otherwise.</returns>
         public bool TryGetValue(string path, string method, out RouteQueueInfo? queueInfo)
         {
@@ -205,11 +200,9 @@ namespace CodeProject.AI.API.Common
             if (_routeQueueMap.TryGetValue(key, out queueInfo!))
                 return true;
 
-            //find the best match
-            // longest route the has the correct Method and starts the path.
+            // Find the best match. The longest route the has the correct Method and starts the path.
             queueInfo = _routeQueueMap!.Values
-                    .Where(x => string.Compare(method, x.Method, true) == 0
-                             && path.StartsWith(x.Path, StringComparison.OrdinalIgnoreCase))
+                    .Where(x => method.EqualsIgnoreCase(x.Method) && path.StartsWithIgnoreCase(x.Path))
                     .OrderByDescending(x => x.Path.Length)
                     .FirstOrDefault();
 
@@ -231,18 +224,19 @@ namespace CodeProject.AI.API.Common
         /// <param name="command">The command that will be passed with the payload.</param>
         public void Register(string path, string method, string queueName, string command)
         {
-            string key                      = MakeKey(path, method);
-            RouteQueueInfo backendRouteInfo = new RouteQueueInfo(path, method, queueName, command);
-            _routeQueueMap[key]             = backendRouteInfo;
+            string key            = MakeKey(path, method);
+            var routeInfo         = new RouteQueueInfo(path, method, queueName, command);
+            _routeQueueMap[key] = routeInfo;
         }
 
         /// <summary>
         /// Associates a url and command with a queue.
         /// </summary>
-        /// <param name="info">A <cref="ModuleRouteInfo"> structure containing the info to register.
-        public void Register(/*string moduleName,*/ ModuleRouteInfo info)
+        /// <param name="info">A <cref="ModuleRouteInfo"> structure containing the info to register.</param>
+        /// <param name="queueName">The name of the queue that the request will be associated with.</param>
+        public void Register(ModuleRouteInfo info, string queueName)
         {
-            Register(info.Path, info.Method, info.Queue, info.Command);
+            Register(info.Path, info.Method, queueName, info.Command);
         }
     }
 }

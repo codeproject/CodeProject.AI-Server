@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Options;
-
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -7,9 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using CodeProject.AI.API.Server.Backend;
-using CodeProject.AI.AnalysisLayer.SDK;
-using Xunit;
+using CodeProject.AI.SDK;
+
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+
+using Xunit;
 
 namespace QueueServiceTests
 {

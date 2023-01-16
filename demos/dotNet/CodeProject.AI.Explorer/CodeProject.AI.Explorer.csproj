@@ -1,9 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+	<!-- Platform, architecture, runtime target defines -->
+	<Import Project="../../../src/SDK/NET/Common.targets" />
+
 	<PropertyGroup>
 		<RootNamespace>CodeProject.AI.Explorer</RootNamespace>
 		<AssemblyName>CodeProject.AI.Explorer</AssemblyName>
 		<OutputType>WinExe</OutputType>
+		<TargetFramework>net7.0-windows</TargetFramework>
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
@@ -28,12 +32,6 @@
 		<DebugType>portable</DebugType>
 	</PropertyGroup>
 
-	<!-- Platform, architecture, runtime target defines and overrides -->
-	<Import Project="../../../src/AnalysisLayer/SDK/NET/CodeProject.AI.AnalysisLayer.SDK/Common.targets"/>
-	<PropertyGroup>
-		<TargetFramework>net6.0-windows</TargetFramework>
-	</PropertyGroup>
-	
 	<ItemGroup>
 		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.3" />
 	</ItemGroup>

@@ -1,8 +1,0 @@
-{
-  "Modules": {
-    "PortraitFilter": {
-      "FilePath": "PortraitFilter\\bin\\debug\\net6.0\\PortraitFilter.exe",
-      "WorkingDirectory": "PortraitFilter"
-    }
-  }
-}

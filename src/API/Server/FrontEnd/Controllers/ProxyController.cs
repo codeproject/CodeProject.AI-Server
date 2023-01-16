@@ -4,21 +4,24 @@ using System.IO;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-using CodeProject.AI.AnalysisLayer.SDK;
+using CodeProject.AI.SDK;
 using CodeProject.AI.API.Server.Backend;
 using CodeProject.AI.API.Common;
+using System.Text.Json.Nodes;
+using System.Diagnostics;
 
 namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
     // ------------------------------------------------------------------------------
-    // When a backend process starts it will register itself with the main CodeProject.AI Server.
-    // It does this by Posting as Register request to the Server which
+    // When a backend analysis module starts it will register itself with the main CodeProject.AI
+    // Server. It does this by Posting as Register request to the Server which
     //  - provides the end part of url for the request
     //  - the name of the queue that the request will be sent to.
     //  - the command string that will be associated with the payload sent to the queue.
@@ -70,15 +73,28 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             {
                 RequestPayload payload = CreatePayload(path, routeInfo!);
 
+                Stopwatch sw = Stopwatch.StartNew();
+
                 var reqid = routeInfo!.Command; // TODO: remove reqid. Not needed
                 var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, reqid, payload);
 
-                // if the response is a string, it was returned from the backend.
-                if (response is string)
+                long analysisRoundTripMs = sw.ElapsedMilliseconds;
+
+                // if the response is a string, it was returned from the backend analysis module.
+                if (response is string responseString)
                 {
+                    // Unwrap the response and add the analysisRoundTripMs property
+                    JsonObject? jsonResponse = null;
+                    if (!string.IsNullOrEmpty(responseString))
+                        jsonResponse = JsonSerializer.Deserialize<JsonObject>(responseString);
+                    jsonResponse ??= new JsonObject();                   
+                    jsonResponse["analysisRoundTripMs"] = analysisRoundTripMs;
+
+                    // Wrap it back up
+                    responseString = JsonSerializer.Serialize(jsonResponse) as string;
                     return new ContentResult
                     {
-                        Content     = response as string,
+                        Content     = responseString,
                         ContentType = "application/json",
                         StatusCode  = 200
                     };
@@ -210,7 +226,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             var endOfUrl = path.Remove(0, routeInfo.Path.Length);
 
             var segments    = new List<string>();
-            var queryParams = new List<KeyValuePair<string, string[]?>>();
+            var queryParams = new List<KeyValuePair<string, string?[]>>();
             var formFiles   = new List<RequestFormFile>();
 
             if (endOfUrl.StartsWith("/"))
@@ -225,7 +241,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (queryParts?.Any() ?? false)
             {
                 foreach (var param in queryParts)
-                    queryParams.Add(new KeyValuePair<string, string[]?>(param.Key, param.Value.ToArray()));
+                    queryParams.Add(new KeyValuePair<string, string?[]>(param.Key, param.Value.ToArray()));
             }
 
             try // if there is no Form values, then Request.Form throws.
@@ -233,7 +249,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                 IFormCollection form = Request.Form;
                 
                 // Add any Form values.
-                queryParams.AddRange(form.Select(x => new KeyValuePair<string, string[]?>(x.Key, x.Value.ToArray())));
+                queryParams.AddRange(form.Select(x => new KeyValuePair<string, string?[]>(x.Key, x.Value.ToArray())));
 
                 // Add any form files
                 formFiles.AddRange(form.Files.Select(x => new RequestFormFile

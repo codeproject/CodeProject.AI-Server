@@ -3,7 +3,9 @@
     "ObjectDetectionNet": {
       "commandName": "Project",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development",
+        "CPAI_MODULE_SUPPORT_GPU": "true",
+        "CPAI_MODULE_PARALLELISM": "0"
       },
       "dotnetRunMessages": "true"
     },

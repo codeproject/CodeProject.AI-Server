@@ -1,17 +1,15 @@
-﻿using CodeProject.AI.API.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+using CodeProject.AI.API.Common;
+using CodeProject.AI.SDK.Common;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
@@ -63,19 +61,28 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
     [ApiController]
     public class SettingsController : ControllerBase
     {
-        private readonly IConfiguration   _config;
-        private readonly FrontendOptions  _frontendOptions;
+        private readonly IConfiguration _config;
+        private readonly ServerOptions  _serverOptions;
+        private readonly ModuleRunner   _moduleRunner;
+        private readonly string         _storagePath;
+
+
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="config">The configuration</param>
-        /// <param name="options">The Frontend Options</param>
+        /// <param name="serverOptions">The server options</param>
+        /// <param name="moduleRunner">The module runner instance</param>
         public SettingsController(IConfiguration config,
-                                  IOptions<FrontendOptions> options)
+                                  IOptions<ServerOptions> serverOptions,
+                                  ModuleRunner moduleRunner)
         {
-            _config          = config;
-            _frontendOptions = options.Value;
+            _config        = config;
+            _serverOptions = serverOptions.Value;
+            _moduleRunner  = moduleRunner;
+            _storagePath   = _config["ApplicationDataDir"] 
+                           ?? throw new ApplicationException("ApplicationDataDir is not defined in configuration");
         }
 
         /// <summary>
@@ -99,15 +106,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (settings == null || string.IsNullOrWhiteSpace(settings.Name))
                return new ErrorResponse("No setting or setting name provided");
 
-            // Get the backend processor (DI won't work here due to the order things get fired up
-            // in Main.
-            var backend = HttpContext.RequestServices.GetServices<IHostedService>()
-                                                     .OfType<BackendProcessRunner>()
-                                                     .FirstOrDefault();
-            if (backend is null)
-                return new ErrorResponse("Unable to get list of modules");
-
-            ModuleConfig? module = backend.GetModule(moduleId);
+            ModuleConfig? module = _moduleRunner.GetModule(moduleId);
             if (module is null)
                 return new ErrorResponse($"No module with ID {moduleId} found");
 
@@ -116,9 +115,9 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
             // Restart the module and persist the settings
             bool success = false;
-            if (await backend.RestartProcess(module))
+            if (await _moduleRunner.RestartProcess(module))
             {
-                var settingStore = new PersistedOverrideSettings(_config["ApplicationDataDir"]);
+                var settingStore = new PersistedOverrideSettings(_storagePath);
                 var overrideSettings = await settingStore.LoadSettings();
 
                 if (ModuleConfigExtensions.UpsertSettings(overrideSettings, module.ModuleId!,
@@ -145,18 +144,11 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (!settings.Any())
                 return new ErrorResponse("No settings provided");
 
-            // Get the backend processor (DI won't work here due to the order things get fired up
-            // in Main.
-            var backend = HttpContext.RequestServices.GetServices<IHostedService>()
-                                                     .OfType<BackendProcessRunner>()
-                                                     .FirstOrDefault();
-            if (backend is null)
-                return new ErrorResponse("Unable to get list of modules");
-
             bool restartSuccess = true;
 
             // Load up the current persisted settings so we can update and re-save them
-            var settingStore = new PersistedOverrideSettings(_config["ApplicationDataDir"]);
+
+            var settingStore = new PersistedOverrideSettings(_storagePath);
             var overrideSettings = await settingStore.LoadSettings();
 
             // Keep tabs on which modules need to be restarted
@@ -167,12 +159,12 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                 string moduleId = moduleSetting.Key;
 
                 // Special case
-                if (moduleId.Equals("Global", StringComparison.OrdinalIgnoreCase))
+                if (moduleId.EqualsIgnoreCase("Global"))
                 {
                     // Update all settings based on what's in the global settings. We'll get back a
                     // list of affected modules that need restarting.
                     Dictionary<string, string> globalSettings = moduleSetting.Value;
-                    ModuleCollection modules                  = backend.Modules;
+                    ModuleCollection modules = _moduleRunner.Modules;
                     moduleIdsToRestart = LegacyParams.UpdateSettings(globalSettings, modules,
                                                                      overrideSettings);
 
@@ -180,7 +172,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                 }
 
                 // Targeting a specific module
-                ModuleConfig? module = backend.GetModule(moduleId);
+                ModuleConfig? module = _moduleRunner.GetModule(moduleId);
                 if (module is null)
                     continue;
 
@@ -202,9 +194,9 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             // Restart the modules that were updated
             foreach (string moduleId in moduleIdsToRestart)
             {
-                ModuleConfig? module = backend.GetModule(moduleId);
+                ModuleConfig? module = _moduleRunner.GetModule(moduleId);
                 if (module is not null)
-                    restartSuccess = await backend.RestartProcess(module) && restartSuccess;
+                    restartSuccess = await _moduleRunner.RestartProcess(module) && restartSuccess;
             }
 
             // Only persist these override settings if all modules restarted successfully
@@ -230,21 +222,17 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (string.IsNullOrWhiteSpace(moduleId))
                 return new ErrorResponse("No module ID provided");
 
-            // Get the backend processor (DI won't work here due to the order things get fired up
-            // in Main.
-            var backend = HttpContext.RequestServices.GetServices<IHostedService>()
-                                                     .OfType<BackendProcessRunner>()
-                                                     .FirstOrDefault();
-            if (backend is null)
-                return new ErrorResponse("Unable to get list of modules");
-
-            ModuleConfig? module = backend.GetModule(moduleId);
+            ModuleConfig? module = _moduleRunner.GetModule(moduleId);
             if (module is null)
                 return new ErrorResponse($"No module found with ID {moduleId}");
 
             Dictionary<string, string?> processEnvironmentVars = new();
-            _frontendOptions.AddEnvironmentVariables(processEnvironmentVars);
+            _serverOptions.AddEnvironmentVariables(processEnvironmentVars);
             module.AddEnvironmentVariables(processEnvironmentVars);
+
+            // Expand the environment variables
+            foreach (string key in processEnvironmentVars.Keys)
+                processEnvironmentVars[key] = _moduleRunner.ModuleSettings.ExpandOption(processEnvironmentVars[key]);
 
             var response = new SettingsResponse
             {

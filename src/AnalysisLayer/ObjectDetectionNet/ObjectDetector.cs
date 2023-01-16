@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
+using System.Linq;
 
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 
@@ -12,8 +10,8 @@ using SkiaSharp;
 using Yolov5Net.Scorer;
 using Yolov5Net.Scorer.Models;
 
-using CodeProject.AI.AnalysisLayer.SDK;
-using System.Linq;
+using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK;
 
 namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
 {
@@ -23,6 +21,14 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
     public class DetectionPrediction : BoundingBoxPrediction
     {
         public string? label { get; set; }
+    }
+
+    /// <summary>
+    /// An Custom Object 'List available models' Response.
+    /// </summary>
+    public class BackendCustomModuleListResponse : BackendSuccessResponse
+    {
+        public string[]? models { get; set; }
     }
 
     /// <summary>
@@ -51,46 +57,38 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
         /// </summary>
         public string HardwareType { get; set; } = "CPU";
 
-        public ObjectDetector(IConfiguration config, IHostEnvironment env, ILogger<ObjectDetector> logger)
+        public ObjectDetector(string modelPath, ILogger<ObjectDetector> logger)
         {
             _logger = logger;
 
-            string path = Directory.GetCurrentDirectory(); // AppContext.BaseDirectory;
-
-            string mode = config.GetValue<string>("MODEL_SIZE");
-            string modelPath = (mode ?? string.Empty.ToLower()) switch
-            {
-                "large"  => "assets/yolov5m.onnx",
-                "medium" => "assets/yolov5s.onnx",
-                "small"  => "assets/yolov5n.onnx",
-                "tiny"   => "assets/yolov5n.onnx",
-                _        => "assets/yolov5s.onnx"
-            };
-
             try
             {
-                string modelFilePath = Path.Combine(path, modelPath);
-                var modelFileInfo = new FileInfo(modelFilePath);
+                var modelFileInfo = new FileInfo(modelPath);
                 SessionOptions sessionOpts = GetHardwareInfo();
 
                 if (modelFileInfo.Exists)
                 {
                     try
                     {
-                        _scorer = new YoloScorer<YoloCocoP5Model>(modelFilePath, sessionOpts);
+                        _scorer = new YoloScorer<YoloCocoP5Model>(modelPath, sessionOpts);
                     }
                     catch // something went wrong, probably the device is too old and no longer supported.
                     {
                         // fall back to CPU only
-                        _logger.LogError($"Unable to load the model with {ExecutionProvider}. Falling back to CPU.");
-                        _scorer = new YoloScorer<YoloCocoP5Model>(modelFilePath);
-
-                        ExecutionProvider = "CPU";
-                        HardwareType      = "CPU";
+                        if (ExecutionProvider != "CPU")
+                        {
+	                        _logger.LogError($"Unable to load the model with {ExecutionProvider}. Falling back to CPU.");
+	                        _scorer = new YoloScorer<YoloCocoP5Model>(modelPath);
+	
+	                        ExecutionProvider = "CPU";
+	                        HardwareType      = "CPU";
+                        }
+                        else
+                            _logger.LogError("Unable to load the model at " + modelPath);
                     }
                 }
                 else
-                    _logger.LogError("Unable to load the model at " + modelFilePath);
+                    _logger.LogError("Unable to load the model at " + modelPath);
             }
             catch (Exception e)
             {
@@ -115,7 +113,7 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
                 }
 
                 // Enable CUDA  -------------------
-                if (providers?.Any(p => p.StartsWith("CUDA", StringComparison.OrdinalIgnoreCase)) ?? false)
+                if (providers?.Any(p => p.StartsWithIgnoreCase("CUDA")) ?? false)
                 {
                     try
                     {
@@ -131,7 +129,7 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
                 }
 
                 // Enable OpenVINO -------------------
-                if (providers?.Any(p => p.StartsWith("OpenVINO", StringComparison.OrdinalIgnoreCase)) ?? false)
+                if (providers?.Any(p => p.StartsWithIgnoreCase("OpenVINO")) ?? false)
                 {
                     try
                     {
@@ -149,7 +147,7 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
                 }
 
                 // Enable DirectML -------------------
-                if (providers?.Any(p => p.StartsWith("DML", StringComparison.OrdinalIgnoreCase)) ?? false)
+                if (providers?.Any(p => p.StartsWithIgnoreCase("DML")) ?? false)
                 {
                     try
                     {
@@ -184,9 +182,16 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
                 return null;
 
             using SKImage? image = GetImage(filename);
-            List<YoloPrediction>? predictions = Predict(image);
+            try
+            {
+                List<YoloPrediction>? predictions = Predict(image);
 
-            return predictions;
+                return predictions;
+            }
+            finally
+            {
+                image?.Dispose();
+            }
         }
 
         /// <summary>
@@ -219,7 +224,9 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
                 return null;
 
             var image = GetImage(imageData);
-
+            if (image is null)
+                return null;
+                
             try
             {
                 return _scorer?.Predict(image);
@@ -228,6 +235,10 @@ namespace CodeProject.AI.AnalysisLayer.ObjectDetection.Yolo
             {
                 _logger.LogError(ex, "Unable to run prediction");
                 return null;
+            }
+            finally
+            { 
+                image?.Dispose(); 
             }
         }
 

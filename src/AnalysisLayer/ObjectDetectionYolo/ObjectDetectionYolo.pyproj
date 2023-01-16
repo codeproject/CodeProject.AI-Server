@@ -24,101 +24,46 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Create_Custom_Folder.bat" />
-    <Content Include="install.dev.bat" />
-    <Content Include="install.dev.sh" />
+    <Compile Include="__init__.py" />
+    <Compile Include="init.py" />
+    <Compile Include="detect_adapter.py" />
+    <Compile Include="options.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Create_Custom_Folder.bat" />
+    <Content Include="install.bat" />
+    <Content Include="install.sh" />
     <Content Include="MODELS.md" />
-    <Content Include="models\hub\anchors.yaml" />
-    <Content Include="models\hub\yolov3-spp.yaml" />
-    <Content Include="models\hub\yolov3-tiny.yaml" />
-    <Content Include="models\hub\yolov3.yaml" />
-    <Content Include="models\hub\yolov5-bifpn.yaml" />
-    <Content Include="models\hub\yolov5-fpn.yaml" />
-    <Content Include="models\hub\yolov5-p2.yaml" />
-    <Content Include="models\hub\yolov5-p34.yaml" />
-    <Content Include="models\hub\yolov5-p6.yaml" />
-    <Content Include="models\hub\yolov5-p7.yaml" />
-    <Content Include="models\hub\yolov5-panet.yaml" />
-    <Content Include="models\hub\yolov5l6.yaml" />
-    <Content Include="models\hub\yolov5m6.yaml" />
-    <Content Include="models\hub\yolov5n6.yaml" />
-    <Content Include="models\hub\yolov5s-ghost.yaml" />
-    <Content Include="models\hub\yolov5s-transformer.yaml" />
-    <Content Include="models\hub\yolov5s6.yaml" />
-    <Content Include="models\hub\yolov5x6.yaml" />
-    <Content Include="models\yolov5l.yaml" />
-    <Content Include="models\yolov5m.yaml" />
-    <Content Include="models\yolov5n.yaml" />
-    <Content Include="models\yolov5s.yaml" />
-    <Content Include="models\yolov5x.yaml" />
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.macos-arm.json" />
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
-    <Content Include="modulesettings.macos-arm.json">
+    <Content Include="modulesettings.macos.arm64.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="requirements.txt" />
+    <Content Include="requirements.windows.cuda.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.linux.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-    <Content Include="requirements.macos-arm.txt">
+    <Content Include="requirements.linux.cuda.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-    <Content Include="requirements.linux-arm64.txt">
+    <Content Include="requirements.linux.arm64.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.macos.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-    <Content Include="requirements.windows.cuda.txt">
+    <Content Include="requirements.macos.arm64.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="utils\augmentations.py" />
-    <Compile Include="utils\autoanchor.py" />
-    <Compile Include="utils\autobatch.py" />
-    <Compile Include="utils\benchmarks.py" />
-    <Compile Include="utils\callbacks.py" />
-    <Compile Include="utils\dataloaders.py" />
-    <Compile Include="utils\downloads.py" />
-    <Compile Include="utils\loss.py" />
-    <Compile Include="utils\metrics.py" />
-    <Compile Include="utils\plots.py" />
-    <Compile Include="__init__.py" />
-    <Compile Include="init.py" />
-    <Compile Include="process.py" />
-    <Compile Include="detect_adapter.py" />
-    <Compile Include="options.py" />
-    <Compile Include="models\common.py" />
-    <Compile Include="models\experimental.py" />
-    <Compile Include="models\yolo.py" />
-    <Compile Include="models\__init__.py" />
-    <Compile Include="recognition\networks.py" />
-    <Compile Include="recognition\process.py" />
-    <Compile Include="recognition\__init__.py" />
-    <Compile Include="utils\activations.py" />
-    <Compile Include="utils\datasets.py" />
-    <Compile Include="utils\general.py" />
-    <Compile Include="utils\google_utils.py" />
-    <Compile Include="utils\torch_utils.py" />
-    <Compile Include="utils\__init__.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="models" />
-    <Folder Include="models\hub\" />
-    <Folder Include="recognition" />
-    <Folder Include="utils" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="..\bin\windows\python37\venv\">

@@ -1,14 +1,11 @@
 ﻿// No longer used
 
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.AI.AnalysisLayer.SDK;
+using CodeProject.AI.SDK;
 
 namespace CodeProject.AI.API.Server.Backend
 {

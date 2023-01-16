@@ -1,0 +1,10 @@
+{
+  "Modules": {
+    "SentimentAnalysis": {
+      "ModulePath": "SentimentAnalysis",
+      "FilePath": "bin/Debug/net7.0/SentimentAnalysis.dll",
+      "WorkingDirectory": "SentimentAnalysis",
+      "Runtime": "dotnet"
+    }
+  }
+}

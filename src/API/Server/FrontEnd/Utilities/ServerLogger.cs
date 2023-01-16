@@ -1,23 +1,21 @@
-﻿using CodeProject.AI.API.Common;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Configuration;
-using Microsoft.Extensions.Options;
-
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
+
+using CodeProject.AI.API.Common;
+
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
-    #pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable IDE1006 // Naming Styles
     /// <summary>
     /// Represents a single log entry
     /// </summary>
@@ -111,12 +109,13 @@ namespace CodeProject.AI.API.Server.Frontend
         private static readonly List<LogEntry> _latestLogEntries = new List<LogEntry>();
         
         private static readonly object _consoleLock = new object();
+        private static readonly object _logFilelock = new object();
 
         private static int _logEntriesRecorded = 0;
         private static ServerLoggerConfiguration? _config;
         private static DateTime _lastLogCapacityCheck = DateTime.MinValue;
         
-        private readonly FrontendOptions _frontEndOptions;
+        private readonly ServerOptions _serverOptions;
 
         private readonly string _categoryName;
         private readonly Func<ServerLoggerConfiguration> _getCurrentConfig;
@@ -126,14 +125,14 @@ namespace CodeProject.AI.API.Server.Frontend
         /// </summary>
         /// <param name="categoryName">The category of the logger</param>
         /// <param name="getCurrentConfig">A method to get the logging config</param>
-        /// <param name="frontEndOptions">The frontend Options</param>
+        /// <param name="serverOptions">The server Options</param>
         public ServerLogger(string categoryName,
                             Func<ServerLoggerConfiguration> getCurrentConfig,
-                            IOptions<FrontendOptions> frontEndOptions)
+                            IOptions<ServerOptions> serverOptions)
         {
             _categoryName     = categoryName;
             _getCurrentConfig = getCurrentConfig;
-            _frontEndOptions  = frontEndOptions.Value;
+            _serverOptions    = serverOptions.Value;
         }
 
         /// <summary>
@@ -142,7 +141,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <typeparam name="TState"></typeparam>
         /// <param name="state"></param>
         /// <returns></returns>
-        public IDisposable BeginScope<TState>(TState state) => default!;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default!;
 
         /// <summary>
         /// Returns a value indicating whether or not logging is enabled for the given logging 
@@ -187,7 +186,7 @@ namespace CodeProject.AI.API.Server.Frontend
                     category = "CodeProject." + category;
                 */
 
-                // if (_categoryName.StartsWith("CodeProject.", StringComparison.OrdinalIgnoreCase))
+                // if (_categoryName.StartsWithIgnoreCase("CodeProject."))
                 //   category = "Server";
             }
 
@@ -289,8 +288,7 @@ namespace CodeProject.AI.API.Server.Frontend
                                      .Replace("%m", DateTime.Today.Month.ToString("D2"))
                                      .Replace("%d", DateTime.Today.Day.ToString("D2"));
 
-            logpath = Path.Combine(BackendProcessRunner.GetRootPath(_frontEndOptions.ROOT_PATH),
-                                   logpath);
+            logpath = Path.Combine(ModuleSettings.GetRootPath(_serverOptions.ApplicationRootPath), logpath);
 
             try
             {
@@ -305,8 +303,11 @@ namespace CodeProject.AI.API.Server.Frontend
                 }
 
                 logpath = Path.Combine(logpath, filename);
-                using StreamWriter sw = File.AppendText(logpath);
-                sw.WriteLine(line);
+                lock (_logFilelock)
+                {
+                    using StreamWriter sw = File.AppendText(logpath);
+                    sw.WriteLine(line);
+                }
             }
             catch
             {
@@ -387,9 +388,10 @@ namespace CodeProject.AI.API.Server.Frontend
     [ProviderAlias("AIServer")]
     public sealed class ServerLoggerProvider : ILoggerProvider
     {
-        private readonly IDisposable _onChangeToken;
-        private ServerLoggerConfiguration _currentConfig;
-        private readonly IOptions<FrontendOptions> _frontEndOptions;
+        private readonly IDisposable?            _onChangeToken;
+        private ServerLoggerConfiguration        _currentConfig;
+        private readonly IOptions<ServerOptions> _serverOptions;
+
         private readonly ConcurrentDictionary<string, ServerLogger> _loggers =
                                                             new(StringComparer.OrdinalIgnoreCase);
 
@@ -397,12 +399,12 @@ namespace CodeProject.AI.API.Server.Frontend
         /// Creates a new instance of the ServerLoggerProvider class
         /// </summary>
         /// <param name="config">The server logger config</param>
-        /// <param name="frontEndOptions">The front end options</param>
+        /// <param name="serverOptions">The server options</param>
         public ServerLoggerProvider(IOptionsMonitor<ServerLoggerConfiguration> config,
-                                    IOptions<FrontendOptions> frontEndOptions)
+                                    IOptions<ServerOptions> serverOptions)
         {
             _currentConfig   = config.CurrentValue;
-            _frontEndOptions = frontEndOptions;
+            _serverOptions = serverOptions;
             _onChangeToken   = config.OnChange(updatedConfig => _currentConfig = updatedConfig);
         }
 
@@ -414,7 +416,7 @@ namespace CodeProject.AI.API.Server.Frontend
         public ILogger CreateLogger(string categoryName)
         {
             return _loggers.GetOrAdd(categoryName, name => new ServerLogger(name, GetCurrentConfig,
-                                                                            _frontEndOptions));
+                                                                            _serverOptions));
         }
 
         private ServerLoggerConfiguration GetCurrentConfig()
@@ -426,7 +428,7 @@ namespace CodeProject.AI.API.Server.Frontend
         public void Dispose()
         {
             _loggers.Clear();
-            _onChangeToken.Dispose();
+            _onChangeToken?.Dispose();
         }
     }
 

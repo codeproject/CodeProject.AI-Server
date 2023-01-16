@@ -1,0 +1,67 @@
+{
+  "Modules": {
+
+    "SceneClassifier": {
+      "Name": "Scene Classification",
+      "Activate": true,
+      "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+
+      "Description": "Classifies an image according to one of 365 pre-trained scenes", 
+      "Version": "1.1",
+      "ReleaseDate": "2022-03-01",
+      "LastUpdated": "2022-03-10",
+      "License": "Apache 2.0",
+      "LicenseUrl": "http://www.apache.org/licenses/",
+      "PreInstalled": false,
+
+      "Parallelism": 1,
+      "SupportGPU": true,
+      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
+
+      "Queue": "scene_queue",
+      "ModulePath": "SceneClassifier",
+      "FilePath": "scene_adapter.py",
+      "Runtime": "python38",
+
+      "EnvironmentVariables": {
+        "USE_CUDA": "True",
+        "APPDIR": "%CURRENT_MODULE_PATH%",
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Scene Classifier",
+          "Path": "vision/scene",
+          "Method": "POST",
+          "Command": "detect",
+          "Description": "Classifies the scene in an image. It can recognise 365 different scenes.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "label",
+              "Type": "Text",
+              "Description": "The classification of the scene such as 'conference_room'."
+            },
+            {
+              "Name": "confidence",
+              "Type": "Float",
+              "Description": "The confidence in the classification in the range of 0.0 to 1.0."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

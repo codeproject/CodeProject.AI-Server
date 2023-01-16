@@ -1,0 +1,67 @@
+{
+  // The processes (typically the backend analysis processes) that are to be started when the
+  // server starts. They will be started in order of appearance.
+  "Modules": {
+    "SentimentAnalysis": {
+      "Name": "Sentiment Analysis",
+      "Activate": true,
+      "Platforms": [ "windows", "macos" ], // No tensorflow found in linux, and no "*-arm64" because ML.NET only suports x86 and x64 chips
+
+      "Description": "Provides an alaysis of the sentiment of a piece of text. Positive or negative?", 
+      "Version": "1.0",
+      "ReleaseDate": "2022-06-01",
+      "LastUpdated": "2022-06-10",
+      "License": "CC-BY-4.0",
+      "LicenseUrl": "https://github.com/dotnet/samples/blob/main/LICENSE",
+      "PreInstalled": false,
+
+      "Parallelism": 1, // Defaults to (#CPUs - 1)
+      "SupportGPU": false,
+      "PostStartPauseSecs": 0, // 1 if using GPU, 0 for CPU
+
+      "Queue": "sentimentanalysis_queue",
+      "ModulePath": "SentimentAnalysis",
+      "FilePath": "SentimentAnalysis.exe",
+      "Runtime": "execute",
+
+      "EnvironmentVariables": {
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\sentiment_model",
+        "TF_CPP_MIN_LOG_LEVEL": 2 // 0=Debug, 1=Info, 2=Warning, 3=Error
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Sentiment Analysis",
+          "Path": "text/sentiment",
+          "Method": "POST",
+          "Command": "sentiment",
+          "Description": "Determines if the supplied text has a positive or negative sentiment",
+          "Inputs": [
+            {
+              "Name": "text",
+              "Type": "Text",
+              "Description": "The text to be analyzed."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "is_positive",
+              "Type": "Boolean",
+              "Description": "Whether the input text had a positive sentiment."
+            },
+            {
+              "Name": "positive_probability",
+              "Type": "Float",
+              "Description": "The probability the input text has a positive sentiment."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

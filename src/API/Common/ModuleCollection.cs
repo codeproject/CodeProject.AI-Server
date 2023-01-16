@@ -8,6 +8,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
+using CodeProject.AI.SDK.Common;
+
 namespace CodeProject.AI.API.Common
 {
     /// <summary>
@@ -21,33 +23,11 @@ namespace CodeProject.AI.API.Common
         public ModuleCollection() : base(StringComparer.OrdinalIgnoreCase) { }
     }
 
-    public class ModuleDescription
-    {
-        /// <summary>
-        /// Gets or sets the Id of the Module
-        /// </summary>
-        public string? ModuleId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Name to be displayed.
-        /// </summary>
-        public string? Name { get; set; }
-
-        /// <summary>
-        /// Gets or sets the platforms on which this module is supported.
-        /// </summary>
-        public string[] Platforms { get; set; } = Array.Empty<string>();
-
-        /// <summary>
-        /// Gets or sets the version of this module
-        /// </summary>
-        public string? Version { get; set; }
-    }
-
     /// <summary>
-    /// Information required to start the backend processes.
+    /// Basic module information shared between module listings for download, and module 
+    /// settings on installed modules.
     /// </summary>
-    public class ModuleConfig
+    public class ModuleBase
     {
         /// <summary>
         /// Gets or sets the Id of the Module
@@ -64,6 +44,62 @@ namespace CodeProject.AI.API.Common
         /// no instruction to the contrary is seen. A default "Start me up" flag.
         /// </summary>
         public bool? Activate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the platforms on which this module is supported.
+        /// </summary>
+        public string[] Platforms { get; set; } = Array.Empty<string>();
+
+        /// <summary>
+        /// Gets or sets the Description for the module.
+        /// </summary>
+        public string? Description  { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version of this module
+        /// </summary>
+        public string? Version { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date this module was released
+        /// </summary>
+        public DateTime ReleaseDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date this module was last udpated
+        /// </summary>
+        public DateTime LastUpdated { get; set; }
+
+        /// <summary>
+        /// Gets or sets the current version.
+        /// </summary>
+        public string? License { get; set; }
+
+        /// <summary>
+        /// Gets or sets the current version.
+        /// </summary>
+        public string? LicenseUrl { get; set; }
+
+        /// <summary>
+        /// The string represtation of this module
+        /// </summary>
+        /// <returns>A string object</returns>
+        public override string ToString()
+        {
+            return $"{Name} ({ModuleId}) {Version} {License ?? ""}";
+        }        
+    }
+
+    /// <summary>
+    /// Information required to start the backend processes.
+    /// </summary>
+    public class ModuleConfig : ModuleBase
+    {
+        /// <summary>
+        /// Gets or sets a value indicating whether or not this module comes pre-installed with
+        /// this server setup.
+        /// </summary>
+        public bool PreInstalled { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether this process should support GPUs. This doesn't
@@ -98,6 +134,11 @@ namespace CodeProject.AI.API.Common
         public string? Runtime { get; set; }
 
         /// <summary>
+        /// Gets or sets the name of the queue this module should service when processing commands.
+        /// </summary>
+        public string? Queue { get; set; }
+
+        /// <summary>
         /// Gets or sets the command to execute the file at FilePath. If set, this overrides Runtime.
         /// An example would be "/usr/bin/python3". This property allows you to specify an explicit
         /// command in case the necessary runtime hasn't been registered, or in case you need to
@@ -107,10 +148,9 @@ namespace CodeProject.AI.API.Common
         public string? Command { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not this module comes pre-installed with
-        /// this server setup.
+        ///  Gets or sets the path, relative to the directory containing this module, of this module.
         /// </summary>
-        public bool PreInstalled { get; set; } = false;
+        public string? ModulePath { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the startup file relative to the module directory.
@@ -134,7 +174,7 @@ namespace CodeProject.AI.API.Common
         public string? WorkingDirectory { get; set; }
 
         /// <summary>
-        /// Gets or sets the information to pass to the backend processes.
+        /// Gets or sets the information to pass to the backend analysis modules.
         /// </summary>
         public Dictionary<string, object>? EnvironmentVariables { get; set; }
 
@@ -142,16 +182,6 @@ namespace CodeProject.AI.API.Common
         /// Gets or sets a list of RouteMaps.
         /// </summary>
         public ModuleRouteInfo[] RouteMaps { get; set; } = Array.Empty<ModuleRouteInfo>();
-
-        /// <summary>
-        /// Gets or sets the platforms on which this module is supported.
-        /// </summary>
-        public string[] Platforms { get; set; } = Array.Empty<string>();
-
-        /// <summary>
-        /// Gets or sets the version of this module
-        /// </summary>
-        public string? Version { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether or not this is a valid module that can actually be
@@ -182,8 +212,11 @@ namespace CodeProject.AI.API.Common
                 summary.AppendLine($"GPU:         Support {((SupportGPU == true)? "enabled" : "disabled")}");
                 summary.AppendLine($"Parallelism: {Parallelism}");
                 summary.AppendLine($"Platforms:   {string.Join(',', Platforms)}");
+                summary.AppendLine($"FilePath:    {FilePath}");
+                summary.AppendLine($"ModulePath:  {ModulePath}");
+                summary.AppendLine($"Install:     {(PreInstalled ? "PreInstalled" : "PostInstalled")}");
                 summary.AppendLine($"Runtime:     {Runtime}");
-                summary.AppendLine($"Queue:       {this.QueueName()}");
+                summary.AppendLine($"Queue:       {Queue}");
                 summary.AppendLine($"Start pause: {PostStartPauseSecs} sec");
                 summary.AppendLine($"Valid:       {Valid}");
                 summary.AppendLine($"Environment Variables");
@@ -220,19 +253,7 @@ namespace CodeProject.AI.API.Common
                                     module.Platforms!.Any(p => p.ToLower() == platform.ToLower()));
         }
 
-        /// <summary>
-        /// Returns the first queue name in the module's route map
-        /// </summary>
-        /// <param name="module">This module</param>
-        /// <returns>A string, or null if no queues</returns>
-        public static string? QueueName(this ModuleConfig module)
-        {
-            if (module?.RouteMaps is null || module.RouteMaps.Length == 0)
-                return null;
-
-            return module.RouteMaps[0].Queue;
-        }
-
+        /* Not used
         /// <summary>
         /// Returns true if this module is running on the specified Queue
         /// </summary>
@@ -241,12 +262,10 @@ namespace CodeProject.AI.API.Common
         /// <returns>True if running on the queue; false otherwise</returns>
         public static bool HasQueue(this ModuleConfig module, string queueName)
         {
-            // TODO: Switch to this once we've confirmed we'll move to 1 module, 1 queue.
-            // return module.QueueName()?.Equals(queueName, StringComparison.OrdinalIgnoreCase) == true;
-
-            return module.RouteMaps!.Any(x => x.IsQueue(queueName));
+            return module.Queue.EqualsIgnoreCase(queueName) == true;
         }
-
+        */
+        
         /// <summary>
         /// Sets or updates a value in the ModuleConfig.
         /// </summary>
@@ -257,20 +276,20 @@ namespace CodeProject.AI.API.Common
                                          string? value)
         {
             // Handle pre-defined global values first
-            if (name.Equals("Activate", StringComparison.OrdinalIgnoreCase))
+            if (name.EqualsIgnoreCase("Activate"))
             {
                 module.Activate = value?.ToLower() == "true";
             }
-            else if (name.Equals("SupportGPU", StringComparison.OrdinalIgnoreCase))
+            else if (name.EqualsIgnoreCase("SupportGPU"))
             {
                 module.SupportGPU = value?.ToLower() == "true";
             }
-            else if (name.Equals("Parallelism", StringComparison.OrdinalIgnoreCase))
+            else if (name.EqualsIgnoreCase("Parallelism"))
             {
                 if (int.TryParse(value, out int parallelism))
                     module.Parallelism = parallelism;
             }
-            else if (name.Equals("PostStartPauseSecs", StringComparison.OrdinalIgnoreCase))
+            else if (name.EqualsIgnoreCase("PostStartPauseSecs"))
             {
                 if (int.TryParse(value, out int pauseSec))
                     module.PostStartPauseSecs = pauseSec;
@@ -312,20 +331,20 @@ namespace CodeProject.AI.API.Common
             var moduleSettings = (JsonObject)allModules[moduleId]!;
 
             // Handle pre-defined global values first
-            if (name.Equals("Activate", StringComparison.OrdinalIgnoreCase))
+            if (name.EqualsIgnoreCase("Activate"))
             {
                 moduleSettings["Activate"] = value?.ToLower() == "true";
             }
-            else if (name.Equals("SupportGPU", StringComparison.OrdinalIgnoreCase))
+            else if (name.EqualsIgnoreCase("SupportGPU"))
             {
                 moduleSettings["SupportGPU"] = value?.ToLower() == "true";
             }
-            else if (name.Equals("Parallelism", StringComparison.OrdinalIgnoreCase))
+            else if (name.EqualsIgnoreCase("Parallelism"))
             {
                 if (int.TryParse(value, out int parallelism))
                     moduleSettings["Parallelism"] = parallelism;
             }
-            else if (name.Equals("PostStartPauseSecs", StringComparison.OrdinalIgnoreCase))
+            else if (name.EqualsIgnoreCase("PostStartPauseSecs"))
             {
                 if (int.TryParse(value, out int pauseSec))
                     moduleSettings["PostStartPauseSecs"] = pauseSec;

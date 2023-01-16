@@ -1,0 +1,68 @@
+{
+  // The processes (typically the backend analysis processes) that are to be started when the
+  // server starts. They will be started in order of appearance.
+  "Modules": {
+    "PortraitFilter": {
+      "Name": "Portrait Filter",
+      "Activate": true,
+      "Platforms": [ "windows" ], // errors with Microsoft.ML.OnnxRuntime.NativeMethods in macOS, and System.Drawing issues in Linux
+
+      "Description": "Provides a depth-of-field (bokeh) effect on images. Great for selfies.", 
+      "Version": "1.0",
+      "ReleaseDate": "2022-06-01",
+      "LastUpdated": "2022-06-10",
+      "License": "MIT",
+      "LicenseUrl": "https://opensource.org/licenses/MIT",
+      "PreInstalled": false,
+
+      "Parallelism": 1, // Defaults to (#CPUs - 1)
+      "SupportGPU": true,
+      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
+
+      "Queue": "portraitfilter_queue",
+      "ModulePath": "PortraitFilter",
+      "FilePath": "PortraitFilter.exe",
+      "Runtime": "execute",
+
+      "EnvironmentVariables": {
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Portrait Filter",
+          "Path": "image/portraitfilter",
+          "Method": "POST",
+          "Command": "filter",
+          "Description": "Blurs the background behind the main subjects in an image.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The image to be filtered."
+            },
+            {
+              "Name": "strength",
+              "Type": "Float",
+              "Description": "How much to blur the background (0.0 - 1.0).",
+              "MinValue": 0.0,
+              "MaxValue": 1.0,
+              "DefaultValue": 0.5
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "filtered_image",
+              "Type": "Base64ImageData",
+              "Description": "The base64 encoded image that has had its background blurred."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

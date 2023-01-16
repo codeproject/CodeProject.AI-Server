@@ -23,17 +23,17 @@ namespace CodeProject.AI.API.Server.Frontend
         /// Here's how it works:
         /// 
         /// Environment variables that an analysis module would typically access are set in 
-        /// BackendProcessRunner.CreateProcessStartInfo. The values that CreateProcessStartInfo
+        /// ModuleRunner.CreateProcessStartInfo. The values that CreateProcessStartInfo
         /// gets are from the server's appsettings.json in the EnvironmentVariables section, or
-        /// from the backend analysis service's modulesettings.json file in its
+        /// from the backend analysis module's modulesettings.json file in its
         /// EnvironmentVariables section. These two sets of variables are combined into one set and
-        /// then used to set the Environment variables for the backend analysis process being
+        /// then used to set the Environment variables for the backend analysis module being
         /// launched.
         /// 
         /// To override these values via the command line you just set the value of the environment
         /// variable using its name. The "name" is the tricky bit. In the appsettings.json file you
         /// may have "USE_CUDA" in the EnvironmentVariable section, but its fully qualified name
-        /// for the command line would be FrontEndOptions:EnvironmentVariables:CPAI_PORT. In the
+        /// for the command line would be ServerOptions:EnvironmentVariables:CPAI_PORT. In the
         /// object detection module's variables in modulesettings.json, changing the value USE_CUDA
         /// requires the command line parameter Modules:ObjectDetectionYolo:EnvironmentVariables:USE_CUDA.
         /// 
@@ -46,16 +46,16 @@ namespace CodeProject.AI.API.Server.Frontend
         /// </summary>
         public static void PassThroughLegacyCommandLineParams(IConfiguration configuration)
         {
-            var keyValues = new Dictionary<string, string>();
+            var keyValues = new Dictionary<string, string?>();
 
             // Go through the configuration looking for root level keys that could have been passed
             // via command line or otherwise. For the ones we find, convert them to value or values
             // that should be stored in configuration in a way that modules can access.
-            foreach (KeyValuePair<string, string> pair in configuration.AsEnumerable())
+            foreach (KeyValuePair<string, string?> pair in configuration.AsEnumerable())
             {
                 // Port.
                 if (pair.Key.Equals("PORT", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["FrontEndOptions:EnvironmentVariables:CPAI_PORT"] = pair.Value;
+                    keyValues["ServerOptions:EnvironmentVariables:CPAI_PORT"] = pair.Value;
 
                 // Activation
                 if (pair.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase) ||
@@ -80,10 +80,10 @@ namespace CodeProject.AI.API.Server.Frontend
                     keyValues["Modules:SceneClassification:EnvironmentVariables:MODE"]   = pair.Value;
                     keyValues["Modules:VisionObjectDetection:EnvironmentVariables:MODE"] = pair.Value;
 
-                    string modelSize = pair.Value;
-                    if (pair.Value.Equals("High", StringComparison.InvariantCultureIgnoreCase))
+                    string modelSize = pair.Value ?? "Medium";
+                    if (pair.Value?.Equals("High", StringComparison.InvariantCultureIgnoreCase) ?? false)
                         modelSize = "Large";
-                    else if (pair.Value.Equals("Low", StringComparison.InvariantCultureIgnoreCase))
+                    else if (pair.Value?.Equals("Low", StringComparison.InvariantCultureIgnoreCase) ?? false)
                         modelSize = "Small";
 
                     keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:MODEL_SIZE"] = modelSize;
@@ -185,8 +185,8 @@ namespace CodeProject.AI.API.Server.Frontend
                 {
                     MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionYolo",
                                       "Activate", setting.Value, modulesUpdated);
-                    MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
-                                      "Activate", setting.Value, modulesUpdated);
+                    // MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
+                    //                  "Activate", setting.Value, modulesUpdated);
                     // MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionNet",
                     //                  "Activate", setting.Value, modulesUpdated);
                 }
@@ -206,8 +206,8 @@ namespace CodeProject.AI.API.Server.Frontend
                 // Mode, which is effectively model size
                 if (setting.Key.Equals("MODE", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
-                                      "MODE", setting.Value, modulesUpdated);
+                    // MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
+                    //                   "MODE", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "FaceProcessing",
                                       "MODE", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "SceneClassification",
@@ -223,13 +223,15 @@ namespace CodeProject.AI.API.Server.Frontend
                                       "MODEL_SIZE", modelSize, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionNet",
                                       "MODEL_SIZE", modelSize, modulesUpdated);
+                    MakeSettingUpdate(modules, overrideSettings, "YOLOv5-3.1",
+                                      "MODEL_SIZE", modelSize, modulesUpdated);
                 }
 
                 // Using CUDA?
                 if (setting.Key.Equals("CUDA_MODE", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
-                                      "USE_CUDA", setting.Value, modulesUpdated);
+                    // MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
+                    //                  "USE_CUDA", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "FaceProcessing",
                                       "USE_CUDA", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "SceneClassification",
@@ -239,10 +241,11 @@ namespace CodeProject.AI.API.Server.Frontend
                                       "USE_CUDA", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionNet",
                                       "USE_CUDA", setting.Value, modulesUpdated);
+                    MakeSettingUpdate(modules, overrideSettings, "YOLOv5-3.1",
+                                      "USE_CUDA", setting.Value, modulesUpdated);
 
-
-                    MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
-                                      "CPAI_MODULE_SUPPORT_GPU", setting.Value, modulesUpdated);
+                    // MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
+                    //                  "CPAI_MODULE_SUPPORT_GPU", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "FaceProcessing",
                                       "CPAI_MODULE_SUPPORT_GPU", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "SceneClassification",
@@ -251,6 +254,8 @@ namespace CodeProject.AI.API.Server.Frontend
                     MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionYolo",
                                       "CPAI_MODULE_SUPPORT_GPU", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionNet",
+                                      "CPAI_MODULE_SUPPORT_GPU", setting.Value, modulesUpdated);
+                    MakeSettingUpdate(modules, overrideSettings, "YOLOv5-3.1",
                                       "CPAI_MODULE_SUPPORT_GPU", setting.Value, modulesUpdated);
                 }
 
@@ -264,6 +269,8 @@ namespace CodeProject.AI.API.Server.Frontend
                     MakeSettingUpdate(modules, overrideSettings, "SceneClassification",
                                       "DATA_DIR", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionYolo",
+                                      "DATA_DIR", setting.Value, modulesUpdated);
+                    MakeSettingUpdate(modules, overrideSettings, "YOLOv5-3.1",
                                       "DATA_DIR", setting.Value, modulesUpdated);
                 }
 

@@ -1,0 +1,16 @@
+#! Python3.9
+
+# We install a specific version of PaddlePaddle because we have a patch to apply
+paddlepaddle==2.3.2		# Installing PaddelPaddle, the Deep Learning platform
+
+# PaddleOCR is famously painful to install. This works well for Windows, no GPU,
+# using paddle2.3.2
+paddleocr>=2.0.1		# Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+
+# Do these after paddlepaddle because paddlepaddle requires specific versions 
+imutils					# Installing imutils, the image utilities library
+Pillow					# Installing Pillow, a Python Image Library
+opencv-python			# Installing OpenCV, the Computer Vision library for Python
+numpy					# Installing NumPy, a package for scientific computing
+
+# end of file

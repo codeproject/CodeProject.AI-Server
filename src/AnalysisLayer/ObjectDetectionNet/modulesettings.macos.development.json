@@ -1,7 +1,7 @@
 {
   "Modules": {
     "ObjectDetectionNet": {
-      "FilePath": "ObjectDetectionNet/bin/Debug/net6.0/ObjectDetectionNet.dll",
+      "FilePath": "bin/Debug/net7.0/ObjectDetectionNet.dll",
       "Runtime": "dotnet",
       "WorkingDirectory": "ObjectDetectionNet"
     }

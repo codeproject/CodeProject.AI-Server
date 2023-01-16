@@ -1,0 +1,9 @@
+{
+  "Modules": {
+    "FaceProcessing": {
+      "EnvironmentVariables": {
+        "USE_CUDA": "False"
+      }
+    }
+ }
+}

@@ -4,13 +4,15 @@ To learn about what can be done with methods and variables in the project files 
 https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=vs-2022
 -->
 
+	<!-- Platform, architecture, runtime target defines -->
+	<Import Project="../../../SDK/NET/Common.targets" />
+
 	<!-- Common properties -->
 	<PropertyGroup>
 		<Name>API Server</Name>
 		<RootNamespace>CodeProject.AI.API.Server.Frontend</RootNamespace>
 		<AssemblyName>CodeProject.AI.Server</AssemblyName>
-		<Version>1.6.8.0</Version>
-		<TargetFramework>net6.0</TargetFramework>
+		<Version>2.0.5</Version>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
@@ -38,6 +40,7 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Description>A Service hosting the CodeProject.AI WebAPI for face detection and recognition, object detection, and scene classification, and other AI operations.</Description>
 		<PackageProjectUrl>https://www.codeproject.com/ai</PackageProjectUrl>
 		<PackageIcon>codeproject125x125.png</PackageIcon>
+		<TargetFramework>net7.0</TargetFramework>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->
@@ -59,9 +62,6 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
-	<!-- Platform, architecture, runtime target defines and overrides -->
-	<Import Project="../../../AnalysisLayer/SDK/NET/CodeProject.AI.AnalysisLayer.SDK/Common.targets"/>
-
 	<ItemGroup>
 		<Compile Remove="Controllers\TextController.cs" />
 		<Compile Remove="Controllers\VisionController.cs" />
@@ -69,21 +69,14 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 
 	<ItemGroup>
 		<Content Remove="installconfig.json" />
-		<Content Remove="wwwroot\assets\codeprojectAI-black.svg" />
-		<Content Remove="wwwroot\assets\codeprojectAI-white.svg" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="wwwroot\assets\codeprojectAI-white.svg" />
-		<None Include="wwwroot\assets\codeprojectAI-black.svg" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
-		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="6.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="7.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -94,11 +87,29 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Content Update="wwwroot\assets\bootstrap.bundle.min.js">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
-		<Content Update="wwwroot\assets\bootstrap.min.css">
+		<Content Update="wwwroot\assets\bootstrap-dark.min.css">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\bootstrap.min.css">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\codeproject-colour.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Update="wwwroot\assets\codeproject60x60.png">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\codeprojectAI-black.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\codeprojectAI-white.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\dashboard.css">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\dashboard.js">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Update="wwwroot\assets\favicon-16x16.png">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -112,14 +123,17 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Content Update="wwwroot\assets\logo250x135.gif">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
+		<Content Update="wwwroot\assets\senseAI.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
 		<Content Update="wwwroot\assets\styles.css">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
+		<Content Update="wwwroot\assets\sw.js">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
 		<Content Update="wwwroot\index.html">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Update="wwwroot\testdata.zip">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<Content Update="wwwroot\vision.html">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -131,14 +145,17 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
+		<None Update="module_dir_readme.txt">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call ..\..\..\starttimer.bat $(ProjectName)" />
+		<Exec Command="call ..\..\..\SDK\Scripts\starttimer.bat $(ProjectName)" />
 	</Target>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call ..\..\..\endtimer.bat $(ProjectName)" />
+		<Exec Command="call ..\..\..\SDK\Scripts\endtimer.bat $(ProjectName)" />
 	</Target>
 
 </Project>

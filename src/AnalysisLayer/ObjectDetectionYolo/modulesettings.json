@@ -2,29 +2,37 @@
   "Modules": {
 
     "ObjectDetectionYolo": {
-      "Name": "Object Detection (YOLO)",
+      "Name": "Object Detection (YOLOv5 6.2)",
+      "Activate": true,
+      "Platforms": [ "all" ],
+
+      "Description": "Provides Object Detection using YOLOv5 v6.2 library with support for CPUs and CUDA enabled GPUs.", 
       "Version": "1.0",
+      "ReleaseDate": "2022-03-01",
+      "LastUpdated": "2022-03-01",
+      "License": "GPL-3.0",
+      "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
       "PreInstalled": true,
 
-      "Activate": true,
       "Parallelism": 0, // Defaults to (#CPUs - 1)
       "SupportGPU": true,
       "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
 
-      "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects that the custom models have been trained on.",
-      "FilePath": "ObjectDetectionYolo\\detect_adapter.py",
+      "Queue": "objectdetection_queue",
+      "ModulePath": "ObjectDetectionYolo",
+      "FilePath": "detect_adapter.py",
       "Runtime": "python38",
-      "Platforms": [ "all" ],
 
       "EnvironmentVariables": {
+        "YOLOv5_AUTOINSTALL": "false",
         "YOLOv5_VERBOSE": "false",
 
         "MODEL_SIZE": "Medium", // tiny, small, medium, large
         "USE_CUDA": "True",
 
-        "APPDIR": "%MODULES_PATH%\\ObjectDetectionYolo",
-        "MODELS_DIR": "%MODULES_PATH%\\ObjectDetectionYolo\\assets",
-        "CUSTOM_MODELS_DIR": "%MODULES_PATH%\\ObjectDetectionYolo\\custom-models",
+        "APPDIR": "%CURRENT_MODULE_PATH%",
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets",
+        "CUSTOM_MODELS_DIR": "%CURRENT_MODULE_PATH%\\custom-models",
 
         "CPAI_HALF_PRECISION": "Enable", // "Force", "Enable", "Disable": whether to force on, use default, or disable half-precision ops
         "CPAI_CUDA_DEVICE_NUM": "0"
@@ -32,10 +40,9 @@
 
       "RouteMaps": [
         {
-          "Name": "Object Detector (YOLO)",
+          "Name": "Object Detector (YOLOv5 6.2)",
           "Path": "vision/detection",
           "Method": "POST",
-          "Queue": "detection_queue",
           "Command": "detect",
           "Description": "Detects multiple objects, of 80 different possible types, in an image.",
           "Inputs": [
@@ -68,10 +75,9 @@
         },
 
         {
-          "Name": "Custom Object Detector (YOLO)",
+          "Name": "Custom Object Detector (YOLOv5 6.2)",
           "Path": "vision/custom",
           "Method": "POST",
-          "Queue": "detection_queue",
           "Command": "custom",
           "Description": "Detects objects based on YOLO PyTorch models. Models are stored as .pt files in the /ObjectDetectionYolo/assets directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's .pt file",
           "Inputs": [
@@ -101,10 +107,9 @@
         },
 
         {
-          "Name": "Object Detector List Custom Models",
+          "Name": "Object Detector List Custom Models (YOLOv5 6.2)",
           "Path": "vision/custom/list",
           "Method": "POST",
-          "Queue": "detection_queue",
           "Command": "list-custom",
           "Description": "Returns a list of models available.",
           "Inputs": [],

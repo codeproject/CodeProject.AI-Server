@@ -1,0 +1,92 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{0690d5f7-864f-4347-8e20-fa9903ce56eb}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>OCR_adapter.py</StartupFile>
+    <SearchPath>..\SDK\Python</SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>OCR</Name>
+    <RootNamespace>OCR</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
+    <InterpreterId>MSBuild|venv|$(MSBuildProjectFullPath)</InterpreterId>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="OCR.py" />
+    <Compile Include="options.py" />
+    <Compile Include="OCR_adapter.py" />
+    <Compile Include="patch\paddle2.3.2\image.py" />
+    <Compile Include="patch\paddle2.3.2.post116\image.py" />
+    <Compile Include="patch\paddle2.4.0RC0\image.py" />
+    <Compile Include="__init__.py" />
+    <Content Include="install.bat" />
+    <Content Include="install.sh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="modulesettings.json" />
+	  <Content Include="modulesettings.linux-arm64.json" >
+		  <DependentUpon>modulesettings.json</DependentUpon>
+	  </Content>
+	  <Content Include="modulesettings.linux.json" >
+		  <DependentUpon>modulesettings.json</DependentUpon>
+	  </Content>
+	  <Content Include="modulesettings.macos.arm64.json" >
+		  <DependentUpon>modulesettings.json</DependentUpon>
+	  </Content>
+	  <Content Include="modulesettings.macos.json" >
+		  <DependentUpon>modulesettings.json</DependentUpon>
+	  </Content>
+    <Content Include="modulesettings.windows.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+   <Content Include="requirements.txt" />
+    <Content Include="requirements.linux.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda.txt" >
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.arm64.txt" >
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda-no-luck.txt" >
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.macos.arm64.txt" >
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.macos.txt" >
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="patch\" />
+    <Folder Include="patch\paddle2.3.2\" />
+    <Folder Include="patch\paddle2.3.2.post116\" />
+    <Folder Include="patch\paddle2.4.0RC0\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="bin\windows\python37\venv\">
+      <Id>venv</Id>
+      <Version>3.7</Version>
+      <Description>venv (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

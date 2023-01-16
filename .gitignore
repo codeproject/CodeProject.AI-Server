@@ -3,21 +3,6 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-/demos/Python/detected
-/docs/mkdocs/CodeProject.AI/site
-/Installers/downloads
-/Installers/Windows/Thumbs.db
-
-/src/AnalysisLayer/BackgroundRemover/models
-/src/AnalysisLayer/CustomDetection/assets
-/src/AnalysisLayer/ObjectDetectionNet/assets/
-/src/AnalysisLayer/Vision/assets
-
-# Generate Wix files.
-*Files.wxs
-
-/src/API/Server/FrontEnd/installconfig.json
-
 # User-specific files
 *.rsuser
 *.suo
@@ -375,15 +360,55 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# Heat Generated Wix files.
+**/*Files.wxs
 
 *.DS_Store
 
+/demos/Python/detected
+/demos/Python/Vision/detected
+
+/Installers/downloads
+
+/Installers/Windows/Python37.Installer/Python37Files.wxs
+/Installers/Windows/Python37.Installer/PythonSdkFiles.wxs
+/Installers/Windows/BackgroundRemover.Installer/BackgroundRemoverFiles.wxs
+/Installers/Windows/CodeProjectAI.Server.Installer/FrontendInstallFiles.wxs
+/Installers/Windows/DeepStack.Installer/DeepStackFiles.wxs
+/Installers/Windows/ObjectDetectionYolo.Installer/ObjectDetectionYoloFiles.wxs
+/Installers/Windows/ObjectDetectionYolo.Installer/ObjectDetectionYoloFiles.wxs
+/Installers/Windows/PortraitFilter.Installer/PortraitFilterInstallFiles.wxs
+/Installers/Windows/Python37.Installer/Python37Files.wxs
+/Installers/Windows/PortraitFilter.Installer/PortraitFilterInstallFiles.wxs
+/Installers/Windows/CodeProjectAI.Server.Installer/DemoImangesFiles.wxs
+/Installers/Windows/Python39.Installer/Python39Files.wxs
+
 /Installers/zlib123dllx64.zip
 /Installers/cudnn-windows-x86_64-8.5.0.96_cuda11-archive.zip
-/src/AnalysisLayer/Vision/datastore/faceembedding.db
+
+/src/API/Server/FrontEnd/installconfig.json
+
+/src/AnalysisLayer/FaceProcessing/assets
+/src/AnalysisLayer/FaceProcessing/datastore/
+/src/AnalysisLayer/ObjectDetectionNet/assets/
+/src/AnalysisLayer/ObjectDetectionNet/custom-models
 /src/AnalysisLayer/ObjectDetectionYolo/assets
-/src/AnalysisLayer/ObjectDetectionYolo/custom
-/src/AnalysisLayer/CustomObjectDetection/assets
 /src/AnalysisLayer/ObjectDetectionYolo/custom-models
-/demos/Python/Vision/detected
+
+/src/downloads/
+/src/module-downloads/
+/src/modules/downloads/
+
 /src/modules/ALPR/paddleocr
+/src/modules/ALPR/plate.png
+/src/modules/BackgroundRemover/models
+/src/modules/OCR/paddleocr
+/src/modules/PortraitFilter/runtimeconfig.template.Designer.cs
+/src/modules/SceneClassifier/assets
+/src/modules/YOLOv5-3.1/custom-models
+/src/modules/YOLOv5-3.1/assets
+/src/modules/YOLOv5-3.1/windows_packages_cpu
+/src/modules/YOLOv5-3.1/windows_packages_gpu
+/src/AnalysisLayer/BackgroundRemover/models/u2net.onnx
+/src/AnalysisLayer/SceneClassifier/assets/categories_places365.txt
+/src/AnalysisLayer/SceneClassifier/assets/scene.pt

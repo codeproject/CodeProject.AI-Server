@@ -1,0 +1,7 @@
+{
+  "Modules": {
+    "OCR": {
+      "SupportGPU": false
+    }
+  }
+}

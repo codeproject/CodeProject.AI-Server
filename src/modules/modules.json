@@ -1,0 +1,171 @@
+[
+  {
+    "ModuleId": "ALPR",
+    "Name": "Automatic Licence Plate Recognition",
+    "Description": "Detects and readers licence plates using YOLO object detection and the PaddleOCR toolkit", 
+    "Platforms": [ "windows", "linux", "macos", "macos-arm64" ], // Issues installing PaddlePaddle on linux-arm64
+    "Runtime": "Python 3.7",
+    "Version": "1.0",
+    "ReleaseDate": "2022-11-01",
+    "LastUpdated": "2022-11-10",
+    "License": "SSPL",
+    "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+    "Downloads": 0
+  },
+  
+  
+  {
+    "ModuleId": "BackgroundRemover",
+    "Name": "Background Remover",
+    "Description": "Automatically removes the background from a picture", 
+    "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+    "Runtime": "Python 3.9",
+    "Version": "1.1",
+    "ReleaseDate": "2022-06-01",
+    "LastUpdated": "2022-06-01",
+    "License": "MIT",
+    "LicenseUrl": "https://opensource.org/licenses/MIT",
+    "Downloads": 0
+  },
+/*
+  {
+    "ModuleId": "ObjectDetectionNet",
+    "Name": "Object Detection (.NET)",
+    "Description": "Provides Object Detection using YOLOv5 ONNX models with DirectML. This module is best for those on Windows and Linux without CUDA enabled GPUs", 
+    "Platforms": [ "windows", "linux", "linux-arm64" , "macos", "macos-arm64"],
+    "Runtime": ".NET 7",
+    "Version": "1.0",
+    "ReleaseDate": "2022-06-01",
+    "LastUpdated": "2022-06-01",
+    "License": "MIT",
+    "LicenseUrl": "https://opensource.org/licenses/MIT",
+    "Downloads": 0
+  },
+*/
+  {
+    "ModuleId": "ObjectDetectionYolo",
+    "Name": "Object Detection (YOLO 6.2)",
+    "Description": "Provides Object Detection using YOLOv5 v6.2 library with support for CPUs and CUDA enabled GPUs.", 
+    "Platforms": [ "all" ],
+    "Runtime": "Python 3.7",
+    "Version": "1.0",
+    "ReleaseDate": "2022-03-01",
+    "LastUpdated": "2022-03-01",
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  },
+  
+  {
+    "ModuleId": "OCR",
+    "Name": "Optical Character Recognition",
+    "Description": "Provides OCR support using the PaddleOCR toolkit", 
+    "Platforms": [ "windows", "linux", "macos", "macos-arm64" ], // Issues installing PaddlePaddle on linux-arm64
+    "Runtime": "Python 3.7",
+    "Version": "1.0",
+    "ReleaseDate": "2022-11-01",
+    "LastUpdated": "2022-12-14",
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+  
+  /*
+  {
+    "ModuleId": "PortraitFilter",
+    "Name": "Portrait Filter",
+    "Description": "Provides a depth-of-field (bokeh) effect on images. Great for selfies.", 
+    "Platforms": [ "windows", "linux", "linux-arm64" ], // errors with Microsoft.ML.OnnxRuntime.NativeMethods in macOS
+    "Runtime": ".NET 7",
+    "Version": "1.0",
+    "ReleaseDate": "2022-06-01",
+    "LastUpdated": "2022-06-10",
+    "License": "MIT",
+    "LicenseUrl": "https://opensource.org/licenses/MIT",
+    "Downloads": 0
+  },
+*/
+  {
+    "ModuleId": "SceneClassifier",
+    "Name": "Scene Classification",
+    "Description": "Classifies an image according to one of 80 pre-trained scenes", 
+    "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+    "Runtime": "Python 3.7",
+    "Version": "1.1",
+    "ReleaseDate": "2022-03-01",
+    "LastUpdated": "2022-03-10",
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+/*
+  {
+    "ModuleId": "SentimentAnalysis",
+    "Name": "Sentiment Analysis",
+    "Description": "Provides an alaysis of the sentiment of a piece of text. Positive or negative?", 
+    "Platforms": [ "windows", "macos" ], // No "macos-arm64" because ML.NET doesn't yet work on M1 chips
+    "Runtime": ".NET 7",
+    "Version": "1.0",
+    "ReleaseDate": "2022-06-01",
+    "LastUpdated": "2022-06-10",
+    "License": "CC-BY-4.0",
+    "LicenseUrl": "https://github.com/dotnet/samples/blob/main/LICENSE",
+    "Downloads": 0
+  },
+*/
+  {
+    "ModuleId": "SuperResolution",
+    "Name": "Super Resolution",
+    "Description": "Increases the resolution of an image using AI", 
+    "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+    "Runtime": "Python 3.7",
+    "Version": "1.1",
+    "ReleaseDate": "2022-03-01",
+    "LastUpdated": "2022-03-10",
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+
+  {
+    "ModuleId": "TextSummary",
+    "Name": "Text Summary",
+    "Description": "Summarizes text content by selecting a number of sentences that are most representitive of the content.",
+    "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+    "Runtime": "Python 3.7",
+    "Version": "1.1",
+    "ReleaseDate": "2022-03-01",
+    "LastUpdated": "2022-03-10",
+    "License": "No License",
+    "LicenseUrl": "https://github.com/edubey/text-summarizer",
+    "Downloads": 0
+  },
+
+  {
+    "ModuleId": "FaceProcessing",
+    "Description": "A number of Face image APIs including detect, recognize, and compare.",
+    "Name": "Face Processing",
+    "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+    "Runtime": "Python 3.7",
+    "Version": "1.0",
+    "ReleaseDate": "2022-03-01",
+    "LastUpdated": "2022-03-10",
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+  
+  {
+    "ModuleId": "YOLOv5-3.1",
+    "Name": "Object Detection (YOLOv5 3.1)",
+    "Description": "Provides Object Detection using YOLOv5 v3.1 library with support for CPUs and CUDA enabled GPUs. This option is best for those with older CUDA 10.2 and below GPUs", 
+    "Platforms": [ "windows", "linux", "linux-arm64", "macos" ], // macos-arm64 should use the YOLOv5 6.2
+    "Runtime": "Python 3.7",
+    "Version": "1.0",
+    "ReleaseDate": "2022-03-01",
+    "LastUpdated": "2022-03-01",
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  }  
+]

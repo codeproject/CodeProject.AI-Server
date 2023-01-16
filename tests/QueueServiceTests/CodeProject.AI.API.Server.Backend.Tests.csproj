@@ -1,31 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+	<!-- Platform, architecture, runtime target defines -->
+	<Import Project="../../src/SDK/NET/Common.targets" />
+
 	<!-- Common properties -->
 	<PropertyGroup>
 		<Name>API Server Tests</Name>
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
 		<Platforms>AnyCPU;ARM64</Platforms>
+		<TargetFramework>net7.0</TargetFramework>
 	</PropertyGroup>
 
-	<!-- Platform, architecture, runtime target defines and overrides -->
-	<Import Project="../../src/AnalysisLayer/SDK/NET/CodeProject.AI.AnalysisLayer.SDK/Common.targets"/>
-
 	<ItemGroup>
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-		<PackageReference Include="xunit" Version="2.4.1" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
+		<PackageReference Include="xunit" Version="2.4.2" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="coverlet.collector" Version="3.1.2">
+		<PackageReference Include="coverlet.collector" Version="3.2.0">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\AnalysisLayer\SDK\NET\CodeProject.AI.AnalysisLayer.SDK\CodeProject.AI.AnalysisLayer.SDK.csproj" />
+		<ProjectReference Include="..\..\src\SDK\NET\NET.csproj" />
 		<ProjectReference Include="..\..\src\API\Server\Backend\Backend.csproj" />
 		<ProjectReference Include="..\..\src\API\Common\Common.csproj" />
 	</ItemGroup>

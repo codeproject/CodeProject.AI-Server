@@ -6,7 +6,7 @@
 	<title>CodeProject.AI Explorer</title>
 
 	<!-- If you use this, ensure the body has class "dark-mode"-->
-	<link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="assets/bootstrap-dark.min.css">
 	<!-- for light mode should you wish it
 	   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" />
 	-->
@@ -43,6 +43,14 @@
 
 			.site-title .end {
 				font-weight: 600;
+			}
+
+		.timing-table {
+			margin-top:1rem;
+		}
+			.timing-table td {
+				font-size: 80%;
+				padding-right: 1rem;
 			}
 
 		#faces::file-selector-button {
@@ -106,14 +114,21 @@
 			setTimeout(setCustomModelLists, 5000);
 
 			// Quick check for the video demo
-            navigator.getUserMedia({ video: true }, () => {
-                console.log('Webcam detected.')
-            }, () => {
-				console.log('No webcam detected.')
+			try {
+				navigator.getUserMedia({ video: true }, () => {
+					console.log('Webcam detected.');
+				}, () => {
+					console.log('No webcam detected.');
+					document.getElementById('video-panel').style.display = 'none';
+					document.getElementById('video-tab').style.display = 'none';
+				});
+				onStopVideo(null);
+			}
+			catch {
+				console.log('Webcam detection failed.');
 				document.getElementById('video-panel').style.display = 'none';
-                document.getElementById('video-tab').style.display = 'none';
-            });
-			onStopVideo(null);
+				document.getElementById('video-tab').style.display = 'none';
+			}
 		});
 
 		function adjustForImageSize() {
@@ -156,7 +171,7 @@
 				img.style.visibility = "hidden";
 			}
 			else {
-				var context = annotations.getContext("2d");
+				let context = annotations.getContext("2d");
 				context.clearRect(0, 0, annotations.width, annotations.height);
 			}
 		}
@@ -173,7 +188,7 @@
 				document.getElementById("status").innerHTML = "<span>" + text + "</span>";
 		}
 
-		function drawRectangles(predictions) {
+		function drawRectangles(predictions, sortByConfidence = true) {
 
 			if (!img.width || !img.height)
 				return;
@@ -182,9 +197,11 @@
 				return;
 
 			// Sort descending
-			predictions.sort(function (a, b) {
-				return b.confidence - a.confidence;
-			});
+			if (sortByConfidence) {
+				predictions.sort(function (a, b) {
+					return b.confidence - a.confidence;
+				});
+			}
 
 			let svg = null;
 			let xRatio = img.width * 1.0 / img.naturalWidth;
@@ -203,12 +220,12 @@
 				context.lineWidth = "1";
 			}
 
-			for (var i = 0; i < predictions.length; i++) {
-				let rect = predictions[i];
-				let left   = Math.min(rect.x_min, rect.x_max) * xRatio;
-				let top    = Math.min(rect.y_min, rect.y_max) * yRatio;
-				let width  = Math.abs(rect.x_min - rect.x_max) * xRatio;
-				let height = Math.abs(rect.y_min - rect.y_max) * yRatio;
+			for (let i = 0; i < predictions.length; i++) {
+                let prediction = predictions[i];
+				let left   = Math.min(prediction.x_min,  prediction.x_max) * xRatio;
+				let top    = Math.min(prediction.y_min,  prediction.y_max) * yRatio;
+				let width  = Math.abs(prediction.x_min - prediction.x_max) * xRatio;
+                let height = Math.abs(prediction.y_min - prediction.y_max) * yRatio;
 
 				if (useSVG) {
 					svg += `<rect fill="#ffffff" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
@@ -217,7 +234,7 @@
 					context.strokeStyle = "red";
 					context.strokeRect(left, top, width, height);
 					context.strokeStyle = "yellow";
-					context.strokeText(i + " " + (rect.label || ""), left, top);
+                    context.strokeText(i + " " + (prediction.label || ""), left, top);
 				}
 			}
 
@@ -232,15 +249,15 @@
 				let colorIndex = 0;
 
 				let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 2 : 5) : 15;
-				for (var i = 0; i < predictions.length; i++) {
+				for (let i = 0; i < predictions.length; i++) {
 
-					let rect = predictions[i];
-					let left = Math.min(rect.x_min, rect.x_max) * xRatio;
-					let top = Math.min(rect.y_min, rect.y_max) * yRatio;
-					let width = Math.abs(rect.x_min - rect.x_max) * xRatio;
-					let height = Math.abs(rect.y_min - rect.y_max) * yRatio;
+					let prediction = predictions[i];
+					let left   = Math.min(prediction.x_min,  prediction.x_max) * xRatio;
+					let top    = Math.min(prediction.y_min,  prediction.y_max) * yRatio;
+					let width  = Math.abs(prediction.x_min - prediction.x_max) * xRatio;
+					let height = Math.abs(prediction.y_min - prediction.y_max) * yRatio;
 
-					let right = left + width;
+					let right  = left + width;
 					let bottom = top + height;
 
 					// CodeProject.AI style
@@ -252,7 +269,7 @@
 					let styleTrans = `style="stroke:rgba(${color}, 0.5);stroke-width:${lineWidth}"`;
 
 					// label
-					let label = rect.label || rect.userid;
+                    let label = prediction.label || prediction.userid;
 					if (label)
 						svg += `<text x="${left}" y="${top - lineWidth}" style="stroke: none; fill:rgba(${color}, 1);font-size:12px">${label || ""}</text>`;
 
@@ -304,87 +321,118 @@
 			}
 		}
 
-		function displayPredictionResults(predictions) {
+		function getInferenceTimingHtml(data) {
 
-			if (!(predictions && predictions.length > 0)) {
-				result.innerHTML = "No predictions returned";
-				return;
-			}
-
-			// Sort descending
-			predictions.sort(function (a, b) {
-				return b.confidence - a.confidence;
-			});
-
-			var html = "<table style='width:100%'><tr><th>#</th><th>Label</th><th>Confidence</th></tr>";
-			for (var i = 0; i < predictions.length; i++) {
-				var pred = predictions[i];
-				html += "<tr><td>" + i + "</td><td>" + (pred.label || "Face")
-					+ "</td><td>" + confidence(pred.confidence) + "</td></tr>";
-			}
+			let html = "<table class='timing-table'>";
+			if (data.analysisRoundTripMs)
+				html += `<tr><td>Analysis round trip</td><td>${data.analysisRoundTripMs} ms</td></tr>`;
+			if (data.processMs)
+				html += `<tr><td>Processing</td><td>${data.processMs} ms</td></tr>`;
+			if (data.inferenceMs)
+				html += `<tr><td>Inference</td><td>${data.inferenceMs} ms</td></tr>`;
 			html += "</table>";
-			result.innerHTML = html;
+
+			return html;
 		}
 
-		function displayRecognitionResults(recognitions) {
+        function displayPredictionResults(data, sortByConfidence = true) {
 
-			if (!(recognitions && recognitions.length > 0)) {
-				result.innerHTML = "No recognitions returned";
+			if (!data || !data.predictions || !data.predictions.length) {
+				setResultsHtml("No predictions returned");
 				return;
 			}
 
 			// Sort descending
-			recognitions.sort(function (a, b) {
+			if (sortByConfidence) {
+				data.predictions.sort(function (a, b) {
+					return b.confidence - a.confidence;
+				});
+			}
+
+			let html = "<table style='width:100%'><tr><th>#</th>"
+			         + "<th>Label</th><th>Confidence</th></tr>";
+			for (let i = 0; i < data.predictions.length; i++) {
+				let pred = data.predictions[i];
+				html += `<tr><td>${i}</td><td>${pred.label || "Face"}</td>`
+				      + `<td>${confidence(pred.confidence)}</td></tr>`;
+			}
+			html += "</table>";
+
+			html += getInferenceTimingHtml(data);
+
+			setResultsHtml(html);
+		}
+
+		function displayRecognitionResults(data) {
+
+			if (!(data.predictions && data.predictions.length > 0)) {
+				setResultsHtml("No recognitions returned");
+				return;
+			}
+
+			// Sort descending
+			data.predictions.sort(function (a, b) {
 				return b.confidence - a.confidence;
 			});
 
-			var html = "<table style='width:100%'><tr><th>#</th><th>Name</th><th>Confidence</th></tr>";
-			for (var i = 0; i < recognitions.length; i++) {
-				var recog = recognitions[i];
+			let html = "<table style='width:100%'><tr><th>#</th><th>Name</th><th>Confidence</th></tr>";
+			for (let i = 0; i < data.predictions.length; i++) {
+				let recog = data.predictions[i];
 				html += "<tr><td>" + i + "</td><td>" + (recog.userid || "Face")
 					+ "</td><td>" + confidence(recog.confidence) + "</td></tr>";
 			}
 			html += "</table>";
-			result.innerHTML = html;
+
+			html += getInferenceTimingHtml(data);
+
+			setResultsHtml(html);
 		}
 
 		function displayMatchResults(match) {
 
 			if (!match) {
-				result.innerHTML = "No matches returned";
+				setResultsHtml("No matches returned");
 				return;
 			}
 
-			var html = "Match: " + confidence(match.similarity);
-			result.innerHTML = html;
+			let html = "Match: " + confidence(match.similarity);
+
+			html += getInferenceTimingHtml(match);
+
+			setResultsHtml(html);
 		}
 
 		function displayBaseResults(base) {
 
 			if (!base) {
-				result.innerHTML = "No results returned";
+				setResultsHtml("No results returned");
 				return;
 			}
 
-			var html = base.success ? "Operation successful" : "Operation failed";
-			result.innerHTML = html;
+			let html = base.success ? "Operation successful" : "Operation failed";
+
+			html += getInferenceTimingHtml(base);
+	
+			setResultsHtml(html);
 		}
 
 		function displayRegisteredFaces(data) {
 
 			if (!data || data.faces == null || data.faces.length <= 0) {
-				result.innerHTML = "No faces registered";
+				setResultsHtml("No faces registered");
 				return;
 			}
 
-			var html = "";
-			for (var name of data.faces)
+			let html = "";
+			for (let name of data.faces)
 				html += name + "<br>";
-			result.innerHTML = html;
+
+			setResultsHtml(html);
 		}
 
-		function showSummaryText(text) {
-			result.innerHTML = text;
+		// Not actually used. We probably should though.
+		function setResultsHtml(html) {
+			result.innerHTML = html;
 		}
 
 		function confidence(value) {
@@ -454,11 +502,11 @@
 							if (data && data.statuses) {
 
 								// disable all first
-								var cards = document.getElementsByClassName('card');
+								let cards = document.getElementsByClassName('card');
 								for (const card of cards)
 									card.classList.replace('d-flex', 'd-none');
 
-                                var navTabs = document.getElementsByClassName('nav-item');
+                                let navTabs = document.getElementsByClassName('nav-item');
                                 for (const tab of navTabs)
                                     tab.classList.add('d-none');
 								
@@ -470,7 +518,7 @@
 									// enable those that need enabling. Note that some cards will be
 									// shared among modules, so we need to ensure we're not disabling
 									// a card that was just enabled by a different module
-									var cards = document.getElementsByClassName('card ' + moduleId);
+									let cards = document.getElementsByClassName('card ' + moduleId);
 									for (const card of cards) {
 										if (running) {
 											card.classList.replace('d-none', 'd-flex');
@@ -517,7 +565,7 @@
 
 			let url = serviceUrl.value.trim() + '/v1/' + route + '/' + apiName;
 
-			result.innerHTML = "";
+			setResultsHtml("");
 
 			const controller  = new AbortController()
 			const timeoutSecs = parseInt(serviceTimeoutSecTxt.value);
@@ -538,6 +586,8 @@
 					} else {
 						response.json()
 							.then(data => {
+								console.log("Request succeeded")
+
 								if (data) {
 									if (data.success) {
 										doneFunc(data)
@@ -545,7 +595,7 @@
 									}
 									else {
 										if (failFunc) failFunc();
-										result.innerHTML = data.error ?? "";
+										setResultsHtml(data.error ?? "");
 										setStatus("Call to " + apiName + " failed", "red");
 									}
 								}
@@ -568,7 +618,7 @@
 						serverOnline = false;
 					}
 					else
-						showSummaryText('Unable to complete API call: ' + error)
+						setResultsHtml('Unable to complete API call: ' + error);
 				});
 		}
 
@@ -585,11 +635,12 @@
 			let images = [fileChooser.files[0]];
 
 			submitRequest('vision', 'scene', images, null, function (data) {
-				result.innerHTML = "<table style='width:100%'>" +
-					"<tr><th>Label</th><th>Confidence</th></tr><tr>" +
-					"<tr><td> " + data.label + "</td>" +
-					"<td> " + confidence(data.confidence) + "</td ></tr> " +
-					"<table>";
+				setResultsHtml("<table style='width:100%'>" +
+							   "<tr><th>Label</th><th>Confidence</th></tr><tr>" +
+							   "<tr><td> " + data.label + "</td>" +
+							   "<td> " + confidence(data.confidence) + "</td ></tr> " +
+							   "<table>" +
+							   getInferenceTimingHtml(data));
 			});
 		}
 
@@ -607,7 +658,7 @@
 
 			submitRequest('vision', 'face', images, null, function (data) {
 				drawRectangles(data.predictions);
-				displayPredictionResults(data.predictions)
+				displayPredictionResults(data)
 			});
 		}
 
@@ -639,7 +690,7 @@
 						default: title = data.models[i];
 					}
 
-					var model = new Option(title, data.models[i]);
+					let model = new Option(title, data.models[i]);
 					selectList.options.add(model);
 				}
 			});
@@ -659,7 +710,7 @@
 
 			submitRequest('vision', 'custom/' + model_name, images, null, function (data) {
 				drawRectangles(data.predictions);
-				displayPredictionResults(data.predictions)
+				displayPredictionResults(data)
 			});
 		}
 
@@ -677,7 +728,7 @@
 
 			submitRequest('vision', 'detection', images, null, function (data) {
 				drawRectangles(data.predictions);
-				displayPredictionResults(data.predictions)
+				displayPredictionResults(data)
 			});
 		}
 
@@ -714,15 +765,15 @@
 
 			setImage(faceCtrl.files[0]);
 
-			var images = [];
-			for (var i = 0; i < faceCtrl.files.length; i++)
+			let images = [];
+			for (let i = 0; i < faceCtrl.files.length; i++)
 				images.push(faceCtrl.files[i]);
 
 			submitRequest('vision', 'face/register', images, [["userid", userId]], function (data) {
 				if (data)
 					displayBaseResults(data);
 				else
-					result.innerText = "Unable to register faces";
+					setResultsHtml("Unable to register faces");
 			});
 		}
 
@@ -740,7 +791,7 @@
 			clearCanvas();
 
 			submitRequest('vision', 'face/delete', null, [["userid", userId]], function (data) {
-				result.innerText = "Face deleted";
+				setResultsHtml("Face deleted");
 			});
 		}
 
@@ -756,14 +807,14 @@
 			setImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
-			var params = []
-			var minConfidence = parseFloat(minimumConfidence);
+			let params = []
+			let minConfidence = parseFloat(minimumConfidence);
 			if (!isNaN(minConfidence))
 				params = [["min_confidence", minConfidence]]
 
 			submitRequest('vision', 'face/recognize', images, params, function (data) {
 				drawRectangles(data.predictions);
-				displayRecognitionResults(data.predictions)
+				displayRecognitionResults(data)
 			});
 		}
 
@@ -781,7 +832,7 @@
 			let params = [["use_alphamatting", use_alphamatting]]
 
 			submitRequest('image', 'removebackground', images, params, function (data) {
-				result.innerText = "Background Removal complete";
+				setResultsHtml("Background Removal complete" + getInferenceTimingHtml(data));
 				img.src = "data:image/png;base64," + data.imageBase64;
 				img.style.visibility = "visible";
 			});
@@ -801,7 +852,7 @@
 			let params = [["strength", strength]]
 
 			submitRequest('image', 'portraitfilter', images, params, function (data) {
-				result.innerText = "Portrait mode complete";
+				setResultsHtml("Portrait mode complete" + getInferenceTimingHtml(data));
 				img.src = "data:image/png;base64," + data.filtered_image;
 				img.style.visibility = "visible";
 			});
@@ -821,9 +872,29 @@
             let params = [["confidence", confidence]]
 
             submitRequest('image', 'alpr', images, params, function (data) {
-				result.innerText = "License plate detection complete";
-                drawRectangles(data.predictions);
-                displayPredictionResults(data.predictions)
+				setResultsHtml("License plate detection complete");
+                drawRectangles(data.predictions, false);
+                displayPredictionResults(data, false)
+            });
+		}
+
+        function onReadText(fileChooser) {
+
+            clearCanvas();
+
+            if (fileChooser.files.length == 0) {
+                alert("No file was selected for optical character recognition");
+                return;
+            }
+
+            setImage(fileChooser.files[0]);
+            let images = [fileChooser.files[0]];
+			let params = null; 
+
+            submitRequest('image', 'ocr', images, params, function (data) {
+                setResultsHtml("Optical character recognition complete");
+                drawRectangles(data.predictions, false);
+                displayPredictionResults(data, false)
             });
 		}
 
@@ -841,7 +912,7 @@
 			let params = null;
 
 			submitRequest('image', 'superresolution', images, params, function (data) {
-				result.innerText = "Resolution Improvement complete";
+				setResultsHtml("Resolution Improvement complete" + getInferenceTimingHtml(data));
 				img.src = "data:image/png;base64," + data.imageBase64;
 				img.style.visibility = "visible";
 			});
@@ -856,11 +927,12 @@
 				return;
 			}
 
-			var numberOfSentences = !isNaN(numberOfSentences) ? parseInt(numberOfSentences) : 2;
-			var params = [['text', articleText], ["num_sentences", numberOfSentences]]
+			numberOfSentences = !isNaN(numberOfSentences) ? parseInt(numberOfSentences) : 2;
+			let params = [['text', articleText], ["num_sentences", numberOfSentences]]
 
 			submitRequest('text', 'summarize', null, params, function (data) {
-				showSummaryText(data.summary || "No summary  was returned");
+				setResultsHtml((data.summary || "No summary  was returned") +
+				               getInferenceTimingHtml(data));
 			});
 		}
 
@@ -873,16 +945,17 @@
 				return;
 			}
 
-			var params = [['text', articleText]]
+			let params = [['text', articleText]]
 
 			submitRequest('text', 'sentiment', null, params, function (data) {
 				if (!data.success) {
-					result.innerText = "Sentiment analysis failed";
+					setResultsHtml("Sentiment analysis failed");
 				}
 				else {
-					result.innerText = "Probability that text is positive is " +
-						+ (data.positive_probability * 100).toFixed(1) + "%. "
-						+ "Text sentiment is " + (data.is_positive ? "positive" : "negative");
+					setResultsHtml("Probability that text is positive is " +
+								   (data.positive_probability * 100).toFixed(1) + "%. " +
+								   "Text sentiment is " + (data.is_positive ? "positive" : "negative") +
+								   getInferenceTimingHtml(data));
 				}
 			});
 		}
@@ -990,7 +1063,7 @@
 									if (previousInferenceTime && previousInferenceTime < lastInferenceTime)
 										processedPerSecond = 1000.0 / (lastInferenceTime - previousInferenceTime);
 
-									for (var i = 0; i < data.predictions.length; i++) {
+									for (let i = 0; i < data.predictions.length; i++) {
 
 										let rect = data.predictions[i];
 										rect_left   = Math.min(rect.x_min, rect.x_max);
@@ -1020,12 +1093,12 @@
             if (!useRequestAnimationFrame && videoTimerId)
 				clearInterval(videoTimerId);
 
-			var stream = video.srcObject;
+			let stream = video.srcObject;
 			try {
-				var tracks = stream.getTracks();
+				let tracks = stream.getTracks();
 
-				for (var i = 0; i < tracks.length; i++) {
-					var track = tracks[i];
+				for (let i = 0; i < tracks.length; i++) {
+					let track = tracks[i];
 					track.stop();
 				}
 			}
@@ -1077,9 +1150,13 @@
 
         function sendBenchmarkRequest(route, images, startMilliseconds,  resultElm) {
 
+			console.log("About to send Benchmark Request")
+
             totalBenchmarkRequests++;
             submitRequest('vision', route, images, null,
                 (data) => {
+					console.log("Benchmark Request succeeded")
+
                     let currentMilliseconds = performance.now();
                     let opsPerSecond = (totalBenchmarkRequests * 1000) / (currentMilliseconds - startMilliseconds);
                     resultElm.innerHTML = opsPerSecond.toFixed(1) + " operations per second - " + totalBenchmarkRequests + "/50";
@@ -1088,8 +1165,9 @@
                         sendBenchmarkRequest(route, images, startMilliseconds, resultElm);
                 },
 				() => {
-                    if (totalBenchmarkRequests < maxBenchmarkRequests)
-                        sendBenchmarkRequest(route, images, startMilliseconds, resultElm);
+					console.log("Benchmark Request failed")
+                    // if (totalBenchmarkRequests < maxBenchmarkRequests)
+                    //    sendBenchmarkRequest(route, images, startMilliseconds, resultElm);
 				}
             );
 		}
@@ -1153,7 +1231,9 @@
 				</a>
 
 				<!--<div style="font-size: 2.1rem; margin-top: 12px;">CodeProject.AI Explorer</div>-->
-
+				<!--
+				<A href="http://localhost:32168/swagger/index.html">SwaggerUI</a>		
+				-->
 				<a href="https://www.codeproject.com/ai" style="margin:0px 5px 0 0">
 					<svg viewBox="0 0 660 160" xmlns="http://www.w3.org/2000/svg" style="height:60px">
 						<defs>
@@ -1201,7 +1281,6 @@
 					<div style="width:600px">
 
 						<ul class="nav nav-tabs d-flex" id="DemoTabs" role="tablist">
-
 							<li class="nav-item d-none" id="vision-tab-listitem">
 								<button class="nav-link active" id="vision-tab" data-bs-toggle="tab" data-bs-target="#vision-panel" type="button" role="tab" aria-controls="vision" aria-selected="true">Vision</button>
 							</li>
@@ -1229,7 +1308,7 @@
 
 							<div class="tab-pane fade show active" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
 
-								<div class="card mt-3 d-none FaceProcessing ObjectDetectionNet SceneClassification VisionObjectDetection ObjectDetectionYolo">
+								<div class="card mt-3 d-none FaceProcessing ObjectDetectionNet SceneClassification VisionObjectDetection ObjectDetectionYolo YOLOv5-3.1">
 									<div class="card-header h3">Object Detection</div>
 									<div class="card-body">
 
@@ -1246,7 +1325,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none ObjectDetectionYolo">
+								<div class="card mt-3 d-none ObjectDetectionYolo ObjectDetectionNet YOLOv5-3.1">
 									<div class="card-header h3">Custom Object Detection</div>
 									<div class="card-body">
 
@@ -1313,6 +1392,22 @@
 												   oninput="document.getElementById('strengthLabel').innerHTML=this.value;">
 											<span id="strengthLabel" class="col-form-label text-nowrap col-1">1.0</span>
 										</div>
+									</div>
+								</div>
+
+								<div class="card mt-3 d-none OCR">
+									<div class="card-header h3">Optical Character Recognition</div>
+									<div class="card-body">
+
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="ocrInput" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Read Text"
+												   style="width:11rem" id="on-read-text"
+												   onclick="onReadText(ocrInput)" />
+										</div>
+
 									</div>
 								</div>
 
@@ -1491,7 +1586,7 @@
 
 							<div class="tab-pane fade show" id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-tab">
 
-								<div class="card mt-3 ObjectDetectionNet VisionObjectDetection ObjectDetectionYolo">
+								<div class="card mt-3 ObjectDetectionNet VisionObjectDetection ObjectDetectionYolo YOLOv5-3.1">
 									<div class="card-header h3">Benchmark</div>
 									<div class="card-body">
 
@@ -1552,9 +1647,9 @@
 
 	<script src="assets/bootstrap.bundle.min.js"></script>
 	<script>
-		var triggerTabList = [].slice.call(document.querySelectorAll('#DemoTabs button'))
+		let triggerTabList = [].slice.call(document.querySelectorAll('#DemoTabs button'))
 		triggerTabList.forEach(function (triggerEl) {
-			var tabTrigger = new bootstrap.Tab(triggerEl)
+			let tabTrigger = new bootstrap.Tab(triggerEl)
 
 			triggerEl.addEventListener('click', function (event) {
 				event.preventDefault()
