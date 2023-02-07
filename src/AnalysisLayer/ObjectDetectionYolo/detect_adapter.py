@@ -304,9 +304,19 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
     try:
         # the default resolution for YoloV5? is 640
         #  YoloV5?6 is 1280
-
+        size = 640
+        m = re.search("imgsz-(\d+)", model_name)
+        if m:
+            size = int(m[1])
+        module_runner.log(LogMethod.Info | LogMethod.Server,
+                        {
+                            "filename": "detect_adapter.py",
+                            "loglevel": "information",
+                            "method": "do_detection",
+                            "message": f"Running do_detection for {module_runner.module_name} with {model_name} @ {size}px"
+                        })
         start_inference_time = time.perf_counter()
-        det = detector(img, size=640)
+        det = detector(img, size=size)
         inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
         outputs = []
