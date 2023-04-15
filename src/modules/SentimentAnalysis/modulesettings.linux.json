@@ -1,0 +1,7 @@
+{
+  "Modules": {
+    "SentimentAnalysis": {
+      "FilePath": "SentimentAnalysis"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "Modules": {
     "OCR": {
-      "Command": "%CURRENT_MODULE_PATH%\\bin\\%OS%\\python37\\venv\\Scripts\\python"
+      "Runtime": "python37"
     }
   }
 }

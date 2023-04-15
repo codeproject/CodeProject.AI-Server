@@ -26,6 +26,7 @@ namespace CodeProject.AI.API.Server.Frontend
     public class Startup
     {
         private InstallConfig? _installConfig;
+        private VersionConfig? _versionConfig;
         private ILogger<Startup>? _logger;
 
         /// <summary>
@@ -100,14 +101,14 @@ namespace CodeProject.AI.API.Server.Frontend
                     .AddQueueProcessing();
 
             services.Configure<InstallConfig>(Configuration.GetSection(InstallConfig.InstallCfgSection));
-            services.Configure<VersionConfig>(Configuration.GetSection(VersionConfig.VersionCfgSection));
 
-            services.AddModuleRunner(Configuration);
+            services.AddAiModuleSupport(Configuration);
 
-            services.AddSingleton<VersionService,  VersionService>();
-            services.AddSingleton<ModuleSettings,  ModuleSettings>();
-            services.AddSingleton<ModuleInstaller, ModuleInstaller>();
-            services.AddVersionProcessRunner();
+            services.AddVersionProcessRunner(Configuration);
+
+            // Configure the shutdown timeout to 60s instead of 2
+            services.Configure<HostOptions>(
+                opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(60));
         }
 
         /// <summary>
@@ -117,15 +118,18 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <param name="env">The Hosting Evironment.</param>
         /// <param name="logger">The logger</param>
         /// <param name="installConfig">The installation instance config values.</param>
+        /// <param name="versionConfig">The Version Configuration</param>
         /// <remarks>
         ///   This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         /// </remarks>
         public void Configure(IApplicationBuilder app,
                               IWebHostEnvironment env,
                               ILogger<Startup> logger,
-                              IOptions<InstallConfig> installConfig)
+                              IOptions<InstallConfig> installConfig,
+                              IOptions<VersionConfig> versionConfig)
         {
             _installConfig = installConfig.Value;
+            _versionConfig = versionConfig.Value;
             _logger        = logger;
 
             if (env.IsDevelopment())
@@ -162,32 +166,36 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             if (_installConfig is null || _installConfig.Id == Guid.Empty)
             {
-                ModuleInstaller.QueueInitialModulesInstallation();
+                _installConfig ??= new InstallConfig();
+                _installConfig.Id = Guid.NewGuid();
+            }
 
-                try
-                {
-                    _installConfig  ??= new InstallConfig();
-                    _installConfig.Id = Guid.NewGuid();
+            // if this is a new install or replacing a pre V2.1.0 version
+            if (string.IsNullOrEmpty(_installConfig.Version))
+                AiModuleInstaller.QueueInitialModulesInstallation();
 
-                    var configValues = new { install = _installConfig };
+            _installConfig.Version = _versionConfig?.VersionInfo?.Version ?? string.Empty;
 
-                    string appDataDir     = Configuration["ApplicationDataDir"] 
-                                          ?? throw new ArgumentNullException("ApplicationDataDir is not defined in configuration");
+            try
+            {
+                var configValues = new { install = _installConfig };
 
-                    string configFilePath = Path.Combine(appDataDir, InstallConfig.InstallCfgFilename);
+                string appDataDir     = Configuration["ApplicationDataDir"] 
+                                        ?? throw new ArgumentNullException("ApplicationDataDir is not defined in configuration");
 
-                    if (!Directory.Exists(appDataDir))
-                        Directory.CreateDirectory(appDataDir);
+                string configFilePath = Path.Combine(appDataDir, InstallConfig.InstallCfgFilename);
 
-                    var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
-                    string configJson = System.Text.Json.JsonSerializer.Serialize(configValues, options);
+                if (!Directory.Exists(appDataDir))
+                    Directory.CreateDirectory(appDataDir);
 
-                    File.WriteAllText(configFilePath, configJson);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError($"Exception updating Install Config: {ex.Message}");
-                }
+                var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                string configJson = System.Text.Json.JsonSerializer.Serialize(configValues, options);
+
+                File.WriteAllText(configFilePath, configJson);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError($"Exception updating Install Config: {ex.Message}");
             }
         }
 

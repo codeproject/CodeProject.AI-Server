@@ -3,29 +3,41 @@
 
     "ALPR": {
       "Name": "License Plate Reader",
-      "Activate": true,
-      "Platforms": [ "windows", "linux", "macos", "macos-arm64" ], // Issues installing PaddlePaddle on linux-arm64
+      "Version": "2.2",
 
-      "Description": "Detects and readers licence plates using YOLO object detection and the PaddleOCR toolkit", 
-      "Version": "1.0",
-      "ReleaseDate": "2022-11-01",
-      "LastUpdated": "2022-11-10",
+      // Publishing info
+      "Description": "Detects and readers licence plates using YOLO object detection and the PaddleOCR toolkit",
+      "Platforms": [ "windows", "linux", "macos", "macos-arm64" ], // Issues installing PaddlePaddle on linux-arm64
       "License": "SSPL",
       "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
-      "PreInstalled": false,
 
-      "Parallelism": 0, // Defaults to (#CPUs - 1)
-      "SupportGPU": true,
-      "CUDADeviceNumber": 0, // 0 = default
-      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
+      // Which server version is compatible with each version of this module.
+      "VersionCompatibililty": [
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "2.1", "ServerVersionRange": [ "2.0.9", "2.0.9" ], "ReleaseDate": "2022-12-01" },
+        { "ModuleVersion": "2.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+      ],
 
-      "Queue": "ALPR_queue",
-      "ModulePath": "ALPR",
+      // Launch instructions
+      "AutoStart": true,
       "FilePath": "ALPR_adapter.py",
-      "Command": "%CURRENT_MODULE_PATH%/bin/%OS%/python38/venv/bin/python", // Paddle requires Python <= 3.8
+      "Runtime": "python38",
+      "RuntimeLocation": "Local", // Can be Local or Shared
+
+      // These are all optional. Defaults are usually fine
+      "SupportGPU": true,
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 0,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 1,        // 1 if using GPU, 0 for CPU
+
+      "Queue": "alpr_queue",          // default is lower(modulename) + "_queue"
 
       "EnvironmentVariables": {
-        "PLATE_CONFIDENCE": 0.4
+        "PLATE_CONFIDENCE": 0.7,      // Confidence required in detecting a plate in the first place
+        "PLATE_ROTATE_DEG": 0,        // If non-zero, rotate plate before OCR (+ve = counterclockwise)
+        "AUTO_PLATE_ROTATE": true,
+        "PLATE_RESCALE_FACTOR": 2
       },
 
       "RouteMaps": [
@@ -49,10 +61,24 @@
               "Description": "True if successful."
             },
             {
-              "return": "alpr_result",
-              "Name": "alpr_result",
-              "Type": "Object",
-              "Description": "ALPR result."
+              "Name": "predictions",
+              "Type": "Object[]",
+              "Description": "An array of objects with the x_max, x_min, max, y_min bounds of the plate, label, the plate chars and confidence."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         }

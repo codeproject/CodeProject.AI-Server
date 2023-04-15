@@ -75,8 +75,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
                 Stopwatch sw = Stopwatch.StartNew();
 
-                var reqid = routeInfo!.Command; // TODO: remove reqid. Not needed
-                var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, reqid, payload);
+                var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, payload);
 
                 long analysisRoundTripMs = sw.ElapsedMilliseconds;
 
@@ -125,9 +124,6 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
             foreach (var module in moduleList)
             {
-                if (module.Activate != true)
-                    continue;
-
                 foreach (ModuleRouteInfo routeInfo in module.RouteMaps)
                 {
                     string url = "http://localhost:32168";
@@ -244,7 +240,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                     queryParams.Add(new KeyValuePair<string, string?[]>(param.Key, param.Value.ToArray()));
             }
 
-            try // if there is no Form values, then Request.Form throws.
+            try // if there are no Form values, then Request.Form throws.
             {
                 IFormCollection form = Request.Form;
                 
@@ -269,7 +265,6 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             {
                 urlSegments = segments.ToArray(),
                 command     = routeInfo.Command,
-                queue       = routeInfo.QueueName,
                 values      = queryParams,
                 files       = formFiles
             };

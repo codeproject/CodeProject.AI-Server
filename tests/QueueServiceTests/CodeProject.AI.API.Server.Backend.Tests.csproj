@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<!-- Platform, architecture, runtime target defines -->
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
 	<Import Project="../../src/SDK/NET/Common.targets" />
 
 	<!-- Common properties -->

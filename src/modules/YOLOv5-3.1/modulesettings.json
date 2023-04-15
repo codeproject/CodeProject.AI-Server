@@ -2,25 +2,35 @@
   "Modules": {
     "YOLOv5-3.1": {
       "Name": "Object Detection (YOLOv5 3.1)",
-      "Activate": false,
-      "Platforms": [ "windows", "linux", "linux-arm64", "macos" ], // macos-arm64 should use the YOLOv5 6.2
+      "Version": "1.2",
 
+      // Publishing info
       "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects the models have been trained on. At this point there are 80 different types of objects that can be detected.",
-      "Version": "1.0",
-      "ReleaseDate": "2022-03-01",
-      "LastUpdated": "2022-03-01",
+      "Platforms": [ "windows", "linux", "linux-arm64", "macos" ], // macos-arm64 should use the YOLOv5 6.2
       "License": "GPL-3.0",
       "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
-      "PreInstalled": false,
 
-      "Parallelism": 0, // Defaults to (#CPUs - 1)
-      "SupportGPU": true,
-      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
+      // Which server version is compatible with each version of this module.
+      "VersionCompatibililty": [
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+      ],
 
-      "Queue": "objectdetection_queue",
-      "ModulePath": "YOLOv5-3.1",
+      // Launch instructions
+      "AutoStart": false,
       "FilePath": "yolo_adapter.py",
-      "Command": "%CURRENT_MODULE_PATH%/bin/%OS%/python38/venv/bin/python",
+      "Runtime": "python38",
+      "RuntimeLocation": "Local", // Can be Local or Shared
+      
+      // These are all optional. Defaults are usually fine
+      "SupportGPU": true,
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 0,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 1,        // 1 if using GPU, 0 for CPU
+
+      // Deliberately not using the default queue: We make all Object detectors use the same queue.
+      "Queue": "objectdetection_queue",  // default is lower(modulename) + "_queue"
 
       "EnvironmentVariables": {
         "PROFILE": "desktop_gpu",
@@ -30,8 +40,8 @@
 
         "APPDIR": "%CURRENT_MODULE_PATH%",
         "DATA_DIR": "%DATA_DIR%",
-        "TEMP_PATH": "%CURRENT_MODULE_PATH%\\tempstore",
-        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets"
+        "TEMP_PATH": "%CURRENT_MODULE_PATH%/tempstore",
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%/assets"
       },
 
       "RouteMaps": [
@@ -66,6 +76,21 @@
               "Name": "predictions",
               "Type": "Object",
               "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         }

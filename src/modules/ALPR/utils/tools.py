@@ -2,65 +2,102 @@
 import cv2
 import math
 import numpy as np
+from PIL import Image
 
-debug_log = False
+from utils.cartesian import *
 
-# Need to find which image type is actually being used here
-TempImageType = any
+debug_log = False   # Output log info
+debug_img = False   # Save intermediate images to view the progress
 
-def resize_image(image: TempImageType, scale_percent: int) -> TempImageType:
-    width   = int(image.shape[1] * scale_percent / 100)
-    height  = int(image.shape[0] * scale_percent / 100)
-    dim     = (width, height)  
-    image   = cv2.resize(image, dim, interpolation = cv2.INTER_CUBIC)
+# Could switch to numpy, so keep this abstracted for now
+ImageType = Image
 
-    return image
+def resize_image(image: ImageType, scale_percent: int) -> ImageType:
+    """
+    Resize an image by the given percent
+    image: ImageType
+    scale_percent: the percentage the image should be scaled to.
+    """
 
-def rotate_image(image: TempImageType, angle: float) -> TempImageType:
+    dimension = Size(image.shape[1], image.shape[0])  
+    dimension.scale(scale_percent / 100.0)
+    dimension.integerize()
+
+    new_image = cv2.resize(image, dimension.as_tuple(), interpolation = cv2.INTER_CUBIC)
+
+    if debug_img:
+        cv2.imwrite("resize_image_pre.jpg", image)
+        cv2.imwrite("resize_image_post.jpg", new_image)
+
+    return new_image
+
+
+def rotate_image(image: ImageType,  angle: float, largest_size: Size = None) -> ImageType:
     """
     Rotates an image by the given angle
-    image: type?
+    image: ImageType
     angle: degrees or radians? +ve is cw or ccw?
+    largest_size: if provided, the rotated image will be cropped to this size
     """
-    image_height, image_width = image.shape[0:2]
-    image_center = tuple(np.array(image.shape[1::-1]) / 2)
-    rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
-    image_rotated = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
-    image_rotated_cropped = crop_around_center(
-        image_rotated,
-        *largest_rotated_rect(
-            image_width,
-            image_height,
-            math.radians(angle))
-    )
 
-    return image_rotated_cropped
+    image_center    = tuple(np.array(image.shape[1::-1]) / 2)
+    rotation_matrix = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+    image_rotated   = cv2.warpAffine(image, rotation_matrix, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+
+    if debug_img:
+        cv2.imwrite("rotate_image_pre.jpg", image)
+
+    if largest_size:
+        image_rotated_cropped = crop_around_center(image_rotated, largest_size)
+        if debug_img:
+            cv2.imwrite("rotate_image_cropped.jpg", image_rotated_cropped)
+        return image_rotated_cropped
+
+    # image_height, image_width = image.shape[0:2]
+    # image_rotated_cropped = crop_around_center(image_rotated,
+    #    *largest_rotated_rect(image_width, image_height, math.radians(angle)))
+
+    if debug_img:
+        cv2.imwrite("rotate_image_post.jpg", image_rotated_cropped)
+
+    return image_rotated
 
 
-def crop_around_center(image: TempImageType, width: int, height: int) -> TempImageType:
+def crop_around_center(image: ImageType, size: Size) -> ImageType:
     """
-    Given a NumPy / OpenCV 2 image, crops it to the given width and height,
+    Given a NumPy / OpenCV 2 image, crops it to the given size (width,  height),
     around it's centre point
     """
 
-    image_size = (image.shape[1], image.shape[0])
-    image_center = (int(image_size[0] * 0.5), int(image_size[1] * 0.5))
+    # Note that 'shape' is (height, width, depth). Because Python.
+    image_size = Size(image.shape[1], image.shape[0])
 
-    if(width > image_size[0]):
-        width = image_size[0]
+    # Anything to do? If not, return
+    if image_size.width <= size.width and image_size.height <= size.height:
+        return image
 
-    if(height > image_size[1]):
-        height = image_size[1]
+    if size.width > image_size.width:
+        size.width = image_size.width
 
-    x1 = int(image_center[0] - width * 0.5)
-    x2 = int(image_center[0] + width * 0.5)
-    y1 = int(image_center[1] - height * 0.5)
-    y2 = int(image_center[1] + height * 0.5)
+    if size.height > image_size.height:
+        size.height = image_size.height
 
-    return image[y1:y2, x1:x2]
+    image_center = Point(image_size.width * 0.5, image_size.height * 0.5)
+    x1 = int(image_center.x - size.width * 0.5)
+    x2 = int(image_center.x + size.width * 0.5)
+    y1 = int(image_center.y - size.height * 0.5)
+    y2 = int(image_center.y + size.height * 0.5)
+
+    cropped_image = image[y1:y2, x1:x2]
+
+    if debug_img:
+        cv2.imwrite("crop_around_center_pre.jpg", image)
+        cv2.imwrite("crop_around_center_post.jpg", cropped_image)
+
+    return cropped_image
 
 
-def largest_rotated_rect(w: int, h: int, angle: int) -> float:
+def largest_rotated_rect(size: Size, angle: int) -> Size:
     """
     Given a rectangle of size w * h that has been rotated by 'angle' (in
     radians), computes the width and height of the largest possible
@@ -71,18 +108,18 @@ def largest_rotated_rect(w: int, h: int, angle: int) -> float:
     Converted to Python by Aaron Snoswell
     """
 
-    quadrant = int(math.floor(angle / (math.pi / 2))) & 3
+    quadrant   = int(math.floor(angle / (math.pi / 2))) & 3
     sign_alpha = angle if ((quadrant & 1) == 0) else math.pi - angle
-    alpha = (sign_alpha % math.pi + math.pi) % math.pi
+    alpha      = (sign_alpha % math.pi + math.pi) % math.pi
 
-    bb_w = w * math.cos(alpha) + h * math.sin(alpha)
-    bb_h = w * math.sin(alpha) + h * math.cos(alpha)
+    bb_w = size.width * math.cos(alpha) + size.height * math.sin(alpha)
+    bb_h = size.width * math.sin(alpha) + size.height * math.cos(alpha)
 
-    gamma = math.atan2(bb_w, bb_w) if (w < h) else math.atan2(bb_w, bb_w)
+    gamma = math.atan2(bb_w, bb_w) if (size.width < size.height) else math.atan2(bb_w, bb_w)
 
     delta = math.pi - alpha - gamma
 
-    length = h if (w < h) else w
+    length = size.height if (size.width < size.height) else size.width
 
     d = length * math.cos(alpha)
     a = d * math.sin(alpha) / math.sin(delta)
@@ -90,54 +127,61 @@ def largest_rotated_rect(w: int, h: int, angle: int) -> float:
     y = a * math.cos(gamma)
     x = y * math.tan(gamma)
 
-    return (bb_w - 2 * x, bb_h - 2 * y)
+    return Size(bb_w - 2 * x, bb_h - 2 * y)
 
 
-def compute_skew(src_img: TempImageType) -> float:
-    
-    if len(src_img.shape) == 3:
-        h, w, _ = src_img.shape
-    elif len(src_img.shape) == 2:
-        h, w = src_img.shape
-    else:
-        print('unsupported image type')
+def compute_skew(src_img: ImageType) -> float:
+    """
+    Computes the degrees by which an image containing a licence plate (or anything
+    vaguely rectangular that's longer than it is high) is skewed
+    """
+    try:
+        dimensions: Size = Size(src_img.shape[1], src_img.shape[0])
+        dimensions.integerize()
+
+        # Exxagerate the width to make line detection more prominent
+        dimensions.width *= 4
+
+        src_img    = cv2.resize(src_img, dimensions.as_tuple(), interpolation = cv2.INTER_CUBIC)
+        gray_img   = cv2.cvtColor(src_img,cv2.COLOR_BGR2GRAY)
+        median_img = cv2.medianBlur(gray_img, 5)
+        edges      = cv2.Canny(median_img,  threshold1 = 60,  threshold2 = 90, apertureSize = 3, L2gradient = True)
+
+        lines = cv2.HoughLinesP(edges, rho = 1, theta = np.pi/180, threshold = int(dimensions.height * 0.50),
+                                minLineLength = dimensions.height * 0.75, maxLineGap = dimensions.width * 0.04)
+
+        for line in lines:
+            x1,y1,x2,y2 = line[0]
+            cv2.line(median_img, (x1,y1), (x2,y2), (255,255,255), 2)
+
+        angle: float = 0.0
+        count: int   = 0
+        index: int   = 0
         
-    img = cv2.medianBlur(src_img, 5)
-    
-    edges = cv2.Canny(img,  threshold1 = int(w * 0.05),  threshold2 = int(w * 0.20), apertureSize = 3, L2gradient = True)
-    lines = cv2.HoughLinesP(edges, 1, math.pi/180, 30, minLineLength=w * 0.30, maxLineGap=h * 0.20)
-    angle = 0.0
-    nlines = lines.size
+        for index in range(len(lines)):
+            line = lines[index]
+            for x1, y1, x2, y2 in line:
+                line_angle = np.arctan2(y2 - y1, x2 - x1) * 4
 
-    if debug_log == True:
-        with open("log.txt", "a") as text_file:
-            text_file.write("nlines " + str(nlines))
-            text_file.write("\n")
-    
-    cnt = 0
-    for x1, y1, x2, y2 in lines[0]:
-        ang = np.arctan2(y2 - y1, x2 - x1)
+            if math.fabs(line_angle) <= 0.524 and math.fabs(line_angle): # excluding extreme rotations
+                angle += line_angle
+                count += 1
 
-        if math.fabs(ang) <= 30: # excluding extreme rotations
-            angle += ang
-            cnt += 1
-    
-    if debug_log == True:
-        with open("log.txt", "a") as text_file:
-            text_file.write("angle " + str(angle))
-            text_file.write("\n")
-
-    if cnt == 0:
+    except Exception as ex:
         return 0.0
 
-    return (angle / cnt)*180/math.pi
+    # return the average line angle in degrees if lines were found
+    if count:
+        return (angle / count)*180/math.pi    
+
+    return 0.0
 
 
-def deskew(src_img: TempImageType) -> TempImageType:
-    return rotate_image(src_img, compute_skew(src_img))
+# def deskew(src_img: ImageType) -> ImageType:
+#    return rotate_image(src_img, compute_skew(src_img))
 
 
-def gamma_correction(image: TempImageType) -> TempImageType:
+def gamma_correction(image: ImageType) -> ImageType:
     # HSV (or other color spaces)
 
     # convert img to HSV
@@ -158,12 +202,16 @@ def gamma_correction(image: TempImageType) -> TempImageType:
     lookUpTable = np.empty((1,256), np.uint8)
     for i in range(256):
         lookUpTable[0,i] = np.clip(pow(i / 255.0, gamma) * 255.0, 0, 255)
-    image = cv2.LUT(image, lookUpTable)
+    corrected_image = cv2.LUT(image, lookUpTable)
 
-    return image
+    if debug_img:
+        cv2.imwrite("gamma_correction_pre.jpg", image)
+        cv2.imwrite("gamma_correction_post.jpg", corrected_image)
+
+    return corrected_image
 
 
-def equalize(image: TempImageType) -> TempImageType:
+def equalize(image: ImageType) -> ImageType:
 
     b_image, g_image, r_image = cv2.split(image)
     b_image_eq = cv2.equalizeHist(b_image)

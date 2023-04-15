@@ -3,26 +3,36 @@
 
     "BackgroundRemover": {
       "Name": "Background Remover",
-      "Activate": true,
-      "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+      "Version": "1.2",
 
+      // Publishing info
       "Description": "Automatically removes the background from a picture", 
-      "Version": "1.1",
-      "ReleaseDate": "2022-11-01",
-      "LastUpdated": "2022-11-10",
+      "Platforms": [ "windows", /*"linux", "linux-arm64",*/ "macos", "macos-arm64" ], // issues with numpy on linux
       "License": "SSPL",
       "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
-      "PreInstalled": false,
 
-      "Parallelism": 1,
-      "SupportGPU": false,
-      "PostStartPauseSecs": 0, // 5 if using GPU, 0 for CPU
+      // Which server version is compatible with each version of this module.
+      "VersionCompatibililty": [
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "1.6.9", "2.0.8" ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+      ],
 
-      "Queue": "removebackground_queue",
-      "ModulePath": "BackgroundRemover",
+      // Launch instructions
+      "AutoStart": true,
       "FilePath": "rembg_adapter.py",
       "Runtime": "python39",
-      // Alternatively: "Command": "%MODULES_PATH%\\bin\\windows\\python39\\venv\\Scripts\\python",
+      "RuntimeLocation": "Local", // Can be Local or Shared
+      // Alternatively: "Command": "%RUNTIMES_PATH%\\bin\\windows\\python39\\venv\\Scripts\\python",
+      
+      // These are all optional. Defaults are usually fine
+      "SupportGPU": false,
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 0,        // 1 if using GPU, 0 for CPU
+
+      "Queue": "backgroundremover_queue",    // default is lower(modulename) + "_queue"
 
       "EnvironmentVariables": {
         "U2NET_HOME": "%CURRENT_MODULE_PATH%/models" // where to store the models
@@ -58,6 +68,21 @@
               "Name": "imageBase64",
               "Type": "Base64ImageData",
               "Description": "The base64 encoded image that has had its background removed."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         }

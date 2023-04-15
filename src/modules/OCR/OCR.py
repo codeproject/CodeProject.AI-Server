@@ -1,31 +1,36 @@
 import io
+import sys
 import time
 import traceback
 from PIL import Image
 
-from analysis.codeprojectai import CodeProjectAIRunner
-from analysis.analysislogging import LogMethod
 from common import JSON
+from module_runner import ModuleRunner
+from module_logging import LogMethod, LogVerbosity
 
 from options import Options
-opts = Options()
-
 from paddleocr import PaddleOCR
 
-# See notes at the end of this file for options.
-ocr = PaddleOCR(lang                = opts.language,
-                use_gpu             = opts.use_GPU,
-                show_log            = opts.showLog,
-                det_db_unclip_ratio = opts.det_db_unclip_ratio,
-                det_db_box_thresh   = opts.box_detect_threshold,
-                drop_score          = opts.char_detect_threshold,
-                rec_algorithm       = opts.algorithm,
-                cls_model_dir       = opts.cls_model_dir,
-                det_model_dir       = opts.det_model_dir,
-                rec_model_dir       = opts.rec_model_dir)
+ocr = None
+no_text_found = 'Text Not Found'
 
+def init_detect_ocr(opts: Options) -> None:
 
-async def read_text(module_runner: CodeProjectAIRunner, image: Image, rotate_deg: int = 0) -> JSON:
+    global ocr
+  
+    # See notes at the end of this file for options.
+    ocr = PaddleOCR(lang                = opts.language,
+                    use_gpu             = opts.use_gpu,
+                    show_log            = opts.log_verbosity == LogVerbosity.Loud,
+                    det_db_unclip_ratio = opts.det_db_unclip_ratio,
+                    det_db_box_thresh   = opts.box_detect_threshold,
+                    drop_score          = opts.char_detect_threshold,
+                    rec_algorithm       = opts.algorithm,
+                    cls_model_dir       = opts.cls_model_dir,
+                    det_model_dir       = opts.det_model_dir,
+                    rec_model_dir       = opts.rec_model_dir)
+
+def read_text(module_runner: ModuleRunner, image: Image, rotate_deg: int = 0) -> JSON:
 
     outputs = []
 
@@ -38,21 +43,22 @@ async def read_text(module_runner: CodeProjectAIRunner, image: Image, rotate_deg
     # working_image = enhance_image(working_image)
 
     # Read text
+    inferenceTimeMs = 0
     try:
         # Convert the image to a bytes array
         with io.BytesIO() as image_buffer:
-            working_image.save(image_buffer, format='PNG')
+            working_image.save(image_buffer, format='JPEG')
             img_byte_arr = image_buffer.getvalue()
 
         start_time = time.perf_counter()
         ocr_response = ocr.ocr(img_byte_arr, cls=True)
-        inferenceMs = int((time.perf_counter() - start_time) * 1000)
+        inferenceTimeMs = int((time.perf_counter() - start_time) * 1000)
 
         # Note that ocr_response[0][0][0][0] could be a float with value 0 ('false'), or in some
         # other universe maybe it's a string. To be really careful we would have a test like
         # if hasattr(ocr_response[0][0][0][0], '__len__') and (not isinstance(ocr_response[0][0][0][0], str))
         if not ocr_response or not ocr_response[0] or not ocr_response[0][0] or not ocr_response[0][0][0]:
-            return None 
+            return { "success": False, "error": "No OCR response received", "inferenceMs" : inferenceTimeMs }
 
         # Seems that different versions of paddle return different structures, OR
         # paddle returns different structures depending on its mood. We're expecting
@@ -89,19 +95,17 @@ async def read_text(module_runner: CodeProjectAIRunner, image: Image, rotate_deg
                 }
                 outputs.append(detection)
 
-        return { "success": True, "predictions" : outputs, "inferenceMs" : inferenceMs }
+        # The operation  was successfully completed. There just wasn't any text
+        # if not outputs:
+        #    return { "success": False, "predictions" : None, "inferenceMs" : inferenceTimeMs }
+
+        return { "success": True, "predictions" : outputs, "inferenceMs" : inferenceTimeMs }
 
     except Exception as ex:
+        module_runner.report_error(ex, __file__)
+
         message = "".join(traceback.TracebackException.from_exception(ex).format())
-        module_runner.log(LogMethod.Error | LogMethod.Server,
-                            { 
-                                "filename": "ocr.py",
-                                "method": "read_text",
-                                "loglevel": "error",
-                                "message": message,
-                                "exception_type": "Exception"
-                            })
-        return None
+        return { "success": False, "error": message, "inferenceMs" : inferenceTimeMs }
 
 
 """

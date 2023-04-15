@@ -115,8 +115,7 @@ def objectdetection(thread_name: str, delay: float):
 
                     output = {
                         "success": False,
-                        "error": "invalid image file",
-                        "code": 400,
+                        "error": "invalid image file"
                     }
 
                 except Exception:
@@ -126,8 +125,7 @@ def objectdetection(thread_name: str, delay: float):
 
                     output = {
                         "success": False,
-                        "error": "error occured on the server",
-                        "code": 500,
+                        "error": "error occured on the server"
                     }
 
                 finally:

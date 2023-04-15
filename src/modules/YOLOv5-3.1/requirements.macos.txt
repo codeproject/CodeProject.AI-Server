@@ -7,8 +7,11 @@ PyYAML           # Installing PyYAML, a library for reading configuration files
 tqdm             # Installing TDQM, the Fast, Extensible Progress Meter
 Matplotlib       # Installing Matplotlib, the Python plotting package
 
--f https://download.pytorch.org/whl/torch_stable.html
-torch==1.6.0          # Installing PyTorch, for Tensor computation and Deep neural networks
+#-f https://download.pytorch.org/whl/torch_stable.html
+#torch==1.6.0          # Installing PyTorch, for Tensor computation and Deep neural networks
+# See https://github.com/openai/DALL-E/issues/54#issuecomment-1092826376
+torch<=1.10.0            # Installing PyTorch, for Tensor computation and Deep neural networks
 
--f https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.7.0    # Installing TorchVision, for Computer Vision based AI
+# -f https://download.pytorch.org/whl/torch_stable.html
+# torchvision==0.7.0    # Installing TorchVision, for Computer Vision based AI
+torchvision==0.11.0     # Installing TorchVision, for Computer Vision based AI

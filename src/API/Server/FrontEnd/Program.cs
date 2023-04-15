@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -39,11 +41,13 @@ namespace CodeProject.AI.API.Server.Frontend
             const string company = "CodeProject";
             const string product = "AI";
 
+            await SystemInfo.InitializeAsync();
+
             // lower cased as Linux has case sensitive file names
             string  os           = SystemInfo.OperatingSystem.ToLower();
             string  architecture = SystemInfo.Architecture.ToLower();
             string? runtimeEnv   = SystemInfo.RuntimeEnvironment == SDK.Common.RuntimeEnvironment.Development ||
-                                   SystemInfo.IsDevelopment ? "development" : string.Empty;
+                                   SystemInfo.IsDevelopmentCode ? "development" : string.Empty;
 
             var assembly         = Assembly.GetExecutingAssembly();
             var assemblyName     = (assembly.GetName().Name ?? string.Empty)
@@ -65,22 +69,38 @@ namespace CodeProject.AI.API.Server.Frontend
                 else if (args[0].EqualsIgnoreCase("/Uninstall"))
                 {
                     WindowsServiceInstaller.Uninstall(serviceName);
+                    KillOrphanedProcesses(runtimeEnv);
+                    return;
+                }
+                else if (args[0].EqualsIgnoreCase("/Start"))
+                {
+                    WindowsServiceInstaller.Start(serviceName);
                     return;
                 }
                 else if (args[0].EqualsIgnoreCase("/Stop"))
                 {
                     WindowsServiceInstaller.Stop(serviceName);
+                    KillOrphanedProcesses(runtimeEnv);
                     return;
                 }
             }
 
-            // Get a directory for the given platform that allows momdules to store persisted data
+            // make sure any processes that didn't get killed on the Service shutdown get killed now.
+            KillOrphanedProcesses(runtimeEnv);
+
+            // GetProcessStatus a directory for the given platform that allows momdules to store persisted data
             string programDataDir = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
 
-            // .NET's suggestion for macOS isn't great. Let's do something different.
+            // .NET's suggestion for macOS and Linux aren't great. Let's do something different.
             if (os == "macos")
+            {
                 applicationDataDir = $"/Library/Application Support/{company}/{product}";
+            }
+            else if (os == "linux")
+            {
+                applicationDataDir = $"/etc/{company.ToLower()}/{product.ToLower()}";
+            }
 
             // Store this dir in the config settings so we can get to it later.
             var inMemoryConfigData = new Dictionary<string, string?> {
@@ -108,14 +128,17 @@ namespace CodeProject.AI.API.Server.Frontend
 
                 _logger.LogInformation($"** App DataDir:      {applicationDataDir}");
 
-                string gpuInfo = await SystemInfo.GetVideoAdapterInfo();
-                foreach (string line in gpuInfo.Split('\n'))
+                string info = await SystemInfo.GetGpuUsageInfo();
+                foreach (string line in info.Split('\n'))
+                    _logger.LogInformation(line.TrimEnd());
+
+                info = await SystemInfo.GetVideoAdapterInfo();
+                foreach (string line in info.Split('\n'))
                     _logger.LogInformation(line.TrimEnd());
             }
 
             Task? hostTask;
             hostTask = host.RunAsync();
-
 #if DEBUG
             try
             {
@@ -142,6 +165,35 @@ namespace CodeProject.AI.API.Server.Frontend
             }
         }
 
+        private static void KillOrphanedProcesses(string? runtimeEnv)
+        {
+            if (SystemInfo.OperatingSystem.EqualsIgnoreCase("Windows"))
+            {
+                try
+                {
+                    Console.WriteLine("Stopping any orphaned Processes.");
+                    var scriptDir = Path.Combine(AppContext.BaseDirectory, 
+                                                 runtimeEnv != "development" 
+                                                            ? "..\\SDK\\Scripts\\"
+                                                            : "..\\..\\..\\..\\..\\..\\SDK\\Scripts\\");
+                    var startInfo = new ProcessStartInfo()
+                    {
+                        WindowStyle     = ProcessWindowStyle.Hidden,
+                        FileName        = Path.Combine(scriptDir,"stop_all.bat"),
+                        WorkingDirectory= Path.GetDirectoryName(scriptDir)
+                    };
+
+                    var process = Process.Start(startInfo);
+                    process?.WaitForExit();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception trying to stop orphaned Processes {ex.Message}");
+                }
+
+            }
+        }
+
         /// <summary>
         /// Sets up our custom Configuration Loader Pipeline
         /// </summary>
@@ -161,7 +213,7 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 string baseDir = AppContext.BaseDirectory;
 
-                // Remove the default sources and rebuild it.
+                // RemoveProcessStatus the default sources and rebuild it.
                 config.Sources.Clear(); 
 
                 // add in the default appsetting.json file and its variants
@@ -233,7 +285,7 @@ namespace CodeProject.AI.API.Server.Frontend
                                    reloadOnChange: reloadConfigOnChange, optional: true);
 
                 // Load the modulesettings.json files to get analysis module settings
-                LoadModulesConfiguration(config);
+                LoadModulesConfiguration(config, runtimeEnv);
 
                 // Load the last saved config values as set by the user
                 LoadUserOverrideConfiguration(config, applicationDataDir, runtimeEnv, reloadConfigOnChange);
@@ -262,66 +314,164 @@ namespace CodeProject.AI.API.Server.Frontend
         //      - use this configuration to load the module settings
         // The module class will have methods and properties to get the ModuleConfigs, and other
         // things. To be done at a later date.
-        private static void LoadModulesConfiguration(IConfigurationBuilder config)
+        private static void LoadModulesConfiguration(IConfigurationBuilder config, string? runtimeEnv)
         {
             bool reloadOnChange = SystemInfo.ExecutionEnvironment != ExecutionEnvironment.Docker;
 
             IConfiguration configuration = config.Build();
-            var serverOptions = configuration.GetSection("ServerOptions");
-            string? rootPath  = serverOptions["ApplicationRootPath"];
+            (var modulesPath, var preInstalledModulesPath) = EnsureDirectories(configuration, runtimeEnv);
 
-            // Get the Application root Path
-            rootPath = ModuleSettings.GetRootPath(rootPath);
-
-            if (string.IsNullOrWhiteSpace(rootPath))
+            // Scan the Modules' directories and add each modulesettings files to the config
+            if (!string.IsNullOrWhiteSpace(modulesPath) && Directory.Exists(modulesPath))
             {
-                Console.WriteLine("No root path provided");
-                return;
+                var directories = Directory.GetDirectories(modulesPath);
+                foreach (string? directory in directories)
+                    ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
             }
 
-            if (!Directory.Exists(rootPath))
-            {
-                Console.WriteLine($"The provided root path '{rootPath}' doesn't exist");
-                return;
-            }
-
-            var moduleOptions = configuration.GetSection("ModuleOptions");
-            string? preInstalledModulesPath = moduleOptions["PreInstalledModulesPath"];
-            string? downloadedModulesPath   = moduleOptions["DownloadedModulesPath"];
-
-            if (string.IsNullOrWhiteSpace(preInstalledModulesPath) && string.IsNullOrWhiteSpace(downloadedModulesPath))
-            {
-                Console.WriteLine("No modules path provided");
-                return;
-            }
-
-            preInstalledModulesPath = Text.FixSlashes(preInstalledModulesPath?.Replace("%ROOT_PATH%",
-                                                                                       rootPath));
-            preInstalledModulesPath = Path.GetFullPath(preInstalledModulesPath);
-
-            downloadedModulesPath   = Text.FixSlashes(downloadedModulesPath?.Replace("%ROOT_PATH%", rootPath));
-            downloadedModulesPath   = Path.GetFullPath(downloadedModulesPath);
-
-            if (!Directory.Exists(preInstalledModulesPath) && !Directory.Exists(downloadedModulesPath))
-            {
-                Console.WriteLine($"The provided modules paths '{preInstalledModulesPath}' and '{downloadedModulesPath}' don't exist");
-                return;
-            }
-
-            // Get the installed Modules' directories, then the downloaded/sideloaded, and add the
-            // modulesettings files to the config
+            // Scan the pre-installed Modules' directories and add each modulesettings files
             if (!string.IsNullOrWhiteSpace(preInstalledModulesPath) && Directory.Exists(preInstalledModulesPath))
             {
                 var directories = Directory.GetDirectories(preInstalledModulesPath);
                 foreach (string? directory in directories)
                     ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
             }
+        }
 
-            if (!string.IsNullOrWhiteSpace(downloadedModulesPath) && Directory.Exists(downloadedModulesPath))
+        private static (string?,string?) EnsureDirectories(IConfiguration configuration, string? runtimeEnv)
+        {
+            var serverOptions = configuration.GetSection("ServerOptions");
+            string? rootPath  = serverOptions["ApplicationRootPath"];
+
+            // GetProcessStatus the Application root Path
+            rootPath = ModuleSettings.GetRootPath(rootPath);
+
+            if (string.IsNullOrWhiteSpace(rootPath))
             {
-                var directories = Directory.GetDirectories(downloadedModulesPath);
-                foreach (string? directory in directories)
-                    ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
+                Console.WriteLine("No root path provided");
+                return (null, null);
+            }
+
+            if (!Directory.Exists(rootPath))
+            {
+                Console.WriteLine($"The provided root path '{rootPath}' doesn't exist");
+                return (null, null);
+            }
+
+            var moduleOptions                  = configuration.GetSection("ModuleOptions");
+            string? runtimesPath               = moduleOptions["RuntimesPath"];
+            string? modulesPath                = moduleOptions["ModulesPath"];
+            string? preInstalledModulesPath    = moduleOptions["PreInstalledModulesPath"];
+            string? downloadedPackagesPath     = moduleOptions["DownloadedModulePackagesPath"];
+            string? moduleInstallerScriptsPath = moduleOptions["ModuleInstallerScriptsPath"];
+
+            // make sure that all the require paths are defined
+            if (string.IsNullOrWhiteSpace(runtimesPath))
+            {
+                Console.WriteLine("No runtime path provided");
+                return (null, null);
+            }
+
+            if (string.IsNullOrWhiteSpace(modulesPath))
+            {
+                Console.WriteLine("No modules path provided");
+                return (null, null);
+            }
+
+            if (string.IsNullOrWhiteSpace(downloadedPackagesPath))
+            {
+                Console.WriteLine("No downloaded module Packages path provided");
+                return (null, null);
+            }
+
+            if (string.IsNullOrWhiteSpace(moduleInstallerScriptsPath))
+            {
+                Console.WriteLine("No modules Installer path provided");
+                return (null, null);
+            }
+
+            // get the full paths
+            runtimesPath               = Text.FixSlashes(runtimesPath?.Replace("%ROOT_PATH%", rootPath));
+            runtimesPath               = Path.GetFullPath(runtimesPath);
+            downloadedPackagesPath     = Text.FixSlashes(downloadedPackagesPath?.Replace("%ROOT_PATH%", rootPath));
+            downloadedPackagesPath     = Path.GetFullPath(downloadedPackagesPath);
+            moduleInstallerScriptsPath = Text.FixSlashes(moduleInstallerScriptsPath?.Replace("%ROOT_PATH%", rootPath));
+            moduleInstallerScriptsPath = Path.GetFullPath(moduleInstallerScriptsPath);
+            modulesPath                = Text.FixSlashes(modulesPath?.Replace("%ROOT_PATH%", rootPath));
+            modulesPath                = Path.GetFullPath(modulesPath);
+            preInstalledModulesPath    = Text.FixSlashes(preInstalledModulesPath?.Replace("%ROOT_PATH%", rootPath));
+            preInstalledModulesPath    = Path.GetFullPath(preInstalledModulesPath);
+
+            // create the directories if the don't exist
+            if (!Directory.Exists(runtimesPath))
+            {
+                Console.WriteLine($"Creating runtimes path '{runtimesPath}'");
+                Directory.CreateDirectory(runtimesPath);
+            }
+
+            if (!Directory.Exists(downloadedPackagesPath))
+            {
+                Console.WriteLine($"Creating downloaded modules package path '{downloadedPackagesPath}'");
+                Directory.CreateDirectory(downloadedPackagesPath);
+            }
+
+            if (!Directory.Exists(moduleInstallerScriptsPath))
+            {
+                Console.WriteLine($"Creating modules installer path '{moduleInstallerScriptsPath}'");
+                Directory.CreateDirectory(moduleInstallerScriptsPath);
+            }
+
+            if (!Directory.Exists(modulesPath))
+            {
+                Console.WriteLine($"Creating modules path '{modulesPath}'");
+                Directory.CreateDirectory(modulesPath);
+            }
+
+            var srcPath = Path.Combine(rootPath, "src");
+
+            // copy over the SDK if required.
+            if (runtimeEnv?.ToLower() == "development" && !srcPath.EqualsIgnoreCase(moduleInstallerScriptsPath))
+            {
+                Console.WriteLine("Copying SDK and Setup Scripts");
+
+                File.Copy(Path.Combine(srcPath, "setup.bat"), Path.Combine(moduleInstallerScriptsPath, "setup.bat"), true);
+                File.Copy(Path.Combine(srcPath, "setup.sh"), Path.Combine(moduleInstallerScriptsPath, "setup.sh"), true);
+                CopyDirectory(Path.Combine(srcPath, "SDK"), Path.Combine(moduleInstallerScriptsPath, "SDK"),true);
+            }
+
+            return (modulesPath, preInstalledModulesPath);
+        }
+
+        private static void CopyDirectory(string sourceDir, string destinationDir, bool recursive)
+        {
+            // Get information about the source directory
+            var dir = new DirectoryInfo(sourceDir);
+
+            // Check if the source directory exists
+            if (!dir.Exists)
+                throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
+
+            // Cache directories before we start copying
+            DirectoryInfo[] dirs = dir.GetDirectories();
+
+            // Create the destination directory
+            Directory.CreateDirectory(destinationDir);
+
+            // Get the files in the source directory and copy to the destination directory
+            foreach (FileInfo file in dir.GetFiles())
+            {
+                string targetFilePath = Path.Combine(destinationDir, file.Name);
+                file.CopyTo(targetFilePath, true);
+            }
+
+            // If recursive and copying subdirectories, recursively call this method
+            if (recursive)
+            {
+                foreach (DirectoryInfo subDir in dirs)
+                {
+                    string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
+                    CopyDirectory(subDir.FullName, newDestinationDir, true);
+                }
             }
         }
 
@@ -378,22 +528,60 @@ namespace CodeProject.AI.API.Server.Frontend
                             webBuilder.UseShutdownTimeout(TimeSpan.FromSeconds(30));
                             webBuilder.ConfigureKestrel((hostbuilderContext, serverOptions) =>
                             {
-                                _port = GetServerPort(hostbuilderContext);
-                                serverOptions.Listen(IPAddress.IPv6Any, _port);
-                                // We always want this port.
-                                if (_port != 32168)
-                                    serverOptions.Listen(IPAddress.IPv6Any, 32168);
+                                IConfiguration config = hostbuilderContext.Configuration;
+                                bool disableLegacyPort = config.GetValue("ServerOptions:DisableLegacyPort", false);
 
-                                // Add some legacy ports
-                                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                                _port = GetServerPort(hostbuilderContext);
+                                bool foundPort = false;
+
+                                if (IsPortAvailable(_port))
                                 {
-                                    if (_port != 5500)
-                                        serverOptions.Listen(IPAddress.IPv6Any, 5500);
+                                    serverOptions.Listen(IPAddress.IPv6Any, _port);
+                                    foundPort = true;
                                 }
-                                else
+
+                                // We always want this port.
+                                if (_port != 32168 && IsPortAvailable(32168))
                                 {
-                                    if (_port != 5000)
-                                        serverOptions.Listen(IPAddress.IPv6Any, 5000);
+                                    if (!foundPort)
+                                        _port = 32168;
+
+                                    serverOptions.Listen(IPAddress.IPv6Any, 32168);
+                                    foundPort = true;
+                                }
+
+                                if (!disableLegacyPort)
+                                {
+                                    // Add some legacy ports
+                                    if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                                    {
+                                        if (_port != 5500 && IsPortAvailable(5500))
+                                        {
+                                            if (!foundPort)
+                                                _port = 5500;
+                                        
+                                            serverOptions.Listen(IPAddress.IPv6Any, 5500);
+                                           foundPort = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (_port != 5000 && IsPortAvailable(5000))
+                                        {
+                                            if (!foundPort)
+                                                _port = 5000;
+                                        
+                                            serverOptions.Listen(IPAddress.IPv6Any, 5000);
+                                            foundPort = true;
+                                        }
+                                    }
+                                }
+
+                                if (!foundPort)
+                                {
+                                    _port = GetAvailablePort(IPAddress.IPv6Any);
+                                    serverOptions.Listen(IPAddress.IPv6Any, _port);
+                                    Console.WriteLine("Standard ports in use. Falling back to port " + _port);
                                 }
 
                                 // Add a self-signed certificate to enable HTTPS locally
@@ -423,6 +611,48 @@ namespace CodeProject.AI.API.Server.Frontend
                     // Or if we want to do this manually...
                     // webBuilder.UseUrls($"http://localhost:{_port}/", $"https://localhost:{_sPort}/");
                 });
+        }
+
+        /// <summary>
+        /// Checks as to whether a given port on this machine is avaialble for use.
+        /// </summary>
+        /// <param name="port">The port number</param>
+        /// <returns>true if the port is available; false otherwise</returns>
+        private static bool IsPortAvailable(int port)
+        {
+            bool isAvailable = true;
+
+            // Evaluate current system tcp connections. This is the same information provided
+            // by the netstat command line application, just in .Net strongly-typed object
+            // form.  We will look through the list, and if our port we would like to use
+            // in our TcpClient is occupied, we will set isAvailable to false.
+            IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+            TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
+
+            foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
+            {
+                if (tcpi.LocalEndPoint.Port == port)
+                {
+                    isAvailable = false;
+                    break;
+                }
+            }
+
+            return isAvailable;
+        }
+
+        /// <summary>
+        /// Gets an available port for this server
+        /// </summary>
+        /// <returns></returns>    
+        private static int GetAvailablePort(IPAddress address)
+        {
+            TcpListener listener = new TcpListener(address, 0);
+            listener.Start();
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+
+            return port;
         }
 
         private static int GetServerPort(WebHostBuilderContext hostbuilderContext)

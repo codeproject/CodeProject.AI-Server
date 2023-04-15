@@ -20,19 +20,19 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
     [ApiController]
     public class QueueController : ControllerBase
     {
-        private readonly QueueServices _queueService;
-        private readonly ModuleRunner  _moduleRunner;
+        private readonly QueueServices         _queueService;
+        private readonly ModuleProcessServices _moduleProcessService;
 
         /// <summary>
         /// Initializes a new instance of the QueueController class.
         /// </summary>
         /// <param name="queueService">The QueueService.</param>
-        /// <param name="moduleRunner">The module runner instance</param>
+        /// <param name="moduleProcessService">The Module Process Service.</param>
         public QueueController(QueueServices queueService,
-                               ModuleRunner moduleRunner)
+                               ModuleProcessServices moduleProcessService)
         {
-            _queueService = queueService;
-            _moduleRunner = moduleRunner;
+            _queueService         = queueService;
+            _moduleProcessService = moduleProcessService;
         }
 
         /// <summary>
@@ -53,16 +53,16 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                                                    CancellationToken token)
         {
 
-            BackendRequestBase? response = await _queueService.DequeueRequestAsync(name, token);
+            BackendRequestBase? request = await _queueService.DequeueRequestAsync(name, token);
 
             bool shuttingDown = false;
 
-            if (response != null)
+            if (request != null)
             {
                 // We're going to sniff the request to see if it's a Quit command. If so it allows us
                 // to update the status of the process. If it's a quit command then the process will
                 // shut down and no longer updating its status via the queue. This is our last chance.
-                if (response.reqtype?.ToLower() == "quit" && response is BackendRequest origRequest)
+                if (request.reqtype?.ToLower() == "quit" && request is BackendRequest origRequest)
                 {
                     string? requestModuleId = origRequest.payload?.GetValue("moduleId");
                     shuttingDown = moduleId.EqualsIgnoreCase(requestModuleId);
@@ -71,7 +71,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
             UpdateProcessStatus(moduleId, incrementProcessCount: false, executionProvider, shuttingDown);
 
-            return new OkObjectResult(response);
+            return new OkObjectResult(request);
         }
 
         /// <summary>
@@ -111,10 +111,9 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (string.IsNullOrEmpty(moduleId))
                 return;
 
-            if (_moduleRunner.HasModule(moduleId))
+            if (_moduleProcessService.TryGetProcessStatus(moduleId, out ProcessStatus? status))
             {
-                ProcessStatus status = _moduleRunner.ProcessStatuses[moduleId];
-                if (status.Status != ProcessStatusType.Stopping)
+                if (status!.Status != ProcessStatusType.Stopping)
                     status.Status = shuttingDown? ProcessStatusType.Stopping : ProcessStatusType.Started;
                 status.Started ??= DateTime.UtcNow;
                 status.LastSeen  = DateTime.UtcNow;

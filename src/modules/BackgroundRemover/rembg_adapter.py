@@ -20,13 +20,11 @@ To call:
 # Import our general libraries
 import sys
 import time
-import traceback
 
-# Import the CodeProject.AI SDK. This will add to the PATH vaar for future imports
+# Import the CodeProject.AI SDK. This will add to the PATH var for future imports
 sys.path.append("../../SDK/Python")
-from analysis.codeprojectai import CodeProjectAIRunner
-from analysis.analysislogging import LogMethod
-from analysis.requestdata import AIRequestData
+from request_data import RequestData
+from module_runner import ModuleRunner
 from common import JSON
 
 from PIL import Image
@@ -34,56 +32,34 @@ from PIL import Image
 # Import the method of the module we're wrapping
 from rembg.bg import remove
 
+class rembg_adapter(ModuleRunner):
 
-def main():
+    def initialise(self) -> None:   
+        if self.support_GPU:
+            if self.hasONNXRuntimeGPU:
+                self.execution_provider = "ONNX"
 
-    # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("removebackground_queue", remove_background_callback)
+    def process(self, data: RequestData) -> JSON:
+        try:
+            img: Image             = data.get_image(0)
+            use_alphamatting: bool = data.get_value("use_alphamatting", "false") == "true"
 
-    # Hack for debug mode
-    if module_runner.module_id == "CodeProject.AI":
-        module_runner.module_id   = "BackgroundRemover"
-        module_runner.module_name = "Background Remover"
+            start_time = time.perf_counter()
+            (processed_img, inferenceTime) = remove(img, use_alphamatting)
 
-    # TODO: Set OMP_NUM_THREADS from Parallelism
+            return { 
+                "success": True, 
+                "imageBase64": data.encode_image(processed_img),
+                "processMs" : int((time.perf_counter() - start_time) * 1000),
+                "inferenceMs" : inferenceTime
+            }
 
-    # Start the module
-    module_runner.start_loop()
+        except Exception as ex:
+            self.report_error(ex, __file__)
+            return {"success": False, "error": "unable to process the image"}
 
-
-def remove_background_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
-
-    try:
-        img: Image             = data.get_image(0)
-        use_alphamatting: bool = data.get_value("use_alphamatting", "false") == "true"
-
-        start_time = time.perf_counter()
-        (processed_img, inferenceTime) = remove(img, use_alphamatting)
-
-        return { 
-            "success": True, 
-            "imageBase64": data.encode_image(processed_img),
-            "processMs" : int((time.perf_counter() - start_time) * 1000),
-            "inferenceMs" : inferenceTime,
-            "code": 200
-        }
-
-    except Exception as ex:
-        # err_trace = traceback.format_exc()
-        # message = str(ex) or f"A {ex.__class__.__name__} error occurred"
-        message = "".join(traceback.TracebackException.from_exception(ex).format())
-
-        module_runner.log(LogMethod.Error | LogMethod.Server,
-                    {
-                        "filename": "rembg_adapter.py",
-                        "method": "remover_background",
-                        "loglevel": "error",
-                        "message": message,
-                        "exception_type": "Exception"
-                    })
-
-        return {"success": False, "error": "unable to process the image", "code": 500}
-
+    def shutdown(self) -> None:
+        pass
 
 if __name__ == "__main__":
-    main()
+    rembg_adapter().start_loop()

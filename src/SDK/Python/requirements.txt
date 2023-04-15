@@ -1,8 +1,12 @@
 #! Python3
 
 ## CodeProject.AI
-aiohttp            # Installing aiohttp, the Async IO HTTP library
-aiofiles           # Installing aiofiles, the Async IO Files library
-py-cpuinfo         # Installing py-cpuinfo to allow us to query CPU info
-requests           # Installing Requests, the HTTP library
-Pillow             # Installing Pillow, a Python Image Library
+
+# aiohttp 3.8.3 requires charset-normalizer<3.0,>=2.0, so force the issue
+charset-normalizer<3.0      # Installing Charset normalizer
+
+aiohttp                     # Installing aiohttp, the Async IO HTTP library
+aiofiles                    # Installing aiofiles, the Async IO Files library
+py-cpuinfo                  # Installing py-cpuinfo to allow us to query CPU info
+requests                    # Installing Requests, the HTTP library
+Pillow                      # Installing Pillow, a Python Image Library

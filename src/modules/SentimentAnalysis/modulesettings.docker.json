@@ -1,9 +1,0 @@
-{
-  "Modules": {
-    "SentimentAnalysis": {
-      "ModulePath": "SentimentAnalysis",
-      "FilePath": "SentimentAnalysis",
-      "Runtime": "execute"
-    }
-  }
-}

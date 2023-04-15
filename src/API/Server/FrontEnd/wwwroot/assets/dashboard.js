@@ -1,33 +1,38 @@
 
-const pingFrequency        = 2000;    // milliseconds
-const logFrequency         = 250;     // milliseconds
-const statusFrequency      = 3000;    // milliseconds
-const checkUpdateFrequency = 1 * 3600 * 1000; // 1hr in milliseconds
-const logLinesPerRequest   = 100;     // lines to retrieve per log request
-const maxLogStorage        = 50000;   // characters, including HTML
+const pingFrequency         = 2000;    // milliseconds
+const logFrequency          = 250;     // milliseconds
+const statusFrequency       = 3000;    // milliseconds
+const checkUpdateFrequency  = 1 * 3600 * 1000; // 1hr in milliseconds
+const logLinesPerRequest    = 100;     // lines to retrieve per log request
+const maxLogEntriesPerLevel = 1000;    // max entries for each log level
+const lostConnectionSec     = 15;      // consider connection down after 15s no contact
 
 let apiServiceProtocol = window.location.protocol;
 if (!apiServiceProtocol || apiServiceProtocol === "file:")
     apiServiceProtocol = "http:"; // Needed if you launch this file from Finder
 
-const apiServiceHostname   = window.location.hostname || "localhost";
-const apiServicePort       = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
-const apiServiceUrl        = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
+const apiServiceHostname  = window.location.hostname || "localhost";
+const apiServicePort      = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
+const apiServiceUrl       = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
 
-let _usingGPU              = false; // Is the server reporting that we're we using a GPU?
-let _lastLogId             = 0;     // Allows us to fetch only new log entries
-let _serverIsOnline        = false; // Anyone home?
-let _version               = null;  // Currently installed version of the server
-let _darkMode              = true;  // TODO: Need to store this in a cookie
-let  _delayFetchCallUntil  = null;  // No fetch calls until this time. Allows us to delay after fetch errors
-let  _fetchErrorDelaySec   = 0;     // The number of seconds to delay until the next fetch if there's a fetch error
+let _usingGPU             = false; // Is the server reporting that we're we using a GPU?
+let _lastLogId            = 0;     // Allows us to fetch only new log entries
+let _serverIsOnline       = false; // Anyone home?
+let _version              = null;  // Currently installed version of the server
+let _darkMode             = true;  // TODO: Need to store this in a cookie
+let _delayFetchCallUntil  = null;  // No fetch calls until this time. Allows us to delay after fetch errors
+let _fetchErrorDelaySec   = 0;     // The number of seconds to delay until the next fetch if there's a fetch error
+let _logVerbosityLevel    = "information";
+let _displayDirty         = false;
 
+let _requestIdMap         = new Map();
+let _logEntries           = new Map();
 
-// ========== Status: ping, version  ==============================================================
+// Status: ping, version  =====================================================
 
 /**
  * Makes a call to the status API of the server
- * @param method - the name of the method to call: ping, version, updateavailable etc
+ * @param method - the name of the method to call: ping, version, updates etc
  */
 async function callStatus(method, callback) {
 
@@ -47,19 +52,20 @@ async function callStatus(method, callback) {
                 clearFetchError();
 
                 if (!response.ok) {
-                    setStatus('Throwing errors', "danger");
+                    setServerStatus('Error', "danger");
                 } 
                 else {
                     response.json()
                         .then(data => callback(data))
                         .catch(error => {
-                            setStatus('Returning bad data', "warning")
+                            setServerStatus('Error', "danger");
+                            addLogEntry(null, new Date(), "error", null, "Bad data returned from server: " + error);
                         });
                 }
             })
             .catch(error => {
                 if (error.name === 'AbortError')
-                    setStatus("Too slow to respond.");
+                    setServerStatus('Timeout', "warning");
                 else {
                     setFetchError();
                 }
@@ -83,7 +89,7 @@ async function ping() {
 
         _serverIsOnline = data.success;
         if (_serverIsOnline)
-            setStatus('Online', "success");
+            setServerStatus('Online', "success");
     });
 }
 
@@ -94,6 +100,7 @@ async function getVersion() {
 
     await callStatus('version', function (data) {
         _version = data.version;
+        let version = document.getElementById("version");
         version.innerHTML = data.message;
     });
 }
@@ -104,6 +111,7 @@ async function getVersion() {
  */
 async function checkForUpdates(showResult) {
 
+    let update = document.getElementById("update");
     update.innerHTML = "Checking for updates";
 
     await callStatus('updateavailable', function (data) {
@@ -112,7 +120,6 @@ async function checkForUpdates(showResult) {
 
             if (data.updateAvailable) {
 
-                let update = document.getElementById("update");
                 update.style.display = '';
 
                 let message = data.message + " <a href='" + data.version.file + "'>Download<a>";
@@ -140,7 +147,7 @@ async function checkForUpdates(showResult) {
 }
 
 
-// ========== Settings: Change server and module Status (eg disable module, enable GPU) ===========
+// Settings: Change server and module Status (eg disable module, enable GPU) ==
 
 async function callSettings(moduleId, key, value) {
 
@@ -176,7 +183,8 @@ async function callSettings(moduleId, key, value) {
 }
 
 /**
- * Calls the settings API to update a setting with the given value for the given module
+ * Calls the settings API to update a setting with the given value for the 
+ * given module
  * @param event - the click event
  * @param moduleId - The ID of the module to update
  * @param setting - the setting to change
@@ -188,7 +196,7 @@ function updateSetting(event, moduleId, setting, value) {
 }
 
 
-// ========== Server status: server and analysis modules status and stats =========================
+// Server status: server and analysis modules status and stats ================
 
 /**
  * Gets the system utilitisation (CPU and GPU use + RAM)
@@ -217,8 +225,11 @@ async function getSystemStatus() {
 
                         let gpu = `<span class="alert-success p-1 rounded" title="RAM Used / Processor Utilization">GPU</span> ${gpuMemUsage} / ${gpuUsage }`;
                         let cpu = `<span class="alert-info ms-3 p-1 rounded" title="RAM Used / Processor Utilization">CPU</span> ${ systemMemUsage } / ${ cpuUsage }`;
+
+                        let gpuMemUsed = document.getElementById('gpuMemUsed');
                         gpuMemUsed.innerHTML = (data.gpuMemUsage ? gpu : "") + cpu;
 
+                        let serverStatus = document.getElementById('serverStatusVerbose');
                         serverStatus.innerHTML = data.serverStatus.replace(/[\n\r]+/g, "<br>");
                     });
                 }
@@ -234,10 +245,10 @@ async function getSystemStatus() {
 }
 
 /**
- * Query the server for a list of services that are installed, and their status. The
- * results of this will be used to populate the serviceStatus table
+ * Query the server for a list of services that are installed, and their status.
+ * The results of this will be used to populate the serviceStatus table
  */
-async function getAnalysisStatus() {
+async function getModulesStatuses() {
 
     if (isFetchDelayInEffect())
         return;
@@ -274,12 +285,21 @@ async function getAnalysisStatus() {
                             let moduleId          = moduleInfo.moduleId;
                             let moduleName        = moduleInfo.name;
                             let status            = moduleInfo.status;
+                            let lastSeen          = moduleInfo.lastSeen? new Date(moduleInfo.lastSeen) : null;
                             let processedCount    = moduleInfo.processed;
                             let hardwareType      = moduleInfo.hardwareType;
                             let executionProvider = moduleInfo.executionProvider;
-                                
-                            let className = status.toLowerCase();
+                            
+                            var numberFormat = Intl.NumberFormat();
+                            processedCount = numberFormat.format(parseInt(processedCount));
+
+                            // Have we lost contact with a module that should be running?
+                            if (status === "Started" && lastSeen && (new Date() - lastSeen)/1000 > lostConnectionSec)
+                                status = "LostContact";
+
+                            let className  = status.toLowerCase();
                             let statusDesc = "Unknown";
+
                             switch (status) {
                                 case "Enabled":
                                     statusDesc = "Enabled";
@@ -325,6 +345,10 @@ async function getAnalysisStatus() {
                                     statusDesc = "Stopped";
                                     className = "alert-light"
                                     break;
+                                case "LostContact":
+                                    statusDesc = "Lost Contact";
+                                    className = "bg-dark text-muted"
+                                    break;
                             }
 
                             let hardware = (!hardwareType || hardwareType.toLowerCase() === "cpu") ? "CPU" : "GPU";
@@ -358,7 +382,7 @@ async function getAnalysisStatus() {
                                     +  `</li></ul>`
                                     + `</div>`                                   
 
-                                    + `<div class='proc-count text-end' style='width:3rem'>${processedCount}</div>`
+                                    + `<div class='proc-count text-end text-nowrap' style='width:3rem'>${processedCount}</div>`
                                     + "<div class='dropdown ms-2' style='width:1em'>";
 
                                 if (status !== "NotAvailable") {
@@ -366,12 +390,13 @@ async function getAnalysisStatus() {
                                         `<button class='btn dropdown-toggle p-1' type='button' id='dropdownMenu${i}' data-bs-toggle='dropdown'>`
                                     + "...</button>"
                                     + `<ul class='dropdown-menu' aria-labelledby="dropdownMenu${i}">`
-                                    + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'Activate',   false)\">Stop</a></li>`
-                                    + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'Activate',   true)\">Start</a></li>`
+                                    + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'Restart',    'now')\">Restart</a></li>`
+                                    + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'AutoStart',  false)\">Stop</a></li>`
+                                    + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'AutoStart',  true)\">Start</a></li>`
                                     + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'SupportGPU', false)\">Disable GPU</a></li>`
                                     + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'SupportGPU', true)\">Enable GPU</a></li>`
 
-                                    if (moduleId == "ObjectDetectionYolo") {
+                                    if (moduleId == "ObjectDetectionYolo" || moduleId == "YOLOv5-3.1" || moduleId == "FaceProcessing") {
                                         rowHtml +=
                                                 "<li><a class='dropdown-item small' href='#'>Half Precision &raquo;</a>"
                                             + " <ul class='submenu dropdown-menu'>"
@@ -382,7 +407,7 @@ async function getAnalysisStatus() {
                                             + "</li>";
                                     }
 
-                                    if (moduleId == "ObjectDetectionYolo" || moduleId == "YOLOv5-3.1" || moduleId == "ObjectDetectionNet") {
+                                    if (moduleId == "ObjectDetectionYolo" || moduleId == "YOLOv5-3.1" || moduleId == "ObjectDetectionNet" || moduleId == "ObjectDetectionTFLite") {
                                         rowHtml +=
                                                 "<li><a class='dropdown-item small' href='#'>Model Size &raquo;</a>"
                                             + " <ul class='submenu dropdown-menu'>"
@@ -413,6 +438,21 @@ async function getAnalysisStatus() {
                                 row.querySelector("div.current-summary").innerHTML = currentSummary;
                             }
                         }
+
+                        // Now check for rows that need to be removed. 
+                        const statusRows = statusTable.querySelectorAll(".status-row");
+                        statusRows.forEach((row) => {
+                        
+                            let foundModuleForRow = false;
+                            for (let i = 0; !foundModuleForRow && i < data.statuses.length; i++) {
+                                let moduleInfo = data.statuses[i];
+                                if (row.id == 'module-info-' + moduleInfo.moduleId)
+                                    foundModuleForRow = true;
+                            }
+
+                            if (!foundModuleForRow)
+                                row.remove();
+                        });
                     }
                 })
             }
@@ -428,46 +468,186 @@ async function getAnalysisStatus() {
 }
 
 
-// ========== Logs ================================================================================
+// Logs =======================================================================
 
-function createLogEntry(id, date, logLevel, label, entry) {
+function purgeMarkerIndices() {
+    let now = new Date().getTime();
+    _requestIdMap.forEach((value, key, map) => {
+        if (now - value.time > 60000) {
+            // console.log(`Purging for entry ${key}`);
+            map.delete(key);
+        }
+    });
+}
+
+var lastIndex = 0;
+function addLogEntry(id, date, logLevel, label, entry, refreshDisplay = true) {
+
+    logLevel = logLevel.toLowerCase();
+
+    // Get the bucket of entries for this log level, and abort if we have already stored this entry
+    let entry_bucket = _logEntries.get(logLevel) || [];
+    if (id && entry_bucket.some((entry) => entry.id == id))
+        return;
 
     let className       = "";
     let specialCategory = ""; // "Server: ";
     let specialMarker   = "** ";
     let dateText        = date.toLocaleTimeString('en-US', { hour12: false });
+    let idText          = "<span class='text-muted me-2'>" + (id || "") + "</span>";
+    let logText         = entry.replace(/[\n\r]+/g, "<br>"); // newlines to BR tags
 
-    let logText  = entry.replace(/[\n\r]+/g, "<br>");
+    idText = ""; // comment this out for debugging
 
+    // Processing special "highligh me" marker ("**")
     if (logText.startsWith(specialCategory + specialMarker)) {
         logText = specialCategory + logText.substring(specialCategory.length + specialMarker.length);
         className = "highlight";
     }
 
-    if (id)
-        return `<div id='log${id}' class='${logLevel} ${label} ${className}'>${dateText}: ${logText}</div>`;
-    
-    return `<div class='${logLevel} ${label} ${className}'>${dateText}: ${logText}</div>`;
+    // Extract request ID and colour code logs by that ID
+    let markerIndex = 0;
+    let reqId       = null;
+    let match = /\(\#reqid ([a-z0-9-]+)\)/g.exec(logText); // ["fee ", index: 0, input: "fee fi fo fum"]
+    if (match && match.length > 1 && match[1]) {
+        let fullMatch = match[0];
+        reqId = match[1];
+        logText = logText.replace(fullMatch, `(...${reqId.substring(reqId.length - 6)})`);
+
+        if (_requestIdMap.has(reqId)) {
+            markerIndex = _requestIdMap.get(reqId).index;
+        }
+        else {
+            markerIndex = Math.floor(Math.random() * 15) + 1;
+            if (markerIndex == lastIndex) markerIndex = (markerIndex+1) % 14 + 1;
+            lastIndex = markerIndex;
+            _requestIdMap.set(reqId, { index: markerIndex, time: new Date().getTime()});
+        }
+    }
+    let requestIdMarker;
+    if (reqId) 
+        requestIdMarker = `<span class='dot dot-${markerIndex}' title='Request ID ${reqId}'></span>`;
+    else
+        requestIdMarker = `<span class='dot dot-${markerIndex}' title='No Request ID'></span>`;
+
+    let logMessage = entry.message || '';
+
+     // Strip the "spin" animation chars
+    const re = /(\||\-|\\|\/|\s)/g;
+    // May need to use this if editors or Git complain about the literal control char above.
+    // const re = new RegExp('(\||\-|\\|\/|\s)[\b]', 'g'); // \b = wordbreak in regex, but [\b] = backspace
+    logText = logText.replace(re, ""); // strip 'spin' characters |,/,-,\,<space> + backspace
+
+    // Transform xterm colour escapes into HTML. 
+
+    // TODO: Process, rather than strip, background
+    logText = logText.replace(/\033\[(4|10)\dm/g, "");                    // strip background
+    logText = logText.replace(/\033\[0m/g, "</span>");                    // convert reset code
+    // TODO: Use colour classes so we can deal with Dark/Light theme,
+    logText = logText.replace(/\033\[(((0|1);)?(3|9)\d)m/g, (match, p1, p2, p3) => { // convert foreground
+        let code = p1;
+        if (p2) code = code.substring(p2.length); // trim 'intensity' bit
+
+        let colour = null;
+        switch (code) {
+            case '39': colour = 'default';     break;
+            case '30': colour = 'black';       break;
+            case '31': colour = 'darkred';     break;
+            case '32': colour = 'darkgreen';   break;
+            case '33': colour = 'darkyellow';  break;
+            case '34': colour = 'darkblue';    break;
+            case '35': colour = 'darkmagenta'; break;
+            case '36': colour = 'darkCyan';    break;
+            case '37': colour = 'gray';        break;
+            case '90': colour = 'darkgrey';    break; 
+            case '91': colour = 'red';         break;
+            case '92': colour = 'green';       break;
+            case '93': colour = 'yellow';      break;
+            case '94': colour = 'blue';        break;
+            case '95': colour = 'magenta';     break;
+            case '96': colour = 'cyan';        break;
+            case '30': colour = 'white';       break;
+        }
+        
+        if (colour)
+            return `<span class='text-${colour}'>`;
+
+        return "<span>";
+    })
+
+    const html = id
+               ? `<div id='log${id}' class='${logLevel} ${label} ${className}'>${idText}${dateText}:${requestIdMarker}${logText}${logMessage}</div>`
+               : `<div class='${logLevel} ${label} ${className}'>${dateText}:${requestIdMarker}${logText}${logMessage}</div>`;
+
+    // Store entry in the bucket for this log level. Note we're limiting the size of each bucket
+    if (entry_bucket.length >= maxLogEntriesPerLevel)
+        entry_bucket.splice(0, entry_bucket.length - maxLogEntriesPerLevel + 1)
+    entry_bucket.push({ date: date, id: id, html: html});
+    _logEntries.set(logLevel, entry_bucket);
+
+    _displayDirty = true;
+
+    if (refreshDisplay)
+        displayLogs();
 }
 
-function addLogs(logEntries) {
+function displayLogs() {
 
-     if (!logEntries) 
+    if (!_displayDirty)
         return;
+
+    _displayDirty = false;
+
+    // Combine all entries into one sorted array, but filter out by log verbosity
+    let allEntries = [];
+    for (let [logLevel, entries] of _logEntries) {
+
+        if (_logVerbosityLevel == "critical") {
+            if (logLevel != "critical") continue;
+        }
+        else if (_logVerbosityLevel == "error") {
+            if (logLevel != "critical" && logLevel != "error") continue;
+        }
+        else if (_logVerbosityLevel == "warning") {
+            if (logLevel != "critical" && logLevel != "error" && logLevel != "warning") continue;
+        }
+        else if (_logVerbosityLevel == "information") {
+            if (logLevel != "critical" && logLevel != "error" && logLevel != "warning" &&
+                logLevel != "information") continue;
+        }
+        else if (_logVerbosityLevel == "debug") {
+            if (logLevel != "critical"    && logLevel != "error" && logLevel != "warning" &&
+                logLevel != "information" && logLevel != "debug") continue;
+        }
+        else if (_logVerbosityLevel == "trace") {
+            if (logLevel != "critical"    && logLevel != "error" && logLevel != "warning" &&
+                logLevel != "information" && logLevel != "debug" && logLevel != "trace") continue;
+        }
+
+        allEntries.push(...entries);
+    }
+    allEntries.sort((a,b) => a.date - b.date);
+
+    // Create a single chunk of sorted HTML entries
+    // Create a single chunk of sorted HTML entries
+    var html = '';
+    for (let entry of allEntries)
+        html += entry.html;
 
     let logsBrief = document.getElementById('logs');
     let logsFull = document.getElementById('logsMain');
 
-    let log = logsBrief.innerHTML + logEntries;
-    if (log.length > maxLogStorage) {
-        log = log.substring(log.length - maxLogStorage);
-        let indexOfEndDiv = log.indexOf("<div");
+    /*
+    if (html.length > maxLogStorage) {
+        html = html.substring(html.length - maxLogStorage);
+        let indexOfEndDiv = html.indexOf("<div");
         if (indexOfEndDiv)
-            log = log.substring(indexOfEndDiv);
+            html = html.substring(indexOfEndDiv);
     }
+    */
 
-    logsBrief.innerHTML = log;
-    logsFull.innerHTML  = log
+    logsBrief.innerHTML = html;
+    logsFull.innerHTML  = html;
 
     // logsBrief.parentNode.scrollTop = logsBrief.offsetHeight - logsBrief.parentNode.offsetHeight;
 
@@ -477,9 +657,6 @@ function addLogs(logEntries) {
 
     logsBrief.scroll({ top: logsBrief.scrollHeight, behaviour: 'smooth' });
     logsFull.scroll({ top: logsFull.scrollHeight, behaviour: 'smooth' });
-
-    if (log.length)
-        updateLogVerbosity();
 }
 
 /**
@@ -505,19 +682,30 @@ async function getLogs() {
                 response.json().then(data => {
                     if (data && data.entries) {
 
-                        let newLogs = "";
+                        let lastEntryWasTimeout = false;
                         for (let i = 0; i < data.entries.length; i++) {
 
                             let logEntry = data.entries[i];
-                            newLogs += createLogEntry(i+1, new Date(logEntry.timestamp), logEntry.level, logEntry.label, logEntry.entry)
+                            _lastLogId   = logEntry.id;
 
-                            _lastLogId = logEntry.id;
-                            
+                            // Ignore repeated timeout warnings. They just clog up the logs
+                            if (logEntry.entry.indexOf("[TimeoutError]") >= 0 || 
+                                logEntry.entry.indexOf("Pausing on error") >= 0)
+                            {
+                                if (lastEntryWasTimeout) continue;
+                                lastEntryWasTimeout = true;
+                            }
+                            else
+                                lastEntryWasTimeout = false;
+
+                            addLogEntry(logEntry.id, new Date(logEntry.timestamp), logEntry.level,
+                                        logEntry.label, logEntry.entry, false)
+                          
                             if (logEntry.label == "command timing")
-                                document.getElementById('latestTiming').innerText = logText;
+                                document.getElementById('latestTiming').innerText = logEntry.entry;
                         }
 
-                        addLogs(newLogs);
+                        displayLogs();
                     }
                 })
             }
@@ -533,11 +721,11 @@ async function getLogs() {
 }
 
 
-// ========== Modules =============================================================================
+// Modules ====================================================================
 
 /**
- * Query the server for a list of modules that can be installed. The results of this will 
- * be used to populate the availableModules table
+ * Query the server for a list of modules that can be installed. The results of
+ * this will be used to populate the availableModules table
  */
 async function getDownloadableModules() {
 
@@ -561,7 +749,7 @@ async function getDownloadableModules() {
 
                     if (data && data.modules) {
 
-                        data.modules.sort((a, b) => a.name.localeCompare(b.name));
+                        data.modules.sort((a, b) => a.name.localeCompare(b.name||''));
 
                         for (let i = 0; i < data.modules.length; i++) {
 
@@ -569,15 +757,17 @@ async function getDownloadableModules() {
 
                             let moduleId         = moduleInfo.moduleId;
                             let moduleName       = moduleInfo.name;
-                            let availableVersion = moduleInfo.version;
+                            let availableVersion = moduleInfo.latestCompatibleVersion || '';
                             let status           = moduleInfo.status;
                             let license          = moduleInfo.licenseUrl && moduleInfo.license 
                                                  ? `<a href='${moduleInfo.licenseUrl}'>${moduleInfo.license}</a>` : '';
-                            let currentVersion   = moduleInfo.currentInstalledVersion;
-                            
-                            let versionDesc      = (currentVersion && currentVersion != availableVersion)
-                                                 ? `${availableVersion} (current ${currentVersion})` : availableVersion;
+                            let currentVersion   = moduleInfo.currentInstalledVersion || '';
+                            let downloadable     = moduleInfo.isDownloadable? '' : '<div title="This module is not downloadable" class="text-light me-2">Private</div>';
 
+                            let newVersionAvail  = (currentVersion && currentVersion != availableVersion);
+                            let versionReleased  = moduleInfo.compatibleVersionReleaseDate;
+                            let versionDesc      = newVersionAvail ? `New: ${availableVersion} (current ${currentVersion})` 
+                                                                   : availableVersion;
                             let btnClassName     = "d-none";
                             let statClassName    = '';
                             let statusDesc       = status;
@@ -607,7 +797,7 @@ async function getDownloadableModules() {
 
                                 case "Installed":
                                     statusDesc    = "Installed";
-                                    btnClassName  = "btn-danger";
+                                    btnClassName  = "btn-outline-danger";
                                     statClassName = "text-success";
                                     action        = "Uninstall";
                                     break;
@@ -633,6 +823,13 @@ async function getDownloadableModules() {
                                     action        = "";
                                     break;
 
+                                case "UninstallFailed":
+                                    statusDesc    = "Uninstall Failed";
+                                    btnClassName  = "btn-warning";
+                                    statClassName = "text-warning";
+                                    action        = "Uninstall";
+                                    break;
+
                                 case "NotAvailable":
                                     statusDesc    = "Not Available";
                                     btnClassName  = "d-none";
@@ -645,8 +842,8 @@ async function getDownloadableModules() {
                             let buttonClass = `btn action ${btnClassName} py-0 mx-2`;
 
                             // HACK: disable actions on these
-                            if (moduleId == "ObjectDetectionNet" || moduleId == "FaceProcessing" || moduleId == "ObjectDetectionYolo")
-                                buttonClass += " d-none";
+                            // if (moduleId == "ObjectDetectionNet" || moduleId == "FaceProcessing" || moduleId == "ObjectDetectionYolo")
+                            //    buttonClass += " d-none";
 
                             let row = document.getElementById('module-download-' + moduleId);
                             if (!row) {
@@ -658,15 +855,16 @@ async function getDownloadableModules() {
                                 let rowHtml =
                                       `<div id='module-download-${moduleId}' class='status-row'>`
                                     +   `<div class='d-flex justify-content-between'>`
-                                    +     `<div class='me-auto'><b>${moduleName}</b></div>`
-                                    +     `<div class='me-3'>${license}</div>`
+                                    +     `<div class='me-auto'><b>${moduleName}</b></div>${downloadable}`
                                     +     `<div class='me-3 version'>${versionDesc}</div>`
+                                    +     `<div class='me-3 text-muted'>${versionReleased}</div>`
                                     +     `<div style='width:8rem' class='${statusClass}'>${statusDesc}</div>`
                                     +     `<div style='width:7rem'><button class='${buttonClass}' type='button'`
-                                    +     ` id='installModule${i}' onclick='doModuleAction(this)' data-module-id='${moduleId}'`
-                                    +     ` data-action='${action}' data-available-version='${availableVersion}'>${action}</button></div>`
+                                    +     `  id='installModule${i}' onclick='doModuleAction(this)' data-module-id='${moduleId}'`
+                                    +     `  data-action='${action}' data-available-version='${availableVersion}'`
+                                    +     `  data-downloadable='${moduleInfo.isDownloadable}'>${action}</button></div>`
                                     +   `</div>`
-                                    +   `<div class='text-muted small'>${moduleInfo.description || ''}</div>`
+                                    +   `<div class='text-muted small'>${license} ${moduleInfo.description || ''}</div>`
                                     + `</div>`;
 
                                 row.outerHTML = rowHtml;
@@ -700,13 +898,13 @@ async function getDownloadableModules() {
 }
 
 function doModuleAction(elm) {
-    modifyModule(elm.dataset.moduleId, elm.dataset.availableVersion, elm.dataset.action);
+    modifyModule(elm.dataset.moduleId, elm.dataset.availableVersion, elm.dataset.action, elm.dataset.downloadable);
 }
 
 /**
  * Modifies a module (installs or uninstalls).
  */
-async function modifyModule(moduleId, version, action) {
+async function modifyModule(moduleId, version, action, downloadable) {
 
     let urlElm = document.getElementById('serviceUrl');
     let url = urlElm.value.trim() + '/v1/module/';
@@ -718,7 +916,18 @@ async function modifyModule(moduleId, version, action) {
         default: alert(`Unknown module action ${action}`); return;
     }
 
+    if (action.toLowerCase() == "uninstall") {
+        let prompt = `Are you sure you want to uninstall '${moduleId}'?`;
+        if (downloadable == "false") 
+            prompt = "This module is not downloadable and can only be re-installed manually. " + prompt; 
+
+        if (!confirm(prompt))
+            return;
+    }
+
     try {
+        setModuleUpdateStatus(`Starting ${action} for ${moduleId}`, "info");
+
         await fetch(url, {
             method: "POST",
             cache: "no-cache"
@@ -728,34 +937,102 @@ async function modifyModule(moduleId, version, action) {
                 clearFetchError();
 
                 if (response.ok) {
-                    let log = createLogEntry(null, new Date(), "information", "", `** Performing ${action} on module ${moduleId}`);
-                    addLogs(log);
+                    setModuleUpdateStatus(`${action} of ${moduleId} has started and will continue on the server. See Server Logs for updates`, "success");
+                    addLogEntry(null, new Date(), "information", "", `** Call to ${action} on module ${moduleId} has completed.`);
                 }
                 else {
                     response.json().then(data => {
-                        let log = createLogEntry(null, new Date(), "error", "", data.error);
-                        addLogs(log);
+                        setModuleUpdateStatus(`Error in ${action} ${moduleId}: ${data.error}`);
+                        addLogEntry(null, new Date(), "error", "", data.error);
                     })
                 }
             })
             .catch(error => {
+                setModuleUpdateStatus(`Error in ${action} ${moduleId}: ${error}`, "error");
                 setFetchError();
             });
     }
     catch
     {
+        setModuleUpdateStatus(`Error initiating ${action} on ${moduleId}`, "error");
         setFetchError();
     }            
 }
 
 
-// ========== General UI methods ==================================================================
+/**
+ * Uploads and installs a module via a zip file.
+ */
+async function uploadModule() {
 
-let lastSliderThatWasUpdated = null;
+    let passwordElm        = document.getElementById('installPwd');
+    let uploadInstallerElm = document.getElementById('uploadInstaller');
+
+    if (!uploadInstallerElm || !passwordElm) {
+    
+        addLogEntry(null, new Date(), "error", "", "Can't find upload file or password input elements");
+        return;
+    }
+
+    let uploadPwd  = passwordElm.value.trim();
+    let uploadFile = uploadInstallerElm.files.length > 0 ? uploadInstallerElm.files[0] : null;
+
+    if (!uploadFile || !uploadPwd) {
+        addLogEntry(null, new Date(), "error", "", "Please supply a password and module installer zip file");
+        return;
+    }
+
+    let urlElm = document.getElementById('serviceUrl');
+    let url = urlElm.value.trim() + '/v1/module/upload';
+
+	let formData = new FormData();
+
+	formData.append('upload-module', uploadFile);
+	formData.append("install-pwd",   uploadPwd);
+
+    try {
+        setModuleUpdateStatus(`Starting module upload`, "info");
+
+        await fetch(url, {
+            method: "POST",
+            body: formData,
+            cache: "no-cache"
+        })
+            .then(response => {
+
+                clearFetchError();
+
+                if (response.ok) {
+                    setModuleUpdateStatus(`New module uploaded. Installation will continue on server. See Server Logs for updates.`, "success");
+                    addLogEntry(null, new Date(), "information", "", `** module upload and install completed`);
+                }
+                else {
+                    response.json().then(data => {
+                        setModuleUpdateStatus(`Error uploading new module: ${data.error}`);
+                        addLogEntry(null, new Date(), "error", "", data.error);
+                    })
+                }
+            })
+            .catch(error => {
+                setModuleUpdateStatus(`Error uploading module: ${error}`, "error");
+                setFetchError();
+            });
+    }
+    catch
+    {
+        setModuleUpdateStatus(`Error initiating module upload`, "error");
+        setFetchError();
+    }            
+}
+
+// General UI methods =========================================================
+
 
 /**
- * Handles the verbositry slider updates (eg as a user switches from "Info" to just "Errors")
+ * Handles the verbositry slider updates (eg as a user switches from "Info" 
+ * to just "Errors")
  */
+let lastSliderThatWasUpdated = null;
 function updateLogVerbosity(slider) {
 
     slider = slider || lastSliderThatWasUpdated;
@@ -764,62 +1041,22 @@ function updateLogVerbosity(slider) {
 
     lastSliderThatWasUpdated = slider;
 
-    let severity       = slider.value;
-    let verbosityLevel = '';
+    let severity = slider.value;
 
-    document.querySelectorAll(".logs div").forEach((logItem) => {
-        logItem.classList.add("d-none");
-    });
-
-    let classList = [];
     switch (severity) {
-        case "1": 
-            verbosityLevel = "Critical";
-            classList.push(".logs div.critical");
-            break;
-        case "2": 
-            verbosityLevel = "Error";
-            classList.push(".logs div.critical");
-            classList.push(".logs div.error");
-            break;
-        case "3": 
-            verbosityLevel = "Warning";
-            classList.push(".logs div.critical");
-            classList.push(".logs div.error");
-            classList.push(".logs div.warning");
-            break;
-        case "4": 
-            verbosityLevel = "Info";
-            classList.push(".logs div.critical");
-            classList.push(".logs div.error");
-            classList.push(".logs div.warning");
-            classList.push(".logs div.information");
-            break;
-        case "5": 
-            verbosityLevel = "Debug";
-            classList.push(".logs div.critical");
-            classList.push(".logs div.error");
-            classList.push(".logs div.warning");
-            classList.push(".logs div.information");
-            classList.push(".logs div.debug");
-            break;
-        case "6": 
-            verbosityLevel = "Trace";
-            classList.push(".logs div.critical");
-            classList.push(".logs div.error");
-            classList.push(".logs div.warning");
-            classList.push(".logs div.information");
-            classList.push(".logs div.debug");
-            classList.push(".logs div.trace");
-            break;
+        case "1": _logVerbosityLevel = "critical";    break;
+        case "2": _logVerbosityLevel = "error";       break;
+        case "3": _logVerbosityLevel = "warning";     break;
+        case "4": _logVerbosityLevel = "information"; break;
+        case "5": _logVerbosityLevel = "debug";       break;
+        case "6": _logVerbosityLevel = "trace";       break;
     }
 
-    document.getElementById('verbosity').innerText      = verbosityLevel;
-    document.getElementById('verbosity-main').innerText = verbosityLevel;
+    document.getElementById('verbosity').innerText      = _logVerbosityLevel;
+    document.getElementById('verbosity-main').innerText = _logVerbosityLevel;
 
-    document.querySelectorAll(classList.join(",")).forEach((logItem) => {
-        logItem.classList.remove("d-none");
-    });
+    _displayDirty = true;
+    displayLogs();
 }
 
 
@@ -844,19 +1081,26 @@ function toggleColourMode() {
 /**
  * Updates the main status message regarding server state
  */
-function setStatus(text, variant) {
+function setServerStatus(text, variant) {
     if (variant)
-        document.getElementById("status").innerHTML = "<span class='text-white p-1 bg-" + variant + "'>" + text + "</span>";
+        document.getElementById("serverStatus").innerHTML = "<span class='text-white p-1 bg-" + variant + "'>" + text + "</span>";
     else
-        document.getElementById("status").innerHTML = "<span class='text-white p-1'>" + text + "</span>";
+        document.getElementById("serverStatus").innerHTML = "<span class='text-white p-1'>" + text + "</span>";
+}
+
+function setModuleUpdateStatus(text, variant) {
+    if (variant)
+        document.getElementById("moduleUpdateStatus").innerHTML = "<span class='p-1 text-" + variant + "'>" + text + "</span>";
+    else
+        document.getElementById("moduleUpdateStatus").innerHTML = "<span class='text-white p-1'>" + text + "</span>";
 }
 
 
-// ========== Fetch error throttling ==============================================================
+// Fetch error throttling =====================================================
 
 /**
- * Returns true if the system is still considered in a non-eonnected state, meaning fetch calls
- * should not be made.
+ * Returns true if the system is still considered in a non-eonnected state, 
+ * meaning fetch calls should not be made.
  */
 function isFetchDelayInEffect() {
 
@@ -875,7 +1119,7 @@ function setFetchError() {
 
     if (_fetchErrorDelaySec > 5) {
 
-        setStatus("Server Not responding", "warning");
+        setServerStatus("Offline", "warning");
 
         let statusTable = document.getElementById('serviceStatus');
         if (statusTable)
@@ -903,15 +1147,31 @@ function clearFetchError() {
     // }
 }
 
+/**
+ * ChatGPT is my bro.
+ */
+const copyToClipboard = (elmId) => {
 
-// ========== Initialise ==========================================================================
+    if (!navigator.clipboard) return;
+
+    const elm = document.getElementById(elmId);
+    navigator.clipboard.writeText(elm.innerText)
+        .then(() => {
+            console.log('Text copied to clipboard');
+         })
+        .catch((error) => { 
+             console.error('Failed to copy text: ', error);
+         });
+}
+
+// Initialise =================================================================
 
 window.addEventListener('DOMContentLoaded', function (event) {
 
     let urlElm = document.getElementById('serviceUrl');
     urlElm.value = apiServiceUrl;
 
-    setStatus("...", "light");
+    setServerStatus("...", "light");
 
     getVersion();
     checkForUpdates(false);
@@ -919,10 +1179,12 @@ window.addEventListener('DOMContentLoaded', function (event) {
 
     setInterval(ping, pingFrequency);
     setInterval(getLogs, logFrequency);
-    setInterval(getAnalysisStatus, statusFrequency);
+    setInterval(getModulesStatuses, statusFrequency);
     setInterval(getSystemStatus, statusFrequency);
     setInterval(checkForUpdates, checkUpdateFrequency);
     setInterval(getDownloadableModules, statusFrequency);
+
+    setInterval(purgeMarkerIndices, 5000);
 
     // force fresh reload
     let launchLink = document.getElementById('explorer-launcher');

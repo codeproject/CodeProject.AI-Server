@@ -1,9 +1,7 @@
 {
   "Modules": {
     "PortraitFilter": {
-      "ModulePath": "PortraitFilter",
-      "FilePath": "bin\\debug\\net7.0\\PortraitFilter.exe",
-      "WorkingDirectory": "PortraitFilter"
+      "FilePath": "bin\\debug\\net7.0\\PortraitFilter.exe"
     }
   }
 }

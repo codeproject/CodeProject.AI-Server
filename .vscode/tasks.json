@@ -85,7 +85,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/AnalysisLayer/ObjectDetectionNet",
+                "${workspaceFolder}/src/modules/ObjectDetectionNet",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

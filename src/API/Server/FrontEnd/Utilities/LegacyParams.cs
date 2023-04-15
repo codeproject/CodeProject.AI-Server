@@ -23,7 +23,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// Here's how it works:
         /// 
         /// Environment variables that an analysis module would typically access are set in 
-        /// ModuleRunner.CreateProcessStartInfo. The values that CreateProcessStartInfo
+        /// AiModuleRunner.CreateProcessStartInfo. The values that CreateProcessStartInfo
         /// gets are from the server's appsettings.json in the EnvironmentVariables section, or
         /// from the backend analysis module's modulesettings.json file in its
         /// EnvironmentVariables section. These two sets of variables are combined into one set and
@@ -60,17 +60,17 @@ namespace CodeProject.AI.API.Server.Frontend
                 // Activation
                 if (pair.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_FACE", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["Modules:FaceProcessing:EnvironmentVariables:Activate"] = pair.Value;
+                    keyValues["Modules:FaceProcessing:EnvironmentVariables:AutoStart"] = pair.Value;
 
                 if (pair.Key.Equals("VISION-SCENE", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_SCENE", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["Modules:SceneClassification:EnvironmentVariables:Activate"] = pair.Value;
+                    keyValues["Modules:SceneClassification:EnvironmentVariables:AutoStart"] = pair.Value;
 
                 if (pair.Key.Equals("VISION-DETECTION", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_DETECTION", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:Activate"] = pair.Value;
-                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:Activate"]   = pair.Value;
+                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:AutoStart"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:AutoStart"]   = pair.Value;
                 }
 
                 // Mode, which convolutes resolution and model size
@@ -143,7 +143,7 @@ namespace CodeProject.AI.API.Server.Frontend
         ///         "MODEL_SIZE" : "Large"
         ///     },
         ///     "FaceProcessing": {
-        ///         "Activate" : "False"
+        ///         "AutoStart" : "False"
         ///     }
         /// }
         ///</example>
@@ -184,30 +184,26 @@ namespace CodeProject.AI.API.Server.Frontend
                     setting.Key.Equals("VISION_DETECTION", StringComparison.InvariantCultureIgnoreCase))
                 {
                     MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionYolo",
-                                      "Activate", setting.Value, modulesUpdated);
-                    // MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
-                    //                  "Activate", setting.Value, modulesUpdated);
+                                      "AutoStart", setting.Value, modulesUpdated);
                     // MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionNet",
-                    //                  "Activate", setting.Value, modulesUpdated);
+                    //                  "AutoStart", setting.Value, modulesUpdated);
                 }
                 if (setting.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase) ||
                     setting.Key.Equals("VISION_FACE", StringComparison.InvariantCultureIgnoreCase))
                 {
                     MakeSettingUpdate(modules, overrideSettings, "FaceProcessing",
-                                      "Activate", setting.Value, modulesUpdated);
+                                      "AutoStart", setting.Value, modulesUpdated);
                 }
                 if (setting.Key.Equals("VISION-SCENE", StringComparison.InvariantCultureIgnoreCase) ||
                     setting.Key.Equals("VISION_SCENE", StringComparison.InvariantCultureIgnoreCase))
                 {
                     MakeSettingUpdate(modules, overrideSettings, "SceneClassification",
-                                      "Activate", setting.Value, modulesUpdated);
+                                      "AutoStart", setting.Value, modulesUpdated);
                 }
 
                 // Mode, which is effectively model size
                 if (setting.Key.Equals("MODE", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    // MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
-                    //                   "MODE", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "FaceProcessing",
                                       "MODE", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "SceneClassification",
@@ -230,8 +226,6 @@ namespace CodeProject.AI.API.Server.Frontend
                 // Using CUDA?
                 if (setting.Key.Equals("CUDA_MODE", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    // MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
-                    //                  "USE_CUDA", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "FaceProcessing",
                                       "USE_CUDA", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "SceneClassification",
@@ -244,8 +238,6 @@ namespace CodeProject.AI.API.Server.Frontend
                     MakeSettingUpdate(modules, overrideSettings, "YOLOv5-3.1",
                                       "USE_CUDA", setting.Value, modulesUpdated);
 
-                    // MakeSettingUpdate(modules, overrideSettings, "VisionObjectDetection",
-                    //                  "CPAI_MODULE_SUPPORT_GPU", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "FaceProcessing",
                                       "CPAI_MODULE_SUPPORT_GPU", setting.Value, modulesUpdated);
                     MakeSettingUpdate(modules, overrideSettings, "SceneClassification",

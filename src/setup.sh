@@ -11,7 +11,7 @@
 #      environment.
 #   2. From within an analysis module directory to setup just that module.
 #
-# If called from within /src, then all analysis modules (in AnalysisLayer/ and
+# If called from within /src, then all analysis modules (in modules/ and
 # modules/ dirs) will be setup in turn, as well as the main SDK and demos.
 #
 # If called from within a module's dir then we assume we're in the 
@@ -70,8 +70,20 @@ useColor="true"
 # Width of lines
 lineWidth=70
 
+# Whether or not downloaded modules can have their Python setup installed in The
+# shared area
+allowSharedPythonInstallsForModules="true"
 
-# Debug flags for downloads
+# We can't do shared installs in Docker. They won't persist
+if [ "$DOTNET_RUNNING_IN_CONTAINER" == "true" ]; then 
+    echo
+    echo "Hi Docker! We will disable shared python installs for downloaded modules"
+    echo
+    allowSharedPythonInstallsForModules="false"; 
+fi
+
+
+# Debug flags for downloads and installs
 
 # If files are already present, then don't overwrite if this is false
 forceOverwrite="false"
@@ -80,6 +92,17 @@ forceOverwrite="false"
 # force all downloads to be retrieved from cached downloads. If the cached download
 # doesn't exist the install will fail.
 offlineInstall="false"
+
+# For speeding up debugging
+skipPipInstall="false"
+
+# Whether or not to install all python packages in one step (-r requirements.txt)
+# or step by step. Doing this allows the PIP manager to handle incompatibilities 
+# better.
+# ** WARNING ** There is a big tradeoff on keeping the users informed and speed/
+# reliability. Generally one-step shouldn't be needed. But it often is. And if
+# often doesn't actually solve problems either. Overall it's safer, but not a panacea
+oneStepPIP="false"
 
 
 # Basic locations
@@ -98,17 +121,24 @@ srcDir='src'
 # be downloaded
 downloadDir='downloads'
 
-# The name of the dir holding the pre-installed backend analysis services
-analysisLayerDir='AnalysisLayer'
+# The name of the dir holding the runtimes
+runtimesDir='runtimes'
 
 # The name of the dir holding the downloaded/sideloaded backend analysis services
-downloadedModulesDir="modules"
+modulesDir="modules"
+
+# In development, we have the downloadable modules in /src/modules.
+# In production, the modules live in /opts/CodeProject/AI/modules.
+# In docker, the modules live in /app/modules.
+# BUT: 'production' for non-Windows means 'Docker', and for that we map folders
+#      to handle things. No need to make any changes at this point.
+# persistedModuleDataPath="/opt/CodeProject/AI/"
 
 # Override some values via parameters ::::::::::::::::::::::::::::::::::::::::
 while getopts ":h" option; do
     param=$(echo $option | tr '[:upper:]' '[:lower:]')
 
-    if [ "$param" == "--no-color" ]; then set useColor=false; fi
+    if [ "$param" == "--no-color" ]; then set useColor="false"; fi
 done
 
 # Pre-setup ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -175,28 +205,47 @@ correctLineEndings ${sdkScriptsPath}/utils.sh
 source ${sdkScriptsPath}/utils.sh
 
 # Test for CUDA drivers and adjust supportCUDA if needed
+hasCUDA="false"
 if [ "$os" == "macos" ]; then 
     supportCUDA="false"
 else 
     if [ "$supportCUDA" == "true" ]; then
-        supportCUDA='false'
-        if [[ -x nvidia-smi ]]; then
+        if [ -x "$(command -v nvidia-smi)" ]; then
             nvidia=$(nvidia-smi | grep -i -E 'CUDA Version: [0-9]+.[0-9]+') > /dev/null 2>&1
-            if [[ ${nvidia} == *'CUDA Version: '* ]]; then 
-                supportCUDA='true'
-            fi
+            if [[ ${nvidia} == *'CUDA Version: '* ]]; then hasCUDA='true'; fi
         fi
     fi
 fi
 
 # The location of directories relative to the root of the solution directory
-installedModulesPath="${absoluteAppRootDir}/${analysisLayerDir}"
-downloadedModulesPath="${absoluteAppRootDir}/${downloadedModulesDir}"
-downloadPath="${absoluteAppRootDir}/${downloadDir}"
+runtimesPath="${absoluteAppRootDir}/${runtimesDir}"
 
-dataDir="/usr/share/CodeProject/AI"
+# In development, we have the downloadable modules in /src/modules.
+# In production, the modules live in /opts/CodeProject/AI/modules.
+# In docker, the modules live in /app/modules.
+# BUT: 'production' for non-Windows means 'Docker', and for that we map folders
+#      to handle things. No need to make any changes at this point.
+# if [ "$executionEnvironment" == 'Development' ]; then
+    modulesPath="${absoluteAppRootDir}/${modulesDir}"
+    downloadPath="${absoluteAppRootDir}/${downloadDir}"
+# else
+#    modulesPath="${persistedModuleDataPath}/${modulesDir}"
+#    downloadPath="${persistedModuleDataPath}/${downloadDir}"
+# fi
+
+# Create directories for persisted application data
 if [ "$os" == "macos" ]; then 
-    dataDir='/Library/Application Support/CodeProject/AI'
+    commonDataDir='/Library/Application Support/CodeProject/AI'
+else
+    commonDataDir='/etc/codeproject/ai'
+
+    # Correct for mis-placed data
+    if [ -d "/usr/share/CodeProject/AI" ]; then
+        if [ ! -d "${commonDataDir}" ]; then
+            sudo mv "/usr/share/CodeProject/AI" "${commonDataDir}"
+        fi
+        sudo mv "/usr/share/CodeProject/AI" "/usr/share/CodeProject/AI.bak"
+    fi
 fi
 
 # Set Flags
@@ -229,6 +278,18 @@ else
     pipFlags="${pipFlags} --progress-bar off"
 fi
 
+# ** WARNING 2 ** Turns out PIP is more painful that we thought it could be:
+#  - For Windows, oneStep is necessary otherwise FaceProcessing fails.
+#  - For Mac and Linux, oneStep will NOT work
+#  - For Docker, which is Linux, it DOES work. Sometimes. Or maybe not.
+if [ "$DOTNET_RUNNING_IN_CONTAINER" == "true" ]; then 
+    oneStepPIP="true"
+elif [ "$os" == "linux" ] || [ "$os" == "macos" ]; then
+    oneStepPIP="false"
+elif [ "$os" == "windows" ]; then 
+    oneStepPIP="true"
+fi
+
 if [ "$useColor" != "true" ]; then
     pipFlags="${pipFlags} --no-color"
 fi
@@ -256,8 +317,8 @@ if [ "$verbosity" != "quiet" ]; then
     writeLine "installerScriptsPath  = ${installerScriptsPath}"  $color_mute
     writeLine "sdkScriptsPath        = ${sdkScriptsPath}"        $color_mute
     writeLine "absoluteAppRootDir    = ${absoluteAppRootDir}"    $color_mute
-    writeLine "installedModulesPath  = ${installedModulesPath}"  $color_mute
-    writeLine "downloadedModulesPath = ${downloadedModulesPath}" $color_mute
+    writeLine "runtimesPath          = ${runtimesPath}"          $color_mute
+    writeLine "modulesPath           = ${modulesPath}"           $color_mute
     writeLine "downloadPath          = ${downloadPath}"          $color_mute
     writeLine 
 fi
@@ -267,8 +328,13 @@ fi
 
 checkForTool wget
 checkForTool unzip
-
 writeLine ""
+
+# ============================================================================
+# Checks on GPU ability
+
+write "CUDA Present..."
+if [ "$hasCUDA" == "true" ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
 write "Allowing GPU Support: "
 if [ "$enableGPU" == "true" ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
 write "Allowing CUDA Support: "
@@ -287,7 +353,6 @@ write "Creating Directories..." $color_primary
 
 # For downloading assets
 mkdir -p "${downloadPath}"
-
 if [ "$os" == "macos" ]; then 
     if [[ ! -w "${downloadPath}" ]]; then
         sudo chmod 777 "${downloadPath}"
@@ -296,48 +361,25 @@ fi
 
 # For persisting settings
 if [ "$os" == "linux" ]; then 
-    sudo mkdir -p "${dataDir}"
-    if [[ ! -w "${dataDir}" ]]; then
-        sudo chmod 777 "${dataDir}"
+    sudo mkdir -p "${commonDataDir}"
+    if [[ ! -w "${commonDataDir}" ]]; then
+        sudo chmod 777 "${commonDataDir}"
     fi
 fi
+
+# for the runtimes
+mkdir -p "${runtimesPath}"
+
 writeLine "Done" $color_success
 
+
 # And off we go...
+success='true'
 
 if [ "$setupMode" == 'SetupDevEnvironment' ]; then 
 
     # Walk through the modules directory and call the setup script in each dir
-    for d in ${installedModulesPath}/*/ ; do
-
-        moduleDir="$(basename $d)"
-        modulePath=$d
-
-        if [ "${modulePath: -1}" == "/" ]; then
-            modulePath="${modulePath:0:${#modulePath}-1}"
-        fi
-
-        # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
-        dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
-        if [ "${dirname}" != 'bin' ]; then
-
-            if [ -f "${modulePath}/install.sh" ]; then
-
-                writeLine
-                writeLine "Processing pre-installed module ${moduleDir}" "White" "Blue" $lineWidth
-                writeLine
-
-                correctLineEndings "${modulePath}/install.sh"
-                source "${modulePath}/install.sh" "install"
-            fi
-        fi
-    done
-
-    writeLine
-    writeLine "Pre-installed Modules setup Complete" $color_success    
-
-    # Walk through the sideloaded / downloaded modules directory and call the setup script in each dir
-    for d in ${downloadedModulesPath}/*/ ; do
+    for d in ${modulesPath}/*/ ; do
 
         moduleDir="$(basename $d)"
         modulePath=$d
@@ -358,12 +400,14 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
 
                 correctLineEndings "${modulePath}/install.sh"
                 source "${modulePath}/install.sh" "install"
+
+                if [ $? -ne 0 ]; then success='false'; fi
             fi
         fi
     done
 
     writeLine
-    writeLine "Sideloaded Modules setup Complete" $color_success
+    writeLine "Modules setup Complete" $color_success
 
 
     # Now do SDK
@@ -374,6 +418,7 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
     writeLine
     correctLineEndings "${modulePath}/install.sh"
     source "${modulePath}/install.sh" "install"
+    if [ $? -ne 0 ]; then success='false'; fi
 
     # And Demos
     moduleDir="demos"
@@ -383,7 +428,7 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
     writeLine
     correctLineEndings "${modulePath}/install.sh"
     source "${modulePath}/install.sh" "install"
-    writeLine "Done" $color_success
+    if [ $? -ne 0 ]; then success='false'; fi
 
     # And finally, supporting library packages
 
@@ -452,7 +497,8 @@ else
     # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
     dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
 
-    downloadPath=${modulePath}/${downloadDir}
+    # We'll have all downloads go to the same place
+    # downloadPath=${modulePath}/${downloadDir}
 
     if [ -f "${modulePath}/install.sh" ]; then
 
@@ -462,6 +508,8 @@ else
 
         correctLineEndings "${modulePath}/install.sh"
         source "${modulePath}/install.sh" "install"
+
+        if [ $? -ne 0 ]; then success='false'; fi
     fi
 
     # ============================================================================
@@ -472,4 +520,19 @@ else
     writeLine
 fi
 
-quit
+if [ "${success}" != "true" ]; then quit 1; fi
+
+quit 0
+
+# The return codes
+# 1 - General error
+# 2 - failed to install required runtime
+# 3 - required runtime missing, needs installing
+# 4 - required tool missing, needs installing
+# 5 - unable to create Python virtual environment
+# 6 - unable to download required asset
+# 7 - unable to expand compressed archive
+# 8 - unable to create file or directory
+# 9 - required parameter not supplied
+# 10 - failed to install required tool
+# 100 - impossible code path executed

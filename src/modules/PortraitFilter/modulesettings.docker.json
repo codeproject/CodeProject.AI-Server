@@ -1,9 +1,0 @@
-{
-  "Modules": {
-    "PortraitFilter": {
-      "ModulePath": "PortraitFilter",
-      "FilePath": "PortraitFilter",
-      "Runtime": "execute"
-    }
-  }
-}

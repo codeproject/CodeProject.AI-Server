@@ -2,21 +2,27 @@
 ::
 ::                           Scene Classifier
 ::
-:: This script is only called from /src/setup.bat 
+:: This script is only called from ..\..\setup.bat 
 
 @if "%1" NEQ "install" (
-	echo This script is only called from /src/setup.bat
+	echo This script is only called from ..\..\setup.bat
 	@pause
 	@goto:eof
 )
 
 :: Install python and the required dependencies
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.7
+call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Shared"
+if errorlevel 1 exit /b 1
+
 call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "Shared"
+if errorlevel 1 exit /b 1
+
 call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "Shared"
+if errorlevel 1 exit /b 1
 
 :: Download the YOLO models and store in /assets
 call "%sdkScriptsPath%\utils.bat" GetFromServer "scene-classification-models.zip" "assets" "Downloading Scene classification models..."
+if errorlevel 1 exit /b 1
 
 
 ::                         -- Install script cheatsheet -- 
@@ -26,11 +32,10 @@ call "%sdkScriptsPath%\utils.bat" GetFromServer "scene-classification-models.zip
 ::  absoluteAppRootDir    - the root path of the app (eg: C:\Program Files]\CodeProject\AI\)
 ::  sdkScriptsPath        - the path to the installation utility scripts (%rootPath%\src\SDK\Scripts)
 ::  downloadPath          - the path to where downloads will be stored (%rootPath%\src\downloads)
-::  installedModulesPath  - the path to the pre-installed AI modules (%rootPath%\src\AnalysisLayer)
-::  downloadedModulesPath - the path to the download AI modules (%rootPath%\src\modules)
+::  runtimesPath          - the path to the installed runtimes (%rootPath%\src\runtimes)
+::  modulesPath           - the path to all the AI modules (%rootPath%\src\modules)
 ::  moduleDir             - the name of the directory containing this module
-::  modulePath            - the path to this module (%installedModulesPath%\%moduleDir% or
-::                          %downloadedModulesPath%\%moduleDir%, depending on whether pre-installed)
+::  modulePath            - the path to this module (%modulesPath%\%moduleDir%)
 ::  os                    - "windows"
 ::  architecture          - "x86_64" or "arm64"
 ::  platform              - "windows" or "windows-arm64"
@@ -59,11 +64,11 @@ call "%sdkScriptsPath%\utils.bat" GetFromServer "scene-classification-models.zip
 ::  SetupPython Version [install-location]
 ::       Version - version number of python to setup. 3.7 and 3.9 currently supported. A virtual
 ::                 environment will be created in the module's local folder if install-location is
-::                 "LocalToModule", otherwise in %installedModulesPath%/bin/windows/python<version>/venv.
-::       install-location - [optional] "LocalToModule" or "Shared" (see above)
+::                 "Local", otherwise in %runtimesPath%/bin/windows/python<version>/venv.
+::       install-location - [optional] "Local" or "Shared" (see above)
 ::
 ::  InstallPythonPackages Version requirements-file-directory [install-location]
 ::       Version - version number, as per SetupPython
 ::       requirements-file-directory - directory containing the requirements.txt file
-::       install-location - [optional] "LocalToModule" (installed in the module's local folder) or 
-::                          "Shared" (installed in the shared AnalysisLayer/bin directory)
+::       install-location - [optional] "Local" (installed in the module's local folder) or 
+::                          "Shared" (installed in the shared runtimes/bin directory)

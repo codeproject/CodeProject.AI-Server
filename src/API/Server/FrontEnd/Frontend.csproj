@@ -4,7 +4,7 @@ To learn about what can be done with methods and variables in the project files 
 https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=vs-2022
 -->
 
-	<!-- Platform, architecture, runtime target defines -->
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
 	<Import Project="../../../SDK/NET/Common.targets" />
 
 	<!-- Common properties -->
@@ -12,13 +12,14 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Name>API Server</Name>
 		<RootNamespace>CodeProject.AI.API.Server.Frontend</RootNamespace>
 		<AssemblyName>CodeProject.AI.Server</AssemblyName>
-		<Version>2.0.5</Version>
+		<Version>2.1.0</Version>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<Platform>AnyCPU</Platform>
+		<TargetFramework>net7.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
@@ -45,7 +46,7 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 
 	<!-- Common Release properties -->
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
-		<SelfContained>True</SelfContained>
+		<SelfContained>false</SelfContained>
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>

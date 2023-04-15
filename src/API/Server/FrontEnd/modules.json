@@ -1,0 +1,508 @@
+[
+  {
+    "ModuleId": "ALPR",
+    "Name": "License Plate Reader",
+    "Version": "2.2",
+    "Description": "Detects and readers licence plates using YOLO object detection and the PaddleOCR toolkit",
+    "Platforms": [
+      "windows",
+      "linux",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python37",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01"
+      },
+      {
+        "ModuleVersion": "2.1",
+        "ServerVersionRange": [
+          "2.0.9",
+          "2.0.9"
+        ],
+        "ReleaseDate": "2022-12-01"
+      },
+      {
+        "ModuleVersion": "2.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "SSPL",
+    "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "BackgroundRemover",
+    "Name": "Background Remover",
+    "Version": "1.2",
+    "Description": "Automatically removes the background from a picture",
+    "Platforms": [
+      "windows",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python39",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01"
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "1.6.9",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "SSPL",
+    "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "Cartooniser",
+    "Name": "Cartooniser",
+    "Version": "1.0",
+    "Description": "Convert a photo into an anime style cartoon",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python39",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-28"
+      }
+    ],
+    "License": "MIT",
+    "LicenseUrl": "https://github.com/bryandlee/animegan2-pytorch/blob/main/LICENSE",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "FaceProcessing",
+    "Name": "Face Processing",
+    "Version": "1.2",
+    "Description": "A number of Face image APIs including detect, recognize, and compare.",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python37",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-03-01"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "ObjectDetectionNet",
+    "Name": "Object Detection (YOLOv5 .NET)",
+    "Version": "1.2",
+    "Description": "Provides Object Detection using YOLOv5 ONNX models with DirectML. This module is best for those on Windows and Linux without CUDA enabled GPUs",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "dotnet",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-06-01"
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1"
+        ],
+        "ReleaseDate": "2023-03-20"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-04-09"
+      }
+    ],
+    "License": "MIT",
+    "LicenseUrl": "https://opensource.org/licenses/MIT",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "ObjectDetectionTFLite",
+    "Name": "ObjectDetection (TF-Lite)",
+    "Version": "1.2",
+    "Description": "The object detection module Tensorflow Lite to locate and classify the objects the models have been trained on.",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python39",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-04-10"
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1"
+        ],
+        "ReleaseDate": "2023-04-03"
+      },
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1"
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "Apache-2.0",
+    "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "ObjectDetectionYolo",
+    "Name": "Object Detection (YOLOv5 6.2)",
+    "Version": "1.2",
+    "Description": "Provides Object Detection using YOLOv5 v6.2 library with support for CPUs and CUDA enabled GPUs.",
+    "Platforms": [
+      "all"
+    ],
+    "Runtime": "python37",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-03-01"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "OCR",
+    "Name": "Optical Character Recognition",
+    "Version": "1.2",
+    "Description": "Provides OCR support using the PaddleOCR toolkit",
+    "Platforms": [
+      "windows",
+      "linux",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python37",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "PortraitFilter",
+    "Name": "Portrait Filter",
+    "Version": "1.1",
+    "Description": "Provides a depth-of-field (bokeh) effect on images. Great for selfies.",
+    "Platforms": [
+      "windows"
+    ],
+    "Runtime": "execute",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "MIT",
+    "LicenseUrl": "https://opensource.org/licenses/MIT",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "SceneClassifier",
+    "Name": "Scene Classification",
+    "Version": "1.2",
+    "Description": "Classifies an image according to one of 365 pre-trained scenes",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python37",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-03-01"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "SentimentAnalysis",
+    "Name": "Sentiment Analysis",
+    "Version": "1.1",
+    "Description": "Provides an alaysis of the sentiment of a piece of text. Positive or negative?",
+    "Platforms": [
+      "windows",
+      "macos"
+    ],
+    "Runtime": "execute",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "CC-BY-4.0",
+    "LicenseUrl": "https://github.com/dotnet/samples/blob/main/LICENSE",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "SuperResolution",
+    "Name": "Super Resolution",
+    "Version": "1.3",
+    "Description": "Increases the resolution of an image using AI",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python39",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.6.8"
+        ],
+        "ReleaseDate": "2022-03-01"
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.6.9",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1"
+        ],
+        "ReleaseDate": "2023-03-20"
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-04-11"
+      }
+    ],
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "TextSummary",
+    "Name": "Text Summary",
+    "Version": "1.2",
+    "Description": "Summarizes text content by selecting a number of sentences that are most representitive of the content.",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python37",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "1.6.8"
+        ],
+        "ReleaseDate": "2022-11-01"
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "1.6.9",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "No License",
+    "LicenseUrl": "https://github.com/edubey/text-summarizer",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "YOLOv5-3.1",
+    "Name": "Object Detection (YOLOv5 3.1)",
+    "Version": "1.2",
+    "Description": "The object detection module uses YOLO (You Only Look Once) to locate and classify the objects the models have been trained on. At this point there are 80 different types of objects that can be detected.",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos"
+    ],
+    "Runtime": "python37",
+    "VersionCompatibililty": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-03-20"
+      }
+    ],
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  }
+]

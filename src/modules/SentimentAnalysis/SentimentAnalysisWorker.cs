@@ -5,7 +5,7 @@ using CodeProject.AI.SDK;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
+namespace CodeProject.AI.Modules.SentimentAnalysis
 {
     class SentimentAnalysisResponse : BackendSuccessResponse
     {
@@ -22,10 +22,6 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
 
     public class SentimentAnalysisWorker : CommandQueueWorker
     {
-        private const string _defaultModuleId  = "SentimentAnalysis";
-        private const string _defaultQueueName = "sentimentanalysis_queue";
-        private const string _moduleName       = "Sentiment Analysis";
-
         private readonly TextClassifier _textClassifier;
 
         /// <summary>
@@ -37,7 +33,7 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
         public SentimentAnalysisWorker(ILogger<SentimentAnalysisWorker> logger,
                                        TextClassifier textClassifier,  
                                        IConfiguration configuration)
-            : base(logger, configuration, _moduleName, _defaultQueueName, _defaultModuleId)
+            : base(logger, configuration)
         {
             _textClassifier  = textClassifier;
         }
@@ -51,14 +47,14 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
         {
             string? text = request?.payload?.GetValue("text");
             if (text is null)
-                return new BackendErrorResponse(-1, $"{ModuleName} missing 'text' parameter.");
+                return new BackendErrorResponse($"{ModuleName} missing 'text' parameter.");
 
             Stopwatch sw = Stopwatch.StartNew();
             var result = _textClassifier.PredictSentiment(text);
             long inferenceMs = sw.ElapsedMilliseconds;
 
             if (result is null)
-                return new BackendErrorResponse(-1, $"{ModuleName} PredictSentiment returned null.");
+                return new BackendErrorResponse($"{ModuleName} PredictSentiment returned null.");
 
             var response = new SentimentAnalysisResponse
             {
@@ -71,10 +67,12 @@ namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
             return response;
         }
 
-        protected override void GetHardwareInfo()
+        protected async override void GetHardwareInfo()
         {
-            HardwareType      = _textClassifier.HardwareType;
-            ExecutionProvider = _textClassifier.ExecutionProvider;
+            await System.Threading.Tasks.Task.Run(() => {
+                HardwareType      = _textClassifier.HardwareType;
+                ExecutionProvider = _textClassifier.ExecutionProvider;
+            });
         }
     }
 }

@@ -1,19 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<!-- Platform, architecture, runtime target defines -->
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
 	<Import Project="../../../src/SDK/NET/Common.targets" />
 
 	<PropertyGroup>
 		<RootNamespace>CodeProject.AI.Explorer</RootNamespace>
 		<AssemblyName>CodeProject.AI.Explorer</AssemblyName>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>net7.0-windows</TargetFramework>
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 		<SelfContained>false</SelfContained>
 		<PublishSingleFile>false</PublishSingleFile>
 		<Platform>AnyCPU</Platform>
+		<TargetFramework>net7.0-windows</TargetFramework>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->

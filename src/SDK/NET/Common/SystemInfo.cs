@@ -1,29 +1,122 @@
 ﻿using System.Globalization;
-using System.Text;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
-#if Windows
-using System.Management;
-#endif
+using Hardware.Info;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 namespace CodeProject.AI.SDK.Common
 {
+    /// <summary>
+    /// Represents the properties of all CPUs combined
+    /// </summary>
+    public class CpuCollection: List<CpuInfo>
+    {
+    };
+
+    /// <summary>
+    /// Represents the properties of a single CPU
+    /// </summary>
+    public class CpuInfo
+    {
+        public string? Name { get; set; }
+        public uint NumberOfCores { get; set; }
+        public uint LogicalProcessors { get; set; }
+    };
+
+    /// <summary>
+    /// Represents what we know about System (non GPU) memory
+    /// </summary>
+    public class MemoryProperties
+    {
+        public ulong Total { get; set; }
+        public ulong Available { get; set; }
+    };
+
     public class GpuInfo
     {
-        public string? GpuName { get; set; }
+        /// <summary>
+        /// Gets or sets the name of the card
+        /// </summary>
+        public string? Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the card's vendor
+        /// </summary>
+        public string? Vendor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the driver version string
+        /// </summary>
         public string? DriverVersion { get; set; }
-        public int GpuUtilization { get; set; }
-        public long MemoryUsed { get; set; }
-        public long TotalMemory { get; set; }
+
+        /// <summary>
+        /// Gets or sets GPU utlisation as a percentage between 0 and 100
+        /// </summary>
+        public int Utilization { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total memory used in bytes
+        /// </summary>
+        public ulong MemoryUsed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the total card memory in bytes
+        /// </summary>
+        public ulong TotalMemory { get; set; }
+
+        /// <summary>
+        /// The string representation of this object
+        /// </summary>
+        /// <returns>A string object</returns>
+        public virtual string Description
+        {
+            get
+            {
+                var info = new StringBuilder();
+                info.Append(Name);
+
+                if (TotalMemory > 0)
+                    info.Append($" ({SystemInfo.FormatSizeBytes(TotalMemory, 0)})");
+
+                if (!string.IsNullOrWhiteSpace(Vendor))
+                    info.Append($" ({Vendor})");
+
+                if (!string.IsNullOrWhiteSpace(DriverVersion))
+                    info.Append($" Driver: {DriverVersion}");
+
+                return info.ToString();
+            }
+        }
     }
 
     public class NvidiaInfo : GpuInfo
     {
+        public NvidiaInfo() : base()
+        {
+            Vendor = "NVidia";
+        }
+
         public string? CudaVersion { get; set; }
         public string? ComputeCapacity { get; internal set; }
+
+        /// <summary>
+        /// The string representation of this object
+        /// </summary>
+        /// <returns>A string object</returns>
+        public override string Description
+        {
+            get
+            {
+                var info = base.Description 
+                         + " CUDA: " + CudaVersion
+                         + " Compute: " + ComputeCapacity;
+
+                return info;
+            }
+        }  
     }
 
     public enum RuntimeEnvironment
@@ -78,15 +171,37 @@ namespace CodeProject.AI.SDK.Common
     }
 
     /// <summary>
-    /// A simple utillity class for querying GPU info. An interesting project is 
-    /// https://github.com/clSharp/Cloo, which works on AMD, Intel and Nvidia. However, it only
-    /// seems to report hardware / driver config, not usage.
-    /// Another interesting writeup is at https://www.cyberciti.biz/faq/howto-find-linux-vga-video-card-ram/
+    /// Provides information on the host system, including OS, CPU, GPU, runtimes and the overall
+    /// environment in which the server is running.
     /// </summary>
+    /// <remarks>
+    /// Uses the Hardware.info package. Also see https://www.cyberciti.biz/faq/howto-find-linux-vga-video-card-ram/
+    /// </remarks>
     public class SystemInfo
     {
-        private static bool? _isDevelopment;
-        private static bool? _hasNvidiaCard = null;
+        // The underlying object that does the investigation into the properties.
+        // The other properties mostly rely on this creature for their worth.
+        private static HardwareInfo? _hardwareInfo = null;
+        private static bool?         _isDevelopment;
+        private static bool?         _hasNvidiaCard;
+
+        /// <summary>
+        /// Gets the CPU properties for this system
+        /// </summary>
+        public static CpuCollection? CPU { get; private set; }
+
+        /// <summary>
+        /// Gets the Memory properties for this system
+        /// </summary>
+        public static MemoryProperties? Memory { get; private set; }
+
+        /// Gets the GPU properties for this system
+        public static GpuInfo? GPU { get; private set; }
+
+        /// <summary>
+        /// Gets a summary of the system that can be safely sent as telemetry (no personal info).
+        /// </summary>
+        public static object? Summary { get; private set; }
 
         /// <summary>
         /// Whether or not this system contains an Nvidia card. If the value is
@@ -97,7 +212,7 @@ namespace CodeProject.AI.SDK.Common
         /// <summary>
         /// Gets a value indicating whether we are running development code.
         /// </summary>
-        public static bool IsDevelopment
+        public static bool IsDevelopmentCode
         {
             get
             {
@@ -107,7 +222,7 @@ namespace CodeProject.AI.SDK.Common
                 _isDevelopment = false;
 
                 // 1. Scoot up the tree to check for build folders
-                DirectoryInfo? info = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+                var info = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
                 while (info != null)
                 {
                     if (info.Name.EqualsIgnoreCase("debug") || info.Name.EqualsIgnoreCase("release"))
@@ -131,7 +246,7 @@ namespace CodeProject.AI.SDK.Common
         {
             get
             {
-                if (IsDevelopment ||
+                if (IsDevelopmentCode ||
                     Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").EqualsIgnoreCase("true"))
                     return RuntimeEnvironment.Development;
 
@@ -234,8 +349,34 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
-        /// Gets the current platform name. This will be OS[-architecture]. eg Windows, macOS,
-        /// Linux-arm64. Note that x86_64 won't have a suffix.
+        /// Gets the hardware vendor.
+        /// </summary>
+        public static string Vendor
+        {
+            get
+            {
+                if (OperatingSystem == "macOS")
+                    return "Apple";
+
+                if (OperatingSystem == "Linux")
+                {
+                    try
+                    {
+                        string cpuInfo = File.ReadAllText("/proc/cpuinfo");
+                        if (cpuInfo.Contains("Raspberry Pi"))
+                            return "Raspberry Pi";
+                    }
+                    catch {}
+                }
+
+                // Intel and AMD chips...
+
+                return "Unknown";
+            }
+        }
+
+        /// <summary>
+        /// Gets the current Operating System name.
         /// </summary>
         public static string OperatingSystem
         {
@@ -260,14 +401,15 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
-        /// Returns the Operating System version, corrected for Windows 11
+        /// Returns the Operating System description, with corrections for Windows 11
         /// </summary>
         public static string OperatingSystemDescription
         {
             get
             {
-                // See https://github.com/getsentry/sentry-dotnet/issues/1484. C'mon guys: technically
-                // the version may be 10.x, but stick to the branding that the rest of the world understands.
+                // See https://github.com/getsentry/sentry-dotnet/issues/1484. 
+                // C'mon guys: technically the version may be 10.x, but stick to the branding that
+                // the rest of the world understands.
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
                     Environment.OSVersion.Version.Major >= 10 && 
                     Environment.OSVersion.Version.Build >= 22000)
@@ -277,24 +419,51 @@ namespace CodeProject.AI.SDK.Common
             }
         }
 
+        /// <summary>
+        /// Returns the Operating System version (Major, Minor, Build, Revision)
+        /// </summary>
+        public static string OperatingSystemVersion
+        {
+            get { return Environment.OSVersion.Version.ToString(); }
+        }
+
+        /// <summary>
+        /// Static constructor
+        /// </summary>
         static SystemInfo()
         {
-#if Windows
-            _hasNvidiaCard = false;
-            using (var searcher = new ManagementObjectSearcher("select * from Win32_VideoController"))
-            {
-                IEnumerable<ManagementObject> managementObjects = searcher.Get().Cast<ManagementObject>();
-                foreach (ManagementObject obj in managementObjects)
+           // InitializeAsync();
+        }
+
+        /// <summary>
+        /// Initializes the SystemInfo class async. This method is here in case we want to avoid a
+        /// static constructor that makes potentially blocking calls to async methods. The static
+        /// method would be removed, and this method would be called at the start of whatever app
+        /// used this class. 
+        /// </summary>
+        /// <returns></returns>
+        public static async Task InitializeAsync()
+        {
+            // Not necessary.
+            // await Task.Run(() =>
+            // {
+                try
                 {
-                    string? name = obj?["Name"]?.ToString();
-                    if (name is not null && name.ContainsIgnoreCase("Nvidia"))
-                    {
-                        _hasNvidiaCard = true;
-                        break;
-                    }
+                    _hardwareInfo = new HardwareInfo();
+                    _hardwareInfo.RefreshCPUList(false); // false = no CPU %. Saves 21s delay on first use
+                    _hardwareInfo.RefreshMemoryStatus();
+                    _hardwareInfo.RefreshVideoControllerList();
                 }
-            }
-#endif
+                catch
+                {
+                }
+            // });
+
+            GPU    = await GetGpuInfo(); // <- This await is the reason we have async messiness.
+            CPU    = GetCpuInfo();
+            Memory = GetMemoryInfo();
+
+            InitSummary();
         }
 
         /// <summary>
@@ -305,69 +474,102 @@ namespace CodeProject.AI.SDK.Common
         {       
             var info = new StringBuilder();
 
+            string? gpuDesc = GPU?.Description;
+
             info.AppendLine($"Operating System: {OperatingSystem} ({OperatingSystemDescription})");
-            info.AppendLine($"Architecture:     {Architecture}");
+
+            if (CPU is not null)
+            {
+                var cpus = new StringBuilder();
+                if (!string.IsNullOrEmpty(CPU[0].Name))
+                    cpus.Append(CPU[0].Name + "\n                  ");
+
+                cpus.Append(CPU.Count + " CPU");
+                if (CPU.Count != 1)
+                    cpus.Append("s");
+
+                if (CPU[0].NumberOfCores > 0)
+                {
+                    cpus.Append($" x {CPU[0].NumberOfCores} core");
+                    if (CPU[0].NumberOfCores != 1)
+                        cpus.Append("s");
+                }
+                cpus.Append(".");
+                if (CPU[0].LogicalProcessors > 0)
+                    cpus.Append($" {CPU[0].LogicalProcessors} logical processors");
+
+                info.AppendLine($"CPUs:             {cpus} ({Architecture})");
+            }
+
+            if (!string.IsNullOrWhiteSpace(gpuDesc))
+            {
+                gpuDesc = gpuDesc.Replace("Driver:", "\n                  Driver:");
+                info.AppendLine($"GPU:              {gpuDesc}");
+            }
+            if (Memory is not null)
+                info.AppendLine($"System RAM:       {FormatSizeBytes(Memory.Total, 0)}");
             info.AppendLine($"Target:           {Platform}");
             info.AppendLine($"BuildConfig:      {BuildConfig}");
             info.AppendLine($"Execution Env:    {ExecutionEnvironment}");
             info.AppendLine($"Runtime Env:      {RuntimeEnvironment}");
+            info.AppendLine($".NET framework:   {RuntimeInformation.FrameworkDescription}");
+            // info.AppendLine($"Python versions:  {PythonVersions}");
 
             return info.ToString().Trim();
         }
 
         /// <summary>
-        /// Returns GPU info for the current system
+        /// Returns GPU usage info for the current system
+        /// </summary>
+        public static async ValueTask<string> GetGpuUsageInfo()
+        {
+            int    gpu3DUsage  = await GetGpuUsage();
+            string gpuMemUsage = FormatSizeBytes(await GetGpuMemoryUsage(), 1);
+
+            var info = new StringBuilder();
+            info.AppendLine("System GPU info:");
+            info.AppendLine($"  GPU 3D Usage       {gpu3DUsage}%");
+            info.AppendLine($"  GPU RAM Usage      {gpuMemUsage}");
+
+            return info.ToString().Trim();
+        }
+
+        /* Maybe we need this, but could be tricky for all platforms
+        /// <summary>
+        /// Returns the CPU temperature in C.
+        /// </summary>
+        /// <returns>The temperature in C</returns>
+        public static async ValueTask<int> GetCpuTemp()
+        {
+            return await new ValueTask<int>(0);
+
+            // macOS: sudo powermetrics --samplers smc | grep -i "CPU die temperature"
+        }
+        */
+
+        /// <summary>
+        /// Returns Video adapter info for the current system
         /// </summary>
         public static async ValueTask<string> GetVideoAdapterInfo()
         {
-#if Windows
             var info = new StringBuilder();
 
-            info.AppendLine("System GPU info:");
-            int gpu3DUsage   = await Get3DGpuUsage();
-            long gpuMemUsage = GetGpuMemoryUsage();
-            info.AppendLine($"  GPU 3D Usage       {gpu3DUsage}%");
-            info.AppendLine($"  GPU RAM Usage      {FormatSizeBytes(gpuMemUsage, 2)}");
-            info.AppendLine();
-
-            try
+            info.AppendLine("Video adapter info:");
+            if (_hardwareInfo != null)
             {
-                using (var searcher = new ManagementObjectSearcher("select * from Win32_VideoController"))
+                foreach (var videoController in _hardwareInfo.VideoControllerList)
                 {
-                    info.AppendLine("Video adapter info:");
+                    string adapterRAM = FormatSizeBytes(videoController.AdapterRAM, 0);
 
-                    IEnumerable<ManagementObject> managementObjects = searcher.Get().Cast<ManagementObject>();
-                    foreach (ManagementObject obj in managementObjects)
-                    {
-                        if (obj is not null)
-                        {
-                            string name       = obj["Name"]?.ToString() ?? "Unknown Video controller";
-
-                            string adapterRAM = "NA";
-                            if (long.TryParse(obj["AdapterRAM"]?.ToString() ?? String.Empty, out long ram))
-                                adapterRAM = FormatSizeBytes(ram, 0);
-
-                            info.AppendLine($"{name}:");
-                            info.AppendLine($"  Device ID          {obj["DeviceID"]}");
-                            info.AppendLine($"  Adapter RAM        {adapterRAM}");
-                            info.AppendLine($"  Adapter DAC Type   {obj["AdapterDACType"]}");
-                            // info.AppendLine($"Display Drivers {obj["InstalledDisplayDrivers"]}");
-                            info.AppendLine($"  Driver Version     {obj["DriverVersion"]}");
-                            info.AppendLine($"  Video Processor    {obj["VideoProcessor"]}");
-                            info.AppendLine($"  Video Architecture {VideoArchitecture(obj["VideoArchitecture"]?.ToString())}");
-                            info.AppendLine($"  Video Memory Type  {MemoryType(obj["VideoMemoryType"]?.ToString())}");
-                        }
-                    }
+                    info.AppendLine($"  {videoController.Name}:");
+                    // info.AppendLine($"    Adapter RAM        {adapterRAM}"); - terribly inaccurate
+                    info.AppendLine($"    Driver Version     {videoController.DriverVersion}");
+                    // info.AppendLine($"    Driver Date        {videoController.DriverDate}");
+                    info.AppendLine($"    Video Processor    {videoController.VideoProcessor}");
                 }
-            }
-            catch
-            {
             }
 
             return await new ValueTask<string>(info.ToString().Trim());
-#else
-            return await new ValueTask<string>(string.Empty);
-#endif
         }
 
         /// <summary>
@@ -376,92 +578,76 @@ namespace CodeProject.AI.SDK.Common
         /// <returns>A float representing bytes</returns>
         public async static ValueTask<int> GetCpuUsage()
         {
-            long usage = 0;
+            int usage = 0;
 
+            // ANNOYANCE: We have Windows, Linux and macOS defined as constants in the Common.targets
+            // file in /SDK/NET. These constants work great in Windows. Sometimes in Linux. Never in
+            // macOS on Apple Silicon. So we work around it.
             try
             {
-#if Windows
-                /* This requires Admin rights to run
-                long start_time = DateTime.Now.Ticks;
-                var processes = Process.GetProcesses();
-                long totalTimeUsedStart = processes.Sum(p => p.TotalProcessorTime.Ticks);
+// #if Windows
+                if (OperatingSystem == "Windows")
+                {
+                    // Easier, but this incurs a 21 sec delay at startup, and after 15 min idle.
+                    // _hardwareInfo.RefreshCPUList(true);
+                    // int usage = (int) _hardwareInfo.CpuList.Average(cpu => (float)cpu.PercentProcessorTime);
 
-                await Task.Delay(1000);
+                    List<PerformanceCounter> utilization = GetCounters("Processor",
+                                                                       "% Processor Time",
+                                                                       "_Total");
+                    utilization.ForEach(x => x.NextValue());
+                    await Task.Delay(1000);
+                    usage = (int)utilization.Sum(x => x.NextValue());
+                }
+// #elif Linux
+                else if (OperatingSystem == "Linux")
+                {
+                    // Easier but not yet tested
+                    // _hardwareInfo.RefreshCPUList(true);
+                    // int usage = (int) _hardwareInfo.CpuList.Average(cpu => (float)cpu.PercentProcessorTime);
 
-                long endTime = DateTime.Now.Ticks;
-                processes = Process.GetProcesses();
-                long totalTimeUsedEnd = processes.Sum(p => p.TotalProcessorTime.Ticks);
+                    // Output is in the form:
+                    // top - 08:38:12 up  1:20,  0 users,  load average: 0.00, 0.00, 0.00
+                    // Tasks:   5 total,   1 running,   4 sleeping,   0 stopped,   0 zombie
+                    // %Cpu(s):  0.0 us,  0.0 sy,  0.0 ni, ... <-- this line, sum of values 1-3
 
-                usage = 100 * (totalTimeUsedEnd - totalTimeUsedStart) /
-                             (Environment.ProcessorCount * (endTime - start_time));
-                */
+                    var results = await GetProcessInfo("/bin/bash",  "-c \"top -b -n 1\"");
+                    var lines = results["output"]?.Split("\n");
 
-                List<PerformanceCounter> utilization = GetCounters("Processor",
-                                                                   "% Processor Time",
-                                                                   "_Total");
-                utilization.ForEach(x => x.NextValue());
-                await Task.Delay(1000);
-                usage = (int)utilization.Sum(x => x.NextValue());
-#elif Linux
-                var output = string.Empty;
+                    if (lines is not null && lines.Length > 2)
+                    {
+                        string pattern = @"(?<userTime>[\d.]+)\s*us,\s*(?<systemTime>[\d.]+)\s*sy,\s*(?<niceTime>[\d.]+)\s*ni";
+                        Match match    = Regex.Match(lines[2], pattern, RegexOptions.ExplicitCapture);
+                        var userTime   = match.Groups["userTime"].Value;
+                        var systemTime = match.Groups["systemTime"].Value;
+                        var niceTime   = match.Groups["niceTime"].Value;
 
-                await Task.Run(() => {
-                    var info = new ProcessStartInfo("top -b -n 1");
-                    info.FileName  = "/bin/bash";
-                    info.Arguments = "-c \"top -b -n 1\"";
-                    info.RedirectStandardOutput = true;
-
-                    using (var process = Process.Start(info))
-                    {                
-                        output = process?.StandardOutput.ReadToEnd() ?? string.Empty;
-                        // Console.WriteLine(output);
+                        usage = (int)(float.Parse(userTime) + float.Parse(systemTime) + float.Parse(niceTime));
                     }
-                });
+                }
+// #elif macOS
+                else if (OperatingSystem == "macOS")
+                {
+                    // oddly, hardware.info hasn't yet added CPU usage for macOS
 
-                // Output is in the form:
-                // top - 08:38:12 up  1:20,  0 users,  load average: 0.00, 0.00, 0.00
-                // Tasks:   5 total,   1 running,   4 sleeping,   0 stopped,   0 zombie
-                // %Cpu(s):  0.0 us,  0.0 sy,  0.0 ni, ... <-- this line, sum of values 1-3
- 
-                var lines = output.Split("\n");
-
-                string pattern = @"(?<userTime>[\d.]+)\s*us,\s*(?<systemTime>[\d.]+)\s*sy,\s*(?<niceTime>[\d.]+)\s*ni";
-                Match match    = Regex.Match(lines[2], pattern, RegexOptions.ExplicitCapture);
-                var userTime   = match.Groups["userTime"].Value;
-                var systemTime = match.Groups["systemTime"].Value;
-                var niceTime   = match.Groups["niceTime"].Value;
-
-                usage = (int)(float.Parse(userTime) + float.Parse(systemTime) + float.Parse(niceTime));
-#elif macOS
-                var output = string.Empty;
-
-                await Task.Run(() => {
-                    var info = new ProcessStartInfo("top -l 2 | grep -E '^CPU'");
-                    info.FileName  = "/bin/bash";
-                    info.Arguments = "-c \"top -l 1 | grep -E '^CPU'\"";
-                    info.RedirectStandardOutput = true;
-
-                    using (var process = Process.Start(info))
-                    {                
-                        output = process?.StandardOutput.ReadToEnd() ?? string.Empty;
-                        // Console.WriteLine(output);
-                    }
-                });
-
-                // Output is in the form:
-                // CPU usage: 12.33% user, 13.63% sys, 74.2% idle 
-                string pattern = @"CPU usage:\s+(?<userTime>[\d.]+)%\s+user,\s*(?<systemTime>[\d.]+)%\s*sys,\s*(?<idleTime>[\d.]+)%\s*idle";
-                Match match    = Regex.Match(output, pattern, RegexOptions.ExplicitCapture);
-                var userTime   = match.Groups["userTime"].Value;
-                var systemTime = match.Groups["systemTime"].Value;
-
-                usage = (int)(float.Parse(userTime) + float.Parse(systemTime));
-#else
-                await Task.Delay(0);
-#endif
+                    // Output is in the form:
+                    // CPU usage: 12.33% user, 13.63% sys, 74.2% idle 
+                    string pattern = @"CPU usage:\s+(?<userTime>[\d.]+)%\s+user,\s*(?<systemTime>[\d.]+)%\s*sys,\s*(?<idleTime>[\d.]+)%\s*idle";
+                    var results = await GetProcessInfo("/bin/bash",  "-c \"top -l 1 | grep -E '^CPU'\"",
+                                                       pattern);
+                    usage = (int)(float.Parse(results["userTime"]) + float.Parse(results["systemTime"]));
+                }
+// #else
+                else
+                {
+                    Console.WriteLine("WARNING: Getting CPU usage for unknown OS: " + OperatingSystem);
+                    await Task.Delay(0);
+                }
+// #endif
             }
-            catch (Exception /*e*/)
+            catch (Exception e)
             {
+                Console.WriteLine("Failed to get CPU use: " + e);
             }
 
             return (int) usage;
@@ -471,188 +657,254 @@ namespace CodeProject.AI.SDK.Common
         /// Gets the amount of System memory currently in use
         /// </summary>
         /// <returns>A long representing bytes</returns>
-        public static long GetSystemMemoryUsage()
+        public async static ValueTask<ulong> GetSystemMemoryUsage()
         {
-#if Windows
-            var processes = Process.GetProcesses();
-            return processes.Sum(p => p.WorkingSet64);
-#elif Linux
-            var info = new ProcessStartInfo("free -b");
-            info.FileName = "/bin/bash";
-            info.Arguments = "-c \"free -b\"";
-            info.RedirectStandardOutput = true;
+            ulong memoryUsed = 0;
 
-            var output = string.Empty;
-            using(var process = Process.Start(info))
-            {                
-                output = process?.StandardOutput.ReadToEnd() ?? string.Empty;
-                // Console.WriteLine(output);
+            // ANNOYANCE: We have Windows, Linux and macOS defined as constants in the Common.targets
+            // file in /SDK/NET. These constants work great in Windows. Sometimes in Linux. Never in
+            // macOS on Apple Silicon. So we work around it.
+
+// #if Windows
+            if (OperatingSystem == "Windows")
+            {
+                var processes = Process.GetProcesses();
+                memoryUsed = (ulong)processes.Sum(p => p.WorkingSet64);
             }
+// #elif Linux
+            else if (OperatingSystem == "Linux")
+            {
+                // Easier but not yet tested
+                // _hardwareInfo.RefreshMemoryStatus();
+                // return _hardwareInfo.MemoryStatus.TotalPhysical - _hardwareInfo.MemoryStatus.AvailablePhysical;
 
-            // Output is in the form:
-            //       total used free
-            // Mem:    XXX  YYY  ZZZ <- We want tokens 1 - 3 from this line
-            // Swap:   xxx  yyy  zzz
- 
-            var lines = output.Split("\n");
-            var memory = lines[1].Split(" ", StringSplitOptions.RemoveEmptyEntries);
-    
-            long totalMemory = long.Parse(memory[1]);
-            long memoryUsed  = long.Parse(memory[2]);
-            long memoryFree  = long.Parse(memory[3]);
- 
-            return memoryUsed;
-#elif macOS
-            // ps -caxm -orss= | awk '{ sum += $1 } END { print sum/1024 }' 
-            var info = new ProcessStartInfo("ps -caxm -orss= | awk '{ sum += $1 } END { print sum * 1024 }'");
-            info.FileName = "/bin/bash";
-            info.Arguments = "-c \"ps -caxm -orss= | awk '{ sum += $1 } END { print sum * 1024 }'\"";
-            info.RedirectStandardOutput = true;
+                // Output is in the form:
+                //       total used free
+                // Mem:    XXX  YYY  ZZZ <- We want tokens 1 - 3 from this line
+                // Swap:   xxx  yyy  zzz
 
-            var output = string.Empty;
-            using(var process = Process.Start(info))
-            {                
-                output = process?.StandardOutput.ReadToEnd() ?? string.Empty;
-                // Console.WriteLine(output);
+                var results = await GetProcessInfo("/bin/bash",  "-c \"free -b\"");
+                var lines = results["output"]?.Split("\n");
+
+                if (lines is not null && lines.Length > 1)
+                {
+                    var memory = lines[1].Split(" ", StringSplitOptions.RemoveEmptyEntries);
+                    memoryUsed  = ulong.Parse(memory[2]);
+                    // ulong totalMemory = ulong.Parse(memory[1]);
+                    // ulong memoryFree  = ulong.Parse(memory[3]);
+                }
             }
- 
-            long memoryUsed = (long)float.Parse(output.Trim());
+// #elif macOS
+            else if (OperatingSystem == "macOS")
+            {
+                var results = await GetProcessInfo("/bin/bash", 
+                                                   "-c \"ps -caxm -orss= | awk '{ sum += $1 } END { print sum * 1024 }'\"",
+                                                   "(?<memused>[\\d.]+)");
+                ulong.TryParse(results["memused"], out memoryUsed);
+            }
+// #else
+            else
+            {
+                Console.WriteLine("WARNING: Getting memory usage for unknown OS: " + OperatingSystem);
+            }
+// #endif
             return memoryUsed;
-#else
-            return 0;
-#endif
         }
 
         /// <summary>
         /// Gets the current GPU utilisation as a %
         /// </summary>
         /// <returns>An int representing bytes</returns>
-        public async static ValueTask<int> Get3DGpuUsage()
+        public async static ValueTask<int> GetGpuUsage()
         {
-            NvidiaInfo? gpuInfo = ParseNvidiaSmi();
+            NvidiaInfo? gpuInfo = await ParseNvidiaSmi();
             if (gpuInfo is not null)
-                return gpuInfo.GpuUtilization;
+                return gpuInfo.Utilization;
 
-#if Windows
             int usage = 0;
+
+// #if Windows
             try
             {
-                List<PerformanceCounter> utilization = GetCounters("GPU Engine",
-                                                                   "Utilization Percentage",
-                                                                   "engtype_3D");
+                if (OperatingSystem == "Windows")
+                {
+                    List<PerformanceCounter> utilization = GetCounters("GPU Engine",
+                                                                       "Utilization Percentage",
+                                                                       "engtype_3D");
 
-                // See https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.performancecounter.nextvalue?view=dotnet-plat-ext-6.0#remarks
-                // If the calculated value of a counter depends on two counter reads, the first
-                // read operation returns 0.0. The recommended delay time between calls to the
-                // NextValue method is one second
-                utilization.ForEach(x => x.NextValue());
-                await Task.Delay(1000);
+                    // See https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.performancecounter.nextvalue?view=dotnet-plat-ext-6.0#remarks
+                    // If the calculated value of a counter depends on two counter reads, the first
+                    // read operation returns 0.0. The recommended delay time between calls to the
+                    // NextValue method is one second
+                    utilization.ForEach(x => x.NextValue());
+                    await Task.Delay(1000);
 
-                usage = (int)utilization.Sum(x => x.NextValue());
+                    usage = (int)utilization.Sum(x => x.NextValue());
+                }
+// #else
+                else if (Vendor == "Raspberry Pi")
+                {
+                    var results = await GetProcessInfo("vcgencmd", "get_config core_freq", @"=(?<maxFreq>\d+)");
+                    if (ulong.TryParse(results["maxFreq"], out ulong maxFreq))
+                        maxFreq *= 1_000_000;
+
+                    results = await GetProcessInfo("vcgencmd", "measure_clock core", @"=(?<freq>\d+)");
+                    ulong.TryParse(results["freq"], out ulong freq);
+
+                    if (maxFreq > 0)
+                        usage = (int)(freq * 100 / maxFreq);
+                }
             }
             catch
             {
             }
-
+// #endif
             return usage;
-#else
-            return await new ValueTask<int>(0);
-#endif
         }
 
         /// <summary>
         /// Gets the amount of GPU memory currently in use
         /// </summary>
         /// <returns>A long representing bytes</returns>
-        public static long GetGpuMemoryUsage()
+        public async static ValueTask<ulong> GetGpuMemoryUsage()
         {
-            NvidiaInfo? gpuInfo = ParseNvidiaSmi();
+            NvidiaInfo? gpuInfo = await ParseNvidiaSmi();
             if (gpuInfo is not null)
                 return gpuInfo.MemoryUsed;
 
+            ulong memoryUsed = 0;
+
             try
             {
-#if Windows
-                List<PerformanceCounter> counters = GetCounters("GPU Process Memory",
-                                                                "Dedicated Usage", null);
-                // gpuCounters.ForEach(x => x.NextValue());
-                // Thread.Sleep(1000);
+// #if Windows
+                if (OperatingSystem == "Windows")
+                {
+                    List<PerformanceCounter> counters = GetCounters("GPU Process Memory",
+                                                                    "Dedicated Usage", null);
+                    // gpuCounters.ForEach(x => x.NextValue());
+                    // Thread.Sleep(1000);
 
-                return counters.Sum(x => (long)x.NextValue());
-#else
-                return 0;
-#endif
+                    memoryUsed = (ulong)counters.Sum(x => (long)x.NextValue());
+                }
+
+                if (Vendor == "Raspberry Pi")
+                {
+                    var results = await GetProcessInfo("vcgencmd", "get_mem malloc_total", @"=(?<memused>\d+)");
+                    if (ulong.TryParse(results["memused"], out ulong memUsed))
+                        memoryUsed = memUsed * 1024 * 1024;
+                }
+// #endif
             }
-            catch
+            catch 
             {
-                return 0;
             }
+
+            return memoryUsed;
+        }
+
+        public async static ValueTask<GpuInfo?> GetGpuInfo()
+        {
+            if (Architecture == "Arm64" && OperatingSystem == "macOS")
+            {
+                return new GpuInfo
+                {
+                    Name   = "Apple Silicon",
+                    Vendor = "Apple"
+                };
+            }
+
+            GpuInfo? gpu = await ParseNvidiaSmi();
+            if (gpu is null && _hardwareInfo != null)
+            {
+                foreach (var videoController in _hardwareInfo.VideoControllerList)
+                {
+                    if (string.IsNullOrWhiteSpace(videoController.Manufacturer))
+                        continue;
+
+                    gpu = new GpuInfo
+                    {
+                        Name          = videoController.Name,
+                        Vendor        = videoController.Manufacturer,
+                        DriverVersion = videoController.DriverVersion,
+                        TotalMemory   = videoController.AdapterRAM
+                    };
+
+                    break;
+                }
+            }
+
+            return gpu;
         }
 
         /// <summary>
         /// Returns information on the first GPU found (TODO: Extend to multiple GPUs)
         /// </summary>
-        /// <returns></returns>
-        public static NvidiaInfo? ParseNvidiaSmi()
+        /// <returns>An NvidiaInfo object</returns>
+        private async static ValueTask<NvidiaInfo?> ParseNvidiaSmi()
         {
-            if (SystemInfo.HasNvidiaGPU == false)
+            // Do an initial fast check to see if we have an Nvidia card. This saves a process call
+            // and exception in the case there's not Nvidia card. If _hardwareInfo is null then we
+            // just plow on ahead regardless.
+            if (_hasNvidiaCard is null && _hardwareInfo is not null)
+            {
+                _hasNvidiaCard = false;
+                foreach (var videoController in _hardwareInfo.VideoControllerList)
+                {
+                    if (videoController.Manufacturer.ContainsIgnoreCase("NVidia"))
+                        _hasNvidiaCard = true;
+                }
+            }
+           
+            if (_hasNvidiaCard == false)
                 return null;
                 
             // TODO: Cache this value once a second
 
             try
             {
-                var info = new ProcessStartInfo("nvidia-smi", "--query-gpu=count,name,driver_version,memory.total,memory.free,utilization.gpu,compute_cap --format=csv,noheader");
-                info.RedirectStandardOutput = true;
+                // Example call and response
+                // nvidia-smi --query-gpu=count,name,driver_version,memory.total,memory.free,utilization.gpu,compute_cap --format=csv,noheader
+                // 1, NVIDIA GeForce RTX 3060, 512.96, 12288 MiB, 10473 MiB, 4 %, 8.6
+                // BUT WAIT: For old cards we don't get compute_cap. So we break this up.
 
-                string output = string.Empty;
-                using(var process = Process.Start(info))
-                {                
-                    output = process?.StandardOutput?.ReadToEnd() ?? string.Empty;
-                    // Console.WriteLine(output);
-                }
+                string args    = "--query-gpu=count,name,driver_version,memory.total,memory.free,utilization.gpu --format=csv,noheader";
+                string pattern = @"\d+,\s+(?<gpuname>.+?),\s+(?<driver>[\d.]+),\s+(?<memtotal>\d+)\s*MiB,\s+(?<memfree>\d+)\s*MiB,\s+(?<gpuUtil>\d+)\s*%";
+                var results    = await GetProcessInfo("nvidia-smi", args, pattern);
 
-                string pattern      = @"\d+,\s+(?<gpuname>.+?),\s+(?<driver>[\d.]+),\s+(?<memused>\d+)\s*MiB,\s+(?<memtotal>\d+)\s*MiB,\s+(?<gpuUtil>\d+)\s*%,\s+(?<computecap>.*?)\s";
-                Match match         = Regex.Match(output, pattern, RegexOptions.ExplicitCapture);
-                var gpuName         = match.Groups["gpuname"].Value;
-                var driverVersion   = match.Groups["driver"].Value;
-                var memUsedStr      = match.Groups["memused"].Value;
-                var memTotalStr     = match.Groups["memtotal"].Value;
-                var gpuUtilStr      = match.Groups["gpuUtil"].Value;
-                var computeCapacity = match.Groups["computecap"].Value;
+                var gpuName         = results["gpuname"];
+                var driverVersion   = results["driver"];
+                ulong.TryParse(results["memfree"],  out ulong memoryFreeMiB);
+                ulong.TryParse(results["memtotal"], out ulong totalMemoryMiB);
+                int.TryParse(results["gpuUtil"],    out int gpuUtilPercent);
 
-                long.TryParse(memUsedStr, out long memoryUsedMiB);
-                long.TryParse(memTotalStr, out long totalMemoryMiB);
-                int.TryParse(gpuUtilStr,  out int gpuUtilPercent);
+                ulong memoryUsedMiB = totalMemoryMiB - memoryFreeMiB;
 
-                // Get CUDA info        
-                info = new ProcessStartInfo("nvidia-smi");
-                info.RedirectStandardOutput = true;
+                // Get Compute Capability if we can
+                // nvidia-smi --query-gpu=compute_cap --format=csv,noheader
+                // 8.6
+                args    = "--query-gpu=compute_cap --format=csv,noheader";
+                pattern = @"(?<computecap>[\d\.]*)";
+                results = await GetProcessInfo("nvidia-smi", args, pattern);
+                string computeCapacity = results["computecap"];
 
-                output = string.Empty;
-                using(var process = Process.Start(info))
-                {                
-                    output = process?.StandardOutput.ReadToEnd() ?? string.Empty;
-                    // Console.WriteLine(output);
-                }
+                // Get CUDA info. Output is in the form:
+                //  Thu Dec  8 08:45:30 2022
+                //  +-----------------------------------------------------------------------------+
+                //  | NVIDIA-SMI 512.96       Driver Version: 512.96       CUDA Version: 11.6     |
+                //  |-------------------------------+----------------------+----------------------+
+                pattern = @"Driver Version:\s+(?<driver>[\d.]+)\s*CUDA Version:\s+(?<cuda>[\d.]+)";
+                results = await GetProcessInfo("nvidia-smi", "", pattern);
+                string cudaVersion = results["cuda"];
 
-                /* Output is in the form:
-                    Thu Dec  8 08:45:30 2022
-                    +-----------------------------------------------------------------------------+
-                    | NVIDIA-SMI 512.96       Driver Version: 512.96       CUDA Version: 11.6     |
-                    |-------------------------------+----------------------+----------------------+
-                */
- 
-                pattern         = @"Driver Version:\s+(?<driver>[\d.]+)\s*CUDA Version:\s+(?<cuda>[\d.]+)";
-                match           = Regex.Match(output, pattern, RegexOptions.ExplicitCapture);
-                var cudaVersion = match.Groups["cuda"].Value;
- 
+                // If we've reached this point we definitely have an Nvidia card.
+                _hasNvidiaCard = true;
+
                 return new NvidiaInfo
                 {
-                    GpuName         = gpuName,
+                    Name            = gpuName,
                     DriverVersion   = driverVersion,
                     CudaVersion     = cudaVersion,
-                    GpuUtilization  = gpuUtilPercent,
+                    Utilization     = gpuUtilPercent,
                     MemoryUsed      = memoryUsedMiB * 1024 * 1024,
                     TotalMemory     = totalMemoryMiB * 1024 * 1024,
                     ComputeCapacity = computeCapacity,
@@ -665,56 +917,163 @@ namespace CodeProject.AI.SDK.Common
                 return null;
             }
         }
-
-        // https://docs.microsoft.com/en-us/windows/win32/cimwin32prov/win32-videocontroller
-        private static string VideoArchitecture(string? typeId)
+        
+        /// <summary>
+        /// Format Size from bytes to a Kb, MiB or GiB string, where 1KiB = 1024 bytes.
+        /// </summary>
+        /// <param name="bytes">Number of bytes.</param>
+        /// <param name="rounding">The number of significant decimal places (precision) in the
+        /// return value.</param>
+        /// <param name="useBinaryMultiples">If true then use MiB (1024 x 1024)B not MB (1000 x 1000)B.
+        /// <param name="itemAbbreviation">The item abbreviation (eg 'B' for bytes).</param>
+        /// <param name="compact">If set to <c>true</c> then compact the string result (no spaces).
+        /// </param>
+        /// <returns>Returns formatted size.</returns>
+        /// <example>
+        /// +----------------------+
+        /// | input  |   output    |
+        /// -----------------------|
+        /// |  1024  |    1 Kb     |
+        /// |  225   |  225 B      |
+        /// +----------------------+
+        /// </example>
+        public static string FormatSizeBytes(ulong bytes, int rounding, bool useBinaryMultiples = true,
+                                             string itemAbbreviation = "B", bool compact = false)
         {
-            if (typeId == null)
-                return "N/A";
+            if (bytes == 0)
+                return "0";
 
-            return typeId switch
+            string result;
+            string format = "#,###." + new string('#', rounding);
+            string spacer = compact ? string.Empty : " ";
+
+            // We're trusting that the compiler will pre-compute the values here.
+            ulong kiloDivisor = useBinaryMultiples? 1024UL                      : 1000UL;
+            ulong megaDivisor = useBinaryMultiples? 1024UL * 1024               : 1000UL * 1000;
+            ulong gigaDivisor = useBinaryMultiples? 1024UL * 1024 * 1024        : 1000UL * 1000 * 1000;
+            ulong teraDivisor = useBinaryMultiples? 1024UL * 1024 * 1024 * 1024 : 1000UL * 1000 * 1000 * 1000;
+
+            // 1KB = 1024 bytes. 1kB = 1000 bytes. 1KiB = 1024 bytes. 
+            // Read https://physics.nist.gov/cuu/Units/binary.html. If you dare.
+            string kilos = (useBinaryMultiples ? "Ki" : "k") + itemAbbreviation;
+            string megas = (useBinaryMultiples ? "Mi" : "m") + itemAbbreviation;
+            string gigas = (useBinaryMultiples ? "Gi" : "g") + itemAbbreviation;
+            string teras = (useBinaryMultiples ? "Ti" : "t") + itemAbbreviation;
+
+            if (bytes > teraDivisor)            // more than a teraunit
             {
-                "1" => "Other",
-                "2" => "Unknown",
-                "3" => "CGA",
-                "4" => "EGA",
-                "5" => "VGA",
-                "6" => "SVGA",
-                "7" => "MDA",
-                "8" => "HGC",
-                "9" => "MCGA",
-                "10" => "8514A",
-                "11" => "XGA",
-                "12" => "Linear Frame Buffer",
-                "160" => "PC-98",
-                _ => $"Unlisted ({typeId})"
+                result = Math.Round(bytes / (float)teraDivisor,
+                                    rounding).ToString(format, CultureInfo.CurrentCulture) +
+                                    spacer + teras;
+            }
+            else if (bytes > gigaDivisor)       // more than a gigaunit but less than a teraunit
+            {
+                result = Math.Round(bytes / (float)gigaDivisor,
+                                    rounding).ToString(format, CultureInfo.CurrentCulture) +
+                                    spacer + gigas;
+            }
+            else if (bytes > megaDivisor)       // more than a megaunit but less than a gigaunit
+            {
+                result = Math.Round(bytes / (float)megaDivisor,
+                                    rounding).ToString(format, CultureInfo.CurrentCulture) +
+                                    spacer + megas;
+            }
+            else if (bytes > kiloDivisor)       // more than a kilounit but less than a megaunit
+            {
+                result = Math.Round(bytes / (float)kiloDivisor,
+                                    rounding).ToString(format, CultureInfo.CurrentCulture) +
+                                    spacer + kilos;
+            }
+            else                                // less than a kilounit
+            {
+                result = bytes.ToString(format, CultureInfo.CurrentCulture) + spacer + itemAbbreviation;
+            }
+
+            return result;
+        }
+
+        private static MemoryProperties GetMemoryInfo()
+        {
+            return new MemoryProperties
+            {
+                Total     = _hardwareInfo?.MemoryStatus.TotalPhysical ?? 0,
+                Available = _hardwareInfo?.MemoryStatus.AvailablePhysical ?? 0
             };
         }
 
-        private static string MemoryType(string? typeId)
+        private static CpuCollection GetCpuInfo() 
         {
-            if (typeId == null)
-                return "N/A";
-
-            return typeId switch
+            var cpus = new CpuCollection();
+            if (_hardwareInfo != null)
             {
-                "1" => "Other",
-                "2" => "Unknown",
-                "3" => "VRAM",
-                "4" => "DRAM",
-                "5" => "SRAM",
-                "6" => "WRAM",
-                "7" => "EDO RAM",
-                "8" => "Burst Synchronous DRAM",
-                "9" => "Pipelined Burst SRAM",
-                "10" => "CDRAM",
-                "11" => "3DRAM",
-                "12" => "SDRAM",
-                "13" => "SGRAM",
-                _ => $"Unlisted ({typeId})"
+                foreach (var cpu in _hardwareInfo.CpuList)
+                {
+                    var cpuInfo = new CpuInfo
+                    {
+                        Name              = cpu.Name,
+                        NumberOfCores     = cpu.NumberOfCores,
+                        LogicalProcessors = cpu.NumberOfLogicalProcessors
+                    };
+
+                    cpus.Add(cpuInfo);
+                }
+            }
+
+            // There's obviously at least 1.
+            if (cpus.Count == 0)
+                cpus.Add(new CpuInfo() { NumberOfCores = 1, LogicalProcessors = 1 });
+
+            return cpus;
+        }
+
+        private static void InitSummary()
+        {
+            Summary = new
+            {
+                Host = new
+                {
+                    OperatingSystem = OperatingSystem,
+                    OSVersion       = OperatingSystemVersion,
+                    TotalMemory     = Memory?.Total ?? 0,
+                    Environment     = ExecutionEnvironment.ToString(),
+                },
+                CPU = new
+                {
+                    Count             = CPU?.Count ?? 0,
+                    Name              = CPU?[0].Name ?? "",
+                    Cores             = CPU?[0].NumberOfCores ?? 0,
+                    LogicalProcessors = CPU?[0].LogicalProcessors ?? 0,
+                    Architecture      = Architecture
+                },
+                GPUs = GPU is null
+                      ? Array.Empty<object>()
+                      : new Object[] {
+                        GPU is NvidiaInfo? new {
+                                                Name            = GPU.Name,
+                                                Vendor          = GPU.Vendor,
+                                                Memory          = GPU.TotalMemory,
+                                                DriverVersion   = GPU.DriverVersion,
+                                                CUDAVersion     = (GPU as NvidiaInfo)?.CudaVersion,
+                                                ComputeCapacity = (GPU as NvidiaInfo)?.ComputeCapacity
+                                            }
+                                         : new {
+                                                Name            = GPU.Name,
+                                                Vendor          = GPU.Vendor,
+                                                Memory          = GPU.TotalMemory,
+                                                DriverVersion   = GPU.DriverVersion
+                                            }
+                        }
             };
         }
 
+        /*
+        private static string GetPythonVersions()
+        {
+            // Windows: py -0
+            // Linux:   ls -1 /usr/bin/python* | grep '.*[2-3].[0-9]$' | sed 's/\/usr\/bin\///g'
+        }
+        */
+        
         private static List<PerformanceCounter> GetCounters(string category, string metricName,
                                                             string? instanceEnding = null)
         {
@@ -736,73 +1095,70 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
-        /// Format Size from bytes to a Kb, MiB or GiB string, where 1KiB = 1024 bytes.
+        /// Runs a command/args as a process, grabs the output of this process, then creates a
+        /// dictionary containing name/value pairs based on a regex pattern against the output.
+        /// An entry "output" containing the full output of the process will always be included.
         /// </summary>
-        /// <param name="bytes">Number of bytes.</param>
-        /// <param name="rounding">The number of significant decimal places (precision) in the
-        /// return value.</param>
-        /// <param name="useMebiBytes">If true then use MiB (1024 x 1024)B not MB (1000 x 1000)B.
-        /// <param name="itemAbbreviation">The item abbreviation (eg 'B' for bytes).</param>
-        /// <param name="compact">If set to <c>true</c> then compact the string result (no spaces).
-        /// </param>
-        /// <returns>Returns formatted size.</returns>
-        /// <example>
-        /// +----------------------+
-        /// | input  |   output    |
-        /// -----------------------|
-        /// |  1024  |    1 Kb     |
-        /// |  225   |  225 B      |
-        /// +----------------------+
-        /// </example>
-        private static string FormatSizeBytes(long bytes, int rounding, bool useMebiBytes = true,
-                                              string itemAbbreviation = "B",
-                                              bool compact = false)
+        /// <param name="command">The command to run</param>
+        /// <param name="args">The args for the command</param>
+        /// <param name="pattern">The regex pattern to apply to the output of the command. Each
+        /// named expression in that pattern will be the name of an entry in the return dictionary</param>
+        /// <returns>A Dictionary</returns>
+        /// <remarks>Suppose you call the process "dotnet" with args "--version". Say you want to 
+        /// extract the Major/Minor version, so your pattern is @"(?<major>\d+)\.(?<minor>\d+)".
+        /// The results from this call will be a dictionary with:
+        ///    "output" = "7.0.201",
+        ///    "major"  = "7"
+        ///    "minor"  = "0"
+        /// "output" is always added as the first item in the dictionary, and is the full text output
+        /// by the process call. The names "major", and "minor" were pulled from the regex pattern.
+        /// </remarks>
+        private async static ValueTask<Dictionary<string, string>> GetProcessInfo(string command,
+                                                                                  string args,
+                                                                                  string? pattern = null)
         {
-            string result;
-            string format = "#,###." + new string('#', rounding);
-            string spacer = compact ? string.Empty : " ";
+            var values = new Dictionary<string, string>();
 
-            int kiloDivisor = useMebiBytes? 1024 : 1000;
-            int megaDivisor = useMebiBytes? 1024 * 1024: 1000 * 1000;
-            int gigaDivisor = useMebiBytes? 1024 * 1024 * 1024: 1000 * 1000 * 1000;
-
-            if (itemAbbreviation == "B" && useMebiBytes)
-                itemAbbreviation = "iB";
-
-            // We're trusting that the compiler will pre-compute the literals here.
-
-            if (bytes < megaDivisor)            // less than a megaunit
+            try
             {
-                if (bytes < kiloDivisor)        // less than a kilounit
+                var info = new ProcessStartInfo(command, args);
+                info.RedirectStandardOutput = true;
+
+                using var process = Process.Start(info);
+                if (process?.StandardOutput is null)
+                    return values;
+
+                string? output = await process.StandardOutput.ReadToEndAsync() ?? string.Empty;
+
+                // Raw output
+                values["output"] = output;
+
+                // Extracted values
+                if (!string.IsNullOrEmpty(pattern))
                 {
-                    result = bytes.ToString("N0", CultureInfo.CurrentCulture) + spacer + itemAbbreviation;
-                }
-                else                            // more than a kilounit
-                {
-                    result = Math.Round(bytes / (float)kiloDivisor,
-                                        rounding).ToString(format, CultureInfo.CurrentCulture) +
-                                        spacer + "K" + itemAbbreviation;
+                    // Match values in the output against the pattern
+                    Match valueMatch = Regex.Match(output, pattern, RegexOptions.ExplicitCapture);
+
+                    // Match the names in the pattern against our match name pattern
+                    Regex expression = new Regex(@"\(\?\<(?<matchName>([a-zA-Z_-]+))\>");
+                    var results = expression.Matches(pattern);
+
+                    // For each name we found in the search pattern, get the value of the match of that
+                    // name from the output string and store in the dictionary
+                    foreach (Match patternMatch in results)
+                    {
+                        string matchName = patternMatch.Groups[1].Value;
+                        values[matchName] = valueMatch.Groups[matchName].Value;
+                    }
                 }
             }
-            else                                // greater than a megaunit
+            catch (Exception e)
             {
-                if (bytes > gigaDivisor)        // greater than a gigaunit
-                {
-                    result = Math.Round(bytes / (float)gigaDivisor,
-                                        rounding).ToString(format, CultureInfo.CurrentCulture) +
-                                        spacer + "G" + itemAbbreviation;
-                }
-                else                            // greater than a megaunit
-                {
-                    result = Math.Round(bytes / (float)megaDivisor,
-                                        rounding).ToString(format, CultureInfo.CurrentCulture) +
-                                        spacer + "M" + itemAbbreviation; // megaunits
-                }
+                Console.WriteLine(e);
             }
 
-            return result;
+            return values;
         }
-
     }
 }
 #pragma warning restore CA1416 // Validate platform compatibility

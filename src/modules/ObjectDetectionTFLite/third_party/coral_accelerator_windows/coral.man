@@ -1,0 +1,48 @@
+<!-- <?xml version="1.0" encoding="UTF-16"?> -->
+<instrumentationManifest
+  xmlns="http://schemas.microsoft.com/win/2004/08/events"
+  xmlns:win="https://manifests.microsoft.com/win/2004/08/windows/events"
+  xmlns:xs="https://www.w3.org/2001/XMLSchema"
+  >
+
+  <instrumentation>
+
+    <counters xmlns="http://schemas.microsoft.com/win/2005/12/counters"
+              schemaVersion="1.1">
+
+      <provider callback = "custom"
+                applicationIdentity = "%SystemRoot%\System32\Drivers\coral.sys"
+                providerType = "kernelMode"
+                providerName = "coral"
+                providerGuid = "{AAA5BF9E-C44B-4177-AF65-D3A06BA45FE7}">
+
+        <counterSet guid        = "{075C6A9D-7C06-411A-B48A-AEBBD758150C}"
+                    uri         = "Coral.PCIeAccelerator"
+                    name        = "Coral PCIe Accelerator"
+                    description = "This counter set displays Coral PCIe Accelerator parameters"
+                    instances   = "multiple"
+                    symbol      = "DevicePerformaceCounters">
+
+          <structs>
+            <struct name="DevicePerformaceCounters" type="DEVICE_PERF_COUNTERS"/>
+          </structs>
+
+          <counter id           = "1"
+                   uri          = "Coral.PCIeAccelerator.Temp"
+                   name         = "Temperature"
+                   description  = "Coral PCIe Accelerator temperature"
+                   struct       = "DevicePerformaceCounters"
+                   field        = "temperature"
+                   type         = "perf_counter_rawcount"
+                   detailLevel  = "standard"
+                   defaultScale = "-3"/>
+
+        </counterSet>
+
+      </provider>
+
+    </counters>
+
+  </instrumentation>
+
+</instrumentationManifest>

@@ -1,0 +1,13 @@
+#! Python3.8
+
+# For edge devices only
+# tflite-runtime==2.5.0.post1 # Installing Tensorflow Lite
+
+# Tensorflow 2.10 was the last version that supported GPU on windows
+tensorflow==2.10            # Installing Tensorflow
+
+numpy			            # Installing NumPy, a package for scientific computing
+Pillow>=4.0.0               # Installing Pillow, a Python Image Library
+OpenCV-Python               # Installing OpenCV, the Open source Computer Vision library
+
+# last line empty

@@ -7,62 +7,75 @@ import torch
 from models.experimental import attempt_load
 from PIL import Image
 from utils.datasets import LoadImages, LoadStreams, letterbox
+from options import Options
 
 from utils.general import (
     non_max_suppression,
     scale_coords,
 )
 
+from module_runner import ModuleRunner
+
+
+def init_detect(opts: Options):
+
+    if opts.use_CUDA:
+        try:
+            opts.use_CUDA = torch.cuda.is_available()
+        except:
+            print("Unable to test for CUDA support: " + str(ex))
+            opts.use_CUDA = False
+
+    try:
+        import cpuinfo
+        cpu_brand = cpuinfo.get_cpu_info().get('brand_raw')
+        if cpu_brand and cpu_brand.startswith("Apple M"):
+            opts.use_MPS = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    except Exception as ex:
+        print("Unable to import test for Apple Silicon: " + str(ex))
+
+
 class YOLODetector(object):
-    # def __init__(self, model_path: str, reso: int = 640, cuda: bool = False):
+
     def __init__(self, model_path: str, reso: int = 640, cuda: bool = False, 
-                 cuda_device_num: int = 0, mps: bool = False,
+                 accel_device_name: str = 0, mps: bool = False,
                  half_precision: str = 'enable'):
 
         if cuda:
             self.device_type = "cuda"
-        elif mps:
-            self.device_type = "mps"
-        else:
-            self.device_type = "cpu"
 
-        self.device = torch.device("cuda:0" if cuda else "cpu")
+            # accel_device_name = "cuda:1" - for testing
 
-       # Use half-precision if possible. There's a bunch of Nvidia cards where
-        # this won't work
-        if cuda:
-            if cuda_device_num >= 0 and cuda_device_num < torch.cuda.device_count():
-                self.device = torch.device(f"cuda:{cuda_device_num}")
+            if accel_device_name: # should be "cuda:N" where N < # devices
+                self.device = torch.device(accel_device_name)
             else:
-                self.device = torch.device("cuda")
+                self.device = torch.device("cuda") # = cuda:0
 
             device_name = torch.cuda.get_device_name(self.device)
 
-            no_half = ["TU102","TU104","TU106","TU116", "TU117",
-                       "GeoForce GT 1030", "GeForce GTX 1050","GeForce GTX 1060",
-                       "GeForce GTX 1060","GeForce GTX 1070","GeForce GTX 1080",
-                       "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080",
-                       "GeForce GTX 1650", "GeForce GTX 1660", "MX550", "MX450",
-                       "Quadro RTX 8000", "Quadro RTX 6000", "Quadro RTX 5000", "Quadro RTX 4000"
-                       # "Quadro P1000", - this works with half!
-                       "Quadro P620", "Quadro P400",
-                       "T1000", "T600", "T400","T1200","T500","T2000",
-                       "Tesla T4"]
-
+            print(f"GPU compute capability is {torch.cuda.get_device_capability()[0]}.{torch.cuda.get_device_capability()[1]}")
+            
             if half_precision == 'disable':
                 self.half = False
             else:
-                self.half = half_precision == 'force' or \
-                            not any(check_name in device_name for check_name in no_half)
+                self.half = half_precision == 'force' or torch.cuda.get_device_capability()[0] >= 6
 
             if self.half:
                 print(f"Using half-precision for the device '{device_name}'")
             else:
                 print(f"Not using half-precision for the device '{device_name}'")
-        else:
+
+        elif mps:
+            self.device_type = "mps"
             self.device = torch.device(self.device_type)
-            device_name = "Apple Silicon GPU" if mps else "CPU"
-            self.half = False
+            device_name = "Apple Silicon GPU"
+            self.half   = False
+
+        else:
+            self.device_type = "cpu"
+            device_name = "CPU"
+            self.device = torch.device(self.device_type)
+            self.half   = False
 
         print(f"Inference processing will occur on device '{device_name}'")
 

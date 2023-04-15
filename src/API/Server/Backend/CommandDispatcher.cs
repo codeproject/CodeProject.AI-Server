@@ -62,14 +62,11 @@ namespace CodeProject.AI.API.Server.Backend
         }
         */
 
-        // TODO: Remove reqid, since it is just a copy of payload.command
-        public async Task<object> QueueRequest(string queueName, string reqid,
-                                               RequestPayload payload,
+        public async Task<object> QueueRequest(string queueName, RequestPayload payload,
                                                CancellationToken token = default)
         {
-            var response = await _queueServices.SendRequestAsync(queueName, 
-                                                                 new BackendRequest (reqid, payload),
-                                                                 token);
+            var response = await _queueServices.SendRequestAsync(queueName.ToLower(), 
+                                                                 new BackendRequest(payload), token);
             return response;
         }
     }

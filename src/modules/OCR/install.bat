@@ -9,19 +9,21 @@
 :: The setup.bat file will find this install.bat file and execute it.
 
 @if "%1" NEQ "install" (
-	echo This script is only called from /src/setup.bat
+	echo This script is only called from ..\..\src\setup.bat
 	@pause
 	@goto:eof
 )
 
 :: Install python and the required dependencies
 :: Note that PaddlePaddle requires Python <= 3.8
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "LocalToModule"
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "LocalToModule"
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "LocalToModule"
+call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Local"
+rem if errorlevel 1 exit /b 1
 
-:: Download the OCR models and store in /paddleocr
-call "%sdkScriptsPath%\utils.bat" GetFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
+call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "Local"
+rem if errorlevel 1 exit /b 1
+
+call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "Local"
+rem if errorlevel 1 exit /b 1
 
 :: We have a patch to apply!
 call "!sdkScriptsPath!\utils.bat" WriteLine "Applying patch for PaddlePaddle" "!color_info!"
@@ -31,6 +33,10 @@ if /i "!hasCUDA!" == "true" (
 	copy /Y "!modulePath!\patch\paddle2.3.2\image.py"         "!modulePath!\bin\%os%\python37\venv\Lib\site-packages\paddle\dataset\"
 )
 
+:: Download the OCR models and store in /paddleocr
+call "%sdkScriptsPath%\utils.bat" GetFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
+rem if errorlevel 1 exit /b 1
+
 :: Cleanup if you wish
 :: rmdir /S %downloadPath%
 
@@ -39,14 +45,13 @@ if /i "!hasCUDA!" == "true" (
 ::
 :: Variables available:
 ::
-::  absoluteRootDir       - the root path of the installation (eg: C:\Program Files]\CodeProject\AI)
+::  absoluteAppRootDir    - the root path of the app (eg: C:\Program Files]\CodeProject\AI\)
 ::  sdkScriptsPath        - the path to the installation utility scripts (%rootPath%\src\SDK\Scripts)
 ::  downloadPath          - the path to where downloads will be stored (%rootPath%\src\downloads)
-::  installedModulesPath  - the path to the pre-installed AI modules (%rootPath%\src\AnalysisLayer)
-::  downloadedModulesPath - the path to the download AI modules (%rootPath%\src\modules)
+::  runtimesPath          - the path to the installed runtimes (%rootPath%\src\runtimes)
+::  modulesPath           - the path to all the AI modules (%rootPath%\src\modules)
 ::  moduleDir             - the name of the directory containing this module
-::  modulePath            - the path to this module (%installedModulesPath%\%moduleDir% or
-::                          %downloadedModulesPath%\%moduleDir%, depending on whether pre-installed)
+::  modulePath            - the path to this module (%modulesPath%\%moduleDir%)
 ::  os                    - "windows"
 ::  architecture          - "x86_64" or "arm64"
 ::  platform              - "windows" or "windows-arm64"
@@ -75,11 +80,11 @@ if /i "!hasCUDA!" == "true" (
 ::  SetupPython Version [install-location]
 ::       Version - version number of python to setup. 3.7 and 3.9 currently supported. A virtual
 ::                 environment will be created in the module's local folder if install-location is
-::                 "LocalToModule", otherwise in %installedModulesPath%/bin/windows/python<version>/venv.
-::       install-location - [optional] "LocalToModule" or "Shared" (see above)
+::                 "Local", otherwise in %runtimesPath%/bin/windows/python<version>/venv.
+::       install-location - [optional] "Local" or "Shared" (see above)
 ::
 ::  InstallPythonPackages Version requirements-file-directory [install-location]
 ::       Version - version number, as per SetupPython
 ::       requirements-file-directory - directory containing the requirements.txt file
-::       install-location - [optional] "LocalToModule" (installed in the module's local folder) or 
-::                          "Shared" (installed in the shared AnalysisLayer/bin directory)
+::       install-location - [optional] "Local" (installed in the module's local folder) or 
+::                          "Shared" (installed in the shared runtimes/bin directory)

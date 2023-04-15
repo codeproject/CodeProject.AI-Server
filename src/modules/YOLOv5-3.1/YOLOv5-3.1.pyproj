@@ -66,6 +66,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
+	  <Content Include="requirements.linux.txt" >
+		  <DependentUpon>requirements.txt</DependentUpon>
+	  </Content>
 	  <Content Include="requirements.linux.arm64.txt" >
 		  <DependentUpon>requirements.txt</DependentUpon>
 	  </Content>

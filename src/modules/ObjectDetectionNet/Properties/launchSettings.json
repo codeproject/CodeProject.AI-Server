@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "ObjectDetectionNet": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "CPAI_MODULE_SUPPORT_GPU": "true",
+        "CPAI_LOG_VERBOSITY" : "info",
+        "CPAI_MODULE_PARALLELISM": "0"
+      },
+      "dotnetRunMessages": "true"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

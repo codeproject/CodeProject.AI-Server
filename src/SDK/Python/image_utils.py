@@ -43,6 +43,7 @@ def deskew(src_img):
     return src_img
   
 if __name__ == '__main__':
+    pass
     # import cv2
     # img = cv2.imread('test.png')
     # corrected_img = deskew(img)

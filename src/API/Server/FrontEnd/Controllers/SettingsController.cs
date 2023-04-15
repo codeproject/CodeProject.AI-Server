@@ -47,7 +47,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
     ///         "MODEL_SIZE" : "Large"
     ///     },
     ///     "FaceProcessing": {
-    ///         "Activate" : "False"
+    ///         "AutoStart" : "False"
     ///     }
     /// }
     ///</example>
@@ -61,10 +61,12 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
     [ApiController]
     public class SettingsController : ControllerBase
     {
-        private readonly IConfiguration _config;
-        private readonly ServerOptions  _serverOptions;
-        private readonly ModuleRunner   _moduleRunner;
-        private readonly string         _storagePath;
+        private readonly IConfiguration        _config;
+        private readonly ServerOptions         _serverOptions;
+        private readonly ModuleSettings        _moduleSettings;
+        private readonly ModuleCollection      _moduleCollection;
+        private readonly ModuleProcessServices _moduleProcessServices;
+        private readonly string                _storagePath;
 
 
 
@@ -73,16 +75,22 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         /// </summary>
         /// <param name="config">The configuration</param>
         /// <param name="serverOptions">The server options</param>
-        /// <param name="moduleRunner">The module runner instance</param>
+        /// <param name="moduleSettings">The moduleSettings.</param>
+        /// <param name="moduleCollection">The collection of modules.</param>
+        /// <param name="moduleProcessServices">The Module Process Services.</param>
         public SettingsController(IConfiguration config,
                                   IOptions<ServerOptions> serverOptions,
-                                  ModuleRunner moduleRunner)
+                                  ModuleSettings moduleSettings,
+                                  IOptions<ModuleCollection> moduleCollection,
+                                  ModuleProcessServices moduleProcessServices)
         {
-            _config        = config;
-            _serverOptions = serverOptions.Value;
-            _moduleRunner  = moduleRunner;
-            _storagePath   = _config["ApplicationDataDir"] 
-                           ?? throw new ApplicationException("ApplicationDataDir is not defined in configuration");
+            _config                = config;
+            _serverOptions         = serverOptions.Value;
+            _moduleSettings        = moduleSettings;
+            _moduleCollection      = moduleCollection.Value;
+            _moduleProcessServices = moduleProcessServices;
+            _storagePath           = _config["ApplicationDataDir"] 
+                                   ?? throw new ApplicationException("ApplicationDataDir is not defined in configuration");
         }
 
         /// <summary>
@@ -106,24 +114,33 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (settings == null || string.IsNullOrWhiteSpace(settings.Name))
                return new ErrorResponse("No setting or setting name provided");
 
-            ModuleConfig? module = _moduleRunner.GetModule(moduleId);
+            ModuleConfig? module = _moduleCollection.GetModule(moduleId);
             if (module is null)
                 return new ErrorResponse($"No module with ID {moduleId} found");
 
-            // Make the change to the module's settings
-            module.UpsertSetting(settings.Name, settings.Value);
-
-            // Restart the module and persist the settings
             bool success = false;
-            if (await _moduleRunner.RestartProcess(module))
-            {
-                var settingStore = new PersistedOverrideSettings(_storagePath);
-                var overrideSettings = await settingStore.LoadSettings();
 
-                if (ModuleConfigExtensions.UpsertSettings(overrideSettings, module.ModuleId!,
-                                                          settings.Name, settings.Value))
+            // Special case
+            if (settings.Name.EqualsIgnoreCase("Restart"))
+            {
+                success = await _moduleProcessServices.RestartProcess(module);
+            }
+            else
+            {
+                // Make the change to the module's settings
+                module.UpsertSetting(settings.Name, settings.Value);
+
+                // Restart the module and persist the settings
+                if (await _moduleProcessServices.RestartProcess(module))
                 {
-                    success = await settingStore.SaveSettings(overrideSettings);
+                    var settingStore = new PersistedOverrideSettings(_storagePath);
+                    var overrideSettings = await settingStore.LoadSettings();
+
+                    if (ModuleConfigExtensions.UpsertSettings(overrideSettings, module.ModuleId!,
+                                                              settings.Name, settings.Value))
+                    {
+                        success = await settingStore.SaveSettings(overrideSettings);
+                    }
                 }
             }
 
@@ -164,15 +181,14 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                     // Update all settings based on what's in the global settings. We'll get back a
                     // list of affected modules that need restarting.
                     Dictionary<string, string> globalSettings = moduleSetting.Value;
-                    ModuleCollection modules = _moduleRunner.Modules;
-                    moduleIdsToRestart = LegacyParams.UpdateSettings(globalSettings, modules,
+                    moduleIdsToRestart = LegacyParams.UpdateSettings(globalSettings, _moduleCollection,
                                                                      overrideSettings);
 
                     continue;
                 }
 
                 // Targeting a specific module
-                ModuleConfig? module = _moduleRunner.GetModule(moduleId);
+                ModuleConfig? module = _moduleCollection.GetModule(moduleId);
                 if (module is null)
                     continue;
 
@@ -194,9 +210,9 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             // Restart the modules that were updated
             foreach (string moduleId in moduleIdsToRestart)
             {
-                ModuleConfig? module = _moduleRunner.GetModule(moduleId);
+                ModuleConfig? module = _moduleCollection.GetModule(moduleId);
                 if (module is not null)
-                    restartSuccess = await _moduleRunner.RestartProcess(module) && restartSuccess;
+                    restartSuccess = await _moduleProcessServices.RestartProcess(module) && restartSuccess;
             }
 
             // Only persist these override settings if all modules restarted successfully
@@ -222,7 +238,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             if (string.IsNullOrWhiteSpace(moduleId))
                 return new ErrorResponse("No module ID provided");
 
-            ModuleConfig? module = _moduleRunner.GetModule(moduleId);
+            ModuleConfig? module = _moduleCollection.GetModule(moduleId);
             if (module is null)
                 return new ErrorResponse($"No module found with ID {moduleId}");
 
@@ -232,15 +248,17 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
             // Expand the environment variables
             foreach (string key in processEnvironmentVars.Keys)
-                processEnvironmentVars[key] = _moduleRunner.ModuleSettings.ExpandOption(processEnvironmentVars[key]);
+                processEnvironmentVars[key] = _moduleSettings.ExpandOption(processEnvironmentVars[key]);
 
             var response = new SettingsResponse
             {
                 success  = true,
                 settings = new
                 {
-                    activate           = module.Activate ?? false,
+                    autostart          = module.AutoStart ?? false,
                     supportGPU         = module.SupportGPU,
+                    logVerbosity       = module.LogVerbosity,
+                    halfPrecision      = module.HalfPrecision,
                     parallelism        = module.Parallelism,
                     postStartPauseSecs = module.PostStartPauseSecs
                 },

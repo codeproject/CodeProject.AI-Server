@@ -14,11 +14,13 @@ if [ "$1" != "install" ]; then
 	exit 1 
 fi
 
-
-# Install python and the required dependencies. If we find onnxruntime then asssume it's all there
-setupPython 3.9 "Shared"
-installPythonPackages 3.9 "${modulePath}" "Shared"
-installPythonPackages 3.9 "${absoluteAppRootDir}/SDK/Python" "Shared"
+# Install python and the required dependencies in the shared Python environment
+setupPython 3.9 "Local"
+if [ $? -ne 0 ]; then quit 1; fi
+installPythonPackages 3.9 "${modulePath}" "Local"
+if [ $? -ne 0 ]; then quit 1; fi
+installPythonPackages 3.9 "${absoluteAppRootDir}/SDK/Python" "Local"
+if [ $? -ne 0 ]; then quit 1; fi
 
 # Location of models as per original repo
 # u2netp:          https://drive.google.com/uc?id=1tNuFmLv0TSNDjYIkjEdeH1IWKQdUA4HR
@@ -28,6 +30,7 @@ installPythonPackages 3.9 "${absoluteAppRootDir}/SDK/Python" "Shared"
 
 # Download the models and store in /models
 getFromServer "rembg-models.zip" "models" "Downloading Background Remover models..."
+if [ $? -ne 0 ]; then quit 1; fi
 
 
 
@@ -35,14 +38,13 @@ getFromServer "rembg-models.zip" "models" "Downloading Background Remover models
 #
 # Variables available:
 #
-#  absoluteAppRootDir    - the root path of the app (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/src/SDK/Scripts)
-#  downloadPath          - the path to where downloads will be stored ($rootPath/src/downloads)
-#  installedModulesPath  - the path to the pre-installed AI modules ($rootPath/src/AnalysisLayer)
-#  downloadedModulesPath - the path to the download AI modules ($rootPath/src/modules)
+#  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
+#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/Installers)
+#  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
+#  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
+#  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
 #  moduleDir             - the name of the directory containing this module
-#  modulePath            - the path to this module ($installedModulesPath/$moduleDir or
-#                          $downloadedModulesPath/$moduleDir, depending on whether pre-installed)
+#  modulePath            - the path to this module ($modulesPath/$moduleDir)
 #  os                    - "linux" or "macos"
 #  architecture          - "x86_64" or "arm64"
 #  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
@@ -77,11 +79,11 @@ getFromServer "rembg-models.zip" "models" "Downloading Background Remover models
 #  setupPython Version [install-location]
 #       Version - version number of python to setup. 3.8 and 3.9 currently supported. A virtual
 #                 environment will be created in the module's local folder if install-location is
-#                 "LocalToModule", otherwise in $installedModulesPath/bin/$platform/python<version>/venv.
-#       install-location - [optional] "LocalToModule" or "Shared" (see above)
+#                 "Local", otherwise in $runtimesPath/bin/$platform/python<version>/venv.
+#       install-location - [optional] "Local" or "Shared" (see above)
 #
 #  installPythonPackages Version requirements-file-directory
 #       Version - version number, as per SetupPython
 #       requirements-file-directory - directory containing the requirements.txt file
-#       install-location - [optional] "LocalToModule" (installed in the module's local venv) or 
-#                          "Shared" (installed in the shared $installedModulesPath/bin venv folder)
+#       install-location - [optional] "Local" (installed in the module's local venv) or 
+#                          "Shared" (installed in the shared $runtimesPath/bin venv folder)

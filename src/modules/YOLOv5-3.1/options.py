@@ -1,5 +1,5 @@
 import os
-import torch
+from module_options import ModuleOptions
 
 class Settings:
 
@@ -10,80 +10,51 @@ class Settings:
 
 class Options:
 
-    def get_env_variable(varName: str, default: str):
-        value = os.getenv(varName, "")
-        if not value and default != "": # Allow a None value to be a default
-            value = default
-            print(f"{varName} not found. Setting to default {default}")
+    def __init__(self):
+        # -------------------------------------------------------------------------
+        # Setup constants
 
-        return value
+        # see https://github.com/ultralytics/yolov5 for resolution data
+        self.MODEL_SETTINGS = {
+            # "tiny":   Settings(STD_MODEL_NAME = "yolov5n", RESOLUTION = 256), # 640
+            "small":  Settings(STD_MODEL_NAME = "yolov5s", RESOLUTION = 256),
+            "medium": Settings(STD_MODEL_NAME = "yolov5m", RESOLUTION = 416),
+            "large":  Settings(STD_MODEL_NAME = "yolov5l", RESOLUTION = 640),
+            # "huge":   Settings(STD_MODEL_NAME = "yolov5x", RESOLUTION = 640)  # Not yet included
+        }
 
-    # -------------------------------------------------------------------------
-    # Setup constants
+        # -------------------------------------------------------------------------
+        # Setup values
 
-    # see https://github.com/ultralytics/yolov5 for resolution data
-    MODEL_SETTINGS = {
-        #"tiny":   Settings(STD_MODEL_NAME = "yolov5n", RESOLUTION = 256), # 640
-        "small":  Settings(STD_MODEL_NAME = "yolov5s", RESOLUTION = 256),
-        "medium": Settings(STD_MODEL_NAME = "yolov5m", RESOLUTION = 416),
-        "large":  Settings(STD_MODEL_NAME = "yolov5l", RESOLUTION = 640),
-        #"huge":   Settings(STD_MODEL_NAME = "yolov5x", RESOLUTION = 640)  # Not yet included
-    }
+        self._show_env_variables = True
 
-    # -------------------------------------------------------------------------
-    # Setup values
+        self.app_dir            = os.path.normpath(ModuleOptions.getEnvVariable("APPDIR", os.getcwd()))
+        self.models_dir         = os.path.normpath(ModuleOptions.getEnvVariable("MODELS_DIR", f"{self.app_dir}/assets"))
+        self.custom_models_dir  = os.path.normpath(ModuleOptions.getEnvVariable("CUSTOM_MODELS_DIR", f"{self.app_dir}/custom-models"))
 
-    _show_env_variables = True
+        self.sleep_time         = 0.01
 
-    app_dir           = os.path.normpath(get_env_variable("APPDIR", os.getcwd()))
-    models_dir        = os.path.normpath(get_env_variable("MODELS_DIR", f"{app_dir}/assets"))
-    custom_models_dir = os.path.normpath(get_env_variable("CUSTOM_MODELS_DIR", f"{app_dir}/custom-models"))
+        self.model_size         = ModuleOptions.getEnvVariable("MODEL_SIZE", "Medium")   # small, medium, large //, nano, x-large
+        self.use_CUDA           = ModuleOptions.getEnvVariable("USE_CUDA",   "True")     # True / False
+        self.use_MPS            = False   # Default is False, but we'll enable if possible
 
-    sleep_time        = 0.01
+        # Normalise input
+        self.model_size         = self.model_size.lower()
+        self.use_CUDA           = ModuleOptions.support_GPU and self.use_CUDA.lower() == "true"
 
-    port              = get_env_variable("CPAI_PORT",  "32168")
-    support_GPU       = get_env_variable("CPAI_MODULE_SUPPORT_GPU", "True")
-    model_size        = get_env_variable("MODEL_SIZE", "Medium")   # small, medium, large //, nano, x-large
-    use_CUDA          = get_env_variable("USE_CUDA",   "True")     # True / False
-    cuda_device_num   = get_env_variable("CPAI_CUDA_DEVICE_NUM", "0")
-    half_precision    = get_env_variable("CPAI_HALF_PRECISION", "Enable")
+        if self.model_size not in [ "tiny", "small", "medium", "large" ]:
+            self.model_size = "medium"
 
-    # Normalise input
-    model_size        = model_size.lower()
-    support_GPU       = support_GPU.lower() == "true"
-    use_CUDA          = use_CUDA.lower() == "true"
-    use_CUDA          = support_GPU and use_CUDA and torch.cuda.is_available()
-    cuda_device_num   = int(cuda_device_num)
-    half_precision    = half_precision.lower()
-    
-    if half_precision not in [ "force", "enable", "disable" ]:
-        half_precision = "enable"
+        # Get settings
+        settings = self.MODEL_SETTINGS[self.model_size]   
+        self.resolution_pixels = settings.RESOLUTION
+        self.std_model_name    = settings.STD_MODEL_NAME
 
-    use_MPS = False
+        # -------------------------------------------------------------------------
+        # dump the important variables
 
-    try:
-        import cpuinfo
-        manufacturer = cpuinfo.get_cpu_info().get('brand_raw')
-        if manufacturer and manufacturer.startswith("Apple M"):
-            use_MPS = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    except Exception as ex:
-        print("Unable to import cpuinfo and test for hardware:" + str(ex))
+        if self._show_env_variables:
+            print(f"APPDIR:      {self.app_dir}")
+            print(f"MODEL_SIZE:  {self.model_size}")
+            print(f"MODELS_DIR:  {self.models_dir}")
 
-    if model_size not in [ "small", "medium", "large" ]:
-        model_size = "medium"
-
-    # Get settings
-    settings = MODEL_SETTINGS[model_size]   
-    resolution_pixels = settings.RESOLUTION
-    std_model_name    = settings.STD_MODEL_NAME
-
-    # -------------------------------------------------------------------------
-    # dump the important variables
-
-    if _show_env_variables:
-        print(f"APPDIR:      {app_dir}")
-        print(f"CPAI_PORT:   {port}")
-        print(f"MODEL_SIZE:  {model_size}")
-        print(f"MODELS_DIR:  {models_dir}")
-        print(f"support_GPU: {support_GPU}")
-        print(f"use_CUDA:    {use_CUDA}")

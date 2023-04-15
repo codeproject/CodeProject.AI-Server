@@ -62,7 +62,7 @@ namespace CodeProject.AI.SDK
             //     request.DefaultRequestHeaders.Add("X-CPAI-ExecutionProvider", executionProvider);
             // httpResponse = await _httpClient!.SendAsync(request, token).ConfigureAwait(false);
 
-            string requestUri = $"v1/queue/{queueName}?moduleid={moduleId}";
+            string requestUri = $"v1/queue/{queueName.ToLower()}?moduleid={moduleId}";
             if (executionProvider != null)
                 requestUri += $"&executionProvider={executionProvider}";
 
@@ -87,7 +87,7 @@ namespace CodeProject.AI.SDK
                 Console.WriteLine($"Unable to get request from {queueName} for {moduleId}");
                 _errorPauseSecs = Math.Min(_errorPauseSecs > 0 ? _errorPauseSecs * 2 : 5, 60);
 
-                if (_errorPauseSecs > 0)
+                if (!token.IsCancellationRequested && _errorPauseSecs > 0)
                 {
                     Console.WriteLine($"Pausing on error for {_errorPauseSecs} secs.");
                     await Task.Delay(_errorPauseSecs * 1_000, token);
@@ -131,7 +131,7 @@ namespace CodeProject.AI.SDK
             }
             catch 
             {
-                Console.WriteLine($"Unable to sent response to request {reqid} for {moduleId}");
+                Console.WriteLine($"Unable to send response to request for {moduleId} (#reqid {reqid})");
             }
         }
 
@@ -154,7 +154,6 @@ namespace CodeProject.AI.SDK
 
         private async Task SendLoggingData(LoggingData data, CancellationToken token)
         { 
-            // TODO: [Matthew] push this on a Queue/pipeline and process in the background
             var form = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string?, string?>("entry", data.message),

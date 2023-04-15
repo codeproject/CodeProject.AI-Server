@@ -4,25 +4,33 @@
   "Modules": {
     "PortraitFilter": {
       "Name": "Portrait Filter",
-      "Activate": true,
-      "Platforms": [ "windows" ], // errors with Microsoft.ML.OnnxRuntime.NativeMethods in macOS, and System.Drawing issues in Linux
+      "Version": "1.1",
 
       "Description": "Provides a depth-of-field (bokeh) effect on images. Great for selfies.", 
-      "Version": "1.0",
-      "ReleaseDate": "2022-06-01",
-      "LastUpdated": "2022-06-10",
+      "Platforms": [ "windows" ], // errors with Microsoft.ML.OnnxRuntime.NativeMethods in macOS, and System.Drawing issues in Linux
       "License": "MIT",
       "LicenseUrl": "https://opensource.org/licenses/MIT",
-      "PreInstalled": false,
 
-      "Parallelism": 1, // Defaults to (#CPUs - 1)
-      "SupportGPU": true,
-      "PostStartPauseSecs": 1, // 1 if using GPU, 0 for CPU
-
-      "Queue": "portraitfilter_queue",
-      "ModulePath": "PortraitFilter",
+      // Which server version is compatible with each version of this module.
+      "VersionCompatibililty": [
+        // { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-06-01" },
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+      ],
+      
+      // Launch instructions
+      "AutoStart": true,
       "FilePath": "PortraitFilter.exe",
       "Runtime": "execute",
+      "RuntimeLocation": "Shared", // Can be Local or Shared. .NET so moot point here
+
+      // These are all optional. Defaults are usually fine
+      "SupportGPU": true,
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 1,        // 1 if using GPU, 0 for CPU
+
+      "Queue": "portraitfilter_queue",    // default is lower(modulename) + "_queue"
 
       "EnvironmentVariables": {
       },
@@ -59,6 +67,21 @@
               "Name": "filtered_image",
               "Type": "Base64ImageData",
               "Description": "The base64 encoded image that has had its background blurred."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         }

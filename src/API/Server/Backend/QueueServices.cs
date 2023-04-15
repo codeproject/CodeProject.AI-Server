@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -71,7 +72,8 @@ namespace CodeProject.AI.API.Server.Backend
             // that the task is not completed.
             if (!_pendingResponses.TryAdd(request.reqid, completion))
             {
-                return new BackendErrorResponse(-3, $"Unable to add pending response id {request.reqid}.");
+                string msg = $"Unable to add pending response id {request.reqid} to queue '{queueName}'.";
+                return new BackendErrorResponse(msg);
             }
 
             // setup a request timeout.
@@ -89,39 +91,37 @@ namespace CodeProject.AI.API.Server.Backend
                 try
                 {
                     await queue.Writer.WriteAsync(request, theToken).ConfigureAwait(false);
-
-                    if (request != null)
-                        _logger.LogTrace($"Queued: '{request.reqtype}' request, id {request.reqid}");
+                    _logger.LogTrace($"Client request '{request.reqtype}' in queue '{queueName}' (#reqid {request.reqid})");
                 }
                 catch (OperationCanceledException)
                 {
                     if (timeoutToken.IsCancellationRequested)
-                        return new BackendErrorResponse(-1, "request queue is full.");
+                        return new BackendErrorResponse($"Request queue '{queueName}' is full (#reqid {request.reqid})");
 
-                    return new BackendErrorResponse(-6, "the request was canceled by caller.");
+                    return new BackendErrorResponse($"The request in '{queueName}' was canceled by caller (#reqid {request.reqid})");
                 }
 
                 var jsonString = await completion.Task;
 
                 if (jsonString is null)
-                    return new BackendErrorResponse(-5, "null json returned from backend.");
+                    return new BackendErrorResponse($"null json returned from backend (#reqid {request.reqid})");
 
                     return jsonString;
                 }
             catch (OperationCanceledException)
             {
                 if (timeoutToken.IsCancellationRequested)
-                    return new BackendErrorResponse(-1, "The request timed out.");
+                    return new BackendErrorResponse($"The request timed out (#reqid {request.reqid})");
 
-                    return new BackendErrorResponse(-6, "the request was canceled by caller.");
+                    return new BackendErrorResponse($"The request was canceled by caller (#reqid {request.reqid})");
             }
             catch (JsonException)
             {
-                return new BackendErrorResponse(-4, "Invalid JSON response from backend.");
+                return new BackendErrorResponse($"Invalid JSON response from backend (#reqid {request.reqid})");
             }
             catch (Exception ex)
             {
-                return new BackendErrorResponse(-2, ex.Message);
+                return new BackendErrorResponse(ex.Message + $" (#reqid {request.reqid})");
             }
             finally
             {
@@ -131,7 +131,7 @@ namespace CodeProject.AI.API.Server.Backend
 
         private Channel<BackendRequestBase> GetOrCreateQueue(string queueName)
         {
-            return _queues.GetOrAdd(queueName,
+            return _queues.GetOrAdd(queueName.ToLower(),
                             Channel.CreateBounded<BackendRequestBase>(_settings.MaxQueueLength));
         }
 
@@ -147,7 +147,12 @@ namespace CodeProject.AI.API.Server.Backend
                 return false;
 
             completion.SetResult(responseString);
-            _logger.LogTrace($"Response received (id {req_id})");
+            
+            var response = JsonSerializer.Deserialize<JsonObject>(responseString ?? "");
+            if (response?["message"] is not null)
+                _logger.LogTrace($"Response received (#reqid {req_id}): {response["message"]}");
+            else
+                _logger.LogTrace($"Response received (#reqid {req_id})");
 
             return true;
         }
@@ -159,7 +164,7 @@ namespace CodeProject.AI.API.Server.Backend
         /// <returns>A request if available. null if the queue does not exist or empty.</returns>
         public BackendRequestBase? DequeueRequest(string queueName)
         {
-            if(!_queues.TryGetValue(queueName, out Channel<BackendRequestBase>? queue))
+            if(!_queues.TryGetValue(queueName.ToLower(), out Channel<BackendRequestBase>? queue))
                 return null;
 
             BackendRequestBase? request;
@@ -177,12 +182,12 @@ namespace CodeProject.AI.API.Server.Backend
         /// Get a request from the queue.
         /// </summary>
         /// <param name="queueName">The name of the queue.</param>
-        /// <returns>A request if available. null if the queue does not exist 
-        ///     or is cancelled waiting for a value.</returns>
+        /// <returns>A request if available. null if the queue does not exist or is cancelled 
+        /// waiting for a value.</returns>
         public async ValueTask<BackendRequestBase?> DequeueRequestAsync(string queueName, 
                                                                         CancellationToken token = default)
         {
-            if (!_queues.TryGetValue(queueName, out Channel<BackendRequestBase>? queue))
+            if (!_queues.TryGetValue(queueName.ToLower(), out Channel<BackendRequestBase>? queue))
                 return null;
 
             BackendRequestBase? request = null;
@@ -203,7 +208,7 @@ namespace CodeProject.AI.API.Server.Backend
                 {
                     request = await queue.Reader.ReadAsync(theToken).ConfigureAwait(false);
                     if (request != null)
-                        _logger.LogTrace($"Dequeued '{request.reqtype}' request, id {request.reqid}");
+                        _logger.LogTrace($"Request '{request.reqtype}' dequeued from '{queueName}' (#reqid {request.reqid})");
                 }
                 catch
                 {

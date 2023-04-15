@@ -8,17 +8,20 @@
 # 
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-# For speeding up debugging
-skipPipInstall='false'
-
+# Quits the script and returns an optional error code (default is 0)
 function quit () {
 
+    local exit_code=$1
+    if [ "$exit_code" == "" ]; then exit_code=0; fi
+
     if [ "${useColor}" == "true" ] && [ "${darkmode}" == "true" ]; then
-        # this resets the terminal, but also clears the screen which isn't great
+        # this resets the terminal, but also clears all colours from the screen
+        # which isn't great
         # tput reset
         echo
     fi
-    exit
+
+    exit $exit_code
 }
 
 # Returns a color code for the given foreground/background colors
@@ -29,11 +32,13 @@ function quit () {
 #        Defaults to "Default" which uses the system default
 # string background color name.  Optional. Defaults to "Default"
 #        which is the system default
+# string intense. Optional. If "true" then the insensity is turned up
 # returns a string
 function Color () {
 
     local foreground=$1
     local background=$2
+    local intense=$3
 
     if [ "$foreground" == "" ]; then foreground='Default'; fi
     if [ "$background" == "" ]; then background='Default'; fi
@@ -41,29 +46,36 @@ function Color () {
     if [ "$foreground" == 'Contrast' ]; then
         foreground=$(ContrastForeground ${background})
     fi
-    
+
+    # Colour effect: <ESC>[(0|1)<code>m, where 0 = not intense / reset, 1 = intense    
+    # See this most excellent answer: https://stackoverflow.com/a/33206814
     local colorString='\033['
+    if [ "$intense" == "true" ]; then 
+        colorString="${colorString}1;"
+    else
+        colorString="${colorString}0;"
+    fi
 
     # Foreground Colours
     case "$foreground" in
-        'Default')      colorString='\033[0;39m';;
-        'Black' )       colorString='\033[0;30m';;
-        'DarkRed' )     colorString='\033[0;31m';;
-        'DarkGreen' )   colorString='\033[0;32m';;
-        'DarkYellow' )  colorString='\033[0;33m';;
-        'DarkBlue' )    colorString='\033[0;34m';;
-        'DarkMagenta' ) colorString='\033[0;35m';;
-        'DarkCyan' )    colorString='\033[0;36m';;
-        'Gray' )        colorString='\033[0;37m';;
-        'DarkGray' )    colorString='\033[1;90m';;
-        'Red' )         colorString='\033[1;91m';;
-        'Green' )       colorString='\033[1;92m';;
-        'Yellow' )      colorString='\033[1;93m';;
-        'Blue' )        colorString='\033[1;94m';;
-        'Magenta' )     colorString='\033[1;95m';;
-        'Cyan' )        colorString='\033[1;96m';;
-        'White' )       colorString='\033[1;97m';;
-        *)              colorString='\033[0;39m';;
+        'Default')      colorString="${colorString}39m";;
+        'Black' )       colorString="${colorString}30m";;
+        'DarkRed' )     colorString="${colorString}31m";;
+        'DarkGreen' )   colorString="${colorString}32m";;
+        'DarkYellow' )  colorString="${colorString}33m";;
+        'DarkBlue' )    colorString="${colorString}34m";;
+        'DarkMagenta' ) colorString="${colorString}35m";;
+        'DarkCyan' )    colorString="${colorString}36m";;
+        'Gray' )        colorString="${colorString}37m";;
+        'DarkGray' )    colorString="${colorString}90m";;
+        'Red' )         colorString="${colorString}91m";;
+        'Green' )       colorString="${colorString}92m";;
+        'Yellow' )      colorString="${colorString}93m";;
+        'Blue' )        colorString="${colorString}94m";;
+        'Magenta' )     colorString="${colorString}95m";;
+        'Cyan' )        colorString="${colorString}96m";;
+        'White' )       colorString="${colorString}97m";;
+        *)              colorString="${colorString}39m";;
     esac
 
     # Background Colours
@@ -157,7 +169,7 @@ function errorNoPython () {
     writeLine 
     writeLine
     
-    quit
+    quit 3 # required runtime missing, needs installing
 }
 
 function spin () {
@@ -255,34 +267,65 @@ function write () {
 
 function checkForTool () {
 
+    # Install the tool and move on, or warn and quit?
+    doInstall="true"
+
     local name=$1
 
     if command -v ${name} &> /dev/null; then
-        return
+        return 0 # all good
     fi
 
-    writeLine
-    writeLine
-    writeLine '------------------------------------------------------------------------'
-    writeLine "Error: ${name} is not installed on your system" $color_error
+    if [[ "${doInstall}" == "true" ]]; then
+        if [ "$os" == "macos" ]; then
+            # Ensure Brew is installed
+            if ! command -v brew &> /dev/null; then
+                writeLine "Installing brew..." $color_info
+                /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'
 
-    if [ "$os" == "macos" ]; then
-        writeLine "       Please run 'brew install ${name}'" $color_error
+                if [ $? -ne 0 ]; then 
+                    quit 10 # failed to install required tool
+                fi
+            fi
 
-        if ! command -v brew &> /dev/null; then
-            writeLine
-            writeLine "Error: It looks like you don't have brew installed either" $color_warn
-            writeLine '       Please run:' $color_warn
-            writeLine "       /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'" $color_warn
-            quit
+            writeLine "Installing ${name}..." $color_info
+            brew install ${name}
+        else
+            writeLine "Installing ${name}..." $color_info
+            sudo apt install ${name}
         fi
+
+        if [ $? -ne 0 ]; then 
+            quit 10 # failed to install required tool
+        fi
+
     else
-        writeLine "       Please run 'sudo apt install ${name}'" $color_error
+        writeLine
+        writeLine
+        writeLine '------------------------------------------------------------------------'
+        writeLine "Error: ${name} is not installed on your system" $color_error
+
+        if [ "$os" == "macos" ]; then
+        
+            writeLine "       Please run 'brew install ${name}'" $color_error
+
+            if ! command -v brew &> /dev/null; then
+                writeLine
+                writeLine "Error: It looks like you don't have brew installed either" $color_warn
+                writeLine '       Please run:' $color_warn
+                writeLine "       /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'" $color_warn
+                quit 4 # required tool missing, needs installing
+            fi
+        else
+            writeLine "       Please run 'sudo apt install ${name}'" $color_error
+        fi
+
+        writeLine
+        writeLine
+        quit 4 # required tool missing, needs installing
     fi
 
-    writeLine
-    writeLine
-    quit
+    return 0
 }
 
 # Thanks to https://stackoverflow.com/a/4025065/1128209
@@ -318,6 +361,7 @@ compareVersions () {
             return 2
         fi
     done
+
     return 0
 }
 
@@ -343,7 +387,7 @@ function setupDotNet () {
 
         if [ "$offlineInstall" == "true" ]; then 
             writeLine "Offline Installation: Unable to download and install .NET." $color_error
-            return
+            return 4 # required tool missing, needs installing
         fi
 
         # The script provides the warning: "To set up a development environment or to run apps,
@@ -363,7 +407,10 @@ function setupDotNet () {
 
             if [ "${hardware}" == "RaspberryPi" ]; then
 
-                sudo bash "${pathToInstallerBase}/dotnet-install-rpi.sh" ${sdkInstallVersion}
+                sudo bash "${sdkScriptsPath}/dotnet-install-rpi.sh" ${sdkInstallVersion}
+                if [ $? -ne 0 ]; then 
+                    return 2 # failed to install required runtime
+                fi
 
             elif [ "$currentLinuxDistro" == "ubuntu" ] && [[ "$currentLinuxVersion" =~ ^(18\.04|20\.04|21\.04|22\.04|22\.10)$ ]]; then           
 
@@ -372,6 +419,10 @@ function setupDotNet () {
                 sudo dpkg -i packages-microsoft-prod.deb
                 rm packages-microsoft-prod.deb 
                 sudo apt-get update && sudo apt-get install -y dotnet-sdk-${sdkInstallVersion}
+
+                if [ $? -ne 0 ]; then 
+                    return 2 # failed to install required runtime
+                fi
 
             else
 
@@ -382,24 +433,26 @@ function setupDotNet () {
                 writeLine "sudo dpkg -i packages-microsoft-prod.deb" $color_info
                 writeLine "rm packages-microsoft-prod.deb " $color_info
                 writeLine "sudo apt-get update && sudo apt-get install -y dotnet-sdk-${sdkInstallVersion}" $color_info
-                quit
+                quit 3 # required runtime missing, needs installing
 
             fi
         else
             if [ "$architecture" == 'arm64' ]; then
                 writeLine "Please download and install the .NET SDK. For macOS Arm64 (Apple Silicon) use:"
                 writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-arm64-installer"
-                quit
+                quit 3 # required runtime missing, needs installing
             else
                 writeLine "Please download and install the .NET SDK. For macOS Intel machines use:"
                 writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-x64-installer"
-                quit
+                quit 3 # required runtime missing, needs installing
             fi
-            quit
+            quit 100 # impossible code path
         fi
     else
         writeLine "Current .NET version is ${currentDotNetVersion}. Good to go." $color_success
     fi
+
+    return 0
 }
 
 function setupPython () {
@@ -411,26 +464,39 @@ function setupPython () {
 
     # M1 macs are trouble for python
     if [ "$platform" == "macos-arm64" ]; then
-        writeLine "Arm64 (Apple silicon) Mac detected, but we are not running under Rosetta. " $color_warn
+        writeLine "Arm64 (Apple silicon) Mac detected. Not running under Rosetta. " $color_warn
         if [ $(/usr/bin/pgrep oahd >/dev/null 2>&1; echo $?) -gt 0 ]; then
         #if [ "$(pkgutil --files com.apple.pkg.RosettaUpdateAuto)" == "" ]; then 
     	    writeLine 'Rosetta is not installed' $color_error
             needRosettaAndiBrew
         else
-    	    writeLine 'All Good! Rosetta is installed. We can continue.' $color_success
+    	    writeLine 'Rosetta is, however, available. We can continue.' $color_success
         fi
     fi
 
     local pythonVersion=$1
     local installLocation=$2
 
+    # HACK: Version 2.1 changed installLocation from LocalToModule to Local
+    if [ "${installLocation}" == "LocalToModule" ]; then installLocation="Local"; fi
+
+    if [ "${installLocation}" == "" ]; then installLocation="Shared"; fi
+
+    if [ "${allowSharedPythonInstallsForModules}" == "false" ]; then
+        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${installLocation}" == "Shared" ]]; then
+            writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
+            installLocation="Local"
+        fi
+    fi
+
     # Version with ".'s removed
     local pythonName="python${pythonVersion/./}"
 
-    if [ "${installLocation}" == "LocalToModule" ]; then
+    # For now we will force all docker installs to be local
+    if [ "${installLocation}" == "Local" ]; then
         installPath="${modulePath}/bin/${os}/${pythonName}"
     else
-        installPath="${installedModulesPath}/bin/${os}/${pythonName}"
+        installPath="${runtimesPath}/bin/${os}/${pythonName}"
     fi
 
     if [ "${forceOverwrite}" == "true" ]; then
@@ -460,7 +526,7 @@ function setupPython () {
      fi
 
      if [ ! -d "${installPath}" ]; then
-            mkdir -p "${installPath}"
+        mkdir -p "${installPath}"
      fi
 
      pythonCmd="python${pythonVersion}"
@@ -489,12 +555,12 @@ function setupPython () {
                 # Apple silicon requires Rosetta2 for python to run for Python < 3.9.1,
                 # so use the x86 version of Brew we installed earlier
                 if [ $(versionCompare "${pythonVersion}" '3.9.1') == "-1" ]; then
-                if [ "${verbosity}" == "quiet" ]; then
-                    arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
-                    spin $!
-                else
-                    arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}
-                fi
+                    if [ "${verbosity}" == "quiet" ]; then
+                        arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
+                        spin $!
+                    else
+                        arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}
+                    fi
                 else
                     if [ "${verbosity}" == "quiet" ]; then
                         brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
@@ -517,7 +583,7 @@ function setupPython () {
 
                 # Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" \
                 #                   "${platform}/${pythonDir}" "Downloading Python interpreter..."
-                # cp -R "${downloadPath}/${platform}/${pythonDir}" "${installedModulesPath}/bin/${platform}"
+                # cp -R "${downloadPath}/${platform}/${pythonDir}" "${runtimesPath}/bin/${platform}"
 
                 if [ "${verbosity}" == "quiet" ]; then
                     brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
@@ -684,6 +750,11 @@ function setupPython () {
                 writeLine "Done" $color_success
             fi
         fi
+
+        if ! command -v $pythonCmd &> /dev/null; then
+            return 2 # failed to install required runtime
+        fi
+
     fi
 
     # =========================================================================
@@ -708,7 +779,7 @@ function setupPython () {
             if [ "${verbosity}" == "quiet" ]; then
                 write "Installing Virtual Environment tools for mac..." $color_primary
                 
-                pip3 $pipFlags install virtualenv virtualenvwrapper >/dev/null &
+                pip3 $pipFlags install setuptools virtualenv virtualenvwrapper >/dev/null &
                 spin $!
                 writeLine "Done" $color_success
 
@@ -720,18 +791,18 @@ function setupPython () {
                     writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
                 fi
 
-                pip3 $pipFlags install virtualenv virtualenvwrapper
+                pip3 $pipFlags setuptools install virtualenv virtualenvwrapper
             fi
         else
             if [ "${verbosity}" == "quiet" ]; then
                 write 'Installing Virtual Environment tools for Linux...' $color_primary
 
-                sudo apt install python3-pip python3-setuptools python${pythonVersion}-venv >/dev/null 2>/dev/null &
+                sudo apt install python3-pip python3-setuptools python${pythonVersion}-venv -y >/dev/null 2>/dev/null &
                 spin $!
                 writeLine "Done" $color_success
             else
                 writeLine 'Installing Virtual Environment tools for Linux...' $color_primary
-                sudo apt install python3-pip python3-setuptools python${pythonVersion}-venv
+                sudo apt install python3-pip python3-setuptools python${pythonVersion}-venv -y
             fi
         fi
 
@@ -746,10 +817,18 @@ function setupPython () {
 
         if [ "$os" == "macos" ]; then
             ${pythonCmd} -m venv "${installPath}/venv"
-        else          
+        else
+            #echo ${pythonCmd}
+            #echo ${installPath}
+            
             ${pythonCmd} -m venv "${installPath}/venv" &
             spin $! # process ID of the python install call
         fi
+
+        if [ ! -d "${installPath}/venv" ]; then
+            return 5 # unable to create Python virtual environment
+        fi
+
         writeLine "Done" $color_success
     fi
 
@@ -769,30 +848,40 @@ function setupPython () {
         errorNoPython
     fi 
     writeLine 'present' $color_success
+
+    return 0
 }
 
 function installPythonPackages () {
 
     if [ "$offlineInstall" == "true" ]; then 
         writeLine "Offline Installation: Unable to download and install Python packages." $color_error
-        return
+        return 6 # unable to download required asset
     fi
-
-    # Whether or not to install all python packages in one step (ie use 
-    # -r requirements.txt) or step by step
-    oneStepPIP="false"
 
     pythonVersion=$1
     requirementsDir=$2
-    # testForPipExistanceName=$3
 
-    # Either "LocalToModule" or "Shared"
+    # Either "Local" or "Shared"
     installLocation=$3
+
+    # HACK: Version 2.1 changed installLocation from LocalToModule to Local
+    if [ "${installLocation}" == "LocalToModule" ]; then installLocation="Local"; fi
+
+    if [ "${installLocation}" == "" ]; then installLocation="Shared"; fi
+
+    if [ "${allowSharedPythonInstallsForModules}" == "false" ]; then
+        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${installLocation}" == "Shared" ]]; then
+            writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
+            installLocation="Local"
+        fi
+    fi
 
     # Version with ".'s removed
     local pythonName="python${pythonVersion/./}"
     pythonCmd="python${pythonVersion}"
 
+    # hasCUDA is actually already set in /src/setup.sh, but no harm in keeping this check here
     hasCUDA='false'
 
     # Brew doesn't set PATH by default (nor do we need it to) which means we 
@@ -829,6 +918,7 @@ function installPythonPackages () {
     fi
 
     # This is getting complicated. The order of priority for the requirements file is:
+    #
     #  requirements.os.architecture.cuda.txt
     #  requirements.os.cuda.txt
     #  requirements.cuda.txt
@@ -838,6 +928,12 @@ function installPythonPackages () {
     #  requirements.os.architecture.txt
     #  requirements.os.txt
     #  requirements.txt
+    #
+    # The logic here is that we go from most specific to least specific. The only
+    # real tricky bit is the subtlety around .cuda vs .gpu. CUDA is a specific
+    # type of card. We may not be able to support that, but may be able to support
+    # other cards generically via OpenVINO or DirectML. So CUDA first, then GPU,
+    # then CPU. With a query at each steo for OS and architecture.
 
     requirementsFilename=""
 
@@ -887,11 +983,12 @@ function installPythonPackages () {
         return
     fi
 
-    if [ "${installLocation}" == "LocalToModule" ]; then
+    if [ "${installLocation}" == "Local" ]; then
         virtualEnv="${modulePath}/bin/${os}/${pythonName}/venv"
     else
-        virtualEnv="${installedModulesPath}/bin/${os}/${pythonName}/venv"
+        virtualEnv="${runtimesPath}/bin/${os}/${pythonName}/venv"
     fi
+    # echo "virtualEnv = ${virtualEnv}"
 
     # For speeding up debugging
     if [ "${skipPipInstall}" == "true" ]; then return; fi
@@ -905,12 +1002,22 @@ function installPythonPackages () {
         # Ensure we have pip (no internet access - ensures we have the current
         # python compatible version.
         write 'Ensuring PIP is installed...' $color_primary
-        ./python3 -m ensurepip  >/dev/null 2>/dev/null &
+
+        if [ "$os" == "macos" ]; then
+            # sudo $pythonCmd -m ensurepip 2>/dev/null &
+            $pythonCmd -m ensurepip >/dev/null 2>/dev/null &
+        else
+            $pythonCmd -m ensurepip  >/dev/null 2>/dev/null &
+        fi
         spin $!
         writeLine 'Done' $color_success
 
         write 'Updating PIP...' $color_primary
-        ./python3 -m pip install --upgrade pip >/dev/null 2>/dev/null &
+        if [ "$os" == "macos" ]; then
+            $pythonCmd -m pip install --upgrade pip >/dev/null 2>/dev/null &
+        else
+            $pythonCmd -m pip install --upgrade pip >/dev/null 2>/dev/null &
+        fi
         spin $!
         writeLine 'Done' $color_success
     else
@@ -923,122 +1030,132 @@ function installPythonPackages () {
             fi
         fi
     
-        ./python3 -m ensurepip
-        ./python3 -m pip install --upgrade pip
+        if [ "$os" == "macos" ]; then
+            # sudo $pythonCmd -m ensurepip
+            $pythonCmd -m ensurepip
+            $pythonCmd -m pip install pip
+        else
+            sudo $pythonCmd -m ensurepip
+            $pythonCmd -m pip install --upgrade pip
+        fi
     fi 
     popd  >/dev/null
 
     # =========================================================================
     # Install PIP packages
 
-    # debug
-    # writeLine "Installing PIP from ${requirementsPath}" $color_error
-    # writeLine "Checking ${packagesPath}/${testForPipExistanceName}" $color_error
-
     packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
 
-    # ASSUMPTION: If a folder by the name of "testForPipExistanceName" exists
-    # in the site-packages directory then we assume the requirements.txt file 
-    # has already been processed. (Disabled - let's just reinstall always. Safer.)
+    pushd "${virtualEnv}/bin" >/dev/null
 
-    # write "Checking for required packages..." $color_primary
-    # if [ "${testForPipExistanceName}" != "" ] || [ -d "${packagesPath}/${testForPipExistanceName}" ]; then
-    if [ "a" == "b" ]; then 
-        #    writeLine "${testForPipExistanceName} present." $color_success
-        writeLine 'Skipping package detection tests' $color_mute
+    #hack
+    write 'Installing setuptools...' $color_primary
+    # pip3 install setuptools
+    $pythonCmd -m pip install setuptools >/dev/null 2>/dev/null &
+    spin $!
+    writeLine "Done" $color_success
+
+    writeLine "Choosing packages from ${requirementsFilename}" $color_info
+
+    if [ "${oneStepPIP}" == "true" ]; then
+
+        # Install the Python Packages in one fell swoop. Not much feedback, but it works
+        write 'Installing Packages into Virtual Environment...' $color_primary
+        if [ "${verbosity}" != "loud" ]; then
+            # writeLine "${pythonCmd} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}" $color_info
+            #hack
+            #./pip3 install $pipFlags -r ${requirementsPath} --target ${packagesPath} # > /dev/null &
+            $pythonCmd -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath} > /dev/null &
+            spin $!
+        else
+            #hack
+            # ./pip3 install $pipFlags -r ${requirementsPath} --target ${packagesPath}
+            $pythonCmd -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}
+        fi
+        writeLine 'Success' $color_success
+
     else
 
-        writeLine "Installing packages in ${requirementsFilename}" $color_info
+        # Open requirements.txt and grab each line. We need to be careful with --find-links lines
+        # as this doesn't currently work in Linux
+        currentOption=''
 
-        pushd "${virtualEnv}/bin"  >/dev/null
-        if [ "${oneStepPIP}" == "true" ]; then
+        IFS=$'\n' # set the Internal Field Separator as end of line
+        cat "${requirementsPath}" | while read -r line
+        do
 
-            # Install the Python Packages in one fell swoop. Not much feedback, but it works
-            write 'Installing Packages into Virtual Environment...' $color_primary
-            if [ "${verbosity}" != "loud" ]; then
-                # writeLine "${pythonCmd} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}" $color_info
-                ./pip install $pipFlags -r ${requirementsPath} --target ${packagesPath} > /dev/null &
-                spin $!
+            line="$(echo $line | tr -d '\r\n')"    # trim newlines / CRs
+
+            if [ "${line}" == "" ]; then
+                currentOption=''
+            elif [ "${line:0:1}" == "#" ]; then
+                currentOption=''
+            elif [ "${line:0:1}" == "-" ]; then
+                currentOption="${currentOption} ${line}"
             else
-                ./pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}
-            fi
-            writeLine 'Success' $color_success
-
-        else
-
-            # Open requirements.txt and grab each line. We need to be careful with --find-links lines
-            # as this doesn't currently work in Linux
-            currentOption=''
-
-            IFS=$'\n' # set the Internal Field Separator as end of line
-            cat "${requirementsPath}" | while read -r line
-            do
-
-                line="$(echo $line | tr -d '\r\n')"    # trim newlines / CRs
-
-                if [ "${line}" == "" ]; then
-                    currentOption=''
-                elif [ "${line:0:1}" == "#" ]; then
-                    currentOption=''
-                elif [ "${line:0:1}" == "-" ]; then
-                    currentOption="${currentOption} ${line}"
-                else
-            
-                    module="${line}"
-                    description=''
-
-                    # breakup line into module name and description
-                    IFS='#'; tokens=($module); IFS=$'\n';
-
-                    if [ ${#tokens[*]} -gt 1 ]; then
-                        module="${tokens[0]}"
-                        description="${tokens[1]}"
-                    fi
-
-                    if [ "${description}" == "" ]; then
-                        description="Installing ${module}"
-                    fi
         
-                    # remove all whitespaces
-                    # module="${module// /}"
+                module="${line}"
+                description=''
 
-                    if [ "${module}" != "" ]; then
+                # breakup line into module name and description
+                IFS='#'; tokens=($module); IFS=$'\n';
 
-                        # writeLine "./pip install ${pipFlags} $module ${currentOption}" $color_error
-                        write "  -${description}..." $color_primary
-
-                        # TODO: We should test first. Alter the requirements file to provide the 
-                        # name of a module (module_import) to be tested before we import
-                        # if python3 -c "import ${module_import}"; then echo "Found ${module}. Skipping."; fi;
-
-                        if [ "${verbosity}" != "loud" ]; then
-                            # I have NO idea why it's necessary to use eval to get this to work without errors
-                            # ./pip3 install ${module} ${currentOption} >/dev/null & # 2>/dev/null &
-                            eval "./pip3 install ${module} ${currentOption} -q -q -q" >/dev/null &
-                            spin $!
-                        else
-                            # ./pip3 install $module ${currentOption}
-                            eval "./pip3 install ${module} ${currentOption}"
-                        fi
-
-                        status=$?    
-                        if [ $status -eq 0 ]; then
-                            writeLine "Done" $color_success
-                        else
-                            writeLine "Failed" $color_error
-                        fi
-                    fi
-
-                    currentOption=''
-
+                if [ ${#tokens[*]} -gt 1 ]; then
+                    module="${tokens[0]}"
+                    description="${tokens[1]}"
                 fi
 
-            done
-            unset IFS
-        fi
-        popd  >/dev/null
+                if [ "${description}" == "" ]; then
+                    description="Installing ${module}"
+                fi
+    
+                # remove all whitespaces
+                # module="${module// /}"
+
+                if [ "${module}" != "" ]; then
+
+                    # writeLine "./pip install ${pipFlags} $module ${currentOption}" $color_error
+                    write "  -${description}..." $color_primary
+
+                    # TODO: We should test first. Alter the requirements file to provide the 
+                    # name of a module (module_import) to be tested before we import
+                    # if python3 -c "import ${module_import}"; then echo "Found ${module}. Skipping."; fi;
+
+                    if [ "${verbosity}" != "loud" ]; then
+                        # I have NO idea why it's necessary to use eval to get this to work without errors
+                        # ./pip3 install ${module} ${currentOption} >/dev/null & # 2>/dev/null &
+
+                        #hack
+                        # eval "./pip3 install ${module} ${currentOption} -q -q -q" >/dev/null &
+                        $pythonCmd -m pip install ${module} ${currentOption} --target ${packagesPath} >/dev/null  2>/dev/null &
+                        spin $!
+                    else
+                        # ./pip3 install $module ${currentOption}
+                        #hack
+                        #eval "./pip3 install ${module} ${currentOption}"
+                        $pythonCmd -m pip install ${module} ${currentOption}  --target ${packagesPath}
+                    fi
+
+                    status=$?    
+                    if [ $status -eq 0 ]; then
+                        writeLine "Done" $color_success
+                    else
+                        writeLine "Failed" $color_error
+                    fi
+                fi
+
+                currentOption=''
+
+            fi
+
+        done
+        unset IFS
 
     fi
+
+    popd  >/dev/null
+
+    return 0
 }
 
 function getFromServer () {
@@ -1065,7 +1182,7 @@ function getFromServer () {
     # eg           "$S3_bucket"   "rembg-models.zip" /downloads/module/"    "assets"    "Downloading Background Remover models..."
     downloadAndExtract $storageUrl $fileToGet "${downloadPath}" "${moduleDir}" "${message}"
 
-    # Copy contents of downloadPath\moduleDir to installedModulesPath\moduleDir\moduleAssetsDir
+    # Copy contents of downloadPath\moduleDir to runtimesPath\moduleDir\moduleAssetsDir
     if [ -d "${downloadPath}/${moduleDir}" ]; then
 
         if [ ! -d "${modulePath}/${moduleAssetsDir}" ]; then
@@ -1087,17 +1204,21 @@ function getFromServer () {
         # 1. Copy all non-zip files to the module's installation dir
         # 2. Delete all non-zip files in the download dir
         if [ $verbosity == "quiet" ]; then 
-            rsync -av --exclude='*.zip' --exclude='.DS_Store' * "${modulePath}/${moduleAssetsDir}/"  >/dev/null 
+            rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${modulePath}/${moduleAssetsDir}/"  >/dev/null 
             find . -type f -not -name '*.zip' | xargs rm >/dev/null 2>/dev/null
             find . -type d -not -name . -not -name ..| xargs rmdir >/dev/null 2>/dev/null
         else
-            rsync -av --exclude='*.zip' --exclude='.DS_Store' * "${modulePath}/${moduleAssetsDir}/"
+            rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${modulePath}/${moduleAssetsDir}/"
             find . -type f -not -name '*.zip' | xargs rm  2>/dev/null
             find . -type d -not -name . -not -name ..| xargs rmdir  2>/dev/null
         fi
 
         popd >/dev/null 2>/dev/null
+    else
+        return 6 # unable to download required asset
     fi
+
+    return 0
 }
 
 function downloadAndExtract () {
@@ -1115,7 +1236,7 @@ function downloadAndExtract () {
    
     if [ "${fileToGet}" == "" ]; then
         writeLine 'No download file was specified' $color_error
-        quit    # no point in carrying on
+        quit 9 # required parameter not supplied
     fi
 
     if [ "${message}" == "" ]; then
@@ -1143,24 +1264,24 @@ function downloadAndExtract () {
 
         if [ "$offlineInstall" == "true" ]; then 
             writeLine "Offline Installation: Unable to download ${fileToGet}." $color_error
-            return
+            return 6  # unable to download required asset
         fi
 
         # writeLine "Downloading ${fileToGet} to ${dirToSave}.zip in ${downloadToDir}"  $color_warn
         # wget $wgetFlags --show-progress -O "${downloadToDir}/${dirToSave}/${fileToGet}" -P "${downloadToDir}/${dirToSave}" \
         #                                   "${storageUrl}${fileToGet}"
 
-        wget $wgetFlags --show-progress -P "${downloadToDir}/${dirToSave}" "${storageUrl}${fileToGet}"
+        wget $wgetFlags --progress=bar:force -P "${downloadToDir}/${dirToSave}" "${storageUrl}${fileToGet}"
         status=$?    
         if [ $status -ne 0 ]; then
             writeLine "The wget command failed for file ${fileToGet}." $color_error
-            quit    # no point in carrying on
+            quit 6 # unable to download required asset
         fi
     fi
 
     if [ ! -f  "${downloadToDir}/${dirToSave}/${fileToGet}" ]; then
         writeLine "The downloaded file '${fileToGet}' doesn't appear to exist." $color_error
-        quit    # no point in carrying on
+        quit 6 # unable to download required asset
     fi
 
     write 'Expanding...' $color_info
@@ -1176,17 +1297,17 @@ function downloadAndExtract () {
             spin $! # process ID of the unzip/tar call
         fi
     else
-    if [ "${extension}" == ".gz" ]; then
-            tar $tarFlags "${fileToGet}"
-    else
-            unzip $unzipFlags "${fileToGet}"
+        if [ "${extension}" == ".gz" ]; then
+                tar $tarFlags "${fileToGet}"
+        else
+                unzip $unzipFlags "${fileToGet}"
         fi
     fi
     
     if [ ! "$(ls -A .)" ]; then # Is the download dir empty?
         writeLine "Unable to extract download. Can you please check you have write permission to "${dirToSave}"." $color_error
         popd >/dev/null
-        quit    # no point in carrying on
+        quit 7  # unable to expand compressed archivep
     fi
     
     # Remove thw downloaded zip
@@ -1195,6 +1316,8 @@ function downloadAndExtract () {
     popd >/dev/null
 
     writeLine 'Done.' $color_success
+
+    return 0
 }
 
 # Thanks: https://stackoverflow.com/a/4025065 with mods
@@ -1253,13 +1376,33 @@ function checkForInternet () {
     online=$?
 }
 
+function getVersionFromModuleSettings () { # jsonFile key
+
+    # Code thanks to ChatGPT. Radically reworked to make it...work
+
+    local json_file=$1
+    local key=$2
+
+    # echo jsonFile is $jsonFile
+    # echo key is $key
+
+    # Use the jq command to extract the value of the property from the JSON file.
+    # ...except jq needs to be installed using sudo apt install jq
+    #  jsonValue=$(jq -r ".$key" "$json_file")
+
+    # or use inbuilt bash commands.
+    jsonValue=$(grep -o "\"$key\":[^,}]*" "$json_file" | sed 's/.*: "\(.*\)".*/\1/')
+
+    echo $jsonValue
+}
+
 function displayMacOSDirCreatePermissionError () {
     writeLine
     writeLine 'Unable to Create a Directory'  $color_error
 
     if [[ $OSTYPE == 'darwin'* ]]; then
 
-       local commonDir=$1
+        local commonDir=$1
 
         writeLine
         writeLine 'But we may be able to suggest something:'  $color_info
@@ -1280,7 +1423,7 @@ function displayMacOSDirCreatePermissionError () {
         writeLine 'Thanks to https://osxdaily.com/2018/10/09/fix-operation-not-permitted-terminal-error-macos/'
     fi
 
-    quit
+    quit 8 # unable to create file or directory
 }
 
 function needRosettaAndiBrew () {
@@ -1290,7 +1433,7 @@ function needRosettaAndiBrew () {
 
     if [ "$offlineInstall" == "true" ]; then 
         writeLine "You will need to install Rosetta2 to continue, once you are back online." $color_error
-        return
+        return 6 # unable to download required asset
     fi
 
     writeLine "You will need to install Rosetta2 to continue."  $color_error
@@ -1300,7 +1443,7 @@ function needRosettaAndiBrew () {
     if [ "${installRosetta}" == "y" ] || [ "${installRosetta}" == "Y" ]; then
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
     else
-        quit
+        quit 4 # required tool missing, needs installing
     fi
 
     writeLine "Then you need to install brew under Rosetta (We'll alias it as ibrew)"
@@ -1308,7 +1451,7 @@ function needRosettaAndiBrew () {
     if [ "${installiBrew}" == "y" ] || [ "${installiBrew}" == "Y" ]; then
         arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
     else
-        quit
+        quit 4 # required tool missing, needs installing
     fi
 }
 
@@ -1370,28 +1513,31 @@ if [ "$os" == "macos" ]; then
 else
     darkmode='true'
     terminalBg=$(gsettings get org.gnome.desktop.background primary-color)
-    terminalBg="${terminalBg%\'}"                               # remove first '
-    terminalBg="${terminalBg#\'}"                               # remove last '
-    terminalBg=`echo $terminalBg | tr '[:lower:]' '[:upper:]'`  # uppercase-ing
 
-    if [[ $terminalBg =~ ^\#[0-9A-F]{6}$ ]]; then   # if it's of the form #xxxxxx hex colour
+    if [ "${terminalBg}" != "no schemas installed" ]; then
+        terminalBg="${terminalBg%\'}"                               # remove first '
+        terminalBg="${terminalBg#\'}"                               # remove last '
+        terminalBg=`echo $terminalBg | tr '[:lower:]' '[:upper:]'`  # uppercase-ing
 
-        a=`echo $terminalBg | cut -c2-3`
-        b=`echo $terminalBg | cut -c4-5`
-        c=`echo $terminalBg | cut -c6-7`
+        if [[ $terminalBg =~ ^\#[0-9A-F]{6}$ ]]; then   # if it's of the form #xxxxxx hex colour
 
-        r=`echo "ibase=16; $a" | bc`
-        g=`echo "ibase=16; $b" | bc`
-        b=`echo "ibase=16; $c" | bc`
+            a=`echo $terminalBg | cut -c2-3`
+            b=`echo $terminalBg | cut -c4-5`
+            c=`echo $terminalBg | cut -c6-7`
 
-        luma=$(echo "(0.2126 * $r) + (0.7152 * $g) + (0.0722 * $b)" | bc)
-        luma=${luma%.*}
-        
-        if (( luma > 127 )); then 
-            darkmode='false'
+            r=`echo "ibase=16; $a" | bc`
+            g=`echo "ibase=16; $b" | bc`
+            b=`echo "ibase=16; $c" | bc`
+
+            luma=$(echo "(0.2126 * $r) + (0.7152 * $g) + (0.0722 * $b)" | bc)
+            luma=${luma%.*}
+            
+            if (( luma > 127 )); then 
+                darkmode='false'
+            fi
+
+            # echo "terminalBg = ${terminalBg}, darkmode = ${darkmode}, luminosity = ${luma}"
         fi
-
-        # echo "terminalBg = ${terminalBg}, darkmode = ${darkmode}, luminosity = ${luma}"
     fi
 fi
 

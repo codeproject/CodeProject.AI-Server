@@ -3,7 +3,7 @@
   // we know works
   "Modules": {
     "YOLOv5-3.1": {
-      "Command": "%CURRENT_MODULE_PATH%/bin/%OS%/python37/venv/Scripts/python"
+      "Runtime": "python37"
     }
   }
 }

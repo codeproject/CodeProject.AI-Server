@@ -1,0 +1,289 @@
+{
+  "Modules": {
+
+    "FaceProcessing": {
+      "Name": "Face Processing",
+      "Version": "1.2",
+
+      // Publishing info
+      "Description": "A number of Face image APIs including detect, recognize, and compare.",
+      "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+      "License": "GPL-3.0",
+      "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+
+      // Which server version is compatible with each version of this module.
+      "VersionCompatibililty": [
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-03-01" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+      ],
+
+      // Launch instructions
+      "AutoStart": true,
+      "FilePath": "intelligencelayer\\face.py",
+      "Runtime": "python38",
+      "RuntimeLocation": "Shared", // Can be Local or Shared. If Local, update install.* files.
+                                   // NOTE: Installing this module after YOLO caused PIP conflicts.
+                                   //       Making this "local" will solve this, at the expense of space
+
+      // These are all optional. Defaults are usually fine
+      "SupportGPU": true,
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 0,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 1,        // 1 if using GPU, 0 for CPU
+
+      "Queue": "faceprocessing_queue",    // default is lower(modulename) + "_queue"
+
+      "EnvironmentVariables": {
+
+        "YOLOv5_AUTOINSTALL": "false",
+        "YOLOv5_VERBOSE": "false",
+
+        "PROFILE": "desktop_gpu",
+        "USE_CUDA": "True",
+        "MODE": "MEDIUM",
+
+        "APPDIR": "%CURRENT_MODULE_PATH%\\intelligencelayer",
+        "DATA_DIR": "%DATA_DIR%",
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Face Detection",
+          "Path": "vision/face",
+          "Method": "POST",
+          "Command": "detect",
+          "Description": "Detects faces in an image and returns the coordinates of the faces.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP File Object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0.",
+              "DefaultValue": 0.4,
+              "MinValue": 0.0,
+              "MaxValue": 1.0
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
+            }
+          ]
+        },
+        {
+          "Name": "Face Comparison",
+          "Path": "vision/face/match",
+          "Method": "POST",
+          "Command": "match",
+          "Description": "Compares two faces in two images and returns a value indicating how similar the faces are.",
+          "Inputs": [
+            {
+              "Name": "image1",
+              "Type": "File",
+              "Description": "First HTTP File Object (image) to be analyzed."
+            },
+            {
+              "Name": "image2",
+              "Type": "File",
+              "Description": "Second HTTP File Object (image) to be analyzed."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "similarity",
+              "Type": "Float",
+              "Description": "How similar the two images are, in the range of 0.0 to 1.0."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
+            }
+          ]
+        },
+        {
+          "Name": "List Registered Faces",
+          "Path": "vision/face/list",
+          "Method": "POST",
+          "Command": "list",
+          "Description": "Lists the users that have images registered in the Face Recognition database.",
+          "Inputs": [ // no inputs
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "faces",
+              "Type": "Object",
+              "Description": "An array of the userid strings for users with registered images."
+            }
+          ]
+        },
+        {
+          "Name": "Register Face",
+          "Path": "vision/face/register",
+          "Method": "POST",
+          "Command": "register",
+          "Description": "Registers one or more images for a user for recognition. This trains the face recognition model and allows the face recognition to report back a userId based on an image you supply that may or may not contain that user's face.",
+          "Inputs": [
+            {
+              "Name": "imageN",
+              "Type": "File",
+              "Description": "The one or more HTTP File Objects (images) to be registered."
+            },
+            {
+              "Name": "userid",
+              "Type": "Text",
+              "Description": "The identifying string for the user."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "Message",
+              "Type": "Text",
+              "Description": "face added"
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
+            }
+          ]
+
+        },
+        {
+          "Name": "Delete Registered Face",
+          "Path": "vision/face/delete",
+          "Method": "POST",
+          "Command": "delete",
+          "Description": "Removes a userid and images from the Face Registration database.",
+          "Inputs": [
+            {
+              "Name": "userid",
+              "Type": "Text",
+              "Description": "The identifying string for the user."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            }
+          ]
+        },
+        {
+          "Name": "Face Recognition",
+          "Path": "vision/face/recognize",
+          "Method": "POST",
+          "Command": "recognize",
+          "Description": "Recognizes all faces in an image and returns the userId and coordinates of each face in the image. If a new (unregistered) face is detected then no userid for that face will be returned.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0.",
+              "DefaultValue": 0.4,
+              "MinValue": 0.0,
+              "MaxValue": 1.0
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the userid, x_max, x_min, max, y_min, label and confidence."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
+            }
+          ]
+
+        }
+      ]
+    }
+  }
+}

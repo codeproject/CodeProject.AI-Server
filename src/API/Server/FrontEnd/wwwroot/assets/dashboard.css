@@ -27,14 +27,66 @@ a {
     border: 1px solid #333;
     white-space: pre;
 }       
-.logs .trace       { color: #808080; }
-.logs .debug       { color: #c39401; }
+.logs .trace       { color: #939393; }
+.logs .debug       { color: #d5d507; }
 .logs .information { color: var(--bs-black); }
 .logs .warning     { color: #f90; }
 .logs .error       { color: var(--bs-danger); }
 .logs .critical    { color: var(--bs-black); background-color:var(--bs-danger);}
 .logs .timing      { font-weight: bold; }
 .logs .highlight   { font-weight: bold; color: #00a900; }
+
+.logs .text-default     { color: inherit;}
+.logs .text-black       { color: black; }
+.logs .text-darkred     { color: darkred; }
+.logs .text-darkgreen   { color: #15a815; }
+.logs .text-darkyellow  { color: #dddd00; }
+.logs .text-darkblue    { color: darkblue; }
+.logs .text-darkmagenta { color: #c000c0; }
+.logs .text-darkcyan    { color: darkcyan; }
+.logs .text-darkgrey    { color: grey; }
+.logs .text-grey        { color: lightgrey; }
+.logs .text-white       { color: white; }
+.logs .text-red         { color: red; }
+.logs .text-green       { color: #00d300; }
+.logs .text-yellow      { color: #dddd22; }
+.logs .text-blue        { color: #0077ff; }
+.logs .text-magenta     { color: magenta; }
+.logs .text-cyan        { color: #00cfcf; } 
+.logs .text-white       { color: white;   }
+
+.dark-mode .logs .text-black       { color: white;   }
+.dark-mode .logs .text-darkred     { color: #c30000; }
+.dark-mode .logs .text-darkblue    { color: blue;    }
+.dark-mode .logs .text-darkmagenta { color: #a003a0; }
+.dark-mode .logs .text-yellow      { color: yellow;  }
+.dark-mode .logs .text-cyan        { color: cyan;    } 
+.dark-mode .logs .text-white       { color: black;   }
+.dark-mode .logs .text-blue        { color: deepskyblue; }
+
+.dot { 
+    height: 0.65em;
+    width: 0.65em;
+    margin: 0 0.25em 0 0.3em;
+    border-radius: 50%;
+    display: inline-block;
+}
+.dot-0  { background-color: transparent; }
+.dot-1  { background-color: #037e4a; }
+.dot-2  { background-color: #00dc00; }
+.dot-3  { background-color: #c1f762; }
+.dot-4  { background-color: #ff79ac; }
+.dot-5  { background-color: #ff49ff; }
+.dot-6  { background-color: #ff88f8; }
+.dot-7  { background-color: #d37f00; }
+.dot-8  { background-color: #dccc00; }
+.dot-9  { background-color: #e7af98; }
+.dot-10 { background-color: #d8033f; }
+.dot-11 { background-color: #99005b; }
+.dot-12 { background-color: #a57ee0; }
+.dot-13 { background-color: #003de4; }
+.dot-14 { background-color: #53c1fc; }
+.dot-15 { background-color: #2ef8f8; }
 
 .shrouded:after {
     content: "";
@@ -119,8 +171,8 @@ body:not(.dark-mode) {
 .dark-mode .sub-panel { background-color: var(--bs-secondary-rgb); }
 .dark-mode a { color: #ffbf61; }
 .dark-mode .top-nav-bar a { color:var(--bs-white); font-weight:200;}
-.dark-mode .logs .trace       { color: var(--bs-gray-200); }
-.dark-mode .logs .debug       { color: var(--bs-yellow); }
+.dark-mode .logs .trace       { color: var(--bs-gray-500); }
+.dark-mode .logs .debug       { color: #d5d507; }
 .dark-mode .logs .information { color: var(--bs-white); }
 .dark-mode .logs .warning     { color: var(--bs-warning); }
 .dark-mode .logs .error       { color: var(--bs-danger); }

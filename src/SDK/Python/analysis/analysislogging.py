@@ -243,22 +243,24 @@ class AnalysisLogger():
 
         except Exception as ex:
 
+            exception_type = ex.__class__.__name__
             if hasattr(ex, "os_error") and isinstance(ex.os_error, ConnectionRefusedError):
-                err_msg        = f"Server connection refused. Is the server running, and can you connect to the server?"
-                exception_type = "ConnectionRefusedError"
-            elif ex.__class__.__name__ == "ClientConnectorError":
-                err_msg        = f"Server connection error. Is the server URL correct?"
-                exception_type = "ClientConnectorError"
-            elif ex.__class__.__name__ == "TimeoutError":
-                err_msg        = f"Timeout connecting to the server"
-                exception_type = "TimeoutError"
+                err_msg              = f"Server connection refused. Is the server running, and can you connect to the server?"
+                exception_type       = "ConnectionRefusedError"
+                self._server_healthy = False
+            elif exception_type == "ClientConnectorError":
+                err_msg              = f"Server connection error. Is the server URL correct?"
+                self._server_healthy = False
+            elif exception_type == "TimeoutError":
+                err_msg              = f"Timeout connecting to the server"
+                self._server_healthy = False
+            elif exception_type == "CancelledError":
+                err_msg        = f"HTTP post to server log API was cancelled"
             else:
                 err_msg = f"Error posting log [{exception_type}]: {str(ex)}"
-                exception_type = ex.__class__.__name__
 
             print(f"{err_msg}\n")
 
-            self._server_healthy = False
             return False
 
 

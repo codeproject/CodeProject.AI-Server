@@ -1,9 +1,10 @@
-﻿using CodeProject.AI.API.Common;
-
-using System.IO;
+﻿using System.IO;
 using System;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+
+using CodeProject.AI.API.Common;
+using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -16,18 +17,6 @@ namespace CodeProject.AI.API.Server.Frontend
         internal static string DevSettingsFilename = "modulesettings.development.json";
 
         private string _storagePath;
-
-        /// <summary>
-        /// Gets a value indicating whether we are currently in a development environment.
-        /// </summary>
-        public bool IsDevelopment
-        {
-            get
-            {
-                return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?
-                                  .ToLower() == "development";
-            }
-        }
 
         /// <summary>
         /// Initialises an instance of the PersistedSettings class
@@ -46,7 +35,7 @@ namespace CodeProject.AI.API.Server.Frontend
             // In Dev, we'll try loading up the dev settings first, but if they don't exist load
             // production values (but in dev we only save to dev)
             string settingsFilePath;
-            if (IsDevelopment)
+            if (SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development)
             {
                 settingsFilePath = Path.Combine(_storagePath, DevSettingsFilename);
                 if (!File.Exists(settingsFilePath))
@@ -64,7 +53,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <returns>A JsonObject containing the settings</returns>
         public async Task<bool> SaveSettings(JsonObject? settings)
         {
-            string settingsFilePath = IsDevelopment
+            string settingsFilePath = SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development
                                     ? Path.Combine(_storagePath, DevSettingsFilename)
                                     : Path.Combine(_storagePath, SettingsFilename);
 

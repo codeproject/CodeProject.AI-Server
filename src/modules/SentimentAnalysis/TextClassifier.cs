@@ -17,7 +17,7 @@ using Microsoft.ML;
 using Microsoft.ML.Data;
 using Microsoft.ML.Transforms;
 
-namespace CodeProject.AI.AnalysisLayer.SentimentAnalysis
+namespace CodeProject.AI.Modules.SentimentAnalysis
 {
     public class TextClassifier
     {

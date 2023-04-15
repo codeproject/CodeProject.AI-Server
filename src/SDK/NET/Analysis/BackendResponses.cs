@@ -9,7 +9,7 @@
         public bool success { get; set; }
 
         /// <summary>
-        /// Gets or sets the return code (follows the conventions of HTTP codes)
+        /// DEPRECATED: Gets or sets the return code (follows the conventions of HTTP codes). 
         /// </summary>
         public int code { get; set; } = 200;
 
@@ -44,9 +44,9 @@
         /// <summary>
         /// Instantiates a new instance of the <cref="BackendErrorResponse" /> class.
         /// </summary>
-        /// <param name="errorCode">The error code.</param>
         /// <param name="errorMessage">The error message.</param>
-        public BackendErrorResponse(int errorCode, string errorMessage)
+        /// <param name="errorCode">The error code.</param>
+        public BackendErrorResponse(string errorMessage, int errorCode = 500)
         {
             success = false;
             code    = errorCode;

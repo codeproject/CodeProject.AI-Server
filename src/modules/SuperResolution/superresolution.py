@@ -15,7 +15,9 @@ import torch.nn.init as init
 from resizeimage import resizeimage
 import numpy as np
 
-print(torch.__version__)
+from module_options import ModuleOptions
+
+# print(torch.__version__)
 
 # Super Resolution Model Definition in Pytorch
 class SuperResolutionNet(nn.Module):
@@ -60,7 +62,13 @@ def load_pretrained_weights(path: str):
     batch_size = 1    # just a random number
 
     # Initialize model with the pretrained weights
-    map_location = None if torch.cuda.is_available() else torch.device('cpu') 
+    if ModuleOptions.support_GPU and torch.cuda.is_available():
+        map_location = None     # default GPU
+    # elif use_MPS:
+    #    map_location = torch.device('mps')
+    else:
+        map_location = torch.device('cpu') 
+
     torch_model.load_state_dict(torch.load(model_url, map_location=map_location))
 
     # set the model to inference mode
@@ -98,7 +106,11 @@ def run_onnx(asset_path: str, processed_img: Image) -> any:
     # onnxruntime.InferenceSession(path/to/model, providers=['CUDAExecutionProvider'])
     model_path = os.path.normpath(asset_path + "/super-resolution-10.onnx")
 
-    ort_session = onnxruntime.InferenceSession(model_path)
+    if ModuleOptions.support_GPU and torch.cuda.is_available():
+        ort_session = onnxruntime.InferenceSession(model_path, providers=['CUDAExecutionProvider'])
+    else:
+        ort_session = onnxruntime.InferenceSession(model_path)
+        
     ort_inputs = {ort_session.get_inputs()[0].name: processed_img} 
     ort_outs = ort_session.run(None, ort_inputs)   
     output = ort_outs[0]

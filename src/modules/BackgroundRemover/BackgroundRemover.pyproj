@@ -26,6 +26,7 @@
     <Content Include="install.sh" />
     <Content Include="LICENSE.txt" />
     <Content Include="modulesettings.json" />
+    <Content Include="package.bat" />
     <Content Include="test.html" />
   </ItemGroup>
   <ItemGroup>
@@ -33,13 +34,13 @@
     <Content Include="requirements.linux.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-   <Content Include="requirements.macos.txt">
+    <Content Include="requirements.macos.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.macos.arm64.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-	  <Content Include="requirements.windows.gpu.txt" >
+    <Content Include="requirements.windows.gpu.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>
@@ -60,7 +61,7 @@
     <Folder Include="rembg\" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\bin\windows\python39\venv\">
+    <Interpreter Include=".\bin\windows\python39\venv\">
       <Id>venv</Id>
       <Version>3.9</Version>
       <Description>venv (Python 3.9 (64-bit))</Description>

@@ -1,0 +1,119 @@
+;// SPDX
+;/*
+; * Module name: coral.inf; install file for the windows coral driver
+; *
+; * Driver for the Apex chip.
+; *
+; * Copyright (C) 2020 Google, Inc.
+; */
+
+[Version]
+Signature="$WINDOWS NT$"
+;
+Class=coral_Device  
+ClassGuid={E8C7BB5B-6BD1-44C5-B852-2E5038239871} 
+;
+Provider=%ManufacturerName%
+;
+CatalogFile=coral.cat
+;
+DriverVer = 07/09/2021,16.56.20.950
+
+[DestinationDirs]
+DefaultDestDir = 12
+coral_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+[ClassInstall32]
+Addreg=coralClassReg
+
+[coralClassReg]
+HKR,,,0,%coralstr%
+HKR,,Icon,,-14
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+coral.sys  = 1,,
+;
+
+
+;*****************************************
+; Install Section
+;*****************************************
+[Manufacturer]
+%ManufacturerName%=Standard,NTamd64
+
+[Standard.NTamd64]
+%coral.DeviceDesc%=coral_Device, PCI\VEN_1AC1&DEV_089A&SUBSYS_089A1AC1&REV_00
+
+[coral_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+coral.sys
+
+;;;MSI interrupt configuration
+[coral_Device.NT.HW]
+AddReg = coral_Device.NT.HW.AddReg
+
+[coral_Device.NT.HW.AddReg]
+HKR, "Interrupt Management", , 0x00000010
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", , 0x00000010
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", MSISupported, 0x00010001, 1
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", MessageNumberLimit, 0x00010001, 0x00000004
+
+;-------------- Service installation
+[coral_Device.NT.Services]
+AddService = coral,%SPSVCINST_ASSOCSERVICE%, coral_Service_Inst
+
+; -------------- coral driver install sections
+;
+[coral_Service_Inst]
+;DisplayName    = %coral.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\coral.sys
+AddReg         = coral_Device.NT.Services.AddReg
+
+[coral_Device.NT.Services.AddReg]
+HKR, "Parameters", "trip_point0_temp", 0x00010001, 85000
+HKR, "Parameters", "trip_point1_temp", 0x00010001, 90000
+HKR, "Parameters", "trip_point2_temp", 0x00010001, 95000
+;
+HKR, "Parameters", "hw_temp_warn1_en", 0x00010001, 0
+HKR, "Parameters", "hw_temp_warn2_en", 0x00010001, 1
+HKR, "Parameters", "hw_temp_warn1", 0x00010001, 100000
+HKR, "Parameters", "hw_temp_warn2", 0x00010001, 100000
+HKR, "Parameters", "temp_poll_interval", 0x00010001, 5000
+
+;--- coral_Device Coinstaller installation ------
+;
+[coral_Device.NT.CoInstallers]
+AddReg=coral_Device_CoInstaller_AddReg
+CopyFiles=coral_Device_CoInstaller_CopyFiles
+
+[coral_Device_CoInstaller_AddReg]
+;
+
+
+[coral_Device_CoInstaller_CopyFiles]
+;
+
+
+[coral_Device.NT.Wdf]
+KmdfService =  coral, coral_wdfsect
+;
+[coral_wdfsect]
+KmdfLibraryVersion = 1.27
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Google LLC" 
+ClassName="CoralPCIeClass" ;
+DiskName = "Coral Installation Disk"
+coralstr = "Coral Accelerator devices"
+coral.DeviceDesc = "Coral PCIe Accelerator"
+coral.SVCDESC = "Coral PCIe Accelerator Service"

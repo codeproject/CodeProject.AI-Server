@@ -14,5 +14,10 @@ namespace CodeProject.AI.API.Server.Frontend
         /// Gets or sets the Id.
         /// </summary>
         public Guid Id { get; set; } = Guid.Empty;
+
+        /// <summary>
+        /// Gets or sets the Version.
+        /// </summary>
+        public string Version { get; set; } = string.Empty;
     }
 }

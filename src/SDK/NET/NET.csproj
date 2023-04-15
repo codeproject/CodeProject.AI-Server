@@ -1,23 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<!-- Platform, architecture, runtime target defines -->
-	<Import Project="./Common.targets" />
+	<Import Project="Common.targets" />
 
 	<!-- Common properties -->
 	<PropertyGroup>
 		<Name>CodeProject.AI SDK</Name>
+		<RootNamespace>CodeProject.AI.SDK</RootNamespace>
+		<AssemblyName>CodeProject.AI.SDK</AssemblyName>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<Platform>AnyCPU</Platform>
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<RootNamespace>CodeProject.AI.SDK</RootNamespace>
-		<AssemblyName>CodeProject.AI.SDK</AssemblyName>
 		<TargetFramework>net7.0</TargetFramework>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
-		<SelfContained>True</SelfContained>
+		<SelfContained>false</SelfContained>
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>

@@ -20,13 +20,14 @@ set doDebug=false
 if "%1" == "" (
     call "!pwd!\utils.bat" WriteLine "Solution Cleaner" "White"
     call "!pwd!\utils.bat" WriteLine 
-    call "!pwd!\utils.bat" WriteLine "clean [build : install : installall : downloads : all]"
+    call "!pwd!\utils.bat" WriteLine "clean [build : assets : install : installall : downloads : all]"
     call "!pwd!\utils.bat" WriteLine 
-    call "!pwd!\utils.bat" WriteLine "  build      - cleans build output (bin / obj)"
-    call "!pwd!\utils.bat" WriteLine "  install    - removes current OS installation stuff (Python, PIPs, downloads etc)"
-    call "!pwd!\utils.bat" WriteLine "  installall - removes installation stuff for all platforms"
-    call "!pwd!\utils.bat" WriteLine "  downloads  - removes downloads to force re-download"
-    call "!pwd!\utils.bat" WriteLine "  all        - removes build and installation stuff for all platforms"
+    call "!pwd!\utils.bat" WriteLine "  build          - cleans build output (bin / obj)"
+    call "!pwd!\utils.bat" WriteLine "  install        - removes installation stuff, current OS (Python, PIPs, downloads etc)"
+    call "!pwd!\utils.bat" WriteLine "  installall     - removes installation stuff for all OSs"
+    call "!pwd!\utils.bat" WriteLine "  assets         - removes assets that were downloaded and moved into place"
+    call "!pwd!\utils.bat" WriteLine "  download-cache - removes download cache to force re-download"
+    call "!pwd!\utils.bat" WriteLine "  all            - removes build and installation stuff for all OSs"
     call "!pwd!\utils.bat" WriteLine 
     exit /b
 )
@@ -34,31 +35,31 @@ if "%1" == "" (
 
 set cleanBuild=false
 set cleanAssets=false
-set cleanDownloads=false
-set cleanInstallLocal=false
+set cleanDownloadCache=false
+set cleanInstallCurrentOS=false
 set cleanInstallAll=false
 set cleanAll=false
 
-if /i "%1" == "build"      set cleanBuild=true
-if /i "%1" == "assets"     set cleanAssets=true
-if /i "%1" == "downloads"  set cleanDownloads=true
-if /i "%1" == "install"    set cleanInstallLocal=true
-if /i "%1" == "installall" set cleanInstallAll=true
-if /i "%1" == "all"        set cleanAll=true
+if /i "%1" == "build"          set cleanBuild=true
+if /i "%1" == "assets"         set cleanAssets=true
+if /i "%1" == "download-cache" set cleanDownloadCache=true
+if /i "%1" == "install"        set cleanInstallCurrentOS=true
+if /i "%1" == "installall"     set cleanInstallAll=true
+if /i "%1" == "all"            set cleanAll=true
 
 REM if /i "!cleanAll!" == "true"          set cleanInstallAll=true
-REM if /i "!cleanInstallAll!" == "true"   set cleanInstallLocal=true
-REM if /i "!cleanInstallLocal!" == "true" set cleanBuild=true
+REM if /i "!cleanInstallAll!" == "true"   set cleanInstallCurrentOS=true
+REM if /i "!cleanInstallCurrentOS!" == "true" set cleanBuild=true
 
 if /i "!cleanAll!" == "true" (
     set cleanInstallAll=true
     set cleanBuild=true
     set cleanAssets=true
-    set cleanDownloads=true
+    set cleanDownloadCache=true
 )
 
-if /i "!cleanInstallLocal!" == "true" set cleanAssets=true
-if /i "!cleanInstallAll!" == "true"   set cleanAssets=true
+if /i "!cleanInstallCurrentOS!" == "true" set cleanAssets=true
+if /i "!cleanInstallAll!" == "true"       set cleanAssets=true
 
 
 if /i "%cleanBuild%" == "true" (
@@ -67,7 +68,6 @@ if /i "%cleanBuild%" == "true" (
     call "!pwd!\utils.bat" WriteLine "Cleaning Build                                                      " "White" "Blue"
     call "!pwd!\utils.bat" WriteLine 
 
-    call :CleanSubDirs "!rootDir!\src"   "bin" "\AnalysisLayer\bin"
     call :CleanSubDirs "!rootDir!\src"   "obj"
     call :CleanSubDirs "!rootDir!\Installers\Windows"  "bin"
     call :CleanSubDirs "!rootDir!\Installers\Windows"  "obj"
@@ -77,15 +77,13 @@ if /i "%cleanBuild%" == "true" (
     call :CleanSubDirs "!rootDir!\tests" "obj"
 )
 
-if /i "%cleanInstallLocal%" == "true" (
+if /i "%cleanInstallCurrentOS%" == "true" (
 
     call "!pwd!\utils.bat" WriteLine 
     call "!pwd!\utils.bat" WriteLine "Cleaning Windows Install                                            " "White" "Blue"
     call "!pwd!\utils.bat" WriteLine 
 
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\bin"            "windows" 
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\FaceProcessing" "datastore"
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\FaceProcessing" "tempstore"
+    call :CleanSubDirs "!rootDir!\src\runtimes\bin"           "windows" 
 )
 
 if /i "%cleanInstallAll%" == "true" (
@@ -94,7 +92,7 @@ if /i "%cleanInstallAll%" == "true" (
     call "!pwd!\utils.bat" WriteLine "Cleaning install for other platforms                                " "White" "Blue"
     call "!pwd!\utils.bat" WriteLine 
 
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer" "bin"
+    call :CleanSubDirs "!rootDir!\src\runtimes" "bin"
 )
 
 if /i "%cleanAssets%" == "true" (
@@ -103,20 +101,21 @@ if /i "%cleanAssets%" == "true" (
     call "!pwd!\utils.bat" WriteLine "Cleaning Assets                                                     " "White" "Blue"
     call "!pwd!\utils.bat" WriteLine 
 
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\BackgroundRemover"   "models"
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\ObjectDetectionNet"  "assets"
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\ObjectDetectionNet"  "custom-models"
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\ObjectDetectionYolo" "assets"
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\ObjectDetectionYolo" "custom-models"
-    call :CleanSubDirs "!rootDir!\src\AnalysisLayer\FaceProcessing"      "assets"
-
-    call :CleanSubDirs "!rootDir!\src\modules\ALPR"                      "paddleocr"
-    call :CleanSubDirs "!rootDir!\src\modules\OCR"                       "paddleocr"
-    call :CleanSubDirs "!rootDir!\src\modules\YOLOv5-3.1"                "assets"
-    call :CleanSubDirs "!rootDir!\src\modules\YOLOv5-3.1"                "custom-models"
-
-    REM In case you have an old install
-    REM call :CleanSubDirs "!rootDir!\src\AnalysisLayer\CustomDetection" "assets" 
+    call :CleanSubDirs "!rootDir!\src\modules\ALPR"                  "paddleocr"
+    call :CleanSubDirs "!rootDir!\src\modules\BackgroundRemover"     "models"
+    call :CleanSubDirs "!rootDir!\src\modules\Cartooniser"           "weights"
+    call :CleanSubDirs "!rootDir!\src\modules\FaceProcessing"        "assets"
+    call :CleanSubDirs "!rootDir!\src\modules\FaceProcessing"        "datastore"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionTFLite" "assets"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionNet"    "assets"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionNet"    "custom-models"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionNet"    "LocalNugets"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionYolo"   "assets"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionYolo"   "custom-models"
+    call :CleanSubDirs "!rootDir!\src\modules\OCR"                   "paddleocr"
+    call :CleanSubDirs "!rootDir!\src\modules\SceneClassifier"       "assets"
+    call :CleanSubDirs "!rootDir!\src\modules\YOLOv5-3.1"            "assets"
+    call :CleanSubDirs "!rootDir!\src\modules\YOLOv5-3.1"            "custom-models"
 
     rem debatable where this should go
     rem call :CleanFiles ".\..\downloads" "*.zip"
@@ -125,16 +124,22 @@ if /i "%cleanAssets%" == "true" (
     rem call :CleanFiles ".\..\downloads\windows\python39" "*.zip"
 )
 
-if /i "%cleanDownloads%" == "true" (
+if /i "%cleanDownloadCache%" == "true" (
 
     call "!pwd!\utils.bat" WriteLine 
     call "!pwd!\utils.bat" WriteLine "Cleaning Downloads                                                  " "White" "Blue"
     call "!pwd!\utils.bat" WriteLine 
 
-    call :CleanSubDirs "!rootDir!\Installers"       "downloads"
-
-    call :CleanSubDirs "!rootDir!\src\modules\OCR"  "downloads"
-    call :CleanSubDirs "!rootDir!\src\modules\ALPR" "downloads"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "ALPR"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "BackgroundRemover"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "Cartooniser"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "FaceProcessing"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "ObjectDetectionNet"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "ObjectDetectionTFLite"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "ObjectDetectionYolo"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "OCR"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "SceneClassifier"
+    call :CleanSubDirs "!rootDir!\src\downloads"  "YOLOv5-3.1"
 )
 
 goto:eof
@@ -149,7 +154,7 @@ goto:eof
 
     pushd "!BasePath!"  >nul 2>nul
     if not "%ErrorLevel%" == "0" (
-        call "!pwd!\utils.bat" WriteLine "Can't navigate to %cd%!BasePath!" "!color_error!"
+        call "!pwd!\utils.bat" WriteLine "Can't navigate to %cd%!BasePath! (but this is probably OK)" "!color_warn!"
         cd %pwd%
         exit /b %ErrorLevel%
     )
@@ -207,7 +212,7 @@ goto:eof
 
     pushd "!BasePath!"  >nul 2>nul
     if not "%errorlevel%" == "0" (
-        call "!pwd!\utils.bat" WriteLine "Can't navigate to %cd%!BasePath! (but that's probably OK)" "!color_warn!"
+        call "!pwd!\utils.bat" WriteLine "Can't navigate to %cd%!BasePath! (but this is probably OK)" "!color_warn!"
         cd %pwd%
         exit /b %errorlevel%
     )

@@ -1,41 +1,35 @@
 @echo off
+SetLocal EnableDelayedExpansion
+
+set pwd=%cd%
+pushd %pwd%\..\..\
+set srcDir=%cd%
+popd
+
+set srcDir=%srcDir:\=\\%
+
+rem wmic process where "ExecutablePath like '%srcDir%\\modules%%'" get Name, ProcessID, ExecutablePath, Description
 
 set /a loops=1
+:whileModules
+if %loops% GEQ 50 goto endModules
 
-:while
-if %loops% lss 10 (
+    rem List processes
+    rem wmic process where "ExecutablePath like '!srcDir!\\modules%%'" get ExecutablePath
 
-    rem To take a peek...
-    rem wmic process where name="Python" get Name,ProcessID rem call echo
+    REM Kill processes
+    wmic process where "ExecutablePath like '%srcDir%\\modules%%\\venv\\%%'" delete
+    wmic process where "ExecutablePath like '%srcDir%\\modules%%'" delete
 
-    echo Terminating dotnet
-    wmic process where name="dotnet" call terminate | findstr /I /C:"Method execution successful" > /dev/null
-    if %errorlevel% EQU 0 set foundProcess=true
-   
-    echo Terminating Python.exe
-    wmic process where name="Python.exe" call terminate | findstr /I /C:"Method execution successful" > /dev/null
-    if %errorlevel% EQU 0 set foundProcess=true
+    REM Count how many are left.
+    Set /a Number=0
+    For /f %%j in ('wmic process where "ExecutablePath like ^'!srcDir!\\modules%%^'" get ExecutablePath ^| Find  /c "modules"') Do Set /a Number=%%j
 
-    echo Terminating Python
-    wmic process where name="Python" call terminate | findstr /I /C:"Method execution successful" > /dev/null
-    if %errorlevel% EQU 0 set foundProcess=true
-
-    echo Terminating SentimentAnalysis
-    wmic process where name="SentimentAnalysis.exe" call terminate | findstr /I /C:"Method execution successful" > /dev/null
-    if %errorlevel% EQU 0 set foundProcess=true
-
-    echo Terminating PortraitFilter
-    wmic process where name="PortraitFilter.exe" call terminate | findstr /I /C:"Method execution successful" > /dev/null
-    if %errorlevel% EQU 0 set foundProcess=true
-
-    echo Terminating ObjectDetectionNet
-    wmic process where name="ObjectDetectionNet.exe" call terminate | findstr /I /C:"Method execution successful" > /dev/null
-    if %errorlevel% EQU 0 set foundProcess=true
-
-    REM No longer finding anything to terminate?
-    if /i "!enableGPU!" NEQ "true" goto:eof
+    if %Number% EQU 0 goto endModules
 
     set /a loops+=1
+    echo Running loop again: attempt !loops!
 
-    echo Running loop again: attempt %loops%
-)
+    goto whileModules
+
+:endModules

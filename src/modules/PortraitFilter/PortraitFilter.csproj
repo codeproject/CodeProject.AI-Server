@@ -1,24 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
-	<!-- Platform, architecture, runtime target defines -->
+	<!-- This module uses Windows specific features (in System.Drawing) -->
+	<PropertyGroup>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	</PropertyGroup>
+
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
 	<Import Project="../../SDK/NET/Common.targets" />
 
 	<!-- Common properties -->
 	<PropertyGroup>
 		<Name>PortraitFilter</Name>
-		<RootNamespace>CodeProject.AI.AnalysisLayer.PortraitFilter</RootNamespace>
+		<RootNamespace>CodeProject.AI.Modules.PortraitFilter</RootNamespace>
 		<AssemblyName>PortraitFilter</AssemblyName>
-		<Version>2.0.5</Version>
+		<Version>2.1.0</Version>
+		<Authors>CodeProject</Authors>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<UserSecretsId>dotnet-PortraitFilter-C4FF0E02-9BBA-46BE-B89E-9C2DA88576BD</UserSecretsId>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 		<!--<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>-->
-		<Authors>CodeProject</Authors>
+		<TargetFramework>net7.0</TargetFramework>
 		<Platform>AnyCPU</Platform>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<TargetFramework>net7.0</TargetFramework>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->
@@ -29,6 +34,7 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
 		<!--<PublishSingleFile>true</PublishSingleFile>-->
+		<DefineConstants>$(DefineConstants);</DefineConstants>
 	</PropertyGroup>
 
 	<!-- Common Debug properties -->
@@ -38,18 +44,49 @@
 		<NoWarn>1701;1702;</NoWarn>
 		<DebugType>portable</DebugType>
 		<DebugSymbols>true</DebugSymbols>
+		<DefineConstants>$(DefineConstants);</DefineConstants>
 	</PropertyGroup>
 
+	<Choose>
+		<When Condition="!$(DefineConstants.Contains('CPU')) and !$(DefineConstants.Contains('GPU_CUDA')) and !$(DefineConstants.Contains('GPU_DIRECTML')) and !$(DefineConstants.Contains('GPU_OPENVINO'))">
+			<!-- If no GPU type was specified then we'll apply a best-guess given the OS,
+				 with the understanding that the GPU_CUDA will fallback to CPU if no CUDA
+				 is available. This will apply to Release and Debug, but when we build our
+				 Release packages we'll be specifying a GPUType so this block won't be used -->
+			<PropertyGroup>
+				<GpuType>CPU</GpuType>
+				<GpuType Condition="'$(IsWindows)'=='true'">DirectML</GpuType>
+				<GpuType Condition="'$(IsLinux)'=='true'">CUDA</GpuType>
+				<GpuType Condition="'$(IsOsx)'=='true'">CPU</GpuType>
+			</PropertyGroup>
+		</When>
+		<Otherwise>
+			<!-- A GPU type was specified, so use it (but carefully) -->
+			<PropertyGroup>
+				<GpuType>CPU</GpuType>
+				<GpuType Condition="$(DefineConstants.Contains('GPU_DIRECTML'))">DirectML</GpuType>
+				<GpuType Condition="$(DefineConstants.Contains('GPU_CUDA'))">CUDA</GpuType>
+				<!--
+				<GpuType Condition="$(DefineConstants.Contains('GPU_OPENVINO')) And '$(IsArm64)'!='true'">OpenVINO</GpuType>
+				-->
+
+				<!-- Macs can only do CPU OnnxRuntime -->
+				<GpuType Condition="'$(IsOsx)'=='true'">CPU</GpuType>
+			</PropertyGroup>
+		</Otherwise>
+	</Choose>
+	
 	<ItemGroup>
 	  <Content Include="favicon.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.13.1" Condition="'$(IsWindows)'=='true'" />
-		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.12.1" Condition="'$(IsLinux)'=='true' and '$(IsArm64)'!='true'" />
-		<!-- Note that  Microsoft.ML.OnnxRuntime only supports the AnyCPU, x64, and x86 platforms at this time. -->
-		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.12.1" Condition="'$(IsLinux)'=='true' and '$(IsArm64)'=='true'" />
-		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.12.1" Condition="'$(IsOsx)'=='true'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.13.1" Condition="'$(GpuType)'=='CPU'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.12.1" Condition="'$(GpuType)'=='CUDA'" />
+		<!--
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.13.1-dev-20221026-1209-861125ccb" Condition="'$(GpuType)'=='OpenVINO'" />
+		-->
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.13.1" Condition="'$(GpuType)'=='DirectML'" />
 
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
 		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.3" />

@@ -16,7 +16,7 @@ function cleanSubDirs() {
 
     pushd "${basePath}" >/dev/null 2>/dev/null
     if [ $? -ne 0 ]; then
-        writeLine "Can't navigate to $(pwd)/${basePath} (but that's probably OK)" $color_warn
+        writeLine "Can't navigate to ${basePath} (but that's probably OK)" $color_warn
         # popd  >/dev/null
         return
     fi
@@ -77,7 +77,7 @@ function cleanFiles() {
     pushd "${basePath}" >/dev/null 2>/dev/null
 
     if [ $? -ne 0 ]; then
-        writeLine "Can't navigate to $(pwd)/${basePath} (but that's probably OK)" $color_warn
+        writeLine "Can't navigate to ${basePath} (but that's probably OK)" $color_warn
         # popd  >/dev/null
         return
     fi
@@ -160,20 +160,20 @@ if [ "$1" == "" ]; then
 fi
 
 cleanAssets='false'
-cleanDownloads='false'
+cleanDownloadCache='false'
 cleanBuild='false'
-cleanInstallLocal='false'
+cleanInstallCurrentOS='false'
 cleanInstallAll='false'
 cleanAll='false'
 cleanTools='false'
 cleanRuntimes='false'
 
-if [ "$1" == "assets" ]; then     cleanAssets='true'; fi
-if [ "$1" == "downloads" ]; then  cleanDownloads='true'; fi
-if [ "$1" == "build" ]; then      cleanBuild='true'; fi
-if [ "$1" == "install" ]; then    cleanInstallLocal='true'; fi
-if [ "$1" == "installall" ]; then cleanInstallAll='true'; fi
-if [ "$1" == "all" ]; then        cleanAll='true'; fi
+if [ "$1" == "assets" ]; then         cleanAssets='true'; fi
+if [ "$1" == "download-cache" ]; then cleanDownloadCache='true'; fi
+if [ "$1" == "build" ]; then          cleanBuild='true'; fi
+if [ "$1" == "install" ]; then        cleanInstallCurrentOS='true'; fi
+if [ "$1" == "installall" ]; then     cleanInstallAll='true'; fi
+if [ "$1" == "all" ]; then            cleanAll='true'; fi
 
 # not covered by "all"
 if [ "$1" == "tools" ]; then      cleanTools='true'; fi
@@ -183,10 +183,10 @@ if [ "$cleanAll" == 'true' ]; then
     cleanInstallAll='true'
     cleanBuild='true'
     cleanAssets='true'
-    cleanDownloads='true'
+    cleanDownloadCache='true'
 fi
 
-if [ "$cleanInstallLocal" == 'true' ] || [ "$cleanInstallAll" == 'true' ]; then
+if [ "$cleanInstallCurrentOS" == 'true' ] || [ "$cleanInstallAll" == 'true' ]; then
     cleanAssets='true'
 fi
 
@@ -196,7 +196,7 @@ if [ "$cleanBuild" == "true" ]; then
     writeLine "Cleaning Build                                                      " "White" "Blue"
     writeLine 
 
-    cleanSubDirs "${rootDir}/src"                "bin" "AnalysisLayer/bin"
+    cleanSubDirs "${rootDir}/src"                "bin" "runtimes/bin"
     cleanSubDirs "${rootDir}/src"                "obj" "ObjectDetection"
     cleanSubDirs "${rootDir}/Installers/windows" "bin"
     cleanSubDirs "${rootDir}/Installers/windows" "obj"
@@ -206,19 +206,15 @@ if [ "$cleanBuild" == "true" ]; then
     cleanSubDirs "${rootDir}/tests"              "obj"
 fi
 
-if [ "$cleanInstallLocal" == "true" ]; then
+if [ "$cleanInstallCurrentOS" == "true" ]; then
 
     writeLine 
     writeLine "Cleaning ${platform} Install                                            " "White" "Blue"
     writeLine 
 
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/bin" "${platform}"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/BackgroundRemover"   "models"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/ObjectDetectionNet"  "assets"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/ObjectDetectionYolo" "assets"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/FaceProcessing"      "assets"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/FaceProcessing"      "datastore"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/FaceProcessing"      "tempstore"
+    cleanSubDirs "${rootDir}/src/runtimes/bin" "${platform}"
+
+    cleanSubDirs "${rootDir}/src/modules/FaceProcessing"  "datastore"
 fi
 
 if [ "$cleanInstallAll" == "true" ]; then
@@ -227,7 +223,7 @@ if [ "$cleanInstallAll" == "true" ]; then
     writeLine "Cleaning install for all platforms                                  " "White" "Blue"
     writeLine 
 
-    cleanSubDirs "${rootDir}/src/AnalysisLayer" "bin"
+    cleanSubDirs "${rootDir}/src/runtimes" "bin"
 fi
 
 if [ "$cleanAssets" == "true" ]; then
@@ -236,29 +232,36 @@ if [ "$cleanAssets" == "true" ]; then
     writeLine "Cleaning assets                                                     " "White" "Blue"
     writeLine 
 
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/BackgroundRemover"   "models"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/ObjectDetectionNet"  "assets"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/ObjectDetectionNet"  "custom-models"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/ObjectDetectionYolo" "assets"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/ObjectDetectionYolo" "custom-models"
-    cleanSubDirs "${rootDir}/src/AnalysisLayer/FaceProcessing"      "assets"
-
-    cleanSubDirs "${rootDir}/src/modules/ALPR"                      "paddleocr"
-    cleanSubDirs "${rootDir}/src/modules/OCR"                       "paddleocr"
-    cleanSubDirs "${rootDir}/src/modules/YOLOv5-3.1"                "assets"
-    cleanSubDirs "${rootDir}/src/modules/YOLOv5-3.1"                "custom-models"
+    cleanSubDirs "${rootDir}/src/modules/ALPR"                "paddleocr"
+    cleanSubDirs "${rootDir}/src/modules/BackgroundRemover"   "models"
+    cleanSubDirs "${rootDir}/src/modules/Cartooniser"         "weights"
+    cleanSubDirs "${rootDir}/src/modules/FaceProcessing"      "assets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"  "assets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"  "custom-models"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"  "LocalNugets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionYolo" "assets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionYolo" "custom-models"
+    cleanSubDirs "${rootDir}/src/modules/OCR"                 "paddleocr"
+    cleanSubDirs "${rootDir}/src/modules/YOLOv5-3.1"          "assets"
+    cleanSubDirs "${rootDir}/src/modules/YOLOv5-3.1"          "custom-models"
 fi
 
-if [ "$cleanDownloads" == "true" ]; then
+if [ "$cleanDownloadCache" == "true" ]; then
 
     writeLine 
-    writeLine "Cleaning downloads                                                  " "White" "Blue"
+    writeLine "Cleaning download cache                                             " "White" "Blue"
     writeLine 
 
-    cleanFiles "${rootDir}/Installers/downloads"         "*.zip"   # keep original downloads
-
-    cleanSubDirs "${rootDir}/src/modules/OCR/downloads"  "*.zip"
-    cleanSubDirs "${rootDir}/src/modules/ALPR/downloads" "*.zip"
+    cleanSubDirs "${rootDir}/src/downloads"  "ALPR"
+    cleanSubDirs "${rootDir}/src/downloads"  "BackgroundRemover"
+    cleanSubDirs "${rootDir}/src/downloads"  "Cartooniser"
+    cleanSubDirs "${rootDir}/src/downloads"  "FaceProcessing"
+    cleanSubDirs "${rootDir}/src/downloads"  "ObjectDetectionNet"
+    cleanSubDirs "${rootDir}/src/downloads"  "ObjectDetectionTFLite"
+    cleanSubDirs "${rootDir}/src/downloads"  "ObjectDetectionYolo"
+    cleanSubDirs "${rootDir}/src/downloads"  "OCR"
+    cleanSubDirs "${rootDir}/src/downloads"  "SceneClassifier"
+    cleanSubDirs "${rootDir}/src/downloads"  "YOLOv5-3.1"
 fi
 
 if [ "$os" == "macos" ]; then

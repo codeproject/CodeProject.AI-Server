@@ -3,7 +3,7 @@ using System.Drawing;
 using UMapx.Core;
 using UMapx.Imaging;
 
-namespace CodeProject.AI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.Modules.PortraitFilter
 {
     /// <summary>
     /// Defines "portrait mode" filter.
@@ -66,7 +66,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
             Bitmap segmentantionMask = (Bitmap)mask.Clone();
 
             // radius calculation
-            int radius = (int)(_strength * 2 * (( Math.Max(image.Height, image.Width) / 100 ) + 1));
+            int radius = (int)(_strength * 3 * (( Math.Max(image.Height, image.Width) / 100 ) + 1));
             Console.WriteLine($"Blur radius --> {radius}");
 
             // gaussian blur approximation

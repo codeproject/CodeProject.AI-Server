@@ -2,28 +2,24 @@
 import os
 import sys
 import time
-import traceback
-
-# Import the CodeProject.AI SDK. This will add to the PATH vaar for future imports
-sys.path.append("../../SDK/Python")
-from common import JSON
-from analysis.codeprojectai import CodeProjectAIRunner
-from analysis.requestdata import AIRequestData
-from analysis.analysislogging import LogMethod
-
-# Import the method of the module we're wrapping
-from options import Options
-from PIL import UnidentifiedImageError, Image
 from threading import Lock
 
+# Import the CodeProject.AI SDK. This will add to the PATH var for future imports
+sys.path.append("../../SDK/Python")
+from common import JSON
+from request_data import RequestData
+from module_runner import ModuleRunner
+from module_logging import LogMethod
+
+# Import the method of the module we're wrapping
 import torch
 import torchvision.transforms as transforms
 from torchvision.models import resnet50
+from PIL import UnidentifiedImageError, Image
 
-# Thread locking
-models_lock = Lock()
+from options import Options
 
-   
+ 
 class SceneModel(object):
 
     def __init__(self, model_path, cuda=False):
@@ -49,122 +45,107 @@ class SceneModel(object):
         return out.argmax(), out.max().item()
 
 
-# These will be populated in the init callback
-classes     = list()
-placesnames = None
-classifier  = None # Lazy load later on
+class Scene_adapter(ModuleRunner):
 
+    def __init__(self):
+        super().__init__()
+        self.opts        = Options()
+        self.models_lock = Lock()
+        self.classes     = list()
+        self.place_names = None
+        self.classifier  = None # Lazy load later on
 
-def main():
-
-    # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("scene_queue", scene_classification_callback,
-                                        scene_classification_init_callback)
-
-    # Hack for debug mode
-    if module_runner.module_id == "CodeProject.AI":
-        module_runner.module_id   = "SceneClassification"
-        module_runner.module_name = "Scene Classification"
-        os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"     # For PyTorch on Apple silicon
-
-    if Options.use_CUDA and module_runner.support_GPU:
-        module_runner.execution_provider = "CUDA"
-    elif Options.use_MPS and module_runner.support_GPU:
-        module_runner.execution_provider = "MPS"
-
-    # Start the module
-    module_runner.start_loop()
-
-
-def scene_classification_init_callback(module_runner: CodeProjectAIRunner) -> None:
+    def initialise(self) -> None:
     
-    global classes
-    global placesnames
+        # TODO: Read this file async
+        with open(os.path.join(self.opts.models_dir, "categories_places365.txt")) as class_file:
+            for line in class_file:
+                self.classes.append(line.strip().split(" ")[0][3:])
 
-    with open(os.path.join(Options.models_dir, "categories_places365.txt")) as class_file:
-        for line in class_file:
-            classes.append(line.strip().split(" ")[0][3:])
+        self.place_names = tuple(self.classes)
 
-    placesnames = tuple(classes)
+        if self.opts.use_CUDA:
+            self.opts.use_CUDA = self.hasTorchCuda
 
+        if not self.opts.use_CUDA:
+            self.opts.use_MPS = self.hasTorchMPS
 
-def init_models() -> None:
+        if self.opts.use_CUDA:
+            self.execution_provider = "CUDA"
+        elif self.opts.use_MPS:
+            self.execution_provider = "MPS"
 
-    """
-    For lazy loading the models
-    """
-    global classifier
-    if classifier is not None:
-        return
+    def process(self: ModuleRunner, data: RequestData) -> JSON:
 
-    with models_lock:
-        if classifier is None:
-            classifier = SceneModel(os.path.join(Options.models_dir, "scene.pt"), 
-                                    Options.use_CUDA)
+        img: Image = data.get_image(0)
 
-def scene_classification_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
+        start_time = time.perf_counter()
 
-    img: Image = data.get_image(0)
+        trans = transforms.Compose([
+                    transforms.Resize((256, 256)),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+                ])
 
-    start_time = time.perf_counter()
-
-    trans = transforms.Compose([
-                transforms.Resize((256, 256)),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-            ])
-
-    img = trans(img).unsqueeze(0)
+        img = trans(img).unsqueeze(0)
                     
-    try:
+        try:
+            self.init_models()
 
-        init_models()
+            start_inference_time = time.perf_counter()
+            name, conf = self.classifier.predict(img)
+            inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
-        start_inference_time = time.perf_counter()
-        cl, conf = classifier.predict(img)
-        inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
+            name = self.place_names[name]
+            conf = float(conf)
 
-        cl   = placesnames[cl]
-        conf = float(conf)
+            return {
+                "success": True, 
+                "label": name, 
+                "confidence": conf,
+                "message": f"Detected scene {name}",
+                "processMs" : int((time.perf_counter() - start_time) * 1000),
+                "inferenceMs" : inferenceMs
+            }
 
-        return {
-            "success": True, 
-            "label": cl, 
-            "confidence": conf,
-            "processMs" : int((time.perf_counter() - start_time) * 1000),
-            "inferenceMs" : inferenceMs,
-            "code": 200
-        }
-
-    except UnidentifiedImageError:
-        # message = "".join(traceback.TracebackException.from_exception(ex).format())
-        message = "The image provided was of an unknown type"
-        module_runner.log(LogMethod.Error | LogMethod.Server,
-                          { 
-                             "filename": "scene_adapter.py",
-                             "method": "sceneclassification_callback",
-                             "loglevel": "error",
-                             "message": message,
-                             "exception_type": "UnidentifiedImageError"
-                          })
-        
-        return { "success": False, "error": "Error occured on the server", "code": 400 }
+        except UnidentifiedImageError as img_ex:
+            self.report_error(img_ex, __file__, "The image provided was of an unknown type")
+            return { "success": False, "error": "Error occured on the server" }
     
-    except Exception as ex:
-        # message = str(ex) or f"A {ex.__class__.__name__} error occurred"
-        message = "".join(traceback.TracebackException.from_exception(ex).format())
-        module_runner.log(LogMethod.Error | LogMethod.Server,
-                          { 
-                              "filename": "scene_adapter.py",
-                              "method": "sceneclassification_callback",
-                              "loglevel": "error",
-                              "message": message,
-                              "exception_type": "Exception"
-                          })
-
-        return { "success": False, "error": "Error occured on the server", "code": 500 }
+        except Exception as ex:
+            self.report_error(ex, __file__)
+            return { "success": False, "error": "Error occured on the server" }
     
+    def init_models(self, re_entered: bool = False) -> None:
+
+        """
+        For lazy loading the models
+        """
+        if self.classifier is not None:
+            return
+
+        try:
+            with self.models_lock:
+                if self.classifier is None:
+                    self.classifier = SceneModel(os.path.join(self.opts.models_dir, "scene.pt"), self.opts.use_CUDA)
+
+        except Exception as ex:
+            if not re_entered and self.opts.use_CUDA and str(ex).startswith('CUDA out of memory'):
+
+                """ Force switch to CPU-only mode """
+                self.classifier    = None
+                self.opts.use_CUDA = False
+
+                self.log(LogMethod.Info | LogMethod.Server,
+                { 
+                    "filename": __file__,
+                    "method":   sys._getframe().f_code.co_name,
+                    "message": "GPU out of memory. Switching to CPU mode",
+                    "loglevel": "information",
+                })
+
+                self.init_models(re_entered = True)
 
 if __name__ == "__main__":
-    main()
+    Scene_adapter().start_loop()

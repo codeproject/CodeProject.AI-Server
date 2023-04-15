@@ -13,7 +13,7 @@ using SkiaSharp.Views.Desktop;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK;
 
-namespace CodeProject.AI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.Modules.PortraitFilter
 {
     class PortraitResponse : BackendSuccessResponse
     {
@@ -27,10 +27,6 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
     {
         private const string _modelPath = "Lib\\deeplabv3_mnv2_pascal_train_aug.onnx";
 
-        private const string _defaultQueueName = "portraitfilter_queue";
-        private const string _defaultModuleId  = "PortraitFilter";
-        private const string _moduleName = "Portrait Filter";
-
         private DeepPersonLab? _deepPersonLab;
 
         /// <summary>
@@ -41,7 +37,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         /// <param name="configuration">The app configuration values.</param>
         public PortraitFilterWorker(ILogger<PortraitFilterWorker> logger,
                                     IConfiguration configuration)
-            : base(logger, configuration, _moduleName, _defaultQueueName, _defaultModuleId)
+            : base(logger, configuration)
         {
             string modelPath = _modelPath.Replace('\\', Path.DirectorySeparatorChar);
 
@@ -65,8 +61,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         {
             var sessionOpts = new SessionOptions();
 
-            bool supportGPU = (Environment.GetEnvironmentVariable("CPAI_MODULE_SUPPORT_GPU") ?? "false").ToLower() == "true";
-            if (supportGPU)
+            if (SupportGPU)
             {
                 string[]? providers = null;
                 try
@@ -137,8 +132,9 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         /// Sniff the hardware in use so we can report to the API server. This method is empty
         /// since we already sniffed hardware in GetSessionOptions.
         /// </summary>
-        protected override void GetHardwareInfo()
+        protected async override void GetHardwareInfo()
         {
+            await System.Threading.Tasks.Task.Delay(0);
         }
 
         /// <summary>
@@ -149,19 +145,17 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
         public override BackendResponseBase ProcessRequest(BackendRequest request)
         {
             if (_deepPersonLab == null)
-                return new BackendErrorResponse(-1, $"{ModuleName} missing _deepPersonLab object.");
+                return new BackendErrorResponse($"{ModuleName} missing _deepPersonLab object.");
 
             // ignoring the file name
             var file        = request.payload?.files?.FirstOrDefault();
-            var strengthStr = request.payload?.values?
-                                              .FirstOrDefault(x => x.Key == "strength")
-                                              .Value?[0] ?? "0.5";
+            var strengthStr = request.payload?.GetValue("strength", "0.5");
 
             if (!float.TryParse(strengthStr, out var strength))
                 strength = 0.5f;
 
             if (file?.data is null)
-                return new BackendErrorResponse(-1, "Portrait Filter File or file data is null.");
+                return new BackendErrorResponse("Portrait Filter File or file data is null.");
 
             Logger.LogInformation($"Processing {file.filename}");
 
@@ -178,7 +172,7 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
                 Bitmap? image     = GetImage(imageData);
 
                 if (image is null)
-                    return new BackendErrorResponse(-1, "Portrait Filter unable to get image from file data.");
+                    return new BackendErrorResponse("Portrait Filter unable to get image from file data.");
 
                 Stopwatch stopWatch = Stopwatch.StartNew();
                 Bitmap mask = _deepPersonLab.Fit(image);
@@ -192,11 +186,11 @@ namespace CodeProject.AI.AnalysisLayer.PortraitFilter
             }
             catch (Exception ex)
             {
-                return new BackendErrorResponse(-1, $"Portrait Filter Error for {file.filename}: {ex.Message}.");
+                return new BackendErrorResponse($"Portrait Filter Error for {file.filename}: {ex.Message}.");
             }
 
             if (result is null)
-                return new BackendErrorResponse(-1, "Portrait Filter returned null.");
+                return new BackendErrorResponse("Portrait Filter returned null.");
             
             return new PortraitResponse { 
                 filtered_image = result,

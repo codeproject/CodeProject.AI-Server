@@ -1,0 +1,7 @@
+{
+  "Modules": {
+    "ObjectDetectionTFLite": {
+      "Command": "%CURRENT_MODULE_PATH%\\bin\\%OS%\\python39\\venv\\Scripts\\python"
+    }
+  }
+}

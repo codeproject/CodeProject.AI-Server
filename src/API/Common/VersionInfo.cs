@@ -122,7 +122,7 @@ namespace CodeProject.AI.API.Common
 
         /// <summary>
         /// Compares two versions. If versionA &lt; versionB then this method returns &lt; 0. If
-        /// the two versions are equal it returns 0. Otherwise this method returns %gt; 0. 
+        /// the two versions are equal it returns 0. Otherwise this method returns &gt; 0. 
         /// Comparison order is Major, Minor, Patch, Build, PreRelease then Security.
         /// </summary>
         /// <param name="versionA">The first version to compare</param>
@@ -155,9 +155,9 @@ namespace CodeProject.AI.API.Common
             if (versionA.Build != versionB.Build)
                 return versionA.Build - versionB.Build;
 
-            int result = (versionA.PreRelease ?? "").CompareTo(versionB.PreRelease ?? "");
-            if (result != 0)
-                return result;
+            // int result = (versionA.PreRelease ?? "").CompareTo(versionB.PreRelease ?? "");
+            // if (result != 0)
+            //     return result;
 
             return (versionA.SecurityUpdate ?? false).CompareTo(versionB.SecurityUpdate ?? false);
         }

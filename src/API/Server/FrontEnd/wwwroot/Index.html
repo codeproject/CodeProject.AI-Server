@@ -16,8 +16,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="assets/dashboard.css?v=2.0.4.5">
-    <script type="text/javascript" src="assets/dashboard.js?v=2.0.4.5"></script>
+    <link rel="stylesheet" type="text/css" href="assets/dashboard.css?v=2.1.0.6">
+    <script type="text/javascript" src="assets/dashboard.js?v=2.1.0.6"></script>
 
     <script type="text/javascript">
     /*
@@ -153,7 +153,7 @@
                        target="_blank">CodeProject.AI Explorer</a>
                 </div>
                 <div class="ms-auto me-3 server-status">
-                    Server is <span id="status" class="font-weight-bold ms-1"></span>
+                    Server is <span id="serverStatus" class="font-weight-bold ms-1"></span>
                 </div>
                 <div id="version" style="cursor:pointer" onclick="checkForUpdates(true)" title="Check for updates"></div>
                 <div id="colourModeToggle" onclick="toggleColourMode()" class="ms-1" style="cursor:pointer">☀️</div>
@@ -236,8 +236,15 @@
 
                 <div class="tab-pane fade show" id="system-panel" role="tabpanel" aria-labelledby="system-tab">
                     <div class="card">
-                        <div class="card-body sub-panel">
-                            <div id="serverStatus" class='server-summary'>Server summary loading...</div>
+                        <div class="card-body sub-panel" style="position: relative;">
+                            <div style="float:right;cursor: pointer;" onclick="copyToClipboard('serverStatusVerbose')" title="Copy to clipboard">
+                                <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round"
+                                     stroke-linejoin="round" class="h-4 w-4" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                                     <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                     <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                </svg>
+                            </div>
+                            <div id="serverStatusVerbose" class='server-summary'>Server summary loading...</div>
                         </div>
                     </div>
                 </div>
@@ -266,8 +273,21 @@
 
                 <div class="tab-pane fade show" id="modules-panel" role="tabpanel" aria-labelledby="modules-tab">
                     <div class="card">
+
                         <div class="card-body sub-panel">
                             <div id="availableModules" class="w-100"></div>
+                        </div>
+                        <!--
+                        <div class="form-group row my-3 mx-2">
+                            <label class="col-form-label col text-end">Upload Module</label>
+							<input class="btn-light form-control" style="width: 15rem;" id="uploadInstaller" type="file">
+						    <label class="col-form-label col text-end">Install Password</label>
+                            <input class="form-control" style="width: 8rem;" id="installPwd" type="text">
+                            <input class="form-control btn-warning ms-2" style="width: 5rem;" id="install" type="button" value="Install" onclick="uploadModule()">
+                        </div>
+                        -->
+                        <div>
+                            <span class="font-weight-bold ms-3" id="moduleUpdateStatus"></span>
                         </div>
                     </div>                   
                 </div>

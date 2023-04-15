@@ -13,8 +13,10 @@ namespace CodeProject.AI.SDK
     {
         private readonly string?       _queueName;
         private readonly string?       _moduleId;
-
-        private readonly int           _parallelism = 1;
+        private readonly int           _parallelism     = 1;
+        private readonly string?       _accelDeviceName = null;
+        private readonly string        _halfPrecision   = "enable"; // Can be enable, disable or force
+        private readonly string        _logVerbosity    = "info";   // Can be Quiet, Info or Loud
 
         private readonly BackendClient _codeprojectAI;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -27,6 +29,13 @@ namespace CodeProject.AI.SDK
         /// Gets or sets the name of this Module
         /// </summary>
         public string? ModuleName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path to this Module
+        /// </summary>
+        public string? ModulePath { get; set; }
+
+        public bool   SupportGPU  { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the name of the hardware acceleration execution provider
@@ -48,32 +57,32 @@ namespace CodeProject.AI.SDK
         /// </summary>
         /// <param name="logger">The Logger.</param>
         /// <param name="configuration">The app configuration values.</param>
-        /// <param name="defaultQueueName">The default Queue Name.</param>
-        /// <param name="defaultModuleId">The default Module Id.</param>
-        public CommandQueueWorker(ILogger logger, IConfiguration configuration,
-                                  string moduleName,
-                                  string defaultQueueName, string defaultModuleId)
+        public CommandQueueWorker(ILogger logger, IConfiguration configuration)
         {
             _cancelled = false;
             _logger    = logger;
-            ModuleName = moduleName;
 
-            int port = configuration.GetValue<int>("CPAI_PORT");
-            if (port == default)
-                port = 32168;
+            string currentModulePath = GetModuleDirectory();
+            string currentDirName = new DirectoryInfo(currentModulePath).Name;
 
-            _queueName = configuration.GetValue<string>("CPAI_MODULE_QUEUE") ?? defaultQueueName;
-            if (string.IsNullOrEmpty(_queueName))
-                throw new ArgumentException("QueueName not initialized");
+            _moduleId  = configuration.GetValue<string?>("CPAI_MODULE_ID", null)        ?? currentDirName;
+            ModuleName = configuration.GetValue<string?>("CPAI_MODULE_NAME", null)      ?? _moduleId;
+            ModulePath = configuration.GetValue<string?>("CPAI_MODULE_PATH", null)      ?? currentModulePath;
+            _queueName = configuration.GetValue<string?>("CPAI_MODULE_QUEUENAME", null) ?? _moduleId.ToLower() + "_queue";
 
-            _moduleId  = configuration.GetValue<string>("CPAI_MODULE_ID") ?? defaultModuleId;
-            if (string.IsNullOrEmpty(_moduleId))
-                throw new ArgumentException("ModuleId not initialized");
+            int port = configuration.GetValue<int>("CPAI_PORT", 32168);
 
             _parallelism = configuration.GetValue<int>("CPAI_MODULE_PARALLELISM", 0);
 
+            // We want this big enough to increase throughput, but not so big as to
+            // cause thread starvation.
             if (_parallelism == 0)
-                _parallelism = Environment.ProcessorCount - 1;
+                _parallelism = Environment.ProcessorCount/2;
+
+            SupportGPU       = configuration.GetValue<bool>("CPAI_MODULE_SUPPORT_GPU",   true);
+            _accelDeviceName = configuration.GetValue<string?>("CPAI_ACCEL_DEVICE_NAME", null);
+            _halfPrecision   = configuration.GetValue<string?>("CPAI_HALF_PRECISION", null) ?? "enable"; // Can be enable, disable or force
+            _logVerbosity    = configuration.GetValue<string?>("CPAI_LOG_VERBOSITY", null)  ?? "info";   // Can be Quiet, Info or Loud
 
             var token = _cancellationTokenSource.Token;
 #if DEBUG
@@ -88,6 +97,32 @@ namespace CodeProject.AI.SDK
 #else
             _codeprojectAI = new BackendClient($"http://localhost:{port}/", token: token);
 #endif
+        }
+
+        protected string GetModuleDirectory()
+        {
+            string moduleDir = AppContext.BaseDirectory;
+            DirectoryInfo? info = new DirectoryInfo(moduleDir);
+
+            // HACK: If we're running this server from the build output dir in dev environment
+            // then the root path will be wrong.
+            if (SystemInfo.IsDevelopmentCode)
+            {
+                while (info != null)
+                {
+                    info = info.Parent;
+                    if (info?.Name.ToLower() == "bin")
+                    {
+                        info = info.Parent;
+                        break;
+                    }
+                }
+            }
+
+            if (info != null)
+                return info.FullName;
+
+            return moduleDir;
         }
 
         /// <summary>
@@ -117,7 +152,7 @@ namespace CodeProject.AI.SDK
         ///    With ONNX you can actually install multiple Execution Providers and the runtime
         ///    will check which one to use based on a list of providers to check, and whether they
         ///    can be used in the current environment.  However, we haven't found a way to
-        ///    determine which one is selected, especially in NET6 as the C# api is only exposing
+        ///    determine which one is selected, especially in NET7 as the C# API is only exposing
         ///    a subset of the OnnxRuntime API.
         ///   </para>
         ///   <para>
@@ -129,7 +164,7 @@ namespace CodeProject.AI.SDK
         ///    We were able to use this to verify that the Execution Providers to be used could be 
         ///    selected at runtime, so a GPU=Intel|AMD|NVIDIA|M1 could be an option if we can find
         ///    or build the Execution Providers for our requirements. There are more publically
-        ///    available for Python and C/C++ than C#/NET.
+        ///    available packages for Python and C/C++ than C#/NET.
         ///   </para>
         ///  </description>
         /// </item>
@@ -139,8 +174,8 @@ namespace CodeProject.AI.SDK
         ///    With PyTorch and TensorFlow in Python, you need to install the specific flavor(s)
         ///    of PyTorch and/or TensorFlow specific to your CPU and GPU, and have the appropriate
         ///    libraries and drivers for the GPU installed as well. It won't be easy, or
-        ///    necessarily even possible, to install all the packages at install time and then
-        ///    select them at runtime.
+        ///    necessarily even possible, or practical given dowwnload sizes, to install all the
+        ///    packages at install time and then select them at runtime.
         ///    </para>
         ///   </description>
         /// </item>
@@ -158,14 +193,14 @@ namespace CodeProject.AI.SDK
         /// correct version based on sniffed hardware.
         /// </para>
         /// </remarks>
-        protected virtual void GetHardwareInfo()
+        protected async virtual void GetHardwareInfo()
         {
-            var sniffer = new Hardware();
-            sniffer.SniffHardwareInfo();
-            ExecutionProvider = sniffer.ExecutionProvider;
-
-            if (!string.IsNullOrEmpty(ExecutionProvider) && !ExecutionProvider.EqualsIgnoreCase("CPU"))
-                HardwareType = "GPU";
+            GpuInfo? gpu = await SystemInfo.GetGpuInfo();
+            if (gpu is not null)
+            {
+                HardwareType      = "GPU";
+                ExecutionProvider = gpu.Vendor;
+            }
         }
 
         /// <summary>
@@ -243,8 +278,8 @@ namespace CodeProject.AI.SDK
                     if (responseTask is not null)
                         await responseTask;
 
-                    responseTask = _codeprojectAI.SendResponse(request.reqid, _moduleId!, content, token,
-                                                               ExecutionProvider);
+                    responseTask = _codeprojectAI.SendResponse(request.reqid, _moduleId!, content,
+                                                               token, ExecutionProvider);
 
                     await _codeprojectAI.LogToServer($"Command completed in {response.processMs} ms.",
                                                      $"{ModuleName}", LogLevel.Information,

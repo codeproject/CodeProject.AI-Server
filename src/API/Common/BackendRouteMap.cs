@@ -43,7 +43,6 @@ namespace CodeProject.AI.API.Common
     /// <summary>
     /// Holds the route and command associated with a url.
     /// </summary>
-    // TODO: this should be a Record.
     // TODO: Rename to CommandRouteInfo
     public struct ModuleRouteInfo
     {
@@ -155,7 +154,7 @@ namespace CodeProject.AI.API.Common
         public string Command { get; private set; }
 
         /// <summary>
-        /// Initializes a new instance of the CommandRouteInfo class.
+        /// Initializes a new instance of the RouteQueueInfo class.
         /// </summary>
         /// <param name="path">The URL path for this route.</param>
         /// <param name="method">The HTTP Method for the route.</param>
@@ -165,7 +164,7 @@ namespace CodeProject.AI.API.Common
         {
             Path      = path.ToLower();
             Method    = method.ToUpper();
-            QueueName = queueName;
+            QueueName = queueName.ToLower();
             Command   = command;
         }
     }
@@ -224,8 +223,8 @@ namespace CodeProject.AI.API.Common
         /// <param name="command">The command that will be passed with the payload.</param>
         public void Register(string path, string method, string queueName, string command)
         {
-            string key            = MakeKey(path, method);
-            var routeInfo         = new RouteQueueInfo(path, method, queueName, command);
+            string key          = MakeKey(path, method);
+            var routeInfo       = new RouteQueueInfo(path, method, queueName, command);
             _routeQueueMap[key] = routeInfo;
         }
 

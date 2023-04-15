@@ -101,7 +101,7 @@ class CodeProjectAIRunner:
 
         self.parallelism         = int(self.parallelism) if isinstance(self.parallelism, int) else 0
         if self.parallelism <= 0:
-            self.parallelism = os.cpu_count() - 1
+            self.parallelism = os.cpu_count()//2
 
         # Setup GPU libraries
         if self.support_GPU:
@@ -239,8 +239,6 @@ class CodeProjectAIRunner:
     # Main loop
     async def main_loop(self, task_id) -> None:
 
-        start_time = time.perf_counter()
-
         get_command_task = asyncio.create_task(self.get_command(task_id))
         send_response_task = None
 
@@ -263,18 +261,18 @@ class CodeProjectAIRunner:
                    self.module_id == data.get_value("moduleId"):
 
                     await self.log_async(LogMethod.Info | LogMethod.File | LogMethod.Server, { 
-                        "process":        self.module_name,
-                        "filename":       "codeprojectai.py",
-                        "method":         "main_loop",
-                        "loglevel":       "info",
-                        "message":        "Shutting down"
+                        "process":  self.module_name,
+                        "filename": __file__,
+                        "method":   "main_loop",
+                        "loglevel": "info",
+                        "message":  "Shutting down"
                     })
                     self._cancelled = True
                     break
 
                 process_name = f"Queue and Processing {self.module_name}"
                 if data.command:
-                    process_name += f" command '{data.command}'"
+                    process_name += f" command '{data.command}' (#reqid {data.request_id})"
 
                 timer: Tuple[str, float] = self.start_timer(process_name)
 
@@ -284,32 +282,34 @@ class CodeProjectAIRunner:
                     loop = asyncio.get_running_loop()
                     if asyncio.iscoroutinefunction(self.process_callback):
                         callbacktask = asyncio.create_task(self.process_callback(self, data))
-                    else :
+                    else:
                         callbacktask = loop.run_in_executor(None, self.process_callback, self, data)
+
+                    # start_time = time.perf_counter()
 
                     output = await callbacktask
 
-                    if output:
-                        output["taskElapsedMs"] = int((time.perf_counter() - start_time) * 1000)
+                    # if output:
+                    #    output["taskElapsedMs"] = int((time.perf_counter() - start_time) * 1000)
 
                 except asyncio.CancelledError:
-                    print(f"The future has been cancelled. Ignoring command {data.command}")
+                    print(f"The future has been cancelled. Ignoring command {data.command} (#reqid {data.request_id})")
 
                 except Exception as ex:
                     output = {
                         "success": False,
-                        "error":   "unable to process the request",
+                        "error":   f"unable to process the request (#reqid {data.request_id})",
                         "code":    500
                     }
 
                     message = "".join(traceback.TracebackException.from_exception(ex).format())
                     await self.log_async(LogMethod.Error | LogMethod.Server, { 
                         "process":        self.module_name,
-                        "filename":       "codeprojectai.py",
-                        "method":         "main_loop",
+                        "filename":       __file__,
+                        "method":         sys._getframe().f_code.co_name,
                         "loglevel":       "error",
                         "message":        message,
-                        "exception_type": "Exception"
+                        "exception_type": ex.__class__.__name__
                     })
 
                 finally:
@@ -322,7 +322,7 @@ class CodeProjectAIRunner:
                         send_response_task = asyncio.create_task(self.send_response(data.request_id, output))
                         
                     except Exception:
-                        print("An exception occured sending the inference response")
+                        print(f"An exception occured sending the inference response (#reqid {data.request_id})")
             
                 # reset for next command that we retrieved
                 start_time = time.perf_counter()
@@ -419,6 +419,11 @@ class CodeProjectAIRunner:
                 if session_response.ok:
                     content = await session_response.text()
                     if (content):
+
+                        # This method allows multiple commands to be returned,
+                        # but to keep things simple we're only ever returning a 
+                        # single command at a time (but still: ensure it's as an
+                        # array)
                         commands = [content]
 
                         # The request worked: clear the error pause time, record
@@ -430,14 +435,14 @@ class CodeProjectAIRunner:
                             "loglevel": "debug"
                         })
                 else:
-                    await self.log_async(LogMethod.Error | LogMethod.Server, {
-                        "message": f"Error retrieving command from queue {self.queue_name}",
-                        "method": "get_command",
-                        "loglevel": "error",
-                        "process": self.queue_name,
-                        "filename": "codeprojectai.py",
-                        "exception_type": "TimeoutError"
-                    })
+                    # await self.log_async(LogMethod.Error | LogMethod.Server, {
+                    #     "message": f"Error retrieving command from queue {self.queue_name}",
+                    #     "method": "get_command",
+                    #     "loglevel": "error",
+                    #     "process": self.queue_name,
+                    #     "filename": __file__,
+                    #     "exception_type": "TimeoutError"
+                    # })
 
                     # We'll only calculate the error pause time in task #0, but 
                     # all tasks will pause on error for the same amount of time
@@ -450,11 +455,11 @@ class CodeProjectAIRunner:
             if not self._cancelled:
                 await self.log_async(LogMethod.Error | LogMethod.Server, {
                     "message": f"Timeout retrieving command from queue {self.queue_name}",
-                    "method": "get_command",
+                    "method": sys._getframe().f_code.co_name,
                     "loglevel": "error",
                     "process": self.queue_name,
-                    "filename": "codeprojectai.py",
-                    "exception_type": "TimeoutError"
+                    "filename": __file__,
+                    "exception_type": ex.__class__.__name__
                 })
 
             # We'll only calculate the error pause time in task #0, but all 
@@ -467,12 +472,12 @@ class CodeProjectAIRunner:
         except ConnectionRefusedError:
             if not self._cancelled:
                 await self.log_async(LogMethod.Error, {
-                    "message": f"Unable to check the command queue {self.queue_name}. Is the server running, and can you connect to the server?",
-                    "method": "get_command",
+                    "message": f"Connection refused trying to check the command queue {self.queue_name}.",
+                    "method": sys._getframe().f_code.co_name,
                     "loglevel": "error",
                     "process": self.queue_name,
-                    "filename": "codeprojectai.py",
-                    "exception_type": "ConnectionRefusedError"
+                    "filename": __file__,
+                    "exception_type": ex.__class__.__name__
                 })
 
             # We'll only calculate the error pause time in task #0, but all 
@@ -482,53 +487,66 @@ class CodeProjectAIRunner:
                                                  if self._current_error_pause_secs \
                                                  else self._error_pause_secs
 
-		#  except aiohttp.client_exceptions.ClientResponseError:
+        #  except aiohttp.client_exceptions.ClientResponseError:
         #     ...handle this directly
 
         except Exception as ex:
 
+            pause_on_error = False
+            err_msg        = None
+            exception_type = ex.__class__.__name__
+
             if hasattr(ex, "os_error") and isinstance(ex.os_error, ConnectionRefusedError):
                 err_msg = f"Unable to check the command queue {self.queue_name}. Is the server running, and can you connect to the server?"
                 exception_type = "ConnectionRefusedError"
+                pause_on_error = True
+
+            elif ex.__class__.__name__ == "ServerDisconnectedError":
+                # This happens when the server shuts down but the module doesn't, then on restart we
+                # have multiple modules and it all goes weird
+                err_msg = f"Unable to check the command queue {self.queue_name}. The server was disconnected."
+                exception_type = "ServerDisconnectionError"
+                pause_on_error = True
 
             elif ex.__class__.__name__ == "ClientConnectorError":
                 err_msg = f"Unable to check the command queue {self.queue_name}. Is the server URL correct?"
                 exception_type = "ClientConnectorError"
+                pause_on_error = True
 
             elif ex.__class__.__name__ == "TimeoutError":
                 err_msg        = f"Timeout retrieving command from queue {self.queue_name}"
                 exception_type = "TimeoutError"
+                pause_on_error = True
 
             else:
-                # if self._verbose_exceptions:
-                #     err_msg  = str(ex)
-                err_msg        = "Error retrieving command: Is the API Server running?"
-                exception_type = "Exception"
+                err_msg = str(ex)
 
-            if not self._cancelled:
-                await self.log_async(LogMethod.Error|LogMethod.Server, {
-                    "message": err_msg,
-                    "method": "get_command",
-                    "loglevel": "error",
-                    "process": self.queue_name,
-                    "filename": "codeprojectai.py",
-                    "exception_type": exception_type
-                })
+                if not self._cancelled and err_msg and err_msg != 'Session is closed':
+                    pause_on_error = True
+                    err_msg = "Error retrieving command [" + exception_type + "]: " + err_msg
+                    await self.log_async(LogMethod.Error|LogMethod.Server, {
+                        "message": err_msg,
+                        "method": sys._getframe().f_code.co_name,
+                        "loglevel": "error",
+                        "process": self.queue_name,
+                        "filename": __file__,
+                        "exception_type": ex.__class__.__name__
+                    })
 
             # We'll only calculate the error pause time in task #0, but all 
             # tasks will pause on error for the same amount of time
-            if task_id == 0:
+            if pause_on_error and task_id == 0:
                 self._current_error_pause_secs = self._current_error_pause_secs * 2 \
                                                  if self._current_error_pause_secs \
                                                  else self._error_pause_secs
+                print(f"Pausing on errors for {sleep_time} secs.")
 
         finally:
             # We'll only calculate the error pause time in task #0, but all 
             # tasks will pause on error. However, if the error pause has hit a
             # threshold then we should quit
-            if self._current_error_pause_secs:
+            if not self._cancelled and self._current_error_pause_secs:
                 sleep_time = min(self._current_error_pause_secs, 60)
-                print(f"Pausing on error for {sleep_time} secs.")
                 await asyncio.sleep(sleep_time) # Don't pause for more than a minute
 
             return commands
@@ -574,7 +592,7 @@ class CodeProjectAIRunner:
             if self._verbose_exceptions:
                 print(f"Error sending response: {str(ex)}")
             else:
-                print(f"Error sending response: Is the API Server running?")
+                print(f"Error sending response: Is the API Server running? [" + ex.__class__.__name__ + "]")
 
         finally:
             #if success:

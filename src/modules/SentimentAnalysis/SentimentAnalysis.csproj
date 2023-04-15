@@ -1,20 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
-	<!-- Platform, architecture, runtime target defines -->
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
 	<Import Project="../../SDK/NET/Common.targets" />
 
 	<!-- Common properties -->
 	<PropertyGroup>
 		<Name>SentimentAnalysis</Name>
-		<RootNamespace>CodeProject.AI.AnalysisLayer.SentimentAnalysis</RootNamespace>
-		<Version>2.0.5</Version>
+		<RootNamespace>CodeProject.AI.Modules.SentimentAnalysis</RootNamespace>
+		<Version>2.1.0</Version>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<UserSecretsId>dotnet-SentimentAnalysis-EBFB5149-7C8C-4D4E-96D1-6C0227E67E29</UserSecretsId>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<TargetFramework>net7.0</TargetFramework>
 		<Platform>AnyCPU</Platform>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<TargetFramework>net7.0</TargetFramework>
 	</PropertyGroup>
 	
 	<!-- Common Release properties -->

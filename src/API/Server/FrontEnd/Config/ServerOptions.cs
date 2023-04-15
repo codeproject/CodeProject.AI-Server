@@ -9,6 +9,12 @@ namespace CodeProject.AI.API.Server.Frontend
     public class ServerOptions
     {
         /// <summary>
+        /// Gets or sets a value indicating whether the server should run in offline mode and not
+        /// make calls to get updates or module download listings.
+        /// </summary>
+        public bool? AllowInternetAccess { get; set; }
+
+        /// <summary>
         /// The URL the server uses to check for the latest available server version.
         /// </summary>
         public string? ServerVersionCheckUrl { get; set; }

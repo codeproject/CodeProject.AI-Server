@@ -8,7 +8,7 @@
 ::      environment.
 ::   2. From within an analysis module directory to setup just that module.
 ::
-:: If called from within /src, then all analysis modules (in AnalysisLayer/ and
+:: If called from within /src, then all analysis modules (in modules/ and
 :: modules/ dirs) will be setup in turn, as well as the main SDK and demos.
 ::
 :: If called from within a module's dir then we assume we're in the 
@@ -64,8 +64,11 @@ set useColor=true
 :: Width of lines
 set lineWidth=70
 
+:: Whether or not modules can have their Python setup installed in the shared area
+set allowSharedPythonInstallsForModules=true
 
-:: Debug flags for downloads
+
+:: Debug flags for downloads and installs
 
 :: If files are already present, then don't overwrite if this is false
 set forceOverwrite=false
@@ -74,6 +77,17 @@ set forceOverwrite=false
 :: force all downloads to be retrieved from cached downloads. If the cached download
 :: doesn't exist the install will fail.
 set offlineInstall=false
+
+REM For speeding up debugging
+set skipPipInstall=false
+
+REM Whether or not to install all python packages in one step (-r requirements.txt)
+REM or step by step. Doing this allows the PIP manager to handle incompatibilities 
+REM better.
+REM ** WARNING ** There is a big tradeoff on keeping the users informed and speed/
+REM reliability. Generally one-step shouldn't be needed. But it often is. And if
+REM often doesn't actually solve problems either. Overall it's safer, but not a panacea
+set oneStepPIP=true
 
 
 :: Basic locations
@@ -91,11 +105,11 @@ set srcDir=src
 :: be downloaded
 set downloadDir=downloads
 
-:: The name of the dir holding the pre-installed backend analysis services
-set analysisLayerDir=AnalysisLayer
+:: The name of the dir holding the installed runtimes
+set runtimesDir=runtimes
 
 :: The name of the dir holding the downloaded/sideloaded backend analysis services
-set downloadedModulesDir=modules
+set modulesDir=modules
 
 
 :: Override some values via parameters ::::::::::::::::::::::::::::::::::::::::
@@ -187,7 +201,8 @@ if /i "!architecture!" == "ARM64" (
 set hasCUDA=false
 if /i "!enableGPU!" == "true" (
     if /i "!supportCUDA!" == "true" (
-        wmic PATH Win32_VideoController get Name | findstr /I /C:"NVIDIA" > NUL
+        REM wmic PATH Win32_VideoController get Name | findstr /I /C:"NVIDIA" >NUL 2>&1
+        where nvidia-smi >nul 2>nul
         if !errorlevel! EQU 0 set hasCUDA=true
     )
 )
@@ -195,8 +210,8 @@ if /i "!hasCUDA!" == "false" set supportCUDA=false
 
 
 :: The location of directories relative to the root of the solution directory
-set installedModulesPath=!absoluteAppRootDir!\!analysisLayerDir!
-set downloadedModulesPath=!absoluteAppRootDir!\!downloadedModulesDir!
+set runtimesPath=!absoluteAppRootDir!!runtimesDir!
+set modulesPath=!absoluteAppRootDir!!modulesDir!
 set downloadPath=!absoluteAppRootDir!!downloadDir!
 
 :: Let's go
@@ -225,11 +240,14 @@ if /i "%verbosity%" neq "quiet" (
     call "!sdkScriptsPath!\utils.bat" WriteLine "installerScriptsPath  = !installerScriptsPath!"  !color_mute!
     call "!sdkScriptsPath!\utils.bat" WriteLine "sdkScriptsPath        = !sdkScriptsPath!"        !color_mute!
     call "!sdkScriptsPath!\utils.bat" WriteLine "absoluteAppRootDir    = !absoluteAppRootDir!"    !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "installedModulesPath  = !installedModulesPath!"  !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "downloadedModulesPath = !downloadedModulesPath!" !color_mute!
+    call "!sdkScriptsPath!\utils.bat" WriteLine "runtimesPath          = !runtimesPath!"          !color_mute!
+    call "!sdkScriptsPath!\utils.bat" WriteLine "modulesPath           = !modulesPath!"           !color_mute!
     call "!sdkScriptsPath!\utils.bat" WriteLine "downloadPath          = !downloadPath!"          !color_mute!
     call "!sdkScriptsPath!\utils.bat" WriteLine
 )
+
+
+:: Checks on GPU ability
 
 call "!sdkScriptsPath!\utils.bat" WriteLine ""
 call "!sdkScriptsPath!\utils.bat" Write "CUDA Present..."
@@ -252,39 +270,20 @@ call "!sdkScriptsPath!\utils.bat" WriteLine
 
 call "!sdkScriptsPath!\utils.bat" Write "Creating Directories..."
 if not exist "!downloadPath!\" mkdir "!downloadPath!"
+if not exist "!runtimesPath!\" mkdir "!runtimesPath!"
 call "!sdkScriptsPath!\utils.bat" WriteLine "Done" "Green"
 
 :: And off we go...
 
+set success=true
+
 if /i "!setupMode!" == "SetupDevEnvironment" (
 
-    REM Walk through the pre-installed modules directory and call the setup script in each dir
-    REM TODO: This should be just a simple for /d %%D in ("!installedModulesPath!") do (
-    for /f "delims=" %%D in ('dir /a:d /b "!installedModulesPath!"') do (
+    REM  Walk through the modules directory and call the setup script in each dir
+    REM  TODO: This should be just a simple for /d %%D in ("!modulesPath!") do (
+    for /f "delims=" %%D in ('dir /a:d /b "!modulesPath!"') do (
         set moduleDir=%%~nxD
-        set modulePath=!installedModulesPath!\!moduleDir!
-
-        if /i "!moduleDir!" NEQ "bin" (
-            if exist "!modulePath!\install.bat" (
-
-                set announcement=Processing pre-installed module !moduleDir!
-                call "!sdkScriptsPath!\utils.bat" WriteLine
-                call "!sdkScriptsPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
-                call "!sdkScriptsPath!\utils.bat" WriteLine
-
-                call "!modulePath!\install.bat" install
-            )
-        )
-    )
-
-    call "!sdkScriptsPath!\utils.bat" WriteLine
-    call "!sdkScriptsPath!\utils.bat" WriteLine "Pre-installed Modules setup Complete" "Green"
-
-    REM  Walk through the downloaded modules directory and call the setup script in each dir
-    REM  TODO: This should be just a simple for /d %%D in ("!downloadedModulesPath!") do (
-    for /f "delims=" %%D in ('dir /a:d /b "!downloadedModulesPath!"') do (
-        set moduleDir=%%~nxD
-        set modulePath=!downloadedModulesPath!\!moduleDir!
+        set modulePath=!modulesPath!\!moduleDir!
 
         if /i "!moduleDir!" NEQ "bin" (
             if exist "!modulePath!\install.bat" (
@@ -295,6 +294,7 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
                 call "!sdkScriptsPath!\utils.bat" WriteLine
 
                 call "!modulePath!\install.bat" install
+                if errorlevel 1 set success=false
             )
         )
     )
@@ -312,6 +312,7 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
     set modulePath=!absoluteAppRootDir!!moduleDir!
     echo !modulePath!
     call "!modulePath!\install.bat" install
+    if errorlevel 1 set success=false
 
 
     REM And finally, Demos
@@ -322,6 +323,7 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
     set moduleDir=demos
     set modulePath=!absoluteRootDir!\!moduleDir!
     call "!modulePath!\install.bat" install
+    if errorlevel 1 set success=false
 
     call "!sdkScriptsPath!\utils.bat" WriteLine
     call "!sdkScriptsPath!\utils.bat" WriteLine "                Development Environment setup complete" "White" "DarkGreen" !lineWidth!
@@ -342,9 +344,12 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
         call "!sdkScriptsPath!\utils.bat" WriteLine
 
         call "!modulePath!\install.bat" install
+        if errorlevel 1 set success=false
     )
 
     call "!sdkScriptsPath!\utils.bat" WriteLine
     call "!sdkScriptsPath!\utils.bat" WriteLine "Module setup complete" "White" "DarkGreen" !lineWidth!
     call "!sdkScriptsPath!\utils.bat" WriteLine
 )
+
+if /i "!success!" == "false" exit /b 1

@@ -74,11 +74,11 @@ class AIRequestData:
                 err_msg = str(ex)
 
             self.log(LogMethod.Error|LogMethod.Server, {
-                "message": err_msg,
-                "method": "get_image",
-                "process": self.queue_name,
-                "filename": "requestdata.py",
-                "exception_type": "Exception"
+                "message":  err_msg,
+                "method":   sys._getframe().f_code.co_name,
+                "process":  self.queue_name,
+                "filename": __file__,
+                "exception_type": ex.__class__.__name__
             })
             """
             return None

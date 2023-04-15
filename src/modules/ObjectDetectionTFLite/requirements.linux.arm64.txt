@@ -1,0 +1,18 @@
+#! Python3.8
+
+# Install Tensorflow. One way or another...
+# tensorflow                    # Installing Tensorflow, the open source machine learning framework for everyone
+# tflite-runtime==2.5.0.post1   # Installing Tensorflow Lite
+# ./third_party/wheels/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl # Installing Tensorflow Lite
+https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl
+
+# numpy>=1.16.0               # Installing NumPy, the fundamental package for array computing with Python.
+numpy                         # Installing NumPy, a package for scientific computing
+
+Pillow>=4.0.0                 # Installing Pillow, a Python Image Library
+
+#OpenCV-Python                # Installing OpenCV, the Open source Computer Vision library
+# See https://raspberrypi-guide.github.io/programming/install-opencv
+opencv-python==4.5.3.56       # Installing OpenCV, the Open source Computer Vision library
+
+# last line empty

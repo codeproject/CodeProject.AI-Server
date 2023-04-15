@@ -16,5 +16,8 @@ fi
 
 
 # Install python and the required dependencies. If we find imutils then asssume it's all there
-setupPython 3.8
-installPythonPackages 3.8 "${modulePath}/Python"
+setupPython 3.8 "Shared"
+if [ $? -ne 0 ]; then quit 1; fi
+
+installPythonPackages 3.8 "${modulePath}/Python" "Shared"
+if [ $? -ne 0 ]; then quit 1; fi

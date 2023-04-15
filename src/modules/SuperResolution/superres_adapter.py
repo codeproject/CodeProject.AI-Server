@@ -2,72 +2,50 @@
 # coding: utf-8
 
 # Import our general libraries
+import os
 import sys
 import time
-import traceback
 
-# Import the CodeProject.AI SDK. This will add to the PATH vaar for future imports
+# Import the CodeProject.AI SDK. This will add to the PATH var for future imports
 sys.path.append("../../SDK/Python")
-from analysis.codeprojectai import CodeProjectAIRunner
-from analysis.analysislogging import LogMethod
-from analysis.requestdata import AIRequestData
 from common import JSON
+from request_data import RequestData
+from module_runner import ModuleRunner
 
 # Import libraries needed
-import os
 from PIL import Image
 
 # Import the method of the module we're wrapping
 from superresolution import superresolution, load_pretrained_weights
 
 
-def main():
+class SuperRes_adapter(ModuleRunner):
 
-    # create a CodeProject.AI module object
-    module_runner = CodeProjectAIRunner("superresolution_queue", superresolution_callback)
+    def initialise(self) -> None:
+        assets_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "assets/"))
+        load_pretrained_weights(assets_path)
 
-    # Hack for debug mode
-    if module_runner.module_id == "CodeProject.AI":
-        module_runner.module_id   = "SuperResolution"
-        module_runner.module_name = "Super Resolution"
+        if self.support_GPU and self.hasTorchCuda:
+            self.execution_provider = "CUDA"
 
-    # Setup the module
-    assets_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "assets/"))
-    load_pretrained_weights(assets_path)
+    def process(self, data: RequestData) -> JSON:
+        try:
+            img: Image = data.get_image(0)
 
-    # Start the module
-    module_runner.start_loop()
+            start_time = time.perf_counter()
+            (out_img, inferenceMs) = superresolution(img)
 
+            return {
+                "success": True,
+                "imageBase64": data.encode_image(out_img),
+                "processMs" : int((time.perf_counter() - start_time) * 1000),
+                "inferenceMs": inferenceMs
+            }
 
-def superresolution_callback(module_runner: CodeProjectAIRunner, data: AIRequestData) -> JSON:
-
-    try:
-        img: Image = data.get_image(0)
-
-        start_time = time.perf_counter()
-        (out_img, inferenceMs) = superresolution(img)
-
-        return {
-            "success": True,
-            "imageBase64": data.encode_image(out_img),
-            "processMs" : int((time.perf_counter() - start_time) * 1000),
-            "inferenceMs": inferenceMs,
-            "code": 200
-        }
-
-    except Exception as ex:
-        message = "".join(traceback.TracebackException.from_exception(ex).format())
-        module_runner.log(LogMethod.Error | LogMethod.Server,
-                    {
-                        "filename": "superres_adapter.py",
-                        "method": "superresolution",
-                        "loglevel": "error",
-                        "message": message,
-                        "exception_type": "Exception"
-                    })
-
-        return {"success": False, "error": "unable to process the image", "code": 500}
+        except Exception as ex:
+            self.report_error(ex, __file__)
+            return {"success": False, "error": "unable to process the image"}
 
 
 if __name__ == "__main__":
-    main()
+    SuperRes_adapter().start_loop()

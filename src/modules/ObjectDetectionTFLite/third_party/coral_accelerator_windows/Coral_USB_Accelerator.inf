@@ -1,0 +1,56 @@
+; WinUSB-based INF. See below URL for more details.
+; https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation#inf
+
+[Version]
+Signature = "$Windows NT$"
+Class = USBDevice
+ClassGUID = {88BAE032-5A81-49f0-BC3D-A4FF138216D6}
+Provider = %ManufacturerName%
+CatalogFile = Coral_USB_Accelerator.cat
+DriverVer = 09/23/2019,11.25.00.000
+
+[Manufacturer]
+%ManufacturerName% = Standard,NTamd64
+
+[Standard.NTamd64]
+%DeviceName% = USB_Install, USB\VID_18D1&PID_9302
+
+[USB_Install]
+Include = winusb.inf
+Needs = WINUSB.NT
+
+[USB_Install.Services]
+Include = winusb.inf
+Needs = WINUSB.NT.Services
+
+[USB_Install.HW]
+AddReg = Dev_AddReg
+
+[Dev_AddReg]
+HKR,,DeviceInterfaceGUIDs,0x10000,"{01152DA2-8235-43B7-A67C-28FF9BD3F8A4}"
+
+[USB_Install.CoInstallers]
+AddReg = CoInstallers_AddReg
+CopyFiles = CoInstallers_CopyFiles
+
+[CoInstallers_AddReg]
+HKR,,CoInstallers32,0x00010000,"WdfCoInstaller01009.dll,WdfCoInstaller","WinUsbCoInstaller2.dll"
+
+[CoInstallers_CopyFiles]
+WinUsbCoInstaller2.dll
+WdfCoInstaller01009.dll
+
+[DestinationDirs]
+CoInstallers_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%
+
+[SourceDisksFiles.amd64]
+WinUsbCoInstaller2.dll = 1,amd64
+WdfCoInstaller01009.dll = 1,amd64
+
+[Strings]
+ManufacturerName = "Google"
+DeviceName = "Coral USB Accelerator"
+DiskName = "Coral USB Accelerator Install Disk"

@@ -2,18 +2,23 @@
 ::
 ::                           Background Remover
 ::
-:: This script is only called from /src/setup.bat 
+:: This script is only called from ..\..\setup.bat
 
 @if "%1" NEQ "install" (
-	echo This script is only called from /src/setup.bat
+	echo This script is only called from ..\..\setup.bat
 	@pause
 	@goto:eof
 )
 
-:: Install python and the required dependencies. If we find onnxruntime then asssume it's all there
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.9 "Shared"
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%" "Shared"
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%absoluteAppRootDir%\SDK\Python" "Shared"
+:: Install python and the required dependencies in the shared Python environment
+call "%sdkScriptsPath%\utils.bat" SetupPython 3.9 "Local"
+if errorlevel 1 exit /b 1
+
+call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%" "Local"
+if errorlevel 1 exit /b 1
+
+call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%absoluteAppRootDir%\SDK\Python" "Local"
+if errorlevel 1 exit /b 1
 
 :: Location of models as per original repo
 :: u2netp:          https://drive.google.com/uc?id=1tNuFmLv0TSNDjYIkjEdeH1IWKQdUA4HR
@@ -23,7 +28,7 @@ call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%absoluteAppRootDir
 
 :: Download the models and store in /models
 call "%sdkScriptsPath%\utils.bat" GetFromServer "rembg-models.zip" "models" "Downloading Background Remover models..."
-
+if errorlevel 1 exit /b 1
 
 
 ::                         -- Install script cheatsheet -- 
@@ -33,11 +38,10 @@ call "%sdkScriptsPath%\utils.bat" GetFromServer "rembg-models.zip" "models" "Dow
 ::  absoluteAppRootDir    - the root path of the app (eg: C:\Program Files]\CodeProject\AI\)
 ::  sdkScriptsPath        - the path to the installation utility scripts (%rootPath%\src\SDK\Scripts)
 ::  downloadPath          - the path to where downloads will be stored (%rootPath%\src\downloads)
-::  installedModulesPath  - the path to the pre-installed AI modules (%rootPath%\src\AnalysisLayer)
-::  downloadedModulesPath - the path to the download AI modules (%rootPath%\src\modules)
+::  runtimesPath          - the path to the installed runtimes (%rootPath%\src\runtimes)
+::  modulesPath           - the path to all the AI modules (%rootPath%\src\modules)
 ::  moduleDir             - the name of the directory containing this module
-::  modulePath            - the path to this module (%installedModulesPath%\%moduleDir% or
-::                          %downloadedModulesPath%\%moduleDir%, depending on whether pre-installed)
+::  modulePath            - the path to this module (%modulesPath%\%moduleDir%)
 ::  platform              - "windows" for this script
 ::  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 ::  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
@@ -64,11 +68,11 @@ call "%sdkScriptsPath%\utils.bat" GetFromServer "rembg-models.zip" "models" "Dow
 ::  SetupPython Version [install-location]
 ::       Version - version number of python to setup. 3.7 and 3.9 currently supported. A virtual
 ::                 environment will be created in the module's local folder if install-location is
-::                 "LocalToModule", otherwise in %installedModulesPath%/bin/windows/python<version>/venv.
-::       install-location - [optional] "LocalToModule" or "Shared" (see above)
+::                 "Local", otherwise in %runtimesPath%/bin/windows/python<version>/venv.
+::       install-location - [optional] "Local" or "Shared" (see above)
 ::
 ::  InstallPythonPackages Version requirements-file-directory [install-location]
 ::       Version - version number, as per SetupPython
 ::       requirements-file-directory - directory containing the requirements.txt file
-::       install-location - [optional] "LocalToModule" (installed in the module's local folder) or 
-::                          "Shared" (installed in the shared AnalysisLayer/bin directory)
+::       install-location - [optional] "Local" (installed in the module's local folder) or 
+::                          "Shared" (installed in the shared runtimes/bin directory)

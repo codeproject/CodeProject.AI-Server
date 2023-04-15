@@ -4,7 +4,7 @@ filetype					# Installing FileType, a package to infer file types and MIME types
 gdown						# Installing gdown, a package for downloading from Google Drive folders
 
 # We may need to rework this. See https://stackoverflow.com/a/66536896
-numpy						# Installing NumPy, a package for scientific computing
+numpy==1.23.5						# Installing NumPy, a package for scientific computing
 
 pymatting					# Installing pymatting, a Python Library for Alpha Matting
 Pillow						# Installing Pillow, a Python Image Library

@@ -7,7 +7,7 @@ using System.Linq;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace CodeProject.AI.AnalysisLayer.PortraitFilter
+namespace CodeProject.AI.Modules.PortraitFilter
 {
     /// <summary>
     /// Defines deep person lab.

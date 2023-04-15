@@ -15,98 +15,106 @@ if [ "$1" != "install" ]; then
 	exit 1 
 fi
 
-# *** IF YOU WISH TO USE GPU ON LINUX ***
-# Before you do anything you need to  ensure CUDA is installed in Ubuntu. 
-# These steps need to be done outside of our setup scripts
+# Work needs to be done to get Paddle to install on the Raspberry Pi 
+if [ "${hardware}" == "RaspberryPi" ]; then
+    writeLine 'Unable to install PaddleOCR on RaspberryPi. Quitting.' 'Red'
+else
 
-message="
-*** IF YOU WISH TO USE GPU ON LINUX Please ensure you have CUDA installed ***
-# The steps are: (See https://chennima.github.io/cuda-gpu-setup-for-paddle-on-windows-wsl)
+    # *** IF YOU WISH TO USE GPU ON LINUX ***
+    # Before you do anything you need to  ensure CUDA is installed in Ubuntu. 
+    # These steps need to be done outside of our setup scripts
 
-sudo apt install libgomp1
+    message="
+    *** IF YOU WISH TO USE GPU ON LINUX Please ensure you have CUDA installed ***
+    # The steps are: (See https://chennima.github.io/cuda-gpu-setup-for-paddle-on-windows-wsl)
 
-# Install CUDA
+    sudo apt install libgomp1
 
-sudo apt-key del 7fa2af80
-wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
-sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
-wget https://developer.download.nvidia.com/compute/cuda/11.7.0/local_installers/cuda-repo-wsl-ubuntu-11-7-local_11.7.0-1_amd64.deb
-sudo dpkg -i cuda-repo-wsl-ubuntu-11-7-local_11.7.0-1_amd64.deb
+    # Install CUDA
 
-sudo cp /var/cuda-repo-wsl-ubuntu-11-7-local/cuda-B81839D3-keyring.gpg /usr/share/keyrings/
+    sudo apt-key del 7fa2af80
+    wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
+    sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
+    wget https://developer.download.nvidia.com/compute/cuda/11.7.0/local_installers/cuda-repo-wsl-ubuntu-11-7-local_11.7.0-1_amd64.deb
+    sudo dpkg -i cuda-repo-wsl-ubuntu-11-7-local_11.7.0-1_amd64.deb
 
-sudo apt-get update
-sudo apt-get -y install cuda
+    sudo cp /var/cuda-repo-wsl-ubuntu-11-7-local/cuda-B81839D3-keyring.gpg /usr/share/keyrings/
 
-# Now Install cuDNN
+    sudo apt-get update
+    sudo apt-get -y install cuda
 
-sudo apt-get install zlib1g
+    # Now Install cuDNN
 
-# => Go to https://developer.nvidia.com/cudnn, sign in / sign up, agree to terms 
-#    and download 'Local Installer for Linux x86_64 (Tar)'. This will download a
-#    file similar to 'cudnn-linux-x86_64-8.4.1.50_cuda11.6-archive.tar.xz'
-#
-# In the downloads folder do: 
+    sudo apt-get install zlib1g
 
-tar -xvf cudnn-linux-x86_64-8.4.1.50_cuda11.6-archive.tar.xz
-sudo cp cudnn-*-archive/include/cudnn*.h /usr/local/cuda/include 
-sudo cp -P cudnn-*-archive/lib/libcudnn* /usr/local/cuda/lib64 
-sudo chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
+    # => Go to https://developer.nvidia.com/cudnn, sign in / sign up, agree to terms 
+    #    and download 'Local Installer for Linux x86_64 (Tar)'. This will download a
+    #    file similar to 'cudnn-linux-x86_64-8.4.1.50_cuda11.6-archive.tar.xz'
+    #
+    # In the downloads folder do: 
 
-# and you'll be good to go
-"
-# print message
+    tar -xvf cudnn-linux-x86_64-8.4.1.50_cuda11.6-archive.tar.xz
+    sudo cp cudnn-*-archive/include/cudnn*.h /usr/local/cuda/include 
+    sudo cp -P cudnn-*-archive/lib/libcudnn* /usr/local/cuda/lib64 
+    sudo chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
 
-# Install python and the required dependencies.
+    # and you'll be good to go
+    "
+    # print message
 
-# Note that PaddlePaddle requires Python3.8 or below
-setupPython 3.8 "LocalToModule"
-installPythonPackages 3.8 "${modulePath}" "LocalToModule"
-installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "LocalToModule"
+    # Install python and the required dependencies.
 
-# Download the OCR models and store in /paddleocr
-getFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
+    # Note that PaddlePaddle requires Python3.8 or below
+    setupPython 3.8 "Local"
+    if [ $? -ne 0 ]; then quit 1; fi
+    installPythonPackages 3.8 "${modulePath}" "Local"
+    if [ $? -ne 0 ]; then quit 1; fi
+    installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "Local"
+    if [ $? -ne 0 ]; then quit 1; fi
 
-# We have a patch to apply for linux. 
-if [ "${platform}" = "linux" ]; then
-    if [ "${hasCUDA}" != "true" ]; then
-        # writeLine 'Applying PaddlePaddle patch'
-        # https://www.codeproject.com/Tips/5347636/Getting-PaddleOCR-and-PaddlePaddle-to-work-in-Wind
-        # NOT Needed for Ubuntu 20.04 WSL under Win10
-        # cp ${modulePath}/patch/paddle2.4.0rc0/image.py ${modulePath}/bin/${platform}/python38/venv/lib/python3.8/site-packages/paddle/dataset/.
+    # Download the OCR models and store in /paddleocr
+    getFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
+    if [ $? -ne 0 ]; then quit 1; fi
 
-        writeLine 'Applying PaddleOCR patch'
-        # IS needed due to a newer version of Numpy deprecating np.int
-    cp ${modulePath}/patch/paddleocr2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
+    # We have a patch to apply for linux. 
+    if [ "${platform}" = "linux" ]; then
+        if [ "${hasCUDA}" != "true" ]; then
+            # writeLine 'Applying PaddlePaddle patch'
+            # https://www.codeproject.com/Tips/5347636/Getting-PaddleOCR-and-PaddlePaddle-to-work-in-Wind
+            # NOT Needed for Ubuntu 20.04 WSL under Win10
+            # cp ${modulePath}/patch/paddle2.4.0rc0/image.py ${modulePath}/bin/${platform}/python38/venv/lib/python3.8/site-packages/paddle/dataset/.
+
+            writeLine 'Applying PaddleOCR patch'
+            # IS needed due to a newer version of Numpy deprecating np.int
+            cp ${modulePath}/patch/paddleocr2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
+        fi
     fi
+
+    # We have a patch to apply for macOS-arm64 due to numpy upgrade that deprecates np.int that we can't downgrade
+    if [ "${os}" == "macos" ]; then
+        writeLine 'Applying PaddleOCR patch'
+        cp ${modulePath}/patch/paddleocr2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
+    fi
+
+    # To test paddle was setup correctly, open a python prompt and do:
+    # >>> import paddle
+    # >>> paddle.utils.run_check()
+
+    # Cleanup if you wish
+    # rmdir /S %downloadPath%
 fi
-
-# We have a patch to apply for macOS-arm64 due to numpy upgrade that deprecates np.int that we can't downgrade
-if [ "${os}" == "macos" ]; then
-    writeLine 'Applying PaddleOCR patch'
-    cp ${modulePath}/patch/paddleocr2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
-fi
-
-# To test paddle was setup correctly, open a python prompt and do:
-# >>> import paddle
-# >>> paddle.utils.run_check()
-
-# Cleanup if you wish
-# rmdir /S %downloadPath%
-
 
 #                         -- Install script cheatsheet -- 
 #
 # Variables available:
 #
-#  absoluteAppRootDir    - the root path of the app (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/src/SDK/Scripts)
-#  downloadPath          - the path to where downloads will be stored ($rootPath/src/downloads)
-#  installedModulesPath  - the path to the pre-installed AI modules ($rootPath/src/AnalysisLayer)
-#  downloadedModulesPath - the path to the download AI modules ($rootPath/src/modules)
+#  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
+#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/Installers)
+#  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
+#  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
+#  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
 #  moduleDir             - the name of the directory containing this module
-#  modulePath            - the path to this module ($installedModulesPath/$moduleDir or
-#                          $downloadedModulesPath/$moduleDir, depending on whether pre-installed)
+#  modulePath            - the path to this module ($modulesPath/$moduleDir)
 #  os                    - "linux" or "macos"
 #  architecture          - "x86_64" or "arm64"
 #  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
@@ -141,11 +149,11 @@ fi
 #  setupPython Version [install-location]
 #       Version - version number of python to setup. 3.8 and 3.9 currently supported. A virtual
 #                 environment will be created in the module's local folder if install-location is
-#                 "LocalToModule", otherwise in $installedModulesPath/bin/$platform/python<version>/venv.
-#       install-location - [optional] "LocalToModule" or "Shared" (see above)
+#                 "Local", otherwise in $runtimesPath/bin/$platform/python<version>/venv.
+#       install-location - [optional] "Local" or "Shared" (see above)
 #
 #  installPythonPackages Version requirements-file-directory
 #       Version - version number, as per SetupPython
 #       requirements-file-directory - directory containing the requirements.txt file
-#       install-location - [optional] "LocalToModule" (installed in the module's local venv) or 
-#                          "Shared" (installed in the shared $installedModulesPath/bin venv folder)
+#       install-location - [optional] "Local" (installed in the module's local venv) or 
+#                          "Shared" (installed in the shared $runtimesPath/bin venv folder)

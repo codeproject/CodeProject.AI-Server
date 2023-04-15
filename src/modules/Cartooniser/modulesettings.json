@@ -1,0 +1,90 @@
+{
+  "Modules": {
+
+    "Cartooniser": {
+      "Name": "Cartooniser",
+      "Version": "1.0",
+
+      // Publishing info
+      "Description": "Convert a photo into an anime style cartoon", 
+      "Platforms": [ "windows" , "linux", "linux-arm64", "macos", "macos-arm64" ], // only tested on windows
+      "License": "MIT",
+      "LicenseUrl": "https://github.com/bryandlee/animegan2-pytorch/blob/main/LICENSE",
+
+      // Which server version is compatible with each version of this module.
+      "VersionCompatibililty": [
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "2.1", "" ], "ReleaseDate": "2023-03-28" },
+      ],
+
+      // Launch instructions
+      "AutoStart": true,
+      "FilePath": "cartooniser_adapter.py",
+      "Runtime": "python39",
+      "RuntimeLocation": "Local", // Can be Local or Shared
+      
+      // These are all optional. Defaults are usually fine
+      "SupportGPU": false,
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 0,        // 1 if using GPU, 0 for CPU
+
+      "EnvironmentVariables": {
+        "WEIGHTS_FOLDER": "%CURRENT_MODULE_PATH%\\weights"
+        // "LD_LIBRARY_PATH": "%CURRENT_MODULE_PATH%/bin/%OS%/python39/venv/lib/python3.9/site-packages/nvidia/cudnn/lib/"
+      },
+
+      "RouteMaps": [
+        {
+          "Name": "Cartooniser",
+          "Path": "image/cartoonise",
+          "Method": "POST",
+          "Command": "Cartoonise",
+          "Description": "Convert a photo into an anime style cartoon.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The image to be converted."
+            }
+            /*,
+            {
+              "Name": "model",
+              "Type": "String",
+              "Description": "Name of the model to use",
+              "DefaultValue": ""
+            }
+            */
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "imageBase64",
+              "Type": "Base64ImageData",
+              "Description": "The base64 encoded image."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

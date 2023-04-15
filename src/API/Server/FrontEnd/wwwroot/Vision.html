@@ -518,7 +518,14 @@
 									// enable those that need enabling. Note that some cards will be
 									// shared among modules, so we need to ensure we're not disabling
 									// a card that was just enabled by a different module
-									let cards = document.getElementsByClassName('card ' + moduleId);
+									let selector = moduleId;
+									if (["ObjectDetectionNet",
+									     "VisionObjectDetection",
+										 "ObjectDetectionYolo",
+										 "ObjectDetectionTFLite",
+										 "YOLOv5-3.1"].includes(moduleId)) selector = "ObjectDetection";
+
+									let cards = document.getElementsByClassName('card ' + selector);
 									for (const card of cards) {
 										if (running) {
 											card.classList.replace('d-none', 'd-flex');
@@ -857,6 +864,27 @@
 				img.style.visibility = "visible";
 			});
 		}
+
+		function onCartoonise(model_name, fileChooser) {
+
+			clearCanvas();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for cartoonisation");
+				return;
+			}
+
+			setImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
+
+			params = [["model_name", model_name]]
+
+			submitRequest('image', 'cartoonise', images, params, function (data) {
+				setResultsHtml("onCartoonisation complete" + getInferenceTimingHtml(data));
+				img.src = "data:image/png;base64," + data.imageBase64;
+				img.style.visibility = "visible";
+			});
+		}		
 
         function onReadLicensePlate(fileChooser, confidence) {
 
@@ -1264,13 +1292,13 @@
 			<div class="card mt-3">
 				<div class="card-body">
 
-					<div class="form-group row text-nowrap">
-						<label class="col-form-label col-2 text-end">Service API URL</label>
-						<input class="col-form-control col-2" type="text" id="serviceUrl" style="width:12.5rem"/>
-						<label class="col-form-label col-1 text-end">Timeout</label>
-						<input class="col-form-control col-1" type="number" id="serviceTimeoutSecTxt" style="width:4.5rem"/>
-						<label class="col-form-label col-1" style="width:3rem">sec</label>
-						<label id="status" class="col-form-label col-5 bg-white fw-bold ms-4"></label>
+					<div class="form-group d-flex text-nowrap">
+						<label class="col-form-label text-end me-1">Service API URL</label>
+						<input class="col-form-control form-control type="text" id="serviceUrl" style="width:12.5rem"/>
+						<label class="col-form-label text-end ms-3 me-1">Timeout</label>
+						<input class="col-form-control form-control type="number" id="serviceTimeoutSecTxt" style="width:4.5rem"/>
+						<label class="col-form-label mx-1">sec</label>
+						<label id="status" class="col-form-label rounded bg-white fw-bold ms-auto px-2"></label>
 					</div>
 				</div>
 			</div>
@@ -1308,45 +1336,73 @@
 
 							<div class="tab-pane fade show active" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
 
-								<div class="card mt-3 d-none FaceProcessing ObjectDetectionNet SceneClassification VisionObjectDetection ObjectDetectionYolo YOLOv5-3.1">
+								<div class="card mt-3 d-none ObjectDetection">
 									<div class="card-header h3">Object Detection</div>
-									<div class="card-body">
 
+									<div class="card-body">
 										<div class="form-group row">
-											<label class="col-form-label col-3">Image</label>
-											<input class="col form-control btn-light" id="image" type="file" onchange="return previewImage(this)" />
-										</div>
-										<div class="form-group row mt-2 flex-nowrap">
-											<label class="col-form-label col-3">Operation</label>
-											<input class="col form-control btn-success" type="button" value="Detect Scene" id="scene" onclick="onDetectScene(image)" />
-											<input class="col form-control btn-info" type="button" value="Detect Face" id="face" onclick="onDetectFaces(image)" />
-											<input class="col form-control btn-warning" type="button" value="Detect Things" id="things" onclick="onDetectThings(image)" />
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="image" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Detect Objects"
+												   style="width:11rem" id="things"
+												   onclick="onDetectThings(image)"  />
 										</div>
 									</div>
-								</div>
 
-								<div class="card mt-3 d-none ObjectDetectionYolo ObjectDetectionNet YOLOv5-3.1">
-									<div class="card-header h3">Custom Object Detection</div>
 									<div class="card-body">
 
 										<div class="form-group row">
-											<label class="col-form-label col-3">Image</label>
-											<input class="col form-control btn-light" id="customimage" type="file"
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="customimage" type="file" style="width:17rem"
 												   onchange="return previewImage(this)" />
+											<input class="form-control btn-warning" type="button" value="Custom Detect"
+												   style="width:11rem" id="customthings"
+												   onclick="onCustomDetect(customModel.value, customimage)" />
 										</div>
 										<div class="form-group d-flex justify-content-end mt-2">
-											<select id="customModel" class="form-select me-5">
+											<label class="col-form-label col-2">Model</label>
+											<select id="customModel" class="form-select" style="width:19rem">
 												<option value="ipcam-general">General IP Cam</option>
 												<option value="license-plate">License Plates v2</option>
 												<option value="openlogo">Open Logo</option>
 												<option value="actionnetv2">(Human) ActionNet v2</option>
 											</select>
-											<input class="btn btn-warning" type="button"
-												   value="Run Detection" id="customthings"
-												   onclick="onCustomDetect(customModel.value, customimage)" />
+											<label style="width:11rem"></label>
 										</div>
 									</div>
 								</div>
+
+								<div class="card mt-3 d-none FaceProcessing">
+									<div class="card-header h3">Face Detection</div>
+
+									<div class="card-body">
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="face_image" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Detect Faces"
+												   style="width:11rem" id="face"
+												   onclick="onDetectFaces(face_image)"  />
+										</div>
+									</div>
+								</div>
+
+								<div class="card mt-3 d-none SceneClassifier">
+									<div class="card-header h3">Scene Classification</div>
+
+									<div class="card-body">
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="scene_image" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Classify Scene"
+												   style="width:11rem" id="scene"
+												   onclick="onDetectScene(scene_image)"  />
+										</div>
+									</div>
+								</div>
+
 							</div>
 
 							<div class="tab-pane fade show" id="image-panel" role="tabpanel" aria-labelledby="image-tab">
@@ -1392,6 +1448,41 @@
 												   oninput="document.getElementById('strengthLabel').innerHTML=this.value;">
 											<span id="strengthLabel" class="col-form-label text-nowrap col-1">1.0</span>
 										</div>
+									</div>
+								</div>
+
+								<div class="card mt-3 d-none Cartooniser">
+									<div class="card-header h3">Cartoonise</div>
+									<div class="card-body">
+
+										<div class="form-group row">
+											<label class="col-form-label col-2">Image</label>
+											<input class="col form-control btn-light" id="cartoonInput" type="file" style="width:17rem"
+												   onchange="return previewImage(this)" />
+											<input class="form-control btn-success" type="button" value="Cartoonise" style="width:10rem"
+												   id="on-cartoonise" onclick="onCartoonise(cartoonModel.value, cartoonInput, strength.value)" />
+										</div>
+										<div class="form-group d-flex justify-content-end mt-2">
+											<label class="col-form-label col-2">Model</label>
+											<select id="cartoonModel" class="form-select" style="width:19rem">
+												<option value="face_paint_512_v1">face_paint v1</option>
+												<option value="face_paint_512_v2">face_paint v2</option>
+												<option value="celeba_distill">celeba_distill</option>
+												<option value="paprika">Paprika</option>
+											</select>
+											<label style="width:11rem"></label>
+										</div>
+
+
+										<!--
+										<div class="form-group row mt-1 justify-content-end">
+											<label class="col-3 col-form-label text-end">Cartoonisation Strength</label>
+											<input class="form-control" id="strength" style="width:15rem"
+												   type="range" min="0.0" max="1.0" step="0.1" value="1.0"
+												   oninput="document.getElementById('strengthLabel').innerHTML=this.value;">
+											<span id="strengthLabel" class="col-form-label text-nowrap col-1">1.0</span>
+										</div>
+										-->
 									</div>
 								</div>
 
@@ -1586,7 +1677,7 @@
 
 							<div class="tab-pane fade show" id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-tab">
 
-								<div class="card mt-3 ObjectDetectionNet VisionObjectDetection ObjectDetectionYolo YOLOv5-3.1">
+								<div class="card mt-3 ObjectDetection">
 									<div class="card-header h3">Benchmark</div>
 									<div class="card-body">
 
@@ -1625,7 +1716,7 @@
 					</div>
 
 					<div class="ms-4 mt-3 position-sticky" style="width:475px;">
-						<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black"
+						<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black rounded"
 								style="height: 195px; overflow-y: auto;"></div>
 
 						<div class="w-100 position-relative border-1 border-light">

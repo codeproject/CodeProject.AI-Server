@@ -65,6 +65,31 @@ namespace CodeProject.AI.SDK.Common
     public class Text
     {
         /// <summary>
+        /// Removes XTerm colouring from a string.
+        /// </summary>
+        /// <param name="text">The string</param>
+        /// <returns>A string</returns>
+        public static string StripXTermColors(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            // Strip the foreground <ESC>[30m - <ESC>[37m, <ESC>[90m - <ESC>[97m
+            text = Regex.Replace(text, "\\u001b\\[((0|1);)?(3|9)\\dm", string.Empty, RegexOptions.Compiled);
+
+            // Strip the background. <ESC>[40m - <ESC>[47m, <ESC>[100m - <ESC>[107m
+            text = Regex.Replace(text, "\\u001b\\[(4|10)\\dm", string.Empty, RegexOptions.Compiled);
+
+            // Strip the reset code. <ESC>[0m
+            text = Regex.Replace(text, "\u001b\\[0m", string.Empty, RegexOptions.Compiled);
+
+            // Bonus: Strip the 'spin' animation. |,/,-,\ + backspace
+            text = Regex.Replace(text, "(\\||\\-|\\\\|\\/|\\s)[\\b]", string.Empty, RegexOptions.Compiled);
+
+            return text;
+        }
+
+        /// <summary>
         /// Corrects the direction of the slashes in a directory path so it's correct for the 
         /// current OS.
         /// </summary>

@@ -6,3 +6,5 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "<Pending>", Scope = "member", Target = "~M:CodeProject.AI.SDK.CommandQueueWorker.ProcessQueue(System.Threading.CancellationToken)~System.Threading.Tasks.Task")]
+[assembly: SuppressMessage("Style", "IDE0037:Use inferred member name", Justification = "Not our coding style", Scope = "member", Target = "~M:CodeProject.AI.SDK.Common.SystemInfo.#cctor")]
+[assembly: SuppressMessage("Style", "IDE0017:Simplify object initialization", Justification = "Not our coding style", Scope = "member", Target = "~M:CodeProject.AI.SDK.Common.SystemInfo.ParseNvidiaSmi~CodeProject.AI.SDK.Common.NvidiaInfo")]

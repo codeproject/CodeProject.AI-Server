@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using CodeProject.AI.AnalysisLayer.SentimentAnalysis;
+using CodeProject.AI.Modules.SentimentAnalysis;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>

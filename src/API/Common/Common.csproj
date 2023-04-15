@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<!-- Platform, architecture, runtime target defines -->
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
 	<Import Project="../../SDK/NET/Common.targets" />
 
 	<!-- Common properties -->
@@ -13,13 +13,13 @@
 		<Nullable>enable</Nullable>
 		<RunPostBuildEvent>Always</RunPostBuildEvent>
 		<Platform>AnyCPU</Platform>
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<TargetFramework>net7.0</TargetFramework>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
-		<SelfContained>True</SelfContained>
+		<SelfContained>false</SelfContained>
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>

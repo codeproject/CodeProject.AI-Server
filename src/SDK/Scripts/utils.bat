@@ -7,17 +7,6 @@
 
 @echo off
 
-REM For speeding up debugging
-set skipPipInstall=false
-
-REM Whether or not to install all python packages in one step
-REM (-r requirements.txt) or step by step. Doing this allows the PIP manager
-REM to handle incompatibilities better.
-REM ** WE KEEP THIS AS FALSE for production so we can provide, and get back more,
-REM feedback from users. In some cases (eg Windows) setting this to true can speed
-REM things up.
-set oneStepPIP=false
-
 set pipFlags=-q -q -q
 if /i "%verbosity%"=="info" set pipFlags=-q -q -q
 if /i "%verbosity%"=="loud" set pipFlags=-q
@@ -137,6 +126,7 @@ shift & goto :%~1
 :: string foreground color name. Optional if no background provided.
 ::        Defaults to "White"
 :: string background color name.  Optional. Defaults to Black.
+:: string intense. Optional. If "true" then the insensity is turned up
 :setColor
 
     REM If you want to get a little fancy then you can also try
@@ -145,6 +135,7 @@ shift & goto :%~1
 
     set foreground=%~1
     set background=%~2
+    set intense=%~3
 
     REM if "!foreground!"=="" set foreground=White
     REM if /i "!foreground!"=="Default" set foreground=White
@@ -161,30 +152,37 @@ shift & goto :%~1
 		set foreground=!contrastForeground!
 	)
 
-    set currentColor=
+    REM Colour effect: <ESC>[(0|1)<code>m, where 0 = not intense / reset, 1 = intense    
+    REM See this most excellent answer: https://stackoverflow.com/a/33206814
+    set currentColor=!ESC![
+    if /i "$intense"=="true" (
+        set currentColor=!currentColor!1;
+    ) else (
+        set currentColor=!currentColor!0;
+    )
 
     REM Foreground Colours
-    if /i "!foreground!"=="Default"     set currentColor=!ESC![39m
+    if /i "!foreground!"=="Default"     set currentColor=!currentColor!39m
 
-    if /i "!foreground!"=="Black"       set currentColor=!ESC![30m
-    if /i "!foreground!"=="DarkRed"     set currentColor=!ESC![31m
-    if /i "!foreground!"=="DarkGreen"   set currentColor=!ESC![32m
-    if /i "!foreground!"=="DarkYellow"  set currentColor=!ESC![33m
-    if /i "!foreground!"=="DarkBlue"    set currentColor=!ESC![34m
-    if /i "!foreground!"=="DarkMagenta" set currentColor=!ESC![35m
-    if /i "!foreground!"=="DarkCyan"    set currentColor=!ESC![36m
-    if /i "!foreground!"=="Gray"        set currentColor=!ESC![37m
+    if /i "!foreground!"=="Black"       set currentColor=!currentColor!30m
+    if /i "!foreground!"=="DarkRed"     set currentColor=!currentColor!31m
+    if /i "!foreground!"=="DarkGreen"   set currentColor=!currentColor!32m
+    if /i "!foreground!"=="DarkYellow"  set currentColor=!currentColor!33m
+    if /i "!foreground!"=="DarkBlue"    set currentColor=!currentColor!34m
+    if /i "!foreground!"=="DarkMagenta" set currentColor=!currentColor!35m
+    if /i "!foreground!"=="DarkCyan"    set currentColor=!currentColor!36m
+    if /i "!foreground!"=="Gray"        set currentColor=!currentColor!37m
 
-    if /i "!foreground!"=="DarkGray"    set currentColor=!ESC![90m
-    if /i "!foreground!"=="Red"         set currentColor=!ESC![91m
-    if /i "!foreground!"=="Green"       set currentColor=!ESC![92m
-    if /i "!foreground!"=="Yellow"      set currentColor=!ESC![93m
-    if /i "!foreground!"=="Blue"        set currentColor=!ESC![94m
-    if /i "!foreground!"=="Magenta"     set currentColor=!ESC![95m
-    if /i "!foreground!"=="Cyan"        set currentColor=!ESC![96m
-    if /i "!foreground!"=="White"       set currentColor=!ESC![97m
+    if /i "!foreground!"=="DarkGray"    set currentColor=!currentColor!90m
+    if /i "!foreground!"=="Red"         set currentColor=!currentColor!91m
+    if /i "!foreground!"=="Green"       set currentColor=!currentColor!92m
+    if /i "!foreground!"=="Yellow"      set currentColor=!currentColor!93m
+    if /i "!foreground!"=="Blue"        set currentColor=!currentColor!94m
+    if /i "!foreground!"=="Magenta"     set currentColor=!currentColor!95m
+    if /i "!foreground!"=="Cyan"        set currentColor=!currentColor!96m
+    if /i "!foreground!"=="White"       set currentColor=!currentColor!97m
 
-    if "!currentColor!"=="" set currentColor=!ESC![97m
+    if "!currentColor!"=="" set currentColor=!currentColor!97m
 	
     if /i "!background!"=="Default"     set currentColor=!currentColor!!ESC![49m
 
@@ -305,23 +303,24 @@ shift & goto :%~1
     REM Download !storageUrl!fileToGet to downloadPath and extract into downloadPath\moduleDir
     REM Params are:     S3 storage bucket |  fileToGet   | downloadToDir  | dirToSaveTo  | message
     call :DownloadAndExtract "!storageUrl!" "!fileToGet!" "!downloadPath!\" "!moduleDir!" "!message!"
-    
-    REM Copy contents of downloadPath\moduleDir to installedModulesPath\moduleDir\moduleAssetsDir
+    if errorlevel 1 exit /b 1
+
+    REM Copy contents of downloadPath\moduleDir to modulesPath\moduleDir\moduleAssetsDir
     if exist "!downloadPath!\!moduleDir!" (
 
-        robocopy /e "!downloadPath!\!moduleDir! " "!modulePath!\!moduleAssetsDir! " /XF "*.zip" !roboCopyFlags! > NUL
+        robocopy /e "!downloadPath!\!moduleDir! " "!modulePath!\!moduleAssetsDir! " /XF "*.zip" !roboCopyFlags! >NUL
 
         REM Delete zip file we copied to the assets dir (No longer needed)
-        REM del "!modulePath!\!moduleAssetsDir!\!fileToGet!" rem > NUL 2>nul
+        REM del "!modulePath!\!moduleAssetsDir!\!fileToGet!" rem >NUL 2>&1
 
         REM Delete all but the zip file from the downloads dir
         FOR %%I IN ("!downloadPath!\!moduleDir!\*") DO (
             IF /i "%%~xI" neq ".zip" (
-                DEL "%%I" rem > NUL 2>nul
+                DEL "%%I" rem >NUL 2>&1
                 rem echo cleaning "%%~nxI"
             )
         )
-    )
+    ) else exit /b 1
 
     exit /b
 
@@ -367,7 +366,7 @@ shift & goto :%~1
 
         if /i "!offlineInstall!" == "true" (
             call :WriteLine "Offline Installation: Unable to download !fileToGet!." %color_error%
-            exit /b
+            exit /b 1
         )
 
         if not exist "!downloadToDir!"              mkdir "!downloadToDir!"
@@ -378,12 +377,12 @@ shift & goto :%~1
 
         if errorlevel 1 (
             call :WriteLine "An error occurred that could not be resolved." "!color_error!"
-            exit /b
+            exit /b 1
         )
 
         if not exist "!downloadToDir!!dirToSaveTo!\!fileToGet!" (
             call :WriteLine "An error occurred that could not be resolved." "!color_error!"
-            exit /b
+            exit /b 1
         )
     )
 
@@ -394,14 +393,22 @@ shift & goto :%~1
     REM Try tar first. If that doesn't work, fall back to powershell (slow)
     set tarExists=true
 
-    tar -xf "!fileToGet!" > nul 2>nul
+    tar -xf "!fileToGet!" >NUL 2>&1
     if "%errorlevel%" == "9009" set tarExists=false
 
     REM If we don't have tar, use powershell
-    if "!tarExists!" == "false" ( powershell -command "Expand-Archive -Path '!fileToGet!' -Force" )
+    if "!tarExists!" == "false" ( 
+        call :Write "(no tar - Using PowerShell)..." "!color_info!"
+
+        powershell -command "Expand-Archive -Path '!fileToGet!' -Force"
+        if errorlevel 1 (
+            popd
+            exit /b 1
+        )
+    )
 
     REM Remove the downloaded zip
-    REM del /s /f /q "!fileToGet!" > nul 2>nul
+    REM del /s /f /q "!fileToGet!" >NUL 2>&1
 
     popd
 
@@ -439,16 +446,36 @@ shift & goto :%~1
 
     set pythonVersion=%1
 
-    REM Either "LocalToModule" or "Shared"
+    REM Either "Local" or "Shared"
     set installLocation=%~2
+
+    REM HACK: Version 2.1 changed installLocation from LocalToModule to Local
+    if /i "!installLocation!" == "LocalToModule" set installLocation=Local
+
+	REM echo modulePath = !modulePath!
+	REM echo trimmed = !modulePath:\modules\=!
+
+    if /i "!allowSharedPythonInstallsForModules!" == "false" (
+        REM if modulePath contains '/modules/' and installLocation != 'Local'
+        if /i "!modulePath:\modules\=!" neq "!modulePath!" (
+            if /i "!installLocation!" neq "Local" (
+                call :WriteLine "Downloaded modules must have local Python install. Changing install location" "!color_warn!"
+                set installLocation=Local
+            )
+        )
+    )
 
     REM Version with ".'s removed
     set pythonName=python!pythonVersion:.=!
+    set pythonInstallPath=!runtimesPath!\bin\!os!\!pythonName!
 
-    if /i "!installLocation!" == "LocalToModule" (
-        set installPath=!modulePath!\bin\!os!\!pythonName!
+    if /i "!installLocation!" == "Local" (
+        set virtualEnvPath=!modulePath!\bin\!os!\!pythonName!\venv
+
+        if not exist "!modulePath!\bin"      mkdir "!modulePath!\bin"
+        if not exist "!modulePath!\bin\!os!" mkdir "!modulePath!\bin\!os!"
     ) else (
-        set installPath=!installedModulesPath!\bin\!os!\!pythonName!
+        set virtualEnvPath=!pythonInstallPath!\venv
     )
 
     REM For debugging, or correcting, we can force redownloads. Be careful though.
@@ -459,29 +486,32 @@ shift & goto :%~1
             rmdir /s "%rmdirFlags% "!downloadPath!\!platform!\!pythonName!"
         )
 
-        REM Force overwrite
+        REM Force overwrite of python installation
         call :WriteLine "Cleaning Python directory to force re-install of Python" "!color_info!"
         call :WriteLine "This will mean any previous PIP installs wwill be lost." "!color_warn!"
-        if exist "!installPath!" rmdir /s %rmdirFlags% "!installPath!"
+        if exist "!pythonInstallPath!" rmdir /s %rmdirFlags% "!pythonInstallPath!"
     )
 
-    REM Download whatever packages are missing 
-    rem call :WriteLine "Checking !installPath!" "!color_info!"
+    call :WriteLine "Installing !pythonName! in !pythonInstallPath!" "!color_info!"
 
-    if exist "!installPath!" (
-        call :WriteLine "!pythonName! package already downloaded" "!color_mute!"
+    REM Download whatever packages are missing 
+    if exist "!pythonInstallPath!" (
+        call :Write "Checking for !pythonName! download..." "!color_mute!"
+        call :WriteLine "Present" "!color_success!"
     ) else (
         set baseDir=!downloadPath!\!platform!\
-        if not exist "!baseDir!" mkdir "!baseDir!"
+        if not exist "!baseDir!"              mkdir "!baseDir!"
         if not exist "!baseDir!\!pythonName!" mkdir "!baseDir!\!pythonName!"
 
-        if not exist "!installPath!" (
+        if not exist "!pythonInstallPath!" (
 
             rem Params are:     S3 storage bucket |    fileToGet   | downloadToDir | dirToSaveTo  | message
             call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!baseDir!"  "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
+            if errorlevel 1 exit /b 1
+
             if exist "!downloadPath!\!platform!\!pythonName!" (
-                robocopy /e "!downloadPath!\!platform!\!pythonName! " "!installPath! " !roboCopyFlags! > NUL
-            )
+                robocopy /e "!downloadPath!\!platform!\!pythonName! " "!pythonInstallPath! " /XF "!pythonName!.zip" !roboCopyFlags! >NUL
+            ) else exit /b 1
         )
     )
 
@@ -489,17 +519,18 @@ shift & goto :%~1
     REM but if you have issues, make sure you delete the venv directory before
     REM retrying.
     call :Write "Creating Virtual Environment..."
-    if exist "!installPath!\venv" (
+    if exist "!virtualEnvPath!" (
         call :WriteLine "Python !pythonVersion! Already present" %color_success%
     ) else (
-        "!installPath!\python.exe" -m venv "!installPath!\venv"
+        if /i "%verbosity%" neq "quiet" call :WriteLine "Virtual Environment doesn't exist. Creating at !virtualEnvPath!"
+        "!pythonInstallPath!\python.exe" -m venv "!virtualEnvPath!"
         call :WriteLine "Done" %color_success%
     )
 
     REM our DIY version of Python 'Activate' for virtual environments
     call :Write "Enabling our Virtual Environment..."
-    pushd "!installPath!"
-    set venvPath=%cd%\venv
+    pushd "!virtualEnvPath!"
+    set venvPath=%cd%
     set pythonInterpreterPath="!venvPath!\Scripts\python"
     popd
 
@@ -507,7 +538,7 @@ shift & goto :%~1
 
     REM Ensure Python Exists
     call :Write "Confirming we have Python !pythonVersion!..."
-    !pythonInterpreterPath! --version | find "!pythonVersion!" > NUL
+    !pythonInterpreterPath! --version | find "!pythonVersion!" >NUL
     if errorlevel 1 goto errorNoPython
     call :WriteLine "present" %color_success%
 
@@ -525,16 +556,29 @@ shift & goto :%~1
     set pythonVersion=%1
     set pythonName=python!pythonVersion:.=!
 
-    REM Where the requirements.txt file lives
+    REM Folder where the requirements.txt file lives
     set requirementsDir=%~2
 
-    REM Either "LocalToModule" or "Shared"
+    REM Either "Local" or "Shared"
     set installLocation=%~3
 
-    if /i "!installLocation!" == "LocalToModule" (
+    REM HACK: Version 2.1 changed installLocation from LocalToModule to Local
+    if /i "!installLocation!" == "LocalToModule" set installLocation=Local
+
+    if /i "!allowSharedPythonInstallsForModules!" == "false" (
+        REM if modulePath contains '/modules/' and installLocation != 'Local'
+        if /i "!modulePath:\modules\=!" neq "!modulePath!" (
+            if /i "!installLocation!" neq "Local" (
+                call :WriteLine "Downloaded modules must have local Python install. Changing install location" "!color_warn!"
+                set installLocation=Local
+            )
+        )
+    )
+
+    if /i "!installLocation!" == "Local" (
         set virtualEnv=!modulePath!\bin\!os!\!pythonName!\venv
     ) else (
-        set virtualEnv=!installedModulesPath!\bin\!os!\!pythonName!\venv
+        set virtualEnv=!runtimesPath!\bin\!os!\!pythonName!\venv
     )
 
     REM This will be the python interpreter in the virtual env
@@ -550,6 +594,7 @@ shift & goto :%~1
     )
 
     REM This is getting complicated. The order of priority for the requirements file is:
+    REM
     REM  requirements.windows.architecture.cuda.txt
     REM  requirements.windows.cuda.txt
     REM  requirements.cuda.txt
@@ -559,8 +604,19 @@ shift & goto :%~1
     REM  requirements.windows.architecture.txt
     REM  requirements.windows.txt
     REM  requirements.txt
+    REM
+    REM The logic here is that we go from most specific to least specific. The only
+    REM real tricky bit is the subtlety around .cuda vs .gpu. CUDA is a specific
+    REM type of card. We may not be able to support that, but may be able to support
+    REM other cards generically via OpenVINO or DirectML. So CUDA first, then GPU,
+    REM then CPU. With a query at each steo for OS and architecture.
 
     set requirementsFilename=
+
+    REM TODO: Sniff the modulesettings.json file for this module and check the 
+    REM       "SupportGPU": value (this requires checking all potential modulesettings
+    REM       files based on OS and architecture). If it's false then don't load GPU 
+    REM       stuff here.
 
     if /i "!enableGPU!" == "true" (
         if /i "!hasCUDA!" == "true" (
@@ -596,13 +652,13 @@ shift & goto :%~1
     
     if "!requirementsFilename!" == "" (
         call :WriteLine "No suitable requirements.txt file found." "!color_warn!"
-        exit /b
+        exit /b 1
     )
 
     set requirementsPath=!requirementsDir!\!requirementsFilename!
     if not exist "!requirementsPath!" (
         call :WriteLine "The selected requirements file (!requirementsPath!) wasn't found." "!color_warn!"
-        exit /b
+        exit /b 1
     )
 
     REM =======================================================================
@@ -615,7 +671,7 @@ shift & goto :%~1
     REM python compatible version)
     call :Write "Ensuring Python package manager (pip) is installed..."
     if /i "%verbosity%" == "quiet" (
-        "!pythonPath!" -m ensurepip >nul 2>nul 
+        "!pythonPath!" -m ensurepip >NUL 2>&1
     ) else (
         "!pythonPath!" -m ensurepip
     )
@@ -627,7 +683,7 @@ shift & goto :%~1
     if /i "%verbosity%" == "quiet" (
         "!pythonPath!" -m pip install --trusted-host pypi.python.org ^
                        --trusted-host files.pythonhosted.org ^
-                       --trusted-host pypi.org --upgrade pip !pipFlags! >nul 2>nul 
+                       --trusted-host pypi.org --upgrade pip !pipFlags! >NUL 2>&1
     ) else (
         "!pythonPath!" -m pip install --trusted-host pypi.python.org ^
                        --trusted-host files.pythonhosted.org ^
@@ -638,7 +694,7 @@ shift & goto :%~1
 
     set packagesPath=%virtualEnv%\Lib\site-packages
 
-    call :WriteLine "Installing Python packages from %requirementsFilename%..." !color_info!
+    call :WriteLine "Choosing Python packages from %requirementsFilename%" !color_info!
 
     REM call :WriteLine "virtualEnv = %virtualEnv%" !color_warn!
     REM call :WriteLine "packagesPath = !packagesPath!" !color_warn!
@@ -649,7 +705,7 @@ shift & goto :%~1
         call :Write "Installing Packages into Virtual Environment..."
         REM pip install -r !requirementsPath! !pipFlags!
         if /i "%verbosity%" == "quiet" (
-            "!pythonPath!" -m pip install -r "!requirementsPath!" --target "!packagesPath!" !pipFlags! >nul 
+            "!pythonPath!" -m pip install -r "!requirementsPath!" --target "!packagesPath!" !pipFlags! >nul
         ) else (
             "!pythonPath!" -m pip install -r "!requirementsPath!" --target "!packagesPath!" !pipFlags! 
         )
@@ -684,10 +740,10 @@ shift & goto :%~1
                     call :Write "  -!description!..."
 
                     if /i "%verbosity%" == "quiet" (
-                        "!pythonPath!" -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags!  >nul 2>nul
+                        "!pythonPath!" -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags! >NUL 2>&1
                     ) else (
                         if /i "%verbosity%" == "info" (
-                            "!pythonPath!" -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags!  >nul 
+                            "!pythonPath!" -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags! >nul 
                         ) else (
                             "!pythonPath!" -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags!
                         )
@@ -706,7 +762,7 @@ shift & goto :%~1
 REM Call this, then test: if "%online%" == "true" echo 'online'
 :checkForInternet
     set online=false
-    Ping 8.8.8.8 -n 1 -w 2 >/dev/null
+    Ping 8.8.8.8 -n 1 -w >NUL 2>&1
     if errorlevel 1 set online=true
     exit /b
 
@@ -753,6 +809,32 @@ REM Thanks to https://stackoverflow.com/a/15809139/1128209
 
 :divideLetters  versionVar
     for %%C in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do set "%~1=!%~1:%%C=.%%C!"
+    exit /b
+
+
+:GetVersionFromModuleSettings jsonFile key
+    rem SetLocal EnableDelayedExpansion
+
+    rem Code thanks to ChatGPT. Radically reworked to make it...work
+
+    set jsonFile=%~1
+    set key=%~2
+
+    rem echo jsonFile is %jsonFile%
+    rem echo key is %key%
+
+    rem Use the jq command to extract the value of the property from the JSON file.
+    rem ...except jq can't handle comments in JSON.
+    rem for /f "usebackq tokens=*" %%j in (`jq -r ".%key%" "%jsonFile%"`) do set "jsonValue=%%j"
+
+    rem or use inbuilt DOS commands.
+    for /f "usebackq tokens=2 delims=:," %%a in (`findstr /I /R /C:"\"!key!\"[^^{]*$" "!jsonFile!"`) do (
+        set "jsonValue=%%a"
+        set jsonValue=!jsonValue:"=!
+        set jsonValue=!jsonValue: =!
+        rem echo jsonValue = !jsonValue!
+    )
+
     exit /b
 
 

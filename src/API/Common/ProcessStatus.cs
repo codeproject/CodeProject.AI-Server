@@ -123,6 +123,20 @@ namespace CodeProject.AI.API.Common
         /// </summary>
         public string? HardwareType { get; set; } = "CPU";
 
+        /*
+        /// <summary>
+        /// Gets or sets a value indicating whether or not this process supports
+        /// GPU processing. In many cases this isn't known until runtime when the
+        /// module can query hardware.
+        /// TBD: We can't set this yet because modules typically won't even query
+        /// hardware if SupportGPU = false. We need to know (a) if the module was
+        /// installed with GPU supporting code, (b) if there's a GPU present, (c)
+        /// if the module can actually use the GPU. All all are true then we can
+        /// set this property. Until then we're outta luck.
+        /// </summary>
+        public bool? SupportsGPU { get; set; }
+        */
+
         /// <summary>
         /// Gets or sets the human readable notes regarding how this process was started.
         /// </summary>

@@ -14,9 +14,9 @@ transfer, and is easy to use.
 
 <div style="width:75%;min-width:700px;margin:30px auto">
 
-| <img src="https://www.codeproject.com/ai/docs/img/windows.svg" title="Windows" style="width:64px">  | <img src="https://www.codeproject.com/ai/docs/img/macos.svg" title="macOS" style="width:72px">  | <img src="https://www.codeproject.com/ai/docs/img/apple-silicon.svg" title="Apple Silicon" style="width:64px"> | <img src="https://www.codeproject.com/ai/docs/img/Ubuntu.svg" title="Ubuntu" style="width:64px">  |   <img src="https://www.codeproject.com/ai/docs/img/docker.svg" title="Docker" style="width:64px">  |  <img src="https://www.codeproject.com/ai/docs/img/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="https://www.codeproject.com/ai/docs/img/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
-| :------: |  :---: | :---------: | :-----: | :----: | :--------------------: | :-------------------: |
-| Windows  | macOS  | macOS-arm64 |  Ubuntu | Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
+| <img src="https://www.codeproject.com/ai/docs/img/windows.svg" title="Windows" style="width:64px">  | <img src="https://www.codeproject.com/ai/docs/img/macos.svg" title="macOS" style="width:72px">  | <img src="https://www.codeproject.com/ai/docs/img/apple-silicon.svg" title="Apple Silicon" style="width:64px"> | <img src="https://www.codeproject.com/ai/docs/img/Ubuntu.svg" title="Ubuntu" style="width:64px">  | <img src="https://www.codeproject.com/ai/docs/img/RaspberryPi64.svg" title="Raspberry Pi arm64" style="width:64px"> | <img src="https://www.codeproject.com/ai/docs/img/docker.svg" title="Docker" style="width:64px">  |  <img src="https://www.codeproject.com/ai/docs/img/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="https://www.codeproject.com/ai/docs/img/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
+| :------: |  :---: | :---------: | :-----: | :----: | :----: | :--------------------: | :-------------------: |
+| Windows  | macOS  | macOS arm64 |  Ubuntu | Raspberry&nbsp;Pi arm64 |  Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
 
 </div>
 

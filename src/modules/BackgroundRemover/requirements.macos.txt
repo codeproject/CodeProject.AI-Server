@@ -2,7 +2,8 @@
 
 filetype					# Installing FileType, a package to infer file types and MIME types
 gdown						# Installing gdown, a package for downloading from Google Drive folders
-numpy						# Installing NumPy, a package for scientific computing
+# We need this numpy version due to a "initialization of _internal failed without raising an exception" issue
+numpy==1.23.1				# Installing NumPy, a package for scientific computing
 pymatting					# Installing pymatting, a Python Library for Alpha Matting
 Pillow						# Installing Pillow, a Python Image Library
 
