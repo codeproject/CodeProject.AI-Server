@@ -236,7 +236,6 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <summary>
         /// Returns a string that represents the current directory a module lives in. Note that a
         /// module's folder is always the same name as its Id.
-        /// REVIEW: [Mattew] module.ModulePath is set safely and can be used instead of this if you wish
         /// </summary>
         /// <param name="module">The module to launch</param>
         /// <returns>A string object</returns>
