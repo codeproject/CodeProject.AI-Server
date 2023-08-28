@@ -81,7 +81,7 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             get
             {
-                if (SystemInfo.OperatingSystem.EqualsIgnoreCase("windows"))
+                if (SystemInfo.IsWindows)
                     return _moduleOptions.ModuleInstallerScriptsPath + "\\setup.bat";
 
                 return _moduleOptions.ModuleInstallerScriptsPath + "/setup.sh";
@@ -172,42 +172,63 @@ namespace CodeProject.AI.API.Server.Frontend
 
             string settingsFile = Path.Combine(modulePath, "modulesettings.json");
             if (File.Exists(settingsFile))
+            {
+                Console.WriteLine($"Trace: Loading {settingsFile}");
                 config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadOnChange);
+            }
 
             if (!string.IsNullOrEmpty(runtimeEnv))
             {
                 settingsFile = Path.Combine(modulePath, $"modulesettings.{runtimeEnv}.json");
                 if (File.Exists(settingsFile))
+                {
+                    Console.WriteLine($"Trace: Loading {settingsFile}");
                     config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadOnChange);
+                }
             }
 
             settingsFile = Path.Combine(modulePath, $"modulesettings.{os}.json");
             if (File.Exists(settingsFile))
+            {
+                Console.WriteLine($"Trace: Loading {settingsFile}");
                 config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadOnChange);
+            }
 
             if (!string.IsNullOrEmpty(runtimeEnv))
             {
                 settingsFile = Path.Combine(modulePath, $"modulesettings.{os}.{runtimeEnv}.json");
                 if (File.Exists(settingsFile))
+                {
+                    Console.WriteLine($"Trace: Loading {settingsFile}");
                     config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadOnChange);
+                }
             }
 
             settingsFile = Path.Combine(modulePath, $"modulesettings.{os}.{architecture}.json");
             if (File.Exists(settingsFile))
+            {
+                Console.WriteLine($"Trace: Loading {settingsFile}");
                 config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadOnChange);
+            }
 
             if (!string.IsNullOrEmpty(runtimeEnv))
             {
                 settingsFile = Path.Combine(modulePath, $"modulesettings.{os}.{architecture}.{runtimeEnv}.json");
                 if (File.Exists(settingsFile))
+                {
+                    Console.WriteLine($"Trace: Loading {settingsFile}");
                     config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadOnChange);
+                }
             }
 
-            if (SystemInfo.ExecutionEnvironment == ExecutionEnvironment.Docker)
+            if (SystemInfo.IsDocker)
             {
                 settingsFile = Path.Combine(modulePath, $"modulesettings.docker.json");
                 if (File.Exists(settingsFile))
+                {
+                    Console.WriteLine($"Trace: Loading {settingsFile}");
                     config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadOnChange);
+                }
             }
         }
 
@@ -236,6 +257,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <summary>
         /// Returns a string that represents the current directory a module lives in. Note that a
         /// module's folder is always the same name as its Id.
+        /// REVIEW: [Matthew] module.ModulePath is set safely and can be used instead of this if you wish
         /// </summary>
         /// <param name="module">The module to launch</param>
         /// <returns>A string object</returns>
@@ -249,15 +271,8 @@ namespace CodeProject.AI.API.Server.Frontend
 
         /// <summary>
         /// Returns a string that represents the working directory for a module.
+        /// REVIEW: [Matthew] module.WorkingDirectory is set safely and can be used instead of this if you wish
         /// </summary>
-        /// <remarks>
-        /// REVIEW: [Mattew] module.WorkingDirectory is set safely and can be used instead of this if you wish
-        /// The working directory isn't necessarily the dir the executed file is in. eg. .NET
-        /// exes can be buried deep in /bin/Debug/net6/net6.0-windows. The working directory also
-        /// isn't the Module directory, since the actual executable code for a module could be in a
-        /// subdirectory of that module. So we start by assuming it's the path where the executed
-        /// file is, but allow for an override (in the case of .NET development) if provided.
-        /// </remarks>
         /// <param name="module">The module to launch</param>
         /// <returns>A string object</returns>
         public string GetWorkingDirectory(ModuleBase module)
@@ -313,14 +328,14 @@ namespace CodeProject.AI.API.Server.Frontend
             // If it is "Python" then use our default Python location (in this case, python 3.7 or
             // 3.8 if Linux/macOS)
             if (runtime == "python")
-                runtime = SystemInfo.OperatingSystem == "Windows" ? "python37" : "python38";
+                runtime = SystemInfo.IsWindows ? "python37" : "python38";
 
             // HACK: In Docker, Python installs for downloaded modules can be local for downloaded
             // modules, or shared for pre-installed modules. For preinstalled/shared the python
             // command is in the format of python3.N because we don't install Python in the runtimes
             // folder, but in the OS itself. In Docker this means we call "python3.8", rather than 
             // "/runtimes/bin/linux/python38/venv/bin/python3
-            if (SystemInfo.ExecutionEnvironment == ExecutionEnvironment.Docker && 
+            if (SystemInfo.IsDocker && 
                 module.RuntimeLocation == "Shared" && runtime.StartsWith("python"))
             {
                 if (!runtime.StartsWith("python3."))

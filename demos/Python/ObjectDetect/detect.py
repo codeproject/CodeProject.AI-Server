@@ -2,6 +2,7 @@ import os
 import requests
 from PIL import Image, ImageDraw
 
+from .. import utils
 from options import Options
 
 def main():
@@ -9,7 +10,7 @@ def main():
     minConfidence = 0.4
 
     opts = Options() 
-    opts.cleanDetectedDir()
+    utils.cleanDir(opts.detectedDir)
 
     imagedir = opts.imageDir + "/Objects"
 

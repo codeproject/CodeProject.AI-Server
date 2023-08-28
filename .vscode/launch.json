@@ -31,14 +31,6 @@
                 "RUNNING_IN_VSCODE": "true",
                 "DOTNET_NOLOGO": "true"
             }
-            /*
-            "logging": {
-                "engineLogging": false,
-                "moduleLoad": false,
-                "exceptions": false,
-                "browserStdOut": false
-            }
-            */
         },
         {
             "presentation": {
@@ -232,7 +224,7 @@
             // "program": "dotnet", // dummy command
             // "args": [ "--version" ], // dummy command
 
-            "preLaunchTask": "stop-all",
+            "preLaunchTask": "stop-all"
         },
         {
             "presentation": {
@@ -329,6 +321,35 @@
                 "group": "5 Launch Individual",
                 "hidden": false
             },
+            "name": "Background Remover",
+            "type": "python",
+            "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/linux/python39/venv/bin/python",
+            "request": "launch",
+            "program": "rembg_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/modules/BackgroundRemover",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/windows/python39/venv/Scripts/python.exe",
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/linux/python39/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/macos/python39/venv/bin/python",
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
             "name": "Cartooniser",
             "type": "python",
             "python": "${workspaceFolder}/src/modules/Cartooniser/bin/linux/python39/venv/bin/python",
@@ -389,6 +410,36 @@
                 "group": "5 Launch Individual",
                 "hidden": false
             },
+            "name": "Object Detect Coral",
+            "type": "python",
+            "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/linux/python39/venv/bin/python",
+            "request": "launch",
+            "program": "objectdetection_coral_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionCoral",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/windows/python37/venv/Scripts/python.exe",
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/linux/python39/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/macos/python39/venv/bin/python",
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
             "name": "Object Detect .NET",
             "type": "coreclr",
             "request": "launch",
@@ -397,7 +448,7 @@
             "linux": {
                 "program": "${workspaceFolder}/src/modules/ObjectDetectionNet/bin/Debug/net7.0/ObjectDetectionNet.dll",
             },
-            "args": [],
+            // "args": [ "--selftest" ],
             "cwd": "${workspaceFolder}",
             // "cwd": "${workspaceFolder}/src/modules/ObjectDetectionNet", - causes an exception. WTF. See HACK.
             "stopAtEntry": false,
@@ -412,18 +463,19 @@
             }
         },
 
+
         {
             "presentation": {
                 "group": "5 Launch Individual",
                 "hidden": false
             },
-            "name": "Object Detect TFLite",
+            "name": "Object Detect YOLO RKNN",
             "type": "python",
+            "python": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN/bin/windows/python39/venv/Scripts/python.exe",
             "request": "launch",
-            "python": "${workspaceFolder}\\src\\modules\\ObjectDetectionTFLite\\bin\\windows\\python39\\venv\\Scripts\\python.exe",
-            "program": "objectdetection_tflite_adapter.py",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionTFLite",
+            "program": "objectdetection_fd_rknn_adapter.py",
             "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -432,7 +484,38 @@
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
             },
             "windows": {
-                "python": "${workspaceFolder}\\src\\modules\\ObjectDetectionTFLite\\bin\\windows\\python39\\venv\\Scripts\\python.exe",
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN/bin/windows/python39/venv/Scripts/python.exe",
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN/bin/linux/python39/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN/bin/macos/python39/venv/bin/python",
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Object Detect TFLite",
+            "type": "python",
+            "request": "launch",
+            "python": "${workspaceFolder}/src/modules/ObjectDetectionTFLite/bin/windows/python39/venv/Scripts/python.exe",
+            "program": "objectdetection_tflite_adapter.py",
+            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionTFLite",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
+                "MODEL_SIZE": "tiny"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionTFLite/bin/windows/python39/venv/Scripts/python.exe",
             },
             "linux": {
                 "python": "${workspaceFolder}/src/modules/ObjectDetectionTFLite/bin/linux/python39/venv/bin/python",
@@ -449,12 +532,13 @@
             },
             "name": "Object Detect YOLO 6.2",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "detect_adapter.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/src/modules/ObjectDetectionYolo",
             "justMyCode": false,
+            // "args": [ "--selftest" ],
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
@@ -462,13 +546,13 @@
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/bin/windows/python37/venv/Scripts/python"
+                "python": "${workspaceFolder}/src/runtimes/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -508,7 +592,7 @@
             },
             "name": "OCR",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/OCR/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python37/venv/Scripts/python",
             "request": "launch",
             "program": "OCR_adapter.py",
             "console": "integratedTerminal",
@@ -520,14 +604,15 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python37/venv/Scripts/python"
-            },
+                "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python37/venv/Scripts/python",
+            }/*,
             "linux": {
                 "python": "${workspaceFolder}/src/modules/OCR/bin/linux/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/src/modules/OCR/bin/macos/python38/venv/bin/python",
             }
+            */
         },
 
         {
@@ -537,7 +622,7 @@
             },
             "name": "Scene Classifier",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/src/modules/SceneClassifier/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "scene_adapter.py",
             "console": "integratedTerminal",
@@ -549,13 +634,13 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/bin/windows/python37/venv/Scripts/python"
+                "python": "${workspaceFolder}/src/modules/SceneClassifier/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/src/modules/SceneClassifier/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/src/modules/SceneClassifier/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -632,7 +717,7 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}\\src\\modules\\TextSummary\\bin\\windows\\python37\\venv\\Scripts\\python.exe"
+                "python": "${workspaceFolder}/src/modules/TextSummary/bin/windows/python37/venv/Scripts/python.exe"
             },
             "linux": {
                 "python": "${workspaceFolder}/src/modules/TextSummary/bin/linux/python38/venv/bin/python",
@@ -641,6 +726,64 @@
                 "python": "${workspaceFolder}/src/modules/TextSummary/bin/macos/python38/venv/bin/python",
             }
         },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Training YOLOv5",
+            "type": "python",
+            "python": "${workspaceFolder}/src/modules/TrainingYoloV5/bin/macos/python38/venv/bin/python",
+            "request": "launch",
+            "program": "TrainingYoloV5.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/modules/TrainingYoloV5",
+            // "args": [ "--selftest" ],
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+
+                "YOLOv5_AUTOINSTALL": "false",
+                "YOLOv5_VERBOSE":     "false",
+
+                "CPAI_MODULE_REQUIRED_MB":  "7000",
+                
+                "YOLO_DATASETS_DIRNAME":    "datasets",
+                "YOLO_TRAINING_DIRNAME":    "training",
+                "YOLO_WEIGHTS_DIRNAME":     "weights",
+                "YOLO_MODELS_DIRNAME":      "assets",
+                "YOLO_DATASET_ZOO_DIRNAME": "zoo"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/modules/TrainingYoloV5/bin/windows/python39/venv/Scripts/python.exe"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/modules/TrainingYoloV5/bin/linux/python38/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/modules/TrainingYoloV5/bin/macos/python38/venv/bin/python",
+                "env": {
+                    "DEBUG_IN_VSCODE": "True",
+                    "RUNNING_IN_VSCODE": "True",
+                    "CPAI_PORT": "32168",
+                    
+                    "CPAI_MODULE_SUPPORT_GPU": "False", // https://github.com/ultralytics/yolov5/issues/11235
+
+                    "YOLOv5_AUTOINSTALL": "false",
+                    "YOLOv5_VERBOSE":     "false",
+
+                    "YOLO_DATASETS_DIRNAME":    "datasets",
+                    "YOLO_TRAINING_DIRNAME":    "training",
+                    "YOLO_WEIGHTS_DIRNAME":     "weights",
+                    "YOLO_MODELS_DIRNAME":      "assets",
+                    "YOLO_DATASET_ZOO_DIRNAME": "zoo"
+                }
+            }
+        },
+
 
         // See https://code.visualstudio.com/docs/editor/variables-reference#_settings-command-variables-and-input-variables
         // For variables that can be used
@@ -763,6 +906,37 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True"
+            }
+        },
+
+
+
+        {
+            "presentation": {
+                "group": "6 Launch Demo",
+                "hidden": false
+            },
+            "name": "Racoon detector",
+            "type": "python",
+            "python": "${workspaceFolder}/src/runtimes/bin/windows/python38/venv/bin/python",
+            "request": "launch",
+            "program": "racoon_detect.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/demos/Python/ObjectDetect",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python.exe"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
             }
         }
     ]

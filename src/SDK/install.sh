@@ -30,36 +30,16 @@ if [ $? -ne 0 ]; then quit 1; fi
 installPythonPackages 3.9 "${modulePath}/Python" "Shared"
 if [ $? -ne 0 ]; then quit 1; fi
 
-# Ensure cuDNN is installed. Note this is only for linux since macs no longer support nVidia
-hasCUDA="false" # (disabled for now, pending testing)
-if [ "$os" == "linux" ] && [ "$hasCUDA" == "true" ]; then
+# Ensure CUDA and cuDNN is installed. Note this is only for native linux since 
+# macOS no longer supports NVIDIA, WSL (Linux under Windows) uses the Windows 
+# drivers, and docker images already contain the necessary SDKs and libraries
+if [ "$os" == "linux" ] && [ "$hasCUDA" == "true" ] && [ "${inDocker}" == "false" ] && \
+   [ "${systemName}" != "Jetson" ] && [ "${systemName}" != "Raspberry Pi" ] && \
+   [ "${systemName}" != "Orange Pi" ] ; then
 
-	# Ensure zlib is installed
-	sudo apt-get install zlib1g
-
-	# Download tar from https://developer.nvidia.com/cudnn
-	tar -xvf cudnn-linux-x86_64-8.x.x.x_cudaX.Y-archive.tar.xz
-	sudo cp cudnn-*-archive/include/cudnn*.h /usr/local/cuda/include 
-	sudo cp -P cudnn-*-archive/lib/libcudnn* /usr/local/cuda/lib64 
-	sudo chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
-
-	# Ensure nVidia Project Manager is installed
-
-	# Enable the repo
-	OS="ubuntu2004" # ubuntu1804, ubuntu2004, or ubuntu2204.
-	wget https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/cuda-${OS}.pin 
-
-	sudo mv cuda-${OS}.pin /etc/apt/preferences.d/cuda-repository-pin-600
-	sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/3bf863cc.pub
-	sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/ /"
-	sudo apt-get update
-
-	# install the cuDNN library
-	cudnn_version="8.5.0.*"
-	cuda_version="cuda11.7" # cuda10.2, cuda11.7 or cuda11.8
-
-	sudo apt-get install libcudnn8=${cudnn_version}-1+${cuda_version}
-	sudo apt-get install libcudnn8-dev=${cudnn_version}-1+${cuda_version}
+	# Install CUDA and cuDNN
+	correctLineEndings "${sdkScriptsPath}/install_cuDNN.sh"
+	source "${sdkScriptsPath}/install_cuDNN.sh"
 fi
 
 
@@ -68,7 +48,7 @@ fi
 # Variables available:
 #
 #  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/Installers)
+#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/SDK/Scripts)
 #  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
 #  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
 #  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
@@ -77,6 +57,8 @@ fi
 #  os                    - "linux" or "macos"
 #  architecture          - "x86_64" or "arm64"
 #  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
+#  systemName            - General name for the system. "Linux", "macOS", "Raspberry Pi", "Orange Pi"
+#                          "Jetson" or "Docker"
 #  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 #  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 #                          getFromServer will honour this value. Do it yourself for downloadAndExtract 

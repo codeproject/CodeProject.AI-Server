@@ -74,15 +74,6 @@ lineWidth=70
 # shared area
 allowSharedPythonInstallsForModules="true"
 
-# We can't do shared installs in Docker. They won't persist
-if [ "$DOTNET_RUNNING_IN_CONTAINER" == "true" ]; then 
-    echo
-    echo "Hi Docker! We will disable shared python installs for downloaded modules"
-    echo
-    allowSharedPythonInstallsForModules="false"; 
-fi
-
-
 # Debug flags for downloads and installs
 
 # If files are already present, then don't overwrite if this is false
@@ -114,8 +105,11 @@ installerScriptsPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 # The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
 storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/'
 
-# The name of the source directory
+# The name of the source directory (in development)
 srcDir='src'
+
+# The name of the app directory (in docker)
+appDir='app'
 
 # The name of the dir, within the current directory, where install assets will
 # be downloaded
@@ -146,6 +140,20 @@ done
 # If offline then force the system to use pre-downloaded files
 if [ "$offlineInstall" == "true" ]; then forceOverwrite="false"; fi
 
+# We can't do shared installs in Docker. They won't persist
+inDocker="false"
+if [ "$DOTNET_RUNNING_IN_CONTAINER" == "true" ]; then 
+
+    inDocker="true"
+
+    echo
+    echo "Hi Docker! We will disable shared python installs for downloaded modules"
+    echo
+    allowSharedPythonInstallsForModules="false"; 
+fi
+
+diskSpace=$(df $PWD | awk '/[0-9]%/{print $(NF-2)}')
+echo "${diskSpace} available"
 
 # Execution environment, setup mode and Paths ::::::::::::::::::::::::::::::::
 
@@ -162,11 +170,18 @@ if [ "$currentDirName" == "$srcDir" ]; then setupMode='SetupDevEnvironment'; fi
 # containing this script and check the name of the parent folder to see if
 # we're in dev or production.
 pushd "$installerScriptsPath" >/dev/null
-currentDirName="$(basename ${installerScriptsPath})"
-currentDirName=${currentDirName:-/} # correct for the case where pwd=/
+installScriptDirName="$(basename ${installerScriptsPath})"
+installScriptDirName=${installScriptDirName:-/} # correct for the case where pwd=/
 popd >/dev/null
 executionEnvironment='Production'
-if [ "$currentDirName" == "$srcDir" ]; then executionEnvironment='Development'; fi
+if [ "$installScriptDirName" == "$srcDir" ]; then executionEnvironment='Development'; fi
+
+# For Docker
+if [ "$inDocker" == "true" ]; then
+    # Yes, this is a little contradictory. Maybe "SetupDevEnvironment" should be "SetupAllModules"
+    if [ "$currentDirName" == "$appDir" ]; then setupMode='SetupDevEnvironment'; fi
+    executionEnvironment='Production'
+fi
 
 # The absolute path to the installer script and the root directory. Note that
 # this script (and the SDK folder) is either in the /src dir or the root dir
@@ -205,15 +220,34 @@ correctLineEndings ${sdkScriptsPath}/utils.sh
 source ${sdkScriptsPath}/utils.sh
 
 # Test for CUDA drivers and adjust supportCUDA if needed
-hasCUDA="false"
+hasCUDA='false'
 if [ "$os" == "macos" ]; then 
     supportCUDA="false"
-else 
+else
     if [ "$supportCUDA" == "true" ]; then
+        # https://stackoverflow.com/a/66486390
+        cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
+        chmod ogu+x /usr/bin/nvidia-smi > /dev/null 2>&1
+
         if [ -x "$(command -v nvidia-smi)" ]; then
             nvidia=$(nvidia-smi | grep -i -E 'CUDA Version: [0-9]+.[0-9]+') > /dev/null 2>&1
             if [[ ${nvidia} == *'CUDA Version: '* ]]; then hasCUDA='true'; fi
         fi
+    fi
+fi
+
+# Test for AMD ROCm drivers 
+hasROCm='false'
+if [ "$os" == "linux" ]; then 
+    if [ ! -x "$(command -v rocminfo)" ]; then
+        write "Checking for ROCm support..." $color_primary
+        sudo apt install rocminfo -y > /dev/null 2>&1 &
+        spin $!
+        writeLine "Done" $color_success
+    fi
+    if [ -x "$(command -v rocminfo)" ]; then
+        amdinfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
+        if [[ ${amdinfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm='true'; fi
     fi
 fi
 
@@ -282,7 +316,7 @@ fi
 #  - For Windows, oneStep is necessary otherwise FaceProcessing fails.
 #  - For Mac and Linux, oneStep will NOT work
 #  - For Docker, which is Linux, it DOES work. Sometimes. Or maybe not.
-if [ "$DOTNET_RUNNING_IN_CONTAINER" == "true" ]; then 
+if [ "$inDocker" == "true" ]; then 
     oneStepPIP="true"
 elif [ "$os" == "linux" ] || [ "$os" == "macos" ]; then
     oneStepPIP="false"
@@ -333,6 +367,9 @@ writeLine ""
 # ============================================================================
 # Checks on GPU ability
 
+writeLine "Checking GPU support" "White" "Blue" $lineWidth
+writeLine
+
 write "CUDA Present..."
 if [ "$hasCUDA" == "true" ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
 write "Allowing GPU Support: "
@@ -352,7 +389,9 @@ writeLine
 write "Creating Directories..." $color_primary
 
 # For downloading assets
-mkdir -p "${downloadPath}"
+if [ ! -d "${downloadPath}" ]; then
+    mkdir -p "${downloadPath}"
+fi
 if [ "$os" == "macos" ]; then 
     if [[ ! -w "${downloadPath}" ]]; then
         sudo chmod 777 "${downloadPath}"
@@ -361,14 +400,19 @@ fi
 
 # For persisting settings
 if [ "$os" == "linux" ]; then 
-    sudo mkdir -p "${commonDataDir}"
+    if [ ! -d "${commonDataDir}" ]; then
+        sudo mkdir -p "${commonDataDir}"
+    fi
     if [[ ! -w "${commonDataDir}" ]]; then
         sudo chmod 777 "${commonDataDir}"
     fi
 fi
 
 # for the runtimes
-mkdir -p "${runtimesPath}"
+if [ ! -d "${runtimesPath}" ]; then
+    sudo mkdir -p "${runtimesPath}"
+fi
+sudo chmod a+w "${runtimesPath}"
 
 writeLine "Done" $color_success
 
@@ -390,25 +434,22 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
 
         # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
         dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
-        if [ "${dirname}" != 'bin' ]; then
 
-            if [ -f "${modulePath}/install.sh" ]; then
+        if [ -f "${modulePath}/install.sh" ]; then
 
-                writeLine
-                writeLine "Processing side-loaded module ${moduleDir}" "White" "Blue" $lineWidth
-                writeLine
+            writeLine
+            writeLine "Processing side-loaded module ${moduleDir}" "White" "Blue" $lineWidth
+            writeLine
 
-                correctLineEndings "${modulePath}/install.sh"
-                source "${modulePath}/install.sh" "install"
+            correctLineEndings "${modulePath}/install.sh"
+            source "${modulePath}/install.sh" "install"
 
-                if [ $? -ne 0 ]; then success='false'; fi
-            fi
+            # if [ $? -ne 0 ]; then success='false'; fi
         fi
     done
 
     writeLine
     writeLine "Modules setup Complete" $color_success
-
 
     # Now do SDK
     moduleDir="SDK"
@@ -418,7 +459,7 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
     writeLine
     correctLineEndings "${modulePath}/install.sh"
     source "${modulePath}/install.sh" "install"
-    if [ $? -ne 0 ]; then success='false'; fi
+    # if [ $? -ne 0 ]; then success='false'; fi
 
     # And Demos
     moduleDir="demos"
@@ -428,9 +469,10 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
     writeLine
     correctLineEndings "${modulePath}/install.sh"
     source "${modulePath}/install.sh" "install"
-    if [ $? -ne 0 ]; then success='false'; fi
+    # if [ $? -ne 0 ]; then success='false'; fi
 
     # And finally, supporting library packages
+    # TODO: Move this into the DSK install.sh script
 
     # libfontconfig1 is required for SkiaSharp, libgdplus is required for System.Drawing
     if [ "${verbosity}" == "quiet" ]; then
@@ -509,7 +551,7 @@ else
         correctLineEndings "${modulePath}/install.sh"
         source "${modulePath}/install.sh" "install"
 
-        if [ $? -ne 0 ]; then success='false'; fi
+        # if [ $? -ne 0 ]; then success='false'; fi
     fi
 
     # ============================================================================

@@ -54,7 +54,7 @@ class Options:
         # dump the important variables
 
         if self._show_env_variables:
-            print(f"APPDIR:      {self.app_dir}")
-            print(f"MODEL_SIZE:  {self.model_size}")
-            print(f"MODELS_DIR:  {self.models_dir}")
+            print(f"Debug: APPDIR:      {self.app_dir}")
+            print(f"Debug: MODEL_SIZE:  {self.model_size}")
+            print(f"Debug: MODELS_DIR:  {self.models_dir}")
 

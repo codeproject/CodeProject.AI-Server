@@ -3,7 +3,7 @@
 
     "FaceProcessing": {
       "Name": "Face Processing",
-      "Version": "1.2",
+      "Version": "1.5",
 
       // Publishing info
       "Description": "A number of Face image APIs including detect, recognize, and compare.",
@@ -12,9 +12,12 @@
       "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
 
       // Which server version is compatible with each version of this module.
-      "VersionCompatibililty": [
+      "ModuleReleases": [
         { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-03-01" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" },
+        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-05-17" },
+        { "ModuleVersion": "1.4", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-08-05", "ReleaseNotes": "Bugs in error reporting corrected", "Importance": "Minor" },
+        { "ModuleVersion": "1.5", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-08-12", "ReleaseNotes": "PyTorch version downgrade" }
       ],
 
       // Launch instructions

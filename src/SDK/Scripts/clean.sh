@@ -196,8 +196,12 @@ if [ "$cleanBuild" == "true" ]; then
     writeLine "Cleaning Build                                                      " "White" "Blue"
     writeLine 
 
-    cleanSubDirs "${rootDir}/src"                "bin" "runtimes/bin"
     cleanSubDirs "${rootDir}/src"                "obj" "ObjectDetection"
+    cleanSubDirs "${rootDir}/src/API"            "bin" 
+    cleanSubDirs "${rootDir}/src/SDK"            "bin" 
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"   "bin"
+    cleanSubDirs "${rootDir}/src/modules/PortraitFilter"       "bin"
+    cleanSubDirs "${rootDir}/src/modules/SentimentAnalysis"    "bin"
     cleanSubDirs "${rootDir}/Installers/windows" "bin"
     cleanSubDirs "${rootDir}/Installers/windows" "obj"
     cleanSubDirs "${rootDir}/demos"              "bin"
@@ -214,6 +218,16 @@ if [ "$cleanInstallCurrentOS" == "true" ]; then
 
     cleanSubDirs "${rootDir}/src/runtimes/bin" "${platform}"
 
+    cleanSubDirs "${rootDir}/src/runtimes/ALPR/bin"                  "$os"
+    cleanSubDirs "${rootDir}/src/runtimes/BackgroundRemover/bin"     "$os"
+    cleanSubDirs "${rootDir}/src/runtimes/Cartooniser/bin"           "$os"
+    cleanSubDirs "${rootDir}/src/runtimes/FaceProcessing/bin"        "$os"
+    cleanSubDirs "${rootDir}/src/runtimes/ObjectDetectionTFLite/bin" "$os"
+    cleanSubDirs "${rootDir}/src/runtimes/ObjectDetectionYolo/bin"   "$os"
+    cleanSubDirs "${rootDir}/src/runtimes/OCR/bin"                   "$os"
+    cleanSubDirs "${rootDir}/src/runtimes/SceneClassifier/bin"       "$os"
+    cleanSubDirs "${rootDir}/src/runtimes/YOLOv5-3.1/bin"            "$os"
+
     cleanSubDirs "${rootDir}/src/modules/FaceProcessing"  "datastore"
 fi
 
@@ -223,6 +237,7 @@ if [ "$cleanInstallAll" == "true" ]; then
     writeLine "Cleaning install for all platforms                                  " "White" "Blue"
     writeLine 
 
+    cleanSubDirs "${rootDir}/src/modules"  "bin"
     cleanSubDirs "${rootDir}/src/runtimes" "bin"
 fi
 
@@ -232,18 +247,20 @@ if [ "$cleanAssets" == "true" ]; then
     writeLine "Cleaning assets                                                     " "White" "Blue"
     writeLine 
 
-    cleanSubDirs "${rootDir}/src/modules/ALPR"                "paddleocr"
-    cleanSubDirs "${rootDir}/src/modules/BackgroundRemover"   "models"
-    cleanSubDirs "${rootDir}/src/modules/Cartooniser"         "weights"
-    cleanSubDirs "${rootDir}/src/modules/FaceProcessing"      "assets"
-    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"  "assets"
-    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"  "custom-models"
-    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"  "LocalNugets"
-    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionYolo" "assets"
-    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionYolo" "custom-models"
-    cleanSubDirs "${rootDir}/src/modules/OCR"                 "paddleocr"
-    cleanSubDirs "${rootDir}/src/modules/YOLOv5-3.1"          "assets"
-    cleanSubDirs "${rootDir}/src/modules/YOLOv5-3.1"          "custom-models"
+    cleanSubDirs "${rootDir}/src/modules/ALPR"                  "paddleocr"
+    cleanSubDirs "${rootDir}/src/modules/BackgroundRemover"     "models"
+    cleanSubDirs "${rootDir}/src/modules/Cartooniser"           "weights"
+    cleanSubDirs "${rootDir}/src/modules/FaceProcessing"        "assets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionTFLite" "assets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"    "assets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"    "custom-models"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"    "LocalNugets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionYolo"   "assets"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionYolo"   "custom-models"
+    cleanSubDirs "${rootDir}/src/modules/OCR"                   "paddleocr"
+    cleanSubDirs "${rootDir}/src/modules/SceneClassifier"       "assets"
+    cleanSubDirs "${rootDir}/src/modules/YOLOv5-3.1"            "assets"
+    cleanSubDirs "${rootDir}/src/modules/YOLOv5-3.1"            "custom-models"
 fi
 
 if [ "$cleanDownloadCache" == "true" ]; then

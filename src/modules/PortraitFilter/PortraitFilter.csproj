@@ -13,7 +13,7 @@
 		<Name>PortraitFilter</Name>
 		<RootNamespace>CodeProject.AI.Modules.PortraitFilter</RootNamespace>
 		<AssemblyName>PortraitFilter</AssemblyName>
-		<Version>2.1.0</Version>
+		<Version>1.3</Version>
 		<Authors>CodeProject</Authors>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<Nullable>enable</Nullable>
@@ -87,6 +87,7 @@
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.13.1-dev-20221026-1209-861125ccb" Condition="'$(GpuType)'=='OpenVINO'" />
 		-->
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.13.1" Condition="'$(GpuType)'=='DirectML'" />
+		<PackageReference Include="Microsoft.AI.DirectML" Version="1.10.1" Condition="'$(GpuType)'=='DirectML'"/>
 
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
 		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.3" />

@@ -11,6 +11,7 @@ namespace CodeProject.AI.API.Server.Backend
             services.AddSingleton<QueueServices>();
             services.AddSingleton<CommandDispatcher>();
             services.AddSingleton<BackendRouteMap>();
+            services.AddSingleton<TriggerTaskRunner>();
             return services;
         }
     }

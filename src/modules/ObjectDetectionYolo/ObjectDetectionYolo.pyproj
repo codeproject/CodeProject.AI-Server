@@ -46,6 +46,9 @@
     <Content Include="modulesettings.docker.build.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
+    <Content Include="modulesettings.docker.build.gpu.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
     <Content Include="modulesettings.docker.build.rpi64.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>

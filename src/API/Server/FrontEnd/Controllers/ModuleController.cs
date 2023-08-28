@@ -83,11 +83,12 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
                 using (Stream fileStream = new FileStream(downloadPath, FileMode.Create, FileAccess.Write))
                 {
-                    await uploadedFile.CopyToAsync(fileStream);
+                    await uploadedFile.CopyToAsync(fileStream).ConfigureAwait(false);
                     fileStream.Close();
                 }
 
-                (bool success, string error) = await _moduleInstaller.InstallModuleAsync(downloadPath, null);
+                (bool success, string error) = await _moduleInstaller.InstallModuleAsync(downloadPath, null)
+                                                                     .ConfigureAwait(false);
     
                 return success? new SuccessResponse() : CreateErrorResponse("Unable install module: " + error);
             }
@@ -122,7 +123,8 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                             .ToList() ?? new List<ModuleDescription>();
 
             // Mark those modules that can't be downloaded
-            List<ModuleDescription> downloadables = await _moduleInstaller.GetDownloadableModules();
+            List<ModuleDescription> downloadables = await _moduleInstaller.GetDownloadableModules()
+                                                                          .ConfigureAwait(false);
             foreach (ModuleDescription module in modules)
             {
                 if (!downloadables.Any(download => download.ModuleId == module.ModuleId))
@@ -145,7 +147,8 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ResponseBase> ListAvailableModules()
         {
-            List<ModuleDescription> moduleList = await _moduleInstaller.GetDownloadableModules();
+            List<ModuleDescription> moduleList = await _moduleInstaller.GetDownloadableModules()
+                                                                       .ConfigureAwait(false);
 
             return new ModuleListResponse()
             {
@@ -164,7 +167,8 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ResponseBase> ListAllModules()
         {
-            List<ModuleDescription> downloadableModules = await _moduleInstaller.GetDownloadableModules() 
+            List<ModuleDescription> downloadableModules = await _moduleInstaller.GetDownloadableModules()
+                                                                                .ConfigureAwait(false) 
                                                         ?? new List<ModuleDescription>();
             
             string currentServerVersion = _versionConfig.VersionInfo!.Version;
@@ -203,14 +207,18 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         /// </summary>
         /// <param name="moduleId">The module to install</param>
         /// <param name="version">The version of the module to install</param>
+        /// <param name="noCache">Whether or not to ignore the download cache. If true, the module
+        /// will always be freshly downloaded</param>
         /// <returns>A Response Object.</returns>
-        [HttpPost("install/{moduleId}/{version}", Name = "Install Module")]
+        [HttpPost("install/{moduleId}/{version}/{nocache:bool?}", Name = "Install Module")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ResponseBase> InstallModuleAsync(string moduleId, string version)
+        public async Task<ResponseBase> InstallModuleAsync(string moduleId, string version,
+                                                           bool noCache = false)
         {
-            (bool success, string error) = await _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version);
+            var downloadTask = _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version, noCache);
+            (bool success, string error) = await downloadTask.ConfigureAwait(false);
             
             return success? new SuccessResponse() : CreateErrorResponse(error);
         }
@@ -225,7 +233,8 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ResponseBase> UninstallModuleAsync(string moduleId)
         {
-            (bool success, string error) = await _moduleInstaller.UninstallModuleAsync(moduleId);
+            (bool success, string error) = await _moduleInstaller.UninstallModuleAsync(moduleId)
+                                                                 .ConfigureAwait(false);
             
             return success? new SuccessResponse() : CreateErrorResponse(error);
         }

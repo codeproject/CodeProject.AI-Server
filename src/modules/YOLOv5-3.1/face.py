@@ -154,7 +154,7 @@ def face(thread_name, delay):
                         print(err_trace, file=sys.stderr, flush=True)
                         output = {
                             "success": False,
-                            "error": "error occured on the server"
+                            "error": "error occurred on the server"
                         }
 
                     finally:
@@ -262,7 +262,7 @@ def face(thread_name, delay):
 
                         output = {
                             "success": False,
-                            "error": "error occured on the server"
+                            "error": "error occurred on the server"
                         }
 
                     finally:
@@ -440,7 +440,7 @@ def face(thread_name, delay):
 
                         output = {
                             "success": False,
-                            "error": "error occured on the server"
+                            "error": "error occurred on the server"
                         }
 
                     finally:
@@ -528,7 +528,7 @@ def face(thread_name, delay):
 
                         output = {
                             "success": False,
-                            "error": "error occured on the server"
+                            "error": "error occurred on the server"
                         }
 
                     finally:

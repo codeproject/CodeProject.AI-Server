@@ -47,6 +47,9 @@ class YOLO31_adapter(ModuleRunner):
         elif self.opts.use_MPS:
             self.execution_provider = "MPS"
 
+        if self.opts.use_CUDA and self.half_precision == 'enable' and not self.hasTorchHalfPrecision:
+            self.half_precision = 'disable'
+
 
     def process(self, data: RequestData) -> JSON:
         
@@ -242,7 +245,7 @@ class YOLO31_adapter(ModuleRunner):
 
         except Exception as ex:
             self.report_error(ex, __file__)
-            return { "success": False, "error": "Error occured on the server" }
+            return { "success": False, "error": "Error occurred on the server" }
 
 
 if __name__ == "__main__":

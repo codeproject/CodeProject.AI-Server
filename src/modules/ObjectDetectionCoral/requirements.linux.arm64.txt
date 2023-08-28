@@ -1,0 +1,19 @@
+#! Python3.8
+
+# Install Tensorflow. One way or another...
+# tensorflow                  # Installing Tensorflow, the open source machine learning framework for everyone
+# tflite-runtime==2.5.0.post1 # Installing Tensorflow Lite
+# ./third_party/wheels/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl # Installing Tensorflow Lite
+https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl  # Installing Tensorflow Lite
+
+numpy>=1.16.0                 # Installing NumPy, the fundamental package for array computing with Python.
+
+Pillow>=4.0.0                 # Installing Pillow, a Python Image Library
+
+# Support for Python 3.6-3.9 on Linux arm64 (though we use apt-get to install pycoral, not PIP)
+# 3.6	https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp36-cp36m-linux_aarch64.whl
+# 3.7	https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp37-cp37m-linux_aarch64.whl
+# 3.8	https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp38-cp38-linux_aarch64.whl
+# 3.9	https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp39-cp39-linux_aarch64.whl
+
+# last line empty

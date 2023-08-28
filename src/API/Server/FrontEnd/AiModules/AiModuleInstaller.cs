@@ -91,7 +91,7 @@ namespace CodeProject.AI.API.Server.Frontend
             // }
 
             // Just because we need at least one await
-            await Task.Delay(1);
+            await Task.Delay(1).ConfigureAwait(false);
 
             // Add the initial installed tasks here
             // eg var result = await InstallModuleAsync("TextSummary", "1.1");
@@ -106,11 +106,12 @@ namespace CodeProject.AI.API.Server.Frontend
                     {
                         try
                         {
-                            _logger.LogInformation($"**  Installing initial module {idVersion.Key}.");
+                            _logger.LogInformation($"** Installing initial module {idVersion.Key}.");
 
-                            (bool success, string error) = await DownloadAndInstallModuleAsync(idVersion.Key, idVersion.Value);
+                            var downloadTask = DownloadAndInstallModuleAsync(idVersion.Key, idVersion.Value);
+                            (bool success, string error) = await downloadTask.ConfigureAwait(false);
                             if (!success)
-                                _logger.LogError($"Unable to install {idVersion.Key} ({idVersion.Value}): " + error);
+                                _logger.LogInformation($"Unable to install {idVersion.Key}: " + error);
                         }
                         catch (Exception ex)
                         {
@@ -125,7 +126,7 @@ namespace CodeProject.AI.API.Server.Frontend
                     {
                         try
                         {
-                            _logger.LogInformation($"**  Installing initial module {idVersion.Key}.");
+                            _logger.LogInformation($"** Installing initial module {idVersion.Key}.");
                             installTasks.Add(DownloadAndInstallModuleAsync(idVersion.Key, idVersion.Value));
                         }
                         catch (Exception ex)
@@ -138,7 +139,7 @@ namespace CodeProject.AI.API.Server.Frontend
                     {
                         try
                         {
-                            var result = await task;
+                            var result = await task.ConfigureAwait(false);
                             if (!result.success)
                                 _logger.LogError(result.message ?? "Unknown Error Installing Initial Modules.");
                         }
@@ -190,19 +191,17 @@ namespace CodeProject.AI.API.Server.Frontend
         {
             var moduleDescription = new ModuleDescription()
             {
-                ModuleId     = module.ModuleId,
-                Name         = module.Name,
-                Version      = module.Version,
+                ModuleId       = module.ModuleId,
+                Name           = module.Name,
+                Version        = module.Version,
 
-                Description  = module.Description,                
-                Platforms    = module.Platforms,
-                License      = module.License,
-                LicenseUrl   = module.LicenseUrl,
+                Description    = module.Description,                
+                Platforms      = module.Platforms,
+                License        = module.License,
+                LicenseUrl     = module.LicenseUrl,
 
-                PreInstalled = module.PreInstalled,
-
-                VersionCompatibililty   = module.VersionCompatibililty,
-                CurrentInstalledVersion = module.Version
+                PreInstalled   = module.PreInstalled,
+                ModuleReleases = module.ModuleReleases
             };
 
             // Set initial properties. Most importantly it sets the status. 
@@ -238,7 +237,8 @@ namespace CodeProject.AI.API.Server.Frontend
                     _lastDownloadableModuleCheckTime = DateTime.Now;
 
                     // Download the list of downloadable modules as a JSON string, then deserialise
-                    string downloads = await _packageDownloader.DownloadTextFileAsync(_moduleOptions.ModuleListUrl!);
+                    string downloads = await _packageDownloader.DownloadTextFileAsync(_moduleOptions.ModuleListUrl!)
+                                                               .ConfigureAwait(false);
 
                     var options = new JsonSerializerOptions
                     {
@@ -256,8 +256,10 @@ namespace CodeProject.AI.API.Server.Frontend
                         {
                             int basUrlLength = _moduleOptions.ModuleListUrl!.Length - "modules.json".Length;
                             string baseDownloadUrl = _moduleOptions.ModuleListUrl![..basUrlLength];
+                            if (baseDownloadUrl == "file://")
+                                baseDownloadUrl = _moduleSettings.DownloadedModulePackagesPath;
                             foreach (var module in moduleList)
-                                module.DownloadUrl = baseDownloadUrl + $"downloads/{module.ModuleId}-{module.Version}.zip";
+                                module.DownloadUrl = baseDownloadUrl + $"\\{module.ModuleId}-{module.Version}.zip";
                         }
 
                         string currentServerVersion = _versionConfig.VersionInfo?.Version ?? string.Empty;
@@ -281,7 +283,6 @@ namespace CodeProject.AI.API.Server.Frontend
                             if (downloadableModule is not null)
                             {
                                 downloadableModule.Status = ModuleStatusType.Installed;
-                                downloadableModule.CurrentInstalledVersion = module.Version;
 
                                 if (VersionInfo.Compare(downloadableModule.Version, module.Version) > 0)
                                     downloadableModule.Status = ModuleStatusType.UpdateAvailable;
@@ -358,9 +359,13 @@ namespace CodeProject.AI.API.Server.Frontend
         /// </summary>
         /// <param name="moduleId">The module to install</param>
         /// <param name="version">The version of the module to install</param>
+        /// <param name="noCache">Whether or not to ignore the download cache. If true, the module
+        /// will always be freshly downloaded</param>
         /// <returns>A Tuple containing true for success; false otherwise, and a string containing
         /// the error message if the operation was not successful.</returns>
-        public async Task<(bool, string)> DownloadAndInstallModuleAsync(string moduleId, string version)
+        public async Task<(bool, string)> DownloadAndInstallModuleAsync(string moduleId, 
+                                                                        string version,
+                                                                        bool noCache = false)
         {           
             // if (SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development)
             //    return (false, $"Can't install modules when running in Development");
@@ -370,7 +375,7 @@ namespace CodeProject.AI.API.Server.Frontend
 
             _logger.LogInformation($"Preparing to install module '{moduleId}'");
 
-            ModuleDescription? moduleDownload = await GetCurrentModuleDescription(moduleId);
+            ModuleDescription? moduleDownload = await GetCurrentModuleDescription(moduleId).ConfigureAwait(false);
             if (moduleDownload is null)
                 return (false, $"Unable to find the download info for '{moduleId}'");
 
@@ -391,10 +396,10 @@ namespace CodeProject.AI.API.Server.Frontend
             if (module is not null && module.Valid)
             {
                 if (VersionInfo.Compare(moduleDownload.Version, module.Version) <= 0)
-                    return (false, $"The same, or a newer version, of Module {moduleId} is already installed");
+                    return (false, $"{moduleId} is already installed");
 
                 // If current module is a lower version then uninstall first
-                (bool success, string uninstallError) = await UninstallModuleAsync(moduleId);
+                (bool success, string uninstallError) = await UninstallModuleAsync(moduleId).ConfigureAwait(false);
                 if (!success)
                     return (false, $"Unable to uninstall older version of {moduleId}: {uninstallError}");
             }
@@ -411,15 +416,15 @@ namespace CodeProject.AI.API.Server.Frontend
             bool downloaded = false;
             string error = string.Empty;
 
-            if (System.IO.File.Exists(downloadPath))
+            if (!noCache && System.IO.File.Exists(downloadPath))
             {
                 _logger.LogInformation($" (using cached download for '{moduleId}')");
                 downloaded = true;               
             }
             else
             {
-                (downloaded, error) = await _packageDownloader.DownloadFileAsync(moduleDownload.DownloadUrl!,
-                                                                                 downloadPath);
+                (downloaded, error) = await _packageDownloader.DownloadFileAsync(moduleDownload.DownloadUrl!, downloadPath)
+                                                              .ConfigureAwait(false);
             }
 
             if (downloaded && !System.IO.File.Exists(downloadPath))
@@ -435,7 +440,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 return (false, $"Unable to download module '{moduleId}' from {moduleDownload.DownloadUrl}. Error: {error}");
             }
 
-            return await InstallModuleAsync(downloadPath, moduleId);
+            return await InstallModuleAsync(downloadPath, moduleId).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -464,7 +469,7 @@ namespace CodeProject.AI.API.Server.Frontend
             }
             else
             {
-                moduleDownload = await GetCurrentModuleDescription(moduleId);    
+                moduleDownload = await GetCurrentModuleDescription(moduleId).ConfigureAwait(false);    
                 if (moduleDownload is not null)
                 {
                     moduleDownload.Status = ModuleStatusType.Unpacking;
@@ -505,7 +510,8 @@ namespace CodeProject.AI.API.Server.Frontend
             string? settingsModuleId = null;
             try
             {
-                string content = await File.ReadAllTextAsync(Path.Combine(moduleDir, "modulesettings.json"));
+                string content = await File.ReadAllTextAsync(Path.Combine(moduleDir, "modulesettings.json"))
+                                           .ConfigureAwait(false);
 
                 var documentOptions = new JsonDocumentOptions
                 {
@@ -572,7 +578,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 moduleDownload.Status = ModuleStatusType.Installing;
 
             ProcessStartInfo procStartInfo;
-            if (SystemInfo.OperatingSystem.EqualsIgnoreCase("Windows"))
+            if (SystemInfo.IsWindows)
                 procStartInfo = new ProcessStartInfo(_moduleSettings.ModuleInstallerScriptPath);
             else
                 procStartInfo = new ProcessStartInfo("bash", _moduleSettings.ModuleInstallerScriptPath);
@@ -609,18 +615,20 @@ namespace CodeProject.AI.API.Server.Frontend
 
                     // Wait for the Process to complete before exiting the method or else the 
                     // Process may be killed at some random time when the process variable is GC.
-                    using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
-                    await process.WaitForExitAsync(cts.Token);
+                    using var cts = new CancellationTokenSource(_moduleOptions.ModuleInstallTimeout);
+                    await process.WaitForExitAsync(cts.Token).ConfigureAwait(false);
 
                     _logger.LogInformation($"Installer exited with code {process.ExitCode}");
-                    await logWriter.WriteLineAsync($"Installer exited with code {process.ExitCode}");
+                    await logWriter.WriteLineAsync($"Installer exited with code {process.ExitCode}")
+                                   .ConfigureAwait(false);
                 }
                 else
                 {
                     if (moduleDownload is not null)
                         moduleDownload.Status = ModuleStatusType.FailedInstall;
 
-                    await logWriter.WriteLineAsync($"Unable to start the Module installer for '{moduleId}'");
+                    await logWriter.WriteLineAsync($"Unable to start the Module installer for '{moduleId}'")
+                                   .ConfigureAwait(false);
                     return (false, $"Unable to start the Module installer for '{moduleId}'");
                 }
             }
@@ -632,7 +640,8 @@ namespace CodeProject.AI.API.Server.Frontend
                 if (moduleDownload is not null)
                     moduleDownload.Status = ModuleStatusType.FailedInstall;
 
-                await logWriter.WriteLineAsync($"Timed out attempting to install Module '{moduleId}'");
+                await logWriter.WriteLineAsync($"Timed out attempting to install Module '{moduleId}'")
+                               .ConfigureAwait(false);
                 return (false, $"Timed out attempting to install Module '{moduleId}' (${e.Message})");
             }
             catch (Exception e)
@@ -640,7 +649,8 @@ namespace CodeProject.AI.API.Server.Frontend
                 if (moduleDownload is not null)
                     moduleDownload.Status = ModuleStatusType.FailedInstall;
 
-                await logWriter.WriteLineAsync($"Unable to install Module '{moduleId}' (${e.Message})");
+                await logWriter.WriteLineAsync($"Unable to install Module '{moduleId}' (${e.Message})")
+                               .ConfigureAwait(false);
                 return (false, $"Unable to install Module '{moduleId}' (${e.Message})");
             }
 
@@ -673,7 +683,7 @@ namespace CodeProject.AI.API.Server.Frontend
             if (!Directory.Exists(moduleDir))
                 return (false, $"Unable to find {moduleId}'s install directory {moduleDir ?? "null"}");
 
-            ModuleDescription? moduleDownload = await GetCurrentModuleDescription(moduleId);
+            ModuleDescription? moduleDownload = await GetCurrentModuleDescription(moduleId).ConfigureAwait(false);
 
             // If the module to be uninstalled is no longer a download, create an entry and add it
             // to the download list so at least we can provide updates on it disappearing.
@@ -692,12 +702,12 @@ namespace CodeProject.AI.API.Server.Frontend
             // Console.WriteLine("Setting ModuleStatusType.Uninstalling");
             moduleDownload.Status = ModuleStatusType.Uninstalling;
 
-            if (!await _moduleProcessService.KillProcess(module))
+            if (!await _moduleProcessService.KillProcess(module).ConfigureAwait(false))
             {
                 Console.WriteLine("Setting ModuleStatusType.Unknown");
                 RefreshDownloadableModuleList();
 
-                moduleDownload = await GetCurrentModuleDescription(moduleId);
+                moduleDownload = await GetCurrentModuleDescription(moduleId).ConfigureAwait(false);
                 if (moduleDownload is not null)
                     moduleDownload.Status = ModuleStatusType.Unknown;
 
@@ -711,7 +721,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 Directory.Delete(moduleDir, true);
                 Console.WriteLine("Setting newly deleted module to ModuleStatusType.Available");
 
-                moduleDownload = await GetCurrentModuleDescription(moduleId);
+                moduleDownload = await GetCurrentModuleDescription(moduleId).ConfigureAwait(false);
                 if (moduleDownload is not null)
                     moduleDownload.Status = ModuleStatusType.Available;
             }
@@ -719,13 +729,13 @@ namespace CodeProject.AI.API.Server.Frontend
             {               
                 _logger.LogError($"Unable to delete install folder for {moduleId} ({e.Message})");
                 _logger.LogInformation("Will wait a moment: sometimes a delete just needs time to complete");
-                await Task.Delay(3);
+                await Task.Delay(3).ConfigureAwait(false);
             }
 
             if (Directory.Exists(moduleDir)) // shouldn't actually be possible to get here if delete failed
             {
                 Console.WriteLine("Setting ModuleStatusType.UninstallFailed");
-                moduleDownload = await GetCurrentModuleDescription(moduleId);
+                moduleDownload = await GetCurrentModuleDescription(moduleId).ConfigureAwait(false);
                 if (moduleDownload is not null)
                     moduleDownload.Status = ModuleStatusType.UninstallFailed;
 
@@ -735,7 +745,7 @@ namespace CodeProject.AI.API.Server.Frontend
             }
 
             if (_moduleCollection.ContainsKey(moduleId) && 
-                !_moduleCollection.TryRemove(moduleId, out ModuleConfig _))
+                !_moduleCollection.TryRemove(moduleId, out _))
             {
                 if (moduleDownload is not null)
                     moduleDownload.Status = ModuleStatusType.UninstallFailed;
@@ -762,7 +772,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <returns>A ModuleDescription object, or null if not found.</returns>
         private async Task<ModuleDescription?> GetCurrentModuleDescription(string moduleId)
         {
-            List<ModuleDescription> moduleList = await GetDownloadableModules();
+            List<ModuleDescription> moduleList = await GetDownloadableModules().ConfigureAwait(false);
             return moduleList.FirstOrDefault(m => m.ModuleId?.EqualsIgnoreCase(moduleId) == true);
         }
 
@@ -772,7 +782,10 @@ namespace CodeProject.AI.API.Server.Frontend
 
             if (!string.IsNullOrWhiteSpace(message))
             {
-                log.WriteLine(Text.StripXTermColors(message));
+                message = Text.StripSpinnerChars(message);
+
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss: ");
+                log.WriteLine(timestamp + Text.StripXTermColors(message));
 
                 string? moduleId = GetModuleIdFromEventSender(sender);
                 if (moduleId is not null)
@@ -788,7 +801,10 @@ namespace CodeProject.AI.API.Server.Frontend
 
             if (!string.IsNullOrWhiteSpace(message))
             {
-                log.WriteLine(Text.StripXTermColors(message));
+                message = Text.StripSpinnerChars(message);
+                
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss: ");
+                log.WriteLine(timestamp + Text.StripXTermColors(message));
 
                 string? moduleId = GetModuleIdFromEventSender(sender);
                 if (moduleId is not null)
@@ -797,7 +813,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 _logger.LogError(message);
             }
         }
-
+        
         /// <summary>
         /// Gets a module ID from an event
         /// </summary>
@@ -828,7 +844,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 return;
             }
 
-            ModuleDescription? moduleDownload = await GetCurrentModuleDescription(moduleId);
+            ModuleDescription? moduleDownload = await GetCurrentModuleDescription(moduleId).ConfigureAwait(false);
             if (moduleDownload is null)
             {
                 _logger.LogError("Unable to find recently installed module in downloadable module list");
@@ -862,7 +878,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 _moduleCollection.TryAdd(moduleId, moduleConfig);
                 // StartProcess does more than just start the module wo we need to call it
                 // even if the module's AutoStart is false.
-                if (await _moduleProcessService.StartProcess(moduleConfig))
+                if (await _moduleProcessService.StartProcess(moduleConfig).ConfigureAwait(false))
                     _logger.LogInformation($"Module {moduleId} started successfully.");
                 else if(!(moduleConfig.AutoStart ?? false))
                     _logger.LogInformation($"Module {moduleId} not configured to AutoStart.");

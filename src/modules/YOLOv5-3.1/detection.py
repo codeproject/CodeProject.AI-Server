@@ -125,7 +125,7 @@ def objectdetection(thread_name: str, delay: float):
 
                     output = {
                         "success": False,
-                        "error": "error occured on the server"
+                        "error": "error occurred on the server"
                     }
 
                 finally:

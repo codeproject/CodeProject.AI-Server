@@ -8,7 +8,7 @@
 		<Name>ObjectDetection (YOLO .Net)</Name>
 		<RootNamespace>CodeProject.AI.Analysis.Yolo</RootNamespace>
 		<AssemblyName>ObjectDetectionNet</AssemblyName>
-		<Version>1.2</Version>
+		<Version>1.4</Version>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<UserSecretsId>dotnet-CodeProject.AI.Yolo-384BE45C-AAED-42BA-9DDB-EF37356B630F</UserSecretsId>
@@ -58,7 +58,7 @@
 				<GpuType>CPU</GpuType>
 				<GpuType Condition="'$(IsWindows)'=='true'">DirectML</GpuType>						<!-- Windows -->
 				<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'!='true'">CUDA</GpuType>	<!-- Linux -->
-				<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'=='true'">CPU</GpuType>	<!-- Raspberry Pi-->
+				<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'=='true'">CPU</GpuType>	<!-- Raspberry Pi, Orange Pi, Jetson -->
 				<GpuType Condition="'$(IsOsx)'=='true'">CPU</GpuType>								<!-- Mac -->
 			</PropertyGroup>
 		</When>
@@ -84,7 +84,10 @@
 		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.13.1" Condition="'$(GpuType)'=='CPU'" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.12.1" Condition="'$(GpuType)'=='CUDA'" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.13.1-dev-20221026-1209-861125ccb" Condition="'$(GpuType)'=='OpenVINO'" />
-		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.13.1" Condition="'$(GpuType)'=='DirectML'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.12.0" Condition="'$(GpuType)'=='DirectML'" />
+
+		<!-- https://github.com/microsoft/onnxruntime/issues/12677#issuecomment-1443802719 -->
+		<PackageReference Include="Microsoft.AI.DirectML" Version="1.10.0" Condition="'$(GpuType)'=='DirectML'" />
 
 		<PackageReference Include="SkiaSharp" Version="2.88.3" />
 	
@@ -97,11 +100,18 @@
 	</Target>
 
 	<PropertyGroup>
+		<DefineConstants Condition="'$(GpuType)'=='CPU'">CPU</DefineConstants>
+		<DefineConstants Condition="'$(GpuType)'=='CUDA'">CUDA</DefineConstants>
+		<DefineConstants Condition="'$(GpuType)'=='OpenVINO'">OpenVINO</DefineConstants>
+		<DefineConstants Condition="'$(GpuType)'=='DirectML'">DirectML</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup>
 		<PlatformTarget Condition="'$(GpuType)'=='CPU'">AnyCPU</PlatformTarget>
 		<PlatformTarget Condition="'$(GpuType)'=='CUDA'">AnyCPU</PlatformTarget>
 		<PlatformTarget Condition="'$(GpuType)'=='OpenVINO'">AnyCPU</PlatformTarget>
 		<PlatformTarget Condition="'$(GpuType)'=='DirectML'">x64</PlatformTarget>
-		<FileVersion>2.1.0</FileVersion>
+		<FileVersion>2.1.5</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

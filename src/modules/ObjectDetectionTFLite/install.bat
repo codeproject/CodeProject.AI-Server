@@ -10,16 +10,19 @@
 	@goto:eof
 )
 
-REM "%modulePath%\install_coral.bat"
+call "!sdkScriptsPath!\utils.bat" WriteLine "*** You need to run !modulePath!\install_coral.bat to complete this process" "!color_info!"
+rem Needs admin permissions, so can't run via server install
+rem "%modulePath%\install_coral.bat"
 
 REM Python setup
 call "%sdkScriptsPath%\utils.bat" SetupPython 3.9 "Local"
 if errorlevel 1 exit /b 1
 
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%" "Local"
+REM Do SDK first, since it's a little fussy
+call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%absoluteAppRootDir%\SDK\Python" "Local"
 if errorlevel 1 exit /b 1
 
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%absoluteAppRootDir%\SDK\Python" "Local"
+call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%" "Local"
 if errorlevel 1 exit /b 1
 
 :: Download the MobileNet TFLite models and store in /assets
@@ -41,6 +44,7 @@ if errorlevel 1 exit /b 1
 ::  os                    - "windows"
 ::  architecture          - "x86_64" or "arm64"
 ::  platform              - "windows" or "windows-arm64"
+::  systemName            - "Windows"
 ::  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 ::  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 ::                          GetFromServer will honour this value. Do it yourself for DownloadAndExtract 

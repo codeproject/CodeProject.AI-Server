@@ -13,7 +13,7 @@ numpy==1.16.2                 # Installing NumPy, a package for scientific compu
 
 # numpy
 
-Pillow>=4.0.0                 # Installing Pillow, a Python Image Library
+Pillow<10.0.0			# Installing Pillow, a Python Image Library
 OpenCV-Python                 # Installing OpenCV, the Open source Computer Vision library
 
 

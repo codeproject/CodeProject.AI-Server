@@ -16,7 +16,12 @@ class Options:
         self.auto_plate_rotate     = str(ModuleOptions.getEnvVariable("AUTO_PLATE_ROTATE", "True")).lower() == "true"
 
         # increase size of plate 2X before attempting OCR
-        self.OCR_rescale_factor    = int(ModuleOptions.getEnvVariable("PLATE_RESCALE_FACTOR", 2))
+        self.OCR_rescale_factor    = float(ModuleOptions.getEnvVariable("PLATE_RESCALE_FACTOR", 2.0))
+
+        # OCR optimization
+        self.OCR_optimization             = str(ModuleOptions.getEnvVariable("OCR_OPTIMIZATION", "True")).lower() == "true"
+        self.OCR_optimal_character_height = int(ModuleOptions.getEnvVariable("OCR_OPTIMAL_CHARACTER_HEIGHT", 60))
+        self.OCR_optimal_character_width  = int(ModuleOptions.getEnvVariable("OCR_OPTIMAL_CHARACTER_WIDTH", 36))
 
         # PaddleOCR settings
         self.use_gpu               = ModuleOptions.support_GPU  # We'll disable this if we can't find GPU libraries
@@ -29,19 +34,4 @@ class Options:
         self.det_model_dir         = 'paddleocr/en_PP-OCRv3_det_infer'
         self.rec_model_dir         = 'paddleocr/en_PP-OCRv3_rec_infer'
 
-    """
-    def cleanDetectedDir(self) -> None:
-        # make sure the detected directory exists
-        if not os.path.exists(self.detectedDir):
-            os.mkdir(self.detectedDir)
-
-        # delete all the files in the output directory
-        filelist = os.listdir(self.detectedDir)
-        for filename in filelist:
-            try:
-                filepath = os.path.join(self.detectedDir, filename)
-                os.remove(filepath)
-            except:
-                pass
-    """
 

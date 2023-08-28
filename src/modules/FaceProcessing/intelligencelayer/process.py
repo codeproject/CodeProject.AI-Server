@@ -5,28 +5,20 @@ import torch
 from models.experimental import attempt_load
 from PIL import Image
 from utils.augmentations import letterbox
-from utils.general import (
-    non_max_suppression,
-    scale_coords,
-)
+from utils.general import non_max_suppression, scale_coords
 from module_runner import ModuleRunner
 
 class YOLODetector(object):
-    def __init__(self, model_path: str, reso: int = 640, cuda: bool = False, mps: bool = False,
-                 half_precision: str = 'enable'):
+    def __init__(self, model_path: str, reso: int = 640, cuda: bool = False, 
+                 mps: bool = False, half_precision: str = 'enable'):
 
         # Use half-precision if possible. There's a bunch of Nvidia cards where
         # this won't work
         if cuda:
-            device_type = "cuda"
-            self.device = torch.device(device_type)
-    
+            device_type      = "cuda"
+            self.device      = torch.device(device_type)
             self.device_name = torch.cuda.get_device_name()
-
-            if half_precision == 'disable':
-                self.half = False
-            else:
-                self.half = half_precision == 'force' or torch.cuda.get_device_capability()[0] >= 6
+            self.half        = half_precision != 'disable'
 
             if self.half:
                 print(f"Using half-precision for the device '{self.device_name}'")
@@ -45,9 +37,9 @@ class YOLODetector(object):
             self.device_name = "CPU"
             self.half        = False
 
-        self.reso = (reso, reso)
-        self.cuda = cuda
-        self.mps  = mps
+        self.reso  = (reso, reso)
+        self.cuda  = cuda
+        self.mps   = mps
         self.model = attempt_load(model_path, device=self.device)
         self.names = (
             self.model.module.names

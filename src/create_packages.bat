@@ -16,6 +16,10 @@ set verbosity=quiet
 :: Show output in wild, crazy colours
 set useColor=true
 
+:: Set this to false (or call script with --no-dotnet) to exclude .NET packages
+:: This saves time to allow for quick packaging of the easier, non-compiled modules
+set includeDotNet=true
+
 :: Basic locations
 
 :: The path to the directory containing the install scripts. Will end in "\"
@@ -39,9 +43,12 @@ set modulesDir=modules
     set arg_value=%~2
     if not "!arg_name!" == "" (
         if not "!arg_name:--no-color=!" == "!arg_name!" set useColor=false
-        REM if not "!arg_name:pathToInstall=!" == "!arg_name!" set installerScriptsPath=!arg_value!
+        if not "!arg_name:--no-dotnet=!" == "!arg_name!" set includeDotNet=false
+        if not "!arg_name:pathToInstall=!" == "!arg_name!" (
+            set installerScriptsPath=!arg_value!
+            shift
+        )
     )
-    shift
     shift
 if not "!arg_name!"=="" goto param_loop
 
@@ -116,34 +123,43 @@ for /f "delims=" %%D in ('dir /a:d /b "!modulesPath!"') do (
 
     if exist "!packageModulePath!\package.bat" (
 
-        call "!sdkScriptsPath!\utils.bat" Write "Packaging module !packageModuleId!..." "White"
+        set doPackage=true
 
-        pushd "!packageModulePath!" 
+        if "!includeDotNet!" == "false" if "!packageModuleId!" == "ObjectDetectionNet" set doPackage=false
+        if "!includeDotNet!" == "false" if "!packageModuleId!" == "PortraitFilter"     set doPackage=false
+        if "!includeDotNet!" == "false" if "!packageModuleId!" == "SentimentAnalysis"  set doPackage=false
 
-        REM Read the version from the modulesettings.json file and then pass this 
-        REM version to the package.bat file.
-        call "!sdkScriptsPath!\utils.bat" GetVersionFromModuleSettings "modulesettings.json" "Version"
-        set packageVersion=!jsonValue!
-        rem echo packageVersion is !packageVersion!
-
-        rem Create module download package
-        call package.bat !packageModuleId! !packageVersion!
-        if errorlevel 1 call "!sdkScriptsPath!\utils.bat" WriteLine "Error in package.bat for !packageModuleDir!" "Red"
-
-        popd
-        
-        rem Move package into modules download cache       
-        rem echo Moving !packageModulePath!\!packageModuleId!-!version!.zip to !downloadPath!\modules\
-        move /Y !packageModulePath!\!packageModuleId!-!packageVersion!.zip !downloadPath!\modules\  >NUL 2>&1
-
-        if errorlevel 1 (
-            call "!sdkScriptsPath!\utils.bat" WriteLine "Error" "Red"
+        if "!doPackage!" == "false" (
+            call "!sdkScriptsPath!\utils.bat" WriteLine "Skipping packaging module !packageModuleId!..." "Red"
         ) else (
-            set success=false
-            call "!sdkScriptsPath!\utils.bat" WriteLine "Done" "DarkGreen"
-        )
 
-        REM goto:eof
+            call "!sdkScriptsPath!\utils.bat" Write "Packaging module !packageModuleId!..." "White"
+
+            pushd "!packageModulePath!" 
+
+            REM Read the version from the modulesettings.json file and then pass this 
+            REM version to the package.bat file.
+            call "!sdkScriptsPath!\utils.bat" GetVersionFromModuleSettings "modulesettings.json" "Version"
+            set packageVersion=!jsonValue!
+            rem echo packageVersion is !packageVersion!
+
+            rem Create module download package
+            call package.bat !packageModuleId! !packageVersion!
+            if errorlevel 1 call "!sdkScriptsPath!\utils.bat" WriteLine "Error in package.bat for !packageModuleDir!" "Red"
+
+            popd
+            
+            rem Move package into modules download cache       
+            rem echo Moving !packageModulePath!\!packageModuleId!-!version!.zip to !downloadPath!\modules\
+            move /Y !packageModulePath!\!packageModuleId!-!packageVersion!.zip !downloadPath!\modules\  >NUL 2>&1
+
+            if errorlevel 1 (
+                call "!sdkScriptsPath!\utils.bat" WriteLine "Error" "Red"
+            ) else (
+                set success=false
+                call "!sdkScriptsPath!\utils.bat" WriteLine "Done" "DarkGreen"
+            )
+        )
     )
 )
 

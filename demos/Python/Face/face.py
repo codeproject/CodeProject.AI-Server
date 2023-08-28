@@ -2,6 +2,7 @@ import os
 import requests
 from PIL import Image
 from options import Options
+from .. import utils
 
 def main():
 
@@ -12,7 +13,7 @@ def main():
     image_data = open(filepath, "rb").read()
     image      = Image.open(filepath).convert("RGB")
 
-    opts.cleanDetectedDir()
+    utils.cleanDir(opts.detectedDir)
 
     response = requests.post(opts.endpoint("vision/face"),
                              files = {"image": image_data}).json()

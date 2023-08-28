@@ -9,20 +9,20 @@
 ::
 :: What this script does:
 :: 
-:: 1. Downloads the cuDNN package (v8.5.0.96 forCUDA 11)
+:: 1. Downloads the cuDNN package (v8.9.4.96 for CUDA 11)
 ::
 :: 2. Creates a folder "C:\Program Files\NVIDIA\CUDNN\v8.5" and extracts the cuDNN package
 ::    into that folder. There will be bin, lib and include folders, plus a LICENSE file.
 ::   
 :: 3. Adds this path to the PATH environment variable: 
-::    setx /M PATH = Path + "%PATH%;C:\Program Files\NVIDIA\CUDNN\v8.5\bin"
+::    setx /M PATH = Path + "%PATH%;C:\Program Files\NVIDIA\CUDNN\v8.9\bin"
 ::
 :: 4. Downloads ZLib from WinImage (http://www.winimage.com/zLibDll/zlib123dllx64.zip) and extracts
 ::    into a folder. Since it's being used by cuDNN it's easier to just extract into the
-::    cuDNN folder: "C:\Program Files\NVIDIA\CUDNN\v8.5\zlib
+::    cuDNN folder: "C:\Program Files\NVIDIA\CUDNN\v8.9\zlib
 ::    
 :: 5. Add this path to the PATH environment variable: 
-::    setx /M PATH "%PATH%;C:\Program Files\NVIDIA\CUDNN\v8.5\zlib\dll_x64"
+::    setx /M PATH "%PATH%;C:\Program Files\NVIDIA\CUDNN\v8.9\zlib\dll_x64"
 ::
 :: What you need to do: just double click this bat file in Windows
 
@@ -31,7 +31,8 @@ cls
 setlocal enabledelayedexpansion
 
 set cuDNNLocation=https://developer.nvidia.com/rdp/cudnn-download
-set cuDNNArchiveName=cudnn-windows-x86_64-8.5.0.96_cuda11-archive
+REM set cuDNNArchiveName=cudnn-windows-x86_64-8.5.0.96_cuda11-archive
+set cuDNNArchiveName=cudnn-windows-x86_64-8.9.4.25_cuda11-archive
 set cuDNNArchiveDownloadUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/
 set cuDNNPattern=cudnn-windows-x86_64-*.zip
 set cuDNNRegex=cudnn-windows-x86_64-([0-9]*).([0-9]*).([0-9]*).([0-9]*)_cuda11-archive
@@ -58,7 +59,7 @@ set zLibInstalled=false
 :: but before we start lets ensure we attempt to have at least one version present.
 
 IF not exist "!cuDNNPattern!" (
-    echo No cuDNN archive found. Downloading...
+    echo No cuDNN archive found. Downloading !cuDNNArchiveName!.zip...
     powershell -command "Start-BitsTransfer -Source '!cuDNNArchiveDownloadUrl!!cuDNNArchiveName!.zip' -Destination '!cuDNNArchiveName!.zip'"
 )
 

@@ -11,25 +11,16 @@ class Options:
     # works for you
     rtsp_user      = os.getenv("CPAI_RTSP_DEMO_USER", "User")
     rtsp_pass      = os.getenv("CPAI_RTSP_DEMO_PASS", "Pass")
-    rtsp_IP        = os.getenv("CPAI_RTSP_DEMO_IP",   "10.0.0.204")
+    rtsp_IP        = os.getenv("CPAI_RTSP_DEMO_IP",   "10.0.0.198")
     rtsp_url       = f"rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_IP}/live"
+
+    email_server   = os.getenv("CPAI_EMAIL_DEMO_SERVER",   "smtp.gmail.com")
+    email_port     = int(os.getenv("CPAI_EMAIL_DEMO_PORT", 587))
+    email_acct     = os.getenv("CPAI_EMAIL_DEMO_FROM",     "me@gmail.com")
+    email_pwd      = os.getenv("CPAI_EMAIL_DEMO_PWD",      "password123")
 
     # names of directories of interest
     detectedDir = "detected"
 
     def endpoint(self, route) -> str:
         return self.server_url + route
-
-    def cleanDetectedDir(self) -> None:
-        # make sure the detected directory exists
-        if not os.path.exists(self.detectedDir):
-            os.mkdir(self.detectedDir)
-
-        # delete all the files in the output directory
-        filelist = os.listdir(self.detectedDir)
-        for filename in filelist:
-            try:
-                filepath = os.path.join(self.detectedDir, filename)
-                os.remove(filepath)
-            except:
-                pass

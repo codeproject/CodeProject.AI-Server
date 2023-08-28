@@ -76,10 +76,11 @@ namespace CodeProject.AI.Demo.Explorer
             try
             {
                 var content = new MultipartFormDataContent();
-                using var httpResponse = await Client.GetAsync("status/ping");
+                using var httpResponse = await Client.GetAsync("status/ping").ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<SuccessResponse>();
+                response = await httpResponse.Content.ReadFromJsonAsync<SuccessResponse>()
+                                                     .ConfigureAwait(false);
                 response ??= new ErrorResponse("No response from the server");
             }
             catch (Exception ex)
@@ -112,10 +113,12 @@ namespace CodeProject.AI.Demo.Explorer
 
                 request.Add(content, "image", Path.GetFileName(image_path));
 
-                using var httpResponse = await Client.PostAsync("vision/face", request);
+                using var httpResponse = await Client.PostAsync("vision/face", request)
+                                                     .ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<DetectFacesResponse>();
+                response = await httpResponse.Content.ReadFromJsonAsync<DetectFacesResponse>()
+                                                     .ConfigureAwait(false);
                 response ??= new ErrorResponse("No response from the server");
 
             }
@@ -154,10 +157,12 @@ namespace CodeProject.AI.Demo.Explorer
                 request.Add(new StreamContent(image1_data), "image1", Path.GetFileName(image1FileName));
                 request.Add(new StreamContent(image2_data), "image2", Path.GetFileName(image2FileName));
 
-                using var httpResponse = await Client.PostAsync("vision/face/match", request);
+                using var httpResponse = await Client.PostAsync("vision/face/match", request)
+                                                     .ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<MatchFacesResponse>();
+                response = await httpResponse.Content.ReadFromJsonAsync<MatchFacesResponse>()
+                                                     .ConfigureAwait(false);
                 response ??= new ErrorResponse("No response from the server"); 
             }
             catch (Exception ex)
@@ -188,10 +193,12 @@ namespace CodeProject.AI.Demo.Explorer
 
                 request.Add(new StreamContent(image_data), "image", Path.GetFileName(image_path));
 
-                using var httpResponse = await Client.PostAsync("vision/scene", request);
+                using var httpResponse = await Client.PostAsync("vision/scene", request)
+                                                     .ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<DetectSceneResponse>();
+                response = await httpResponse.Content.ReadFromJsonAsync<DetectSceneResponse>()
+                                                     .ConfigureAwait(false);
                 response ??= new ErrorResponse("No response from the server");
             }
             catch (Exception ex)
@@ -223,12 +230,16 @@ namespace CodeProject.AI.Demo.Explorer
 
                 request.Add(new StreamContent(image_data), "image", Path.GetFileName(image_path));
 
-                using var httpResponse = await Client.PostAsync("vision/detection", request);
+                using var httpResponse = await Client.PostAsync("vision/detection", request)
+                                                     .ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<DetectObjectsResponse>();
-                //var json = await httpResponse.Content.ReadAsStringAsync();
-                //response = System.Text.Json.JsonSerializer.Deserialize<DetectObjectsResponse>(json);
+                response = await httpResponse.Content.ReadFromJsonAsync<DetectObjectsResponse>()
+                                                     .ConfigureAwait(false);
+
+                // var json = await httpResponse.Content.ReadAsStringAsync();
+                // response = System.Text.Json.JsonSerializer.Deserialize<DetectObjectsResponse>(json);
+
                 response ??= new ErrorResponse("No response from the server");
             }
             catch (Exception ex)
@@ -260,11 +271,12 @@ namespace CodeProject.AI.Demo.Explorer
 
                 request.Add(new StreamContent(image_data), "image", Path.GetFileName(image_path));
 
-                using var httpResponse = await Client.PostAsync("vision/custom", request);
+                using var httpResponse = await Client.PostAsync("vision/custom", request)
+                                                     .ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
                 // response = await httpResponse.Content.ReadFromJsonAsync<DetectObjectsResponse>();
-                var json = await httpResponse.Content.ReadAsStringAsync();
+                var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
                 response = System.Text.Json.JsonSerializer.Deserialize<DetectObjectsResponse>(json);
                 response ??= new ErrorResponse("No response from the server");
             }
@@ -309,11 +321,12 @@ namespace CodeProject.AI.Demo.Explorer
                                                   Path.GetFileName(filename));
                 }
 
-                using var httpResponse = await Client.PostAsync("vision/face/register", request);
+                using var httpResponse = await Client.PostAsync("vision/face/register", request)
+                                                     .ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
                 // response = await httpResponse.Content.ReadFromJsonAsync<RegisterFaceResponse>();
-                var json = await httpResponse.Content.ReadAsStringAsync();
+                var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
                 response = System.Text.Json.JsonSerializer.Deserialize<RegisterFaceResponse>(json);
                 response ??= new ErrorResponse("No response from the server");
             }
@@ -351,10 +364,12 @@ namespace CodeProject.AI.Demo.Explorer
                 if (minConfidence.HasValue)
                     request.Add(new StringContent(minConfidence.Value.ToString()), "min_confidence");
 
-                using var httpResponse = await Client.PostAsync("vision/face/recognize", request);
+                using var httpResponse = await Client.PostAsync("vision/face/recognize", request)
+                                                     .ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<RecognizeFacesResponse>();
+                response = await httpResponse.Content.ReadFromJsonAsync<RecognizeFacesResponse>()
+                                                     .ConfigureAwait(false);
                 response ??= new ErrorResponse("No response from the server");
             }
             catch (Exception ex)
@@ -378,10 +393,12 @@ namespace CodeProject.AI.Demo.Explorer
                     { new StringContent(userId), "userid" }
                 };
 
-                using var httpResponse = await Client.PostAsync("vision/face/delete", request);
+                using var httpResponse = await Client.PostAsync("vision/face/delete", request)
+                                                     .ConfigureAwait(false);
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<DeleteFaceResponse>();
+                response = await httpResponse.Content.ReadFromJsonAsync<DeleteFaceResponse>()
+                                                     .ConfigureAwait(false);
                 response ??= new ErrorResponse("No response from the server");
             }
             catch (Exception ex)
@@ -398,12 +415,14 @@ namespace CodeProject.AI.Demo.Explorer
             try
             {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                using var httpResponse = await Client.PostAsync("vision/face/list", null);
+                using var httpResponse = await Client.PostAsync("vision/face/list", null)
+                                                     .ConfigureAwait(false);
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
                 httpResponse.EnsureSuccessStatusCode();
 
-                response = await httpResponse.Content.ReadFromJsonAsync<ListRegisteredFacesResponse>();
+                response = await httpResponse.Content.ReadFromJsonAsync<ListRegisteredFacesResponse>()
+                                                     .ConfigureAwait(false);
                 response ??= new ErrorResponse("No response from the server");
             }
             catch (Exception ex)

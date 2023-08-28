@@ -1,7 +1,6 @@
 # Import our general libraries
 import io
 import math
-import re
 import time
 from typing import Tuple
 
@@ -19,12 +18,24 @@ import numpy as np
 from options import Options
 from paddleocr import PaddleOCR
 
-ocr = None
-no_plate_found = 'Characters Not Found'
+# Constants
+debug_image     = False
+debug_log       = False
+no_plate_found  = 'Characters Not Found'
+
+# Globals
+ocr                  = None
+previous_label       = None
+prev_avg_char_height = None
+prev_avg_char_width  = None
+resize_width_factor  = None
+resize_height_factor = None
+
 
 def init_detect_platenumber(opts: Options) -> None:
 
-    global ocr
+    global ocr, resize_width_factor, resize_height_factor
+
     ocr = PaddleOCR(lang                = opts.language,
                     use_gpu             = opts.use_gpu,
                     show_log            = opts.log_verbosity == LogVerbosity.Loud,
@@ -34,7 +45,11 @@ def init_detect_platenumber(opts: Options) -> None:
                     rec_algorithm       = opts.algorithm,
                     cls_model_dir       = opts.cls_model_dir,
                     det_model_dir       = opts.det_model_dir,
-                    rec_model_dir       = opts.rec_model_dir)
+                    rec_model_dir       = opts.rec_model_dir,
+                    use_angle_cls       = False)
+
+    resize_width_factor  = opts.OCR_rescale_factor
+    resize_height_factor = opts.OCR_rescale_factor
 
 
 async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: Image) -> JSON:
@@ -44,6 +59,9 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
     Returns a tuple containing the Json description of what was found, along 
     """
 
+    global previous_label, prev_avg_char_width, prev_avg_char_height
+    global resize_width_factor, resize_height_factor
+    
     outputs      = []
     pillow_image = image
 
@@ -81,10 +99,11 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
     numpy_image = np.array(pillow_image)
 
     # Remember: numpy is left handed when it comes to indexes
-    orig_image_size: Size = Size(numpy_image.shape[1], numpy_image.shape[0])
+    orig_image_size: Size = Size(width = numpy_image.shape[1], height = numpy_image.shape[0])
 
     # Correct the colour space
-    numpy_image = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
+    # numpy_image = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
+    numpy_image = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2GRAY)
 
     # If a plate is found we'll pass this onto OCR
     for plate_detection in detect_plate_response["predictions"]:
@@ -93,25 +112,16 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
         # The coordinates... (relative to the original image)
         plate_rect  = Rect(plate_detection["x_min"], plate_detection["y_min"],
                            plate_detection["x_max"], plate_detection["y_max"])
-        # The image itself... (Its coordinates are now relativen to itself)
+        # The image itself... (Its coordinates are now relative to itself)
         numpy_plate = numpy_image[plate_rect.top:plate_rect.bottom, plate_rect.left:plate_rect.right]
 
-        # Pre-processing of the extracted plate to give the OCR a better chance of success
-        
-        # Run it through a super-resolution module to improve readability (TBD, but could be slow)
-        # numpy_plate = super_resolution(numpy_plate)
-
-        # resize image if required
-        if opts.OCR_rescale_factor != 1:
-            numpy_plate = tool.resize_image(numpy_plate, opts.OCR_rescale_factor * 100)
-
         # Store the size of the scaled plate before we start rotating it
-        scaled_plate_size = Size(numpy_plate.shape[1], numpy_plate.shape[0])
+        plate_size = Size(numpy_plate.shape[1], numpy_plate.shape[0])
 
         # Work out the angle we need to rotate the image to de-skew it (or use the manual override).
         if opts.auto_plate_rotate:
             plate_rotate_deg = tool.compute_skew(numpy_plate)
-        elif opts.plate_rotate_deg:
+        else:
             plate_rotate_deg = opts.plate_rotate_deg
 
         # If we need to rotate, then check to ensure that rotating the image won't chop off
@@ -120,21 +130,16 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
         if plate_rotate_deg:
         
             # We start with the assumption that we have a plate that is not displayed level. Once
-            # the plate is deskewed, the bounding box of the rotated plate will be *smaller* than
+            # the plate is de-skewed, the bounding box of the rotated plate will be *smaller* than
             # the skewed plate.
             
             # Calculate the corrected (smaller) bounding box if we were to rotate the image
-            rotated_size: Size = tool.largest_rotated_rect(scaled_plate_size, math.radians(plate_rotate_deg))
+            rotated_size: Size = tool.largest_rotated_rect(plate_size, math.radians(plate_rotate_deg))
 
             # Calculate the space between the corresponding edges of the (smaller) rotated plate
             # and the original plate.
-            # buffer: Size = (scaled_plate_size - rotated_size) / 2.0
-            buffer: Size = (scaled_plate_size - rotated_size).__div__(2.0)
-
-            # Scale this back to the original plate dimensions (remember we scaled the plate)
-            if opts.OCR_rescale_factor != 1:
-                # buffer = buffer / opts.OCR_rescale_factor
-                buffer = buffer.__div__(opts.OCR_rescale_factor)
+            # buffer: Size = (plate_size - rotated_size) / 2.0
+            buffer: Size = (plate_size - rotated_size).__div__(2.0)
 
             # 'buffer' represents the width/height of an area along the edges of the original image.
             #
@@ -149,7 +154,7 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
             #         =============================
             #
             # If a plate is detected in the original image, and part of that plate extends into 
-            # (or over) the buffer area then it means that, on rotatiom, part of the image could 
+            # (or over) the buffer area then it means that, on rotation, part of the image could 
             # be cut off. We should avoid that since it could cut off characters.
 
             # Calculate the region inside the extracted plate that the rotated plate image must fit
@@ -167,22 +172,72 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
         if plate_rotate_deg:
             numpy_plate = tool.rotate_image(numpy_plate, plate_rotate_deg, rotated_size)
 
-        # numpy_plate = cv2.GaussianBlur(numpy_plate, (5,5), 0)
-        # numpy_plate = cv2.medianBlur(numpy_plate, 3)
+        if opts.OCR_optimization:
+            # Based on the previous observation we'll adjust the resize factor so that we get
+            # closer and closer to an "optimal" factor that produces images whose characters
+            # match our optimum character size. 
+            # Assumptions:
+            #  1. Most plates we detect will be more or less the same size. Obviously an issue if
+            #     you are scanning plates both near and far
+            #  2. The aspect ratio of the license plate text (width:height) is around 3:5
+            if previous_label and previous_label != no_plate_found: 
+                
+                if prev_avg_char_width < opts.OCR_optimal_character_width and resize_width_factor < 50:
+                    resize_width_factor += 0.02
+
+                if prev_avg_char_width > opts.OCR_optimal_character_width and resize_width_factor > 0.03:
+                    resize_width_factor -= 0.02
+                    
+                if prev_avg_char_height < opts.OCR_optimal_character_height and resize_height_factor < 50:
+                    resize_height_factor += 0.02
+
+                if prev_avg_char_height > opts.OCR_optimal_character_height and resize_height_factor > 0.03:
+                    resize_height_factor -= 0.02
+
+            numpy_plate = cv2.resize(numpy_plate, None, fx = resize_width_factor, 
+                                     fy = resize_height_factor, interpolation = cv2.INTER_CUBIC)
+        else:
+            if opts.OCR_rescale_factor != 1:
+                numpy_plate = tool.resize_image(numpy_plate, opts.OCR_rescale_factor * 100)
+
+        if debug_log:
+            with open("log.txt", "a") as text_file:
+                text_file.write(f"{resize_height_factor}x{resize_width_factor} - {avg_char_height}x{avg_char_width}\n\n")
+
+        """
+        dimensions: Size = Size(numpy_plate.shape[1], numpy_plate.shape[0])
+        dimensions.integerize()
+
+        # Exaggerate the width to make line detection more prominent
+        dimensions.width *= 1.5
+        """
+   
+        # Pre-processing of the extracted plate to give the OCR a better chance of success
+        
+        # Run it through a super-resolution module to improve readability (TBD, but could be slow)
+        # numpy_plate = super_resolution(numpy_plate)
+
+        # resize image if required
+        # if opts.OCR_rescale_factor != 1:
+            # numpy_plate = tool.resize_image(numpy_plate, opts.OCR_rescale_factor * 100)
 
         # perform otsu thresh (best to use binary inverse since opencv contours work better with white text)
         # ret, numpy_plate = cv2.threshold(numpy_plate, 0, 255, cv2.THRESH_OTSU   | cv2.THRESH_BINARY_INV)
         # ret, numpy_plate = cv2.threshold(numpy_plate, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-
-        # Read the plate. This may require multiple attempts
+        # numpy_plate = cv2.GaussianBlur(numpy_plate, (5,5), 0)
+        # numpy_plate = cv2.medianBlur(numpy_plate, 3)
+        # numpy_plate = cv2.bilateralFilter(numpy_plate,9,75,75)
  
         # Read plate
-        (label, confidence, plateInferenceMs) = await read_plate_chars_PaddleOCR(module_runner, numpy_plate)
+        (label, confidence, avg_char_width, avg_char_height, plateInferenceMs) = \
+                            await read_plate_chars_PaddleOCR(module_runner, numpy_plate)
         inferenceMs += plateInferenceMs
 
+        # Read the plate. This may require multiple attempts
         # If we had no success reading the original plate, apply some image enhancement
         # and try again
+        """
         if label == no_plate_found:
             # If characters are not found try gamma correction and equalize
             # numpy_plate = cv2.fastNlMeansDenoisingColored(numpy_plate, None, 10, 10, 7, 21)
@@ -192,10 +247,22 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
             # cv2.imwrite("alpr-enhanced.jpg", numpy_plate)
 
             # Read plate, 2nd attempt
-            (label, confidence, plateInferenceMs) = await read_plate_chars_PaddleOCR(module_runner, numpy_plate)
+            (label, confidence, avg_char_width, avg_char_height, plateInferenceMs) = \
+                             await read_plate_chars_PaddleOCR(module_runner, numpy_plate)
             inferenceMs += plateInferenceMs
+        """
+
+        if debug_image:
+            filename = "/Program Files/CodeProject/AI/Server/wwwroot/alpr.jpg"
+            cv2.imwrite(filename, numpy_plate)
 
         if label and confidence:
+            # Store to help with adjusting for next detection
+            previous_label       = label
+            prev_avg_char_width  = avg_char_width
+            prev_avg_char_height = avg_char_height
+
+            # return what we found
             detection = {
                 "confidence": confidence,
                 "label": "Plate: " + label,
@@ -203,35 +270,37 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
                 "x_min": plate_rect.left,
                 "y_min": plate_rect.top,
                 "x_max": plate_rect.right,
-                "y_max": plate_rect.bottom,
+                "y_max": plate_rect.bottom
             }
             outputs.append(detection)
+        else:
+            # Next loop around we don't want to needlessly adjust resize factors
+            previous_label = no_plate_found
 
     return { "predictions": outputs, "inferenceMs": inferenceMs }
 
 
-async def read_plate_chars_PaddleOCR(module_runner: ModuleRunner, image: Image) -> Tuple[str, float, float]:
-
+async def read_plate_chars_PaddleOCR(module_runner: ModuleRunner, image: Image) -> Tuple[str, float, int, int, float]:
+    
     """
     This uses PaddleOCR for reading the plates. Note that the image being passed
     in should be a tightly cropped licence plate, so we're looking for the largest
     text box and will assume that's the plate number.
-    Returns (plate label, confidence, inference time (ms))
+    Returns (plate label, confidence, avg char height (px), avg char width (px), inference time (ms))
     """
 
-    pattern  = re.compile('[^a-zA-Z0-9]+')
     inferenceTimeMs: int = 0
 
     try:
         start_time = time.perf_counter()
-        ocr_response = ocr.ocr(image, cls=True)
+        ocr_response = ocr.ocr(image, cls=False)
         inferenceTimeMs = int((time.perf_counter() - start_time) * 1000)
 
         # Note that ocr_response[0][0][0][0] could be a float with value 0 ('false'), or in some
         # other universe maybe it's a string. To be really careful we would have a test like
         # if hasattr(ocr_response[0][0][0][0], '__len__') and (not isinstance(ocr_response[0][0][0][0], str))
         if not ocr_response or not ocr_response[0] or not ocr_response[0][0] or not ocr_response[0][0][0]:
-            return no_plate_found, 0, inferenceTimeMs
+            return no_plate_found, 0, 0, 0, inferenceTimeMs
 
         # Seems that different versions of paddle return different structures, OR
         # paddle returns different structures depending on its mood. We're expecting
@@ -245,35 +314,18 @@ async def read_plate_chars_PaddleOCR(module_runner: ModuleRunner, image: Image) 
 
         detections = ocr_response if isinstance(ocr_response[0][0][0][0], float) else ocr_response[0]
 
+        if debug_log:
+            with open("log.txt", "a") as text_file:
+                text_file.write(str(ocr_response) + "\n" + "\n")
+
         # Find the biggest textbox and assume that's the plate number
-        (plate_label, plate_confidence, max_area) = (None, 0.0, 0)
-
-        for detection in detections:
-            bounding_box   = detection[0]   # [ topleft, topright, bottom right, bottom left ], each is [x,y]
-            classification = detection[1]
-
-            label      = classification[0]
-            confidence = classification[1]
-
-            if label and confidence:
-                # We won't assume the points are in a particular order (though we know they are)
-                x_min = int(min(point[0] for point in bounding_box))   # = int(bounding_box[0][0]),
-                y_min = int(min(point[1] for point in bounding_box))   # = int(bounding_box[0][1]),
-                x_max = int(max(point[0] for point in bounding_box))   # = int(bounding_box[3][0]),
-                y_max = int(max(point[1] for point in bounding_box))   # = int(bounding_box[3][1]),
-
-                area = math.fabs((y_max - y_min) * (x_max - x_min))
-
-                if area > max_area:
-                    max_area         = area
-                    plate_label      = pattern.sub('', label)
-                    plate_confidence = confidence
+        plate_label, plate_confidence, avg_char_width, avg_char_height = tool.merge_text_detections(detections)
 
         if not plate_label:
-            return no_plate_found, 0, inferenceTimeMs
+            return no_plate_found, 0, 0, 0, inferenceTimeMs
 
-        return plate_label, plate_confidence, inferenceTimeMs
+        return plate_label, plate_confidence, avg_char_height, avg_char_width, inferenceTimeMs
 
     except Exception as ex:
-        module_runner.report_error_aync(ex, __file__)    
-        return None, 0, inferenceTimeMs
+        module_runner.report_error_async(ex, __file__)    
+        return None, 0, 0, 0, inferenceTimeMs

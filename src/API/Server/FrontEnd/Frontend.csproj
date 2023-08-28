@@ -7,12 +7,20 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
 	<Import Project="../../../SDK/NET/Common.targets" />
 
-	<!-- Common properties -->
+	<!-- Meta data -->
 	<PropertyGroup>
 		<Name>API Server</Name>
+		<Product>CodeProject.AI Server</Product>
+		<Description>A Service hosting the CodeProject.AI WebAPI for face detection and recognition, object detection, and scene classification, and other AI operations.</Description>
+		<Company>CodeProject</Company>
+		<Authors>CodeProject</Authors>
+		<Version>2.1.12</Version>
+	</PropertyGroup>
+
+	<!-- Build properties -->
+	<PropertyGroup>
 		<RootNamespace>CodeProject.AI.API.Server.Frontend</RootNamespace>
 		<AssemblyName>CodeProject.AI.Server</AssemblyName>
-		<Version>2.1.0</Version>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
@@ -21,6 +29,15 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Platform>AnyCPU</Platform>
 		<TargetFramework>net7.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+		<DeleteExistingFiles>true</DeleteExistingFiles>
+	</PropertyGroup>
+
+	<!-- Package properties -->
+	<PropertyGroup>
+		<PackageLicenseExpression>SSPL-1.0</PackageLicenseExpression>
+		<PackageProjectUrl>https://www.codeproject.com/ai</PackageProjectUrl>
+		<PackageIcon>codeproject125x125.png</PackageIcon>
 	</PropertyGroup>
 
 	<!-- Docker properties -->
@@ -28,20 +45,6 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<DockerfileContext>..\..\..\..</DockerfileContext>
 		<DockerfileTag>codeproject/ai-server</DockerfileTag>
-	</PropertyGroup>
-
-	<!-- Package properties -->
-	<PropertyGroup>
-		<Product>CodeProject.AI Server</Product>
-		<Company>CodeProject</Company>
-		<Authors>CodeProject</Authors>
-		<DeleteExistingFiles>true</DeleteExistingFiles>
-		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-		<PackageLicenseExpression>SSPL-1.0</PackageLicenseExpression>
-		<Description>A Service hosting the CodeProject.AI WebAPI for face detection and recognition, object detection, and scene classification, and other AI operations.</Description>
-		<PackageProjectUrl>https://www.codeproject.com/ai</PackageProjectUrl>
-		<PackageIcon>codeproject125x125.png</PackageIcon>
-		<TargetFramework>net7.0</TargetFramework>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->

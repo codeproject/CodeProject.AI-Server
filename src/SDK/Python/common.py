@@ -1,5 +1,6 @@
 
 from typing import Dict, List, Union
+import os
 
 # Define a Json type to allow type hints to be sensible.
 # See https://adamj.eu/tech/2021/06/14/python-type-hints-3-somewhat-unexpected-uses-of-typing-any-in-pythons-standard-library/
@@ -7,6 +8,44 @@ _PlainJSON = Union[
     None, bool, int, float, str, List["_PlainJSON"], Dict[str, "_PlainJSON"]
 ]
 JSON = Union[_PlainJSON, Dict[str, "JSON"], List["JSON"]]
+
+def timedelta_format(td_object):
+    """Formats a time delta value in human readable format"""
+
+    seconds = int(td_object.total_seconds())
+    periods = [
+        # label, #seconds,     spacer, pluralise, 0-pad  Always show
+        ('yr',   60*60*24*365, ', ',   True,      False, False),   # years
+        ('mth',  60*60*24*30,  ', ',   True,      False, False),   # months
+        ('d',    60*60*24,     ' ',    False,     False, False),   # days
+        ('',     60*60,        ':',    False,     False, True),    # hours
+        ('',     60,           ':',    False,     True,  True),    # minutes
+        ('',     1,            '',     False,     True,  True)     # seconds
+    ]
+
+    result=''
+    for label, period_seconds, spacer, pluralise, zero_pad, show_always in periods:
+        if show_always or seconds > period_seconds:
+            period_value, seconds = divmod(seconds, period_seconds)
+            if pluralise and period_value != 0:
+                label += 's'
+            if zero_pad:
+                result += f"{period_value:02}{label}{spacer}"
+            else:
+                result += f"{period_value}{label}{spacer}"
+
+    return result
+
+def get_folder_size(folder):
+    # eg. print "Size: " + str(getFolderSize("."))
+    total_size = os.path.getsize(folder)
+    for item in os.listdir(folder):
+        itempath = os.path.join(folder, item)
+        if os.path.isfile(itempath):
+            total_size += os.path.getsize(itempath)
+        elif os.path.isdir(itempath):
+            total_size += get_folder_size(itempath)
+    return total_size
 
 
 def shorten(text: str, max_length: int) -> str:

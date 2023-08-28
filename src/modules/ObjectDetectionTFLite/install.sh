@@ -1,8 +1,8 @@
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
-#                            ObjectDetection (Coral)
+#                            ObjectDetection (TFLite)
 #
-# This script is called from the ObjectDetectionCoral directory using: 
+# This script is called from the ObjectDetectionTFLite directory using: 
 #
 #    bash ../../setup.sh
 #
@@ -14,28 +14,45 @@ if [ "$1" != "install" ]; then
 	exit 1 
 fi
 
-# We no longer try installing the Coral libraries directly. They are no longer supported and
-# Tensorflow provide access to the Coral TPU directly
-# source "${modulePath}/install_coral.sh"
-
-if [ $(uname -n) == "raspberrypi" ]; then
+if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || \
+   [ "${systemName}" == "Jetson" ]; then
     if [[ $EUID -ne 0 ]]; then
         writeLine "=================================================================================" $color_error
         writeLine "Please run: sudo apt install libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools " $color_info
         writeLine "to complete the setup for ObjectDetectionTFLite" $color_info
         writeLine "=================================================================================" $color_error
     else
-        sudo apt install libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools
+        sudo apt install libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools -y
     fi
 fi
 
 if [ "$os" == "linux" ]; then
 
-    apt-get install curl -y
+    write "Ensuring curl is installed (just in case)..." $color_mute
+    apt-get install curl -y  >/dev/null 2>/dev/null &
+    spin $!
+    writeLine "Done" "$color_success"
 
     # Add the Debian package repository to your system
     echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+    if [ ! -d "${downloadPath}" ]; then mkdir -p "${downloadPath}"; fi
+    if [ ! -d "${downloadPath}/Coral" ]; then mkdir -p "${downloadPath}/Coral"; fi
+    pushd "${downloadPath}/Coral" >/dev/null 2>/dev/null
+
+    write "Downloading signing keys..." $color_mute
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg >/dev/null 2>/dev/null &
+    spin $!
+    writeLine "Done" "$color_success"
+
+    write "Installing signing keys..." $color_mute
+    # NOTE: 'add' is deprecated. We should, instead, name apt-key.gpg as coral.ai-apt-key.gpg and
+    # place it directly in the /etc/apt/trusted.gpg.d/ directory
+    sudo apt-key add apt-key.gpg >/dev/null 2>/dev/null &
+    spin $!
+    writeLine "Done" "$color_success"
+
+    popd "${downloadPath}/Coral" >/dev/null 2>/dev/null
 
     if [[ $EUID -ne 0 ]]; then
         writeLine "=================================================================================" $color_error
@@ -44,7 +61,12 @@ if [ "$os" == "linux" ]; then
         writeLine "=================================================================================" $color_error
     else
         # Install the Edge TPU runtime (standard, meaning half speed, or max, meaning full speed)
-        sudo apt-get update && apt-get install libedgetpu1-std
+        write "Installing libedgetpu1-std (the non-desk-melting version of libedgetpu1)..." $color_mute
+        sudo apt-get update  -y  >/dev/null 2>/dev/null &
+        spin $!
+        sudo apt-get install libedgetpu1-std -y  >/dev/null 2>/dev/null &
+        spin $!
+        writeLine "Done" "$color_success"
 
         # BE CAREFUL. If you want your TPU to go to 11 and choose 'max' you may burn a hole in your desk
         # sudo apt-get update && apt-get install libedgetpu1-max
@@ -76,7 +98,7 @@ if [ $? -ne 0 ]; then quit 1; fi
 # Variables available:
 #
 #  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/Installers)
+#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/SDK/Scripts)
 #  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
 #  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
 #  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
@@ -85,6 +107,8 @@ if [ $? -ne 0 ]; then quit 1; fi
 #  os                    - "linux" or "macos"
 #  architecture          - "x86_64" or "arm64"
 #  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
+#  systemName            - General name for the system. "Linux", "macOS", "Raspberry Pi", "Orange Pi"
+#                          "Jetson" or "Docker"
 #  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 #  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 #                          getFromServer will honour this value. Do it yourself for downloadAndExtract 

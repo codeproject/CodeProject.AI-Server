@@ -118,7 +118,7 @@ namespace CodeProject.AI.API.Server.Frontend
         public bool RemoveProcessStatus(string moduleId)
         {
             if (_processStatuses.ContainsKey(moduleId) && 
-                !_processStatuses.TryRemove(moduleId, out ProcessStatus _))
+                !_processStatuses.TryRemove(moduleId, out _))
             {
                 return false;
             }
@@ -160,11 +160,15 @@ namespace CodeProject.AI.API.Server.Frontend
                 // Send a 'Quit' request but give it time to wrap things up before we step in further
                 var payload = new RequestPayload("Quit");
                 payload.SetValue("moduleId", module.ModuleId);
-                await _queueServices.SendRequestAsync(module.Queue!, new BackendRequest(payload));
+                await _queueServices.SendRequestAsync(module.Queue!, new BackendRequest(payload))
+                                    .ConfigureAwait(false);
 
                 int shutdownServerDelaySecs = _moduleSettings.DelayAfterStoppingModulesSecs;
                 if (shutdownServerDelaySecs > 0)
-                    await Task.Delay(TimeSpan.FromSeconds(shutdownServerDelaySecs));
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(shutdownServerDelaySecs))
+                              .ConfigureAwait(false);
+                }
 
                 try
                 {
@@ -172,7 +176,14 @@ namespace CodeProject.AI.API.Server.Frontend
                     {
                         _logger.LogInformation($"Forcing shutdown of {process.ProcessName}/{module.ModuleId}");
                         process.Kill(true);
-                        await process.WaitForExitAsync();
+
+                        Stopwatch stopWatch = Stopwatch.StartNew();
+                        _logger.LogDebug($"Waiting for {module.ModuleId} to end.");
+        
+                        await process.WaitForExitAsync().ConfigureAwait(false);
+        
+                        stopWatch.Stop();
+                        _logger.LogDebug($"{module.ModuleId} ended after {stopWatch.ElapsedMilliseconds} ms");
                     }
                     else
                         _logger.LogInformation($"{module.ModuleId} went quietly");
@@ -213,6 +224,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 {
                     ModuleId = module.ModuleId,
                     Name     = module.Name,
+                    Queue    = module.Queue,
                     Status   = ProcessStatusType.Unknown
                 };
                 _processStatuses.TryAdd(module.ModuleId, status);
@@ -235,7 +247,8 @@ namespace CodeProject.AI.API.Server.Frontend
             {
                 ProcessStartInfo procStartInfo = CreateProcessStartInfo(module);
 
-                _logger.LogInformation($"Attempting to start {module.ModuleId} with {procStartInfo.FileName} {procStartInfo.Arguments}");
+                _logger.LogDebug("");
+                _logger.LogDebug($"Attempting to start {module.ModuleId} with {procStartInfo.FileName} {procStartInfo.Arguments}");
 
                 process = new Process
                 {
@@ -279,7 +292,7 @@ namespace CodeProject.AI.API.Server.Frontend
 
                     // Trying to reduce startup CPU and instantaneous memory use for low resource
                     // environments such as Docker or RPi
-                    await Task.Delay(TimeSpan.FromSeconds(postStartPauseSecs));
+                    await Task.Delay(TimeSpan.FromSeconds(postStartPauseSecs)).ConfigureAwait(false);
                     status.Status = ProcessStatusType.Started;
                 }
                 else
@@ -296,7 +309,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 _logger.LogError(ex.StackTrace);
 #if DEBUG
                 _logger.LogError($" *** Did you setup the Development environment?");
-                if (SystemInfo.Platform == "Windows")
+                if (SystemInfo.IsWindows)
                     _logger.LogError($"     Run \\src\\setup.bat");
                 else
                     _logger.LogError($"     In /src, run 'bash setup.sh'");
@@ -308,7 +321,7 @@ namespace CodeProject.AI.API.Server.Frontend
             }
 
             if (process is null)
-                _runningProcesses.TryRemove(module.ModuleId, out Process _);
+                _runningProcesses.TryRemove(module.ModuleId, out _);
 
             return process != null;
         }
@@ -335,7 +348,7 @@ namespace CodeProject.AI.API.Server.Frontend
             if (_runningProcesses.TryGetValue(module.ModuleId, out Process? process) && process != null)
             {
                 status.Status = ProcessStatusType.Stopping;
-                await KillProcess(module);
+                await KillProcess(module).ConfigureAwait(false);
                 status.Status = ProcessStatusType.Stopped;
             }
             else
@@ -345,7 +358,7 @@ namespace CodeProject.AI.API.Server.Frontend
             if (module.AutoStart == false || !module.Available(SystemInfo.Platform, _versionConfig.VersionInfo?.Version))
                 return true;
 
-            return await StartProcess(module);
+            return await StartProcess(module).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -415,7 +428,7 @@ namespace CodeProject.AI.API.Server.Frontend
             string filePath   = _moduleSettings.GetFilePath(module);
             string? command   = _moduleSettings.GetCommandPath(module);
 
-            _logger.LogDebug($"Command : {command}");
+            _logger.LogTrace($"Command: {command}");
 
             // Setup the process we're going to launch
 #if Windows
@@ -470,17 +483,41 @@ namespace CodeProject.AI.API.Server.Frontend
             if (string.IsNullOrWhiteSpace(message))
                 return;
 
-            // if (string.IsNullOrEmpty(filename))
-            //    filename = "Process";
-
             if (!string.IsNullOrEmpty(filename))
                 filename += ": ";
 
-            // Force ditch the MS logging scoping headings
-            if (!message.StartsWith("info: ") && !message.EndsWith("[0]"))
-                _logger.LogInformation(filename + message);
+            var testString = message.ToLower();
 
-            // Console.WriteLine("REDIRECT STDOUT: " + filename + message);
+            // We're picking up messages written to the console so let's provide a little help for
+            // messages that are trying to get themselves categorised properly.
+            // Optimisation: We probably should order these by info/trace/debug/warn/error/crit, but
+            // for sanity we'll keep them in order of anxiety.
+            if (testString.StartsWith("crit: "))
+                _logger.LogCritical(filename + message.Substring("crit: ".Length));
+            else if (testString.StartsWith("critical: "))
+                _logger.LogCritical(filename + message.Substring("critical: ".Length));
+            else if (testString.StartsWith("err: "))
+                _logger.LogError(filename + message.Substring("err: ".Length));
+            else if (testString.StartsWith("error: "))
+                _logger.LogError(filename + message.Substring("error: ".Length));
+            else if (testString.StartsWith("warn: "))
+                _logger.LogWarning(filename + message.Substring("warn: ".Length));
+            else if (testString.StartsWith("warning: "))
+                _logger.LogWarning(filename + message.Substring("warning: ".Length));
+            else if (testString.StartsWith("info: "))
+                _logger.LogInformation(filename + message.Substring("info: ".Length));
+            else if (testString.StartsWith("information: "))
+                _logger.LogInformation(filename + message.Substring("information: ".Length));
+            else if (testString.StartsWith("dbg: "))
+                _logger.LogDebug(filename + message.Substring("dbg: ".Length));
+            else if (testString.StartsWith("debug: "))
+                _logger.LogDebug(filename + message.Substring("debug: ".Length));
+            else if (testString.StartsWith("trc: "))
+                _logger.LogTrace(filename + message.Substring("trc: ".Length));
+            else if (testString.StartsWith("trace: "))
+                _logger.LogTrace(filename + message.Substring("trace: ".Length));
+            else
+                _logger.LogInformation(filename + message);
         }
 
         private void SendErrorToLog(object sender, DataReceivedEventArgs data)
@@ -502,31 +539,13 @@ namespace CodeProject.AI.API.Server.Frontend
             if (string.IsNullOrWhiteSpace(error))
                 return;
 
-            // if (string.IsNullOrEmpty(filename))
-            //    filename = "Process";
             if (!string.IsNullOrEmpty(filename))
                 filename += ": ";
 
             if (string.IsNullOrEmpty(error))
                 error = "No error provided";
 
-            if (error.Contains("LoadLibrary failed with error 126") &&
-                error.Contains("onnxruntime_providers_cuda.dll"))
-            {
-                error = "Attempted to load ONNX runtime CUDA provider. No luck, moving on...";
-                _logger.LogInformation(filename + error);
-            }
-            else if (error != "info: Microsoft.Hosting.Lifetime[0]")
-            {
-                // TOTAL HACK. ONNX/Tensorflow output is WAY too verbose for an error
-                if (error.Contains("I tensorflow/cc/saved_model/reader.cc:") ||
-                    error.Contains("I tensorflow/cc/saved_model/loader.cc:"))
-                    _logger.LogInformation(filename + error);
-                else
-                    _logger.LogError(filename + error);
-            };
-
-            // Console.WriteLine("REDIRECT ERROR: " + filename + error);
+             _logger.LogError(filename + error);
         }
 
         /// <summary>
@@ -546,11 +565,11 @@ namespace CodeProject.AI.API.Server.Frontend
                     return;
                 }
 
-                _logger.LogInformation($"Module {moduleId} has shutdown");
+                _logger.LogInformation($"** Module {moduleId} has shutdown");
 
                 // Remove this from the list of running processes
-                if (_runningProcesses.TryGetValue(moduleId, out Process _))
-                    _runningProcesses.TryRemove(moduleId, out Process _);
+                if (_runningProcesses.TryGetValue(moduleId, out _))
+                    _runningProcesses.TryRemove(moduleId, out _);
             }
         }
 
@@ -584,12 +603,26 @@ namespace CodeProject.AI.API.Server.Frontend
             processEnvironmentVars.TryAdd("CPAI_MODULE_ID",          module.ModuleId);
             processEnvironmentVars.TryAdd("CPAI_MODULE_NAME",        module.Name);
             processEnvironmentVars.TryAdd("CPAI_MODULE_PATH",        _moduleSettings.GetModulePath(module));
-            processEnvironmentVars.TryAdd("CPAI_MODULE_QUEUENAME",   module.Queue);
             processEnvironmentVars.TryAdd("CPAI_MODULE_PARALLELISM", module.Parallelism.ToString());
+            processEnvironmentVars.TryAdd("CPAI_MODULE_QUEUENAME",   module.Queue);
+            if ((module.RequiredMb ?? 0) > 0)
+                processEnvironmentVars.TryAdd("CPAI_MODULE_REQUIRED_MB", module.RequiredMb?.ToString());
             processEnvironmentVars.TryAdd("CPAI_MODULE_SUPPORT_GPU", (module.SupportGPU ?? false).ToString());
             processEnvironmentVars.TryAdd("CPAI_ACCEL_DEVICE_NAME",  module.AcceleratorDeviceName);
             processEnvironmentVars.TryAdd("CPAI_HALF_PRECISION",     module.HalfPrecision);
             processEnvironmentVars.TryAdd("CPAI_LOG_VERBOSITY",      (module.LogVerbosity ?? LogVerbosity.Info).ToString());
+
+            // Make sure the runtime environment variables used by the server are passed to the
+            // child process. Otherwise the NET module may start in Production mode. We *hope* the
+            // environment vars are passed down to to spawned processes, but we'll add these two
+            // just in case.
+            var aspnetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            if (aspnetEnv != null)
+                processEnvironmentVars.TryAdd("ASPNETCORE_ENVIRONMENT", aspnetEnv);
+
+            var dotnetEnv = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+            if (dotnetEnv != null)
+                processEnvironmentVars.TryAdd("DOTNET_ENVIRONMENT", dotnetEnv);
 
             return processEnvironmentVars;
         }

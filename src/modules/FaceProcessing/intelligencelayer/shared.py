@@ -83,7 +83,7 @@ class SharedOptions:
     SUPPORT_GPU     = ModuleOptions.support_GPU
     PORT            = ModuleOptions.port
 
-    print(f"Vision AI services setup: Retrieving environment variables...")
+    print(f"Trace: Vision AI services setup: Retrieving environment variables...")
 
     default_app_dir = os.getcwd()
     if default_app_dir.endswith("intelligencelayer"):
@@ -97,7 +97,6 @@ class SharedOptions:
 
     USE_CUDA        = ModuleOptions.getEnvVariable("USE_CUDA", "True")
     USE_MPS         = ModuleOptions.getEnvVariable("USE_MPS", "True")
-    HALF_PRECISION  = ModuleOptions.half_precision
 
     DATA_DIR        = os.path.normpath(ModuleOptions.getEnvVariable("DATA_DIR",   f"{APPDIR}/datastore"))
     MODELS_DIR      = os.path.normpath(ModuleOptions.getEnvVariable("MODELS_DIR", f"{APPDIR}/assets"))
@@ -130,9 +129,9 @@ class SharedOptions:
 
     # dump the important variables
     if showEnvVariables:
-        print(f"APPDIR:       {APPDIR}")
-        print(f"PROFILE:      {PROFILE}")
-        print(f"USE_CUDA:     {USE_CUDA}")
-        print(f"DATA_DIR:     {DATA_DIR}")
-        print(f"MODELS_DIR:   {MODELS_DIR}")
-        print(f"MODE:         {MODE}")
+        print(f"debug: APPDIR:       {APPDIR}")
+        print(f"debug: PROFILE:      {PROFILE}")
+        print(f"debug: USE_CUDA:     {USE_CUDA}")
+        print(f"debug: DATA_DIR:     {DATA_DIR}")
+        print(f"debug: MODELS_DIR:   {MODELS_DIR}")
+        print(f"debug: MODE:         {MODE}")

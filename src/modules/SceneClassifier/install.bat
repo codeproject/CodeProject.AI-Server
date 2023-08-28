@@ -39,6 +39,7 @@ if errorlevel 1 exit /b 1
 ::  os                    - "windows"
 ::  architecture          - "x86_64" or "arm64"
 ::  platform              - "windows" or "windows-arm64"
+::  systemName            - "Windows"
 ::  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 ::  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 ::                          GetFromServer will honour this value. Do it yourself for DownloadAndExtract 

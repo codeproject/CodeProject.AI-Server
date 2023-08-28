@@ -8,8 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 
-using SkiaSharp;
 using SkiaSharp.Views.Desktop;
+
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK;
 
@@ -55,6 +55,67 @@ namespace CodeProject.AI.Modules.PortraitFilter
                 ExecutionProvider = "CPU";
                 HardwareType      = "CPU";
             }
+        }
+
+        /// <summary>
+        /// The work happens here.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <returns>The response.</returns>
+        protected override BackendResponseBase ProcessRequest(BackendRequest request)
+        {
+            if (_deepPersonLab == null)
+                return new BackendErrorResponse($"{ModuleName} missing _deepPersonLab object.");
+
+            // ignoring the file name
+            var file        = request.payload?.files?.FirstOrDefault();
+            var strengthStr = request.payload?.GetValue("strength", "0.5");
+
+            if (!float.TryParse(strengthStr, out var strength))
+                strength = 0.5f;
+
+            if (file?.data is null)
+                return new BackendErrorResponse("Portrait Filter File or file data is null.");
+
+            Logger.LogInformation($"Processing {file.filename}");
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            // dummy result
+            byte[]? result = null;
+
+            try
+            {
+                var portraitModeFilter = new PortraitModeFilter(strength);
+
+                byte[]? imageData = file.data;
+                Bitmap? image     = ImageUtils.GetImage(imageData)?.ToBitmap();
+
+                if (image is null)
+                    return new BackendErrorResponse("Portrait Filter unable to get image from file data.");
+
+                Stopwatch stopWatch = Stopwatch.StartNew();
+                Bitmap mask = _deepPersonLab.Fit(image);
+                stopWatch.Stop();
+
+                if (mask is not null)
+                {
+                    Bitmap? filteredImage = portraitModeFilter.Apply(image, mask);
+                    result = ImageToByteArray(filteredImage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new BackendErrorResponse($"Portrait Filter Error for {file.filename}: {ex.Message}.");
+            }
+
+            if (result is null)
+                return new BackendErrorResponse("Portrait Filter returned null.");
+            
+            return new PortraitResponse { 
+                filtered_image = result,
+                inferenceMs    = sw.ElapsedMilliseconds
+            };
         }
 
         private SessionOptions GetSessionOptions()
@@ -128,89 +189,6 @@ namespace CodeProject.AI.Modules.PortraitFilter
             return sessionOpts;
         }
 
-        /// <summary>
-        /// Sniff the hardware in use so we can report to the API server. This method is empty
-        /// since we already sniffed hardware in GetSessionOptions.
-        /// </summary>
-        protected async override void GetHardwareInfo()
-        {
-            await System.Threading.Tasks.Task.Delay(0);
-        }
-
-        /// <summary>
-        /// The work happens here.
-        /// </summary>
-        /// <param name="request">The request.</param>
-        /// <returns>The response.</returns>
-        public override BackendResponseBase ProcessRequest(BackendRequest request)
-        {
-            if (_deepPersonLab == null)
-                return new BackendErrorResponse($"{ModuleName} missing _deepPersonLab object.");
-
-            // ignoring the file name
-            var file        = request.payload?.files?.FirstOrDefault();
-            var strengthStr = request.payload?.GetValue("strength", "0.5");
-
-            if (!float.TryParse(strengthStr, out var strength))
-                strength = 0.5f;
-
-            if (file?.data is null)
-                return new BackendErrorResponse("Portrait Filter File or file data is null.");
-
-            Logger.LogInformation($"Processing {file.filename}");
-
-            Stopwatch sw = Stopwatch.StartNew();
-
-            // dummy result
-            byte[]? result = null;
-
-            try
-            {
-                var portraitModeFilter = new PortraitModeFilter(strength);
-
-                byte[]? imageData = file.data;
-                Bitmap? image     = GetImage(imageData);
-
-                if (image is null)
-                    return new BackendErrorResponse("Portrait Filter unable to get image from file data.");
-
-                Stopwatch stopWatch = Stopwatch.StartNew();
-                Bitmap mask = _deepPersonLab.Fit(image);
-                stopWatch.Stop();
-
-                if (mask is not null)
-                {
-                    Bitmap? filteredImage = portraitModeFilter.Apply(image, mask);
-                    result = ImageToByteArray(filteredImage);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new BackendErrorResponse($"Portrait Filter Error for {file.filename}: {ex.Message}.");
-            }
-
-            if (result is null)
-                return new BackendErrorResponse("Portrait Filter returned null.");
-            
-            return new PortraitResponse { 
-                filtered_image = result,
-                inferenceMs    = sw.ElapsedMilliseconds
-            };
-        }
-
-        // Using SkiaSharp as it handles more formats.
-        private static Bitmap? GetImage(byte[] imageData)
-        {
-            if (imageData == null)
-                return null;
-
-            var skiaImage = SKImage.FromEncodedData(imageData);
-            if (skiaImage is null)
-                return null;
-
-            return skiaImage.ToBitmap();
-        }
-
         public static byte[]? ImageToByteArray(Image img)
         {
             if (img is null)
@@ -228,6 +206,6 @@ namespace CodeProject.AI.Modules.PortraitFilter
             #pragma warning restore CA1416 // Validate platform compatibility
 
             return stream.ToArray();
-        }
+        }        
     }
 }

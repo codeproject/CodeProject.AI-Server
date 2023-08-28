@@ -66,7 +66,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             try
             {
                 var modelFileInfo = new FileInfo(modelPath);
-                SessionOptions sessionOpts = GetHardwareInfo();
+                SessionOptions sessionOpts = GetSessionOptions();
 
                 if (modelFileInfo.Exists)
                 {
@@ -74,19 +74,19 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                     {
                         _scorer = new YoloScorer<YoloCocoP5Model>(modelPath, sessionOpts);
                     }
-                    catch // something went wrong, probably the device is too old and no longer supported.
+                    catch (Exception ex) // something went wrong, probably the device is too old and no longer supported.
                     {
                         // fall back to CPU only
                         if (ExecutionProvider != "CPU")
                         {
-                            _logger.LogError($"Unable to load the model with {ExecutionProvider}. Falling back to CPU.");
+                            _logger.LogError(ex, $"Unable to load the model with {ExecutionProvider}. Falling back to CPU.");
                             _scorer = new YoloScorer<YoloCocoP5Model>(modelPath);
     
                             ExecutionProvider = "CPU";
                             HardwareType      = "CPU";
                         }
                         else
-                            _logger.LogError("Unable to load the model at " + modelPath);
+                            _logger.LogError(ex, $"Unable to load the model at {modelPath}");
                     }
                 }
                 else
@@ -98,12 +98,12 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             }
         }
 
-        private SessionOptions GetHardwareInfo()
+        private SessionOptions GetSessionOptions()
         {
             var sessionOpts = new SessionOptions();
 
             bool supportGPU = (Environment.GetEnvironmentVariable("CPAI_MODULE_SUPPORT_GPU") ?? "true").ToLower() == "true";
-            _logger.LogDebug($"GetHardwareInfo supportGPU={supportGPU}");
+            _logger.LogDebug($"ObjectDetection (.NET) supportGPU={supportGPU}");
             
             if (supportGPU)
             {
@@ -117,14 +117,14 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 }
 
                 foreach (var providerName in providers ?? Array.Empty<string>())
-                    _logger.LogDebug($"GetHardwareInfo provider: {providerName}");
+                    _logger.LogDebug($"ObjectDetection (.NET) provider: {providerName}");
 
                 // Enable CUDA  -------------------
                 if (providers?.Any(p => p.StartsWithIgnoreCase("CUDA")) ?? false)
                 {
                     try
                     {
-                        _logger.LogDebug($"GetHardwareInfo setting ExecutionProvider = \"CUDA\"");
+                        _logger.LogDebug($"ObjectDetection (.NET) setting ExecutionProvider = \"CUDA\"");
 
                         sessionOpts.AppendExecutionProvider_CUDA();
 
@@ -133,7 +133,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogDebug(ex, $"GetHardwareInfo setting ExecutionProvider = \"CUDA\"");
+                        _logger.LogDebug(ex, $"ObjectDetection (.NET) setting ExecutionProvider = \"CUDA\"");
                         // do nothing, the provider didn't work so keep going
                     }
                 }
@@ -143,7 +143,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 {
                     try
                     {
-                        _logger.LogDebug($"GetHardwareInfo setting ExecutionProvider = \"OpenVINO\"");
+                        _logger.LogDebug($"ObjectDetection (.NET) setting ExecutionProvider = \"OpenVINO\"");
                         sessionOpts.AppendExecutionProvider_OpenVINO("GPU_FP16");
                         //sessionOpts.EnableMemoryPattern = false;
                         //sessionOpts.ExecutionMode = ExecutionMode.ORT_PARALLEL;
@@ -163,11 +163,11 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 {
                     try
                     {
-                        _logger.LogDebug($"GetHardwareInfo setting ExecutionProvider = \"DML\"");
-                        sessionOpts.AppendExecutionProvider_DML();
+                        _logger.LogDebug($"ObjectDetection (.NET) setting ExecutionProvider = \"DML\"");
                         sessionOpts.EnableMemoryPattern    = false;
                         sessionOpts.ExecutionMode          = ExecutionMode.ORT_SEQUENTIAL;
-                        sessionOpts.GraphOptimizationLevel = GraphOptimizationLevel.ORT_DISABLE_ALL;
+                        sessionOpts.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
+                        sessionOpts.AppendExecutionProvider_DML(); // Or set the device Id here in order to choose a card
 
                         ExecutionProvider = "DirectML";
                         HardwareType      = "GPU";
@@ -195,7 +195,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             if (!fi.Exists)
                 return null;
 
-            using SKImage? image = GetImage(filename);
+            using SKImage? image = ImageUtils.GetImage(filename);
             try
             {
                 List<YoloPrediction>? predictions = Predict(image, minConfidence: minConfidence);
@@ -237,7 +237,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             if (imageData == null)
                 return null;
 
-            var image = GetImage(imageData);
+            var image = ImageUtils.GetImage(imageData);
             if (image is null)
                 return null;
                 
@@ -254,31 +254,6 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             { 
                 image?.Dispose(); 
             }
-        }
-
-        /// <summary>
-        /// Loads a Bitmap from a file.
-        /// </summary>
-        /// <param name="filename">The file name.</param>
-        /// <returns>The Bitmap, or null.</returns>
-        /// <remarks>SkiSharp handles more image formats than System.Drawing.</remarks>
-        private SKImage? GetImage(string filename)
-        {
-            // TODO: Add error handling and port this to Maui
-            var skiaImage = SKImage.FromEncodedData(filename);
-            if (skiaImage is null)
-                return null;
-
-            return skiaImage; //.ToBitmap();
-        }
-
-        private SKImage? GetImage(byte[] imageData)
-        {
-            var skiaImage = SKImage.FromEncodedData(imageData);
-            if (skiaImage is null)
-                return null;
-
-            return skiaImage; //.ToBitmap();
         }
     }
 }

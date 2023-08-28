@@ -12,6 +12,6 @@ numpy					# Installing NumPy, a package for scientific computing
 
 # Do these after paddlepaddle because paddlepaddle requires specific versions 
 imutils					# Installing imutils, the image utilities library
-Pillow					# Installing Pillow, a Python Image Library
+Pillow<10.0.0			# Installing Pillow, a Python Image Library
 
 # end of file

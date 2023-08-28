@@ -77,19 +77,21 @@ namespace CodeProject.AI.API.Server.Backend
             }
 
             // setup a request timeout.
-            using var cancelationSource = new CancellationTokenSource(_settings.ResponseTimeout);
-            var timeoutToken = cancelationSource.Token;
+            using var cancellationSource = new CancellationTokenSource(_settings.ResponseTimeout);
+            var timeoutToken = cancellationSource.Token;
 
+            using var linkedCTS        = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken);
+            CancellationToken theToken = linkedCTS.Token;
+            using var ctr              = theToken.Register(() => { completion.TrySetCanceled(); });
             try
             {
-                CancellationToken theToken =
-                    CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken).Token;
-
                 // setup the timeout callback.
-                theToken.Register(() => { completion.TrySetCanceled(); });
-
                 try
                 {
+                    // Add the request onto the queue (by writing  to it)
+                    // the request will be pulled from the queue by the backend module's
+                    // request for a command. The backend module will send the command result
+                    // back and this will be used to set the TaskCompletionResult result.
                     await queue.Writer.WriteAsync(request, theToken).ConfigureAwait(false);
                     _logger.LogTrace($"Client request '{request.reqtype}' in queue '{queueName}' (#reqid {request.reqid})");
                 }
@@ -101,19 +103,20 @@ namespace CodeProject.AI.API.Server.Backend
                     return new BackendErrorResponse($"The request in '{queueName}' was canceled by caller (#reqid {request.reqid})");
                 }
 
-                var jsonString = await completion.Task;
+                // Await the result of the TaskCompletion for the command that was put on the queue
+                var jsonString = await completion.Task.ConfigureAwait(false);
 
                 if (jsonString is null)
                     return new BackendErrorResponse($"null json returned from backend (#reqid {request.reqid})");
 
-                    return jsonString;
-                }
+                return jsonString;
+            }
             catch (OperationCanceledException)
             {
                 if (timeoutToken.IsCancellationRequested)
                     return new BackendErrorResponse($"The request timed out (#reqid {request.reqid})");
 
-                    return new BackendErrorResponse($"The request was canceled by caller (#reqid {request.reqid})");
+                return new BackendErrorResponse($"The request was canceled by caller (#reqid {request.reqid})");
             }
             catch (JsonException)
             {
@@ -143,6 +146,10 @@ namespace CodeProject.AI.API.Server.Backend
         /// <returns></returns>
         public bool SetResult(string req_id, string? responseString)
         {
+            // Gets the TaskCompletionSource associated with the command
+            // and set the TaskCompletionSource's result to the response
+            // returned from the backend module, thus completing the frontend
+            // request.
             if (!_pendingResponses.TryGetValue(req_id, out TaskCompletionSource<string?>? completion))
                 return false;
 
@@ -194,9 +201,10 @@ namespace CodeProject.AI.API.Server.Backend
             do
             {
                 // setup a request timeout.
-                using var cancellationSource = new CancellationTokenSource(_settings.CommandDequeueTimeout);
-                var timeoutToken = cancellationSource.Token;
-                var theToken = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken).Token;
+                using var cancellationSource            = new CancellationTokenSource(_settings.CommandDequeueTimeout);
+                var timeoutToken                        = cancellationSource.Token;
+                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken);
+                var theToken                            = linkedCancellationTokenSource.Token;
 
                 // NOTE FOR VS CODE users: In debug, you may want to uncheck "All Exceptions" under the
                 // breakpoints section (the bottom section) of the Run and Debug tab.

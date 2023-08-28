@@ -25,9 +25,9 @@
     <Compile Include="ALPR.py" />
     <Compile Include="options.py" />
     <Compile Include="ALPR_adapter.py" />
-    <Compile Include="patch\paddle2.3.2\image.py" />
-    <Compile Include="patch\paddle2.3.2.post116\image.py" />
-    <Compile Include="patch\paddle2.4.0rc0\image.py" />
+    <Compile Include="patch\paddlepaddle-2.4.2\image.py" />
+    <Compile Include="patch\paddlepaddle-2.4.0rc0\image.py" />
+    <Compile Include="patch\paddleocr-2.6.0.1\db_postprocess.py" />
     <Compile Include="utils\tools.py" />
     <Compile Include="__init__.py" />
     <Content Include="install.sh" />
@@ -70,9 +70,9 @@
   <ItemGroup>
     <Folder Include="utils\" />
     <Folder Include="patch\" />
-    <Folder Include="patch\paddle2.3.2\" />
-    <Folder Include="patch\paddle2.3.2.post116\" />
-    <Folder Include="patch\paddle2.4.0rc0\" />
+    <Folder Include="patch\paddlepaddle-2.4.2\" />
+    <Folder Include="patch\paddlepaddle-2.4.0rc0\" />
+    <Folder Include="patch\paddleocr-2.6.0.1\" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="bin\windows\python37\venv\">

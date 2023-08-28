@@ -13,6 +13,8 @@ using CodeProject.AI.SDK.Common;
 
 using Yolov5Net.Scorer;
 
+#pragma warning disable CS0162 // unreachable code
+
 namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 {
     /// <summary>
@@ -24,15 +26,14 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
     /// </summary>
     public class ObjectDetectionWorker : CommandQueueWorker
     {
+        private const bool ShowTrace = false;
+
         private readonly ConcurrentDictionary<string, ObjectDetector> _detectors = new ();
 
         private readonly ILogger<ObjectDetector> _logger;
         private readonly string _mode;
         private readonly string _modelDir;
         private readonly string _customDir;
-
-        private string _hardwareType      = "CPU";
-        private string _executionProvider = string.Empty;
 
         private string[] _customFileList  = Array.Empty<string>();
         private DateTime _lastTimeCustomFileListGenerated = DateTime.MinValue;
@@ -67,7 +68,15 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                               "Object Detection module using the 'vision/detection' route and " +
                               "'objectdetection_queue' queue (eg. ObjectDetectionYolo). " +
                               "There will be conflicts");
-
+#if CPU
+            Logger.LogInformation("ObjectDetection (.NET) built for CPU");
+#elif CUDA
+            Logger.LogInformation("ObjectDetection (.NET) built for CUDA");
+#elif OpenVINO
+            Logger.LogInformation("ObjectDetection (.NET) built for OpenVINO");
+#elif DirectML
+            Logger.LogInformation("ObjectDetection (.NET) built for DirectML");
+#endif
             base.InitModule();
         }
 
@@ -76,7 +85,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns>The response.</returns>
-        public override BackendResponseBase ProcessRequest(BackendRequest request)
+        protected override BackendResponseBase ProcessRequest(BackendRequest request)
         {
             BackendResponseBase response;
 
@@ -114,7 +123,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 }
             }
             else if (payload.command.EqualsIgnoreCase("detect") == true)               // Perform 'standard' object detection
-            {
+            {               
                 var file = payload.files?.FirstOrDefault();
                 if (file is null)
                     return new BackendErrorResponse("No File supplied for object detection.");
@@ -178,8 +187,15 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
         {
             Logger.LogInformation($"Processing {file.filename}");
 
+            Stopwatch traceSW = Stopwatch.StartNew();
+            if (ShowTrace)
+                Console.WriteLine($"Trace: Start DoDetection: {traceSW.ElapsedMilliseconds}ms");
+
             if (!_detectors.TryGetValue(modelPath, out ObjectDetector? detector) || detector is null)
             {
+                if (ShowTrace)
+                    Console.WriteLine($"Trace: Creating Detector: {traceSW.ElapsedMilliseconds}ms");
+
                 detector = new ObjectDetector(modelPath, _logger);
                 _detectors.TryAdd(modelPath, detector);
             }
@@ -187,15 +203,27 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             if (detector is null)
                 return new BackendErrorResponse($"Unable to create detector for model {modelPath}");
 
-            _hardwareType      = detector.HardwareType;
-            _executionProvider = detector.ExecutionProvider;
+            if (ShowTrace)
+                Console.WriteLine($"Trace: Setting hardware type: {traceSW.ElapsedMilliseconds}ms");
+
+            HardwareType      = detector.HardwareType;
+            ExecutionProvider = detector.ExecutionProvider;
+
+            if (ShowTrace)
+                Console.WriteLine($"Trace: Start Predict: {traceSW.ElapsedMilliseconds}ms");
 
             Stopwatch sw = Stopwatch.StartNew();
             List<YoloPrediction>? yoloResult = detector.Predict(file.data, minConfidence);
             long inferenceMs = sw.ElapsedMilliseconds;
 
+            if (ShowTrace)
+                Console.WriteLine($"Trace: End Predict: {traceSW.ElapsedMilliseconds}ms");
+
             if (yoloResult == null)
                 return new BackendErrorResponse("Yolo returned null.");
+
+            if (ShowTrace)
+                Console.WriteLine($"Trace: Start Processing results: {traceSW.ElapsedMilliseconds}ms");
 
             var results = yoloResult.Where(x => x?.Rectangle != null && x.Score >= minConfidence);
             int count   = results.Count();
@@ -207,6 +235,9 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             else
                 message = "No objects found";
 
+            if (ShowTrace)
+                Console.WriteLine($"Trace: Sending results: {traceSW.ElapsedMilliseconds}ms");
+                
             return new BackendObjectDetectionResponse
             {
                 count       = count,
@@ -224,13 +255,6 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 inferenceMs = inferenceMs
             };
         }
-
-        protected async override void GetHardwareInfo()
-        {
-            await System.Threading.Tasks.Task.Run(() => {
-                HardwareType      = _hardwareType;
-                ExecutionProvider = _executionProvider;
-            });
-        }
     }
 }
+#pragma warning restore CS0162 // unreachable code

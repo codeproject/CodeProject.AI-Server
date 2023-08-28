@@ -83,10 +83,19 @@ namespace CodeProject.AI.SDK.Common
             // Strip the reset code. <ESC>[0m
             text = Regex.Replace(text, "\u001b\\[0m", string.Empty, RegexOptions.Compiled);
 
-            // Bonus: Strip the 'spin' animation. |,/,-,\ + backspace
-            text = Regex.Replace(text, "(\\||\\-|\\\\|\\/|\\s)[\\b]", string.Empty, RegexOptions.Compiled);
-
             return text;
+        }
+
+        /// <summary>
+        /// Removes the spinner animation characters from a string.
+        /// </summary>
+        /// <param name="text">The string</param>
+        /// <returns>A string</returns>
+        public static string StripSpinnerChars(string text)
+        {
+            // Strip the 'spin' animation. |,/,-,\ + backspace
+            // text = Regex.Replace(text, "([-\\\\\\|\\/])?[\\b]", string.Empty, RegexOptions.Compiled);
+            return Regex.Replace(text, "([\\-\\\\\\|\\/])?", string.Empty, RegexOptions.Compiled);
         }
 
         /// <summary>
@@ -109,9 +118,9 @@ namespace CodeProject.AI.SDK.Common
         /// <param name="path">The path</param>
         /// <param name="maxLength">The max length of the resultant string</param>
         /// <returns>A string</returns>
-        public static string ShrinkPath(string path, int maxLength)
+        public static string? ShrinkPath(string? path, int maxLength)
         {
-            if (path.Length <= maxLength)
+            if (path is null || path.Length <= maxLength)
                 return path;
 
             var parts = new List<string>(path.Split(new char[] { '\\', '/' }));

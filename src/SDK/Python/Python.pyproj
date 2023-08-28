@@ -15,13 +15,12 @@
     <IsWindowsApplication>False</IsWindowsApplication>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <PropertyGroup>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="analysis\analysislogging.py" />
     <Compile Include="analysis\codeprojectai.py" />
@@ -34,15 +33,12 @@
     <Compile Include="module_runner.py" />
     <Compile Include="request_data.py" />
   </ItemGroup>
-
-	<ItemGroup>
+  <ItemGroup>
     <Content Include="requirements.txt" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="analysis\" />
     <Folder Include="training\" />
   </ItemGroup>
-  
-<Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

@@ -2,7 +2,6 @@ import os
 from os.path import exists
 import sys
 import time
-import traceback
 from threading import Lock
 
 import torch
@@ -15,32 +14,11 @@ from options import Options
 
 # Setup a global bucket of YOLO detectors. One for each model
 detectors   = {}  # We'll use this to cache the detectors based on models
-models_lock = Lock()
-
-
-def init_detect(opts: Options):
-
-    # This method needs to be rewritten. opts should be checked and updated
-    # in the adapter, not here.
-    if opts.use_CUDA:
-        try:
-            opts.use_CUDA = torch.cuda.is_available()
-        except:
-            print("Unable to test for CUDA support: " + str(ex))
-            opts.use_CUDA = False
-
-    try:
-        import cpuinfo
-        cpu_brand = cpuinfo.get_cpu_info().get('brand_raw')
-        if cpu_brand and cpu_brand.startswith("Apple M"):
-            opts.use_MPS = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-    except Exception as ex:
-        print("Unable to import test for Apple Silicon: " + str(ex))
-
+ODYOLO_models_lock = Lock()
 
 def get_detector(module_runner, models_dir: str, model_name: str, resolution: int,
                  use_Cuda: bool, accel_device_name: int, use_MPS: bool,
-                 half_precision: str) -> any:
+                 use_DirectML: bool, half_precision: str) -> any:
 
     """
     We have a detector for each custom model. Lookup the detector, or if it's 
@@ -49,31 +27,26 @@ def get_detector(module_runner, models_dir: str, model_name: str, resolution: in
 
     detector = detectors.get(model_name, None)
     if detector is None:
-        with models_lock:
+        with ODYOLO_models_lock:
             detector = detectors.get(model_name, None)
+            half     = False
 
             if detector is None:
                 model_path = os.path.join(models_dir, model_name + ".pt")
 
                 if use_Cuda:
                     device_type = "cuda"
-
                     if accel_device_name:
                         device = torch.device(accel_device_name)
                     else:
                         device = torch.device("cuda")
-
                     device_name = torch.cuda.get_device_name(device)
 
                     print(f"GPU compute capability is {torch.cuda.get_device_capability()[0]}.{torch.cuda.get_device_capability()[1]}")
 
                     # Use half-precision if possible. There's a bunch of Nvidia cards where
                     # this won't work
-                    if half_precision == 'disable':
-                        half = False
-                    else:
-                        half = half_precision == 'force' or torch.cuda.get_device_capability()[0] >= 6
-
+                    half = half_precision != 'disable'
                     if half:
                         print(f"Using half-precision for the device '{device_name}'")
                     else:
@@ -81,15 +54,20 @@ def get_detector(module_runner, models_dir: str, model_name: str, resolution: in
                 
                 elif use_MPS:
                     device_type = "mps"
-                    device      = torch.device(device_type)
                     device_name = "Apple Silicon GPU"
-                    half        = False
+                    device      = torch.device(device_type)
+
+                elif use_DirectML:
+                    device_type = "cpu"
+                    device_name = "DirectML"                    
+                    # Torch-DirectlML throws "Cannot set version_counter for inference tensor"
+                    import torch_directml
+                    device = torch_directml.device()
 
                 else:
                     device_type = "cpu"
-                    device      = torch.device(device_type)
                     device_name = "CPU"
-                    half        = False
+                    device = torch.device(device_type)
 
                 print(f"Inference processing will occur on device '{device_name}'")
       
@@ -133,7 +111,7 @@ def get_detector(module_runner, models_dir: str, model_name: str, resolution: in
 
 def do_detection(module_runner, models_dir: str, model_name: str, resolution: int,
                  use_Cuda: bool, accel_device_name: int, use_MPS: bool,
-                 half_precision: str, img: any, threshold: float):
+                 use_DirectML: bool, half_precision: str, img: any, threshold: float):
     
     # We have a detector for each custom model. Lookup the detector, or if it's
     # not found, create a new one and add it to our lookup.
@@ -142,10 +120,11 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
 
     start_process_time = time.perf_counter()
 
+    detector = None
     try:
         detector = get_detector(module_runner, models_dir, model_name,
                                 resolution, use_Cuda, accel_device_name, use_MPS,
-                                half_precision)
+                                use_DirectML, half_precision)
     except Exception as ex:
         create_err_msg = f"{create_err_msg} ({str(ex)})"
 
@@ -159,7 +138,9 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
         #  YoloV5?6 is 1280
 
         start_inference_time = time.perf_counter()
+
         det = detector(img, size=640)
+
         inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
         outputs = []
@@ -207,5 +188,5 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
 
     except Exception as ex:
         module_runner.report_error(ex, __file__)
-        return { "success": False, "error": "Error occured on the server" }
+        return { "success": False, "error": "Error occurred on the server" }
 

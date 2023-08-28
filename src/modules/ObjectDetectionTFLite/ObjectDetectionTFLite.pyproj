@@ -4,7 +4,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Name>ObjectDetectionTFLite</Name>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{470d3417-36a4-49a4-b719-496477fa92fb}</ProjectGuid>
+    <ProjectGuid>{4c40a443-6a02-43f1-bd33-8f1a73349cda}</ProjectGuid>
     <ProjectHome />
     <StartupFile>objectdetection_tflite_adapter.py</StartupFile>
     <SearchPath />
@@ -16,14 +16,12 @@
     <IsWindowsApplication>False</IsWindowsApplication>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
-</PropertyGroup>
-  
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <PropertyGroup>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="__init__.py" />
     <Compile Include="label_util.py" />
@@ -32,18 +30,13 @@
     <Compile Include="options.py" />
     <Compile Include="tflite_util.py" />
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.windows.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
     <Content Include="modulesettings.docker.build.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
@@ -51,7 +44,6 @@
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="requirements.txt" />
     <Content Include="requirements.linux.txt">
@@ -78,6 +70,5 @@
       <Architecture>X64</Architecture>
     </Interpreter>
   </ItemGroup>
- 
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

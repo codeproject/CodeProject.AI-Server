@@ -72,8 +72,8 @@ class Options:
         # dump the important variables
 
         if self._show_env_variables:
-            print(f"MODULE_PATH:    {self.module_path}")
-            print(f"MODELS_DIR:     {self.models_dir}")
-            print(f"MODEL_SIZE:     {self.model_size}")
-            print(f"CPU_MODEL_NAME: {self.cpu_model_name}")
-            print(f"TPU_MODEL_NAME: {self.tpu_model_name}")
+            print(f"Debug: MODULE_PATH:    {self.module_path}")
+            print(f"Debug: MODELS_DIR:     {self.models_dir}")
+            print(f"Debug: MODEL_SIZE:     {self.model_size}")
+            print(f"Debug: CPU_MODEL_NAME: {self.cpu_model_name}")
+            print(f"Debug: TPU_MODEL_NAME: {self.tpu_model_name}")

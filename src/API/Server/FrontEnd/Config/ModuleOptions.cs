@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CodeProject.AI.API.Server.Frontend
 {
@@ -11,6 +12,11 @@ namespace CodeProject.AI.API.Server.Frontend
         /// The URL the server uses to get a list of all downloadable modules.
         /// </summary>
         public string? ModuleListUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout for installing a module
+        /// </summary>
+        public TimeSpan ModuleInstallTimeout { get; set; }
 
         /// <summary>
         /// The password that must be provided when uploading a new module for installation via

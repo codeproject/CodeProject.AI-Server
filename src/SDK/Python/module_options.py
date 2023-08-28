@@ -8,7 +8,7 @@ def _get_env_var(name: str, default: any = "") -> any:
     value = os.getenv(name, "")
     if value == "" and default != "":
         value = default
-        print(f"{name} not found. Setting to default {str(default)}")
+        print(f"Debug: {name} not found. Setting to default {str(default)}")
 
     return value
 
@@ -17,11 +17,17 @@ class ModuleOptions:
     Helper methods to access options passed to modules
     """
 
+    # TODO: make these instance, not class variables (ie do all of this inside
+    # an __init__ method). This allows us to import this class without this
+    # machinery being invoked until the caller needs it
+
     # You can't call ModuleOptions.getEnvVariable at the root of this class,
     # so the only option is to pull the guts of this method out and hack.
     @staticmethod
     def getEnvVariable(name: str, default: any = "") -> any:
+        """ Returns the value of the environment with the given name """
         return _get_env_var(name, default)
+    
 
     # Needed in a moment...
     current_working_dir = os.getcwd()
@@ -51,6 +57,9 @@ class ModuleOptions:
 
     # How many tasks to spin up for a module
     parallelism         = _get_env_var("CPAI_MODULE_PARALLELISM", "0");
+
+    # How much RAM is needed to perform tasks in this module?
+    required_MB         = _get_env_var("CPAI_MODULE_REQUIRED_MB", "0");
 
     # Whether to *allow* support for GPU. Doesn't mean it's possibly it can or will
     # support GPU. More often used to disable GPU when a GPU causes problems

@@ -25,9 +25,9 @@ namespace CodeProject.AI.API.Common
     }
 
     /// <summary>
-    /// Holds information on which versions of a server a given module is compatible with.
+    /// Holds information on a given release of a module.
     /// </summary>
-    public class VersionCompatibility
+    public class ModuleRelease
     {
         /// <summary>
         /// The version of a module
@@ -35,14 +35,24 @@ namespace CodeProject.AI.API.Common
         public string? ModuleVersion { get; set; }
          
         /// <summary>
-        /// The Inclusive range of server versions for which this module vresion can be installed on
+        /// The Inclusive range of server versions for which this module version can be installed on
         /// </summary>
         public string[]? ServerVersionRange { get; set; }
 
         /// <summary>
         /// The date this version was released
         /// </summary>
-         public string? ReleaseDate { get; set; }
+        public string? ReleaseDate { get; set; }
+
+        /// <summary>
+        /// Any notes associated with this release
+        /// </summary>
+        public string? ReleaseNotes { get; set; }
+
+        /// <summary>
+        /// Gets or sets a string indicating how important this update is.
+        /// </summary>
+        public string? Importance { get; set; }
     }
 
     /// <summary>
@@ -67,6 +77,12 @@ namespace CodeProject.AI.API.Common
         public string[] Platforms { get; set; } = Array.Empty<string>();
 
         /// <summary>
+        /// Gets or sets the number of MB of memory needed for this module to perform operations.
+        /// If null, then no checks done.
+        /// </summary>
+        public int? RequiredMb { get; set; }
+
+        /// <summary>
         /// Gets or sets the Description for the module.
         /// </summary>
         public string? Description  { get; set; }
@@ -80,7 +96,16 @@ namespace CodeProject.AI.API.Common
         /// Gets or sets the list of module versions and the server version that matches
         /// each of these versions.
         /// </summary>
-        public VersionCompatibility[] VersionCompatibililty { get; set; } = Array.Empty<VersionCompatibility>(); 
+        public ModuleRelease[] ModuleReleases { get; set; } = Array.Empty<ModuleRelease>(); 
+
+        /// <summary>
+        /// Gets or sets the legacy structure containing a list of module versions and the server 
+        /// version that matches each of these versions. This name is deprecated and is only here so
+        /// we can read old modulesettings files. Once read these values will be transferred to
+        /// ModuleReleases. Deprecated not just because it was a bad name, but also becauase it was
+        /// a badly *spelled* name.
+        /// </summary>
+        public ModuleRelease[] VersionCompatibililty { get; set; } = Array.Empty<ModuleRelease>(); 
 
         /// <summary>
         /// Gets or sets the current version.
@@ -261,8 +286,16 @@ namespace CodeProject.AI.API.Common
         {
             get
             {
+                // Allow the module path to wrap.
+                // var path = ModulePath.Replace("\\", "\\<wbr>");
+                // path = path.Replace("/", "/<wbr>");
+
+                // or not...
+                var path = ModulePath;
+
                 var summary = new StringBuilder();
                 summary.AppendLine($"Module '{Name}' (ID: {ModuleId})");
+                summary.AppendLine($"Module Path:   {path}");
                 summary.AppendLine($"AutoStart:     {AutoStart}");
                 summary.AppendLine($"Queue:         {Queue}");
                 summary.AppendLine($"Platforms:     {string.Join(',', Platforms)}");
@@ -313,7 +346,7 @@ namespace CodeProject.AI.API.Common
         /// 'pre-install' them in situations like a Docker image. We pre-install modules in a
         /// separate folder than the downloaded and installed modules in order to avoid conflicts 
         /// (in Docker) when a user maps a local folder to the modules dir. Doing this to the 'pre
-        /// insalled' dir would make the contents (the preinstalled modules) disappear.</remarks>
+        /// installed' dir would make the contents (the preinstalled modules) disappear.</remarks>
         public static void Initialise(this ModuleConfig module, string moduleId, string modulesPath,
                                       string preInstalledModulesPath)
         {
@@ -333,11 +366,16 @@ namespace CodeProject.AI.API.Common
             if (module.LogVerbosity == LogVerbosity.Unknown)
                 module.LogVerbosity = LogVerbosity.Info;
 
-            // Transfer old legacy value to new replacement property if it exists, and no new value was set
+            // Transfer old legacy value to new replacement property if it exists, and no new value
+            // was set
             if (module.Activate is not null && module.AutoStart is null)
                 module.AutoStart = module.Activate;
+            if ((module.VersionCompatibililty?.Length ?? 0) > 0 && (module.ModuleReleases?.Length ?? 0) == 0)
+                module!.ModuleReleases = module!.VersionCompatibililty!;
 
-            module.Activate = null;
+            // No longer used. These properties are still here to allow us to load legacy config files.
+            module.Activate              = null;
+            module.VersionCompatibililty = Array.Empty<ModuleRelease>();
         }
     
         /// <summary>
@@ -358,20 +396,20 @@ namespace CodeProject.AI.API.Common
             bool versionOK = string.IsNullOrWhiteSpace(currentServerVersion);
             if (!versionOK)
             {
-                if (module.VersionCompatibililty?.Any() ?? false)
+                if (module.ModuleReleases?.Any() ?? false)
                 {
-                    foreach (VersionCompatibility version in module.VersionCompatibililty)
+                    foreach (ModuleRelease release in module.ModuleReleases)
                     {
-                        if (version.ServerVersionRange is null || version.ServerVersionRange.Length < 2)
+                        if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)
                             continue;
 
-                        string? minServerVersion = version.ServerVersionRange[0];
-                        string? maxServerVersion = version.ServerVersionRange[1];
+                        string? minServerVersion = release.ServerVersionRange[0];
+                        string? maxServerVersion = release.ServerVersionRange[1];
 
                         if (string.IsNullOrEmpty(minServerVersion)) minServerVersion = "0.0";
                         if (string.IsNullOrEmpty(maxServerVersion)) maxServerVersion = currentServerVersion;
 
-                        if (version.ModuleVersion == module.Version &&
+                        if (release.ModuleVersion == module.Version &&
                             VersionInfo.Compare(minServerVersion, currentServerVersion) <= 0 &&
                             VersionInfo.Compare(maxServerVersion, currentServerVersion) >= 0)
                         {
@@ -380,8 +418,10 @@ namespace CodeProject.AI.API.Common
                         }
                     }
                 }
-                else // old modules will not have VersionCompatibility, but we are backward compatible
+                else // old modules will not have ModuleReleases, but we are backward compatible
+                {
                     versionOK = true;
+                }
             }
 
             // Second check: Is this module available on this platform?
@@ -456,6 +496,49 @@ namespace CodeProject.AI.API.Common
             }
         }
 
+        /* Not possible until we have this in the same project as ModuleSettings (which is in 
+           FrontEnd) or we refactor this extension class into a true class that is initialised
+           with a ref to the ModuleSettings class.
+
+        /// <summary>
+        /// Gets a text summary of the settings for this module.
+        /// </summary>
+        public static string SettingsSummary(this ModuleConfig module, ModuleSettings moduleSeettings,
+                                             string? currentModulePath = null)
+        {
+            var summary = new StringBuilder();
+            summary.AppendLine($"Module '{module.Name}' (ID: {module.ModuleId})");
+            summary.AppendLine($"AutoStart:     {module.AutoStart}");
+            summary.AppendLine($"Queue:         {module.Queue}");
+            summary.AppendLine($"Platforms:     {string.Join(',', module.Platforms)}");
+            summary.AppendLine($"GPU:           Support {((module.SupportGPU == true)? "enabled" : "disabled")}");
+            summary.AppendLine($"Parallelism:   {module.Parallelism}");
+            summary.AppendLine($"Accelerator:   {module.AcceleratorDeviceName}");
+            summary.AppendLine($"Half Precis.:  {module.HalfPrecision}");
+            summary.AppendLine($"Runtime:       {module.Runtime}");
+            summary.AppendLine($"Runtime Loc:   {module.RuntimeLocation}");
+            summary.AppendLine($"FilePath:      {module.FilePath}");
+            summary.AppendLine($"Pre installed: {module.PreInstalled}");
+            //summary.AppendLine($"Module Dir:  {module.ModulePath}");
+            summary.AppendLine($"Start pause:   {module.PostStartPauseSecs} sec");
+            summary.AppendLine($"LogVerbosity:  {module.LogVerbosity}");
+            summary.AppendLine($"Valid:         {module.Valid}");
+            summary.AppendLine($"Environment Variables");
+
+            if (module.EnvironmentVariables is not null)
+            {
+                int maxLength = module.EnvironmentVariables.Max(x => x.Key.ToString().Length);
+                foreach (var envVar in module.EnvironmentVariables)
+                {
+                    var value = moduleSettings.ExpandOption(envVar.Value, currentModulePath);
+                    summary.AppendLine($"   {envVar.Key.PadRight(maxLength)} = {envVar.Value}");
+                }
+            }
+
+            return summary.ToString().Trim();
+        }
+        */
+
         /// <summary>
         /// Sets or updates a value in the settings Json structure.
         /// </summary>
@@ -469,62 +552,88 @@ namespace CodeProject.AI.API.Common
             if (settings is null)
                 return false;
 
-            if (!settings.ContainsKey("Modules") || settings["Modules"] is null)
-                settings["Modules"] = new JsonObject();
-
-            JsonObject? allModules = settings["Modules"] as JsonObject;
-            allModules ??= new JsonObject();
-
-            if (!allModules.ContainsKey(moduleId) || allModules[moduleId] is null)
-                allModules[moduleId] = new JsonObject();
-
-            var moduleSettings = (JsonObject)allModules[moduleId]!;
-
-            // Handle pre-defined global values first
-            if (name.EqualsIgnoreCase("Activate") || name.EqualsIgnoreCase("AutoStart"))
+            // Lots of try/catch since this has been a point of issue and it's good to narrow it down
+            try
             {
-                moduleSettings["AutoStart"] = value?.ToLower() == "true";
+                if (!settings.ContainsKey("Modules") || settings["Modules"] is null)
+                    settings["Modules"] = new JsonObject();
             }
-            else if (name.EqualsIgnoreCase("SupportGPU"))
+            catch (Exception e)
             {
-                moduleSettings["SupportGPU"] = value?.ToLower() == "true";
-            }
-            else if (name.EqualsIgnoreCase("Parallelism"))
-            {
-                if (int.TryParse(value, out int parallelism))
-                    moduleSettings["Parallelism"] = parallelism;
-            }
-            else if (name.EqualsIgnoreCase("UseHalfPrecision"))
-            {
-                moduleSettings["HalfPrecision"] = value;
-            }
-            else if (name.EqualsIgnoreCase("AcceleratorDeviceName"))
-            {
-                moduleSettings["AcceleratorDeviceName"] = value;
-            }
-            else if (name.EqualsIgnoreCase("LogVerbosity"))
-            {
-                if (Enum.TryParse(value, out LogVerbosity verbosity))
-                    moduleSettings["LogVerbosity"] = verbosity.ToString();
-            }
-            else if (name.EqualsIgnoreCase("PostStartPauseSecs"))
-            {
-                if (int.TryParse(value, out int pauseSec))
-                    moduleSettings["PostStartPauseSecs"] = pauseSec;
-            }
-            else
-            {
-                if (moduleSettings["EnvironmentVariables"] is null)
-                    moduleSettings["EnvironmentVariables"] = new JsonObject();
-
-                var environmentVars = (JsonObject)moduleSettings["EnvironmentVariables"]!;
-                environmentVars[name.ToUpper()] = value;
+                Console.WriteLine($"Failed to create root modules object in settings: {e.Message}");
+                return false;
             }
 
-            // Clean up legacy values
-            if (moduleSettings["Activate"] is not null && moduleSettings["AutoStart"] is null)
-                moduleSettings["AutoStart"] = moduleSettings["Activate"];
-            moduleSettings.Remove("Activate");
+            JsonObject? allModules = null;
+            try
+            {
+                allModules = settings["Modules"] as JsonObject;
+                allModules ??= new JsonObject();
+
+                if (!allModules.ContainsKey(moduleId) || allModules[moduleId] is null)
+                    allModules[moduleId] = new JsonObject();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to create module object in modules collection: {e.Message}");
+                return false;
+            }
+
+            try
+            {
+                var moduleSettings = (JsonObject)allModules[moduleId]!;
+
+                // Handle pre-defined global values first
+                if (name.EqualsIgnoreCase("Activate") || name.EqualsIgnoreCase("AutoStart"))
+                {
+                    moduleSettings["AutoStart"] = value?.ToLower() == "true";
+                }
+                else if (name.EqualsIgnoreCase("SupportGPU"))
+                {
+                    moduleSettings["SupportGPU"] = value?.ToLower() == "true";
+                }
+                else if (name.EqualsIgnoreCase("Parallelism"))
+                {
+                    if (int.TryParse(value, out int parallelism))
+                        moduleSettings["Parallelism"] = parallelism;
+                }
+                else if (name.EqualsIgnoreCase("UseHalfPrecision"))
+                {
+                    moduleSettings["HalfPrecision"] = value;
+                }
+                else if (name.EqualsIgnoreCase("AcceleratorDeviceName"))
+                {
+                    moduleSettings["AcceleratorDeviceName"] = value;
+                }
+                else if (name.EqualsIgnoreCase("LogVerbosity"))
+                {
+                    if (Enum.TryParse(value, out LogVerbosity verbosity))
+                        moduleSettings["LogVerbosity"] = verbosity.ToString();
+                }
+                else if (name.EqualsIgnoreCase("PostStartPauseSecs"))
+                {
+                    if (int.TryParse(value, out int pauseSec))
+                        moduleSettings["PostStartPauseSecs"] = pauseSec;
+                }
+                else
+                {
+                    if (moduleSettings["EnvironmentVariables"] is null)
+                        moduleSettings["EnvironmentVariables"] = new JsonObject();
+
+                    var environmentVars = (JsonObject)moduleSettings["EnvironmentVariables"]!;
+                    environmentVars[name.ToUpper()] = value;
+                }
+
+                // Clean up legacy values
+                if (moduleSettings["Activate"] is not null && moduleSettings["AutoStart"] is null)
+                    moduleSettings["AutoStart"] = moduleSettings["Activate"];
+                moduleSettings.Remove("Activate");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to update module setting: {e.Message}");
+                return false;
+            }
 
             return true;
         }
@@ -570,7 +679,7 @@ namespace CodeProject.AI.API.Common
                 if (string.IsNullOrWhiteSpace(dir))
                     return new JsonObject();
 
-                string content = await File.ReadAllTextAsync(path);
+                string content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
                 // var settings = JsonSerializer.Deserialize<Dictionary<string, dynamic>>(content);
                 var settings = JsonSerializer.Deserialize<JsonObject>(content);
 
@@ -588,7 +697,7 @@ namespace CodeProject.AI.API.Common
         /// <param name="settings">This set of module settings</param>
         /// <param name="path">The path to save</param>
         /// <returns>true on success; false otherwise</returns>
-        public async static Task<bool> SaveSettings(JsonObject? settings, string path)
+        public async static Task<bool> SaveSettingsAsync(JsonObject? settings, string path)
         {
             if (settings is null || string.IsNullOrWhiteSpace(path))
                 return false;
@@ -605,7 +714,7 @@ namespace CodeProject.AI.API.Common
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string configJson = JsonSerializer.Serialize(settings, options);
 
-                await File.WriteAllTextAsync(path, configJson);
+                await File.WriteAllTextAsync(path, configJson).ConfigureAwait(false);
 
                 return true;
             }
@@ -659,7 +768,7 @@ namespace CodeProject.AI.API.Common
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string configJson = JsonSerializer.Serialize(modules, options);
 
-                await File.WriteAllTextAsync(path, configJson);
+                await File.WriteAllTextAsync(path, configJson).ConfigureAwait(false);
 
                 return true;
             }
@@ -691,22 +800,22 @@ namespace CodeProject.AI.API.Common
                 var moduleList = modules.Values
                                         .OrderBy(m => m.ModuleId)
                                         .Select(m => new {
-                                            ModuleId              = m.ModuleId,
-                                            Name                  = m.Name,
-                                            Version               = m.Version,
-                                            Description           = m.Description,
-                                            Platforms             = m.Platforms,
-                                            Runtime               = m.Runtime,
-                                            VersionCompatibililty = m.VersionCompatibililty,
-                                            License               = m.License,
-                                            LicenseUrl            = m.LicenseUrl,
-                                            Downloads             = 0
+                                            ModuleId       = m.ModuleId,
+                                            Name           = m.Name,
+                                            Version        = m.Version,
+                                            Description    = m.Description,
+                                            Platforms      = m.Platforms,
+                                            Runtime        = m.Runtime,
+                                            ModuleReleases = m.ModuleReleases,
+                                            License        = m.License,
+                                            LicenseUrl     = m.LicenseUrl,
+                                            Downloads      = 0
                                         });
 
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string configJson = JsonSerializer.Serialize(moduleList, options);
 
-                await File.WriteAllTextAsync(path, configJson);
+                await File.WriteAllTextAsync(path, configJson).ConfigureAwait(false);
 
                 return true;
             }

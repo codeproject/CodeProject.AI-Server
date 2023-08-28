@@ -217,6 +217,18 @@ class ModuleLogger():
 
         if logMethod & LogMethod.Info or self.defaultLogging & LogMethod.Info:
             if no_server_log:
+                loglevel = loglevel.lower()
+                if loglevel == "critical":
+                    entry = "critical: " + entry
+                elif loglevel == "error":
+                    entry = "error: " + entry
+                elif loglevel == "warning":
+                    entry = "warning: " + entry
+                elif loglevel == "debug":
+                    entry = "debug: " + entry
+                elif loglevel == "trace":
+                    entry = "trace: " + entry
+
                 print(entry, file=sys.stdout, flush=True)
 
         if not unimportant:

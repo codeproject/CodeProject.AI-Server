@@ -14,9 +14,9 @@
       */
 
       // This NEEDS to be 'shared' for docker pre-installed
-      "RuntimeLocation": "Shared", // Can be Local or Shareds
+      "RuntimeLocation": "Shared", // Can be Local or Shared
 
-      // YOLO too slow for Raspberry Pi, but set it up just in case
+      // YOLO too slow for Raspberry Pi / Orange Pi, but set it up just in case
       "AutoStart": false,
       "PreInstalled": "true",
 

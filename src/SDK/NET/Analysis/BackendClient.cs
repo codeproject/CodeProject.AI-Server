@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Channels;
 
@@ -11,6 +12,9 @@ namespace CodeProject.AI.SDK
     /// </summary>
     public class BackendClient
     {
+        private static readonly JsonSerializerOptions jsonSerializerOptions =
+                new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
         private record  LoggingData(string message, string category, LogLevel logLevel, string label);
 
         private static HttpClient? _httpClient;
@@ -57,7 +61,7 @@ namespace CodeProject.AI.SDK
             //     RequestUri = new Uri(requestUri),
             //     Method = HttpMethod.Get,
             // };
-            // request.DefaultRequestHeaders.Add("X-CPAI-Moduleid",          moduleid);
+            // request.DefaultRequestHeaders.Add("X-CPAI-Moduleid", moduleid);
             // if (executionProvider != null)
             //     request.DefaultRequestHeaders.Add("X-CPAI-ExecutionProvider", executionProvider);
             // httpResponse = await _httpClient!.SendAsync(request, token).ConfigureAwait(false);
@@ -67,30 +71,25 @@ namespace CodeProject.AI.SDK
                 requestUri += $"&executionProvider={executionProvider}";
 
             BackendRequest? request = null;
-            HttpResponseMessage? httpResponse = null;
             try
             {
-                httpResponse = await _httpClient!.GetAsync(requestUri, token).ConfigureAwait(false);
-                if (httpResponse?.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    _errorPauseSecs = 0;
-
-                    var jsonString = await httpResponse.Content.ReadAsStringAsync(token)
-                                                       .ConfigureAwait(false);
-
-                    request = JsonSerializer.Deserialize<BackendRequest>(jsonString,
-                                    new JsonSerializerOptions(JsonSerializerDefaults.Web));
-                }
+                request = await _httpClient!.GetFromJsonAsync<BackendRequest>(requestUri, token)
+                                            .ConfigureAwait(false);
             }
-            catch
+            catch (JsonException)
             {
+                // This is probably due to timing out and therefore no JSON to parse.
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
                 Console.WriteLine($"Unable to get request from {queueName} for {moduleId}");
                 _errorPauseSecs = Math.Min(_errorPauseSecs > 0 ? _errorPauseSecs * 2 : 5, 60);
 
                 if (!token.IsCancellationRequested && _errorPauseSecs > 0)
                 {
                     Console.WriteLine($"Pausing on error for {_errorPauseSecs} secs.");
-                    await Task.Delay(_errorPauseSecs * 1_000, token);
+                    await Task.Delay(_errorPauseSecs * 1_000, token).ConfigureAwait(false);
                 }
             }
 
@@ -101,37 +100,21 @@ namespace CodeProject.AI.SDK
         /// Sends a response for a request to the CodeProject.AI Server.
         /// </summary>
         /// <param name="reqid">The Request ID.</param>
-        /// <param name="moduleId">The Id of the module making this request</param>
+        /// <param name="moduleId">The module sending this response.</param>
         /// <param name="content">The content to send.</param>
         /// <param name="token">A Cancellation Token.</param>
-        /// <param name="executionProvider">The hardware acceleration execution provider</param>
         /// <returns>A Task.</returns>
         public async Task SendResponse(string reqid, string moduleId, HttpContent content,
-                                       CancellationToken token, string? executionProvider = null)
+                                       CancellationToken token)
         {
-            // TODO: A better way to pass this is via header:
-            // string requestUri = $"v1/queue/{reqid}";
-            // var request = new HttpRequestMessage() {
-            //     RequestUri = new Uri(requestUri),
-            //     Method = HttpMethod.Post,
-            // };
-            // request.DefaultRequestHeaders.Add("X-CPAI-Moduleid",          moduleid);
-            // if (executionProvider != null)
-            //     request.DefaultRequestHeaders.Add("X-CPAI-ExecutionProvider", executionProvider);
-            // httpResponse = await _httpClient!.SendAsync(request, token).ConfigureAwait(false);
-
-            string requestUri = $"v1/queue/{reqid}?moduleid={moduleId}";
-            if (executionProvider != null)
-                requestUri += $"&executionProvider={executionProvider}";
-
             try
             {
-                await _httpClient!.PostAsync(requestUri, content, token)
+                await _httpClient!.PostAsync($"v1/queue/{reqid}", content, token)
                                   .ConfigureAwait(false);
             }
             catch 
             {
-                Console.WriteLine($"Unable to send response to request for {moduleId} (#reqid {reqid})");
+                Console.WriteLine($"Unable to send response from module {moduleId} (#reqid {reqid})");
             }
         }
 
@@ -152,21 +135,26 @@ namespace CodeProject.AI.SDK
             return ValueTask.CompletedTask;
         }
 
+        /// <summary>
+        /// Called to process the logging data pulled off a queue by a bacground task. See the
+        /// LogToServer method above.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="token"></param>
+        /// <returns>A Task</returns>
         private async Task SendLoggingData(LoggingData data, CancellationToken token)
         { 
             var form = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string?, string?>("entry", data.message),
-                new KeyValuePair<string?, string?>("category", data.category),
-                new KeyValuePair<string?, string?>("label", data.label),
+                new KeyValuePair<string?, string?>("entry",     data.message),
+                new KeyValuePair<string?, string?>("category",  data.category),
+                new KeyValuePair<string?, string?>("label",     data.label),
                 new KeyValuePair<string?, string?>("log_level", data.logLevel.ToString())
             });
 
-            /*var response = */
             try
             {
-                await _httpClient!.PostAsync($"v1/log", form, token)
-                                  .ConfigureAwait(false);
+                await _httpClient!.PostAsync($"v1/log", form, token).ConfigureAwait(false);
             }
             catch
             {
@@ -178,16 +166,18 @@ namespace CodeProject.AI.SDK
         {
             while(!token.IsCancellationRequested)
             {
-                LoggingData data = await _loggingQueue.Reader.ReadAsync(token);
+                LoggingData data = await _loggingQueue.Reader.ReadAsync(token).ConfigureAwait(false);
                 if (!token.IsCancellationRequested)
+                {
                     try
                     {
-                        await SendLoggingData(data, token);
+                        await SendLoggingData(data, token).ConfigureAwait(false);
                     }
                     catch(Exception e)
                     {
                         Debug.Write(e);
                     }
+                }
             }
 
             _loggingQueue.Writer.Complete();

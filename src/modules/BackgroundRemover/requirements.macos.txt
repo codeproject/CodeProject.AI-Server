@@ -5,7 +5,7 @@ gdown						# Installing gdown, a package for downloading from Google Drive folde
 # We need this numpy version due to a "initialization of _internal failed without raising an exception" issue
 numpy==1.23.1				# Installing NumPy, a package for scientific computing
 pymatting					# Installing pymatting, a Python Library for Alpha Matting
-Pillow						# Installing Pillow, a Python Image Library
+Pillow<10.0.0			# Installing Pillow, a Python Image Library
 
 onnxruntime          		# Installing the ONNX runtime
 

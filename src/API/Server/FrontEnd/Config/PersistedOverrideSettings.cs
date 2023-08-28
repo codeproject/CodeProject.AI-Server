@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
@@ -44,20 +43,22 @@ namespace CodeProject.AI.API.Server.Frontend
             else
                 settingsFilePath = Path.Combine(_storagePath, SettingsFilename);
 
-            return await ModuleConfigExtensions.LoadSettings(settingsFilePath);
+            return await ModuleConfigExtensions.LoadSettings(settingsFilePath)
+                                               .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Saves the persisted override settings of the current setup to file.
         /// </summary>
         /// <returns>A JsonObject containing the settings</returns>
-        public async Task<bool> SaveSettings(JsonObject? settings)
+        public async Task<bool> SaveSettingsAsync(JsonObject? settings)
         {
             string settingsFilePath = SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development
                                     ? Path.Combine(_storagePath, DevSettingsFilename)
                                     : Path.Combine(_storagePath, SettingsFilename);
 
-            return await ModuleConfigExtensions.SaveSettings(settings, settingsFilePath);
+            return await ModuleConfigExtensions.SaveSettingsAsync(settings, settingsFilePath)
+                                               .ConfigureAwait(false);
         }
     }
 }

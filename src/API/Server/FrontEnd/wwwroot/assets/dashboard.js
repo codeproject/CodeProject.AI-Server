@@ -1,7 +1,7 @@
 
-const pingFrequency         = 2000;    // milliseconds
+const pingFrequency         = 5000;    // milliseconds
 const logFrequency          = 250;     // milliseconds
-const statusFrequency       = 3000;    // milliseconds
+const statusFrequency       = 5000;    // milliseconds
 const checkUpdateFrequency  = 1 * 3600 * 1000; // 1hr in milliseconds
 const logLinesPerRequest    = 100;     // lines to retrieve per log request
 const maxLogEntriesPerLevel = 1000;    // max entries for each log level
@@ -11,22 +11,23 @@ let apiServiceProtocol = window.location.protocol;
 if (!apiServiceProtocol || apiServiceProtocol === "file:")
     apiServiceProtocol = "http:"; // Needed if you launch this file from Finder
 
-const apiServiceHostname  = window.location.hostname || "localhost";
-const apiServicePort      = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
-const apiServiceUrl       = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
+const apiServiceHostname = window.location.hostname || "localhost";
+const apiServicePort     = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
+const apiServiceUrl      = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
 
-let _usingGPU             = false; // Is the server reporting that we're we using a GPU?
-let _lastLogId            = 0;     // Allows us to fetch only new log entries
-let _serverIsOnline       = false; // Anyone home?
-let _version              = null;  // Currently installed version of the server
-let _darkMode             = true;  // TODO: Need to store this in a cookie
-let _delayFetchCallUntil  = null;  // No fetch calls until this time. Allows us to delay after fetch errors
-let _fetchErrorDelaySec   = 0;     // The number of seconds to delay until the next fetch if there's a fetch error
-let _logVerbosityLevel    = "information";
-let _displayDirty         = false;
+let _usingGPU            = false; // Is the server reporting that we're we using a GPU?
+let _lastLogId           = 0;     // Allows us to fetch only new log entries
+let _serverIsOnline      = false; // Anyone home?
+let _version             = null;  // Currently installed version of the server
+let _darkMode            = true;  // TODO: Need to store this in a cookie
+let _delayFetchCallUntil = null;  // No fetch calls until this time. Allows us to delay after fetch errors
+let _fetchErrorDelaySec  = 0;     // The number of seconds to delay until the next fetch if there's a fetch error
+let _logVerbosityLevel   = "information";
+let _displayDirty        = false;
+let _installNotice       = null;  // Human readable text about current install/uninstalls
 
-let _requestIdMap         = new Map();
-let _logEntries           = new Map();
+let _requestIdMap        = new Map();
+let _logEntries          = new Map();
 
 // Status: ping, version  =====================================================
 
@@ -289,7 +290,8 @@ async function getModulesStatuses() {
                             let processedCount    = moduleInfo.processed;
                             let hardwareType      = moduleInfo.hardwareType;
                             let executionProvider = moduleInfo.executionProvider;
-                            
+                            let queue             = moduleInfo.queue;
+
                             var numberFormat = Intl.NumberFormat();
                             processedCount = numberFormat.format(parseInt(processedCount));
 
@@ -377,8 +379,17 @@ async function getModulesStatuses() {
                                     + `<div class='dropdown ms-2' style='width:3rem'>`
                                     +  `<button class='btn dropdown-toggle p-1' type='button' id='dropdownMenuInfo${i}' data-bs-toggle='dropdown'>Info</button>`
                                     +  `<ul class='dropdown-menu' aria-labelledby="dropdownMenuInfo${i}"><li>`
-                                    +   `<div class='startup-summary'>${startupSummary}</div>`
-                                    +   `<div class='current-summary'>${currentSummary}</div>`
+                                    +     `<div style="float:right;cursor: pointer;position:relative;z-index:100" onclick="copyToClipboard('module-summary-${moduleId}')" title="Copy to clipboard">`
+                                    +       '<svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" '
+                                    +       '     stroke-linejoin="round" class="h-4 w-4" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">'
+                                    +       '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>'
+                                    +       '<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>'
+                                    +       '</svg>'
+                                    +     '</div>'
+                                    +     `<div id='module-summary-${moduleId}'>`
+                                    +       `<div class='startup-summary'>${startupSummary}</div>`
+                                    +       `<div class='current-summary'>${currentSummary}</div>`
+                                    +     `</div>`
                                     +  `</li></ul>`
                                     + `</div>`                                   
 
@@ -407,7 +418,7 @@ async function getModulesStatuses() {
                                             + "</li>";
                                     }
 
-                                    if (moduleId == "ObjectDetectionYolo" || moduleId == "YOLOv5-3.1" || moduleId == "ObjectDetectionNet" || moduleId == "ObjectDetectionTFLite") {
+                                    if (queue == "objectdetection_queue") {
                                         rowHtml +=
                                                 "<li><a class='dropdown-item small' href='#'>Model Size &raquo;</a>"
                                             + " <ul class='submenu dropdown-menu'>"
@@ -470,6 +481,9 @@ async function getModulesStatuses() {
 
 // Logs =======================================================================
 
+const highlightMarker = "** ";
+const criticalMarker  = "*** ";
+
 function purgeMarkerIndices() {
     let now = new Date().getTime();
     _requestIdMap.forEach((value, key, map) => {
@@ -492,16 +506,21 @@ function addLogEntry(id, date, logLevel, label, entry, refreshDisplay = true) {
 
     let className       = "";
     let specialCategory = ""; // "Server: ";
-    let specialMarker   = "** ";
     let dateText        = date.toLocaleTimeString('en-US', { hour12: false });
     let idText          = "<span class='text-muted me-2'>" + (id || "") + "</span>";
     let logText         = entry.replace(/[\n\r]+/g, "<br>"); // newlines to BR tags
 
     idText = ""; // comment this out for debugging
 
+    // Processing special "critical message" marker ("***")
+    if (logText.startsWith(specialCategory + criticalMarker)) {
+        logText = specialCategory + logText.substring(specialCategory.length + criticalMarker.length);
+        className = "critical";
+    }
+    
     // Processing special "highligh me" marker ("**")
-    if (logText.startsWith(specialCategory + specialMarker)) {
-        logText = specialCategory + logText.substring(specialCategory.length + specialMarker.length);
+    if (logText.startsWith(specialCategory + highlightMarker)) {
+        logText = specialCategory + logText.substring(specialCategory.length + highlightMarker.length);
         className = "highlight";
     }
 
@@ -749,29 +768,53 @@ async function getDownloadableModules() {
 
                     if (data && data.modules) {
 
+                        _installNotice = null;
+
                         data.modules.sort((a, b) => a.name.localeCompare(b.name||''));
 
                         for (let i = 0; i < data.modules.length; i++) {
 
                             let moduleInfo = data.modules[i];
 
-                            let moduleId         = moduleInfo.moduleId;
-                            let moduleName       = moduleInfo.name;
-                            let availableVersion = moduleInfo.latestCompatibleVersion || '';
-                            let status           = moduleInfo.status;
-                            let license          = moduleInfo.licenseUrl && moduleInfo.license 
-                                                 ? `<a href='${moduleInfo.licenseUrl}'>${moduleInfo.license}</a>` : '';
-                            let currentVersion   = moduleInfo.currentInstalledVersion || '';
-                            let downloadable     = moduleInfo.isDownloadable? '' : '<div title="This module is not downloadable" class="text-light me-2">Private</div>';
+                            let moduleId        = moduleInfo.moduleId;
+                            let moduleName      = moduleInfo.name;
+                            let currentVersion  = moduleInfo.version || '';
+                            let latestVersion   = moduleInfo.latestRelease.moduleVersion || '';
+                            let latestReleased  = moduleInfo.latestRelease.releaseDate;
+                            let importance      = moduleInfo.latestRelease.importance || '';
+                            let status          = moduleInfo.status;
+                            let license         = moduleInfo.licenseUrl && moduleInfo.license 
+                                                ? `<a href='${moduleInfo.licenseUrl}'>${moduleInfo.license}</a>` : '';
+                            
+                            let downloadable    = moduleInfo.isDownloadable? '' 
+                                                : '<div title="This module is not downloadable" class="text-light me-2">Private</div>';
 
-                            let newVersionAvail  = (currentVersion && currentVersion != availableVersion);
-                            let versionReleased  = moduleInfo.compatibleVersionReleaseDate;
-                            let versionDesc      = newVersionAvail ? `New: ${availableVersion} (current ${currentVersion})` 
-                                                                   : availableVersion;
+                            let updateDesc      = '';
+                            if (currentVersion && currentVersion != latestVersion) {
+                                status     = 'UpdateAvailable';
+                                updateDesc = 'New version available';
+                                if (importance)
+                                    updateDesc += ` (${importance})`;
+                                updateDesc += `: ${latestVersion} released ${latestReleased}`;
+                                if (moduleInfo.latestRelease.releaseNotes)
+                                    updateDesc += ". " + moduleInfo.latestRelease.releaseNotes;
+
+                                importance = importance.toLowerCase();
+                                if (importance == "minor")
+                                    updateDesc = `<span class='text-muted'>${updateDesc}</span>`;
+                                else if (importance == "major" || importance == "critical")
+                                    updateDesc = `<span class='text-danger'>${updateDesc}</span>`;
+                            }
+
                             let btnClassName     = "d-none";
                             let statClassName    = '';
                             let statusDesc       = status;
                             let action           = "";
+
+                            if (status === "Installing")
+                                _installNotice = "Installing " + moduleName + "...";
+                            else if (status === "Uninstalling")
+                                _installNotice = "Uninstalling " + moduleName + "...";
 
                             switch (status) {
                                 case "Available":
@@ -841,11 +884,9 @@ async function getDownloadableModules() {
                             let statusClass = `status me-1 ${statClassName}`;
                             let buttonClass = `btn action ${btnClassName} py-0 mx-2`;
 
-                            // HACK: disable actions on these
-                            // if (moduleId == "ObjectDetectionNet" || moduleId == "FaceProcessing" || moduleId == "ObjectDetectionYolo")
-                            //    buttonClass += " d-none";
+                            let moduleIdKey = moduleId.replace(/[^a-zA-Z0-9\-]+/g, "");
 
-                            let row = document.getElementById('module-download-' + moduleId);
+                            let row = document.getElementById('module-download-' + moduleIdKey);
                             if (!row) {
                                 row = document.createElement("div");
 
@@ -853,19 +894,26 @@ async function getDownloadableModules() {
                                 modulesTable.appendChild(row);
 
                                 let rowHtml =
-                                      `<div id='module-download-${moduleId}' class='status-row'>`
+                                      `<div id='module-download-${moduleIdKey}' class='status-row py-2'>`
                                     +   `<div class='d-flex justify-content-between'>`
                                     +     `<div class='me-auto'><b>${moduleName}</b></div>${downloadable}`
-                                    +     `<div class='me-3 version'>${versionDesc}</div>`
-                                    +     `<div class='me-3 text-muted'>${versionReleased}</div>`
+                                    +     `<div class='me-3 version'>${currentVersion}</div>`
+                                    +     `<div class='me-3 text-muted'>${latestReleased}</div>`
                                     +     `<div style='width:8rem' class='${statusClass}'>${statusDesc}</div>`
                                     +     `<div style='width:7rem'><button class='${buttonClass}' type='button'`
                                     +     `  id='installModule${i}' onclick='doModuleAction(this)' data-module-id='${moduleId}'`
-                                    +     `  data-action='${action}' data-available-version='${availableVersion}'`
+                                    +     `  data-action='${action}' data-available-version='${latestVersion}'`
                                     +     `  data-downloadable='${moduleInfo.isDownloadable}'>${action}</button></div>`
-                                    +   `</div>`
-                                    +   `<div class='text-muted small'>${license} ${moduleInfo.description || ''}</div>`
+                                    +   `</div>`;
+
+                                if (updateDesc)
+                                    rowHtml +=
+                                        `<div class='text-info small update-available-${moduleIdKey}' style='margin-top:-0.5rem'>${updateDesc}</div>`;
+                                
+                                rowHtml +=                                
+                                        `<div class='text-muted small'>${license} ${moduleInfo.description || ''}</div>`
                                     + `</div>`;
+
 
                                 row.outerHTML = rowHtml;
                             }
@@ -873,15 +921,30 @@ async function getDownloadableModules() {
                                 let statusElm = row.querySelector("div.status");
                                 statusElm.innerHTML = statusDesc;
                                 statusElm.className = statusClass;
+
                                 let actionElm = row.querySelector("button.action");
                                 actionElm.className = buttonClass;
                                 actionElm.innerHTML = action;
                                 actionElm.dataset.action = action;
-                                actionElm.dataset.availableVersion = availableVersion;
+                                actionElm.dataset.latestVersion = latestVersion;
+
                                 let versionElm = row.querySelector("div.version");
-                                versionElm.innerHTML = versionDesc;
+                                versionElm.innerHTML = latestVersion;
+
+                                let updateAvailableElm = row.querySelector(`div.update-available-${moduleIdKey}`);
+                                if (updateAvailableElm)
+                                    updateAvailableElm.innerHTML = updateDesc;
                             }
                         }
+
+                        let installNotice  = document.getElementById('installNotice');
+                        if (_installNotice) {
+                            installNotice.innerHTML = `<div class='status-row alert-info rounded'>${_installNotice}`
+                                                    + '<div class="spinner-border ms-1 p-1 spinner-border-sm text-light" role="status">'
+                                                    + '</div></div>';
+                        }
+                        else
+                            installNotice.innerHTML = '';
                     }
                 })
             }
@@ -909,10 +972,12 @@ async function modifyModule(moduleId, version, action, downloadable) {
     let urlElm = document.getElementById('serviceUrl');
     let url = urlElm.value.trim() + '/v1/module/';
 
+    let noCache = document.getElementById('noCache').checked;
+
     switch (action.toLowerCase()) {
-        case 'uninstall': url += 'uninstall/' + moduleId; break;
-        case 'install':   url += 'install/'   + moduleId + '/' + version; break;
-        case 'update':    url += 'install/'   + moduleId + '/' + version; break;
+        case 'uninstall': url += `uninstall/${moduleId}`; break;
+        case 'install':   url += `install/${moduleId}/${version}/${noCache}`; break;
+        case 'update':    url += `install/${moduleId}/${version}/${noCache}`; break;
         default: alert(`Unknown module action ${action}`); return;
     }
 
@@ -937,14 +1002,25 @@ async function modifyModule(moduleId, version, action, downloadable) {
                 clearFetchError();
 
                 if (response.ok) {
-                    setModuleUpdateStatus(`${action} of ${moduleId} has started and will continue on the server. See Server Logs for updates`, "success");
-                    addLogEntry(null, new Date(), "information", "", `** Call to ${action} on module ${moduleId} has completed.`);
+                    response.json()
+                        .then(data => {
+                            if (data.success) {
+                                setModuleUpdateStatus(`${action} of ${moduleId} has started and will continue on the server. See Server Logs for updates`, "success");
+                                addLogEntry(null, new Date(), "information", "", `${highlightMarker}Call to ${action} on module ${moduleId} has completed.`);
+                            } 
+                            else {
+                                setModuleUpdateStatus(`Error in ${action} ${moduleId}: ${data.error}`);
+                                addLogEntry(null, new Date(), "error", "", data.error);
+                            }
+                        })
+                        .catch((error) => {
+                            setModuleUpdateStatus(`Error in ${action} ${moduleId}. Unknown response from server`);
+                            addLogEntry(null, new Date(), "error", "", "Unknown response from server");
+                        });
                 }
                 else {
-                    response.json().then(data => {
-                        setModuleUpdateStatus(`Error in ${action} ${moduleId}: ${data.error}`);
-                        addLogEntry(null, new Date(), "error", "", data.error);
-                    })
+                    setModuleUpdateStatus(`Error in ${action} ${moduleId}: Call failed.`);
+                    addLogEntry(null, new Date(), "error", "", "Call failed");
                 }
             })
             .catch(error => {
@@ -1004,7 +1080,7 @@ async function uploadModule() {
 
                 if (response.ok) {
                     setModuleUpdateStatus(`New module uploaded. Installation will continue on server. See Server Logs for updates.`, "success");
-                    addLogEntry(null, new Date(), "information", "", `** module upload and install completed`);
+                    addLogEntry(null, new Date(), "information", "", `${highlightMarker}module upload and install completed`);
                 }
                 else {
                     response.json().then(data => {

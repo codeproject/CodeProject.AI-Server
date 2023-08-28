@@ -51,6 +51,7 @@ class Scene_adapter(ModuleRunner):
         super().__init__()
         self.opts        = Options()
         self.models_lock = Lock()
+
         self.classes     = list()
         self.place_names = None
         self.classifier  = None # Lazy load later on
@@ -94,7 +95,9 @@ class Scene_adapter(ModuleRunner):
             self.init_models()
 
             start_inference_time = time.perf_counter()
+
             name, conf = self.classifier.predict(img)
+
             inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
             name = self.place_names[name]
@@ -111,11 +114,11 @@ class Scene_adapter(ModuleRunner):
 
         except UnidentifiedImageError as img_ex:
             self.report_error(img_ex, __file__, "The image provided was of an unknown type")
-            return { "success": False, "error": "Error occured on the server" }
+            return { "success": False, "error": "Error occurred on the server" }
     
         except Exception as ex:
             self.report_error(ex, __file__)
-            return { "success": False, "error": "Error occured on the server" }
+            return { "success": False, "error": "Error occurred on the server" }
     
     def init_models(self, re_entered: bool = False) -> None:
 

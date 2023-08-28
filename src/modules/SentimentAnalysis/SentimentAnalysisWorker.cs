@@ -39,11 +39,20 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         }
 
         /// <summary>
+        /// Called before the main processing loops are started
+        /// </summary>
+        protected override void InitModule()
+        {
+            HardwareType      = _textClassifier.HardwareType;
+            ExecutionProvider = _textClassifier.ExecutionProvider;
+        }
+
+        /// <summary>
         /// The work happens here.
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns>The response.</returns>
-        public override BackendResponseBase ProcessRequest(BackendRequest request)
+        protected override BackendResponseBase ProcessRequest(BackendRequest request)
         {
             string? text = request?.payload?.GetValue("text");
             if (text is null)
@@ -65,14 +74,6 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
             };
 
             return response;
-        }
-
-        protected async override void GetHardwareInfo()
-        {
-            await System.Threading.Tasks.Task.Run(() => {
-                HardwareType      = _textClassifier.HardwareType;
-                ExecutionProvider = _textClassifier.ExecutionProvider;
-            });
         }
     }
 }

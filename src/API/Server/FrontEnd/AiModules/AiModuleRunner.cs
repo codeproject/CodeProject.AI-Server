@@ -130,6 +130,7 @@ namespace CodeProject.AI.API.Server.Frontend
                     {
                         ModuleId = module.ModuleId,
                         Name     = module.Name,
+                        Queue    = module.Queue,
                         Status   = status
                     });
                 }
@@ -149,7 +150,7 @@ namespace CodeProject.AI.API.Server.Frontend
         public async override Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogTrace("ModuleRunner Start");
-            await base.StartAsync(cancellationToken);
+            await base.StartAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc></inheritdoc>
@@ -161,15 +162,15 @@ namespace CodeProject.AI.API.Server.Frontend
             foreach (var module in _modules.Values)
                 tasks.Add(KillProcess(module));
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
 
-            await base.StopAsync(cancellationToken);
+            await base.StopAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc></inheritdoc>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await Task.Delay(100); // let everything else start up as well
+            await Task.Delay(100).ConfigureAwait(false); // let everything else start up as well
 
             if (_modules is null)
             {
@@ -207,7 +208,8 @@ namespace CodeProject.AI.API.Server.Frontend
             else {
                 // Let's make sure the front end is up and running before we start the backend 
                 // analysis services
-                await Task.Delay(TimeSpan.FromSeconds(preLaunchModuleDelaySecs), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(preLaunchModuleDelaySecs), stoppingToken)
+                          .ConfigureAwait(false);
 
                 foreach (var entry in _modules!)
                 {
@@ -224,19 +226,16 @@ namespace CodeProject.AI.API.Server.Frontend
                     if (status == null)
                         continue;
 
-                    await StartProcess(module);
+                    await StartProcess(module).ConfigureAwait(false);
                 }
             }
 
             // Install Initial Modules last so already installed modules will run
             // while the installations are happening.
-            if (SystemInfo.ExecutionEnvironment != ExecutionEnvironment.Docker)
-            {
-                _logger.LogInformation("Installing Initial Modules.");
-                await _moduleInstaller.InstallInitialModules();
-            }
+            if (!SystemInfo.IsDocker)
+                await _moduleInstaller.InstallInitialModules().ConfigureAwait(false);
 
-            await Task.Delay(Timeout.Infinite, stoppingToken);
+            await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
             _logger.LogInformation("ModuleRunner Stopped");
         }
 

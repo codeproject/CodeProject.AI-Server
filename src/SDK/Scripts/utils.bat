@@ -316,7 +316,8 @@ shift & goto :%~1
         REM Delete all but the zip file from the downloads dir
         FOR %%I IN ("!downloadPath!\!moduleDir!\*") DO (
             IF /i "%%~xI" neq ".zip" (
-                DEL "%%I" rem >NUL 2>&1
+                rem echo deleting %%I
+                DEL "%%I" >NUL 2>&1
                 rem echo cleaning "%%~nxI"
             )
         )
@@ -359,7 +360,10 @@ shift & goto :%~1
 
     call :Write "!message!" "!color_primary!"
 
-    call :WriteLine "Checking '!downloadToDir!!dirToSaveTo!\!fileToGet!'" "!color_info!"
+    if /i "%verbosity%" neq "quiet" (
+        call :WriteLine "Checking '!downloadToDir!!dirToSaveTo!\!fileToGet!'" "!color_info!"
+    )
+    
     if exist "!downloadToDir!!dirToSaveTo!\!fileToGet!" (
         call :Write "already exists..." "!color_info!"
     ) else (
@@ -388,33 +392,100 @@ shift & goto :%~1
 
     call :Write "Expanding..." "!color_info!"
 
-    pushd "!downloadToDir!!dirToSaveTo!"
-
-    REM Try tar first. If that doesn't work, fall back to powershell (slow)
-    set tarExists=true
-
-    tar -xf "!fileToGet!" >NUL 2>&1
-    if "%errorlevel%" == "9009" set tarExists=false
-
-    REM If we don't have tar, use powershell
-    if "!tarExists!" == "false" ( 
-        call :Write "(no tar - Using PowerShell)..." "!color_info!"
-
-        powershell -command "Expand-Archive -Path '!fileToGet!' -Force"
-        if errorlevel 1 (
-            popd
-            exit /b 1
-        )
+    if /i "%verbosity%" neq "quiet" (
+        call :WriteLine "Heading to !downloadToDir!!dirToSaveTo!" "!color_info!"
     )
 
-    REM Remove the downloaded zip
-    REM del /s /f /q "!fileToGet!" >NUL 2>&1
+    pushd "!downloadToDir!!dirToSaveTo!"
+
+    call :ExtractToDirectory "!fileToGet!"
+    
+    if errorlevel 1 (
+        popd
+        exit /b 1
+    )
+    
+    REM REM Try tar first. If that doesn't work, fall back to powershell (slow)
+    REM set tarExists=true
+    REM tar -xf "!fileToGet!" >NUL 2>&1
+    REM REM error 9009 means "command not found"
+    REM if errorlevel 9009 set tarExists=false
+    REM 
+    REM REM If we don't have tar, use powershell
+    REM if "!tarExists!" == "false" ( 
+    REM     call :Write "(no tar - Using PowerShell)..." "!color_info!"
+    REM 
+    REM     REM Expand-Archive is really, really slow
+    REM     REM powershell -command "Expand-Archive -Path '!fileToGet!' -DestinationPath '.' -Force"
+    REM     powershell -command "Add-Type -assembly System.IO.Compression.Filesystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('!fileToGet!', '.')" 
+    REM 
+    REM     if errorlevel 1 (
+    REM         popd
+    REM         exit /b 1
+    REM     )
+    REM )
+    REM 
+    REM REM Remove the downloaded zip
+    REM REM del /s /f /q "!fileToGet!" >NUL 2>&1
 
     popd
 
     call :WriteLine "Done." "!color_success!"
 
     exit /b
+
+:ExtractToDirectory
+    SetLocal EnableDelayedExpansion
+
+    REM Param 1: The archive to expand. eg packages_for_gpu.zip
+    set archiveName=%1
+    set archiveName=!archiveName:"=!
+
+    REM Param 2: Delete the archive after expansion? only 'true' means true.
+    set deleteAfter=%2
+    set deleteAfter=!deleteAfter:"=!
+
+    set filenameWithoutExtension=%~n1
+
+    if /i "%verbosity%" neq "quiet" (
+        cd
+        call :WriteLine "Extracting !archiveName!" "!color_info!"
+    )
+
+    REM Try tar first. If that doesn't work, fall back to powershell (slow)
+    set tarSuccessful=true
+    tar -xf "!archiveName!" >NUL 2>&1
+
+    REM mkdir pretty_name && tar xf ugly_name.tar -C pretty_name --strip-components 1
+    
+    REM error 9009 means "command not found"
+    if errorlevel 9009 set tarSuccessful=false
+    if errorlevel 1 set tarSuccessful=false
+
+    REM If we don't have tar, use powershell
+    if "!tarSuccessful!" == "false" ( 
+        call :Write "Tar failed - moving to PowerShell..." "!color_info!"
+
+        REM This fails if the tar left debris. We need to force overwrite
+        rem powershell -command "Add-Type -assembly System.IO.Compression.Filesystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('!archiveName!', '.')" 
+
+        REM Cannot seem to get the call to the ZipFileExtension method correct
+        rem powershell -command "[System.IO.Compression.ZipFile]::ExtractToDirectory('!archiveName!', '.', $true)"
+
+        REM Expand-Archive is really, really slow, but it's our only hope here
+        powershell -command "Expand-Archive -Path '!archiveName!' -DestinationPath '.' -Force"
+
+        if errorlevel 1 exit /b 1
+    )
+
+    REM Remove the archive 
+    if "!deleteAfter!" == "true" (
+        if /i "%verbosity%" neq "quiet" call :WriteLine "Deleting !archiveName!" "!color_info!"
+        del /s /f /q "!archiveName!" >NUL 2>&1
+    )
+ 
+    exit /b
+
 
 :SetupDotNet
     SetLocal EnableDelayedExpansion
@@ -500,12 +571,16 @@ shift & goto :%~1
         call :WriteLine "Present" "!color_success!"
     ) else (
         set baseDir=!downloadPath!\!platform!\
-        if not exist "!baseDir!"              mkdir "!baseDir!"
-        if not exist "!baseDir!\!pythonName!" mkdir "!baseDir!\!pythonName!"
+        if not exist "!baseDir!"             mkdir "!baseDir!"
+        if not exist "!baseDir!!pythonName!" mkdir "!baseDir!!pythonName!"
 
         if not exist "!pythonInstallPath!" (
+			
+			if not exist "!runtimesPath!\bin"                   mkdir "!runtimesPath!\bin"
+			if not exist "!runtimesPath!\bin\!os!"              mkdir "!runtimesPath!\bin\!os!"
+			if not exist "!runtimesPath!\bin\!os!\!pythonName!" mkdir "!runtimesPath!\bin\!os!\!pythonName!"
 
-            rem Params are:     S3 storage bucket |    fileToGet   | downloadToDir | dirToSaveTo  | message
+            rem Params are:      S3 storage bucket |    fileToGet    | downloadToDir | dirToSaveTo | message
             call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!baseDir!"  "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
             if errorlevel 1 exit /b 1
 
@@ -519,7 +594,7 @@ shift & goto :%~1
     REM but if you have issues, make sure you delete the venv directory before
     REM retrying.
     call :Write "Creating Virtual Environment..."
-    if exist "!virtualEnvPath!" (
+    if exist "!virtualEnvPath!\\pyvenv.cfg" (
         call :WriteLine "Python !pythonVersion! Already present" %color_success%
     ) else (
         if /i "%verbosity%" neq "quiet" call :WriteLine "Virtual Environment doesn't exist. Creating at !virtualEnvPath!"
@@ -549,7 +624,7 @@ shift & goto :%~1
     SetLocal EnableDelayedExpansion
 
     if /i "!offlineInstall!" == "true" (
-        call :WriteLine "Offline Installation: Unable to download and install Python packages." %color_error%
+        call :WriteLine "Offline Installation: Skipping download and installation of Python packages." %color_error%
         exit /b
     )
 
@@ -626,6 +701,16 @@ shift & goto :%~1
                 set requirementsFilename=requirements.windows.cuda.txt
             ) else if exist "!requirementsDir!\requirements.cuda.txt" (
                 set requirementsFilename=requirements.cuda.txt
+            )
+        ) 
+
+        if /i "!hasROCm!" == "true" (
+            if exist "!requirementsDir!\requirements.windows.!architecture!.rocm.txt" (
+                set requirementsFilename=requirements.windows.!architecture!.rocm.txt
+            ) else if exist "!requirementsDir!\requirements.windows.rocm.txt" (
+                set requirementsFilename=requirements.windows.rocm.txt
+            ) else if exist "!requirementsDir!\requirements.rocm.txt" (
+                set requirementsFilename=requirements.rocm.txt
             )
         ) 
 

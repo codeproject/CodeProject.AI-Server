@@ -229,7 +229,7 @@ class CodeProjectAIRunner:
 
             await self.log_async(LogMethod.Info | LogMethod.Server, {
                         "message": self.module_name + " started.",
-                        "loglevel": "information"
+                        "loglevel": "trace"
                     })
 
             await asyncio.gather(*tasks)
@@ -322,7 +322,7 @@ class CodeProjectAIRunner:
                         send_response_task = asyncio.create_task(self.send_response(data.request_id, output))
                         
                     except Exception:
-                        print(f"An exception occured sending the inference response (#reqid {data.request_id})")
+                        print(f"An exception occurred sending the inference response (#reqid {data.request_id})")
             
                 # reset for next command that we retrieved
                 start_time = time.perf_counter()

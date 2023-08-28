@@ -7,7 +7,7 @@
 	<PropertyGroup>
 		<Name>SentimentAnalysis</Name>
 		<RootNamespace>CodeProject.AI.Modules.SentimentAnalysis</RootNamespace>
-		<Version>2.1.0</Version>
+		<Version>2.1.5</Version>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<UserSecretsId>dotnet-SentimentAnalysis-EBFB5149-7C8C-4D4E-96D1-6C0227E67E29</UserSecretsId>

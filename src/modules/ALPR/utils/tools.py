@@ -1,6 +1,7 @@
 
 import cv2
 import math
+import re
 import numpy as np
 from PIL import Image
 
@@ -11,6 +12,7 @@ debug_img = False   # Save intermediate images to view the progress
 
 # Could switch to numpy, so keep this abstracted for now
 ImageType = Image
+
 
 def resize_image(image: ImageType, scale_percent: int) -> ImageType:
     """
@@ -139,11 +141,12 @@ def compute_skew(src_img: ImageType) -> float:
         dimensions: Size = Size(src_img.shape[1], src_img.shape[0])
         dimensions.integerize()
 
-        # Exxagerate the width to make line detection more prominent
-        dimensions.width *= 4
+        # Exaggerate the width to make line detection more prominent
+        dimensions.width  *= 8
+        dimensions.height *= 2
 
-        src_img    = cv2.resize(src_img, dimensions.as_tuple(), interpolation = cv2.INTER_CUBIC)
-        gray_img   = cv2.cvtColor(src_img,cv2.COLOR_BGR2GRAY)
+        gray_img   = cv2.resize(src_img, dimensions.as_tuple(), interpolation = cv2.INTER_CUBIC)
+        # gray_img = cv2.cvtColor(src_img,cv2.COLOR_BGR2GRAY)
         median_img = cv2.medianBlur(gray_img, 5)
         edges      = cv2.Canny(median_img,  threshold1 = 60,  threshold2 = 90, apertureSize = 3, L2gradient = True)
 
@@ -221,3 +224,57 @@ def equalize(image: ImageType) -> ImageType:
     image_eq = cv2.merge((b_image_eq, g_image_eq, r_image_eq))
 
     return image_eq
+
+def merge_text_detections(bounding_boxes) -> Tuple[str, float, int, int]:
+    
+    pattern            = re.compile('[^a-zA-Z0-9]+')
+    tallest_box        = None
+    tallest_box_height = 0
+    large_boxes        = []
+    confidence_sum     = 0
+    count              = 0
+    large_boxes_count  = 0
+    avg_char_width     = 0
+    avg_char_height    = 0
+
+    # Find the tallest bounding box
+    for box, (text, confidence) in bounding_boxes:
+        box_height = int(box[3][1] - box[0][1])
+        
+        if text and (tallest_box is None or box_height > tallest_box_height):
+            tallest_box        = box
+            tallest_box_text   = text
+            tallest_box_height = box_height
+
+            box_width          = int(tallest_box[2][0] - tallest_box[3][0])
+            avg_char_width     = int(box_width / len(text))
+            avg_char_height    = box_height
+
+    # Find large boxes and calculate the average confidence. A large box is anything
+    # that is at least 80% the height of the tallest box
+    for box, (_, confidence) in bounding_boxes:
+        box_height = int(box[3][1] - box[0][1])
+        
+        if box_height >= tallest_box_height * 0.8:
+            large_boxes.append(box)        
+            confidence_sum += confidence
+            count += 1
+
+    average_confidence = confidence_sum / count if count > 0 else 0
+    
+    # Merge all text from large boxes
+    merged_text = ''
+    for box, (text, _) in bounding_boxes:
+        if box in large_boxes:
+            large_boxes_count += 1
+            if count > 1 and large_boxes_count < count:
+                text = text + ' '
+            merged_text += text
+
+    merged_text  = pattern.sub(' ', merged_text)
+
+    if debug_log == True:
+        with open("logbox.txt", "a") as text_file:
+            text_file.write(f"Avg char (w,h): {avg_char_height} x {avg_char_width} - {tallest_box_text}\n\n")
+
+    return merged_text, average_confidence, avg_char_height, avg_char_width

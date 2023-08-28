@@ -17,7 +17,7 @@ from module_logging import LogMethod
 from PIL import Image
 from options import Options
 
-from detect import init_detect, do_detection
+from detect import do_detection
 
 
 class YOLO62_adapter(ModuleRunner):
@@ -28,6 +28,15 @@ class YOLO62_adapter(ModuleRunner):
         self.models_last_checked = None
         self.model_names         = []  # We'll use this to cache the available model names
 
+        # These will be adjusted based on the hardware / packages found
+        self.use_CUDA       = self.opts.use_CUDA
+        self.use_MPS        = self.opts.use_MPS
+        self.use_DirectML   = self.opts.use_DirectML
+
+        if self.use_CUDA and self.half_precision == 'enable' and not self.hasTorchHalfPrecision:
+            self.half_precision = 'disable'
+
+
     def initialise(self):
 
         # if the module was launched outside of the server then the queue name 
@@ -36,12 +45,34 @@ class YOLO62_adapter(ModuleRunner):
         if not self.launched_by_server:
             self.queue_name = "objectdetection_queue"
 
-        init_detect(self.opts)
+        # CUDA takes precedence
+        if self.use_CUDA:
+            self.use_CUDA = self.hasTorchCuda
 
-        if self.opts.use_CUDA:
+        # If no CUDA, maybe we're on an Apple Silicon Mac?
+        if self.use_CUDA:
+            self.use_MPS      = False
+            self.use_DirectML = False
+        else:
+            self.use_MPS = self.hasTorchMPS
+
+        # If we're not on Apple Silicon and we're not already using CUDA, and we're in WSL or 
+        # Windows, then DirectML is a good option if allowed and available.
+        # if self.use_DirectML and                         \
+        #    (self.in_WSL or self.system == "Windows") and \
+        #    not self.use_CUDA and not self.use_MPS:
+        #     self.use_DirectML = self.hasTorchDirectML
+        # else:
+        #     self.use_DirectML = False
+        self.use_DirectML = False   # Unfortunately we can't get PyTorch-DirectML working
+
+        if self.use_CUDA:
             self.execution_provider = "CUDA"
-        elif self.opts.use_MPS:
+        elif self.use_MPS:
             self.execution_provider = "MPS"
+        elif self.use_DirectML:
+            self.execution_provider = "DirectML"
+
 
     def process(self, data: RequestData) -> JSON:
         
@@ -62,8 +93,9 @@ class YOLO62_adapter(ModuleRunner):
 
             response = do_detection(self, self.opts.models_dir,
                                     self.opts.std_model_name, self.opts.resolution_pixels,
-                                    self.opts.use_CUDA, self.accel_device_name,
-                                    self.opts.use_MPS, self.half_precision, img, threshold)
+                                    self.use_CUDA, self.accel_device_name,
+                                    self.use_MPS, self.use_DirectML, self.half_precision,
+                                    img, threshold)
 
         elif data.command == "custom":                  # Perform custom object detection
 
@@ -97,14 +129,30 @@ class YOLO62_adapter(ModuleRunner):
 
             use_mX_GPU = False # self.opts.use_MPS   - Custom models don't currently work with pyTorch on MPS
             response = do_detection(self, model_dir, model_name, 
-                                    self.opts.resolution_pixels, self.opts.use_CUDA,
+                                    self.opts.resolution_pixels, self.use_CUDA,
                                     self.accel_device_name, use_mX_GPU,
-                                    self.half_precision, img, threshold)
+                                    self.use_DirectML, self.half_precision,
+                                    img, threshold)
 
         else:
             self.report_error(None, __file__, f"Unknown command {data.command}")
 
         return response
+
+
+    def selftest(self) -> None:
+        
+        file_name = os.path.join("test", "pexels-huseyn-kamaladdin-667838.jpg")
+
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "detect"
+        request_data.add_file(file_name)
+        request_data.add_value("confidence", 0.4)
+
+        result = self.process(request_data)
+        print(f"[INFO] Self-test for {self.module_id}. Success: {result['success']}")
+        print(f"[INFO] Self-test output for {self.module_id}: {result}")
 
 
     def list_models(self, models_path: str):

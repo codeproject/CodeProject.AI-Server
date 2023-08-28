@@ -21,12 +21,14 @@ To call:
 import sys
 import time
 
-# Import the CodeProject.AI SDK. This will add to the PATH var for future imports
+# Import the CodeProject.AI SDK. This will add to the PATH var for
+# future imports
 sys.path.append("../../SDK/Python")
 from request_data import RequestData
 from module_runner import ModuleRunner
 from common import JSON
 
+# Import the method of the module we're wrapping
 from PIL import Image
 
 # Import the method of the module we're wrapping
@@ -35,22 +37,26 @@ from rembg.bg import remove
 class rembg_adapter(ModuleRunner):
 
     def initialise(self) -> None:   
+        """ Initialises the module """
         if self.support_GPU:
             if self.hasONNXRuntimeGPU:
                 self.execution_provider = "ONNX"
 
     def process(self, data: RequestData) -> JSON:
+        """ Processes a request from the client and returns the results"""
         try:
             img: Image             = data.get_image(0)
             use_alphamatting: bool = data.get_value("use_alphamatting", "false") == "true"
 
+            # Make the call to the AI code we're wrapping, and time it
             start_time = time.perf_counter()
             (processed_img, inferenceTime) = remove(img, use_alphamatting)
+            processMs = int((time.perf_counter() - start_time) * 1000)
 
             return { 
-                "success": True, 
-                "imageBase64": data.encode_image(processed_img),
-                "processMs" : int((time.perf_counter() - start_time) * 1000),
+                "success":      True, 
+                "imageBase64":  RequestData.encode_image(processed_img),
+                "processMs" :   processMs,
                 "inferenceMs" : inferenceTime
             }
 

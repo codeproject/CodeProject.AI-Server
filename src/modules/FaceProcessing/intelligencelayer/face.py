@@ -58,7 +58,7 @@ class Face_adapter(ModuleRunner):
         self.facemap         = {}
 
         self.models_lock     = Lock()
-        self.face_lock         = Lock()
+        self.face_lock       = Lock()
 
         # Will be lazy initialised
         self.faceclassifier  = None
@@ -100,7 +100,9 @@ class Face_adapter(ModuleRunner):
             self.processor_type     = "GPU"
             self.execution_provider = "MPS"
 
-        self.init_models();
+        if SharedOptions.USE_CUDA and self.half_precision == 'enable' and not self.hasTorchHalfPrecision:
+            self.half_precision = 'disable'
+
         self.init_db()
         self.load_faces()
 
@@ -150,7 +152,7 @@ class Face_adapter(ModuleRunner):
     def init_models(self, re_entered: bool = False) -> None:
 
         if self.faceclassifier is not None and self.detector is not None:
-            return
+            return True
 
         try:
             with self.models_lock:
@@ -166,8 +168,11 @@ class Face_adapter(ModuleRunner):
                     self.detector = YOLODetector(model_path, self.resolution,
                                                  cuda=SharedOptions.USE_CUDA, 
                                                  mps=SharedOptions.USE_MPS,
-                                                 half_precision=SharedOptions.HALF_PRECISION)
-        
+                                                 half_precision=self.half_precision)
+    
+            if self.faceclassifier is not None and self.detector is not None:
+                return True
+
         except Exception as ex:
             if not re_entered and SharedOptions.USE_CUDA and str(ex).startswith('CUDA out of memory'):
 
@@ -184,9 +189,10 @@ class Face_adapter(ModuleRunner):
                     "loglevel": "information",
                 })
 
-                self.init_models(re_entered = True)
+                return self.init_models(re_entered = True)
             else:
                 self.report_error(ex, __file__)
+                return False
 
 
     # make sure the sqlLite database exists
@@ -265,13 +271,25 @@ class Face_adapter(ModuleRunner):
 
 
     def detect_face(self, data: RequestData) -> JSON:
-                        
+
+        if not self.init_models():
+            return {
+                "success": False,
+                "predictions": [],
+                "count": 0,
+                "message": "Unable to load the face detector",
+                "error": "Unable to load the face detector",
+                "inferenceMs": 0
+            }
+
         try:
             threshold: float  = float(data.get_value("min_confidence", "0.67"))
             img: Image        = data.get_image(0)
 
             start_time        = time.perf_counter()
-            det               = self.detector.predictFromImage(img, threshold)
+
+            det = self.detector.predictFromImage(img, threshold)
+
             inferenceMs       = int((time.perf_counter() - start_time) * 1000)
 
             outputs = []
@@ -313,7 +331,7 @@ class Face_adapter(ModuleRunner):
             trace  = "".join(traceback.TracebackException.from_exception(ex).format())
             output = {
                 "success": False,
-                "error": "An Error occured during processing",
+                "error": "An Error occurred during processing",
                 "err_trace": trace
             }
 
@@ -321,6 +339,14 @@ class Face_adapter(ModuleRunner):
 
 
     def register_face(self, data: RequestData) -> Tuple[JSON, int]:
+
+        if not self.init_models():
+            return {
+                "success": False,
+                "message": "Unable to load the face detector",
+                "error": "Unable to load the face detector",
+                "inferenceMs": 0
+            }
 
         try:
             user_id = data.get_value("userid")
@@ -335,7 +361,9 @@ class Face_adapter(ModuleRunner):
                 pil_image    = data.get_image(i)
 
                 start_time   = time.perf_counter()
-                det          = self.detector.predictFromImage(pil_image, 0.55)
+
+                det = self.detector.predictFromImage(pil_image, 0.55)
+
                 inferenceMs += int((time.perf_counter() - start_time) * 1000)
 
                 new_img = None
@@ -361,7 +389,9 @@ class Face_adapter(ModuleRunner):
             if batch is not None:
 
                 start_time     = time.perf_counter()
+                
                 img_embeddings = self.faceclassifier.predict(batch).cpu()
+
                 inferenceMs   += int((time.perf_counter() - start_time) * 1000)
 
                 img_embeddings = torch.mean(img_embeddings, 0)
@@ -415,7 +445,7 @@ class Face_adapter(ModuleRunner):
             trace  = "".join(traceback.TracebackException.from_exception(ex).format())
             output = {
                 "success": False,
-                "error": "An Error occured during processing",
+                "error": "An Error occurred during processing",
                 "err_trace": trace
             }
 
@@ -444,7 +474,7 @@ class Face_adapter(ModuleRunner):
             trace  = "".join(traceback.TracebackException.from_exception(ex).format())
             output = {
                 "success": False,
-                "error": "An Error occured during processing",
+                "error": "An Error occurred during processing",
                 "err_trace": trace
             }
 
@@ -472,7 +502,7 @@ class Face_adapter(ModuleRunner):
             trace  = "".join(traceback.TracebackException.from_exception(ex).format())
             output = {
                 "success": False,
-                "error": "An Error occured during processing",
+                "error": "An Error occurred during processing",
                 "err_trace": trace
             }
 
@@ -480,6 +510,16 @@ class Face_adapter(ModuleRunner):
 
 
     def recognise_face(self, data: RequestData) -> JSON:
+
+        if not self.init_models():
+            return {
+                "success": False,
+                "predictions": [],
+                "count": 0,
+                "message": "Unable to load the face detector",
+                "error": "Unable to load the face detector",
+                "inferenceMs": 0
+            }
 
         try:
             threshold  = float(data.get_value("min_confidence", "0.67"))
@@ -497,7 +537,9 @@ class Face_adapter(ModuleRunner):
                 face_tensors = face_tensors.cuda()
 
             start_time  = time.perf_counter()
-            det         = self.detector.predictFromImage(pil_image, threshold)
+
+            det = self.detector.predictFromImage(pil_image, threshold)
+
             inferenceMs = int((time.perf_counter() - start_time) * 1000)
 
             faces = [[]]
@@ -523,9 +565,13 @@ class Face_adapter(ModuleRunner):
 
                 detections.append((x_min, y_min, x_max, y_max))
 
-            if found_face == False:
+            if not found_face:
 
-                output = {"success": False, "error": "No face found in image", "inferenceMs": inferenceMs}
+                output = {
+                    "success": False,
+                    "error": "No face found in image",
+                    "inferenceMs": inferenceMs
+                }
 
             elif len(facemap) == 0:
 
@@ -571,7 +617,10 @@ class Face_adapter(ModuleRunner):
                 for face_list in faces:
 
                     start_time   = time.perf_counter()
+
+
                     embedding    = self.faceclassifier.predict(torch.cat(face_list))
+
                     inferenceMs += int((time.perf_counter() - start_time) * 1000)
                     
                     embeddings.append(embedding)
@@ -638,7 +687,7 @@ class Face_adapter(ModuleRunner):
             trace = "".join(traceback.TracebackException.from_exception(ex).format())
             output = {
                 "success": False,
-                "error": "An Error occured during processing",
+                "error": "An Error occurred during processing",
                 "err_trace": trace
             }
 
@@ -647,13 +696,23 @@ class Face_adapter(ModuleRunner):
 
     def match_faces(self, data: RequestData) -> JSON:
 
+        if not self.init_models():
+            return {
+                "success": False,
+                "message": "Unable to load the face detector",
+                "error": "Unable to load the face detector",
+                "inferenceMs": 0
+            }
+
         try:
             image1 = data.get_image(0)
             image2 = data.get_image(1)
 
             start_time  = time.perf_counter()
-            det1        = self.detector.predictFromImage(image1, 0.8)
-            det2        = self.detector.predictFromImage(image2, 0.8)
+
+            det1 = self.detector.predictFromImage(image1, 0.8)
+            det2 = self.detector.predictFromImage(image2, 0.8)
+
             inferenceMs = int((time.perf_counter() - start_time) * 1000)
 
             if len(det1) > 0 and len(det2) > 0:
@@ -687,7 +746,9 @@ class Face_adapter(ModuleRunner):
                 faces = torch.cat([face1, face2], dim=0)
 
                 start_time = time.perf_counter()
+                
                 embeddings = self.faceclassifier.predict(faces)
+
                 inferenceMs += int((time.perf_counter() - start_time) * 1000)
 
                 embed1 = embeddings[0, :].unsqueeze(0)
@@ -706,7 +767,7 @@ class Face_adapter(ModuleRunner):
             trace = "".join(traceback.TracebackException.from_exception(ex).format())
             output = {
                 "success": False,
-                "error": "An Error occured during processing.",
+                "error": "An Error occurred during processing.",
                 "err_trace": trace
             }
 

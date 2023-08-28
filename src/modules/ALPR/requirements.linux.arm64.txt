@@ -10,7 +10,7 @@ paddleocr==2.6.0.1		# Installing PaddleOCR, the OCR toolkit based on PaddlePaddl
 
 # Do these after paddlepaddle because paddlepaddle requires specific versions 
 imutils					# Installing imutils, the image utilities library
-Pillow					# Installing Pillow, a Python Image Library
+Pillow<10.0.0			# Installing Pillow, a Python Image Library
 
 opencv-python			# Installing OpenCV, the Computer Vision library for Python
 numpy==1.23.3			# Installing NumPy, a package for scientific computing

@@ -36,6 +36,7 @@ namespace Yolov5Net.Scorer
 
         private ObjectPool<DenseTensor<float>> _tensorPool;
         private ObjectPool<ConcurrentBag<YoloPrediction>> _predictionListPool;
+        private bool disposedValue;
 
         // To scale up we will need to create multiple InferenceSessions per model
         // as the InferenceSession instance is not thread safe.
@@ -496,7 +497,12 @@ namespace Yolov5Net.Scorer
         {
             FilePath = weights;
 
-            _inferenceSession = new InferenceSession(File.ReadAllBytes(weights), opts ?? new SessionOptions());
+            // Breaking this up so we can debug timing.
+            var bytes   = File.ReadAllBytes(weights);
+            var options = opts ?? new SessionOptions();
+
+            _inferenceSession = new InferenceSession(bytes, options);
+
             SetModelPropetiesFromMetadata();
         }
 
@@ -564,9 +570,37 @@ namespace Yolov5Net.Scorer
         /// <summary>
         /// Disposes YoloScorer instance.
         /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                    _inferenceSession?.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~YoloScorer()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        /// <summary>
+        /// Disposes YoloScorer instance.
+        /// </summary>
         public void Dispose()
         {
-            _inferenceSession?.Dispose();
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

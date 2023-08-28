@@ -68,11 +68,16 @@ if /i "%cleanBuild%" == "true" (
     call "!pwd!\utils.bat" WriteLine "Cleaning Build                                                      " "White" "Blue"
     call "!pwd!\utils.bat" WriteLine 
 
-    call :CleanSubDirs "!rootDir!\src"   "obj"
+    call :CleanSubDirs "!rootDir!\src"     "obj" "ObjectDetection"
+    call :CleanSubDirs "!rootDir!\src\API" "bin"
+    call :CleanSubDirs "!rootDir!\src\SDK" "bin"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionNet"   "bin"
+    call :CleanSubDirs "!rootDir!\src\modules\PortraitFilter"       "bin"
+    call :CleanSubDirs "!rootDir!\src\modules\SentimentAnalysis"    "bin"
     call :CleanSubDirs "!rootDir!\Installers\Windows"  "bin"
     call :CleanSubDirs "!rootDir!\Installers\Windows"  "obj"
     call :CleanSubDirs "!rootDir!\demos" "bin"
-    call :CleanSubDirs "!rootDir!\demos" "obj"
+    call :CleanSubDirs "!rootDir!\demos" "obj" "Objects"
     call :CleanSubDirs "!rootDir!\tests" "bin"
     call :CleanSubDirs "!rootDir!\tests" "obj"
 )
@@ -83,7 +88,19 @@ if /i "%cleanInstallCurrentOS%" == "true" (
     call "!pwd!\utils.bat" WriteLine "Cleaning Windows Install                                            " "White" "Blue"
     call "!pwd!\utils.bat" WriteLine 
 
-    call :CleanSubDirs "!rootDir!\src\runtimes\bin"           "windows" 
+    call :CleanSubDirs "!rootDir!\src\runtimes\bin"                      "windows" 
+
+    call :CleanSubDirs "!rootDir!\src\modules\ALPR\bin"                  "windows"
+    call :CleanSubDirs "!rootDir!\src\modules\BackgroundRemover\bin"     "windows"
+    call :CleanSubDirs "!rootDir!\src\modules\Cartooniser\bin"           "windows"
+    call :CleanSubDirs "!rootDir!\src\modules\FaceProcessing\bin"        "windows"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionTFLite\bin" "windows"
+    call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionYolo\bin"   "windows"
+    call :CleanSubDirs "!rootDir!\src\modules\OCR\bin"                   "windows"
+    call :CleanSubDirs "!rootDir!\src\modules\SceneClassifier\bin"       "windows"
+    call :CleanSubDirs "!rootDir!\src\modules\YOLOv5-3.1\bin"            "windows"
+
+    call :CleanSubDirs "!rootDir!\src\modules\FaceProcessing"        "datastore"
 )
 
 if /i "%cleanInstallAll%" == "true" (
@@ -92,6 +109,7 @@ if /i "%cleanInstallAll%" == "true" (
     call "!pwd!\utils.bat" WriteLine "Cleaning install for other platforms                                " "White" "Blue"
     call "!pwd!\utils.bat" WriteLine 
 
+    call :CleanSubDirs "!rootDir!\src\modules"  "bin"
     call :CleanSubDirs "!rootDir!\src\runtimes" "bin"
 )
 
@@ -105,7 +123,6 @@ if /i "%cleanAssets%" == "true" (
     call :CleanSubDirs "!rootDir!\src\modules\BackgroundRemover"     "models"
     call :CleanSubDirs "!rootDir!\src\modules\Cartooniser"           "weights"
     call :CleanSubDirs "!rootDir!\src\modules\FaceProcessing"        "assets"
-    call :CleanSubDirs "!rootDir!\src\modules\FaceProcessing"        "datastore"
     call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionTFLite" "assets"
     call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionNet"    "assets"
     call :CleanSubDirs "!rootDir!\src\modules\ObjectDetectionNet"    "custom-models"

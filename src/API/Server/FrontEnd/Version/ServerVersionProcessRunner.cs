@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,7 +25,7 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <param name="versionService">The Queue management service.</param>
         /// <param name="logger">The logger</param>
         public ServerVersionProcessRunner(ServerVersionService versionService, 
-                                            ILogger<ServerVersionProcessRunner> logger)
+                                          ILogger<ServerVersionProcessRunner> logger)
         {
             _versionService = versionService;
             _logger         = logger;
@@ -36,17 +35,17 @@ namespace CodeProject.AI.API.Server.Frontend
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             // Let's make sure the front end is up and running before we start the version process
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken).ConfigureAwait(false);
 
-            CheckCurrentVersion();
+            await CheckCurrentVersion().ConfigureAwait(false);
         }
 
-        private async void CheckCurrentVersion()
+        private async Task CheckCurrentVersion()
         {
             // Grab the latest version info
             if (_versionService != null)
             {
-                VersionInfo? latest = await _versionService.GetLatestVersion();
+                VersionInfo? latest = await _versionService.GetLatestVersion().ConfigureAwait(false);
                 if (latest != null && _versionService.VersionConfig?.VersionInfo != null)
                 {
                     _logger.LogDebug($"Current Version is {_versionService.VersionConfig.VersionInfo.Version}");
@@ -55,14 +54,14 @@ namespace CodeProject.AI.API.Server.Frontend
                     if (compare < 0)
                     {
                         if (latest.SecurityUpdate ?? false)
-                            _logger.LogInformation($" *** A SECURITY UPDATE {latest.Version} is available ** ");
+                            _logger.LogInformation($"*** A SECURITY UPDATE {latest.Version} is available");
                         else
-                            _logger.LogInformation($" *** A new version {latest.Version} is available ** ");
+                            _logger.LogInformation($"*** A new version {latest.Version} is available");
                     }
                     else if (compare == 0)
                         _logger.LogInformation("Server: This is the latest version");
                     else
-                        _logger.LogInformation("Server: This is a new, unreleased version");
+                        _logger.LogInformation("*** Server: This is a new, unreleased version");
                 }
             }
         }

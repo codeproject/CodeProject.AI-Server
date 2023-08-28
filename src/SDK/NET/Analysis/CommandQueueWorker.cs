@@ -18,7 +18,7 @@ namespace CodeProject.AI.SDK
         private readonly string        _halfPrecision   = "enable"; // Can be enable, disable or force
         private readonly string        _logVerbosity    = "info";   // Can be Quiet, Info or Loud
 
-        private readonly BackendClient _codeprojectAI;
+        private readonly BackendClient _aiClient;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly ILogger       _logger;
 
@@ -86,7 +86,7 @@ namespace CodeProject.AI.SDK
 
             var token = _cancellationTokenSource.Token;
 #if DEBUG
-            _codeprojectAI = new BackendClient($"http://localhost:{port}/", TimeSpan.FromSeconds(30), token);
+            _aiClient = new BackendClient($"http://localhost:{port}/", TimeSpan.FromSeconds(30), token);
 
             /*
             _logger.LogInformation($"CPAI_PORT:               {port}");
@@ -95,8 +95,36 @@ namespace CodeProject.AI.SDK
             _logger.LogInformation($"CPAI_MODULE_SUPPORT_GPU: {_supportGPU}");
             */
 #else
-            _codeprojectAI = new BackendClient($"http://localhost:{port}/", token: token);
+            _aiClient = new BackendClient($"http://localhost:{port}/", token: token);
 #endif
+        }
+
+        /// <summary>
+        /// Stop the process.
+        /// </summary>
+        /// <param name="token">The stopping cancellation token.</param>
+        /// <returns></returns>
+        public override async Task StopAsync(CancellationToken token)
+        {
+            _cancelled = true;
+
+            await _aiClient.LogToServer($"Shutting down {_moduleId}", _moduleId!,
+                                        LogLevel.Information, string.Empty, token)
+                           .ConfigureAwait(false);
+
+            _cancellationTokenSource.Cancel();
+
+            await base.StopAsync(token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Disposes of this classes resources
+        /// </summary>
+        public override void Dispose()
+        {
+            _cancellationTokenSource?.Dispose();
+            base.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         protected string GetModuleDirectory()
@@ -125,6 +153,8 @@ namespace CodeProject.AI.SDK
             return moduleDir;
         }
 
+        /* No longer really needed in this form
+
         /// <summary>
         /// Sniff the hardware in use so we can report to the API server
         /// </summary>
@@ -143,7 +173,7 @@ namespace CodeProject.AI.SDK
         /// happening. Or we dive in and plug into each module some hardware sniffing code.
         /// </para>
         /// <para>
-        /// The detection and selection of CPU/GPU suppport is a very tricky and complex issue.
+        /// The detection and selection of CPU/GPU support is a very tricky and complex issue.
         /// </para>
         /// <list type="bullet">
         /// <item>
@@ -156,14 +186,14 @@ namespace CodeProject.AI.SDK
         ///    a subset of the OnnxRuntime API.
         ///   </para>
         ///   <para>
-        ///    OnnxRuntime.DirectML on Windows and WSL theorectically should handle all this, but
+        ///    OnnxRuntime.DirectML on Windows and WSL theoretically should handle all this, but
         ///    if fails to execute some models. 
         ///   </para>
         ///   <para>
-        ///    There is a NuGet for OnnxRuntime for OpenVINO, but it is not publically available.
+        ///    There is a NuGet for OnnxRuntime for OpenVINO, but it is not publicly available.
         ///    We were able to use this to verify that the Execution Providers to be used could be 
         ///    selected at runtime, so a GPU=Intel|AMD|NVIDIA|M1 could be an option if we can find
-        ///    or build the Execution Providers for our requirements. There are more publically
+        ///    or build the Execution Providers for our requirements. There are more publicly
         ///    available packages for Python and C/C++ than C#/NET.
         ///   </para>
         ///  </description>
@@ -174,7 +204,7 @@ namespace CodeProject.AI.SDK
         ///    With PyTorch and TensorFlow in Python, you need to install the specific flavor(s)
         ///    of PyTorch and/or TensorFlow specific to your CPU and GPU, and have the appropriate
         ///    libraries and drivers for the GPU installed as well. It won't be easy, or
-        ///    necessarily even possible, or practical given dowwnload sizes, to install all the
+        ///    necessarily even possible, or practical given download sizes, to install all the
         ///    packages at install time and then select them at runtime.
         ///    </para>
         ///   </description>
@@ -193,37 +223,44 @@ namespace CodeProject.AI.SDK
         /// correct version based on sniffed hardware.
         /// </para>
         /// </remarks>
-        protected async virtual void GetHardwareInfo()
+        protected virtual void GetHardwareInfo()
         {
-            GpuInfo? gpu = await SystemInfo.GetGpuInfo();
+            GpuInfo? gpu = SystemInfo.GetGpuInfo();
             if (gpu is not null)
             {
                 HardwareType      = "GPU";
                 ExecutionProvider = gpu.Vendor;
             }
         }
+        */
 
         /// <summary>
         /// Called before the main processing loops are started
         /// </summary>
         protected virtual void InitModule()
         {
-            GetHardwareInfo();
         }
+
+        /// <summary>
+        /// Processes the request receive from the server queue.
+        /// </summary>
+        /// <param name="request">The Request data.</param>
+        /// <returns>An object to serialize back to the server.</returns>
+        protected abstract BackendResponseBase ProcessRequest(BackendRequest request);
 
         /// <summary>
         /// Start the process.
         /// </summary>
         /// <param name="token">The cancellation token.</param>
-        /// <returns></returns>
+        /// <returns>A Task</returns>
         protected override async Task ExecuteAsync(CancellationToken token)
         {
             _cancelled = false;
 
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
-            await _codeprojectAI.LogToServer($"{ModuleName} module started.", $"{ModuleName}",
-                                             LogLevel.Information, string.Empty, token);
+            await _aiClient.LogToServer($"{ModuleName} module started.", $"{ModuleName}",
+                                        LogLevel.Information, string.Empty, token).ConfigureAwait(false);
 
             InitModule();
 
@@ -236,8 +273,8 @@ namespace CodeProject.AI.SDK
 
         private async Task ProcessQueue(CancellationToken token)
         {
-            Task<BackendRequest?> requestTask = _codeprojectAI.GetRequest(_queueName!, _moduleId!,
-                                                                          token, ExecutionProvider);
+            Task<BackendRequest?> requestTask = _aiClient.GetRequest(_queueName!, _moduleId!,
+                                                                     token, ExecutionProvider);
             Task? responseTask = null;
             BackendRequest? request;
 
@@ -245,18 +282,18 @@ namespace CodeProject.AI.SDK
             {
                 try
                 {
-                    request = await requestTask;
-                    requestTask = _codeprojectAI.GetRequest(_queueName!, _moduleId!, token,
-                                                            ExecutionProvider);
+                    request = await requestTask.ConfigureAwait(false);
+                    requestTask = _aiClient.GetRequest(_queueName!, _moduleId!, token,
+                                                       ExecutionProvider);
                     if (request is null)
                         continue;
 
                     // Special shutdown request
                     string? requestModuleId = request.payload?.GetValue("moduleId");
-                    if (request.reqtype?.EqualsIgnoreCase("quit") == true && // Or, request.payload.command.EqualsIgnoreCase("quit") ...
+                    if (request.payload?.command?.EqualsIgnoreCase("quit") == true &&
                         requestModuleId?.EqualsIgnoreCase(_moduleId) == true)
                     {
-                        await StopAsync(token);
+                        await StopAsync(token).ConfigureAwait(false);
                         return;
                     }
 
@@ -265,25 +302,24 @@ namespace CodeProject.AI.SDK
                     stopWatch.Stop();
 
                     long processMs = stopWatch.ElapsedMilliseconds;
-                    response.processMs = processMs;
-                    
-                    // We recheck. Maybe hardware utilisation has changed based on the requeest or
-                    // the environment (power, performance, GPU temp)
-                    GetHardwareInfo();
+                    response.processMs         = processMs;
+                    response.moduleId          = _moduleId;
+                    response.executionProvider = ExecutionProvider ?? string.Empty;
+                    response.command           = request.payload?.command ?? string.Empty;
 
                     HttpContent content = JsonContent.Create(response, response.GetType());
 
                     // Slightly faster as we don't wait for the request to complete before moving
                     // on to the next.
                     if (responseTask is not null)
-                        await responseTask;
+                        await responseTask.ConfigureAwait(false);
 
-                    responseTask = _codeprojectAI.SendResponse(request.reqid, _moduleId!, content,
-                                                               token, ExecutionProvider);
+                    responseTask = _aiClient.SendResponse(request.reqid, _moduleId!, content, token);
 
-                    await _codeprojectAI.LogToServer($"Command completed in {response.processMs} ms.",
-                                                     $"{ModuleName}", LogLevel.Information,
-                                                     "command timing", token);
+                    await _aiClient.LogToServer($"Command completed in {response.processMs} ms.",
+                                                $"{ModuleName}",  LogLevel.Information, 
+                                                "command timing", token)
+                                   .ConfigureAwait(false);
                 }
                 catch (TaskCanceledException) when (_cancelled)
                 {
@@ -300,30 +336,6 @@ namespace CodeProject.AI.SDK
                 Console.WriteLine("Shutdown signal received. Ending loop");
 
             _cancellationTokenSource.Cancel();
-        }
-
-        /// <summary>
-        /// Processes the request receive from the server queue.
-        /// </summary>
-        /// <param name="request">The Request data.</param>
-        /// <returns>An object to serialize back to the server.</returns>
-        public abstract BackendResponseBase ProcessRequest(BackendRequest request);
-
-        /// <summary>
-        /// Stop the process.
-        /// </summary>
-        /// <param name="token">The stopping cancellation token.</param>
-        /// <returns></returns>
-        public override async Task StopAsync(CancellationToken token)
-        {
-            _cancelled = true;
-
-            await _codeprojectAI.LogToServer($"Shutting down {_moduleId}", _moduleId!,
-                                             LogLevel.Information, string.Empty, token);
-
-            _cancellationTokenSource.Cancel();
-
-            await base.StopAsync(token);
         }
     }
 }

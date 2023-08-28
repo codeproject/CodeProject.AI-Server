@@ -1,28 +1,27 @@
 #! Python3.9
 
+## Using the latest
 filetype					# Installing FileType, a package to infer file types and MIME types
 gdown						# Installing gdown, a package for downloading from Google Drive folders
-Pillow						# Installing Pillow, a Python Image Library
+Pillow<10.0.0			# Installing Pillow, a Python Image Library
 
-## If there is an error regarding numba needing a higher version of numpy then use this
-# numpy==1.22.4				# Installing NumPy, a package for scientific computing
-# pymatting==1.1.8			# Installing pymatting, a Python Library for Alpha Matting
+onnxruntime				    # Installing the ONNX runtime
 
-numpy						# Installing NumPy, a package for scientific computing
-pymatting					# Installing pymatting, a Python Library for Alpha Matting
+## IF there is an error regarding numba needing a higher version of numpy then use this
+numpy				# Installing NumPy, a package for scientific computing
+pymatting			# Installing pymatting, a Python Library for Alpha Matting
 
-
-## Using CPU version. GPU hasn't proven to be stable
-onnxruntime                 # Installing the ONNX runtime
-
-## General version for GPU. 
-# onnxruntime-gpu			# Installing the ONNX runtime with GPU support
-
-## Specific version. May not actually work
-## onnxruntime-gpu==1.10.0	# Installing the ONNX runtime with GPU support
-
-## For nightly test build
-## -i https://test.pypi.org/simple/
-## ort-nightly-gpu
-
-# last line blank
+## Not needed for our usage
+## numpy					# Installing NumPy, a package for scientific computing
+## pymatting				# Installing pymatting, a Python Library for Alpha Matting
+## watchdog==2.1.7			# Installing watchdog, a set of utilities to monitor file system events
+## asyncer==0.0.1			# Installing Asyncer, a library to make our networking/concurrency calls easier.
+## pillow==9.0.1			# Pillow, the image library
+## uvicorn==0.17.0			# Uvicorn, an ASGI web server implementation for Python
+## aiohttp==3.8.1			# AIOHTTP, an Asynchronous HTTP Client/Server
+## click==8.0.3				# Click, the Command Line Interface Creation Kit
+## fastapi==0.72.0			# FastAPI, a web framework for building APIs
+## python-multipart==0.0.5
+## scikit-image==0.19.1
+## scipy==1.8.0
+## tqdm==4.62.3

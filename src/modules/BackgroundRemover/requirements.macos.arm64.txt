@@ -7,7 +7,7 @@ gdown						# Installing gdown, a package for downloading from Google Drive folde
 numpy==1.23.5						# Installing NumPy, a package for scientific computing
 
 pymatting					# Installing pymatting, a Python Library for Alpha Matting
-Pillow						# Installing Pillow, a Python Image Library
+Pillow<10.0.0			# Installing Pillow, a Python Image Library
 
 flatbuffers                 # Installing FlatBuffers serialization format support
 onnxruntime                 # Installing the ONNX runtime.

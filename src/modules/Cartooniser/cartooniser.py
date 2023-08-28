@@ -37,7 +37,7 @@ def get_model(weights_dir, model_name, device_type="cpu"):
         # Store path and loaded model for later
         models[model_name] = (model_path, loaded_model)
     else:
-        print(f"Using cached model {model_name}")
+        print(f"Debug: Using cached model {model_name}")
 
     return loaded_model
 

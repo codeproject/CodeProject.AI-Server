@@ -22,7 +22,7 @@ namespace CodeProject.AI.API.Server.Frontend
         private readonly ServerOptions _serverOptions;
 
         /// <summary>
-        /// Initializs a new instance of the Startup class.
+        /// Initializes a new instance of the Startup class.
         /// </summary>
         /// <param name="versionOptions">The version Options instance.</param>
         /// <param name="installOptions">The install Options instance.</param>
@@ -85,6 +85,7 @@ namespace CodeProject.AI.API.Server.Frontend
                     //  is purely things like OS / GPU.
                     string currentVersion = VersionConfig.VersionInfo?.Version ?? string.Empty;
                     _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);
+                    
                     var sysProperties = SystemInfo.Summary;
                     var systemInfoJson = JsonSerializer.Serialize(sysProperties);
                     _client.DefaultRequestHeaders.Add("X-CPAI-Server-SystemInfo", systemInfoJson);
@@ -95,7 +96,8 @@ namespace CodeProject.AI.API.Server.Frontend
 
             try
             {
-                string data = await _client.GetStringAsync(_serverOptions.ServerVersionCheckUrl);
+                string data = await _client.GetStringAsync(_serverOptions.ServerVersionCheckUrl)
+                                           .ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(data))
                 {
                     var options = new JsonSerializerOptions

@@ -67,7 +67,7 @@ namespace CodeProject.AI.SDK
         /// </summary>
         public IEnumerable<RequestFormFile>? files { get; set; }
 
-        // The additional segements at the end of the url path.
+        // The additional segments at the end of the url path.
         public string[] urlSegments { get; set; } = Array.Empty<string>();
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace CodeProject.AI.SDK
         /// </summary>
         /// <param name="key">The name of the value.</param>
         /// <param name="value">The default value to return if not present or.</param>
-        /// <parama name="overwrite">If true, and the key already exists, then the value 
+        /// <param name="overwrite">If true, and the key already exists, then the value 
         /// for this key will be overwritten. Otherwise the value will be added to that
         /// key</param>
         public void SetValue(string key, string value, bool overwrite = true)
@@ -241,12 +241,7 @@ namespace CodeProject.AI.SDK
         /// <returns>The image, or null if conversion fails.</returns>
         public SKImage? AsImage()
         {
-            // Using SkiaSharp as it handles more formats and mostly cross-platform.
-            if (data == null)
-                return null;
-
-            var skiaImage = SKImage.FromEncodedData(data);
-            return skiaImage;
+            return ImageUtils.GetImage(data);
         }
     }
 

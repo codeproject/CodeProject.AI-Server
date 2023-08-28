@@ -66,7 +66,8 @@ namespace CodeProject.AI.API.Server.Backend
                                                CancellationToken token = default)
         {
             var response = await _queueServices.SendRequestAsync(queueName.ToLower(), 
-                                                                 new BackendRequest(payload), token);
+                                                                 new BackendRequest(payload), token)
+                                               .ConfigureAwait(false);
             return response;
         }
     }

@@ -1,8 +1,7 @@
 {
   "Modules": {
     "SentimentAnalysis": {
-      "FilePath": "bin/Debug/net7.0/SentimentAnalysis",
-      "WorkingDirectory": "SentimentAnalysis"
-    }
+      "FilePath": "bin/Debug/net7.0/SentimentAnalysis.dll"
+     }
   }
 }

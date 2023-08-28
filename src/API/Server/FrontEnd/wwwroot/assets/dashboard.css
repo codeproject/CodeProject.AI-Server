@@ -1,5 +1,5 @@
 .main-panel {
-    max-width: 800px;
+   width: clamp(600px, 90%, 1280px);
     background-color: var(--bs-light);
 }
 
@@ -21,8 +21,7 @@ a {
 .tab-content { border: 1px solid #444; }
 
 .logs {
-    text-indent: -2em;
-    padding-left: 2em;
+    padding-left: .2rem;
     font-size: small;
     border: 1px solid #333;
     white-space: pre;
@@ -35,6 +34,7 @@ a {
 .logs .critical    { color: var(--bs-black); background-color:var(--bs-danger);}
 .logs .timing      { font-weight: bold; }
 .logs .highlight   { font-weight: bold; color: #00a900; }
+.logs .attention   { font-weight: bold; color: white; background-color: red; }
 
 .logs .text-default     { color: inherit;}
 .logs .text-black       { color: black; }

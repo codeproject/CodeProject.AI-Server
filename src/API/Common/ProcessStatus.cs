@@ -89,6 +89,11 @@ namespace CodeProject.AI.API.Common
         public string? ModuleId { get; set; }
 
         /// <summary>
+        /// Gets or sets the name of the queue this module is processing
+        /// </summary>
+        public string? Queue { get; set; }
+
+        /// <summary>
         /// Gets or sets the module name
         /// </summary>
         public string? Name { get; set; }
@@ -155,8 +160,15 @@ namespace CodeProject.AI.API.Common
                 StringBuilder summary = new StringBuilder();
 
                 // summary.AppendLine($"Process '{Name}' (ID: {ModuleId})");
-                summary.AppendLine($"Started:      {Started?.ToLocalTime().ToString("dd-MMM-yyyy h:mm:ss tt")}");
-                summary.AppendLine($"LastSeen:     {LastSeen?.ToLocalTime().ToString("dd-MMM-yyyy h:mm:ss tt")}");
+                string timezone = TimeZoneInfo.Local.StandardName;
+                string format   = "dd MMM yyyy h:mm:ss tt";
+                string started  = (Started is null) ? "Not seen" 
+                                : Started.Value.ToLocalTime().ToString(format) + " " + timezone;
+                string lastSeen = (LastSeen is null) ? "Not seen"
+                                : LastSeen.Value.ToLocalTime().ToString(format) + " " + timezone;
+
+                summary.AppendLine($"Started:      {started}");
+                summary.AppendLine($"LastSeen:     {lastSeen}");
                 summary.AppendLine($"Status:       {Status}");
                 summary.AppendLine($"Processed:    {Processed}");
                 summary.AppendLine($"Provider:     {ExecutionProvider}");

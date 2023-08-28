@@ -23,25 +23,40 @@ call "!sdkScriptsPath!\utils.bat" setESC
 rem echo modulePath = %modulePath%
 rem echo sdkScriptsPath = %sdkScriptsPath%
 
+call "!sdkScriptsPath!\utils.bat" WriteLine "Extracting EdgeTPU setup files" "!color_info!"
+pushd install
+mkdir edgetpu
+tar -xf edgetpu_runtime.zip -C edgetpu 
+
+:: We'll just use the existing install.bat that comes with the edgeTPU install instead of doing it
+:: ourselves
+call "!sdkScriptsPath!\utils.bat" WriteLine "Installing EdgeTPU support" "!color_info!"
+pushd edgetpu
+install.bat
+
+popd
+popd
+
+call "!sdkScriptsPath!\utils.bat" WriteLine "Done"
+
+
 REM Coral TPU setup
-call "!sdkScriptsPath!\utils.bat" WriteLine "Installing UsbDk ==============================================" "!color_info!"
-REM See https://pi3g.com/2022/10/19/coral-usb-inference-not-working-on-windows-10-valueerror-failed-to-load-delegate-from-edgetpu-dll/
-REM start /wait msiexec /i "%modulePath%\third_party\usbdk\UsbDk_1.0.22_x64.msi" /qb! /norestart
-start /wait msiexec /i "%modulePath%\third_party\usbdk\UsbDk_1.0.21_x64.msi" /qb! /norestart
-call "!sdkScriptsPath!\utils.bat" WriteLine
+REM call "!sdkScriptsPath!\utils.bat" WriteLine "Installing UsbDk ==============================================" "!color_info!"
+REM start /wait msiexec /i "%modulePath%\third_party\usbdk\UsbDk_1.0.21_x64.msi" /qb! /norestart
+REM call "!sdkScriptsPath!\utils.bat" WriteLine
 
-call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Windows drivers ====================================" "!color_info!"
-pnputil /add-driver "%modulePath%\third_party\coral_accelerator_windows\*.inf" /install
-call "!sdkScriptsPath!\utils.bat" WriteLine
+REM call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Windows drivers ====================================" "!color_info!"
+REM pnputil /add-driver "%modulePath%\third_party\coral_accelerator_windows\*.inf" /install
+REM call "!sdkScriptsPath!\utils.bat" WriteLine
 
-call "!sdkScriptsPath!\utils.bat" WriteLine "Installing performance counters ===============================" "!color_info!"
-lodctr /M:"%modulePath%\third_party\coral_accelerator_windows\coral.man"
-call "!sdkScriptsPath!\utils.bat" WriteLine
-call "!sdkScriptsPath!\utils.bat" WriteLine
+REM call "!sdkScriptsPath!\utils.bat" WriteLine "Installing performance counters ===============================" "!color_info!"
+REM lodctr /M:"%modulePath%\third_party\coral_accelerator_windows\coral.man"
+REM call "!sdkScriptsPath!\utils.bat" WriteLine
+REM call "!sdkScriptsPath!\utils.bat" WriteLine
 
-call "!sdkScriptsPath!\utils.bat" WriteLine "Copying edgetpu and libusb to System32 ========================" "!color_info!"
+REM call "!sdkScriptsPath!\utils.bat" WriteLine "Copying edgetpu and libusb to System32 ========================" "!color_info!"
 
-rem copy "%workingDir%\third_party\libedgetpu\throttled\x64_windows\edgetpu.dll" %systemroot%\system32
-copy "%modulePath%\third_party\libedgetpu\direct\x64_windows\edgetpu.dll" "%systemroot%\system32\"
-copy "%modulePath%\third_party\libusb_win\libusb-1.0.dll" "%systemroot%\system32\"
-call "!sdkScriptsPath!\utils.bat" WriteLine
+REM copy "%workingDir%\third_party\libedgetpu\throttled\x64_windows\edgetpu.dll" %systemroot%\system32
+REM copy "%modulePath%\third_party\libedgetpu\direct\x64_windows\edgetpu.dll" "%systemroot%\system32\"
+REM copy "%modulePath%\third_party\libusb_win\libusb-1.0.dll" "%systemroot%\system32\"
+REM call "!sdkScriptsPath!\utils.bat" WriteLine

@@ -3,7 +3,7 @@
 ## Using the latest
 filetype					# Installing FileType, a package to infer file types and MIME types
 gdown						# Installing gdown, a package for downloading from Google Drive folders
-Pillow						# Installing Pillow, a Python Image Library
+Pillow<10.0.0			# Installing Pillow, a Python Image Library
 
 ## IF there is an error regarding numba needing a higher version of numpy then use this
 numpy==1.22.4				# Installing NumPy, a package for scientific computing

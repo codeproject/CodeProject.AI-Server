@@ -148,7 +148,7 @@ namespace CodeProject.AI.API.Common
         public string QueueName { get; private set; }
 
         /// <summary>
-        /// Gets the command identifier which distiguishes the backend operations to perform based 
+        /// Gets the command identifier which distinguishes the backend operations to perform based 
         /// on the frontend endpoint.
         /// </summary>
         public string Command { get; private set; }

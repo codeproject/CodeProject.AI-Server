@@ -14,30 +14,79 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-if [ "$os" == "linux" ] && [ "$hasCUDA" == "true" ]; then
-    sudo apt install nvidia-cudnn
+# verbosity="loud"
+
+location="Shared"
+pythonVersion="3.8"
+
+pythonName="python${pythonVersion/./}"
+if [ "${location}" == "Local" ]; then
+    virtualEnv="${modulePath}/bin/${os}/${pythonName}/venv"
+else
+    virtualEnv="${runtimesPath}/bin/${os}/${pythonName}/venv"
+fi
+pythonCmd="${virtualEnv}/bin/python${pythonVersion}"
+packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
+
+# Docker images already have the drivers installed
+if [ "$inDocker" != "true" ] && [ "$os" == "linux" ]; then
+
+    # cuDNN needed for linux
+    if [ "$hasCUDA" == "true" ]; then
+        writeLine 'Installing nvidia-cudnn...'
+        sudo apt install nvidia-cudnn -y >/dev/null 2>/dev/null &
+        spin $!
+        writeLine "Done" "$color_success"
+    fi
+
+    # ROCm needed for linux
+    # if [ "$hasROCm" == "true" ]; then
+    #    writeLine 'Installing ROCm driver scripts...'
+    #    sudo apt-get update
+    #    #Ubuntu v20.04
+    #    #wget https://repo.radeon.com/amdgpu-install/5.4.2/ubuntu/focal/amdgpu-install_5.4.50402-1_all.deb
+    #    
+    #    #Ubuntu v22.04
+    #    wget  https://repo.radeon.com/amdgpu-install/5.4.2/ubuntu/jammy/amdgpu-install_5.4.50402-1_all.deb
+    #
+    #    sudo apt-get install ./amdgpu-install_5.4.50402-1_all.deb
+    #    spin $!
+    #    writeLine "Done" "$color_success"
+    #
+    #    writeLine 'Installing ROCm drivers...'
+    #    sudo amdgpu-install --usecase=dkms,graphics,multimedia,opencl,hip,hiplibsdk,rocm
+    #    spin $!
+    #    writeLine "Done" "$color_success"
+    #fi
+
 fi
 
 # Install python and the required dependencies. If we find torch then asssume it's all there
-setupPython 3.8
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages 3.8 "${modulePath}" "Shared"
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "Shared"
+setupPython "${pythonVersion}" "${location}"
 if [ $? -ne 0 ]; then quit 1; fi
 
-# Download the models and store in /assets and /custom-models
+# PyTorch-DirectML not working for this module
+# if [ "$hasCUDA" != "true" ] && [ "$os" == "linux" ]; then
+#     writeLine 'Installing PyTorch-DirectML...'
+#     "${pythonCmd}" -m pip install torch-directml --target "${packagesPath}"
+# fi
+
+installPythonPackages "${pythonVersion}" "${modulePath}" "${location}"
+if [ $? -ne 0 ]; then quit 1; fi
+installPythonPackages "${pythonVersion}" "${absoluteAppRootDir}/SDK/Python" "${location}"
+if [ $? -ne 0 ]; then quit 1; fi
+
+# Download the models and store in /assets and /custom-models (already in place in docker)
 getFromServer "models-yolo5-pt.zip"        "assets" "Downloading Standard YOLO models..."
 if [ $? -ne 0 ]; then quit 1; fi
 getFromServer "custom-models-yolo5-pt.zip" "custom-models" "Downloading Custom YOLO models..."
-
 
 #                         -- Install script cheatsheet -- 
 #
 # Variables available:
 #
 #  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/Installers)
+#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/SDK/Scripts)
 #  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
 #  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
 #  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
@@ -46,6 +95,8 @@ getFromServer "custom-models-yolo5-pt.zip" "custom-models" "Downloading Custom Y
 #  os                    - "linux" or "macos"
 #  architecture          - "x86_64" or "arm64"
 #  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
+#  systemName            - General name for the system. "Linux", "macOS", "Raspberry Pi", "Orange Pi"
+#                          "Jetson" or "Docker"
 #  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 #  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 #                          getFromServer will honour this value. Do it yourself for downloadAndExtract 

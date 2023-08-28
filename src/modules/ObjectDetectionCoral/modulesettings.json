@@ -1,0 +1,95 @@
+{
+  "Modules": {
+    "ObjectDetectionCoral": {
+      "Name": "ObjectDetection (Coral)",
+      "Version": "1.3",
+      
+      // Publishing info
+      "Description": "The object detection module uses the Coral TPU to locate and classify the objects the models have been trained on.",
+      "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+      "License": "Apache-2.0",
+      "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
+
+      // Which server version is compatible with each version of this module.
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "2.1", "" ], "ReleaseDate": "2023-07-11" },
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1", "" ], "ReleaseDate": "2023-07-12" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "" ], "ReleaseDate": "2023-07-12" },
+        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1", "" ], "ReleaseDate": "2023-08-11", "ReleaseNotes": "installer corrections, macOS/Ubuntu support improved" }
+      ],
+
+      // Launch instructions
+      "AutoStart": false,
+      "FilePath": "objectdetection_coral_adapter.py",
+      "Runtime": "python39",
+      "RuntimeLocation": "Local", // Can be Local or Shared
+
+      // These are all optional. Defaults are usually fine
+      "SupportGPU": true,
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 1,        // 1 if using GPU, 0 for CPU
+
+      // Deliberately not using the default queue: We make all Object detectors use the same queue.
+      "Queue": "objectdetection_queue",        // default is lower(modulename) + "_queue"
+
+      "EnvironmentVariables": {
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%/assets",
+        "MODEL_SIZE": "Medium"
+      },
+      
+      "RouteMaps": [
+        {
+          "Name": "Object Detector",
+          "Path": "vision/detection",
+          "Method": "POST",
+          "Command": "detect",
+          "Description": "Detects multiple objects in an image.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4.",
+              "DefaultValue": 0.4,
+              "MinValue": 0.0,
+              "MaxValue": 1.0
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            },
+            {
+              "Name": "analysisRoundTripMs",
+              "Type": "Integer",
+              "Description": "The time (ms) for the round trip to the analysis module and back."
+            }
+          ]
+        }
+      ]    
+    }
+  }
+}

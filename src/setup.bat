@@ -178,10 +178,15 @@ popd
 
 set absoluteAppRootDir=!installerScriptsPath!
 
-:: Platform can define where things are located :::::::::::::::::::::::::::::::
+:: Helper vars for OS, Platform (see note below), and system name. systemName is
+:: a no-op here because nothing exciting happens on Windows. In the corresponding
+:: .sh setup files, systemName can be docker, Raspberry Pi, WSL - all sorts of fun
+:: things. It's here to just make switching between .bat and .sh scripts consistent
 
 set os=windows
 set platform=windows
+set systemName=Windows
+
 :: This can be x86 (32-bit), AMD64 (Intel/AMD 64bit), ARM64 (Arm 64bit)
 set architecture=%PROCESSOR_ARCHITECTURE%
 
@@ -207,6 +212,12 @@ if /i "!enableGPU!" == "true" (
     )
 )
 if /i "!hasCUDA!" == "false" set supportCUDA=false
+
+set hasROCm=false
+if /i "!enableGPU!" == "true" (
+    where rocm-smi >nul 2>nul
+    if !errorlevel! EQU 0 set hasROCm=true
+)
 
 
 :: The location of directories relative to the root of the solution directory
@@ -249,7 +260,9 @@ if /i "%verbosity%" neq "quiet" (
 
 :: Checks on GPU ability
 
+call "!sdkScriptsPath!\utils.bat" WriteLine "Checking GPU support" "White" "Blue" !lineWidth!
 call "!sdkScriptsPath!\utils.bat" WriteLine ""
+
 call "!sdkScriptsPath!\utils.bat" Write "CUDA Present..."
 if /i "%hasCUDA%" == "true" (
     call "!sdkScriptsPath!\utils.bat" WriteLine "True" !color_success!

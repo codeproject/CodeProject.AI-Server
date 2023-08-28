@@ -3,7 +3,7 @@
 
     "SceneClassifier": {
       "Name": "Scene Classification",
-      "Version": "1.2",
+      "Version": "1.3",
 
       // Publishing info
       "Description": "Classifies an image according to one of 365 pre-trained scenes", 
@@ -12,9 +12,11 @@
       "LicenseUrl": "http://www.apache.org/licenses/",
 
       // Which server version is compatible with each version of this module.
-      "VersionCompatibililty": [
+      "ModuleReleases": [
         { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-03-01" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1", "2.1.6" ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "2.1.8" ], "ReleaseDate": "2023-05-03", "ReleaseNotes": "Minor module initialisation changes" },
+        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-05-17", "ReleaseNotes": "Updated module settings", "Importance": "Minor" }
       ],
 
       // Launch instructions

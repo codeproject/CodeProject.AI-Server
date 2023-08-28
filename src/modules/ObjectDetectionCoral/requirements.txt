@@ -1,0 +1,22 @@
+#! Python3.7
+
+Pillow>=4.0.0               # Installing Pillow, a Python Image Library
+
+# For edge devices only
+tflite-runtime==2.5.0.post1 # Installing Tensorflow Lite
+
+# Or...Tensorflow 2.10 was the last version that supported GPU on windows
+# tensorflow==2.10          # Installing Tensorflow
+
+# Coral example has numpy>=1.16.0',
+numpy==1.21.6			    # Installing NumPy, a package for scientific computing
+
+# Support for Python 3.6-3.9
+# 3.6 https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp36-cp36m-win_amd64.whl
+# 3.7 https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp37-cp37m-win_amd64.whl
+# 3.8 https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp38-cp38-win_amd64.whl
+# 3.9 https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp39-cp39-win_amd64.whl
+--extra-index-url https://google-coral.github.io/py-repo/ 
+pycoral~=2.0
+
+# last line empty

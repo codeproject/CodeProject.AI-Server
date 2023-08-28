@@ -1,37 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.API.Server.Backend;
 using CodeProject.AI.API.Common;
-using System.Text.Json.Nodes;
-using System.Diagnostics;
+using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
     // ------------------------------------------------------------------------------
-    // When a backend analysis module starts it will register itself with the main CodeProject.AI
+    // When a backend analysis module starts it will register itself with the main 
     // Server. It does this by Posting as Register request to the Server which
     //  - provides the end part of url for the request
     //  - the name of the queue that the request will be sent to.
     //  - the command string that will be associated with the payload sent to the queue.
     //
-    // To initiate an AI operation, the client will post a payload to the 
+    // To initiate an AI operation, the client will post a payload to the server
     // This is accomplished by
     //  - getting the url ending.
     //  - using this to get the queue name and command name
-    //  - sending the above and payload to the queue
-    //  - await the respons
+    //  - sending the above, plus a payload, to the queue
+    //  - await the response
     //  - return the response to the caller.
     // ------------------------------------------------------------------------------
 
@@ -47,6 +48,8 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         private readonly CommandDispatcher _dispatcher;
         private readonly BackendRouteMap   _routeMap;
         private readonly ModuleCollection  _modules;
+        private readonly TriggersConfig    _triggersConfig;
+        private readonly TriggerTaskRunner _commandRunner;
 
         /// <summary>
         /// Initializes a new instance of the VisionController class.
@@ -54,12 +57,19 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         /// <param name="dispatcher">The Command Dispatcher instance.</param>
         /// <param name="routeMap">The Route Manager</param>
         /// <param name="modulesConfig">Contains the Collection of modules</param>
-        public ProxyController(CommandDispatcher dispatcher, BackendRouteMap routeMap,
-                               IOptions<ModuleCollection> modulesConfig)
+        /// <param name="triggersConfig">Contains the triggers</param>
+        /// <param name="commandRunner">The command runner</param>
+        public ProxyController(CommandDispatcher dispatcher, 
+                               BackendRouteMap routeMap,
+                               IOptions<ModuleCollection> modulesConfig,
+                               IOptions<TriggersConfig> triggersConfig,
+                               TriggerTaskRunner commandRunner)
         {
-            _dispatcher = dispatcher;
-            _routeMap   = routeMap;
-            _modules    = modulesConfig.Value;
+            _dispatcher     = dispatcher;
+            _routeMap       = routeMap;
+            _modules        = modulesConfig.Value;
+            _triggersConfig = triggersConfig.Value;
+            _commandRunner  = commandRunner;
         }
 
         /// <summary>
@@ -75,7 +85,8 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
                 Stopwatch sw = Stopwatch.StartNew();
 
-                var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, payload);
+                var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, payload)
+                                                .ConfigureAwait(false);
 
                 long analysisRoundTripMs = sw.ElapsedMilliseconds;
 
@@ -88,6 +99,9 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                         jsonResponse = JsonSerializer.Deserialize<JsonObject>(responseString);
                     jsonResponse ??= new JsonObject();                   
                     jsonResponse["analysisRoundTripMs"] = analysisRoundTripMs;
+
+                    // Check for, and execute if needed, triggers
+                    ProcessTriggers(routeInfo!.QueueName, jsonResponse);
 
                     // Wrap it back up
                     responseString = JsonSerializer.Serialize(jsonResponse) as string;
@@ -137,7 +151,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                     string category = index > 0 ? routeInfo.Path.Substring(0, index) : routeInfo.Path;
                     string route    = index > 0 ? routeInfo.Path.Substring(index + 1) : string.Empty;
 
-                    // string path     = $"/{version}/{category}/{route}";
+                    // string path  = $"/{version}/{category}/{route}";
                     string path     = $"{version}/{routeInfo.Path}";
 
                     if (category != currentCategory)
@@ -280,6 +294,60 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             reader.Read(data, 0, data.Length);
 
             return data;
+        }
+
+        private void ProcessTriggers(string queueName, JsonObject response)
+        {
+            if (_triggersConfig.Triggers is null || _triggersConfig.Triggers.Length == 0)
+                return;
+
+            string platform = SystemInfo.Platform;
+
+            try
+            {
+                foreach (Trigger trigger in _triggersConfig.Triggers)
+                {
+                    // If the trigger is queue specific, check
+                    if (!string.IsNullOrWhiteSpace(trigger.Queue) &&
+                        !trigger.Queue.EqualsIgnoreCase(queueName))
+                        continue;
+
+                    // Is there a task to run on this platform, and a property to look for?
+                    TriggerTask? task = trigger.GetTask(platform);
+                    if (string.IsNullOrEmpty(trigger.PropertyName) || task is null || 
+                        string.IsNullOrEmpty(task.Command))
+                        continue;
+
+                    if (string.IsNullOrWhiteSpace(trigger.PredictionsCollectionName))
+                    {
+                        float.TryParse(response["confidence"]?.ToString(), out float confidence);
+                        string? value = response[trigger.PropertyName]?.ToString();
+                        if (trigger.Test(value, confidence))
+                            _commandRunner.RunCommand(task);
+                    }
+                    else
+                    {
+                        var predictions = response[trigger.PredictionsCollectionName];
+                        if (predictions is not null)
+                        {
+                            foreach (var prediction in predictions.AsArray())
+                            {
+                                if (prediction is null)
+                                    continue;
+                                    
+                                float.TryParse(prediction["confidence"]?.ToString(), out float confidence);
+                                string? value = prediction[trigger.PropertyName]?.ToString();
+                                if (trigger.Test(value, confidence))
+                                    _commandRunner.RunCommand(task);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
     }
 }

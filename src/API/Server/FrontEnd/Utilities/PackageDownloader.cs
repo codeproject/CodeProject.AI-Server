@@ -51,7 +51,7 @@ namespace CodeProject.AI.API.Server.Frontend.Utilities
             {
                 // remove file:// and then convert /dir -> C:\dir or c:\dir -> /dir as needed
                 uri = uri.Substring("file://".Length);
-                if (SystemInfo.OperatingSystem.EqualsIgnoreCase("Windows"))
+                if (SystemInfo.IsWindows)
                 {
                     if (uri.StartsWith("/"))
                         uri = "C:" + uri;
@@ -60,13 +60,13 @@ namespace CodeProject.AI.API.Server.Frontend.Utilities
                     uri = uri.Substring("c:".Length);
 
                 uri = Text.FixSlashes(uri);
-                return await File.ReadAllTextAsync(uri);
+                return await File.ReadAllTextAsync(uri).ConfigureAwait(false);
             }
 
-            if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri _))
+            if (!Uri.TryCreate(uri, UriKind.Absolute, out _))
                 throw new InvalidOperationException($"{nameof(uri)} is not a valid URI.");
 
-            return await _httpClient.GetStringAsync(uri);
+            return await _httpClient.GetStringAsync(uri).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace CodeProject.AI.API.Server.Frontend.Utilities
                 throw new ArgumentOutOfRangeException(error);
             }
 
-            if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri _))
+            if (!Uri.TryCreate(uri, UriKind.Absolute, out _))
             {
                 error = $"{nameof(uri)} is not a valid URI.";
                 throw new InvalidOperationException(error);
@@ -94,7 +94,7 @@ namespace CodeProject.AI.API.Server.Frontend.Utilities
 
             try
             {
-                byte[] fileBytes = await _httpClient.GetByteArrayAsync(uri);
+                byte[] fileBytes = await _httpClient.GetByteArrayAsync(uri).ConfigureAwait(false);
                 if (fileBytes.Length > 0)
                 {
                     File.WriteAllBytes(outputPath, fileBytes);

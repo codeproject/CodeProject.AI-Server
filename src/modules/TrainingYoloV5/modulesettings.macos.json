@@ -1,0 +1,7 @@
+{
+  "Modules": {
+    "TrainingYoloV5": {
+      "SupportGPU": false  // https://github.com/ultralytics/yolov5/issues/11235
+    }
+  }
+}

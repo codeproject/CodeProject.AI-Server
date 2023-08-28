@@ -10,6 +10,8 @@
 	@goto:eof
 )
 
+:: set verbosity=loud
+
 :: Install python and the required dependencies
 call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Shared"
 if errorlevel 1 exit /b 1
@@ -42,6 +44,7 @@ call "%sdkScriptsPath%\utils.bat" GetFromServer "custom-models-yolo5-pt.zip" "cu
 ::  os                    - "windows"
 ::  architecture          - "x86_64" or "arm64"
 ::  platform              - "windows" or "windows-arm64"
+::  systemName            - "Windows"
 ::  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 ::  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 ::                          GetFromServer will honour this value. Do it yourself for DownloadAndExtract 

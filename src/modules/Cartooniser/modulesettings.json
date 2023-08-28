@@ -3,7 +3,7 @@
 
     "Cartooniser": {
       "Name": "Cartooniser",
-      "Version": "1.0",
+      "Version": "1.1",
 
       // Publishing info
       "Description": "Convert a photo into an anime style cartoon", 
@@ -12,9 +12,10 @@
       "LicenseUrl": "https://github.com/bryandlee/animegan2-pytorch/blob/main/LICENSE",
 
       // Which server version is compatible with each version of this module.
-      "VersionCompatibililty": [
+      "ModuleReleases": [
         { "ModuleVersion": "1.0", "ServerVersionRange": [ "2.1", "" ], "ReleaseDate": "2023-03-28" },
-      ],
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1.7", "" ],      "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" }
+     ],
 
       // Launch instructions
       "AutoStart": true,

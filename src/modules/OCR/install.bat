@@ -25,14 +25,6 @@ rem if errorlevel 1 exit /b 1
 call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "Local"
 rem if errorlevel 1 exit /b 1
 
-:: We have a patch to apply!
-call "!sdkScriptsPath!\utils.bat" WriteLine "Applying patch for PaddlePaddle" "!color_info!"
-if /i "!hasCUDA!" == "true" (
-	copy /Y "!modulePath!\patch\paddle2.3.2.post116\image.py" "!modulePath!\bin\%os%\python37\venv\Lib\site-packages\paddle\dataset\"
-) else (
-	copy /Y "!modulePath!\patch\paddle2.3.2\image.py"         "!modulePath!\bin\%os%\python37\venv\Lib\site-packages\paddle\dataset\"
-)
-
 :: Download the OCR models and store in /paddleocr
 call "%sdkScriptsPath%\utils.bat" GetFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
 rem if errorlevel 1 exit /b 1
@@ -55,6 +47,7 @@ rem if errorlevel 1 exit /b 1
 ::  os                    - "windows"
 ::  architecture          - "x86_64" or "arm64"
 ::  platform              - "windows" or "windows-arm64"
+::  systemName            - "Windows"
 ::  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 ::  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 ::                          GetFromServer will honour this value. Do it yourself for DownloadAndExtract 

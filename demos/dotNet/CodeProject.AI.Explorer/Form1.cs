@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using CodeProject.AI.API.Common;
-
-using SkiaSharp;
+using CodeProject.AI.SDK;
 using SkiaSharp.Views.Desktop;
 
 namespace CodeProject.AI.Demo.Explorer
@@ -39,7 +38,7 @@ namespace CodeProject.AI.Demo.Explorer
         }
         private async void Ping(object sender, EventArgs e)
         {
-            var response = await _AIService.Ping();
+            var response = await _AIService.Ping().ConfigureAwait(false);
             if (_serverLive != response.success)
             {
                 _serverLive = response.success;
@@ -153,7 +152,7 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            var result = await _AIService.DetectFaces(_imageFileName);
+            var result = await _AIService.DetectFaces(_imageFileName).ConfigureAwait(false);
             if (result is DetectFacesResponse detectedFaces)
             {
                 Image? image = GetImage(_imageFileName);
@@ -210,7 +209,8 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            var result = await _AIService.MatchFaces(_faceImageFileName1, _faceImageFileName2);
+            var result = await _AIService.MatchFaces(_faceImageFileName1, _faceImageFileName2)
+                                         .ConfigureAwait(false);
             if (result is MatchFacesResponse matchedFaces)
             {
                 detectionResult.Text = $"Similarity: {Math.Round(matchedFaces.similarity, 4)}";
@@ -233,7 +233,7 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            var result = await _AIService.DetectScene(_imageFileName);
+            var result = await _AIService.DetectScene(_imageFileName).ConfigureAwait(false);
             if (result is DetectSceneResponse detectedScene)
             {
                 var image = GetImage(_imageFileName);
@@ -260,7 +260,7 @@ namespace CodeProject.AI.Demo.Explorer
             }
 
             Stopwatch stopwatch = Stopwatch.StartNew();
-            var result          = await _AIService.DetectObjects(_imageFileName);
+            ResponseBase result = await _AIService.DetectObjects(_imageFileName).ConfigureAwait(false);
             stopwatch.Stop();
 
             if (result is DetectObjectsResponse detectedObjects)
@@ -336,7 +336,8 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            var result = await _AIService.RegisterFace(UserIdTextbox.Text, _registerFileNames);
+            var result = await _AIService.RegisterFace(UserIdTextbox.Text, _registerFileNames)
+                                         .ConfigureAwait(false);
             if (result is RegisterFaceResponse registeredFace)
                 SetStatus("Registration complete");
             else
@@ -359,7 +360,7 @@ namespace CodeProject.AI.Demo.Explorer
             if(float.TryParse(MinConfidence.Text, out float parsedConfidence))
                 minConfidence = parsedConfidence;
 
-            var result = await _AIService.RecognizeFace(filename, minConfidence);
+            var result = await _AIService.RecognizeFace(filename, minConfidence).ConfigureAwait(false);
             if (result is RecognizeFacesResponse recognizeFace)
             {
                 try
@@ -411,7 +412,7 @@ namespace CodeProject.AI.Demo.Explorer
             ClearResults();
             SetStatus("Listing known faces");
 
-            var result = await _AIService.ListRegisteredFaces();
+            var result = await _AIService.ListRegisteredFaces().ConfigureAwait(false);
             if (result is ListRegisteredFacesResponse registeredFaces)
             {
                 if (result?.success ?? false)
@@ -456,7 +457,8 @@ namespace CodeProject.AI.Demo.Explorer
             ClearResults();
             SetStatus("Deleting registered face");
 
-            var result = await _AIService.DeleteRegisteredFace(UserIdTextbox.Text);
+            var result = await _AIService.DeleteRegisteredFace(UserIdTextbox.Text)
+                                         .ConfigureAwait(false);
             if (result?.success ?? false)
                 SetStatus("Completed Face deletion");
             else
@@ -513,7 +515,7 @@ namespace CodeProject.AI.Demo.Explorer
                          : _AIService.DetectObjects(_benchmarkFileName);
                 taskList.Add(task);
             }
-            await Task.WhenAll(taskList);
+            await Task.WhenAll(taskList).ConfigureAwait(false);
             sw.Stop();
 
             BenchmarkResults.Text = $"Benchmark: {Math.Round(nIterations / (sw.ElapsedMilliseconds/ 1000.0), 2)} FPS";
@@ -562,7 +564,7 @@ namespace CodeProject.AI.Demo.Explorer
         /// <remarks>SkiSharp handles more image formats than System.Drawing.</remarks>
         private Image? GetImage(string filename)
         {
-            var skiaImage = SKImage.FromEncodedData(filename);
+            var skiaImage = ImageUtils.GetImage(filename);
             if (skiaImage is null)
                 return null;
 

@@ -8,9 +8,11 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 using CodeProject.AI.API.Common;
+using CodeProject.AI.API.Server.Backend;
 using CodeProject.AI.SDK.Common;
 
 using Microsoft.AspNetCore.Hosting;
@@ -26,9 +28,13 @@ namespace CodeProject.AI.API.Server.Frontend
     /// </summary>
     public class Program
     {
+        const int defaultPort   = 32168;
+        const int legacyPort    = 5000;
+        const int legacyPortOsx = 5500;
+
         static private ILogger? _logger = null;
 
-        static int _port = 32168;
+        static int _port = defaultPort;
         // static int _sPort = 5001; - eventually for SSL
 
         /// <summary>
@@ -37,137 +43,147 @@ namespace CodeProject.AI.API.Server.Frontend
         /// <param name="args">The command line args.</param>
         public static async Task Main(string[] args)
         {
-            // TODO: Pull these from the correct location
-            const string company = "CodeProject";
-            const string product = "AI";
+            const string productCategory = "AI";
 
-            await SystemInfo.InitializeAsync();
-
-            // lower cased as Linux has case sensitive file names
-            string  os           = SystemInfo.OperatingSystem.ToLower();
-            string  architecture = SystemInfo.Architecture.ToLower();
-            string? runtimeEnv   = SystemInfo.RuntimeEnvironment == SDK.Common.RuntimeEnvironment.Development ||
-                                   SystemInfo.IsDevelopmentCode ? "development" : string.Empty;
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
             var assembly         = Assembly.GetExecutingAssembly();
-            var assemblyName     = (assembly.GetName().Name ?? string.Empty)
-                                 + (os == "windows" ? ".exe" : ".dll");
-            var serviceName      = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
+            var assemblyName     = (assembly.GetName().Name ?? string.Empty) + (isWindows? ".exe" : ".dll");
+            var companyName      = assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company
+                                ?? "CodeProject";
+            var productName      = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
                                 ?? assemblyName.Replace(".", " ");
+
+            var serviceName      = productName;
             var servicePath      = Path.Combine(AppContext.BaseDirectory, assemblyName);
 
             var serviceDescription = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description
-                                  ?? string.Empty;
+                                    ?? string.Empty;
 
-            if (args.Length == 1)
+            // Prevent this app from starting more that one instance
+            using (var mutex = new Mutex(false, serviceName))
             {
-                if (args[0].EqualsIgnoreCase("/Install"))
+                if (!mutex.WaitOne(0))
                 {
-                    WindowsServiceInstaller.Install(servicePath, serviceName, serviceDescription);
+                    Console.WriteLine("This application is already running.");
                     return;
                 }
-                else if (args[0].EqualsIgnoreCase("/Uninstall"))
+
+                await SystemInfo.InitializeAsync().ConfigureAwait(false);
+
+                // lower cased as Linux has case sensitive file names
+                string  os           = SystemInfo.OperatingSystem.ToLower();
+                string  architecture = SystemInfo.Architecture.ToLower();
+                string? runtimeEnv   = SystemInfo.RuntimeEnvironment == SDK.Common.RuntimeEnvironment.Development ||
+                                       SystemInfo.IsDevelopmentCode ? "development" : string.Empty;
+
+
+                if (args.Length == 1)
                 {
-                    WindowsServiceInstaller.Uninstall(serviceName);
-                    KillOrphanedProcesses(runtimeEnv);
-                    return;
+                    if (args[0].EqualsIgnoreCase("/Install"))
+                    {
+                        WindowsServiceInstaller.Install(servicePath, serviceName, serviceDescription);
+                        return;
+                    }
+                    else if (args[0].EqualsIgnoreCase("/Uninstall"))
+                    {
+                        WindowsServiceInstaller.Uninstall(serviceName);
+                        KillOrphanedProcesses(runtimeEnv);
+                        return;
+                    }
+                    else if (args[0].EqualsIgnoreCase("/Start"))
+                    {
+                        WindowsServiceInstaller.Start(serviceName);
+                        return;
+                    }
+                    else if (args[0].EqualsIgnoreCase("/Stop"))
+                    {
+                        WindowsServiceInstaller.Stop(serviceName);
+                        KillOrphanedProcesses(runtimeEnv);
+                        return;
+                    }
                 }
-                else if (args[0].EqualsIgnoreCase("/Start"))
+
+                // make sure any processes that didn't get killed on the Service shutdown get killed now.
+                KillOrphanedProcesses(runtimeEnv);
+
+                // GetProcessStatus a directory for the given platform that allows modules to store persisted data
+                string programDataDir = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                string applicationDataDir = $"{programDataDir}\\{companyName}\\{productCategory}".Replace('\\', Path.DirectorySeparatorChar);
+
+                // .NET's suggestion for macOS and Linux aren't great. Let's do something different.
+                if (SystemInfo.IsMacOS)
                 {
-                    WindowsServiceInstaller.Start(serviceName);
-                    return;
+                    applicationDataDir = $"/Library/Application Support/{companyName}/{productCategory}";
                 }
-                else if (args[0].EqualsIgnoreCase("/Stop"))
+                else if (SystemInfo.IsLinux)
                 {
-                    WindowsServiceInstaller.Stop(serviceName);
-                    KillOrphanedProcesses(runtimeEnv);
-                    return;
+                    applicationDataDir = $"/etc/{companyName.ToLower()}/{productCategory.ToLower()}";
                 }
-            }
 
-            // make sure any processes that didn't get killed on the Service shutdown get killed now.
-            KillOrphanedProcesses(runtimeEnv);
+                // Store this dir in the config settings so we can get to it later.
+                var inMemoryConfigData = new Dictionary<string, string?> {
+                    { "ApplicationDataDir", applicationDataDir }
+                };
 
-            // GetProcessStatus a directory for the given platform that allows momdules to store persisted data
-            string programDataDir = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-            string applicationDataDir = $"{programDataDir}\\{company}\\{product}".Replace('\\', Path.DirectorySeparatorChar);
+                bool reloadConfigOnChange = !SystemInfo.IsDocker;
 
-            // .NET's suggestion for macOS and Linux aren't great. Let's do something different.
-            if (os == "macos")
-            {
-                applicationDataDir = $"/Library/Application Support/{company}/{product}";
-            }
-            else if (os == "linux")
-            {
-                applicationDataDir = $"/etc/{company.ToLower()}/{product.ToLower()}";
-            }
+                // Setup our custom Configuration Loader pipeline and build the configuration.
+                IHost? host = CreateHostBuilder(args)
+                           .ConfigureAppConfiguration(SetupConfigurationLoaders(args, os, architecture,
+                                                                                runtimeEnv, applicationDataDir,
+                                                                                inMemoryConfigData,
+                                                                                reloadConfigOnChange))
+                           .Build()
+                           ;
 
-            // Store this dir in the config settings so we can get to it later.
-            var inMemoryConfigData = new Dictionary<string, string?> {
-                { "ApplicationDataDir", applicationDataDir }
-            };
+                _logger = host.Services.GetService<ILogger<Program>>();
 
-            bool reloadConfigOnChange = SystemInfo.ExecutionEnvironment != ExecutionEnvironment.Docker;
+                if (_logger != null)
+                {
+                    string systemInfo = SystemInfo.GetSystemInfo();
+                    foreach (string line in systemInfo.Split('\n'))
+                        _logger.LogInformation("** " + line.TrimEnd());
 
-            // Setup our custom Configuration Loader pipeline and build the configuration.
-            IHost? host = CreateHostBuilder(args)
-                       .ConfigureAppConfiguration(SetupConfigurationLoaders(args, os, architecture,
-                                                                            runtimeEnv, applicationDataDir,
-                                                                            inMemoryConfigData,
-                                                                            reloadConfigOnChange))
-                       .Build()
-                       ;
+                    _logger.LogInformation($"** App DataDir:      {applicationDataDir}");
 
-            _logger = host.Services.GetService<ILogger<Program>>();
+                    string info = await SystemInfo.GetVideoAdapterInfoAsync().ConfigureAwait(false);
+                    foreach (string line in info.Split('\n'))
+                        _logger.LogInformation(line.TrimEnd());
+                }
 
-            if (_logger != null)
-            {
-                string systemInfo = SystemInfo.GetSystemInfo();
-                foreach (string line in systemInfo.Split('\n'))
-                    _logger.LogInformation("** " + line.TrimEnd());
+                Task? hostTask;
+                hostTask = host.RunAsync();
+    #if DEBUG
+                try
+                {
+                    OpenBrowser($"http://localhost:{_port}/");
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Unable to open Dashboard on startup.");
+                }
+    #endif
+                try
+                {
+                    await hostTask.ConfigureAwait(false);
 
-                _logger.LogInformation($"** App DataDir:      {applicationDataDir}");
-
-                string info = await SystemInfo.GetGpuUsageInfo();
-                foreach (string line in info.Split('\n'))
-                    _logger.LogInformation(line.TrimEnd());
-
-                info = await SystemInfo.GetVideoAdapterInfo();
-                foreach (string line in info.Split('\n'))
-                    _logger.LogInformation(line.TrimEnd());
-            }
-
-            Task? hostTask;
-            hostTask = host.RunAsync();
-#if DEBUG
-            try
-            {
-                OpenBrowser($"http://localhost:{_port}/");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Unable to open Dashboard on startup.");
-            }
-#endif
-            try
-            {
-                await hostTask;
-
-                Console.WriteLine("Shutting down");
-            }
-            catch (Exception ex)
-            {
-                // TODO: Host is gone, so no logger ??
-                Console.WriteLine($"\n\nUnable to start the server: {ex.Message}.\n" +
-                                  "Check that another instance is not running on the same port.");
-                Console.Write("Press Enter to close.");
-                Console.ReadLine();
+                    Console.WriteLine("Shutting down");
+                }
+                catch (Exception ex)
+                {
+                    // TODO: Host is gone, so no logger ??
+                    Console.WriteLine($"\n\nUnable to start the server: {ex.Message}.\n" +
+                                      "Check that another instance is not running on the same port.");
+                    Console.Write("Press Enter to close.");
+                    Console.ReadLine();
+                }
             }
         }
 
         private static void KillOrphanedProcesses(string? runtimeEnv)
         {
-            if (SystemInfo.OperatingSystem.EqualsIgnoreCase("Windows"))
+            if (SystemInfo.IsWindows)
             {
                 try
                 {
@@ -216,7 +232,7 @@ namespace CodeProject.AI.API.Server.Frontend
                 // RemoveProcessStatus the default sources and rebuild it.
                 config.Sources.Clear(); 
 
-                // add in the default appsetting.json file and its variants
+                // add in the default appsettings.json file and its variants
                 // In order
                 // appsettings.json
                 // appsettings.development.json
@@ -259,7 +275,7 @@ namespace CodeProject.AI.API.Server.Frontend
                         config.AddJsonFile(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
                 }
 
-                if (SystemInfo.ExecutionEnvironment == ExecutionEnvironment.Docker)
+                if (SystemInfo.IsDocker)
                 {
                     settingsFile = Path.Combine(baseDir, $"appsettings.docker.json");
                     if (File.Exists(settingsFile))                
@@ -284,13 +300,17 @@ namespace CodeProject.AI.API.Server.Frontend
                 config.AddJsonFile(Path.Combine(baseDir, VersionConfig.VersionCfgFilename),
                                    reloadOnChange: reloadConfigOnChange, optional: true);
 
+                // Load the triggers.json file to load the triggers
+                config.AddJsonFile(Path.Combine(baseDir, TriggersConfig.TriggersCfgFilename),
+                                   reloadOnChange: reloadConfigOnChange, optional: true);
+
                 // Load the modulesettings.json files to get analysis module settings
                 LoadModulesConfiguration(config, runtimeEnv);
 
                 // Load the last saved config values as set by the user
                 LoadUserOverrideConfiguration(config, applicationDataDir, runtimeEnv, reloadConfigOnChange);
 
-                // Load Envinronmnet Variables into Configuration
+                // Load Environment Variables into Configuration
                 config.AddEnvironmentVariables();
 
                 // Add command line back in to force it to have full override powers.
@@ -316,7 +336,7 @@ namespace CodeProject.AI.API.Server.Frontend
         // things. To be done at a later date.
         private static void LoadModulesConfiguration(IConfigurationBuilder config, string? runtimeEnv)
         {
-            bool reloadOnChange = SystemInfo.ExecutionEnvironment != ExecutionEnvironment.Docker;
+            bool reloadOnChange = !SystemInfo.IsDocker;
 
             IConfiguration configuration = config.Build();
             (var modulesPath, var preInstalledModulesPath) = EnsureDirectories(configuration, runtimeEnv);
@@ -534,44 +554,49 @@ namespace CodeProject.AI.API.Server.Frontend
                                 _port = GetServerPort(hostbuilderContext);
                                 bool foundPort = false;
 
-                                if (IsPortAvailable(_port))
+                                // Listen on the port that the appsettings defines (we force the
+                                // use of the default port. IsPortAvailable can sometimes be too
+                                // conservative)
+                                if (_port == defaultPort || IsPortAvailable(_port))
                                 {
                                     serverOptions.Listen(IPAddress.IPv6Any, _port);
                                     foundPort = true;
                                 }
 
-                                // We always want this port.
-                                if (_port != 32168 && IsPortAvailable(32168))
+                                // If we aren't listening to the default port (32168), then listen
+                                // to it! (and don't bother asking if it's available. Just try it.)
+                                if (_port != defaultPort /* && IsPortAvailable(defaultPort)*/)
                                 {
                                     if (!foundPort)
-                                        _port = 32168;
+                                        _port = defaultPort;
 
-                                    serverOptions.Listen(IPAddress.IPv6Any, 32168);
+                                    serverOptions.Listen(IPAddress.IPv6Any, defaultPort);
                                     foundPort = true;
                                 }
 
                                 if (!disableLegacyPort)
                                 {
-                                    // Add some legacy ports
+                                    // Add some legacy ports. First macOS (port 5500)
                                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                                     {
-                                        if (_port != 5500 && IsPortAvailable(5500))
+                                        if (_port != legacyPortOsx && IsPortAvailable(legacyPortOsx))
                                         {
                                             if (!foundPort)
-                                                _port = 5500;
+                                                _port = legacyPortOsx;
                                         
-                                            serverOptions.Listen(IPAddress.IPv6Any, 5500);
+                                            serverOptions.Listen(IPAddress.IPv6Any, legacyPortOsx);
                                            foundPort = true;
                                         }
                                     }
+                                    // Then everything else (port 5000)
                                     else
                                     {
-                                        if (_port != 5000 && IsPortAvailable(5000))
+                                        if (_port != legacyPort && IsPortAvailable(legacyPort))
                                         {
                                             if (!foundPort)
-                                                _port = 5000;
+                                                _port = legacyPort;
                                         
-                                            serverOptions.Listen(IPAddress.IPv6Any, 5000);
+                                            serverOptions.Listen(IPAddress.IPv6Any, legacyPort);
                                             foundPort = true;
                                         }
                                     }
@@ -614,7 +639,7 @@ namespace CodeProject.AI.API.Server.Frontend
         }
 
         /// <summary>
-        /// Checks as to whether a given port on this machine is avaialble for use.
+        /// Checks as to whether a given port on this machine is available for use.
         /// </summary>
         /// <param name="port">The port number</param>
         /// <returns>true if the port is available; false otherwise</returns>

@@ -29,12 +29,19 @@ class TFLiteOD_adapter(ModuleRunner):
         if not self.launched_by_server:
             self.queue_name = "objectdetection_queue"
 
+        # No luck on Windows so far
+        import platform
+        if platform.system() == "Windows":  
+            self.support_GPU = False
+
         if self.support_GPU:
             self.support_GPU = self.hasCoralTPU
 
         if self.support_GPU:
             print("Edge TPU detected")
             self.execution_provider = "TPU"
+        else:
+            opts.model_tpu_file = None # disable TPU
 
         init_detect(opts)
 
@@ -73,7 +80,7 @@ class TFLiteOD_adapter(ModuleRunner):
             # you are using raw data access.
             if not sem.acquire(timeout=1):
                 return {
-                    "success"     : "false",
+                    "success"     : False,
                     "predictions" : [],
                     "message"     : "The interpreter is in use. Please try again later",
                     "count"       : 0,
@@ -81,7 +88,7 @@ class TFLiteOD_adapter(ModuleRunner):
                     "inferenceMs" : 0
                 }
 
-            result = do_detect(img, score_threshold)
+            result = do_detect(opts, img, score_threshold)
             sem.release()
 
             predictions = result["predictions"]
@@ -111,7 +118,7 @@ class TFLiteOD_adapter(ModuleRunner):
         except Exception as ex:
             # await self.report_error_async(ex, __file__)
             self.report_error(ex, __file__)
-            return { "success": False, "error": "Error occured on the server"}
+            return { "success": False, "error": "Error occurred on the server"}
 
 
 if __name__ == "__main__":

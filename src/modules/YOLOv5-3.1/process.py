@@ -55,10 +55,7 @@ class YOLODetector(object):
 
             print(f"GPU compute capability is {torch.cuda.get_device_capability()[0]}.{torch.cuda.get_device_capability()[1]}")
             
-            if half_precision == 'disable':
-                self.half = False
-            else:
-                self.half = half_precision == 'force' or torch.cuda.get_device_capability()[0] >= 6
+            self.half = half_precision != 'disable'
 
             if self.half:
                 print(f"Using half-precision for the device '{device_name}'")

@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 import platform
+from platform import uname
 import sys
 import time
 import traceback
@@ -10,7 +11,7 @@ from typing import Tuple
 
 # TODO: All I/O should be async, non-blocking so that logging doesn't impact 
 # the throughput of the requests. Switching to HTTP2 or some persisting 
-# connection mechanism would speed thing up as well.
+# connection mechanism would speed things up as well.
 
 
 # The purpose of inserting the path is so the Python import system looks in the 
@@ -46,28 +47,43 @@ class ModuleRunner:
 
     async def process(self, data: RequestData) -> JSON:
         """
-        Called each time a request is retrieved from this module's queue is to be
-        processed. To be overridden by child classes
+        Called each time a request is retrieved from this module's queue is to
+        be processed. To be overridden by child classes
 
         self - This ModuleRunner
-        data - The RequestData retrieved from the processing queue. It contains all
-               the info needed for this module to satisfy the request
+        data - The RequestData retrieved from the processing queue. It contains
+               all the info needed for this module to satisfy the request
         returns: A JSON package containing the results of this request.
+        """
+        pass
+
+    def status(self, data: RequestData = None) -> JSON:
+        """
+        Called when this module has been asked to provide its current status.
+        Helpful for modules that have long running operations such as training
+        or generative AI.
+        """
+        pass
+    
+    def selftest(self) -> JSON:
+        """
+        Called to run general tests against this module to ensure it's in good
+        working order. Typically this should run unit and/or integration tests
+        and report back the results. Used for post-install checks.
         """
         pass
 
     def shutdown(self) -> None:
         """
-        Called when this module has been asked to shutdown. To be overridden by child
-        classes
+        Called when this module has been asked to shutdown. To be overridden by
+        child classes
         """
         pass
 
     def __init__(self):
-    #
-    #    """ 
-    #    Constructor. 
-    #    """
+        """ 
+        Constructor. 
+        """
 
         # Constants
         self._error_pause_secs      = 1.0   # For general errors
@@ -81,6 +97,7 @@ class ModuleRunner:
         self._current_error_pause_secs = 0
 
         self._hasTorchCuda          = None
+        self._hasTorchDirectML      = None
         self._hasTorchHalfPrecision = None
         self._hasTorchMPS           = None
         self._hasONNXRuntime        = None
@@ -88,12 +105,13 @@ class ModuleRunner:
         self._hasOpenVINO           = None
         self._hasPaddleGPU          = None
         self._hasCoralTPU           = None
+        self._hasFastDeployRockNPU  = None
 
         # Public fields -------------------------------------------------------
 
         # A note about the use of ModuleOptions. ModuleOptions is simply a way 
         # to hide all the calls to _get_env_var behind a simple class. While
-        # there is a lot of repitition in self.property = ModuleOptions.property,
+        # there is a lot of repetition in self.property = ModuleOptions.property,
         # it means we have the means of keeping the initial values the module
         # had at launch separate from the working values which may change during.
         # It's tempting to remove all values that ModuleOptions supplies, and
@@ -119,6 +137,7 @@ class ModuleRunner:
         self.launched_by_server  = ModuleOptions.launched_by_server
 
         # Hardware / accelerator info
+        self.required_MB         = int(ModuleOptions.required_MB or 0)
         self.support_GPU         = ModuleOptions.support_GPU
         self.accel_device_name   = ModuleOptions.accel_device_name
         self.half_precision      = ModuleOptions.half_precision
@@ -137,13 +156,19 @@ class ModuleRunner:
 
         # What system are we running on?
         self.system = { 'Linux': 'Linux', 'Darwin': 'macOS', 'Windows': 'Windows'}[platform.system()]
+        self.in_WSL = self.system == 'Linux' and 'microsoft-standard-WSL' in uname().release
 
-        # Further tests for RaspberryPi
+        # Further tests for Micro devices
         if self.system == 'Linux': 
             try:
                 import io
                 with io.open('/sys/firmware/devicetree/base/model', 'r') as m:
-                    if 'raspberry pi' in m.read().lower(): self.system = 'RaspberryPi'
+                    model_info = m.read().lower()
+                    if 'raspberry pi' in model_info:
+                        self.system = 'Raspberry Pi'
+                    elif 'orange pi' in model_info:
+                        self.system = 'Orange Pi'
+                        
             except Exception: pass
 
         # Need to hold off until we're ready to create the main logging loop.
@@ -172,36 +197,11 @@ class ModuleRunner:
 
         # Private fields
         self._base_queue_url = self.base_api_url + "queue/"
-    
-    """
-    @staticmethod
-    def supports_half_precision(gpu_card_name: str) -> bool:
-        " ""
-        Returns a True or False depending on whether the aupplies card 
-        supports half-precision operations.
-        This is terribly flaky. The docs seem to suggest anything with
-        a compute capability >= 6.0 supports half, so we'll roll with that
-        Half-precision is supported by Pascal architecture and above.
-        https://en.wikipedia.org/wiki/CUDA#GPUs_supported - GPUs by architecture
-        https://www.eatyourbytes.com/list-of-gpus-by-processing-power-half-precision/ - half precision speeds
-        " ""
-        no_half = ["TU102","TU104","TU106","TU116", "TU117",
-                   "GeForce 960",
-                   "GeoForce GT 1030", "GeForce GTX 1050","GeForce GTX 1060",
-                   "GeForce GTX 1060","GeForce GTX 1070","GeForce GTX 1080",
-                   "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080",
-                   "GeForce GTX 1650", "GeForce GTX 1660", "MX550", "MX450",
-                   "Quadro RTX 8000", "Quadro RTX 6000", "Quadro RTX 5000", "Quadro RTX 4000"
-                   # "Quadro P1000", - this works with half!
-                   "Quadro P620", "Quadro P400",
-                   "T1000", "T600", "T400","T1200","T500","T2000",
-                   "Tesla T4"]
-        
-        return not any(check_name in gpu_card_name for check_name in no_half)
-        """
 
     @property
     def hasTorchCuda(self):
+        """ Is CUDA support via PyTorch available? """
+
         if self._hasTorchCuda == None:
             self._hasTorchCuda = False
             try:
@@ -211,7 +211,23 @@ class ModuleRunner:
         return self._hasTorchCuda
 
     @property
+    def hasTorchDirectML(self):
+        """ Is DirectML support via PyTorch available? """
+
+        if self._hasTorchDirectML == None:
+            self._hasTorchDirectML = False
+            if self.in_WSL or self.system == "Windows":
+                try:
+                    import torch
+                    import torch_directml
+                    self._hasTorchDirectML = True
+                except: pass
+        return self._hasTorchDirectML
+
+    @property
     def hasTorchHalfPrecision(self):
+        """ Can this (assumed) NVIDIA GPU support half-precision operations? """
+
         if self._hasTorchHalfPrecision == None:
             self._hasTorchHalfPrecision = False
             try:
@@ -219,11 +235,40 @@ class ModuleRunner:
                 # capability 6.0 and above
                 import torch
                 self._hasTorchHalfPrecision = torch.cuda.get_device_capability()[0] >= 6
+
+                # Except...that's not the case in practice. Below are the cards that
+                # also seem to have issues
+                if self._hasTorchHalfPrecision:
+                    problem_childs = [
+                        # FAILED:
+                        # GeForce GTX 1650, GeForce GTX 1660
+                        # T400, T600, T1000
+
+                        # WORKING:
+                        # Quadro P400, P600
+                        # GeForce GT 1030, GeForce GTX 1050 Ti, 1060, 1070, and 1080
+                        # GeForce RTX 2060 and 2070 (and we assume GeForce RTX 2080)
+                        # Quadro RTX 4000 (and we assume Quadro RTX 5, 6, and 8000)
+                        # Tesla T4
+
+                        # Pascal - Compute Capability 6.1
+                        "MX450", "MX550",                                   # unknown
+
+                        # Turing - Compute Capability 7.5
+                        "GeForce GTX 1650", "GeForce GTX 1660",             # known failures
+                        "T400", "T500", "T600", "T1000", "T1200", "T2000",  # T400, T600, T1000 known failures
+                        "TU102", "TU104", "TU106", "TU116", "TU117"         # unknown
+                    ]
+                    card_name = torch.cuda.get_device_name()
+        
+                    self._hasTorchHalfPrecision = not any(check_name in card_name for check_name in problem_childs)
             except: pass
         return self._hasTorchHalfPrecision
 
     @property
     def hasONNXRuntime(self):
+        """ Is the ONNX runtime available? """
+        
         if self._hasONNXRuntime == None:
             self._hasONNXRuntime = False
             try:
@@ -235,6 +280,8 @@ class ModuleRunner:
 
     @property
     def hasONNXRuntimeGPU(self):
+        """ Is the ONNX runtime available and is there a GPU that will support it? """
+
         if self._hasONNXRuntimeGPU == None:
             self._hasONNXRuntimeGPU = False
             try:
@@ -245,6 +292,8 @@ class ModuleRunner:
 
     @property
     def hasOpenVINO(self):
+        """ Is OpenVINO available? """
+
         if self._hasOpenVINO == None:
             self._hasOpenVINO = False
             try:
@@ -256,6 +305,8 @@ class ModuleRunner:
 
     @property
     def hasTorchMPS(self):
+        """ Are we running on Apple Silicon and is MPS support in PyTorch available? """
+
         if self._hasTorchMPS == None:
             self._hasTorchMPS = False
             if self.cpu_vendor == 'Apple' and self.cpu_arch == 'arm64':
@@ -267,6 +318,8 @@ class ModuleRunner:
 
     @property
     def hasPaddleGPU(self):
+        """ Is PaddlePaddle available and is there a GPU that supports it? """
+
         if self._hasPaddleGPU == None:
             self._hasPaddleGPU = False
             try:
@@ -277,6 +330,8 @@ class ModuleRunner:
 
     @property
     def hasCoralTPU(self):
+        """ Is there a Coral.AI TPU connected and are the libraries in place to support it? """
+
         if self._hasCoralTPU == None:
             self._hasCoralTPU = False
 
@@ -300,23 +355,37 @@ class ModuleRunner:
                 # On Windows, the interpreter.__init__ method accepts experimental
                 # delegates. These are used in self._interpreter.ModifyGraphWithDelegate, 
                 # which fails on Windows
-                import platform
-                if platform.system() != "Windows":  
-                    delegate = {
-                        'Linux': 'libedgetpu.so.1',
-                        'Darwin': 'libedgetpu.1.dylib',
-                        'Windows': 'edgetpu.dll'}[platform.system()]
-                    delegates = [load_delegate(delegate)]
-                    self._hasCoralTPU = len(delegates) > 0
-                    return self._hasCoralTPU
+                delegate = {
+                    'Linux': 'libedgetpu.so.1',
+                    'Darwin': 'libedgetpu.1.dylib',
+                    'Windows': 'edgetpu.dll'}[platform.system()]
+                delegates = [load_delegate(delegate)]
+                self._hasCoralTPU = len(delegates) > 0
+
+                return self._hasCoralTPU
             except Exception as ex:
                 pass
 
         return self._hasCoralTPU
 
     @property
+    def hasFastDeployRockNPU(self):
+        """ Is the Rockchip NPU present (ie. on a Orange Pi) and supported by
+            the fastdeploy library? """
+
+        if self._hasFastDeployRockNPU == None:           
+            self._hasFastDeployRockNPU = False
+            try:
+                from fastdeploy import RuntimeOption
+                RuntimeOption().use_rknpu2()
+                self._hasFastDeployRockNPU = True
+            except: pass
+
+        return self._hasFastDeployRockNPU
+
+    @property
     def execution_provider(self):
-        """ Gets the execution provider """
+        """ Gets the execution provider (eg. CPU, GPU, TPU, NPU etc) """
         return self._execution_provider
       
     @execution_provider.setter
@@ -337,13 +406,29 @@ class ModuleRunner:
 
 
     def start_loop(self):
-
         """
         Starts the tasks that will run the execution loops that check the 
         command queue and forwards commands to the module. Each task runs 
         asynchronously, with each task's loop independently querying the 
         command queue and sending commands to the (same) callback function.
         """
+
+        # SMOKE TEST: 
+        # If this module has been called from the command line and a smoke test
+        # has been requested, then we'll run that test and exit immediately,
+        # rather than firing up the loop to handle messages. 
+        # We could call this from the __init__ method to be cleaner, but child
+        # modules would then need to ensure they called super.__init__ at the
+        # *end* of their __init__ call, rather than at the start, and that's
+        # just fragile.
+
+        if len(sys.argv) > 1 and sys.argv[1] == "--selftest":
+            self._logger = ModuleLogger(self.port, self.server_root_path)
+            self.initialise()
+            self.selftest()
+            quit()
+
+        # No smoke test, so on to the main show
 
         try:
             asyncio.run(self.main_init())
@@ -377,10 +462,9 @@ class ModuleRunner:
 
 
     async def main_init(self):
-
         """
         Initialises the set of tasks for this module. Each task will contain a
-        a loop that will queury the command queue and forward commands to the
+        a loop that will query the command queue and forward commands to the
         callback function.
 
         This method also sets up the shared logging task.
@@ -397,7 +481,7 @@ class ModuleRunner:
                 self._logger.log(LogMethod.Info | LogMethod.Server,
                 { 
                     "filename": __file__,
-                    "loglevel": "information",
+                    "loglevel": "trace",
                     "method": "main_init",
                     "message": f"Running init for {self.module_name}"
                 })
@@ -430,7 +514,7 @@ class ModuleRunner:
 
             await self.log_async(LogMethod.Info | LogMethod.Server, {
                         "message": self.module_name + " started.",
-                        "loglevel": "information"
+                        "loglevel": "trace"
                     })
 
             await asyncio.gather(*tasks)
@@ -439,6 +523,17 @@ class ModuleRunner:
 
     # Main loop
     async def main_loop(self, task_id) -> None:
+        """
+        This is the main request processing loop. This method continually polls
+        the queue that this module is servicing, and each time it sees a request
+        it will grab the request data, send it to the `process` method, then
+        gather the results and post them back to the queue. The server is 
+        responsible for placing requests from the calling client onto the queue,
+        and then taking responses off the queue and returning them to the client.
+
+        Special requests, such as quit, status and selftest are handled 
+        carefully.
+        """
 
         get_command_task = asyncio.create_task(self.get_command(task_id))
         send_response_task = None
@@ -452,52 +547,58 @@ class ModuleRunner:
             if len(queue_entries) == 0:
                 continue
 
-            # print(f"Found a queue entry")
-
             # In theory we may get back multiple command requests. In practice
             # it's always just 1 at a time. At the moment.
             for queue_entry in queue_entries:
+                
+                suppress_timing_log = False
+
                 data: RequestData = RequestData(queue_entry)
 
-                # Special shutdown request
-                if data.command and data.command.lower() == "quit" and \
-                   self.module_id == data.get_value("moduleId"):
+                # The method to call to process this request
+                method_to_call = self.process
 
-                    await self.log_async(LogMethod.Info | LogMethod.File | LogMethod.Server, { 
-                        "process":  self.module_name,
-                        "filename": __file__,
-                        "method":   "main_loop",
-                        "loglevel": "info",
-                        "message":  "Shutting down"
-                    })
-                    self._cancelled = True
-                    break
-
-                process_name = f"Queue request for {self.module_name}"
+                # Special requests
                 if data.command:
-                    process_name += f" command '{data.command}' (#reqid {data.request_id})"
+                    
+                    if self.module_id == data.get_value("moduleId") and data.command.lower() == "quit":
+                        await self.log_async(LogMethod.Info | LogMethod.File | LogMethod.Server, { 
+                            "process":  self.module_name,
+                            "filename": __file__,
+                            "method":   "main_loop",
+                            "loglevel": "info",
+                            "message":  "Shutting down"
+                        })
+                        self._cancelled = True
+                        break
+                    elif data.command.lower() == "status":
+                        method_to_call = self.status
+                        suppress_timing_log = True
+                    elif data.command.lower() == "selftest":
+                        method_to_call = self.selftest
 
-                timer: Tuple[str, float] = self.start_timer(process_name)
+                if not suppress_timing_log:
+                    process_name = f"Rec'd request for {self.module_name}"
+                    if data.command:
+                        process_name += f" command '{data.command}'"
+                    process_name += f" (#reqid {data.request_id})"
+                    timer: Tuple[str, float] = self.start_timer(process_name)
 
                 output: JSON = {}
                 try:
                     # Overriding issue here: We need to await self.process in the
                     # asyncio loop. This means we can't just 'await self.process'
 
-                    # print(f"About to run process")
-
-                    if asyncio.iscoroutinefunction(self.process):
+                    if asyncio.iscoroutinefunction(method_to_call):
                         # if process is async, then it's a coroutine. In this
                         # case we create an awaitable asyncio task to execute
                         # this method.
-                        callbacktask = asyncio.create_task(self.process(data))
+                        callbacktask = asyncio.create_task(method_to_call(data))
                     else:
                         # If the method is not async, then we wrap it in an
                         # awaitable method which we await.
                         loop = asyncio.get_running_loop()
-                        callbacktask = loop.run_in_executor(None, self.process, data)
-
-                    # print(f"Process task created")
+                        callbacktask = loop.run_in_executor(None, method_to_call, data)
 
                     # Await 
                     output = await callbacktask
@@ -524,21 +625,24 @@ class ModuleRunner:
                     })
 
                 finally:
-                    self.end_timer(timer, "command timing")
+                    if not suppress_timing_log:
+                        self.end_timer(timer, "command timing", data.command)
 
                     try:
                         if send_response_task != None:
                             # print("awaiting old send task")
                             await send_response_task
 
-                        # Legacy code. Deprecated
-                        output["code"] = 200 if output["success"] == True else 500
+                        output["code"]              = 200 if output["success"] == True else 500   # Deprecated
+                        output["command"]           = data.command or ''
+                        output["moduleId"]          = self.module_id
+                        output["executionProvider"] = self.execution_provider or 'CPU'
                         
                         # print("creating new send task")
                         send_response_task = asyncio.create_task(self.send_response(data.request_id, output))
                         
                     except Exception:
-                        print(f"An exception occured sending the inference response (#reqid {data.request_id})")
+                        print(f"An exception occurred sending the inference response (#reqid {data.request_id})")
         
         # Cleanup
         self.shutdown()
@@ -559,7 +663,7 @@ class ModuleRunner:
         return (desc, time.perf_counter())
 
 
-    def end_timer(self, timer : Tuple[str, float], label: str = "timing") -> None:
+    def end_timer(self, timer : Tuple[str, float], label: str = "timing", command: str = None) -> None:
         """
         Ends a timing session and logs the time taken along with the initial description if the
         variable logTimingEvents = True
@@ -568,7 +672,7 @@ class ModuleRunner:
         (desc, start_time) = timer
         elapsedMs = (time.perf_counter() - start_time) * 1000
     
-        if (self._log_timing_events):
+        if self._log_timing_events and not command in { "status" }: # exclude some timing events
             self.log(LogMethod.Info|LogMethod.Server, {
                         "message": f"{desc} took {elapsedMs:.0f}ms",
                         "loglevel": "information",
@@ -624,17 +728,17 @@ class ModuleRunner:
             if self.execution_provider:
                 url += "&executionProvider=" + self.execution_provider
 
-            # Send the request to query the queue and wait up to 30 seconds
-            # for a response. We're basically long-polling here
+            # Send a request to query the queue and wait up to 30 seconds for a
+            # response. We're basically long-polling here
             async with self._request_session.get(
                 url,
                 timeout = 30
-                #, verify  = False
+                #, verify = False
             ) as session_response:
 
                 if session_response.ok:
                     content = await session_response.text()
-                    if (content):
+                    if content:
 
                         # This method allows multiple commands to be returned, but to
                         # keep things simple we're only ever returning a single command
@@ -818,6 +922,10 @@ class ModuleRunner:
 
 
     async def call_api(self, method:str, files=None, data=None) -> str:
+        """ 
+        Provides the means to make a call to a CodeProject.AI API. Handy if this
+        module wishes to make use of another module's functionality
+        """
 
         url = self.base_api_url + method
 
@@ -835,7 +943,10 @@ class ModuleRunner:
 
 
     def report_error(self, exception: Exception, filename: str, message: str = None) -> None:
-
+        """
+        Shortcut method provided solely to allow a module to report an error
+        """
+        
         if not message and exception:
             message = "".join(traceback.TracebackException.from_exception(exception).format())
 

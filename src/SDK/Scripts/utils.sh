@@ -281,7 +281,7 @@ function checkForTool () {
             # Ensure Brew is installed
             if ! command -v brew &> /dev/null; then
                 writeLine "Installing brew..." $color_info
-                /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'
+                /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)' > /dev/null
 
                 if [ $? -ne 0 ]; then 
                     quit 10 # failed to install required tool
@@ -289,10 +289,10 @@ function checkForTool () {
             fi
 
             writeLine "Installing ${name}..." $color_info
-            brew install ${name}
+            brew install ${name} > /dev/null
         else
             writeLine "Installing ${name}..." $color_info
-            sudo apt install ${name}
+            sudo apt install ${name} -y > /dev/null
         fi
 
         if [ $? -ne 0 ]; then 
@@ -405,7 +405,7 @@ function setupDotNet () {
             currentLinuxDistro=`echo $currentLinuxDistro | tr '[:upper:]' '[:lower:]'`
             local currentLinuxVersion=$(lsb_release -r | cut -f2)
 
-            if [ "${hardware}" == "RaspberryPi" ]; then
+            if [ "${systemName}" == "Raspberry Pi" ]; then
 
                 sudo bash "${sdkScriptsPath}/dotnet-install-rpi.sh" ${sdkInstallVersion}
                 if [ $? -ne 0 ]; then 
@@ -443,7 +443,8 @@ function setupDotNet () {
                 quit 3 # required runtime missing, needs installing
             else
                 writeLine "Please download and install the .NET SDK. For macOS Intel machines use:"
-                writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-x64-installer"
+                writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-7.0.400-macos-x64-installer"
+                # writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-x64-installer"
                 quit 3 # required runtime missing, needs installing
             fi
             quit 100 # impossible code path
@@ -459,7 +460,7 @@ function setupPython () {
 
     if [ "$offlineInstall" == "true" ]; then 
         writeLine "Offline Installation: Unable to download and install Python." $color_error
-        return
+        return 6 # unable to download required asset
     fi
 
     # M1 macs are trouble for python
@@ -521,19 +522,18 @@ function setupPython () {
     # 1. Install Python. Using deadsnakes for Linux (not macOS), so be aware if
     #    you have concerns about potential late adoption of security patches.
 
-     if [ $verbosity == "loud" ]; then
+    if [ $verbosity == "loud" ]; then
         writeLine "Python install path is ${installPath}" $color_info
-     fi
+    fi
 
-     if [ ! -d "${installPath}" ]; then
+    if [ ! -d "${installPath}" ]; then
         mkdir -p "${installPath}"
-     fi
+    fi
 
-     pythonCmd="python${pythonVersion}"
-     if command -v $pythonCmd &> /dev/null; then
+    globalPythonCmd="python${pythonVersion}"
+    if command -v $globalPythonCmd &> /dev/null; then
          writeLine "Python ${pythonVersion} is already installed" $color_success
-     else
-
+    else
         # For macOS we'll use brew to install python
         if [ "$os" == "macos" ]; then
 
@@ -570,12 +570,6 @@ function setupPython () {
                     fi
                 fi
 
-                # Note that we only need the specific location of the python 
-                # interpreter to setup  the virtual environment. After it's 
-                # setup, all python calls are relative to the same venv no 
-                # matter the location of the original python interpreter
-                pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
-
             else
 
                 # We have a x64 version of python for macOS (Intel) in our S3 bucket
@@ -592,16 +586,18 @@ function setupPython () {
                     brew install python@${pythonVersion}
                 fi
 
-                # Brew specific path
-                pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
-
             fi
+
+            # Note that we only need the system-wide location of the python 
+            # interpreter to setup the virtual environment. After it's setup,
+            # all python calls are made using the venv's python
+            globalPythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
 
             writeLine "Done" $color_success
 
         # macOS: With my M1 chip and Rosetta I make installing Python a real PITA.
         # Raspberry Pi: Hold my beer 
-        elif [ "${hardware}" == "RaspberryPi" ]; then
+        elif [ "${systemName}" == "Raspberry Pi" ]; then
 
             pushd "${pathToInstallerBase}" > /dev/null
 
@@ -646,6 +642,7 @@ function setupPython () {
 
             mkdir --parents downloads/Python
             cd downloads/Python
+
             if [ ! -f "Python-${pythonPatchVersion}.tar.xz" ]; then
                 # curl https://www.python.org/ftp/python/${pythonPatchVersion}/Python-${pythonPatchVersion}.tar.xz | tar -xf
                 curl https://www.python.org/ftp/python/${pythonPatchVersion}/Python-${pythonPatchVersion}.tar.xz --output Python-${pythonPatchVersion}.tar.xz
@@ -673,7 +670,7 @@ function setupPython () {
             sudo make install
             cd ..
             sudo rm -r openssl-1.1.1c
-            sudo apt-get install libssl-dev
+            sudo apt-get install libssl-dev -y
 
             # Bulld Python
             cd Python-${pythonPatchVersion}
@@ -751,7 +748,7 @@ function setupPython () {
             fi
         fi
 
-        if ! command -v $pythonCmd &> /dev/null; then
+        if ! command -v $globalPythonCmd &> /dev/null; then
             return 2 # failed to install required runtime
         fi
 
@@ -816,12 +813,12 @@ function setupPython () {
         fi
 
         if [ "$os" == "macos" ]; then
-            ${pythonCmd} -m venv "${installPath}/venv"
+            $globalPythonCmd -m venv "${installPath}/venv"
         else
-            #echo ${pythonCmd}
-            #echo ${installPath}
+            #echo $globalPythonCmd
+            #echo $installPath
             
-            ${pythonCmd} -m venv "${installPath}/venv" &
+            $globalPythonCmd -m venv "${installPath}/venv" &
             spin $! # process ID of the python install call
         fi
 
@@ -879,31 +876,19 @@ function installPythonPackages () {
 
     # Version with ".'s removed
     local pythonName="python${pythonVersion/./}"
-    pythonCmd="python${pythonVersion}"
+    pythonCmd="./python${pythonVersion}"
 
-    # hasCUDA is actually already set in /src/setup.sh, but no harm in keeping this check here
+    # hasCUDA is actually already set in /src/setup.sh, but no harm in keeping this check here.
+    # Note that CUDA is only available on non-macOS systems
     hasCUDA='false'
-
-    # Brew doesn't set PATH by default (nor do we need it to) which means we 
-    # just have to be careful
-    if [ "$os" == "macos" ]; then
-        
-        # If running "PythonX.Y" doesn't actually work, then let's adjust the
-        # command to point to where we think the python launcher should be
-        python${pythonVersion} --version >/dev/null  2>/dev/null
-        if [ $? -ne 0 ]; then
-            # writeLine "Did not find python in default location"
-            pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
-        fi
-    else
-        # CUDA is only available on non-macOS systems
+    if [ "$os" == "linux" ]; then
         if [ "$supportCUDA" == "true" ]; then
             write 'Checking for CUDA...'
 
             # nvidia=$(lspci | grep -i '.* vga .* nvidia .*')
             # if [[ ${nvidia,,} == *' nvidia '* ]]; then  # force lowercase compare
 
-            if [[ -x nvidia-smi ]]; then
+            if [ -x "$(command -v nvidia-smi)" ]; then
                 nvidia=$(nvidia-smi | grep -i -E 'CUDA Version: [0-9]+.[0-9]+') > /dev/null 2>&1
                 if [[ ${nvidia} == *'CUDA Version: '* ]]; then 
                     hasCUDA='true'
@@ -945,6 +930,16 @@ function installPythonPackages () {
                 requirementsFilename="requirements.${os}.cuda.txt"
             elif [ -f "${requirementsDir}/requirements.cuda.txt" ]; then
                 requirementsFilename="requirements.cuda.txt"
+            fi
+        fi
+
+        if [ "$hasROCm" == "true" ]; then
+            if [ -f "${requirementsDir}/requirements.${os}.${architecture}.rocm.txt" ]; then
+                requirementsFilename="requirements.${os}.${architecture}.rocm.txt"
+            elif [ -f "${requirementsDir}/requirements.${os}.rocm.txt" ]; then
+                requirementsFilename="requirements.${os}.rocm.txt"
+            elif [ -f "${requirementsDir}/requirements.rocm.txt" ]; then
+                requirementsFilename="requirements.rocm.txt"
             fi
         fi
 
@@ -993,47 +988,48 @@ function installPythonPackages () {
     # For speeding up debugging
     if [ "${skipPipInstall}" == "true" ]; then return; fi
 
+    # We'll head into the venv's bin directory which should contain the python interpreter
     pushd "${virtualEnv}/bin"  >/dev/null
+
+    if [ "$os" == "macos" ]; then
+        # Running "PythonX.Y" should work, but may not. Check, and if it doesn't work then set the
+        # pythonCmd var to point to the absolute pather where we think the python launcher should be
+        $pythonCmd --version >/dev/null  2>/dev/null
+        if [ $? -ne 0 ]; then
+            writeLine "Setting python command to point to global install location"
+            pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+        fi
+    fi
 
     # Before installing packages, check to ensure PIP is installed and up to 
     # date. This slows things down a bit, but it's worth it in the end.
     if [ "${verbosity}" == "quiet" ]; then
 
         # Ensure we have pip (no internet access - ensures we have the current
-        # python compatible version.
+        # python compatible version).
         write 'Ensuring PIP is installed...' $color_primary
-
-        if [ "$os" == "macos" ]; then
-            # sudo $pythonCmd -m ensurepip 2>/dev/null &
-            $pythonCmd -m ensurepip >/dev/null 2>/dev/null &
-        else
-            $pythonCmd -m ensurepip  >/dev/null 2>/dev/null &
-        fi
+        $pythonCmd -m ensurepip >/dev/null 2>/dev/null &
         spin $!
         writeLine 'Done' $color_success
 
         write 'Updating PIP...' $color_primary
-        if [ "$os" == "macos" ]; then
-            $pythonCmd -m pip install --upgrade pip >/dev/null 2>/dev/null &
-        else
-            $pythonCmd -m pip install --upgrade pip >/dev/null 2>/dev/null &
-        fi
+        $pythonCmd -m pip install --upgrade pip >/dev/null 2>/dev/null &
         spin $!
         writeLine 'Done' $color_success
     else
         writeLine 'Ensuring PIP is installed and up to date...' $color_primary
     
-       if [ "$os" == "macos" ]; then
-            # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
-            if [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
-                writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
-            fi
-        fi
+        # if [ "$os" == "macos" ]; then
+        #     # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
+        #     if [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
+        #         writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
+        #     fi
+        # fi
     
         if [ "$os" == "macos" ]; then
-            # sudo $pythonCmd -m ensurepip
+            # sudo $globalPythonCmd -m ensurepip
             $pythonCmd -m ensurepip
-            $pythonCmd -m pip install pip
+            $pythonCmd -m pip install --upgrade pip
         else
             sudo $pythonCmd -m ensurepip
             $pythonCmd -m pip install --upgrade pip
@@ -1471,20 +1467,41 @@ else
     architecture='x86_64'
 fi
 
-if [ $(uname -n) == "raspberrypi" ]; then
-    hardware='RaspberryPi'
-else
-    hardware='Unknown'
-fi
-
 if [[ $OSTYPE == 'darwin'* ]]; then
     platform='macos'
     os="macos"
+    os_name=$(awk '/SOFTWARE LICENSE AGREEMENT FOR macOS/' '/System/Library/CoreServices/Setup Assistant.app/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf' | awk -F 'macOS ' '{print $NF}' | awk '{print substr($0, 0, length($0)-1)}') # eg "Big Sur"
+    os_vers=$(sw_vers -productVersion) # eg "11.1" for macOS Big Sur
+
+    systemName=$os
+
     if [[ "$architecture" == 'arm64' ]]; then platform='macos-arm64'; fi
 else
     os='linux'
     platform='linux'
+    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu"
+    os_vers=$(. /etc/os-release;echo $VERSION_ID) # eg "22.04" for Ubuntu 22.04
+
     if [[ "$architecture" == 'arm64' ]]; then platform='linux-arm64'; fi
+
+    modelInfo=""
+    if [ -f "/sys/firmware/devicetree/base/model" ]; then
+        modelInfo=$(tr -d '\0' </sys/firmware/devicetree/base/model) >/dev/null 2>&1
+    fi
+
+    if [[ "${modelInfo}" == *"Raspberry Pi"* ]]; then # elif [ $(uname -n) == "raspberrypi" ]; then
+        systemName='Raspberry Pi'
+    elif [[ "${modelInfo}" == *"Orange Pi"* ]]; then    # elif [ $(uname -n) == "orangepi5" ]; then
+        systemName='Orange Pi'
+    elif [ $(uname -n) == "nano" ]; then
+        systemName='Jetson'
+    elif [ "$inDocker" == "true" ]; then 
+        systemName='Docker'
+    elif [[ $(uname -a) =~ microsoft-standard-WSL ]]; then
+        systemName='WSL'
+    else
+        systemName=$os
+    fi
 fi
 
 # See if we can spot if it's a dark or light background
@@ -1514,7 +1531,7 @@ else
     darkmode='true'
     terminalBg=$(gsettings get org.gnome.desktop.background primary-color)
 
-    if [ "${terminalBg}" != "no schemas installed" ]; then
+    if [ "${terminalBg}" != "no schemas installed" ] && [ "${terminalBg}" != "" ]; then
         terminalBg="${terminalBg%\'}"                               # remove first '
         terminalBg="${terminalBg#\'}"                               # remove last '
         terminalBg=`echo $terminalBg | tr '[:lower:]' '[:upper:]'`  # uppercase-ing
@@ -1538,6 +1555,8 @@ else
 
             # echo "terminalBg = ${terminalBg}, darkmode = ${darkmode}, luminosity = ${luma}"
         fi
+    else
+        writeLine "(No schemas means: we can't detect if you're in light or dark mode)"  $color_info
     fi
 fi
 

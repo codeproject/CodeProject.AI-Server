@@ -3,19 +3,22 @@
 
     "ALPR": {
       "Name": "License Plate Reader",
-      "Version": "2.2",
+      "Version": "2.5",
 
       // Publishing info
-      "Description": "Detects and readers licence plates using YOLO object detection and the PaddleOCR toolkit",
+      "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
       "Platforms": [ "windows", "linux", "macos", "macos-arm64" ], // Issues installing PaddlePaddle on linux-arm64
       "License": "SSPL",
       "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
 
       // Which server version is compatible with each version of this module.
-      "VersionCompatibililty": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-11-01" },
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0",   "2.0.8" ], "ReleaseDate": "2022-11-01" },
         { "ModuleVersion": "2.1", "ServerVersionRange": [ "2.0.9", "2.0.9" ], "ReleaseDate": "2022-12-01" },
-        { "ModuleVersion": "2.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+        { "ModuleVersion": "2.2", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-03-20" },
+        { "ModuleVersion": "2.3", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-04-20", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+        { "ModuleVersion": "2.4", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-05-10", "ReleaseNotes": "PaddlePaddle install more reliable", "Importance": "Minor" },
+        { "ModuleVersion": "2.5", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-06-04", "ReleaseNotes": "Updated PaddlePaddle" }
       ],
 
       // Launch instructions
@@ -37,7 +40,10 @@
         "PLATE_CONFIDENCE": 0.7,      // Confidence required in detecting a plate in the first place
         "PLATE_ROTATE_DEG": 0,        // If non-zero, rotate plate before OCR (+ve = counterclockwise)
         "AUTO_PLATE_ROTATE": true,
-        "PLATE_RESCALE_FACTOR": 2
+        "PLATE_RESCALE_FACTOR": 2,
+        "OCR_OPTIMIZATION": true,
+        "OCR_OPTIMAL_CHARACTER_HEIGHT": 60,
+        "OCR_OPTIMAL_CHARACTER_WIDTH": 36
       },
 
       "RouteMaps": [

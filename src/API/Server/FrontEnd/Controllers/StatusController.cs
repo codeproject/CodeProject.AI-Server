@@ -3,13 +3,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Options;
 
 using CodeProject.AI.API.Common;
 using CodeProject.AI.SDK.Common;
-using Microsoft.Extensions.Options;
 
 namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
@@ -25,6 +25,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         /// </summary>
         private readonly ServerVersionService  _versionService;
         private readonly ModuleSettings        _moduleSettings;
+        private readonly ServerOptions         _serverOptions;
         private readonly ModuleProcessServices _moduleProcessService;
         private readonly ModuleCollection      _moduleCollection;
 
@@ -33,15 +34,18 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         /// </summary>
         /// <param name="versionService">The Version instance.</param>
         /// <param name="moduleSettings">The module settings instance</param>
+        /// <param name="serverOptions">The server options</param>
         /// <param name="moduleProcessService">The Module Process Services.</param>
         /// <param name="moduleCollection">The Module Collection.</param>
         public StatusController(ServerVersionService versionService,
                                 ModuleSettings moduleSettings,
+                                IOptions<ServerOptions> serverOptions,
                                 ModuleProcessServices moduleProcessService,
                                 IOptions<ModuleCollection> moduleCollection)
         {
             _versionService       = versionService;
             _moduleSettings       = moduleSettings;
+            _serverOptions        = serverOptions.Value;
             _moduleProcessService = moduleProcessService;
             _moduleCollection     = moduleCollection.Value;
         }
@@ -97,12 +101,15 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<object> GetSystemStatus()
         {
-            // run these in parallel as they have a Task.Delay(1000) in them.
-            var cpuUsageTask     = SystemInfo.GetCpuUsage();
-            var gpuUsageTask     = SystemInfo.GetGpuUsage();
-            var gpuInfoTask      = SystemInfo.GetGpuUsageInfo();
-            var gpuVideoInfoTask = SystemInfo.GetVideoAdapterInfo();
-            var serverVersion    = _versionService.VersionConfig?.VersionInfo?.Version ?? string.Empty;
+            var serverVersion     = _versionService.VersionConfig?.VersionInfo?.Version ?? string.Empty;
+
+            // Run these in parallel as they have a Task.Delay(1000) in them.
+            string gpuInfo        = await SystemInfo.GetGpuUsageInfoAsync().ConfigureAwait(false);
+            int    gpuUsage       = await SystemInfo.GetGpuUsageAsync().ConfigureAwait(false);
+            string gpuVideoInfo   = await SystemInfo.GetVideoAdapterInfoAsync().ConfigureAwait(false);
+            ulong  gpuMemUsage    = await SystemInfo.GetGpuMemoryUsageAsync().ConfigureAwait(false);
+            int    cpuUsage       = SystemInfo.GetCpuUsage();
+            ulong  systemMemUsage = SystemInfo.GetSystemMemoryUsage();
 
             var systemStatus = new StringBuilder();
             systemStatus.AppendLine($"Server version:   {serverVersion}");
@@ -110,11 +117,11 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             systemStatus.AppendLine();
             systemStatus.AppendLine();
 
-            systemStatus.AppendLine(await gpuInfoTask);
+            systemStatus.AppendLine(gpuInfo);
             systemStatus.AppendLine();
             systemStatus.AppendLine();
 
-            systemStatus.AppendLine(await gpuVideoInfoTask);
+            systemStatus.AppendLine(gpuVideoInfo);
             systemStatus.AppendLine();
             systemStatus.AppendLine();
 
@@ -135,10 +142,10 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
             var response = new
             {
-                CpuUsage       = await cpuUsageTask,
-                SystemMemUsage = await SystemInfo.GetSystemMemoryUsage(),
-                GpuUsage       = await gpuUsageTask,
-                GpuMemUsage    = await SystemInfo.GetGpuMemoryUsage(),
+                CpuUsage       = cpuUsage,
+                SystemMemUsage = systemMemUsage,
+                GpuUsage       = gpuUsage,
+                GpuMemUsage    = gpuMemUsage,
                 ServerStatus   = systemStatus.ToString()
             };
 
@@ -175,7 +182,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ResponseBase> GetUpdateAvailable()
         {
-            VersionInfo? latest = await _versionService.GetLatestVersion();
+            VersionInfo? latest = await _versionService.GetLatestVersion().ConfigureAwait(false);
             if (latest is null)
             {
                 return new VersionUpdateResponse
@@ -230,12 +237,24 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
 
             foreach (ProcessStatus process in _moduleProcessService.ListProcessStatuses())
             {
-                if (!string.IsNullOrEmpty(process.ModuleId))
+                ModuleConfig? module = string.IsNullOrEmpty(process.ModuleId) ? null
+                                     : _moduleCollection.GetModule(process.ModuleId);
+
+                if (module is not null)
                 {
-                    ModuleConfig? module   = _moduleCollection.GetModule(process.ModuleId);
-                    process.StartupSummary = module?.SettingsSummary ?? string.Empty;
+                    process.StartupSummary = module.SettingsSummary ?? string.Empty;
                     if (string.IsNullOrEmpty(process.StartupSummary))
+                    {
                         Console.WriteLine($"Unable to find module for {process.ModuleId}");
+                    }
+                    else
+                    {
+                        // Expanding out the macros causes the display to be too wide
+                        // process.StartupSummary = _moduleSettings.ExpandOption(process.StartupSummary,
+                        //                                                       module.ModulePath);
+                        string appRoot = _serverOptions.ApplicationRootPath!;
+                        process.StartupSummary = process.StartupSummary.Replace(appRoot, "&lt;root&gt;");
+                    }
                 }
             }
 

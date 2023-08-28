@@ -21,6 +21,52 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
 {
     public class TextClassifier
     {
+        /// <summary>
+        /// Class to hold original input data.
+        /// </summary>
+        public class InputData
+        {
+            public string? Text { get; set; }
+        }
+
+        /// <summary>
+        /// Class to contain the output values from the transformation.
+        /// </summary>
+        public class SentimentPrediction
+        {
+            [VectorType(2)]
+            public float[]? Prediction { get; set; }
+        }
+
+        /// <summary>
+        /// Class to hold the variable length feature vector. Used to define the
+        /// column names used as input to the custom mapping action.
+        /// </summary>
+        public class VariableLength
+        {
+            /// <summary>
+            /// This is a variable length vector designated by VectorType attribute. Variable length
+            /// vectors are produced by applying operations such as 'TokenizeWords' on strings
+            /// resulting in vectors of tokens of variable lengths.
+            /// </summary>
+            [VectorType]
+            public int[]? VariableLengthFeatures { get; set; }
+        }
+
+        /// <summary>
+        /// Class to hold the fixed length feature vector. Used to define the
+        /// column names used as output from the custom mapping action,
+        /// </summary>
+        public class FixedLength
+        {
+            /// <summary>
+            /// This is a fixed length vector designated by VectorType attribute.
+            /// </summary>
+            [VectorType(FeatureLength)]
+            public int[]? Features { get; set; }
+        }
+
+
         public const int FeatureLength = 600;
 
         private readonly MLContext    _mlContext;
@@ -86,7 +132,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
 
             IEstimator<ITransformer> pipeline =
                 // Split the text into individual words
-                _mlContext.Transforms.Text.TokenizeIntoWords("TokenizedWords", "ReviewText")
+                _mlContext.Transforms.Text.TokenizeIntoWords("TokenizedWords", "Text")
 
                 // Map each word to an integer value. The array of integer makes up the input features.
                 .Append(_mlContext.Transforms.Conversion.MapValue("VariableLengthFeatures", lookupMap,
@@ -102,67 +148,22 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
                 .Append(_mlContext.Transforms.CopyColumns("Prediction", "Prediction/Softmax"));
 
             // Create an executable model from the estimator pipeline
-            IDataView dataView = _mlContext.Data.LoadFromEnumerable(new List<MovieReview>());
+            IDataView dataView = _mlContext.Data.LoadFromEnumerable(new List<InputData>());
             _model = pipeline.Fit(dataView);
         }
 
-        public MovieReviewSentimentPrediction PredictSentiment(string reviewText)
+        public SentimentPrediction PredictSentiment(string inputText)
         {
-            var engine = _mlContext.Model.CreatePredictionEngine<MovieReview, MovieReviewSentimentPrediction>(_model);
+            var engine = _mlContext.Model.CreatePredictionEngine<InputData, SentimentPrediction>(_model);
 
-            var review = new MovieReview()
+            var review = new InputData()
             {
-                ReviewText = reviewText
+                Text = inputText
             };
 
             // Predict with TensorFlow pipeline.
             var sentimentPrediction = engine.Predict(review);
             return sentimentPrediction;
-        }
-
-        /// <summary>
-        /// Class to hold original sentiment data.
-        /// </summary>
-        public class MovieReview
-        {
-            public string? ReviewText { get; set; }
-        }
-
-        /// <summary>
-        /// Class to contain the output values from the transformation.
-        /// </summary>
-        public class MovieReviewSentimentPrediction
-        {
-            [VectorType(2)]
-            public float[]? Prediction { get; set; }
-        }
-
-        /// <summary>
-        /// Class to hold the variable length feature vector. Used to define the
-        /// column names used as input to the custom mapping action.
-        /// </summary>
-        public class VariableLength
-        {
-            /// <summary>
-            /// This is a variable length vector designated by VectorType attribute.
-            /// Variable length vectors are produced by applying operations such as 'TokenizeWords' on strings
-            /// resulting in vectors of tokens of variable lengths.
-            /// </summary>
-            [VectorType]
-            public int[]? VariableLengthFeatures { get; set; }
-        }
-
-        /// <summary>
-        /// Class to hold the fixed length feature vector. Used to define the
-        /// column names used as output from the custom mapping action,
-        /// </summary>
-        public class FixedLength
-        {
-            /// <summary>
-            /// This is a fixed length vector designated by VectorType attribute.
-            /// </summary>
-            [VectorType(FeatureLength)]
-            public int[]? Features { get; set; }
         }
     }
 }

@@ -1,6 +1,17 @@
 {
   "sdk": {
-    //"version": "7.0.202",
+    // BE CAREFUL: If you pin the version, then 
+    // 1. The SDK you pin it to must be available on every supported platform 
+    //    That means Windows 10+, macOS (Intel and arm64), Ubuntu 20.04+ and RPi64.
+    // 2. You have to update the docs / article to ensure it clear to developers
+    //    which SDK they need
+    // 3. There should be a check in the dev setup script ensuring that users have
+    //    this version, or higher, installed on their dev system.
+    //
+    // If you can't do 1 and 2 then you cannot pin the version.
+    //
+    // "version": "7.0.203",
+
     //"rollForward": "latestFeature",
     "allowPrerelease": false
   }

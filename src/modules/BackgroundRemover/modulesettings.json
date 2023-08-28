@@ -3,7 +3,7 @@
 
     "BackgroundRemover": {
       "Name": "Background Remover",
-      "Version": "1.2",
+      "Version": "1.4",
 
       // Publishing info
       "Description": "Automatically removes the background from a picture", 
@@ -12,10 +12,12 @@
       "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
 
       // Which server version is compatible with each version of this module.
-      "VersionCompatibililty": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-11-01" },
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0",   "2.0.8" ], "ReleaseDate": "2022-11-01" },
         { "ModuleVersion": "1.1", "ServerVersionRange": [ "1.6.9", "2.0.8" ], "ReleaseDate": "2022-11-01" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-03-20" }
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1.0", "2.1.6" ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
+        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1.0", "2.1.6" ], "ReleaseDate": "2023-04-20", "ReleaseNotes": "Install improved for GPU enabled systems" },
+        { "ModuleVersion": "1.4", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-08-05", "ReleaseNotes": "Bugs in error reporting corrected", "Importance": "Minor" }
       ],
 
       // Launch instructions

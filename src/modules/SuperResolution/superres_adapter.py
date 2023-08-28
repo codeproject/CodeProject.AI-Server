@@ -11,13 +11,13 @@ sys.path.append("../../SDK/Python")
 from common import JSON
 from request_data import RequestData
 from module_runner import ModuleRunner
+from threading import Lock
 
 # Import libraries needed
 from PIL import Image
 
 # Import the method of the module we're wrapping
 from superresolution import superresolution, load_pretrained_weights
-
 
 class SuperRes_adapter(ModuleRunner):
 
@@ -33,11 +33,12 @@ class SuperRes_adapter(ModuleRunner):
             img: Image = data.get_image(0)
 
             start_time = time.perf_counter()
+
             (out_img, inferenceMs) = superresolution(img)
 
             return {
                 "success": True,
-                "imageBase64": data.encode_image(out_img),
+                "imageBase64": RequestData.encode_image(out_img),
                 "processMs" : int((time.perf_counter() - start_time) * 1000),
                 "inferenceMs": inferenceMs
             }

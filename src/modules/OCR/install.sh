@@ -15,53 +15,22 @@ if [ "$1" != "install" ]; then
 fi
 
 # Work needs to be done to get Paddle to install on the Raspberry Pi 
-if [ "${hardware}" == "RaspberryPi" ]; then
-    writeLine 'Unable to install PaddleOCR on RaspberryPi. Quitting.' 'Red'
+if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || [ "${systemName}" == "Jetson" ]; then
+    writeLine 'Unable to install PaddleOCR on Raspberry Pi, Orange Pi or Jetson. Quitting.' 'Red'
 else
 
-    message="
-    *** IF YOU WISH TO USE GPU ON LINUX Please ensure you have CUDA installed ***
-    # The steps are: (See https://chennima.github.io/cuda-gpu-setup-for-paddle-on-windows-wsl)
-
-    sudo apt install libgomp1
-
-    # Install CUDA
-
-    sudo apt-key del 7fa2af80
-    wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
-    sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
-    wget https://developer.download.nvidia.com/compute/cuda/11.7.0/local_installers/cuda-repo-wsl-ubuntu-11-7-local_11.7.0-1_amd64.deb
-    sudo dpkg -i cuda-repo-wsl-ubuntu-11-7-local_11.7.0-1_amd64.deb
-
-    sudo cp /var/cuda-repo-wsl-ubuntu-11-7-local/cuda-B81839D3-keyring.gpg /usr/share/keyrings/
-
-    sudo apt-get update
-    sudo apt-get -y install cuda
-
-    # Now Install cuDNN
-
-    sudo apt-get install zlib1g
-
-    # => Go to https://developer.nvidia.com/cudnn, sign in / sign up, agree to terms 
-    #    and download 'Local Installer for Linux x86_64 (Tar)'. This will download a
-    #    file similar to 'cudnn-linux-x86_64-8.4.1.50_cuda11.6-archive.tar.xz'
-    #
-    # In the downloads folder do: 
-
-    tar -xvf cudnn-linux-x86_64-8.4.1.50_cuda11.6-archive.tar.xz
-    sudo cp cudnn-*-archive/include/cudnn*.h /usr/local/cuda/include 
-    sudo cp -P cudnn-*-archive/lib/libcudnn* /usr/local/cuda/lib64 
-    sudo chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
-
-    # and you'll be good to go
-    "
-    # print message
-
+    # Ensure CUDA and cuDNN is installed. Note this is only for native linux since 
+    # macOS no longer supports NVIDIA, WSL (Linux under Windows) uses the Windows 
+    # drivers, and docker images already contain the necessary SDKs and libraries
+    if [ "$os" == "linux" ] && [ "$hasCUDA" == "true" ] && [ "${inDocker}" == "false" ]; then
+    	correctLineEndings "${sdkScriptsPath}/install_cuDNN.sh"
+	    source "${sdkScriptsPath}/install_cuDNN.sh"
+    fi
 
     # Install python and the required dependencies.
 
-    # Note that PaddlePaddle requires Python3.8 or below. Except on RPi? TODO: check 3.9 on all.
-    if [ ! "${hardware}" == "RaspberryPi" ]; then
+    # Note that PaddlePaddle requires Python3.8 or below. Except on RPi and Jetson? TODO: check 3.9 on all.
+    if [ "${systemName}" != "Raspberry Pi" ] && [ "${systemName}" != "Orange Pi" ] && [ "${systemName}" != "Jetson" ]; then
         setupPython 3.8 "Local"
         if [ $? -ne 0 ]; then quit 1; fi
         installPythonPackages 3.8 "${modulePath}" "Local"
@@ -74,30 +43,17 @@ else
     getFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
     if [ $? -ne 0 ]; then quit 1; fi
 
-    # We have a patch to apply for linux. 
-    if [ "${platform}" = "linux" ]; then
-        if [ "${hasCUDA}" != "true" ]; then
-            # writeLine 'Applying PaddlePaddle patch'
-            # https://www.codeproject.com/Tips/5347636/Getting-PaddleOCR-and-PaddlePaddle-to-work-in-Wind
-            # NOT Needed for Ubuntu 20.04 WSL under Win10
-            # cp ${modulePath}/patch/paddle2.4.0rc0/image.py ${modulePath}/bin/${platform}/python38/venv/lib/python3.8/site-packages/paddle/dataset/.
-
-            writeLine 'Applying PaddleOCR patch'
-            # IS needed due to a newer version of Numpy deprecating np.int
-            cp ${modulePath}/patch/paddleocr2.6.0.1/db_postprocess.py ${modulePath}/bin/${platform}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
-        fi
-    fi
-
-    # We have a patch to apply for macOS-arm64 due to numpy upgrade that deprecates np.int that we can't downgrade
-    if [ "${os}" == "macos" ]; then
+    if [ "${systemName}" != "Raspberry Pi" ] && [ "${systemName}" != "Orange Pi" ] && [ "${systemName}" != "Jetson" ]; then
+        # We have a patch to apply for linux and macOS due to a numpy upgrade that 
+        # deprecates np.int that we can't downgrade
         writeLine 'Applying PaddleOCR patch'
-        cp ${modulePath}/patch/paddleocr2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
+        cp ${modulePath}/patch/paddleocr-2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
     fi
 
     # Installing PaddlePaddle: Gotta do this the hard way for RPi.
     # Thanks to https://qengineering.eu/install-paddlepaddle-on-raspberry-pi-4.html
     # NOTE: This, so far, hasn't been working. Sorry.
-    if [ "${hardware}" == "RaspberryPi" ]; then
+    if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || [ "${systemName}" == "Jetson" ]; then
 
         setupPython 3.9 "Local"
         if [ $? -ne 0 ]; then quit 1; fi
@@ -105,8 +61,6 @@ else
         if [ $? -ne 0 ]; then quit 1; fi
         installPythonPackages 3.9 "${absoluteAppRootDir}/SDK/Python" "Local"
         if [ $? -ne 0 ]; then quit 1; fi
-
-        popd "${modulePath}"
 
         # a fresh start
         sudo apt-get update -y
@@ -152,7 +106,7 @@ fi
 # Variables available:
 #
 #  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/Installers)
+#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/SDK/Scripts)
 #  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
 #  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
 #  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
@@ -161,6 +115,7 @@ fi
 #  os                    - "linux" or "macos"
 #  architecture          - "x86_64" or "arm64"
 #  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
+#  systemName            - General name for the system. Linux, macOS, or "Raspberry Pi", Jetson or Docker
 #  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 #  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 #                          getFromServer will honour this value. Do it yourself for downloadAndExtract 

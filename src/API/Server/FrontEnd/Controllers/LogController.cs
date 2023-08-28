@@ -21,7 +21,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="logger"></param>
+        /// <param name="logger">The logger</param>
         public LogController(ILogger<LogController> logger)
         {
             _logger = logger;
@@ -52,13 +52,6 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                 msg += "[[" + category + "]]";
             if (!string.IsNullOrWhiteSpace(label))
                 msg += "{{" + label + "}}";
-
-            if (entry.Contains("LoadLibrary failed with error 126") &&
-                entry.Contains("onnxruntime_providers_cuda.dll"))
-            {
-                entry = "Attempted to load ONNX runtime CUDA provider. No luck, moving on...";
-                log_level = LogLevel.Information;
-            }
 
             // strip out any terminal colourisation
             entry = Regex.Replace(entry, "\\[\\d+(;\\d+)\\d+m", string.Empty);

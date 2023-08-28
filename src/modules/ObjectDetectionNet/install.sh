@@ -49,7 +49,7 @@ fi
 # Variables available:
 #
 #  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/Installers)
+#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/SDK/Scripts)
 #  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
 #  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
 #  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
@@ -58,6 +58,8 @@ fi
 #  os                    - "linux" or "macos"
 #  architecture          - "x86_64" or "arm64"
 #  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
+#  systemName            - General name for the system. "Linux", "macOS", "Raspberry Pi", "Orange Pi"
+#                          "Jetson" or "Docker"
 #  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 #  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 #                          getFromServer will honour this value. Do it yourself for downloadAndExtract 

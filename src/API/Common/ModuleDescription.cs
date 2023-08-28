@@ -115,16 +115,11 @@ namespace CodeProject.AI.API.Common
         public int Downloads { get; set; }
 
         /// <summary>
-        /// Gets or sets the version of this module currently installed. This value is not
-        /// deserialised, but instead must be set by the server.
+        /// Gets or sets the ModuleRelease of the latest release of this module that is compatible
+        /// with the current server. This value is not deserialised, but instead must be set by the
+        /// server.
         /// </summary>
-        public string? CurrentInstalledVersion { get; set; }
-
-        /// <summary>
-        /// Gets or sets the latest version of this module that is compatible with the current
-        /// server. This value is not deserialised, but instead must be set by the server.
-        /// </summary>
-        public string? LatestCompatibleVersion { get; set; }
+        public ModuleRelease? LatestRelease { get; set; }
 
         /// <summary>
         /// Gets or sets the release date of the latest compatible version of this module
@@ -184,9 +179,9 @@ namespace CodeProject.AI.API.Common
             SetLatestCompatibleVersion(module, currentServerVersion);
 
             // Set the status of all entries based on availability on this platform
-            module.Status = string.IsNullOrWhiteSpace(module.LatestCompatibleVersion) 
+            module.Status = string.IsNullOrWhiteSpace(module?.LatestRelease?.ModuleVersion) 
                           || !module.IsAvailable(SystemInfo.Platform, currentServerVersion)
-                          ? ModuleStatusType.NotAvailable : ModuleStatusType.Available;
+                          ? ModuleStatusType.NotAvailable : ModuleStatusType.Available;                          
         }
 
         /// <summary>
@@ -203,13 +198,14 @@ namespace CodeProject.AI.API.Common
                 return false;
 
             // First check: Is there a version of this module that's compatible with the current server?
-            if (serverVersion is not null && string.IsNullOrWhiteSpace(module.LatestCompatibleVersion))
-                SetLatestCompatibleVersion(module, serverVersion);
+            if (serverVersion is not null && string.IsNullOrWhiteSpace(module?.LatestRelease?.ModuleVersion))
+                SetLatestCompatibleVersion(module!, serverVersion);
 
-            bool versionOK = serverVersion is null || !string.IsNullOrWhiteSpace(module.LatestCompatibleVersion);
+            bool versionOK = serverVersion is null || 
+                             !string.IsNullOrWhiteSpace(module?.LatestRelease?.ModuleVersion);
 
             // Second check: Is this module available on this platform?
-            return module.Valid && versionOK &&
+            return module!.Valid && versionOK &&
                    ( module.Platforms!.Any(p => p.EqualsIgnoreCase("all")) ||
                      module.Platforms!.Any(p => p.EqualsIgnoreCase(platform)) );
         }
@@ -219,33 +215,34 @@ namespace CodeProject.AI.API.Common
             // HACK: To be removed after CPAI 2.1 is released. The Versions array wasn't added to
             // the downloadable list of modules until server version 2.1. All modules pre-server
             // 2.1 are compatible with server 2.1+, so 
-            if (module.VersionCompatibililty is null || module.VersionCompatibililty.Count() == 0)
+            if ((module.ModuleReleases?.Length ?? 0) == 0)
             {
-                module.LatestCompatibleVersion      = module.Version;
-                module.CompatibleVersionReleaseDate = "2022-03-20";
-            }
-            else
-            {
-                foreach (VersionCompatibility version in module.VersionCompatibililty)
+                module.LatestRelease = new ModuleRelease() 
                 {
-                    if (version.ServerVersionRange is null || version.ServerVersionRange.Length < 2)
-                        continue;
+                    ModuleVersion = module.Version,
+                    ReleaseDate   = "2022-03-20"
+                };
+                return;
+            }
 
-                    string? minServerVersion = version.ServerVersionRange[0];
-                    string? maxServerVersion = version.ServerVersionRange[1];
+            foreach (ModuleRelease release in module!.ModuleReleases!)
+            {
+                if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)
+                    continue;
 
-                    if (string.IsNullOrEmpty(minServerVersion)) minServerVersion = "0.0";
-                    if (string.IsNullOrEmpty(maxServerVersion)) maxServerVersion = currentServerVersion;
+                string? minServerVersion = release.ServerVersionRange[0];
+                string? maxServerVersion = release.ServerVersionRange[1];
 
-                    if (VersionInfo.Compare(minServerVersion, currentServerVersion) <= 0 &&
-                        VersionInfo.Compare(maxServerVersion, currentServerVersion) >= 0)
+                if (string.IsNullOrEmpty(minServerVersion)) minServerVersion = "0.0";
+                if (string.IsNullOrEmpty(maxServerVersion)) maxServerVersion = currentServerVersion;
+
+                if (VersionInfo.Compare(minServerVersion, currentServerVersion) <= 0 &&
+                    VersionInfo.Compare(maxServerVersion, currentServerVersion) >= 0)
+                {
+                    if (module.LatestRelease is null ||
+                        VersionInfo.Compare(module.LatestRelease.ModuleVersion, release.ModuleVersion) <= 0)
                     {
-                        if (module.LatestCompatibleVersion is null ||
-                            VersionInfo.Compare(module.LatestCompatibleVersion, version.ModuleVersion) <= 0)
-                        {
-                            module.LatestCompatibleVersion      = version.ModuleVersion;
-                            module.CompatibleVersionReleaseDate = version.ReleaseDate;
-                        }
+                        module.LatestRelease = release;
                     }
                 }
             }

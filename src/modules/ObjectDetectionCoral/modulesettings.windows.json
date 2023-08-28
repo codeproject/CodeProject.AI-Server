@@ -1,0 +1,7 @@
+{
+  "Modules": {
+    "ObjectDetectionCoral": {
+      "Runtime": "python37"
+    }
+  }
+}

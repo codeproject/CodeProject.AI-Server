@@ -21,6 +21,7 @@
 
 import argparse
 import collections
+from datetime import datetime
 import time
 
 import cv2
@@ -32,10 +33,12 @@ from tflite_util import get_output_results, make_interpreter, set_input_tensor
 from PIL import Image
 from PIL import ImageDraw
 
+interpreter_lifespan_secs = 3600  # Refresh the interpreter once an hour
 
-interpreter = None
-labels      = None
-edge_tpu    = False
+interpreter               = None  # The model interpreter
+interpreter_created       = None  # When was the interpreter created?
+labels                    = None  # set of labels for this model
+edge_tpu                  = False # Are we using a TPU?
 
 Object = collections.namedtuple('Object', ['label', 'score', 'bbox'])
 
@@ -86,6 +89,7 @@ def get_output(interpreter, score_threshold):
 def init_detect(options: Options):
 
     global interpreter
+    global interpreter_created
     global labels
     global edge_tpu
 
@@ -94,6 +98,7 @@ def init_detect(options: Options):
 
     # Initialize TF-Lite interpreter.
     (interpreter, edge_tpu) = make_interpreter(options.model_tpu_file, options.model_cpu_file, options.num_threads)
+    interpreter_created = datetime.now()
 
     # Get input and output tensors.
     input_details = interpreter.get_input_details()
@@ -101,21 +106,31 @@ def init_detect(options: Options):
 
     interpreter.allocate_tensors()
 
-    print(f"Input details: {input_details[0]}\n")
-    print(f"Output details: {output_details[0]}\n")
+    print(f"Debug: Input details: {input_details[0]}\n")
+    print(f"Debug: Output details: {output_details[0]}\n")
 
     # Read label and generate random colors.
     labels = read_label_file(options.label_file) if options.label_file else None
 
 
-def do_detect(img: Image, score_threshold: float = 0.5):
+def do_detect(options: Options, img: Image, score_threshold: float = 0.5):
+
+    global interpreter
+    global interpreter_created
 
     w,h = img.size
-    print("Input(height, width): ", h, w)
+    print("Debug: Input(height, width): ", h, w)
 
     numpy_image = np.array(img)
 
     input_im = cv2.cvtColor(numpy_image, cv2.COLOR_BGR2RGB)
+
+    # Once an hour, refresh the interpreter
+    seconds_since_created = (datetime.now() - interpreter_created).total_seconds()
+    if seconds_since_created > interpreter_lifespan_secs:
+        print("Info: Refreshing the Tensorflow Interpreter")
+        interpreter = None
+        init_detect(options)
 
     _, height, width, channel = interpreter.get_input_details()[0]["shape"]
     resize_im = cv2.resize(input_im, (width, height))

@@ -123,7 +123,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             // Special case
             if (settings.Name.EqualsIgnoreCase("Restart"))
             {
-                success = await _moduleProcessServices.RestartProcess(module);
+                success = await _moduleProcessServices.RestartProcess(module).ConfigureAwait(false);
             }
             else
             {
@@ -131,15 +131,16 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                 module.UpsertSetting(settings.Name, settings.Value);
 
                 // Restart the module and persist the settings
-                if (await _moduleProcessServices.RestartProcess(module))
+                if (await _moduleProcessServices.RestartProcess(module).ConfigureAwait(false))
                 {
                     var settingStore = new PersistedOverrideSettings(_storagePath);
-                    var overrideSettings = await settingStore.LoadSettings();
+                    var overrideSettings = await settingStore.LoadSettings().ConfigureAwait(false);
 
                     if (ModuleConfigExtensions.UpsertSettings(overrideSettings, module.ModuleId!,
                                                               settings.Name, settings.Value))
                     {
-                        success = await settingStore.SaveSettings(overrideSettings);
+                        success = await settingStore.SaveSettingsAsync(overrideSettings)
+                                                    .ConfigureAwait(false);
                     }
                 }
             }
@@ -166,7 +167,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             // Load up the current persisted settings so we can update and re-save them
 
             var settingStore = new PersistedOverrideSettings(_storagePath);
-            var overrideSettings = await settingStore.LoadSettings();
+            var overrideSettings = await settingStore.LoadSettings().ConfigureAwait(false);
 
             // Keep tabs on which modules need to be restarted
             List<string>? moduleIdsToRestart = new();
@@ -212,11 +213,15 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             {
                 ModuleConfig? module = _moduleCollection.GetModule(moduleId);
                 if (module is not null)
-                    restartSuccess = await _moduleProcessServices.RestartProcess(module) && restartSuccess;
+                {
+                    var restartTask = _moduleProcessServices.RestartProcess(module);
+                    restartSuccess = await restartTask.ConfigureAwait(false) && restartSuccess;
+                }
             }
 
             // Only persist these override settings if all modules restarted successfully
-            bool success = restartSuccess && await settingStore.SaveSettings(overrideSettings);
+            bool success = restartSuccess && await settingStore.SaveSettingsAsync(overrideSettings)
+                                                               .ConfigureAwait(false);
 
             return new ResponseBase { success = success };
         }

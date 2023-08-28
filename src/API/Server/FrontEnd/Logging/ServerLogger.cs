@@ -122,18 +122,31 @@ namespace CodeProject.AI.API.Server.Frontend
             string message  = formatter(state, exception);
             string label    = string.Empty;
 
-            // Trim the category down a little
-            if (!string.IsNullOrEmpty(_categoryName))
-            {
-                /*
-                var parts = _categoryName.Split('.', StringSplitOptions.RemoveEmptyEntries);
-                category  = parts[^1];
-                if (parts.Any(p => p == "CodeProject"))
-                    category = "CodeProject." + category;
-                */
+            // We could create a dictionary of search/replace/new log level but then we run into
+            // issues such as "contains X AND contains Y" so just hardcode it here.
 
-                // if (_categoryName.StartsWithIgnoreCase("CodeProject."))
-                //   category = "Server";
+            // This is more or less expected as we test for ONNXruntime. It's info, not a crash
+            if (message.Contains("LoadLibrary failed with error 126") &&
+                message.Contains("onnxruntime_providers_cuda.dll"))
+            {
+                message = "Attempted to load ONNX runtime CUDA provider. No luck, moving on...";
+                logLevel = LogLevel.Information;
+            }
+            // Annoying
+            else if (message.Contains("Failed to read environment variable [DOTNET_ROOT]"))
+            {
+                logLevel = LogLevel.Debug;
+            }
+            // Pointless
+            else if (message.Contains("Microsoft.Hosting.Lifetime[0]"))
+            {
+                return;
+            }
+            // ONNX/Tensorflow output is WAY too verbose for an error
+            else if (message.Contains("I tensorflow/cc/saved_model/reader.cc:") ||
+                     message.Contains("I tensorflow/cc/saved_model/loader.cc:"))
+            {
+                logLevel = LogLevel.Information;
             }
 
             // We're using the .NET logger which means we don't have a huge amount of control

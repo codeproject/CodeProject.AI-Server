@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,7 +16,7 @@ using CodeProject.AI.API.Common;
 namespace CodeProject.AI.API.Server.Frontend.Controllers
 {
     /// <summary>
-    /// Handles pulling requests from the Command Queue and returning reponses to the calling method.
+    /// Handles pulling requests from the Command Queue and returning responses to the calling method.
     /// </summary>
     [Route("v1/queue")]
     [ApiController]
@@ -40,7 +42,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         /// </summary>
         /// <param name="name">The name of the Queue.</param>
         /// <param name="moduleId">The ID of the module making the request</param>
-        /// <param name="executionProvider">The excution provider, typically the GPU library in use</param>
+        /// <param name="executionProvider">The execution provider, typically the GPU library in use</param>
         /// <param name="token">The aborted request token.</param>
         /// <returns>The Request Object.</returns>
         [HttpGet("{name}", Name = "GetRequestFromQueue")]
@@ -52,8 +54,8 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
                                                    [FromQuery] string? executionProvider,
                                                    CancellationToken token)
         {
-
-            BackendRequestBase? request = await _queueService.DequeueRequestAsync(name, token);
+            BackendRequestBase? request = await _queueService.DequeueRequestAsync(name, token)
+                                                             .ConfigureAwait(false);
 
             bool shuttingDown = false;
 
@@ -79,26 +81,34 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
         /// the named queue if available.
         /// </summary>
         /// <param name="reqid">The id of the request the response is for.</param>
-        /// <param name="moduleId">The ID of the module making the request</param>
-        /// <param name="executionProvider">The hardware accelerator execution provider.</param>
         /// <returns>The Request Object.</returns>
         [HttpPost("{reqid}", Name = "SetResponseInQueue")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ObjectResult> SetResponse(string reqid, [FromQuery] string moduleId,
-                                                    [FromQuery] string? executionProvider = null)
+        public async Task<ObjectResult> SetResponse(string reqid)
         {
-            string? response     = null;
+            string? responseString = null;
             using var bodyStream = HttpContext.Request.Body;
-            if (bodyStream      != null)
+            if (bodyStream != null)
             {
                 using var textreader = new StreamReader(bodyStream);
-                response = await textreader.ReadToEndAsync();
+                responseString = await textreader.ReadToEndAsync().ConfigureAwait(false);
             }
 
-            UpdateProcessStatus(moduleId, true, executionProvider: executionProvider);
+            var response = JsonSerializer.Deserialize<JsonObject>(responseString ?? "");
+ 
+            string? command           = response?["command"]?.ToString();
+            string? moduleId          = response?["moduleId"]?.ToString();
+            string? executionProvider = response?["executionProvider"]?.ToString();
 
-            var success = _queueService.SetResult(reqid, response);
+            if (!string.IsNullOrWhiteSpace(moduleId))
+            {
+                bool incrementProcessCount = command is not null && !command.EqualsIgnoreCase("status");
+                UpdateProcessStatus(moduleId, incrementProcessCount: incrementProcessCount,
+                                    executionProvider: executionProvider);
+            }
+
+            var success = _queueService.SetResult(reqid, responseString);
             if (!success)
                 return BadRequest("failure to set response.");
 
@@ -115,6 +125,7 @@ namespace CodeProject.AI.API.Server.Frontend.Controllers
             {
                 if (status!.Status != ProcessStatusType.Stopping)
                     status.Status = shuttingDown? ProcessStatusType.Stopping : ProcessStatusType.Started;
+
                 status.Started ??= DateTime.UtcNow;
                 status.LastSeen  = DateTime.UtcNow;
 

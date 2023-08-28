@@ -37,6 +37,7 @@ if errorlevel 1 exit /b 1
 ::  moduleDir             - the name of the directory containing this module
 ::  modulePath            - the path to this module (%modulesPath%\%moduleDir%)
 ::  platform              - "windows" for this script
+::  systemName            - "Windows"
 ::  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
 ::  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
 ::                          GetFromServer will honour this value. Do it yourself for DownloadAndExtract 

@@ -95,8 +95,8 @@
 	<script type="text/javascript">
 
 		const useSVG             = true;
-		const pingFrequency      = 1000; // milliseconds
-		const serviceTimeoutSec  = 10;   // seconds
+		const pingFrequency      = 5000; // milliseconds
+		const serviceTimeoutSec  = 30;   // seconds
 
         const apiServiceProtocol = window.location.protocol;
         const apiServiceHostname = window.location.hostname || "localhost";
@@ -112,6 +112,8 @@
 			setInterval(ping, pingFrequency);
 			setInterval(getAnalysisStatus, pingFrequency);
 			setTimeout(setCustomModelLists, 5000);
+
+			setInterval(onTrainingStatus, 5000);
 
 			// Quick check for the video demo
 			try {
@@ -169,6 +171,7 @@
 			if (useSVG) {
 				imageMask.innerHTML = '';
 				img.style.visibility = "hidden";
+                img2.style.visibility = "hidden";
 			}
 			else {
 				let context = annotations.getContext("2d");
@@ -176,11 +179,24 @@
 			}
 		}
 
-		function setError(message) {
+		/**
+		Sets the status text (small area top left) to be the error message in red.
+		Since this is a small area, the text needs to be short.
+		@param message - a short status message
+		@param error - a longer error message which, if supplied, will be sent to console
+		*/
+		function setError(message, error) {
 			setStatus(message, "red")
-			console.log(message);
+			if (error)
+				console.log(message + " Error: " + error);
+			else
+				console.log(message);
 		}
 
+		/**
+		Sets the status text (small area top left) to be the message in the given colour.
+		Since this is a small area, the text needs to be short.
+		*/
 		function setStatus(text, color) {
 			if (color)
 				document.getElementById("status").innerHTML = "<span style='color:" + color + "'>" + text + "</span>";
@@ -209,10 +225,10 @@
 
 			if (useSVG) {
 				svg = `
-															<svg viewBox="0 0 ${img.width} ${img.height}">
-															<defs>
-																<mask id="mask">
-																	<rect fill="#999" x="0" y="0" width="${img.width}" height="${img.height}"></rect>`;
+					<svg viewBox="0 0 ${img.width} ${img.height}">
+					<defs>
+						<mask id="mask">
+							<rect fill="#999" x="0" y="0" width="${img.width}" height="${img.height}"></rect>`;
 			}
 			else {
 				let context = annotations.getContext("2d");
@@ -261,12 +277,12 @@
 					let bottom = top + height;
 
 					// CodeProject.AI style
-					let lineWidth = Math.min(maxLineWidth, width / 10);
-					let blockWidth = (width - lineWidth) / 5;
+					let lineWidth   = Math.min(maxLineWidth, width / 10);
+					let blockWidth  = (width - lineWidth) / 5;
 					let blockHeight = (height - lineWidth) / 5;
-					let color = colors[colorIndex++ % colors.length];
-					let styleSolid = `style="stroke:rgba(${color}, 1);stroke-width:${lineWidth}"`;
-					let styleTrans = `style="stroke:rgba(${color}, 0.5);stroke-width:${lineWidth}"`;
+					let color       = colors[colorIndex++ % colors.length];
+					let styleSolid  = `style="stroke:rgba(${color}, 1);stroke-width:${lineWidth}"`;
+					let styleTrans  = `style="stroke:rgba(${color}, 0.5);stroke-width:${lineWidth}"`;
 
 					// label
                     let label = prediction.label || prediction.userid;
@@ -454,30 +470,29 @@
 
 					clearTimeout(timeoutId);
 
-					if (!response.ok)
+					if (!response.ok) {
 						setError('Error contacting API server');
-					else
+					}
+					else {
 						response.json().then(data => {
-							// if (serverOnline == data.success)
-							//	return;
-
 							serverOnline = data.success;
 							if (serverOnline)
 								setStatus('API server is online', "green");
-							else
-								setError('Unable to contact API server');
+							else // kinda impossible for an offline server to say "I'm offline", but hey...
+								setError('API server is offline');
 						})
-							.catch(error => {
-								setError('Error processing server response: ' + error)
-							});
+						.catch(error => {
+							setError('Unable to process server response', error)
+						});
+					}
 				})
 				.catch(error => {
 					if (error.name === 'AbortError') {
-						setError("Timed out waiting for a response. Maybe increase the timeout value?");
+						setError("Response timeout. Try increasing the timeout value");
 						serverOnline = false;
 					}
 					else
-						setError(/*error.message*/ "Unable to contact AI Server");
+						setError("API server is offline", error?.message);
 				});
 		}
 
@@ -513,17 +528,9 @@
 								for (let i = 0; i < data.statuses.length; i++) {
 
 									let moduleId = data.statuses[i].moduleId.replace(" ", "-");
-									let running = data.statuses[i].status == 'Started';
+									let running  = data.statuses[i].status == 'Started';
 
-									// enable those that need enabling. Note that some cards will be
-									// shared among modules, so we need to ensure we're not disabling
-									// a card that was just enabled by a different module
-									let selector = moduleId;
-									if (["ObjectDetectionNet",
-									     "VisionObjectDetection",
-										 "ObjectDetectionYolo",
-										 "ObjectDetectionTFLite",
-										 "YOLOv5-3.1"].includes(moduleId)) selector = "ObjectDetection";
+									let selector = data.statuses[i].queue;
 
 									let cards = document.getElementsByClassName('card ' + selector);
 									for (const card of cards) {
@@ -572,8 +579,6 @@
 
 			let url = serviceUrl.value.trim() + '/v1/' + route + '/' + apiName;
 
-			setResultsHtml("");
-
 			const controller  = new AbortController()
 			const timeoutSecs = parseInt(serviceTimeoutSecTxt.value);
 			const timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
@@ -587,45 +592,34 @@
 
 					clearTimeout(timeoutId);
 
-					if (!response.ok) {
-						setError('Error contacting API server');
-						if (failFunc) failFunc();
-					} else {
-						response.json()
-							.then(data => {
-								console.log("Request succeeded")
-
-								if (data) {
-									if (data.success) {
-										doneFunc(data)
-										setStatus("Call to " + apiName + " complete", "green");
-									}
-									else {
-										if (failFunc) failFunc();
-										setResultsHtml(data.error ?? "");
-										setStatus("Call to " + apiName + " failed", "red");
-									}
-								}
-								else {
-									if (failFunc) failFunc();
-									setError('No data was returned');
-								}
-							})
-							.catch(error => {
+					if (response.ok) {
+						response.json().then(data => {
+							if (data) {
+								if (doneFunc) doneFunc(data)
+							}
+							else {
 								if (failFunc) failFunc();
-								setError("Unable to process server response: " + error);
-							})
+								setError('No data was returned');
+							}
+						})
+						.catch(error => {
+							if (failFunc) failFunc();
+							setError("Unable to process server response", error);
+						})					
+					} else {
+						setError('Error contacting API server');
+						if (failFunc) failFunc();						
 					}
 				})
 				.catch(error => {
                     if (failFunc) failFunc();
 
 					if (error.name === 'AbortError') {
-						setError("Timed out waiting for a response. Maybe increase the timeout value?");
+						setError("Response timeout. Try increasing the timeout value");
 						serverOnline = false;
 					}
 					else
-						setResultsHtml('Unable to complete API call: ' + error);
+						setError('Unable to complete API call', error);
 				});
 		}
 
@@ -641,6 +635,7 @@
 			setImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
+			setResultsHtml("Classifying scene...");
 			submitRequest('vision', 'scene', images, null, function (data) {
 				setResultsHtml("<table style='width:100%'>" +
 							   "<tr><th>Label</th><th>Confidence</th></tr><tr>" +
@@ -663,6 +658,7 @@
 			setImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
+			setResultsHtml("Detecting faces...");
 			submitRequest('vision', 'face', images, null, function (data) {
 				drawRectangles(data.predictions);
 				displayPredictionResults(data)
@@ -715,6 +711,7 @@
 			setImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
+			setResultsHtml("Detecting objects using custom model...");
 			submitRequest('vision', 'custom/' + model_name, images, null, function (data) {
 				drawRectangles(data.predictions);
 				displayPredictionResults(data)
@@ -733,6 +730,7 @@
 			setImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
+			setResultsHtml("Detecting objects...");
 			submitRequest('vision', 'detection', images, null, function (data) {
 				drawRectangles(data.predictions);
 				displayPredictionResults(data)
@@ -751,6 +749,7 @@
 			setImage(face1Ctrl.files[0]);
 			let images = [face1Ctrl.files[0], face2Ctrl.files[0]];
 
+			setResultsHtml("Comparing faces...");
 			submitRequest('vision', 'face/match', images, null, function (data) {
 				displayMatchResults(data);
 			});
@@ -776,6 +775,7 @@
 			for (let i = 0; i < faceCtrl.files.length; i++)
 				images.push(faceCtrl.files[i]);
 
+			setResultsHtml("Registering face...");
 			submitRequest('vision', 'face/register', images, [["userid", userId]], function (data) {
 				if (data)
 					displayBaseResults(data);
@@ -788,6 +788,7 @@
 
 			clearCanvas();
 
+			setResultsHtml("Listing faces...");
 			submitRequest('vision', 'face/list', null, null, function (data) {
 				displayRegisteredFaces(data)
 			});
@@ -797,6 +798,7 @@
 
 			clearCanvas();
 
+			setResultsHtml("Deleting face info...");
 			submitRequest('vision', 'face/delete', null, [["userid", userId]], function (data) {
 				setResultsHtml("Face deleted");
 			});
@@ -819,6 +821,7 @@
 			if (!isNaN(minConfidence))
 				params = [["min_confidence", minConfidence]]
 
+			setResultsHtml("Recognizing face...");
 			submitRequest('vision', 'face/recognize', images, params, function (data) {
 				drawRectangles(data.predictions);
 				displayRecognitionResults(data)
@@ -838,6 +841,7 @@
 			let images = [fileChooser.files[0]];
 			let params = [["use_alphamatting", use_alphamatting]]
 
+			setResultsHtml("Removing background...");
 			submitRequest('image', 'removebackground', images, params, function (data) {
 				setResultsHtml("Background Removal complete" + getInferenceTimingHtml(data));
 				img.src = "data:image/png;base64," + data.imageBase64;
@@ -858,6 +862,7 @@
 			let images = [fileChooser.files[0]];
 			let params = [["strength", strength]]
 
+			setResultsHtml("Blurring background...");
 			submitRequest('image', 'portraitfilter', images, params, function (data) {
 				setResultsHtml("Portrait mode complete" + getInferenceTimingHtml(data));
 				img.src = "data:image/png;base64," + data.filtered_image;
@@ -879,6 +884,7 @@
 
 			params = [["model_name", model_name]]
 
+			setResultsHtml("Cartoonising face...");
 			submitRequest('image', 'cartoonise', images, params, function (data) {
 				setResultsHtml("onCartoonisation complete" + getInferenceTimingHtml(data));
 				img.src = "data:image/png;base64," + data.imageBase64;
@@ -899,6 +905,7 @@
             let images = [fileChooser.files[0]];
             let params = [["confidence", confidence]]
 
+			setResultsHtml("Detecting license plates...");
             submitRequest('image', 'alpr', images, params, function (data) {
 				setResultsHtml("License plate detection complete");
                 drawRectangles(data.predictions, false);
@@ -919,6 +926,7 @@
             let images = [fileChooser.files[0]];
 			let params = null; 
 
+			setResultsHtml("Reading text from image...");
             submitRequest('image', 'ocr', images, params, function (data) {
                 setResultsHtml("Optical character recognition complete");
                 drawRectangles(data.predictions, false);
@@ -939,6 +947,7 @@
 			let images = [fileChooser.files[0]];
 			let params = null;
 
+			setResultsHtml("Increasing image resolution...");
 			submitRequest('image', 'superresolution', images, params, function (data) {
 				setResultsHtml("Resolution Improvement complete" + getInferenceTimingHtml(data));
 				img.src = "data:image/png;base64," + data.imageBase64;
@@ -958,6 +967,7 @@
 			numberOfSentences = !isNaN(numberOfSentences) ? parseInt(numberOfSentences) : 2;
 			let params = [['text', articleText], ["num_sentences", numberOfSentences]]
 
+			setResultsHtml("Summarizing text...");
 			submitRequest('text', 'summarize', null, params, function (data) {
 				setResultsHtml((data.summary || "No summary  was returned") +
 				               getInferenceTimingHtml(data));
@@ -975,6 +985,7 @@
 
 			let params = [['text', articleText]]
 
+			setResultsHtml("Performing sentiment analysis...");
 			submitRequest('text', 'sentiment', null, params, function (data) {
 				if (!data.success) {
 					setResultsHtml("Sentiment analysis failed");
@@ -994,7 +1005,7 @@
 		let videoProcessingActive = false;
 		let videoTimerId;
         let lastFrameDrawTime, lastInferenceTime, framesPerSecond, processedPerSecond;
-		let rect_left, rect_top, rect_width, rect_height;
+		let predictions;
 		let processQueueLength = 0;
 
 		function onStartVideo(e) {
@@ -1035,8 +1046,22 @@
 			// Draw the current image, the previous detection rect, and the stats
 			ctx.drawImage(video, 0, 0); //, canvas.width, canvas.height);
 
-            ctx.strokeStyle = "red";
-            ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+			if (predictions) {
+				for (let i = 0; i < predictions.length; i++) {
+
+					const rect = predictions[i];
+					const rect_left   = Math.min(rect.x_min, rect.x_max);
+					const rect_top    = Math.min(rect.y_min, rect.y_max);
+					const rect_width  = Math.abs(rect.x_min - rect.x_max);
+					const rect_height = Math.abs(rect.y_min - rect.y_max);
+
+					ctx.strokeStyle = "red";
+					ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+		
+					ctx.strokeStyle = "yellow";
+					ctx.strokeText(predictions[i].label || "", rect_left, rect_top);
+				}
+			}
 
 			if (framesPerSecond) {
 				ctx.font         = '20px sans-serif';
@@ -1072,7 +1097,8 @@
 					let formData = new FormData();
 					formData.append('image', blob, 'filename.png');
 
-					let url = serviceUrl.value.trim() + '/v1/vision/face';
+					// let url = serviceUrl.value.trim() + '/v1/vision/face';	// Face detection
+					let url = serviceUrl.value.trim() + '/v1/vision/detection';	// object detection
 
 					processQueueLength++;
 
@@ -1082,28 +1108,33 @@
 					})
 						.then(response => {
 							processQueueLength--;
-							if (response.ok) response.json().then(data => {
-								if (videoProcessingActive && data && data.success && data.predictions) {
+							if (response.ok) 
+								response.json().then(data => {
+									if (videoProcessingActive && data && data.success && data.predictions) {
 
-									let previousInferenceTime = lastInferenceTime;
-									lastInferenceTime = performance.now();
+										let previousInferenceTime = lastInferenceTime;
+										lastInferenceTime = performance.now();
 
-									if (previousInferenceTime && previousInferenceTime < lastInferenceTime)
-										processedPerSecond = 1000.0 / (lastInferenceTime - previousInferenceTime);
+										if (previousInferenceTime && previousInferenceTime < lastInferenceTime)
+											processedPerSecond = 1000.0 / (lastInferenceTime - previousInferenceTime);
 
-									for (let i = 0; i < data.predictions.length; i++) {
+										predictions = data.predictions
+										for (let i = 0; i < predictions.length; i++) {
 
-										let rect = data.predictions[i];
-										rect_left   = Math.min(rect.x_min, rect.x_max);
-										rect_top    = Math.min(rect.y_min, rect.y_max);
-										rect_width  = Math.abs(rect.x_min - rect.x_max);
-										rect_height = Math.abs(rect.y_min - rect.y_max);
+											const rect = predictions[i];
+											const rect_left   = Math.min(rect.x_min, rect.x_max);
+											const rect_top    = Math.min(rect.y_min, rect.y_max);
+											const rect_width  = Math.abs(rect.x_min - rect.x_max);
+											const rect_height = Math.abs(rect.y_min - rect.y_max);
 
-										ctx.strokeStyle = "red";
-										ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+											ctx.strokeStyle = "red";
+											ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+								
+											ctx.strokeStyle = "yellow";
+            								ctx.strokeText(predictions[i].label || "", rect_left, rect_top);
+										}
 									}
-								}
-							})
+								})
 						})
 						.catch(e => {
                             processQueueLength--;
@@ -1200,6 +1231,311 @@
             );
 		}
 
+		// -------------- Training YoloV5 custom model -------------------------
+
+		let trainingResultsShown = true; // Have successful results been displayed?
+									     // initialize to true or onTrainingModelInfo 
+										 // will be called on the first onTrainingStatus call.
+
+		function onTrainingStatus() {
+
+			// only get status if panel is active
+			const panel = document.getElementById('train-panel');
+            if (!panel.classList.contains("active"))
+                return;
+
+            submitRequest('train', 'status', null, null, 
+				function (data) {
+					if (data.success) {
+					
+						// TODO: Would be nice (but not necessary) to have the training module calculate
+						// these values for us so we don't have to keep up with enums and states
+						let actionActive           = data.state == "Running"; // || data.state == "Initializing" || data.state == "Cancelling";
+						let creatingDataset        = actionActive && data.action == "CreateDataset";
+						let doingTraining          = actionActive && (data.action == "TrainModel" ||
+						                                              data.action == "ResumeTrainModel");
+
+						trainingModelName.value    = data.model_name;
+                        trainingDatasetName.value  = data.dataset_name
+						trainingAction.value       = data.action;
+						trainingState.value        = data.state;
+						statusMessage.value        = data.message;
+
+						trainingState.classList.remove("text-success", "bg-success", "fw-bold", "text-warning", "bg-danger");
+						trainingCancelBtn.setAttribute('disabled', true);
+						trainingCancelBtn.setAttribute('hidden', true);
+
+						if (data.state == "Initializing" || data.state == "Running") {
+							trainingState.classList.add("text-success", "fw-bold");
+							trainingCancelBtn.removeAttribute('disabled')
+							trainingCancelBtn.removeAttribute('hidden')
+							trainingCancelBtn.value = doingTraining ? "Pause" : "Cancel";
+						}
+						else if (data.state == "Completed")
+							trainingState.classList.add("bg-success");
+						else if (data.state == "Cancelling" || data.state == "Cancelled")
+							trainingState.classList.add("text-warning", "fw-bold");
+						else if (data.state == "Failed")
+							trainingState.classList.add("bg-danger");
+
+						let progressStr = (data.progress||0).toFixed(0);
+
+						// Default state for progress bars is hidden
+						datasetProgress.parentElement.classList.add("bg-transparent");
+						datasetProgress.innerHTML = "";
+						trainingProgress.parentElement.classList.add("bg-transparent");
+						trainingProgress.innerHTML = "";
+
+						if (creatingDataset) {
+							datasetProgress.innerHTML = progressStr + "%";
+							datasetProgress.parentElement.classList.remove("bg-transparent");
+							//	onTrainingDatasetInfo(data.dataset_name);
+
+							if (data.progress < 1)
+								datasetProgress.classList.add("progress-bar-striped", "progress-bar-animated");
+							else
+								datasetProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+							datasetProgress.ariaValueNow = progressStr;
+						}
+						else {
+							datasetProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+							// Previously we wanted the dataset creation progress bar to sit at 100%
+							// while the training (that presumably used the created dataset) continued.
+							// This isn't actually realistic :(
+							// datasetProgress.ariaValueNow = data.dataset_created ? "100" : "0";
+							datasetProgress.ariaValueNow = "0";
+						}
+
+						if (doingTraining) {
+							trainingProgress.innerHTML  = progressStr + "%";
+							trainingProgress.parentElement.classList.remove("bg-transparent");
+							onTrainingModelInfo(data.model_name);
+
+							if (data.progress < 1)
+								trainingProgress.classList.add("progress-bar-striped", "progress-bar-animated");
+							else
+								trainingProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+							trainingProgress.ariaValueNow = progressStr;
+						}
+						else {
+							trainingProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+							trainingProgress.ariaValueNow = "0";
+						}
+
+						// We never know when each status call is done, and between calls the training
+						// may have ended. If this is the case, we need to ensure we've done one last
+						// info update to get the final results.
+						if (!trainingResultsShown && !doingTraining) {
+							trainingResultsShown = true;
+							onTrainingModelInfo(data.model_name);
+						}
+
+						datasetProgress.style.width  = datasetProgress.ariaValueNow + "%";
+						trainingProgress.style.width = trainingProgress.ariaValueNow + "%";
+					}
+					else {
+						trainingAction.value  = "Unknown"
+						trainingState.value   = "Unknown";
+					}
+				},
+				function (data) {
+				});
+		}
+
+		function onDatasetCreate(dataset_name, classes, num_images)
+		{
+            params = [
+                ["dataset_name", dataset_name],
+                ["classes", classes],
+                ["num_images", num_images],
+            ];
+            setResultsHtml("Starting dataset creation");
+
+            submitRequest('train', 'create_dataset', null, params,
+                function (data) {
+                    if (data.success)
+						setResultsHtml(`Create the Dataset '${dataset_name}'`);
+                    else
+                        setResultsHtml(`Create Dataset failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
+                },
+                function (data) {
+                    if (data)
+                        setResultsHtml(`Create Dataset failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
+                    else
+                        setResultsHtml("Create Dataset failed to start");
+				}
+			);
+		}
+
+		function onTrainingStart(model_name, dataset_name, model_size, num_epochs, batch, device, 
+								freeze, hyp, patience, workers) {
+
+			params = [
+                [ "model_name",   model_name   ],
+                [ "dataset_name", dataset_name ],
+				[ "model_size",   model_size   ],
+				[ "num_epochs",   num_epochs   ],
+				[ "device",       device       ],
+				[ "batch",        batch        ],
+				[ "freeze",       freeze       ],
+				[ "hyp" ,         hyp          ],
+				[ "patience",     patience     ],
+				[ "workers",      workers      ]
+			];
+
+			setResultsHtml("Starting model training");
+
+            submitRequest('train', 'train_model', null, params, 
+				function (data) {
+					if (data.success) {
+						setResultsHtml("Training started for model " + model_name);
+						trainingResultsShown = false;
+					}
+					else
+						setResultsHtml(`Training failed to start. ${data.error? "(" + data.error + ")" : ''}`);
+				},
+				function (data) {
+					if (data)
+	                    setResultsHtml(`Training failed to start. ${data.error? "(" + data.error + ")" : ''}`);
+					else
+						setResultsHtml("Training failed to start");
+                });
+		}
+
+		function onTrainingResumeTraining(model_name) {
+
+            params = [
+                ["model_name", model_name]
+            ];
+            setResultsHtml("Resume Training model {model_name}");
+
+            submitRequest('train', 'resume_training', null, params,
+                function (data) {
+                    if (data.success) {
+                        // NOTE: if TrainingYOLO has train_in_separate_task = False then the data
+                        // object will contain all the info of the newly created model
+
+                        setResultsHtml("Resuming training for model " + model_name);
+                        trainingResultsShown = false;
+                    }
+                    else
+                        setResultsHtml(`Resume Training failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
+                },
+                function (data) {
+                    if (data)
+                        setResultsHtml(`Resume Training  failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
+                    else
+                        setResultsHtml("Resume Training  failed to start");
+                }
+            );
+		}
+
+		function onTrainingCancel() {
+
+            clearCanvas();
+
+			submitRequest('train', 'cancel', null, null, 
+				function (data) {
+
+					if (data.success)
+						setResultsHtml("Training cancel requested");
+					else
+						setResultsHtml(`Training was already cancelled.`);
+				},
+				function (data) {
+					if (data)
+	                    setResultsHtml(`Training failed to cancel. ${data.error? "(" + data.error + ")" : ''}`);
+					else
+						setResultsHtml("Training failed to cancel");
+                });
+		}
+
+		function onTrainingModelInfo(model_name) {
+
+			if (!model_name) {
+                setResultsHtml("Get Model Info Failed: Model Name is required.")
+				return
+			}
+
+			params = [["model_name", model_name]]
+            submitRequest('train', 'model_info', null, params, 
+				function (data) {
+					if (data.success) {
+						let model_created = data.model_created
+						let resultHtml    = "Get Training Model Info:"
+									      + "<br/><b>Model Name:</b> " + model_name + " (" + data.model_size + "Mb)"
+									      + "<br/><b>Training State:</b> " + (model_created ? "Complete" : "Not Complete") // Need to detect "failed"
+									      + "<br/><br/><b>Model Path:</b><br/> " + (data.model_path || "Not yet available")
+									      + "<br/><br/><b>Results Graph Path:</b><br/>  " + (data.results_graph_path || "Not yet available")
+									      + "<br/><br/><b>Results CSV:</b><br/> " + (data.results_csv_path || "Not yet available")
+									      + "<br/><br/><b>PR Curve Graph Path:</b><br/> " + (data.pr_curve_path || "Not yet available")
+									      + getInferenceTimingHtml(data);
+						setResultsHtml(resultHtml);
+
+						if (data.results_graph_image) {
+							img.src = "data:image/png;base64," + data.results_graph_image;
+							img.style.visibility = "visible";
+						}
+						else {
+							img.src = "";
+							img.style.visibility = "hidden";
+						}
+
+						if (data.pr_curve_image) {
+							img2.src = "data:image/png;base64," + data.pr_curve_image;
+							// results_img.src = "file://" + data.pr_curve_path;
+							img2.style.visibility = "visible";
+						}
+						else {
+							img2.src = "";
+							img2.style.visibility = "hidden";
+						}
+					}
+					else
+                        setResultsHtml("Training: Unable to get Model info");
+				},
+                function (data) {
+                    if (data)
+                        setResultsHtml("Training: Unable to get Model info:" + data.error);
+                    else
+                        setResultsHtml("Training: Unable to get Model info");
+                });
+		}
+
+		// Auto-populate the dataset name if nothing there
+		function onDatasetNameChange() {
+			if (!trainingInputModelDatasetName.value && trainingInputDatasetName.value)
+				trainingInputModelDatasetName.value = trainingInputDatasetName.value;
+		}
+
+		function onTrainingDatasetInfo(dataset_name) {
+
+			if (!dataset_name) {
+                setResultsHtml("Get Dataset Info Failed: Dataset name is required.")
+				return
+			}
+
+			params = [["dataset_name", dataset_name]]
+            submitRequest('train', 'dataset_info', null, params, 
+				function (data) {
+					if (data.success) {
+						let resultHtml = "Dataset Info:"
+									   + "<br/><b>Dataset Name:</b> " + dataset_name + " (" + data.dataset_size + "Mb)"
+                                       + "<br/><b>Creation State:</b> " + (data.dataset_created ? "Complete" : "Not Complete") // Need to detect "failed"
+									   + "<br/><br/><b>Dataset Path:</b><br/> " + (data.dataset_path || "Not yet available")
+									   + getInferenceTimingHtml(data);
+						setResultsHtml(resultHtml);
+					}
+					else
+                        setResultsHtml("Training: Unable to get dataset info");
+				},
+                function (data) {
+                    if (data)
+                        setResultsHtml("Training: Unable to get dataset info:" + data.error);
+                    else
+                        setResultsHtml("Training: Unable to get dataset info");
+                });
+		}
 	</script>
 
 </head>
@@ -1208,7 +1544,7 @@
 	<div>
 		<div class=" mx-auto p-3" style="max-width:1100px;">
 
-			<div class="w-100 header d-flex justify-content-between">
+			<div class="w-100 header d-flex justify-content-start">
 				<a href="https://www.codeproject.com" style="margin:2px 0 2px 5px">
 					<svg version="1.1" xmlns="http://www.w3.org/2000/svg"
 						 xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" role="img"
@@ -1255,38 +1591,18 @@
 		C8.678,7.447,8.915,7.94,8.915,8.547z" />
 						<path id="svg_14" d="M12.291,8.455c0,0.483-0.188,0.877-0.418,0.877s-0.418-0.394-0.418-0.877c0-0.487,0.188-0.881,0.418-0.881
 		S12.291,7.968,12.291,8.455z" />
-					</svg><span class="site-title"><span class="front">Code</span><span class="end">Project</span></span>
-				</a>
-
-				<!--<div style="font-size: 2.1rem; margin-top: 12px;">CodeProject.AI Explorer</div>-->
-				<!--
-				<A href="http://localhost:32168/swagger/index.html">SwaggerUI</a>		
-				-->
-				<a href="https://www.codeproject.com/ai" style="margin:0px 5px 0 0">
-					<svg viewBox="0 0 660 160" xmlns="http://www.w3.org/2000/svg" style="height:60px">
-						<defs>
-							<style>
-								.cls-1 { fill: #fff; }  .cls-2 { fill: #b3ddca; }
-							</style>
-						</defs>
-						<g>
-							<title>CodeProject.AI</title>
-							<path id="svg_1" class="cls-1" d="m549.22,119.94l28.57,-87.75l14.15,0l28.57,87.75l-11,0l-8.81,-26.27l-31.71,0l-8.82,26.27l-10.95,0zm22.95,-36l25.4,0l-12.7,-38l-12.7,38z" fill="#231f20" />
-							<path id="svg_2" class="cls-1" d="m619.73,119.94l0,-87.72l11,0l0,87.72l-11,0z" fill="#231f20" />
-							<path id="svg_3" class="cls-1" d="M 56.1 58.8 Q 57.3 59.6 57.5 60.9 Q 57.7 62.1 56.9 63.3 Q 56.2 64.2 55.1 64.3 Q 54 64.4 53 63.9 Q 49.3 61.4 45 60 Q 40.7 58.7 35.7 58.7 Q 29.7 58.7 24.5 60.8 Q 19.3 62.9 15.4 66.9 Q 11.5 70.9 9.4 76.4 Q 7.3 81.8 7.3 88.4 Q 7.3 95.1 9.5 100.6 Q 11.6 106.1 15.6 110 Q 19.5 114 24.6 116.1 Q 29.8 118.1 35.7 118.1 Q 40.6 118.1 44.9 116.8 Q 49.2 115.4 52.9 113 Q 53.9 112.4 55.1 112.6 Q 56.2 112.7 56.9 113.7 Q 57.8 114.8 57.5 116 Q 57.3 117.3 56.2 118 Q 53.7 119.5 50.4 120.9 Q 47 122.3 43.2 123.1 Q 39.5 124 35.7 124 Q 28.6 124 22.3 121.4 Q 16.1 118.8 11.2 114.1 Q 6.4 109.4 3.7 102.9 Q 1 96.4 1 88.4 Q 1 80.6 3.6 74.1 Q 6.3 67.7 11.1 62.9 Q 15.8 58.2 22.1 55.5 Q 28.5 52.8 35.7 52.8 Q 41.3 52.8 46.6 54.4 Q 51.8 56 56.1 58.8 Z M 114.3 97.7 Q 114.3 105.2 111 111.2 Q 107.8 117.2 102.1 120.6 Q 96.5 124 89.2 124 Q 82.2 124 76.5 120.6 Q 70.8 117.2 67.5 111.2 Q 64.2 105.2 64.2 97.7 Q 64.2 90 67.5 84.1 Q 70.8 78.2 76.5 74.7 Q 82.2 71.2 89.2 71.2 Q 96.5 71.2 102.1 74.7 Q 107.8 78.2 111 84.1 Q 114.3 90 114.3 97.7 Z M 108.4 97.7 Q 108.4 91.6 105.9 86.9 Q 103.4 82.2 99.1 79.5 Q 94.8 76.8 89.2 76.8 Q 83.9 76.8 79.5 79.5 Q 75.2 82.2 72.7 86.9 Q 70.1 91.6 70.1 97.7 Q 70.1 103.7 72.7 108.3 Q 75.2 113 79.5 115.7 Q 83.9 118.4 89.2 118.4 Q 94.8 118.4 99.1 115.7 Q 103.4 113 105.9 108.3 Q 108.4 103.7 108.4 97.7 Z M 166.9 49.7 Q 168.2 49.7 169.1 50.6 Q 169.9 51.4 169.9 52.7 L 169.9 120 Q 169.9 121.2 169 122.1 Q 168.1 123 166.9 123 Q 165.7 123 164.8 122.1 Q 164 121.2 164 120 L 164 108.2 L 165.7 106.9 Q 165.7 109.6 164.2 112.7 Q 162.7 115.7 160 118.2 Q 157.2 120.8 153.6 122.4 Q 150 124 145.9 124 Q 139.2 124 133.9 120.5 Q 128.6 117.1 125.6 111.1 Q 122.5 105.2 122.5 97.6 Q 122.5 90 125.6 84 Q 128.6 78.1 133.9 74.6 Q 139.1 71.2 145.8 71.2 Q 149.8 71.2 153.5 72.7 Q 157.1 74.2 160 76.8 Q 162.8 79.3 164.4 82.7 Q 166 86 166 89.5 L 164 88.1 L 164 52.7 Q 164 51.5 164.8 50.6 Q 165.7 49.7 166.9 49.7 Z M 146.3 118.4 Q 151.7 118.4 155.7 115.7 Q 159.7 113 162 108.3 Q 164.4 103.6 164.4 97.6 Q 164.4 91.6 162 86.9 Q 159.7 82.2 155.7 79.5 Q 151.6 76.8 146.3 76.8 Q 141.2 76.8 137.1 79.5 Q 133 82.2 130.7 86.9 Q 128.3 91.6 128.3 97.6 Q 128.3 103.5 130.7 108.2 Q 133 113 137.1 115.7 Q 141.2 118.4 146.3 118.4 Z M 206.8 124 Q 199.2 124 193.4 120.7 Q 187.5 117.5 184.3 111.6 Q 181 105.8 181 98 Q 181 89.5 184.3 83.6 Q 187.6 77.7 192.9 74.4 Q 198.2 71.2 204.2 71.2 Q 208.5 71.2 212.6 72.8 Q 216.7 74.3 219.9 77.3 Q 223.2 80.3 225.1 84.7 Q 227 89 227.2 94.8 Q 227.1 96 226.2 96.8 Q 225.3 97.7 224.1 97.7 L 184.5 97.7 L 183.3 92.3 L 222.3 92.3 L 221 93.5 L 221 91.5 Q 220.6 86.9 218 83.6 Q 215.4 80.3 211.8 78.6 Q 208.1 77 204.2 77 Q 201.2 77 198.1 78.2 Q 194.9 79.3 192.4 81.9 Q 189.9 84.4 188.3 88.3 Q 186.7 92.2 186.7 97.6 Q 186.7 103.4 189.1 108.2 Q 191.5 112.9 196 115.7 Q 200.5 118.4 206.7 118.4 Q 210.2 118.4 213 117.5 Q 215.7 116.5 217.8 114.8 Q 219.9 113.2 221.3 111.4 Q 222.4 110.5 223.5 110.5 Q 224.4 110.5 225.2 111.3 Q 225.9 112.1 225.9 113.1 Q 225.9 114.3 224.9 115.2 Q 222 118.7 217.2 121.4 Q 212.5 124 206.8 124 Z M 266.3 53.7 Q 271.9 53.7 276.1 56.2 Q 280.4 58.7 282.8 63.2 Q 285.3 67.7 285.3 73.4 Q 285.3 79.1 282.8 83.7 Q 280.4 88.4 276.1 91 Q 271.9 93.7 266.3 93.7 L 245.3 93.7 L 245.8 92.7 L 245.8 120 Q 245.8 121.2 244.9 122.1 Q 244 123 242.8 123 Q 241.5 123 240.7 122.1 Q 239.9 121.2 239.9 120 L 239.9 56.7 Q 239.9 55.5 240.8 54.6 Q 241.7 53.7 242.8 53.7 Z M 266.3 88 Q 270.2 88 273 86 Q 275.9 84.1 277.5 80.8 Q 279.2 77.5 279.2 73.4 Q 279.2 69.3 277.5 66.2 Q 275.9 63.1 273 61.3 Q 270.2 59.5 266.3 59.5 L 245.3 59.5 L 245.8 58.7 L 245.8 88.5 L 245.2 88 Z M 298.9 123 Q 297.5 123 296.7 122.1 Q 295.9 121.2 295.9 120 L 295.9 75.7 Q 295.9 74.5 296.7 73.6 Q 297.6 72.7 298.9 72.7 Q 300.1 72.7 301 73.6 Q 301.8 74.5 301.8 75.7 L 301.8 90.5 L 300.3 90.8 Q 300.6 87.4 302.1 83.9 Q 303.5 80.5 306 77.7 Q 308.5 74.8 311.9 73 Q 315.3 71.2 319.6 71.2 Q 321.3 71.2 323 72 Q 324.7 72.7 324.7 74.4 Q 324.7 75.9 323.9 76.7 Q 323.1 77.5 322 77.5 Q 321.1 77.5 320.1 77 Q 319.1 76.5 317.4 76.5 Q 314.6 76.5 311.8 78.1 Q 309.1 79.7 306.8 82.5 Q 304.5 85.3 303.2 88.7 Q 301.8 92.1 301.8 95.6 L 301.8 120 Q 301.8 121.2 300.9 122.1 Q 300 123 298.9 123 Z M 377.5 97.7 Q 377.5 105.2 374.2 111.2 Q 370.9 117.2 365.3 120.6 Q 359.6 124 352.4 124 Q 345.4 124 339.7 120.6 Q 334 117.2 330.7 111.2 Q 327.4 105.2 327.4 97.7 Q 327.4 90 330.7 84.1 Q 334 78.2 339.7 74.7 Q 345.4 71.2 352.4 71.2 Q 359.6 71.2 365.3 74.7 Q 370.9 78.2 374.2 84.1 Q 377.5 90 377.5 97.7 Z M 371.5 97.7 Q 371.5 91.6 369 86.9 Q 366.6 82.2 362.3 79.5 Q 357.9 76.8 352.4 76.8 Q 347.1 76.8 342.7 79.5 Q 338.3 82.2 335.8 86.9 Q 333.3 91.6 333.3 97.7 Q 333.3 103.7 335.8 108.3 Q 338.3 113 342.7 115.7 Q 347.1 118.4 352.4 118.4 Q 357.9 118.4 362.3 115.7 Q 366.6 113 369 108.3 Q 371.5 103.7 371.5 97.7 Z M 395.9 127.6 Q 395.9 132.3 393.6 135.6 Q 391.4 138.9 388.1 140.7 Q 384.9 142.5 381.6 142.5 Q 380.3 142.5 379.6 141.7 Q 378.8 140.9 378.8 139.8 L 378.8 139.4 Q 378.8 138.2 379.6 137.6 Q 380.4 136.9 381.4 136.7 Q 383.7 136.2 385.6 135 Q 387.5 133.8 388.7 131.7 Q 389.9 129.6 389.9 126.7 L 389.9 75.6 Q 389.9 74.4 390.8 73.5 Q 391.6 72.6 392.9 72.6 Q 394.2 72.6 395 73.5 Q 395.9 74.4 395.9 75.6 Z M 392.9 64.8 Q 390.8 64.8 389.8 63.8 Q 388.7 62.9 388.7 61.1 L 388.7 60.1 Q 388.7 58.4 389.9 57.4 Q 391 56.5 393 56.5 Q 394.9 56.5 395.9 57.4 Q 396.9 58.4 396.9 60.1 L 396.9 61.1 Q 396.9 62.9 395.9 63.8 Q 394.9 64.8 392.9 64.8 Z M 436.7 124 Q 429.1 124 423.3 120.7 Q 417.4 117.5 414.1 111.6 Q 410.9 105.8 410.9 98 Q 410.9 89.5 414.2 83.6 Q 417.5 77.7 422.8 74.4 Q 428.1 71.2 434 71.2 Q 438.4 71.2 442.5 72.8 Q 446.6 74.3 449.8 77.3 Q 453.1 80.3 455 84.7 Q 456.9 89 457.1 94.8 Q 457 96 456.1 96.8 Q 455.2 97.7 454 97.7 L 414.3 97.7 L 413.2 92.3 L 452.2 92.3 L 450.9 93.5 L 450.9 91.5 Q 450.5 86.9 447.9 83.6 Q 445.3 80.3 441.7 78.6 Q 438 77 434 77 Q 431.1 77 428 78.2 Q 424.8 79.3 422.3 81.9 Q 419.8 84.4 418.2 88.3 Q 416.6 92.2 416.6 97.6 Q 416.6 103.4 419 108.2 Q 421.4 112.9 425.9 115.7 Q 430.4 118.4 436.6 118.4 Q 440.1 118.4 442.9 117.5 Q 445.6 116.5 447.7 114.8 Q 449.8 113.2 451.2 111.4 Q 452.3 110.5 453.4 110.5 Q 454.3 110.5 455.1 111.3 Q 455.8 112.1 455.8 113.1 Q 455.8 114.3 454.8 115.2 Q 451.9 118.7 447.1 121.4 Q 442.4 124 436.7 124 Z M 490.6 71.2 Q 495.3 71.2 499.3 72.3 Q 503.2 73.3 505.7 75.1 Q 508.1 76.9 508.1 78.9 Q 508.1 79.9 507.4 80.9 Q 506.7 81.8 505.5 81.8 Q 504.3 81.8 503.6 81.2 Q 502.8 80.6 502.1 79.8 Q 501.4 79 500 78.4 Q 498.7 77.8 496.3 77.3 Q 493.9 76.8 490.9 76.8 Q 485.3 76.8 480.9 79.5 Q 476.4 82.3 473.8 87 Q 471.3 91.7 471.3 97.6 Q 471.3 103.5 473.7 108.2 Q 476.2 113 480.6 115.7 Q 484.9 118.4 490.8 118.4 Q 494.7 118.4 496.9 117.8 Q 499.1 117.1 500.7 116.2 Q 502.5 115.1 503.4 114 Q 504.2 113 505.6 113 Q 506.9 113 507.5 113.7 Q 508.2 114.5 508.2 115.7 Q 508.2 117.3 505.9 119.2 Q 503.5 121.1 499.5 122.6 Q 495.4 124 490.2 124 Q 482.7 124 477.1 120.5 Q 471.6 117.1 468.4 111.1 Q 465.3 105.1 465.3 97.6 Q 465.3 90.3 468.5 84.4 Q 471.7 78.5 477.3 74.8 Q 483 71.2 490.6 71.2 Z M 514.8 72.6 L 537.9 72.6 Q 539.1 72.6 539.9 73.5 Q 540.6 74.3 540.6 75.5 Q 540.6 76.6 539.9 77.4 Q 539.1 78.2 537.9 78.2 L 514.8 78.2 Q 513.6 78.2 512.8 77.3 Q 511.9 76.5 511.9 75.4 Q 511.9 74.2 512.8 73.4 Q 513.6 72.6 514.8 72.6 Z M 525 58.7 Q 526.3 58.7 527.1 59.5 Q 528 60.4 528 61.6 L 528 111.3 Q 528 114.1 528.7 115.5 Q 529.5 116.9 530.6 117.3 Q 531.8 117.8 533 117.8 Q 533.8 117.8 534.5 117.5 Q 535.1 117.3 535.9 117.3 Q 536.8 117.3 537.4 118 Q 538.1 118.6 538.1 119.7 Q 538.1 121.1 536.5 122.1 Q 534.9 123 532.7 123 Q 531.8 123 530 122.9 Q 528.3 122.7 526.4 121.8 Q 524.5 120.8 523.3 118.4 Q 522 116.1 522 111.6 L 522 61.6 Q 522 60.4 522.9 59.5 Q 523.7 58.7 525 58.7 Z"></path>
-
-							<rect x="554.7" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" />
-							<rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 610.649994, 397.350006)" />
-							<rect x="601.6" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="146.3" />
-							<rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 491.309998, 471.269989)" />
-
-							<polygon id="svg_4" class="cls-2" points="535.239990234375,55.010009765625 523.7100219726562,55.010009765625 523.7100219726562,1 554.6600341796875,1 554.6600341796875,12.529998779296875 535.239990234375,12.529998779296875 535.239990234375,55.010009765625 " fill="#b3ddca" />
-							<polygon id="svg_5" class="cls-2" points="577.719970703125,158.91998291015625 523.7100219726562,158.91998291015625 523.7100219726562,127.97000122070312 535.239990234375,127.97000122070312 535.239990234375,147.3900146484375 577.719970703125,147.3900146484375 577.719970703125,158.91998291015625 " fill="#b3ddca" />
-							<polygon id="svg_6" class="cls-2" points="654.6500244140625,158.91998291015625 623.7000122070312,158.91998291015625 623.7000122070312,147.3900146484375 643.1199951171875,147.3900146484375 643.1199951171875,104.91000366210938 654.6500244140625,104.91000366210938 654.6500244140625,158.91998291015625 " fill="#b3ddca" />
-							<polygon id="svg_7" class="cls-2" points="654.6500244140625,31.95001220703125 643.1199951171875,31.95001220703125 643.1199951171875,12.529998779296875 600.6400146484375,12.529998779296875 600.6400146484375,1 654.6500244140625,1 654.6500244140625,31.95001220703125 " fill="#b3ddca" />
-						</g>
 					</svg>
 				</a>
+
+                <a href="https://www.codeproject.com/ai" style="margin:0px 5px 0 0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 40 860 160" height="60px">
+                <defs><style>.cls-1{fill:#fff;}.cls-2{fill:#b3ddca;}</style></defs>
+                <g><title>CodeProject.AI</title>
+                <path id="svg_1" class="cls-1" d="M 747.22 160.94 L 775.79 73.19 L 789.94 73.19 L 818.51 160.94 L 807.51 160.94 L 798.7 134.67 L 766.99 134.67 L 758.17 160.94 L 747.22 160.94 Z M 770.17 124.94 L 795.57 124.94 L 782.87 86.94 L 770.17 124.94 Z" fill="#231f20"></path><path id="svg_2" class="cls-1" d="M 817.73 160.94 L 817.73 73.22 L 828.73 73.22 L 828.73 160.94 L 817.73 160.94 Z" fill="#231f20"></path><rect x="756.7" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="39"></rect><rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 812.650024, 436.350006)"></rect><rect x="803.6" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="185.3"></rect><rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 693.309998, 510.269989)"></rect><polygon id="svg_4" class="cls-2" points="737.24 94.01 725.71 94.01 725.71 40 756.66 40 756.66 51.53 737.24 51.53 737.24 94.01" fill="#b3ddca"></polygon><polygon id="svg_5" class="cls-2" points="779.72 197.92 725.71 197.92 725.71 166.97 737.24 166.97 737.24 186.39 779.72 186.39 779.72 197.92" fill="#b3ddca"></polygon><polygon id="svg_6" class="cls-2" points="856.65 197.92 825.7 197.92 825.7 186.39 845.12 186.39 845.12 143.91 856.65 143.91 856.65 197.92" fill="#b3ddca"></polygon><polygon id="svg_7" class="cls-2" points="856.65 70.95 845.12 70.95 845.12 51.53 802.64 51.53 802.64 40 856.65 40 856.65 70.95" fill="#b3ddca"></polygon><path d="M 44.978 109.764 Q 39.008 112.918 30.109 112.918 Q 18.619 112.918 11.71 105.521 Q 4.801 98.124 4.801 86.108 Q 4.801 73.192 12.573 65.231 Q 20.346 57.271 32.286 57.271 Q 39.946 57.271 44.978 59.486 L 44.978 66.207 Q 39.195 62.978 32.211 62.978 Q 22.937 62.978 17.173 69.174 Q 11.409 75.369 11.409 85.733 Q 11.409 95.571 16.797 101.409 Q 22.186 107.248 30.935 107.248 Q 39.045 107.248 44.978 103.644 Z M 75.579 112.918 Q 64.127 112.918 57.237 105.371 Q 50.347 97.824 50.347 85.733 Q 50.347 72.741 57.368 65.006 Q 64.39 57.271 76.481 57.271 Q 87.633 57.271 94.448 64.781 Q 101.263 72.29 101.263 84.419 Q 101.263 97.598 94.279 105.258 Q 87.295 112.918 75.579 112.918 Z M 76.03 62.978 Q 67.544 62.978 62.25 69.099 Q 56.955 75.219 56.955 85.17 Q 56.955 95.12 62.118 101.184 Q 67.281 107.248 75.579 107.248 Q 84.441 107.248 89.548 101.466 Q 94.654 95.683 94.654 85.282 Q 94.654 74.618 89.698 68.798 Q 84.741 62.978 76.03 62.978 Z M 111.85 112.017 L 111.85 58.172 L 126.72 58.172 Q 155.182 58.172 155.182 84.419 Q 155.182 96.885 147.278 104.451 Q 139.374 112.017 126.119 112.017 Z M 118.159 63.879 L 118.159 106.31 L 126.194 106.31 Q 136.783 106.31 142.678 100.64 Q 148.573 94.97 148.573 84.569 Q 148.573 63.879 126.57 63.879 Z M 194.308 112.017 L 165.771 112.017 L 165.771 58.172 L 193.106 58.172 L 193.106 63.879 L 172.079 63.879 L 172.079 81.79 L 191.529 81.79 L 191.529 87.46 L 172.079 87.46 L 172.079 106.31 L 194.308 106.31 Z" transform="matrix(1.388561, 0, 0, 1.435642, 0.528885, 0.973957)" style="fill: rgb(255, 255, 255); white-space: pre;"></path><path d="M 215.902 93.468 L 215.902 112.017 L 203.774 112.017 L 203.774 58.172 L 222.774 58.172 Q 243.125 58.172 243.125 75.332 Q 243.125 83.442 237.286 88.455 Q 231.447 93.468 221.685 93.468 Z M 215.902 67.484 L 215.902 84.268 L 220.671 84.268 Q 230.358 84.268 230.358 75.782 Q 230.358 67.484 220.671 67.484 Z M 296.18 112.017 L 282.249 112.017 L 273.876 98.161 Q 272.937 96.584 272.073 95.345 Q 271.21 94.106 270.327 93.224 Q 269.445 92.341 268.488 91.872 Q 267.53 91.403 266.404 91.403 L 263.137 91.403 L 263.137 112.017 L 251.009 112.017 L 251.009 58.172 L 270.234 58.172 Q 289.834 58.172 289.834 72.816 Q 289.834 75.632 288.97 78.017 Q 288.107 80.401 286.53 82.316 Q 284.953 84.231 282.719 85.62 Q 280.484 87.009 277.743 87.798 L 277.743 87.948 Q 278.945 88.324 280.071 89.169 Q 281.198 90.013 282.249 91.14 Q 283.301 92.266 284.258 93.562 Q 285.216 94.857 286.004 96.096 Z M 263.137 67.259 L 263.137 82.241 L 268.394 82.241 Q 272.299 82.241 274.664 79.988 Q 277.067 77.697 277.067 74.318 Q 277.067 67.259 268.619 67.259 Z M 323.213 112.956 Q 311.648 112.956 304.364 105.427 Q 297.079 97.899 297.079 85.808 Q 297.079 73.041 304.476 65.156 Q 311.873 57.271 324.077 57.271 Q 335.604 57.271 342.72 64.818 Q 349.835 72.365 349.835 84.719 Q 349.835 97.411 342.457 105.183 Q 335.079 112.956 323.213 112.956 Z M 323.739 67.709 Q 317.355 67.709 313.601 72.497 Q 309.846 77.284 309.846 85.17 Q 309.846 93.167 313.601 97.824 Q 317.355 102.48 323.438 102.48 Q 329.709 102.48 333.389 97.955 Q 337.069 93.43 337.069 85.395 Q 337.069 77.021 333.501 72.365 Q 329.934 67.709 323.739 67.709 Z M 380.478 90.652 Q 380.478 101.466 375.465 107.211 Q 370.452 112.956 360.952 112.956 Q 356.709 112.956 353.104 111.491 L 353.104 100.114 Q 356.221 102.48 360.089 102.48 Q 368.387 102.48 368.387 90.164 L 368.387 58.172 L 380.478 58.172 Z M 424.559 112.017 L 392.267 112.017 L 392.267 58.172 L 423.32 58.172 L 423.32 68.047 L 404.395 68.047 L 404.395 80.025 L 422.006 80.025 L 422.006 89.863 L 404.395 89.863 L 404.395 102.179 L 424.559 102.179 Z M 471.796 110.102 Q 465.901 112.956 456.401 112.956 Q 444.01 112.956 436.913 105.671 Q 429.817 98.387 429.817 86.259 Q 429.817 73.342 437.796 65.306 Q 445.775 57.271 458.504 57.271 Q 466.389 57.271 471.796 59.261 L 471.796 70.939 Q 466.389 67.709 459.48 67.709 Q 451.895 67.709 447.239 72.478 Q 442.583 77.247 442.583 85.395 Q 442.583 93.205 446.977 97.842 Q 451.37 102.48 458.804 102.48 Q 465.901 102.48 471.796 99.025 Z M 518.992 68.047 L 503.634 68.047 L 503.634 112.017 L 491.469 112.017 L 491.469 68.047 L 476.186 68.047 L 476.186 58.172 L 518.992 58.172 Z" transform="matrix(1.388561, 0, 0, 1.435642, 0.528885, 0.973957)" style="fill: rgb(255, 255, 255); white-space: pre;"></path>
+                </g>
+                </svg>
+               </a>
+
 			</div>
 
 			<div class="card mt-3">
@@ -1294,9 +1610,9 @@
 
 					<div class="form-group d-flex text-nowrap">
 						<label class="col-form-label text-end me-1">Service API URL</label>
-						<input class="col-form-control form-control type="text" id="serviceUrl" style="width:12.5rem"/>
+						<input class="col-form-control form-control" type="text" id="serviceUrl" style="width:12.5rem"/>
 						<label class="col-form-label text-end ms-3 me-1">Timeout</label>
-						<input class="col-form-control form-control type="number" id="serviceTimeoutSecTxt" style="width:4.5rem"/>
+						<input class="col-form-control form-control" type="number" id="serviceTimeoutSecTxt" style="width:4.5rem"/>
 						<label class="col-form-label mx-1">sec</label>
 						<label id="status" class="col-form-label rounded bg-white fw-bold ms-auto px-2"></label>
 					</div>
@@ -1325,7 +1641,11 @@
 
 							<li class="nav-item d-none" id="video-tab-listitem">
 								<button class="nav-link" id="video-tab" data-bs-toggle="tab" data-bs-target="#video-panel" type="button" role="tab" aria-controls="video" aria-selected="false">Video</button>
-							</li>							
+							</li>
+
+							<li class="nav-item d-none" id="train-tab-listitem">
+								<button class="nav-link" id="train-tab" data-bs-toggle="tab" data-bs-target="#train-panel" type="button" role="tab" aria-controls="train" aria-selected="false">Train</button>
+							</li>
 
 							<li class="nav-item ms-auto" id="benchmark-tab-listitem">
 								<button class="nav-link" id="benchmark-tab" data-bs-toggle="tab" data-bs-target="#benchmark-panel" type="button" role="tab" aria-controls="benchmark" aria-selected="false">Benchmark</button>
@@ -1336,7 +1656,7 @@
 
 							<div class="tab-pane fade show active" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
 
-								<div class="card mt-3 d-none ObjectDetection">
+								<div class="card mt-3 d-none objectdetection_queue">
 									<div class="card-header h3">Object Detection</div>
 
 									<div class="card-body">
@@ -1346,7 +1666,7 @@
 												   onchange="return previewImage(this)" />
 											<input class="form-control btn-success" type="button" value="Detect Objects"
 												   style="width:11rem" id="things"
-												   onclick="onDetectThings(image)"  />
+												   onclick="onDetectThings(image)" />
 										</div>
 									</div>
 
@@ -1373,7 +1693,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none FaceProcessing">
+								<div class="card mt-3 d-none faceprocessing_queue">
 									<div class="card-header h3">Face Detection</div>
 
 									<div class="card-body">
@@ -1383,12 +1703,12 @@
 												   onchange="return previewImage(this)" />
 											<input class="form-control btn-success" type="button" value="Detect Faces"
 												   style="width:11rem" id="face"
-												   onclick="onDetectFaces(face_image)"  />
+												   onclick="onDetectFaces(face_image)" />
 										</div>
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none SceneClassifier">
+								<div class="card mt-3 d-none sceneclassifier_queue">
 									<div class="card-header h3">Scene Classification</div>
 
 									<div class="card-body">
@@ -1398,7 +1718,7 @@
 												   onchange="return previewImage(this)" />
 											<input class="form-control btn-success" type="button" value="Classify Scene"
 												   style="width:11rem" id="scene"
-												   onclick="onDetectScene(scene_image)"  />
+												   onclick="onDetectScene(scene_image)" />
 										</div>
 									</div>
 								</div>
@@ -1407,7 +1727,7 @@
 
 							<div class="tab-pane fade show" id="image-panel" role="tabpanel" aria-labelledby="image-tab">
 
-								<div class="card mt-3 d-none BackgroundRemover">
+								<div class="card mt-3 d-none backgroundremover_queue">
 									<div class="card-header h3">Background Removal</div>
 									<div class="card-body">
 
@@ -1429,7 +1749,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none PortraitFilter">
+								<div class="card mt-3 d-none portraitfilter_queue">
 									<div class="card-header h3">Background blurring</div>
 									<div class="card-body">
 
@@ -1451,7 +1771,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none Cartooniser">
+								<div class="card mt-3 d-none cartooniser_queue">
 									<div class="card-header h3">Cartoonise</div>
 									<div class="card-body">
 
@@ -1473,20 +1793,19 @@
 											<label style="width:11rem"></label>
 										</div>
 
-
 										<!--
 										<div class="form-group row mt-1 justify-content-end">
 											<label class="col-3 col-form-label text-end">Cartoonisation Strength</label>
 											<input class="form-control" id="strength" style="width:15rem"
-												   type="range" min="0.0" max="1.0" step="0.1" value="1.0"
-												   oninput="document.getElementById('strengthLabel').innerHTML=this.value;">
+												type="range" min="0.0" max="1.0" step="0.1" value="1.0"
+												oninput="document.getElementById('strengthLabel').innerHTML=this.value;">
 											<span id="strengthLabel" class="col-form-label text-nowrap col-1">1.0</span>
 										</div>
 										-->
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none OCR">
+								<div class="card mt-3 d-none ocr_queue">
 									<div class="card-header h3">Optical Character Recognition</div>
 									<div class="card-body">
 
@@ -1502,7 +1821,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none ALPR">
+								<div class="card mt-3 d-none alpr_queue">
 									<div class="card-header h3">License Plate reader</div>
 									<div class="card-body">
 
@@ -1518,7 +1837,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none SuperResolution">
+								<div class="card mt-3 d-none superresolution_queue">
 									<div class="card-header h3">Increase Resolution</div>
 									<div class="card-body">
 
@@ -1537,7 +1856,7 @@
 
 							<div class="tab-pane fade show" id="face-panel" role="tabpanel" aria-labelledby="face-tab">
 
-								<div class="card mt-3 d-none FaceProcessing">
+								<div class="card mt-3 d-none faceprocessing_queue">
 									<div class="card-header h3">Face Comparison</div>
 									<div class="card-body">
 										<div class="d-flex align-items-center">
@@ -1558,7 +1877,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none FaceProcessing">
+								<div class="card mt-3 d-none faceprocessing_queue">
 									<div class="card-header h3">Face Registration</div>
 									<div class="card-body">
 
@@ -1589,7 +1908,7 @@
 									</div>
 								</div>
 
-								<div class="card mt-3 d-none FaceProcessing">
+								<div class="card mt-3 d-none faceprocessing_queue">
 									<div class="card-header h3">Face Recognition</div>
 									<div class="card-body">
 
@@ -1613,7 +1932,7 @@
 
 							<div class="tab-pane fade show" id="text-panel" role="tabpanel" aria-labelledby="text-tab">
 
-								<div class="card mt-3 d-none TextSummary">
+								<div class="card mt-3 d-none textsummary_queue">
 									<div class="card-header h3">Text Summary</div>
 									<div class="card-body">
 
@@ -1635,7 +1954,7 @@
 
 								</div>
 
-								<div class="card mt-3 d-none SentimentAnalysis">
+								<div class="card mt-3 d-none sentimentanalysis_queue">
 									<div class="card-header h3">Sentiment Analysis</div>
 									<div class="card-body">
 
@@ -1657,7 +1976,7 @@
 
 							<div class="tab-pane fade show" id="video-panel" role="tabpanel" aria-labelledby="video-tab">
 
-								<div class="card mt-3 d-none FaceProcessing">
+								<div class="card mt-3 d-none faceprocessing_queue objectdetection_queue">
 
 									<div class="d-flex justify-content-between">
 										<input class="btn btn-success" type="button" value="Start"
@@ -1666,7 +1985,7 @@
 											   onclick="onStopVideo()" style="width:5rem">
 										<!--
 										<input class="btn btn-light" id="videoInput" type="file" style="width:10rem"
-											   onchange="return loadVideoFile(this)" />
+											onchange="return loadVideoFile(this)" />
 										-->
 									</div>
 									<video id="video" style="width:100%;height:480px;display:none" autoplay></video>
@@ -1675,16 +1994,366 @@
 								</div>
 							</div>
 
+							<div class="tab-pane fade show" id="train-panel" role="tabpanel" aria-labelledby="train-tab">
+
+								<div class="card mt-3 d-none trainingyolov5_queue">
+									<div class="card-header h3">YoloV5 Object Detection Training</div>
+
+									<div class="card-body">
+										<div class="row g-3">
+											<div class="col-2">
+												<h6 class="card-title fw-bold">Dataset</h6>
+											</div>
+											<div class="col-10">
+												<div class="progress mt-0 bg-transparent" style="height: 20px;">
+													<div id="datasetProgress" class="progress-bar bg-success" role="progressbar"
+														 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+												</div>
+											</div>											
+										</div>
+										
+										<div class="row g-3">
+											<div class="col-2">
+												<label class="col-form-label">Name</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingInputDatasetName" 
+													   data-bs-toggle="tooltip" type="text"
+													   title="Name of Dataset to create." onchange="onDatasetNameChange()" />
+											</div>
+											<div class="col-2">
+												<label class="col-form-label">#Images</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingNumImages" type="number" 
+													   data-bs-toggle="tooltip" title="Number of images to use for training (10 - 10,000)" 
+													   value="100" />
+											</div>
+										</div>
+										<div class="row g-3">
+											<div class="col-2">
+												<label class="col-form-label text-nowrap">
+													Classes
+													<div class='dropdown text-wrap d-inline-block'>
+														<button class='btn btn-sm dropdown d-inline border-none' type='button' id='open-images-classes-label' 
+																data-bs-toggle='dropdown'>
+															<svg fill="#000000" height="20px" width="20px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+																viewBox="0 0 330 330" xml:space="preserve">
+																<g>
+																<path d="M165,0C74.019,0,0,74.02,0,165.001C0,255.982,74.019,330,165,330s165-74.018,165-164.999C330,74.02,255.981,0,165,0z M165,300c-74.44,0-135-60.56-135-134.999C30,90.562,90.56,30,165,30s135,60.562,135,135.001C300,239.44,239.439,300,165,300z"/>
+																<path d="M164.998,70c-11.026,0-19.996,8.976-19.996,20.009c0,11.023,8.97,19.991,19.996,19.991 c11.026,0,19.996-8.968,19.996-19.991C184.994,78.976,176.024,70,164.998,70z"/>
+																<path d="M165,140c-8.284,0-15,6.716-15,15v90c0,8.284,6.716,15,15,15c8.284,0,15-6.716,15-15v-90C180,146.716,173.284,140,165,140z"/>
+																</g>
+															</svg>																
+														</button>
+														<ul class='dropdown-menu' aria-labelledby="open-images-classes-label">
+															<li>
+																<!-- TODO: Pull this from the training module -->
+																<div id='open-images-classes' style="width:60rem">
+																	Accordion, Adhesive tape, Aircraft, Airplane, Alarm clock, Alpaca, Ambulance, Animal, Ant, Antelope,
+																	Apple, Armadillo, Artichoke, Auto part, Axe, Backpack, Bagel, Baked goods, Balance beam, Ball, Balloon,
+																	Banana, Band-aid, Banjo, Barge, Barrel, Baseball bat, Baseball glove, Bat (Animal), Bathroom accessory,
+																	Bathroom cabinet, Bathtub, Beaker, Bear, Bed, Bee, Beehive, Beer, Beetle, Bell pepper, Belt, Bench,
+																	Bicycle, Bicycle helmet, Bicycle wheel, Bidet, Billboard, Billiard table, Binoculars, Bird, Blender,
+																	Blue jay, Boat, Bomb, Book, Bookcase, Boot, Bottle, Bottle opener, Bow and arrow, Bowl, Bowling equipment,
+																	Box, Boy, Brassiere, Bread, Briefcase, Broccoli, Bronze sculpture, Brown bear, Building, Bull, Burrito,
+																	Bus, Bust, Butterfly, Cabbage, Cabinetry, Cake, Cake stand, Calculator, Camel, Camera, Can opener,
+																	Canary, Candle, Candy, Cannon, Canoe, Cantaloupe, Car, Carnivore, Carrot, Cart, Cassette deck, Castle,
+																	Cat, Cat furniture, Caterpillar, Candy, Cannon, Canoe, Cantaloupe, Car, Carnivore, Carrot, Cart,
+																	Cassette deck, Castle, Cat, Cat furniture, Caterpillar, Cattle, Ceiling fan, Cello, Centipede, Chainsaw,
+																	Chair, Cheese, Cheetah, Chest of drawers, Chicken, Chime, Chisel, Chopsticks, Christmas tree, Clock,
+																	Closet, Clothing, Coat, Cocktail, Cocktail shaker, Coconut, Coffee, Coffee cup, Coffee table, Coffeemaker,
+																	Coin, Common fig, Common sunflower, Computer keyboard, Computer monitor, Computer mouse, Container,
+																	Convenience store, Cookie, Cooking spray, Corded phone, Cosmetics, Couch, Countertop, Cowboy hat, Crab,
+																	Cream, Cricket ball, Crocodile, Croissant, Crown, Crutch, Cucumber, Cupboard, Curtain, Cutting board,
+																	Dairy Product, Deer, Desk, Dessert, Diaper, Dice, Digital clock, Dinosaur, Dishwasher, Dog, Dog bed,
+																	Doll, Dolphin, Door, Door handle, Doughnut, Dragonfly, Drawer, Dress, Drill (Tool), Drink, Drinking straw,
+																	Drum, Duck, Dumbbell, Eagle, Earrings, Egg (Food), Elephant, Envelope, Eraser, Face powder, Facial tissue holder,
+																	Falcon, Fashion accessory, Fast food, Fax, Fedora, Filing cabinet, Fire hydrant, Fireplace, Fish, Flag,
+																	Flashlight, Flower, Flowerpot, Flute, Flying disc, Food, Football, Football helmet, Footwear, Fork,
+																	Fountain, Fox, French fries, French horn, Frog, Fruit, Frying pan, Furniture, Garden Asparagus,
+																	Gas stove, Giraffe, Girl, Glasses, Glove, Goat, Goggles, Goldfish, Golf ball, Golf cart, Gondola,
+																	Goose, Grape, Grapefruit, Grinder, Guacamole, Guitar, Hair dryer, Hair spray, Hamburger, Hammer,
+																	Hamster, Hand dryer, Handbag, Handgun, Harbor seal, Harmonica, Harp, Harpsichord, Hat, Headphones,
+																	Heater, Hedgehog, Helicopter, Helmet, High heels, Hiking equipment, Hippopotamus, Home appliance,
+																	Honeycomb, Horizontal bar, Horse, Hot dog, House, Houseplant, Human arm, Human beard, Human body,
+																	Human ear, Human eye, Human face, Human foot, Human hair, Human hand, Human head, Human leg, Human mouth,
+																	Human nose, Humidifier, Ice cream, Indoor rower, Insect, Invertebrate, Ipod, Isopod, Jacket, Jacuzzi,
+																	Jaguar (Animal), Jeans, Jellyfish, Jet ski, Jug, Juice, Kangaroo, Kettle, Kitchen & dining room table,
+																	Kitchen appliance, Kitchen knife, Kitchen utensil, Kitchenware, Kite, Knife, Koala, Ladder, Ladle,
+																	Ladybug, Lamp, Land vehicle, Lantern, Laptop, Lavender (Plant), Lemon, Leopard, Light bulb, Light switch,
+																	Lighthouse, Lily, Limousine, Lion, Lipstick, Lizard, Lobster, Loveseat, Luggage and bags, Lynx, Magpie,
+																	Mammal, Man, Mango, Maple, Maracas, Marine invertebrates, Marine mammal, Measuring cup, Mechanical fan,
+																	Medical equipment, Microphone, Microwave oven, Milk, Miniskirt, Mirror, Missile, Mixer, Mixing bowl,
+																	Mobile phone, Monkey, Moths and butterflies, Motorcycle, Mouse, Muffin, Mug, Mule, Mushroom,
+																	Musical instrument, Musical keyboard, Necklace, Nightstand, Oboe, Office building, Office supplies,
+																	Orange, Organ (Musical Instrument), Ostrich, Otter, Oven, Owl, Oyster, Paddle, Palm tree, Pancake,
+																	Panda, Paper cutter, Paper towel, Parachute, Parking meter, Parrot, Pasta, Pastry, Peach, Pear, Pen,
+																	Pencil case, Pencil sharpener, Penguin, Perfume, Person, Personal care, Personal flotation device,
+																	Piano, Picnic basket, Picture frame, Pig, Pillow, Pineapple, Pitcher (Container), Pizza, Pizza cutter,
+																	Plant, Plastic bag, Plate, Platter, Plumbing fixture, Polar bear, Pomegranate, Popcorn, Porch, Porcupine,
+																	Poster, Potato, Power plugs and sockets, Pressure cooker, Pretzel, Printer, Pumpkin, Punching bag,
+																	Rabbit, Raccoon, Racket, Radish, Ratchet (Device), Raven, Rays and skates, Red panda, Refrigerator,
+																	Remote control, Reptile, Rhinoceros, Rifle, Ring binder, Roller skates, Rose, Rugby ball, Ruler, Salad,
+																	Salt and pepper shakers, Sandal, Sandwich, Saucer, Saxophone, Scale, Scarf, Scissors, Scoreboard,
+																	Scorpion, Screwdriver, Sculpture, Sea lion, Sea turtle, Seafood, Seahorse, Seat belt, Segway,
+																	Serving tray, Sewing machine, Shark, Sheep, Shelf, Shellfish, Shirt, Shorts, Shotgun, Shower, Shrimp,
+																	Sink, Skateboard, Ski, Skirt, Skull, Skunk, Skyscraper, Slow cooker, Snack, Snail, Snake, Snowboard,
+																	Snowman, Snowmobile, Snowplow, Soap dispenser, Sock, Sofa bed, Sombrero, Sparrow, Spatula, Spice rack,
+																	Spider, Spoon, Sports equipment, Sports uniform, Squash (Plant), Squid, Squirrel, Stairs, Stapler,
+																	Starfish, Stationary bicycle, Stethoscope, Stool, Stop sign, Strawberry, Street light, Stretcher,
+																	Studio couch, Submarine sandwich, Suit, Suitcase, Sun hat, Sunglasses, Surfboard, Sushi, Swan, Swim cap,
+																	Swimming pool, Swimwear, Sword, Syringe, Table, Table tennis racket, Tablet computer, Tableware, Taco,
+																	Tank, Tap, Tart, Taxi, Tea, Teapot, Teddy bear, Telephone, Television, Tennis ball, Tennis racket,
+																	Tent, Tiara, Tick, Tie, Tiger, Tin can, Tire, Toaster, Toilet, Toilet paper, Tomato, Tool, Toothbrush,
+																	Torch, Tortoise, Towel, Tower, Toy, Traffic light, Traffic sign, Train, Training bench, Treadmill,
+																	Tree, Tree house, Tripod, Trombone, Trousers, Truck, Trumpet, Turkey, Turtle, Umbrella, Unicycle, Van,
+																	Vase, Vegetable, Vehicle, Vehicle registration plate, Violin, Volleyball (Ball), Waffle, Waffle iron,
+																	Wall clock, Wardrobe, Waste container, Watch, Watercraft, Watermelon, Weapon, Whale, Wheel, Wheelchair,
+																	Whisk, Whiteboard, Willow, Window, Window blind, Wine, Wine glass, Wine rack, Winter melon, Wok, Woman,
+																	Wood-burning stove, Woodpecker, Worm, Wrench, Zebra, Zucchini
+																</div>
+															</li>
+														</ul>
+													</div>
+												</label>
+											</div>
+											<div class="col-10">
+												<input class="form-control" id="trainingDatasetClasses" type="text" 
+													   data-bs-toggle="tooltip" title="A comma separated list of classes. Click the info button for a list." />
+											</div>
+										</div>
+										<div class="row g-3">
+											<div class="col-2">
+											</div>
+											<div class="col-10 d-flex justify-content-around">
+												<div>
+													<input class="btn btn-success" type="button" value="Create Dataset"
+														   onclick="onDatasetCreate(
+																trainingInputDatasetName.value,
+																trainingDatasetClasses.value,
+																trainingNumImages.value)">
+												</div>
+												<div>
+													<input class="btn btn-info" type="button" value="Dataset Info"
+														   onclick="onTrainingDatasetInfo(trainingInputDatasetName.value)">
+												</div>
+											</div>
+										</div>
+
+										<div class="row g-3 mt-3">
+											<div class="col-2">
+												<h6 class="card-title fw-bold">Model</h6>
+											</div>
+											<div class="col-10">
+												<div class="progress mt-0 bg-transparent" style="height: 20px;">
+													<div id="trainingProgress" class="progress-bar bg-success" role="progressbar"
+														 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+												</div>
+											</div>											
+										</div>
+
+										<div class="row g-3">
+											<div class="col-2">
+												<label class="col-form-label">Name</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingInputModelName" type="text"
+													   data-bs-toggle="tooltip" title="Name of YoloV5 Model to train." />
+											</div>
+											<div class="col-2">
+												<label class="col-form-label">Dataset</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingInputModelDatasetName" type="text"
+													   data-bs-toggle="tooltip" 
+													   title="Name of Dataset used to train the Model. Enter the name of the dataset you created above or the full path of a dataset you have created by other means." />
+											</div>
+										</div>
+
+										<div class="row g-3">
+											<div class="col-2">
+												<label class="col-form-label">Model size</label>
+											</div>
+											<div class="col-4">
+												<select class="form-select" id="trainingModelSize" 
+														data-bs-toggle="tooltip" title="The size of the YoloV5 Model to create.">
+													<option value="tiny">Tiny</option>
+													<option value="small" selected>Small</option>
+													<option value="medium">Medium</option>
+													<option value="large">Large</option>
+												</select>
+											</div>
+											<div class="col-2">
+												<label class="col-form-label">Tuning</label>
+											</div>
+											<div class="col-4">
+												<select class="form-select" id="trainingModelHyp" data-bs-toggle="tooltip"
+														title="Select which Hyper Parameters file to use when training.">
+													<option value="fine" selected>Fine</option>
+													<option value="low">Low</option>
+													<option value="medium">Medium</option>
+													<option value="high">High</option>
+												</select>
+											</div>
+										</div>
+
+										<div class="row g-3">
+											<div class="col-2">
+												<label class="col-form-label">Batch</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingBatchSize" type="number" 
+													   value="4" min="-1" max="256"
+													   data-bs-toggle="tooltip" title="Number of images in each training batch. Higher = more memory use but better performance. Use -1 to auto select (experimental)." />
+											</div>
+											<div class="col-2">
+												<label class="col-form-label">Epochs</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingNumEpochs" type="number" value="100"
+													   data-bs-toggle="tooltip"
+													   title="Number of Epochs to train. Higher = better, but can lead to overtraining. (10 - 1,000)"  />
+											</div>
+										</div>
+
+										<div class="row g-3">
+											<div class="col-2">
+												<label class="col-form-label">Patience</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingPatience" type="number" value="100" 
+													   data-bs-toggle="tooltip" title="Number of epochs to wait for no observable improvement for early stopping of training." />
+											</div>
+											<div class="col-2">
+												<label class="col-form-label">Workers</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingWorkers" type="number" value="-1"
+													   data-bs-toggle="tooltip"
+													   title="Number of number of worker threads. -1=default, 0 for Windows, 2 for Linux."/>
+											</div>
+										</div>
+
+										<div class="row g-3">
+											<div class="col-2">
+												<label class="col-form-label">Freeze</label>
+											</div>
+											<div class="col-4">
+												<select class="form-select" id="trainingFreeze" data-bs-toggle="tooltip"
+														title="Which layers of the model weights to exclude from training. The more exlcuded, the faster the training, at the cost of accuracy">
+													<option value="0">None</option>
+													<option value="10" selected>Backbone</option>
+													<option value="24">All</option>
+												</select>
+											</div>
+											<div class="col-2">
+												<label class="col-form-label">Device</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingDevice" data-bs-toggle="tooltip"
+													   type="text" value="0" 
+													   title="'', 'cpu', '0' or '0,1,2,3' for multiple GPUs." />
+											</div>
+										</div>
+
+										<div class="row g-3 pt-2">
+											<div class="col-2">
+											</div>
+											<div class="col-10 d-flex justify-content-around">
+												<div>
+													<input class="btn btn-success" type="button" value="Train Model"
+														   onclick="onTrainingStart(
+																trainingInputModelName.value,
+																trainingInputModelDatasetName.value,
+																trainingModelSize.value,
+																trainingNumEpochs.value,
+																trainingBatchSize.value,
+																trainingDevice.value,
+																trainingFreeze.value,
+																trainingModelHyp.value,
+																trainingPatience.value,
+																trainingWorkers.value
+															)">
+												</div>
+												<div>
+													<input class="btn btn-success" type="button" value="Resume Training"
+														   data-bs-toggle="tooltip"
+														   title="Resume training the YoloV5 Model from the last successful epoch with the parameters specified when it was started."
+														   onclick="onTrainingResumeTraining(trainingInputModelName.value)">
+												</div>
+												<div>
+													<input class="btn btn-info" type="button" value="Model Info"
+														   onclick="onTrainingModelInfo(trainingInputModelName.value)">
+												</div>
+											</div>
+										</div>
+
+										<div class="row g-3 mt-4">
+											<div class="col-2">
+												<label class="col-form-label">Status</label>
+											</div>
+											<div class="col-10">
+												<input class="form-control" id="statusMessage" type="text" readonly 
+													   title="The status of the last started long running action."/>
+											</div>
+										</div>
+										<div class="row g-3">
+											<div class="col-2">
+												<label class="col-form-label">Action</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingAction"
+													   type="text" readonly />
+											</div>
+											<div class="col-2">
+												<label class="col-form-label">State</label>
+											</div>
+											<div class="col-4">
+												<input class="form-control" id="trainingState" 
+													   type="text" readonly />
+											</div>
+										</div>
+                                        <div class="row g-3">
+                                            <div class="col-2">
+                                                <label class="col-form-label">Model</label>
+                                            </div>
+                                            <div class="col-4">
+                                                <input class="form-control" id="trainingModelName" 
+                                                       type="text" readonly />
+                                            </div>
+                                            <div class="col-2">
+                                                <label class="col-form-label">Dataset</label>
+                                            </div>
+                                            <div class="col-4">
+                                                <input class="form-control" id="trainingDatasetName"
+                                                       type="text" readonly />
+                                            </div>
+                                        </div>
+
+										<div class="row g-3 pt-2">
+											<div class="col-12 text-center">
+												<input class="btn btn-danger" type="button" value="Cancel"
+													   id="trainingCancelBtn"
+													   disabled hidden 
+													   onclick="onTrainingCancel()">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+
 							<div class="tab-pane fade show" id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-tab">
 
-								<div class="card mt-3 ObjectDetection">
+								<div class="card mt-3 objectdetection_queue">
 									<div class="card-header h3">Benchmark</div>
 									<div class="card-body">
 
 										<div class="form-group row">
 											<label class="col-form-label col-2">Image</label>
 											<input class="col form-control btn-light" id="benchmarkInput" type="file" style="width:17rem"
-													onchange="return previewImage(this)" />
+												   onchange="return previewImage(this)" />
 										</div>
 										<div class="form-group d-flex justify-content-end mt-2">
 											<select id="benchmarkModel" class="form-select me-5">
@@ -1696,12 +2365,12 @@
 												<option value="actionnetv2">(Human) ActionNet v2</option>
 											</select>
 											<input class="form-control btn-success" type="button" value="Go" style="width:7rem"
-													id="on-benchmark" onclick="onBenchmark(benchmarkInput, benchmarkModel.value, benchmarkResult)" />
+												   id="on-benchmark" onclick="onBenchmark(benchmarkInput, benchmarkModel.value, benchmarkResult)" />
 
 											<!-- See note above on how this button isn't currently that useful
-											<input type="button" value="Stop" class="styleD" style="margin-left:1em"
-																 onclick="isBenchmarkCancelled = true;" />
-											-->
+					<input type="button" value="Stop" class="styleD" style="margin-left:1em"
+										 onclick="isBenchmarkCancelled = true;" />
+					-->
 										</div>
 										<div class="form-group row mt-1">
 											<span id="benchmarkResult"></span>
@@ -1717,20 +2386,23 @@
 
 					<div class="ms-4 mt-3 position-sticky" style="width:475px;">
 						<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black rounded"
-								style="height: 195px; overflow-y: auto;"></div>
+							 style="height: 195px; overflow-y: auto;"></div>
 
-						<div class="w-100 position-relative border-1 border-light">
+						<div class="w-100 position-relative border-1 border-light mb-4 ">
 
 							<canvas id="annotations" class="position-absolute"
 									style="left:0;top:0;pointer-events:none;z-index:10"></canvas>
 
 							<div id="imageMask" class="position-absolute"
-									style="left:0;top:0;pointer-events:none;z-index:10"></div>
+								 style="left:0;top:0;pointer-events:none;z-index:10"></div>
 
 							<img src="" id="img" class="w-100" style="height:250px;visibility:hidden">
 						</div>
-					</div>
+						<div class="w-100 position-relative border-1 border-light">
+							<img src="" id="img2" class="w-100" style="height:250px;visibility:hidden">
+						</div>
 
+					</div>
 				</div>
 			</form>
 		</div>
@@ -1747,6 +2419,11 @@
 				tabTrigger.show()
 			})
 		})
+
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
 	</script>
 
 </body>
