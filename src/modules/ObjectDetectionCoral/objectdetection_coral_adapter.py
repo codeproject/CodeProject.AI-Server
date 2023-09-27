@@ -112,10 +112,10 @@ class CoralObjectDetector_adapter(ModuleRunner):
             # print(message)
 
             return {
-                "success"     : result['success'],
-                "predictions" : result['predictions'],
                 "message"     : message,
                 "count"       : result["count"],
+                "predictions" : result['predictions'],
+                "success"     : result['success'],
                 "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
                 "inferenceMs" : result['inferenceMs']
             }

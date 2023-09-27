@@ -1,35 +1,27 @@
-:: Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
+:: Setup script ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::
-::                           CodeProject.AI SDK
+::                           CodeProject.AI Server
 ::
-:: This script is called from the SDK directory using: 
+:: This script is called from the server directory using: 
 ::
 ::    ..\..\setup.bat
 ::
 :: The setup.bat file will find this install.bat file and execute it.
 
 @if "%1" NEQ "install" (
-	echo This script is only called from ..\..\setup.bat
-	@pause
-	@goto:eof
+    echo This script is only called from ..\setup.bat
+    @pause
+    @goto:eof
 )
 
-REM Setup .NET for the server and any .NET modules
-call "%sdkScriptsPath%\utils.bat" SetupDotNet 7.0
-if errorlevel 1 exit /b 1
-
-REM Install python and the required dependencies.
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Shared"
-if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%\Python" "Shared"
-if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.9 "Shared"
-if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%\Python" "Shared"
-if errorlevel 1 exit /b 1
+REM Setup .NET for the server and any .NET modules. This is needed because this
+REM script is used for setting up the dev environment, and not all machines will
+REM necessarily have the version of .NET we need. For production, .NET is 
+REM installed as part of the installer. The SetupDotNet function will check for
+REM .NET and do nothing if it finds a suitable version already installed.
+if /i "!executionEnvironment!" == "Development" (
+    call "%sdkScriptsPath%\utils.bat" SetupDotNet 7.0
+)
 
 REM Ensure cuDNN is installed. Disabled for now pending full testing
 rem if /i "%hasCUDA%"=="true" call ../install_CUDnn.bat

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            Scene Classifier
@@ -11,22 +13,21 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
-# Install python and the required dependencies. If we find torchvision then asssume it's all there
-setupPython 3.8 "Shared"
-if [ $? -ne 0 ]; then quit 1; fi
+pythonLocation="Shared"
+pythonVersion=3.8
 
-installPythonPackages 3.8 "${modulePath}" "Shared"
-if [ $? -ne 0 ]; then quit 1; fi
-
-installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "Shared"
-if [ $? -ne 0 ]; then quit 1; fi
+# Install python and the required dependencies
+setupPython
+installPythonPackages
 
 # Download the models and store in /models
 getFromServer "scene-classification-models.zip" "assets" "Downloading Scene classification models..."
 if [ $? -ne 0 ]; then quit 1; fi
+
+module_install_success='true'
 
 
 #                         -- Install script cheatsheet -- 

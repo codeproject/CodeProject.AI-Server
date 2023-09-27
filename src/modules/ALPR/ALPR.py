@@ -56,7 +56,7 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
 
     """
     Performs the plate number detection
-    Returns a tuple containing the Json description of what was found, along 
+    Returns a tuple containing the JSON description of what was found, along 
     """
 
     global previous_label, prev_avg_char_width, prev_avg_char_height

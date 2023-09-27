@@ -8,10 +8,10 @@ set Configuration=Release
 set Target=net7.0
 
 rem Build
-dotnet build -c Release
+dotnet build -c %Configuration%  >nul 2>nul
 
 rem Create the module package
-tar -caf %moduleId%-%version%.zip --exclude=*.development.* --exclude=*.log ^
+tar -caf %moduleId%-%version%.zip --exclude=*.development.* ^
     install.sh install.bat -C .\bin\%Configuration%\%Target%\ *.*
 
 rem Cleanup

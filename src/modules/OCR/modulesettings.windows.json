@@ -1,7 +1,7 @@
 {
   "Modules": {
     "OCR": {
-      "Runtime": "python37"
+      "Runtime": "python3.7"
     }
   }
 }

@@ -3,7 +3,7 @@
   // we know works
   "Modules": {
     "FaceProcessing": {
-      "Runtime": "python37"
+      "Runtime": "python3.7"
     }
   }
 }

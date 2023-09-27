@@ -84,6 +84,11 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         public string HardwareType { get; set; } = "CPU";
 
         /// <summary>
+        /// Gets or sets a value indicating whether or not this detector can use the current GPU
+        /// </summary>
+        public bool CanUseGPU { get; set; } = false;
+
+        /// <summary>
         /// Initializes a new instance of the ObjectDetectionWorker.
         /// </summary>
         /// <param name="logger">The Logger.</param>

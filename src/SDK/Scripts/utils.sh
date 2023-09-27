@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # CodeProject.AI Server Utilities
@@ -278,18 +280,32 @@ function checkForTool () {
 
     if [[ "${doInstall}" == "true" ]]; then
         if [ "$os" == "macos" ]; then
-            # Ensure Brew is installed
-            if ! command -v brew &> /dev/null; then
-                writeLine "Installing brew..." $color_info
-                /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)' > /dev/null
 
-                if [ $? -ne 0 ]; then 
-                    quit 10 # failed to install required tool
+            # Ensure Brew is installed
+            if [ $"$architecture" == 'arm64' ]; then
+                if [ ! -f /usr/local/bin/brew ]; then
+                    writeLine "Installing brew (x64 for arm64)..." $color_info
+                    arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+                    if [ $? -ne 0 ]; then 
+                        quit 10 # failed to install required tool
+                    fi
+                fi
+            else
+                if ! command -v brew &> /dev/null; then
+                    writeLine "Installing brew..." $color_info
+                    /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'
+                    if [ $? -ne 0 ]; then 
+                        quit 10 # failed to install required tool
+                    fi
                 fi
             fi
 
             writeLine "Installing ${name}..." $color_info
-            brew install ${name} > /dev/null
+            if [ $"$architecture" == 'arm64' ]; then
+                arch -x86_64 /usr/local/bin/brew install ${name} > /dev/null
+            else
+                brew install ${name} > /dev/null
+            fi
         else
             writeLine "Installing ${name}..." $color_info
             sudo apt install ${name} -y > /dev/null
@@ -328,43 +344,6 @@ function checkForTool () {
     return 0
 }
 
-# Thanks to https://stackoverflow.com/a/4025065/1128209
-# Compares version numbers: compareVersions version1 version2
-# Returns 1 if version1 > version2
-#         0 if version1 = version2
-#         2 if version1 < version2
-compareVersions () {
-    if [[ $1 == $2 ]]
-    then
-        return 0
-    fi
-    local IFS=.
-    local i ver1=($1) ver2=($2)
-    # fill empty fields in ver1 with zeros
-    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
-    do
-        ver1[i]=0
-    done
-    for ((i=0; i<${#ver1[@]}; i++))
-    do
-        if [[ -z ${ver2[i]} ]]
-        then
-            # fill empty fields in ver2 with zeros
-            ver2[i]=0
-        fi
-        if ((10#${ver1[i]} > 10#${ver2[i]}))
-        then
-            return 1
-        fi
-        if ((10#${ver1[i]} < 10#${ver2[i]}))
-        then
-            return 2
-        fi
-    done
-
-    return 0
-}
-
 function setupDotNet () {
 
     # only major versions accepted
@@ -374,16 +353,25 @@ function setupDotNet () {
     
     write "Checking for .NET >= ${requestedNetVersion}..."
 
+    currentDotNetVersion="(None)"
+    comparison=2
+
     if command -v dotnet &> /dev/null; then
         currentDotNetVersion=$(dotnet --version) 2>/dev/null
-        compareVersions $currentDotNetVersion $requestedNetVersion
-        comparison=$?
-    else
-        currentDotNetVersion="(None)"
-        comparison=2
+        if [ "$?" == "0" ]; then
+            comparison=$(versionCompare $currentDotNetVersion $requestedNetVersion)
+        fi
     fi
 
-    if [ "$comparison" == "2" ]; then
+    if [ "$comparison" == "0" ]; then
+        writeLine "All good. Current .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_success
+    elif [ "$comparison" == "-1" ]; then 
+        writeLine "Upgrading: Current .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_warn
+    else
+        writeLine "All good. Current .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_success
+    fi
+
+    if [ "$comparison" == "-1" ]; then
 
         if [ "$offlineInstall" == "true" ]; then 
             writeLine "Offline Installation: Unable to download and install .NET." $color_error
@@ -400,20 +388,24 @@ function setupDotNet () {
         # popd
 
         if [ "$os" == "linux" ]; then 
+
             # Super naive
-            local currentLinuxDistro=$(lsb_release -d | cut -f2 | cut -d ' ' -f1)
+            # local currentLinuxDistro=$(lsb_release -d | cut -f2 | cut -d ' ' -f1)
+            local currentLinuxDistro=$(. /etc/os-release;echo $ID)
             currentLinuxDistro=`echo $currentLinuxDistro | tr '[:upper:]' '[:lower:]'`
-            local currentLinuxVersion=$(lsb_release -r | cut -f2)
-
-            if [ "${systemName}" == "Raspberry Pi" ]; then
-
-                sudo bash "${sdkScriptsPath}/dotnet-install-rpi.sh" ${sdkInstallVersion}
+            
+            #local currentLinuxVersion=$(lsb_release -r | cut -f2)
+            local currentLinuxVersion=$(. /etc/os-release;echo $VERSION_ID)
+            
+            if [ "$architecture" == 'arm64' ]; then
+                sudo bash "${sdkScriptsPath}/dotnet-install-arm.sh" ${sdkInstallVersion}
                 if [ $? -ne 0 ]; then 
                     return 2 # failed to install required runtime
                 fi
 
-            elif [ "$currentLinuxDistro" == "ubuntu" ] && [[ "$currentLinuxVersion" =~ ^(18\.04|20\.04|21\.04|22\.04|22\.10)$ ]]; then           
+            elif [ "$currentLinuxDistro" == "ubuntu" ] && [[ "$currentLinuxVersion" =~ ^(18|20|21|22|23)\.(04|10)$ ]]; then           
 
+                # echo "currentDotNetVersion = $currentDotNetVersion"
                 writeLine "Current .NET version is ${currentDotNetVersion}. Installing newer version." $color_info
                 wget https://packages.microsoft.com/config/${currentLinuxDistro}/${currentLinuxVersion}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
                 sudo dpkg -i packages-microsoft-prod.deb
@@ -443,14 +435,12 @@ function setupDotNet () {
                 quit 3 # required runtime missing, needs installing
             else
                 writeLine "Please download and install the .NET SDK. For macOS Intel machines use:"
-                writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-7.0.400-macos-x64-installer"
+                writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-x64-installer"
                 # writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-x64-installer"
                 quit 3 # required runtime missing, needs installing
             fi
             quit 100 # impossible code path
         fi
-    else
-        writeLine "Current .NET version is ${currentDotNetVersion}. Good to go." $color_success
     fi
 
     return 0
@@ -468,25 +458,27 @@ function setupPython () {
         writeLine "Arm64 (Apple silicon) Mac detected. Not running under Rosetta. " $color_warn
         if [ $(/usr/bin/pgrep oahd >/dev/null 2>&1; echo $?) -gt 0 ]; then
         #if [ "$(pkgutil --files com.apple.pkg.RosettaUpdateAuto)" == "" ]; then 
-    	    writeLine 'Rosetta is not installed' $color_error
+            writeLine 'Rosetta is not installed' $color_error
             needRosettaAndiBrew
         else
-    	    writeLine 'Rosetta is, however, available. We can continue.' $color_success
+            writeLine 'Rosetta is, however, available. We can continue.' $color_success
         fi
     fi
 
-    local pythonVersion=$1
-    local installLocation=$2
+    # local pythonVersion=$1   - this is set in script calling this method
+    # local installLocation=$2 - this is set in script calling this method
 
-    # HACK: Version 2.1 changed installLocation from LocalToModule to Local
-    if [ "${installLocation}" == "LocalToModule" ]; then installLocation="Local"; fi
+    # if [ "${verbosity}" == "loud" ]; then
+    #     writeLine "pythonVersion = ${pythonVersion}"  $color_mute
+    #     writeLine "pythonLocation = ${pythonLocation}"  $color_mute
+    # fi
 
-    if [ "${installLocation}" == "" ]; then installLocation="Shared"; fi
+    if [ "${pythonLocation}" == "" ]; then pythonLocation="Shared"; fi
 
     if [ "${allowSharedPythonInstallsForModules}" == "false" ]; then
-        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${installLocation}" == "Shared" ]]; then
+        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${pythonLocation}" == "Shared" ]]; then
             writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
-            installLocation="Local"
+            pythonLocation="Local"
         fi
     fi
 
@@ -494,7 +486,7 @@ function setupPython () {
     local pythonName="python${pythonVersion/./}"
 
     # For now we will force all docker installs to be local
-    if [ "${installLocation}" == "Local" ]; then
+    if [ "${pythonLocation}" == "Local" ]; then
         installPath="${modulePath}/bin/${os}/${pythonName}"
     else
         installPath="${runtimesPath}/bin/${os}/${pythonName}"
@@ -604,39 +596,31 @@ function setupPython () {
             # Update at your leisure. 
             # See https://www.python.org/ftp/python/ for a complete list.
             case "${pythonVersion}" in
-                "3.0")  pythonPatchVersion="3.0";;
-                "3.1")  pythonPatchVersion="3.1";;
-                "3.2")  pythonPatchVersion="3.2";;
-                # 3.3.0, 3.4.0, 3.5.0, 3.6.0
-                "3.7")  pythonPatchVersion="3.7.9";;
-                "3.8")  pythonPatchVersion="3.8.10";;
-                "3.9")  pythonPatchVersion="3.9.2";;
-                "3.10") pythonPatchVersion="3.10.4";;
-                "3.11") pythonPatchVersion="3.11.1";;
-                "3.12") pythonPatchVersion="3.12.0";;
+                "3.0")  pythonPatchVersion="3.0";;    # 3.0.1 avail
+                "3.1")  pythonPatchVersion="3.1.5";;
+                "3.2")  pythonPatchVersion="3.2.6";;
+                "3.3")  pythonPatchVersion="3.3.7";;
+                "3.4")  pythonPatchVersion="3.4.9";;  # 3.4.10 avail
+                "3.5")  pythonPatchVersion="3.5.10";;
+                "3.6")  pythonPatchVersion="3.6.15";;
+                "3.7")  pythonPatchVersion="3.7.9";;  # 3.7.17 avail
+                "3.8")  pythonPatchVersion="3.8.10";; # 3.8.18 avail
+                "3.9")  pythonPatchVersion="3.9.2";;  # 3.9.18 avail
+                "3.10") pythonPatchVersion="3.10.4";; # 3.10.13 avail
+                "3.11") pythonPatchVersion="3.11.1";; # 3.11.5 avail
+                "3.12") pythonPatchVersion="3.12.0";; 
                 *)      pythonPatchVersion="${pythonVersion}.0"
             esac
 
             # install the pre-requisites
             sudo apt-get update -y && sudo apt --yes --force-yes upgrade
-            sudo apt-get dist-upgrade
 
-            if [[ $(command -v checkinstall) ]]; then
-                sudo apt -qq install -y wget build-essential < /dev/null
-            else
-                sudo apt -qq install -y wget build-essential checkinstall < /dev/null
-            fi
-
-            sudo apt-get install -y python3-dev python-setuptools # < /dev/null
+            installAptPackages "dist-upgrade wget build-essential checkinstall python3-dev python-setuptools"
 
             # Might not be needed
-            sudo apt-get install -y python3-pip # < /dev/null
-            sudo apt-get install -y python-smbus
-            sudo apt-get install -y libncurses5-dev libgdbm-dev libc6-dev
-            sudo apt-get install -y tk-dev libsqlite3-dev zlib1g-dev
-            sudo apt-get install -y libssl-dev openssl
-            sudo apt-get install -y libffi-dev
-            sudo apt-get install -y libncursesw5-dev libreadline6-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev
+            installAptPackages "python3-pip python-smbus libncurses5-dev libgdbm-dev libc6-dev tk-dev"
+            installAptPackages "libsqlite3-dev zlib1g-dev libssl-dev openssl libffi-dev libncursesw5-dev"
+            installAptPackages "libreadline6-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev"
 
             # Get the Python tar ball and extract into our downloads dir
 
@@ -672,7 +656,7 @@ function setupPython () {
             sudo rm -r openssl-1.1.1c
             sudo apt-get install libssl-dev -y
 
-            # Bulld Python
+            # Build Python
             cd Python-${pythonPatchVersion}
             sudo ./configure --enable-optimizations  --prefix=/usr
             make -j $(nproc) < /dev/null
@@ -728,7 +712,8 @@ function setupPython () {
                 sudo apt-get install python${pythonVersion} -y >/dev/null 2>/dev/null &
                 spin $!
 
-                # apt-get install python3-pip
+                # apt-get install python3-pip - done later
+
                 writeLine "Done" $color_success
             else
                 writeLine "Updating apt-get" $color_info
@@ -743,7 +728,9 @@ function setupPython () {
                 sudo apt upgrade -y
                 writeLine "Installing Python ${pythonVersion}" $color_primary
                 sudo apt-get install python${pythonVersion} -y
-                sudo apt-get install python3-pip
+
+                # sudo apt-get install python3-pip - done later
+
                 writeLine "Done" $color_success
             fi
         fi
@@ -775,20 +762,20 @@ function setupPython () {
         if [ "$os" == "macos" ]; then
             if [ "${verbosity}" == "quiet" ]; then
                 write "Installing Virtual Environment tools for mac..." $color_primary
-                
+                python3 -m pip install --upgrade pip >/dev/null &
                 pip3 $pipFlags install setuptools virtualenv virtualenvwrapper >/dev/null &
                 spin $!
                 writeLine "Done" $color_success
 
             else
                 writeLine "Installing Virtual Environment tools for mac..." $color_primary
-        
+                python3 -m pip install --upgrade pip
                 # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
                 if [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
                     writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
                 fi
 
-                pip3 $pipFlags setuptools install virtualenv virtualenvwrapper
+                pip3 $pipFlags install setuptools virtualenv virtualenvwrapper
             fi
         else
             if [ "${verbosity}" == "quiet" ]; then
@@ -806,7 +793,7 @@ function setupPython () {
         # Create the virtual environments. All sorts of things can go wrong here
         # but if you have issues, make sure you delete the venv directory before
         # retrying.
-        write "Creating Virtual Environment..." $color_primary
+        write "Creating Virtual Environment (${pythonLocation})..." $color_primary
         
         if [ $verbosity == "loud" ]; then
             writeLine "Install path is ${installPath}"
@@ -814,10 +801,7 @@ function setupPython () {
 
         if [ "$os" == "macos" ]; then
             $globalPythonCmd -m venv "${installPath}/venv"
-        else
-            #echo $globalPythonCmd
-            #echo $installPath
-            
+        else            
             $globalPythonCmd -m venv "${installPath}/venv" &
             spin $! # process ID of the python install call
         fi
@@ -837,7 +821,7 @@ function setupPython () {
 
     # Ensure Python Exists
     write "Checking for Python ${pythonVersion}..." $color_primary
-    pyVersion=$($pythonInterpreterPath --version)
+    pyVersion=$("$pythonInterpreterPath" --version)
     write "Found ${pyVersion}. " $color_mute
 
     echo $pyVersion | grep "${pythonVersion}" >/dev/null
@@ -849,28 +833,21 @@ function setupPython () {
     return 0
 }
 
-function installPythonPackages () {
+function installSinglePythonPackage () {
+
+    package_name=$1
+    package_desc=$2 
 
     if [ "$offlineInstall" == "true" ]; then 
         writeLine "Offline Installation: Unable to download and install Python packages." $color_error
         return 6 # unable to download required asset
     fi
 
-    pythonVersion=$1
-    requirementsDir=$2
-
-    # Either "Local" or "Shared"
-    installLocation=$3
-
-    # HACK: Version 2.1 changed installLocation from LocalToModule to Local
-    if [ "${installLocation}" == "LocalToModule" ]; then installLocation="Local"; fi
-
-    if [ "${installLocation}" == "" ]; then installLocation="Shared"; fi
-
+    if [ "${pythonLocation}" == "" ]; then pythonLocation="Shared"; fi
     if [ "${allowSharedPythonInstallsForModules}" == "false" ]; then
-        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${installLocation}" == "Shared" ]]; then
+        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${pythonLocation}" == "Shared" ]]; then
             writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
-            installLocation="Local"
+            pythonLocation="Local"
         fi
     fi
 
@@ -878,34 +855,126 @@ function installPythonPackages () {
     local pythonName="python${pythonVersion/./}"
     pythonCmd="./python${pythonVersion}"
 
+    if [ "${pythonLocation}" == "Local" ]; then
+        virtualEnv="${modulePath}/bin/${os}/${pythonName}/venv"
+    else
+        virtualEnv="${runtimesPath}/bin/${os}/${pythonName}/venv"
+    fi
+    # echo "virtualEnv = ${virtualEnv}"
+
+    pythonCmd="${virtualEnv}/bin/python${pythonVersion}"
+
+    if [ "$os" == "macos" ]; then
+        # Running "PythonX.Y" should work, but may not. Check, and if it doesn't work then set the
+        # pythonCmd var to point to the absolute pather where we think the python launcher should be
+        $pythonCmd --version >/dev/null  2>/dev/null
+        if [ $? -ne 0 ]; then
+            writeLine "Setting python command to point to global install location" $color_warn
+            pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+        fi
+    fi
+
+    # =========================================================================
+    # Install PIP package
+
+    packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
+
+    pushd "${virtualEnv}/bin" >/dev/null
+
+    write "Installing ${package_desc}..." $color_primary
+
+    if [ "${verbosity}" != "loud" ]; then
+        $pythonCmd -m pip install ${pipFlags} "${package_name}" ${currentOption} --target "${packagesPath}" >/dev/null  2>/dev/null &
+        spin $!
+    else
+        $pythonCmd -m pip install ${pipFlags} "${package_name}" ${currentOption}  --target "${packagesPath}"
+    fi
+
+    # Get the return value of the install op
+    status=$?
+
+    # If the package isn't simply a URL or .whl then actually check it worked
+    if [ "${package_name:0:4}" != "http" ] && [ "${package_name:(-4)}" != ".whl" ]; then
+        module_name=$(echo "$package_name" | sed 's/[<=>].*//g')
+        # echo "$pythonCmd -m pip show ${module_name}"
+        $pythonCmd -m pip show ${module_name} >/dev/null  2>/dev/null
+        if [ $? -eq 0 ]; then
+            write "(✔️ checked) " $color_info
+        else
+            write "(failed check) " $color_error
+        fi
+    else
+        write "(not checked) " $color_mute
+    fi
+
+    if [ $status -eq 0 ]; then
+        writeLine "Done" $color_success
+    else
+        writeLine "Failed" $color_error
+    fi
+
+    popd  >/dev/null
+
+    return 0
+}
+
+
+function installPythonPackages () {
+
+    if [ "$offlineInstall" == "true" ]; then 
+        writeLine "Offline Installation: Unable to download and install Python packages." $color_error
+        return 6 # unable to download required asset
+    fi
+
+    # pythonVersion=$1    - this is set in script calling this method
+    # Either "Local" or "Shared"
+    # installLocation=$3  - this is set in script calling this method
+
+    requirementsDir=$1
+    if [ "${requirementsDir}" == "" ]; then requirementsDir=$modulePath; fi
+
+    if [ "${pythonLocation}" == "" ]; then pythonLocation="Shared"; fi
+    if [ "${allowSharedPythonInstallsForModules}" == "false" ]; then
+        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${pythonLocation}" == "Shared" ]]; then
+            writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
+            pythonLocation="Local"
+        fi
+    fi
+
     # hasCUDA is actually already set in /src/setup.sh, but no harm in keeping this check here.
     # Note that CUDA is only available on non-macOS systems
     hasCUDA='false'
-    if [ "$os" == "linux" ]; then
-        if [ "$supportCUDA" == "true" ]; then
-            write 'Checking for CUDA...'
+    if [ "$os" == "linux" ] && [ "$supportCUDA" == "true" ]; then
+        write 'Checking for CUDA...'
 
-            # nvidia=$(lspci | grep -i '.* vga .* nvidia .*')
-            # if [[ ${nvidia,,} == *' nvidia '* ]]; then  # force lowercase compare
-
+        if [ "${systemName}" == "Jetson" ]; then
+            hasCUDA='true'
+        else
             if [ -x "$(command -v nvidia-smi)" ]; then
                 nvidia=$(nvidia-smi | grep -i -E 'CUDA Version: [0-9]+.[0-9]+') > /dev/null 2>&1
                 if [[ ${nvidia} == *'CUDA Version: '* ]]; then 
                     hasCUDA='true'
                 fi
             fi
-            if [ "$hasCUDA" == "true" ]; then
-                writeLine 'CUDA Present' $color_success
-            else 
-                writeLine 'Not found' $color_mute
-            fi
+        fi
+
+        if [ "$hasCUDA" == "true" ]; then
+            writeLine 'CUDA Present' $color_success
+        else 
+            writeLine 'Not found' $color_mute
         fi
     fi
 
     # This is getting complicated. The order of priority for the requirements file is:
     #
-    #  requirements.os.architecture.cuda.txt
-    #  requirements.os.cuda.txt
+    #  requirements.os.architecture.cuda.cuda_version.txt   (version is in form 11_7, 12_2 etc)
+    #  requirements.os.architecture.cuda.cuda_major.txt     (major is in form 11, 12 etc)
+    #  requirements.os.architecture.(cuda|rocm).txt
+    #  requirements.os.cuda.cuda_version.txt
+    #  requirements.os.cuda.cuda_major.txt
+    #  requirements.os.(cuda|rocm).txt
+    #  requirements.cuda.cuda_version.txt
+    #  requirements.cuda.cuda_major.txt
     #  requirements.cuda.txt
     #  requirements.os.architecture.gpu.txt
     #  requirements.os.gpu.txt
@@ -915,19 +984,39 @@ function installPythonPackages () {
     #  requirements.txt
     #
     # The logic here is that we go from most specific to least specific. The only
-    # real tricky bit is the subtlety around .cuda vs .gpu. CUDA is a specific
-    # type of card. We may not be able to support that, but may be able to support
-    # other cards generically via OpenVINO or DirectML. So CUDA first, then GPU,
-    # then CPU. With a query at each steo for OS and architecture.
+    # real tricky bit is the subtlety around .cuda vs .gpu. CUDA / ROCm are specific
+    # types of card. We may not be able to support that, but may be able to support
+    # other cards generically via OpenVINO or DirectML. So CUDA or ROCm first,
+    # then GPU, then CPU. With a query at each step for OS and architecture.
 
     requirementsFilename=""
 
     if [ "$enableGPU" == "true" ]; then
         if [ "$hasCUDA" == "true" ]; then
-            if [ -f "${requirementsDir}/requirements.${os}.${architecture}.cuda.txt" ]; then
+
+            # We probably need to have CUDA specific requirements files
+            cuda_version=$(getCudaVersion)
+            cuda_specifier=$(echo "$cuda_version" | sed 's/\./_/g')
+            cuda_major_version=${cuda_version%%.*}
+            
+            writeLine "CUDA version is $cuda_version (Specifier ${cuda_specifier}, major version ${cuda_major_version})" $color_info
+
+            if [ -f "${requirementsDir}/requirements.${os}.${architecture}.cuda.${cuda_specifier}.txt" ]; then
+                requirementsFilename="requirements.${os}.${architecture}.cuda.${cuda_specifier}.txt"
+            elif [ -f "${requirementsDir}/requirements.${os}.${architecture}.${cuda_major_version}.cuda.txt" ]; then
+                requirementsFilename="requirements.${os}.${architecture}.cuda.${cuda_major_version}.txt"
+            elif [ -f "${requirementsDir}/requirements.${os}.${architecture}.cuda.txt" ]; then
                 requirementsFilename="requirements.${os}.${architecture}.cuda.txt"
+            elif [ -f "${requirementsDir}/requirements.${os}.cuda.${cuda_specifier}.txt" ]; then
+                requirementsFilename="requirements.${os}.cuda.${cuda_specifier}.txt"
+            elif [ -f "${requirementsDir}/requirements.${os}.${cuda_major_version}.cuda.txt" ]; then
+                requirementsFilename="requirements.${os}.cuda.${cuda_major_version}.txt"
             elif [ -f "${requirementsDir}/requirements.${os}.cuda.txt" ]; then
                 requirementsFilename="requirements.${os}.cuda.txt"
+            elif [ -f "${requirementsDir}/requirements.cuda.${cuda_specifier}.txt" ]; then
+                requirementsFilename="requirements.cuda.${cuda_specifier}.txt"
+            elif [ -f "${requirementsDir}/requirements.${cuda_major_version}.cuda.txt" ]; then
+                requirementsFilename="requirements.cuda.${cuda_major_version}.txt"
             elif [ -f "${requirementsDir}/requirements.cuda.txt" ]; then
                 requirementsFilename="requirements.cuda.txt"
             fi
@@ -978,25 +1067,27 @@ function installPythonPackages () {
         return
     fi
 
-    if [ "${installLocation}" == "Local" ]; then
+    # For speeding up debugging
+    if [ "${skipPipInstall}" == "true" ]; then return; fi
+
+    # Version with ".'s removed
+    local pythonName="python${pythonVersion/./}"
+    pythonCmd="./python${pythonVersion}"
+
+    if [ "${pythonLocation}" == "Local" ]; then
         virtualEnv="${modulePath}/bin/${os}/${pythonName}/venv"
     else
         virtualEnv="${runtimesPath}/bin/${os}/${pythonName}/venv"
     fi
-    # echo "virtualEnv = ${virtualEnv}"
 
-    # For speeding up debugging
-    if [ "${skipPipInstall}" == "true" ]; then return; fi
-
-    # We'll head into the venv's bin directory which should contain the python interpreter
-    pushd "${virtualEnv}/bin"  >/dev/null
+    pythonCmd="${virtualEnv}/bin/python${pythonVersion}"
 
     if [ "$os" == "macos" ]; then
         # Running "PythonX.Y" should work, but may not. Check, and if it doesn't work then set the
         # pythonCmd var to point to the absolute pather where we think the python launcher should be
         $pythonCmd --version >/dev/null  2>/dev/null
         if [ $? -ne 0 ]; then
-            writeLine "Setting python command to point to global install location"
+            writeLine "Setting python command to point to global install location" $color_warn
             pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
         fi
     fi
@@ -1005,9 +1096,15 @@ function installPythonPackages () {
     # date. This slows things down a bit, but it's worth it in the end.
     if [ "${verbosity}" == "quiet" ]; then
 
-        # Ensure we have pip (no internet access - ensures we have the current
-        # python compatible version).
-        write 'Ensuring PIP is installed...' $color_primary
+        if [ "$os" == "linux" ]; then
+            write 'Installing PIP...' $color_primary
+            sudo apt-get install python3-pip -y >/dev/null 2>/dev/null &
+            spin $!
+            writeLine 'Done' $color_success
+        fi
+
+        # Ensure we have the current python compatible version of pip
+        write 'Ensuring PIP compatibility...' $color_primary
         $pythonCmd -m ensurepip >/dev/null 2>/dev/null &
         spin $!
         writeLine 'Done' $color_success
@@ -1016,7 +1113,9 @@ function installPythonPackages () {
         $pythonCmd -m pip install --upgrade pip >/dev/null 2>/dev/null &
         spin $!
         writeLine 'Done' $color_success
+
     else
+        
         writeLine 'Ensuring PIP is installed and up to date...' $color_primary
     
         # if [ "$os" == "macos" ]; then
@@ -1026,16 +1125,17 @@ function installPythonPackages () {
         #     fi
         # fi
     
-        if [ "$os" == "macos" ]; then
-            # sudo $globalPythonCmd -m ensurepip
-            $pythonCmd -m ensurepip
-            $pythonCmd -m pip install --upgrade pip
-        else
-            sudo $pythonCmd -m ensurepip
-            $pythonCmd -m pip install --upgrade pip
+        if [ "$os" == "linux" ]; then
+            writeLine 'Installing PIP...' $color_primary
+            sudo apt-get install python3-pip -y
         fi
+
+        writeLine 'Ensuring PIP compatibility ...' $color_primary
+        $pythonCmd -m ensurepip
+
+        writeLine 'Updating PIP...' $color_primary
+        $pythonCmd -m pip install --upgrade pip
     fi 
-    popd  >/dev/null
 
     # =========================================================================
     # Install PIP packages
@@ -1047,7 +1147,7 @@ function installPythonPackages () {
     #hack
     write 'Installing setuptools...' $color_primary
     # pip3 install setuptools
-    $pythonCmd -m pip install setuptools >/dev/null 2>/dev/null &
+    $pythonCmd -m pip install -U setuptools >/dev/null 2>/dev/null &
     spin $!
     writeLine "Done" $color_success
 
@@ -1056,16 +1156,12 @@ function installPythonPackages () {
     if [ "${oneStepPIP}" == "true" ]; then
 
         # Install the Python Packages in one fell swoop. Not much feedback, but it works
+        # writeLine "${pythonCmd} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}" $color_info
         write 'Installing Packages into Virtual Environment...' $color_primary
         if [ "${verbosity}" != "loud" ]; then
-            # writeLine "${pythonCmd} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}" $color_info
-            #hack
-            #./pip3 install $pipFlags -r ${requirementsPath} --target ${packagesPath} # > /dev/null &
             $pythonCmd -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath} > /dev/null &
             spin $!
         else
-            #hack
-            # ./pip3 install $pipFlags -r ${requirementsPath} --target ${packagesPath}
             $pythonCmd -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}
         fi
         writeLine 'Success' $color_success
@@ -1106,37 +1202,56 @@ function installPythonPackages () {
                 fi
     
                 # remove all whitespaces
-                # module="${module// /}"
+                module=$(trim "$module")
+                # echo "Module = [${module}]"
 
                 if [ "${module}" != "" ]; then
 
-                    # writeLine "./pip install ${pipFlags} $module ${currentOption}" $color_error
                     write "  -${description}..." $color_primary
 
-                    # TODO: We should test first. Alter the requirements file to provide the 
-                    # name of a module (module_import) to be tested before we import
-                    # if python3 -c "import ${module_import}"; then echo "Found ${module}. Skipping."; fi;
-
-                    if [ "${verbosity}" != "loud" ]; then
-                        # I have NO idea why it's necessary to use eval to get this to work without errors
-                        # ./pip3 install ${module} ${currentOption} >/dev/null & # 2>/dev/null &
-
-                        #hack
-                        # eval "./pip3 install ${module} ${currentOption} -q -q -q" >/dev/null &
-                        $pythonCmd -m pip install ${module} ${currentOption} --target ${packagesPath} >/dev/null  2>/dev/null &
-                        spin $!
-                    else
-                        # ./pip3 install $module ${currentOption}
-                        #hack
-                        #eval "./pip3 install ${module} ${currentOption}"
-                        $pythonCmd -m pip install ${module} ${currentOption}  --target ${packagesPath}
+                    # Get the module name so we can check if it's installed
+                    module_name=""
+                    if [ "${module:0:4}" != "http" ] && [ "${module:(-4)}" != ".whl" ]; then
+                        module_name=$(echo "$module" | sed 's/[<=>].*//g')
                     fi
 
-                    status=$?    
-                    if [ $status -eq 0 ]; then
-                        writeLine "Done" $color_success
+                    module_exists="false"
+                    if [ "${module_name}" != "" ]; then
+                        $pythonCmd -m pip show ${module_name} >/dev/null  2>/dev/null
+                        if [ $? -eq 0 ]; then module_exists="true"; fi
+                    fi
+
+                    if [ "$module_exists" == "false" ]; then
+                       if [ "${verbosity}" != "loud" ]; then
+                            $pythonCmd -m pip install ${pipFlags} "${module}" ${currentOption} --target "${packagesPath}" >/dev/null 2>/dev/null &
+                            spin $!
+                        else
+                            $pythonCmd -m pip install ${pipFlags} "${module}" ${currentOption} --target "${packagesPath}"
+                        fi
+
+                        # Get the return value of the install op
+                        status=$?
+
+                        # If the module's name isn't simply a URL or .whl then actually check it worked
+                        if [ "${module_name}" != "" ]; then
+                            #...but actually check it worked
+                            $pythonCmd -m pip show ${module_name} >/dev/null  2>/dev/null
+                            if [ $? -eq 0 ]; then
+                                write "(✔️ checked) " $color_info
+                            else
+                                write "(failed check) " $color_error
+                            fi
+                        else
+                            write "(not checked) " $color_mute
+                        fi
+
+                        if [ $status -eq 0 ]; then
+                            writeLine "Done" $color_success
+                        else
+                            writeLine "Failed" $color_error
+                        fi
                     else
-                        writeLine "Failed" $color_error
+                        writeLine "Already installed" $color_success
                     fi
                 fi
 
@@ -1152,6 +1267,40 @@ function installPythonPackages () {
     popd  >/dev/null
 
     return 0
+}
+
+
+function installAptPackages () {
+
+    local packageList=$1
+
+    pkgs_to_install=""
+    write "Checking for installed dependencies (from ${packageList})..."
+    for pkg in $packageList; do
+        apt list "${pkg}" 2>/dev/null | grep installed >/dev/null 2>/dev/null
+        if [ "$?" != "0" ]; then
+            pkgs_to_install+=" ${pkg}"
+        fi
+    done
+    writeLine "Done" $color_success
+
+    if [[ -n "${pkgs_to_install}" ]]; then
+    
+        if [ "${verbosity}" == "quiet" ]; then
+            write "Installing missing dependencies:${pkgs_to_install}..."
+            apt-get update -y -qq #>/dev/null 2>/dev/null  &
+            #spin $!
+            apt-get install -y -qq ${pkgs_to_install} # >/dev/null 2>/dev/null &
+            #spin $!
+            writeLine "Done" $color_success
+        else
+            writeLine "Installing missing dependencies:${pkgs_to_install}..."
+            apt-get update -y && apt-get install -y --no-install-recommends ${pkgs_to_install} >/dev/null 2>/dev/null &
+        fi
+
+    else
+        writeLine "All dependencies already installed." $color_success
+    fi
 }
 
 function getFromServer () {
@@ -1178,7 +1327,7 @@ function getFromServer () {
     # eg           "$S3_bucket"   "rembg-models.zip" /downloads/module/"    "assets"    "Downloading Background Remover models..."
     downloadAndExtract $storageUrl $fileToGet "${downloadPath}" "${moduleDir}" "${message}"
 
-    # Copy contents of downloadPath\moduleDir to runtimesPath\moduleDir\moduleAssetsDir
+    # Copy contents of downloadPath\moduleDir to modules\moduleDir\moduleAssetsDir
     if [ -d "${downloadPath}/${moduleDir}" ]; then
 
         if [ ! -d "${modulePath}/${moduleAssetsDir}" ]; then
@@ -1188,7 +1337,8 @@ function getFromServer () {
         # pushd then cp to stop "cannot stat" error
         pushd "${downloadPath}/${moduleDir}/" >/dev/null 2>/dev/null
 
-        # This code will have issues if you download more than 1 zip to a download folder.
+        # This code (below) will have issues if you download more than 1 zip to a download folder.
+        # 0. Download and extract
         # 1. Copy *everything* over (including the downloaded zip)        
         # 2. Remove the original download archive which was copied over along with everything else.
         # 3. Delete all but the downloaded archive from the downloads dir
@@ -1196,17 +1346,18 @@ function getFromServer () {
         # rm "${modulePath}/${moduleAssetsDir}/${fileToGet}"  #>/dev/null 2>/dev/null
         # ls | grep -xv *.zip | xargs rm
 
-        # Safer.
+        # The safer way to do it:
+        # 0. Download and extract
         # 1. Copy all non-zip files to the module's installation dir
         # 2. Delete all non-zip files in the download dir
         if [ $verbosity == "quiet" ]; then 
             rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${modulePath}/${moduleAssetsDir}/"  >/dev/null 
             find . -type f -not -name '*.zip' | xargs rm >/dev/null 2>/dev/null
-            find . -type d -not -name . -not -name ..| xargs rmdir >/dev/null 2>/dev/null
+            find . -type d -not -name . -not -name ..| xargs rm -rf >/dev/null 2>/dev/null
         else
             rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${modulePath}/${moduleAssetsDir}/"
-            find . -type f -not -name '*.zip' | xargs rm  2>/dev/null
-            find . -type d -not -name . -not -name ..| xargs rmdir  2>/dev/null
+            find . -type f -not -name '*.zip' | xargs rm 2>/dev/null
+            find . -type d -not -name . -not -name ..| xargs rm -rf  2>/dev/null
         fi
 
         popd >/dev/null 2>/dev/null
@@ -1263,6 +1414,12 @@ function downloadAndExtract () {
             return 6  # unable to download required asset
         fi
 
+        # create folder if needed and ensure permissions set
+        if [ ! -d "${downloadToDir}/${dirToSave}" ]; then
+            mkdir -p "${downloadToDir}/${dirToSave}"
+            chmod -R a+w "${downloadToDir}/${dirToSave}"
+        fi
+
         # writeLine "Downloading ${fileToGet} to ${dirToSave}.zip in ${downloadToDir}"  $color_warn
         # wget $wgetFlags --show-progress -O "${downloadToDir}/${dirToSave}/${fileToGet}" -P "${downloadToDir}/${dirToSave}" \
         #                                   "${storageUrl}${fileToGet}"
@@ -1294,9 +1451,9 @@ function downloadAndExtract () {
         fi
     else
         if [ "${extension}" == ".gz" ]; then
-                tar $tarFlags "${fileToGet}"
+            tar $tarFlags "${fileToGet}"
         else
-                unzip $unzipFlags "${fileToGet}"
+            unzip $unzipFlags "${fileToGet}"
         fi
     fi
     
@@ -1361,6 +1518,44 @@ versionCompare () {
     echo "0"
 }
 
+function trim() {
+    local var="$*"
+    # remove leading whitespace characters
+    var="${var#"${var%%[![:space:]]*}"}"
+    # remove trailing whitespace characters
+    var="${var%"${var##*[![:space:]]}"}"
+    printf '%s' "$var"
+}
+
+# Converts bytes value to human-readable string based on 1024 units (binary) [$1: bytes value]
+function bytesToHumanReadableBinary() {
+    local i=${1:-0} d="" s=0 S=("Bytes" "KiB" "MiB" "GiB" "TiB" "PiB" "EiB" "YiB" "ZiB")
+    while ((i > 1024 && s < ${#S[@]}-1)); do
+        printf -v d ".%02d" $((i % 1024 * 100 / 1024))
+        i=$((i / 1024))
+        s=$((s + 1))
+    done
+    echo "$i$d ${S[$s]}"
+}
+
+# Converts bytes value to human-readable string base on 1000 units [$1: bytes value]
+function bytesToHumanReadableKilo() {
+
+    local i=${1:-0} d="" s=0 S=("KiB" "MiB" "GiB" "TiB" "PiB" "EiB" "YiB" "ZiB")
+
+    if ((i < 1024)); then
+        echo "$i Bytes"
+    else
+        i=$((i / 1024))
+        while ((i > 1000 && s < ${#S[@]}-1)); do
+            printf -v d ".%02d" $((i % 100 * 100 / 1000))
+            i=$((i / 1000))
+            s=$((s + 1))
+        done
+        echo "$i$d ${S[$s]}"
+    fi
+}
+
 function getDisplaySize () {
     # See https://linuxcommand.org/lc3_adv_tput.php some great tips around this
     echo "Rows=$(tput lines) Cols=$(tput cols)"
@@ -1372,14 +1567,23 @@ function checkForInternet () {
     online=$?
 }
 
-function getVersionFromModuleSettings () { # jsonFile key
+function getCudaVersion () { 
+    # Run nvcc with the --version option and capture the output
+    output=$(nvcc --version 2>&1)
+    
+    # Search for the line containing "release" to extract the CUDA version
+    cuda_version=$(echo "$output" | grep -i "release" | awk '{print $6}')
 
-    # Code thanks to ChatGPT. Radically reworked to make it...work
+    echo $cuda_version
+}
+
+# jsonFile key
+function getVersionFromModuleSettings () { 
 
     local json_file=$1
     local key=$2
 
-    # echo jsonFile is $jsonFile
+    # echo jsonFile is $json_file
     # echo key is $key
 
     # Use the jq command to extract the value of the property from the JSON file.
@@ -1387,7 +1591,7 @@ function getVersionFromModuleSettings () { # jsonFile key
     #  jsonValue=$(jq -r ".$key" "$json_file")
 
     # or use inbuilt bash commands.
-    jsonValue=$(grep -o "\"$key\":[^,}]*" "$json_file" | sed 's/.*: "\(.*\)".*/\1/')
+    jsonValue=$(grep -o "\"${key}\"\s*:\s*[^,}]*" "$json_file" | sed 's/.*: "\(.*\)".*/\1/')
 
     echo $jsonValue
 }

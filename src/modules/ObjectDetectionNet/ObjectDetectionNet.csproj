@@ -119,7 +119,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\API\Common\Common.csproj" />
 		<ProjectReference Include="..\..\SDK\NET\NET.csproj" />
 	</ItemGroup>
 

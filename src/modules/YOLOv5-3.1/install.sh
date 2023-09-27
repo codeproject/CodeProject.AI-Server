@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Installation script ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                          YOLOv5-3.1
@@ -12,34 +14,95 @@ if [ "$1" != "install" ]; then
     echo
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
-# Ensure CUDA and cuDNN is installed. Note this is only for native linux since 
-# macOS no longer supports NVIDIA, WSL (Linux under Windows) uses the Windows 
-# drivers, and docker images already contain the necessary SDKs and libraries
-if [ "$os" == "linux" ] && [ "$hasCUDA" == "true" ] && [ "${inDocker}" == "false" ] && \
-   [ "${systemName}" != "Jetson" ] && [ "${systemName}" != "Raspberry Pi" ] && \
-   [ "${systemName}" != "Orange Pi" ]; then
- 	correctLineEndings "${sdkScriptsPath}/install_cuDNN.sh"
-    source "${sdkScriptsPath}/install_cuDNN.sh"
+pythonLocation="Local"
+pythonVersion=3.8
+
+if [ "$systemName" == "Jetson" ]; then pythonVersion=3.6; fi
+
+# Install python and the required dependencies
+setupPython
+
+# Ah, Jetson. You could have been so good. Yet here we are.
+# Thanks to https://www.hackster.io/spehj/deploy-yolov7-to-jetson-nano-for-object-detection-6728c3
+if [ "$systemName" == "Jetson" ]; then 
+
+    pyNumber="${pythonVersion/./}"
+    bin_dir="${modulePath}/bin/${os}/python${pyNumber}/venv/bin"
+    site_packages="${modulePath}/bin/${os}/python${pyNumber}/venv/lib/python${pyVersionDot}/site-packages/"
+
+    # OpenCV has to be installed system-wide (it comes preinstalled with NVIDIA developer pack
+    # Ubuntu 18.04), we have to create a symbolic link from global to our virtual environment.
+    # Otherwise, we won't be able to access it from our virtual environment.
+    pushd "${site_packages}" >/dev/null
+    ln -s /usr/lib/python${pyVersionDot}/dist-packages/cv2/python-${pyVersionDot}/cv2.cpython-${pyNumber}m-aarch64-linux-gnu.so cv2.so
+    popd >/dev/null
+
+    sudo apt install libfreetype6-dev -y
+    sudo apt-get install python3-dev -y
+
+    sudo "${bin_dir}/python3" -m pip install --upgrade pip setuptools wheel --target "${site_packages}"
+    sudo "${bin_dir}/python3" -m pip install numpy==1.19.4 --target "${site_packages}"
+    sudo "${bin_dir}/python3" -m pip install matplotlib --target "${site_packages}"
 fi
 
-# Install python and the required dependencies.
-setupPython 3.8 "Local"
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages 3.8 "${modulePath}" "Local"
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "Local"
-if [ $? -ne 0 ]; then quit 1; fi
+installPythonPackages
+
+# Jetson, the pain continues
+if [ "$systemName" == "Jetson" ]; then 
+    sudo apt-get install libopenblas-base libopenmpi-dev -y
+    "${bin_dir}/python3" -m pip install -U future psutil dataclasses typing-extensions pyyaml tqdm seaborn --target "${site_packages}"
+    "${bin_dir}/python3" -m pip install Cython --target "${site_packages}"
+
+    if [ ! -f torch-1.8.0-cp${pyNumber}-cp${pyNumber}m-linux_aarch64.whl ]; then
+        wget https://nvidia.box.com/shared/static/p57jwntv436lfrd78inwl7iml6p13fzh.whl -O torch-1.8.0-cp${pyNumber}-cp${pyNumber}m-linux_aarch64.whl  
+    fi
+
+    "${bin_dir}/python3" -m pip install torch-1.8.0-cp${pyNumber}-cp${pyNumber}m-linux_aarch64.whl --target "${site_packages}"
+    "${bin_dir}/python3" -m pip install thop --target "${site_packages}"
+
+    # Test. Should be 1.8.0
+    pushd "${bin_dir}" >/dev/null
+    # This will fail with an illegal instruction. 
+    ./python3 -c "import torch; print(torch.__version__)"
+    popd >/dev/null
+
+    sudo apt install libjpeg-dev zlib1g-dev libpython3-dev libavcodec-dev libavformat-dev libswscale-dev  -y
+    "${bin_dir}/python3" -m pip install --upgrade pillow --target "${site_packages}"
+
+     # Pull the code for TorchVision and build a wheel. This will take a couple of min
+     # WARNING: this pulls down 655Mb
+    if [ ! -d torchvision ]; then
+        git clone --branch v0.9.0 https://github.com/pytorch/vision torchvision
+    fi
+
+    cd torchvision
+    export BUILD_VERSION=0.9.0
+    # This results in: 18382 Illegal instruction     (core dumped)
+    "${bin_dir}/python3" setup.py bdist_wheel
+
+    # Now install TorchVision
+    cd dist/
+    "${bin_dir}/python3" -m pip install torchvision-0.9.0-cp${pyNumber}-cp${pyNumber}m-linux_aarch64.whl --target "${site_packages}"
+    cd ..
+
+    # Now remove the branch we cloned
+    cd ..
+    # sudo rm -r torchvision
+
+    # Test. Should be 0.9.0
+    pushd "${bin_dir}" >/dev/null
+    ./python3 -c "import torchvision; print(torchvision.__version__)"
+    popd >/dev/null
+fi
 
 # Download the models and store in /assets and /custom-models
 getFromServer "models-yolo5-31-pt.zip"        "assets" "Downloading Standard YOLOv5 models..."
-# if [ $? -ne 0 ]; then quit 1; fi
 getFromServer "custom-models-yolo5-31-pt.zip" "custom-models" "Downloading Custom YOLOv5 models..."
 
-# Cleanup if you wish
-# rmdir /S %downloadPath%
+module_install_success='true'
 
 
 #                         -- Install script cheatsheet -- 

@@ -9,7 +9,7 @@
 
 set pipFlags=-q -q -q
 if /i "%verbosity%"=="info" set pipFlags=-q -q -q
-if /i "%verbosity%"=="loud" set pipFlags=-q
+if /i "%verbosity%"=="loud" set pipFlags=
 
 set rmdirFlags=/q
 if /i "%verbosity%"=="info" set rmdirFlags=/q
@@ -148,9 +148,9 @@ shift & goto :%~1
     if "!ESC!"=="" call :setESC
 
     if /i "!foreground!"=="Contrast" (
-		call :setContrastForeground !background!
-		set foreground=!contrastForeground!
-	)
+        call :setContrastForeground !background!
+        set foreground=!contrastForeground!
+    )
 
     REM Colour effect: <ESC>[(0|1)<code>m, where 0 = not intense / reset, 1 = intense    
     REM See this most excellent answer: https://stackoverflow.com/a/33206814
@@ -183,7 +183,7 @@ shift & goto :%~1
     if /i "!foreground!"=="White"       set currentColor=!currentColor!97m
 
     if "!currentColor!"=="" set currentColor=!currentColor!97m
-	
+    
     if /i "!background!"=="Default"     set currentColor=!currentColor!!ESC![49m
 
     if /i "!background!"=="Black"       set currentColor=!currentColor!!ESC![40m
@@ -216,8 +216,8 @@ shift & goto :%~1
 :: int    Line width. If non-blank the line will be padded right with spaces
 :WriteLine
     SetLocal EnableDelayedExpansion
-	
-    if "!ESC!"=="" call :setESC	
+    
+    if "!ESC!"=="" call :setESC    
     set resetColor=!ESC![0m
 
     set str=%~1
@@ -257,7 +257,7 @@ shift & goto :%~1
 :: string Background color name. Optional. Defaults to "Black"
 :Write
     SetLocal EnableDelayedExpansion
-	
+    
     if "!ESC!"=="" call :setESC
     set resetColor=!ESC![0m
 
@@ -498,16 +498,21 @@ shift & goto :%~1
     call :Write "Checking for .NET !requestedNetMajorVersion!.0 or greater..."
     FOR /F "tokens=* USEBACKQ" %%F IN (`dotnet --version`) DO ( set currentDotNetVersion=%%F )
 
-    call :compareVersions "!currentDotNetVersion!" "!requestedNetMajorVersion!.0"
-    if %errorlevel% == -1 (
-        if /i "!offlineInstall!" == "true" (
-            call :WriteLine "Offline Installation: Unable to download and install .NET." %color_error%
-        ) else (
-            call :WriteLine "Current version is !currentDotNetVersion!. Installing newer version." %color_warn%
-            winget install Microsoft.DotNet.SDK.%requestedNetMajorVersion%
-        )
+    if "!currentDotNetVersion!" == "" (
+        call :WriteLine "No .NET Found. Installing !requestedNetVersion!."
+        winget install Microsoft.DotNet.SDK.%requestedNetMajorVersion%
     ) else (
-        call :WriteLine "Current version is !currentDotNetVersion!. Good to go." %color_success%
+        call :compareVersions "!currentDotNetVersion!" "!requestedNetMajorVersion!.0"
+        if %errorlevel% == -1 (
+            if /i "!offlineInstall!" == "true" (
+                call :WriteLine "Offline Installation: Unable to download and install .NET." %color_error%
+            ) else (
+                call :WriteLine "Current version is !currentDotNetVersion!. Installing newer version." %color_warn%
+                winget install Microsoft.DotNet.SDK.%requestedNetMajorVersion%
+            )
+        ) else (
+            call :WriteLine "Current version is !currentDotNetVersion! Good to go." %color_success%
+        )
     )
 
     exit /b
@@ -515,23 +520,36 @@ shift & goto :%~1
 :SetupPython
     SetLocal EnableDelayedExpansion
 
-    set pythonVersion=%1
+    REM Old method
+    REM set pythonVersion=%1      - this is set in script calling this method
+    REM set pythonLocation=%~2    - this is set in script calling this method
 
-    REM Either "Local" or "Shared"
-    set installLocation=%~2
+    REM This new method is called by module installation scripts. IT IS UP TO 
+    REM THEM TO SET pythonVersion AND pythonLocation AT THE TOP OF THEIR SCRIPT.
+    REM This allows us to set once, use everywhere, with minimal copy and pasting.
+    REM While this does mean it's a global variable, ease of use for the user is
+    REM what's important here.
+    REM
+    REM But let's check. It's not that we don't trust users. It's just...
 
-    REM HACK: Version 2.1 changed installLocation from LocalToModule to Local
-    if /i "!installLocation!" == "LocalToModule" set installLocation=Local
+    REM pythonLocation is either "Local" or "Shared". pythonVersion can technically
+    REM be anything, but we typically stick to 3.7 - 3.9. 
+    if /i "!pythonVersion!" == "" (
+        call :WriteLine "pythonVersion needs to be set by the caller. Exiting." "!color_error!"
+        goto:eof
+    )
 
-	REM echo modulePath = !modulePath!
-	REM echo trimmed = !modulePath:\modules\=!
+    if /i "!pythonLocation!" == "" (
+        call :WriteLine "pythonLocation needs to be set by the caller. Setting to 'Local'." "!color_warn!"
+        set pythonLocation=Local
+    )
 
     if /i "!allowSharedPythonInstallsForModules!" == "false" (
-        REM if modulePath contains '/modules/' and installLocation != 'Local'
+        REM if modulePath contains '/modules/' and pythonLocation != 'Local'
         if /i "!modulePath:\modules\=!" neq "!modulePath!" (
-            if /i "!installLocation!" neq "Local" (
+            if /i "!pythonLocation!" neq "Local" (
                 call :WriteLine "Downloaded modules must have local Python install. Changing install location" "!color_warn!"
-                set installLocation=Local
+                set pythonLocation=Local
             )
         )
     )
@@ -540,7 +558,14 @@ shift & goto :%~1
     set pythonName=python!pythonVersion:.=!
     set pythonInstallPath=!runtimesPath!\bin\!os!\!pythonName!
 
-    if /i "!installLocation!" == "Local" (
+    if /i "%verbosity%" neq "quiet" (
+        call :WriteLine "pythonVersion = !pythonVersion!" !color_info!
+        call :WriteLine "pythonLocation = !pythonLocation!" !color_info!
+        call :WriteLine "pythonName = !pythonName!" !color_info!
+        call :WriteLine "pythonInstallPath = !pythonInstallPath!" !color_info!
+    )
+
+    if /i "!pythonLocation!" == "Local" (
         set virtualEnvPath=!modulePath!\bin\!os!\!pythonName!\venv
 
         if not exist "!modulePath!\bin"      mkdir "!modulePath!\bin"
@@ -563,7 +588,7 @@ shift & goto :%~1
         if exist "!pythonInstallPath!" rmdir /s %rmdirFlags% "!pythonInstallPath!"
     )
 
-    call :WriteLine "Installing !pythonName! in !pythonInstallPath!" "!color_info!"
+    if /i "%verbosity%" neq "quiet" call :WriteLine "Installing !pythonName! in !pythonInstallPath!" "!color_info!"
 
     REM Download whatever packages are missing 
     if exist "!pythonInstallPath!" (
@@ -575,10 +600,10 @@ shift & goto :%~1
         if not exist "!baseDir!!pythonName!" mkdir "!baseDir!!pythonName!"
 
         if not exist "!pythonInstallPath!" (
-			
-			if not exist "!runtimesPath!\bin"                   mkdir "!runtimesPath!\bin"
-			if not exist "!runtimesPath!\bin\!os!"              mkdir "!runtimesPath!\bin\!os!"
-			if not exist "!runtimesPath!\bin\!os!\!pythonName!" mkdir "!runtimesPath!\bin\!os!\!pythonName!"
+            
+            if not exist "!runtimesPath!\bin"                   mkdir "!runtimesPath!\bin"
+            if not exist "!runtimesPath!\bin\!os!"              mkdir "!runtimesPath!\bin\!os!"
+            if not exist "!runtimesPath!\bin\!os!\!pythonName!" mkdir "!runtimesPath!\bin\!os!\!pythonName!"
 
             rem Params are:      S3 storage bucket |    fileToGet    | downloadToDir | dirToSaveTo | message
             call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!baseDir!"  "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
@@ -593,7 +618,7 @@ shift & goto :%~1
     REM Create the virtual environments. All sorts of things can go wrong here
     REM but if you have issues, make sure you delete the venv directory before
     REM retrying.
-    call :Write "Creating Virtual Environment..."
+    call :Write "Creating Virtual Environment (!pythonLocation!)..."
     if exist "!virtualEnvPath!\\pyvenv.cfg" (
         call :WriteLine "Python !pythonVersion! Already present" %color_success%
     ) else (
@@ -604,20 +629,119 @@ shift & goto :%~1
 
     REM our DIY version of Python 'Activate' for virtual environments
     call :Write "Enabling our Virtual Environment..."
-    pushd "!virtualEnvPath!"
-    set venvPath=%cd%
-    set pythonInterpreterPath="!venvPath!\Scripts\python"
-    popd
-
+    set pythonInterpreterPath=!virtualEnvPath!\Scripts\python.exe
     call :WriteLine "Done" %color_success%
 
     REM Ensure Python Exists
     call :Write "Confirming we have Python !pythonVersion!..."
-    !pythonInterpreterPath! --version | find "!pythonVersion!" >NUL
+    rem call :WriteLine "pythonInterpreterPath = !pythonInterpreterPath!"
+
+    "!pythonInterpreterPath!" --version | find "!pythonVersion!" >NUL
     if errorlevel 1 goto errorNoPython
     call :WriteLine "present" %color_success%
 
     exit /b
+
+
+:InstallSinglePythonPackage
+
+    SetLocal EnableDelayedExpansion
+
+    set "package_name=%~1"
+    set "package_desc=%~2"
+
+    if /i "!offlineInstall!" == "true" (
+        call :WriteLine "Offline Installation: Skipping download and installation of Python packages." %color_error%
+        exit /b
+    )
+
+    REM IT IS UP TO THE CALLER OF THIS FUNCTION TO SET pythonVersion AND pythonLocation
+    REM AT THE TOP OF THEIR SCRIPT. pythonLocation is either "Local" or "Shared".
+    REM pythonVersion can technically be anything, but we typically stick to 3.7 - 3.9. 
+
+    if /i "!pythonVersion!" == "" (
+        call :WriteLine "pythonVersion needs to be set by the caller. Exiting." "!color_error!"
+        goto:eof
+    )
+
+    if /i "!pythonLocation!" == "" (
+        call :WriteLine "pythonLocation needs to be set by the caller. Setting to 'Local'." "!color_warn!"
+        set pythonLocation=Local
+    )
+
+    if /i "!allowSharedPythonInstallsForModules!" == "false" (
+        REM if modulePath contains '/modules/' and pythonLocation != 'Local'
+        if /i "!modulePath:\modules\=!" neq "!modulePath!" (
+            if /i "!pythonLocation!" neq "Local" (
+                call :WriteLine "Downloaded modules must have local Python install. Changing install location" "!color_warn!"
+                set pythonLocation=Local
+            )
+        )
+    )
+
+    set pythonName=python!pythonVersion:.=!
+
+    if /i "!pythonLocation!" == "Local" (
+        set virtualEnv=!modulePath!\bin\!os!\!pythonName!\venv
+    ) else (
+        set virtualEnv=!runtimesPath!\bin\!os!\!pythonName!\venv
+    )
+
+    REM This will be the python interpreter in the virtual env
+    set venvPythonPath=!virtualEnv!\Scripts\python.exe
+
+    set packagesPath=%virtualEnv%\Lib\site-packages
+
+    if /i "%verbosity%" neq "quiet" (
+        rem call :WriteLine package_name = !package_name! !color_info!
+        call :WriteLine "package_desc = !package_desc!" !color_info!
+        call :WriteLine "pythonVersion = !pythonVersion!" !color_info!
+        call :WriteLine "pythonLocation = !pythonLocation!" !color_info!
+        call :WriteLine "pythonName = !pythonName!" !color_info!
+        call :WriteLine "venvPythonPath = !venvPythonPath!" !color_info!
+        call :WriteLine "packagesPath = !packagesPath!" !color_info!
+    )
+
+    rem if /i "%verbosity%" neq "quiet" call :WriteLine "Installing !package_name!" "!color_info!"
+    call :Write "  - Installing !package_desc!..."
+
+    if /i "%verbosity%" == "quiet" (
+        "!venvPythonPath!" -m pip install "!package_name!" --target "!packagesPath!" !pipFlags! >NUL 2>&1
+    ) else (
+        if /i "%verbosity%" == "info" (
+            "!venvPythonPath!" -m pip install "!package_name!" --target "!packagesPath!" !pipFlags! >nul 
+        ) else (
+            "!venvPythonPath!" -m pip install "!package_name!" --target "!packagesPath!" !pipFlags!
+        )
+    )
+
+    REM If the module's name isn't simply a URL or .whl then actually check it worked
+    if /i "%package_name:~0,4%" neq "http" (
+        if /i "%package_name:~-4%" neq ".whl" ( 
+
+            REM Remove module endings starting with "==" using findstr and loop
+            for /f "tokens=1,2 delims=>==< " %%a in ("!package_name!") do (
+                set "module_name=%%a"
+                REM set "module_version=%%b"
+                set "module_name=!module_name:==!"
+            )
+            "!venvPythonPath!" -m pip show !module_name! >NUL 2>&1
+            if errorlevel 0 (
+                call :Write "(✔️ checked) " !color_info!
+            ) else (
+                call :Write "(failed check) " !color_error!
+            )
+        ) else (
+            call :Write "(not checked) " !color_mute!
+        )
+    ) else (
+        call :Write "(not checked) " !color_mute!
+    )
+    
+    call :WriteLine "Done" %color_success%
+
+    exit /b
+    
 
 :InstallPythonPackages
 
@@ -628,29 +752,47 @@ shift & goto :%~1
         exit /b
     )
 
-    set pythonVersion=%1
-    set pythonName=python!pythonVersion:.=!
+    REM Old method
+    REM set pythonVersion=%1      - this is set in script calling this method
+    REM set pythonLocation=%~2    - this is set in script calling this method
 
-    REM Folder where the requirements.txt file lives
-    set requirementsDir=%~2
+    REM This new method is called by module installation scripts. IT IS UP TO 
+    REM THEM TO SET pythonVersion AND pythonLocation AT THE TOP OF THEIR SCRIPT.
+    REM This allows us to set once, use everywhere, with minimal copy and pasting.
+    REM While this does mean it's a global variable, ease of use for the user is
+    REM what's important here.
+    REM
+    REM But let's check. It's not that we don't trust users. It's just...
 
-    REM Either "Local" or "Shared"
-    set installLocation=%~3
+    REM pythonLocation is either "Local" or "Shared". pythonVersion can technically
+    REM be anything, but we typically stick to 3.7 - 3.9. 
+    if /i "!pythonVersion!" == "" (
+        call :WriteLine "pythonVersion needs to be set by the caller. Exiting." "!color_error!"
+        goto:eof
+    )
 
-    REM HACK: Version 2.1 changed installLocation from LocalToModule to Local
-    if /i "!installLocation!" == "LocalToModule" set installLocation=Local
+    if /i "!pythonLocation!" == "" (
+        call :WriteLine "pythonLocation needs to be set by the caller. Setting to 'Local'." "!color_warn!"
+        set pythonLocation=Local
+    )
 
     if /i "!allowSharedPythonInstallsForModules!" == "false" (
-        REM if modulePath contains '/modules/' and installLocation != 'Local'
+        REM if modulePath contains '/modules/' and pythonLocation != 'Local'
         if /i "!modulePath:\modules\=!" neq "!modulePath!" (
-            if /i "!installLocation!" neq "Local" (
+            if /i "!pythonLocation!" neq "Local" (
                 call :WriteLine "Downloaded modules must have local Python install. Changing install location" "!color_warn!"
-                set installLocation=Local
+                set pythonLocation=Local
             )
         )
     )
 
-    if /i "!installLocation!" == "Local" (
+    set pythonName=python!pythonVersion:.=!
+
+    REM Folder where the requirements.txt file lives
+    set requirementsDir=%~1
+    if "!requirementsDir!" == "" set requirementsDir=!modulePath!
+
+    if /i "!pythonLocation!" == "Local" (
         set virtualEnv=!modulePath!\bin\!os!\!pythonName!\venv
     ) else (
         set virtualEnv=!runtimesPath!\bin\!os!\!pythonName!\venv
@@ -659,7 +801,13 @@ shift & goto :%~1
     REM This will be the python interpreter in the virtual env
     set pythonPath=!virtualEnv!\Scripts\python
 
-	REM call :WriteLine "pythonPath = %pythonPath%" "!color_warn!"
+    if /i "%verbosity%" neq "quiet" (
+        call :WriteLine "pythonVersion  = !pythonVersion!" !color_info!
+        call :WriteLine "pythonLocation = !pythonLocation!" !color_info!
+        call :WriteLine "pythonName     = !pythonName!" !color_info!
+        call :WriteLine "pythonPath     = !pythonPath!" !color_info!
+        call :WriteLine "packagesPath   = !packagesPath!" !color_info!
+    )
         
     REM Check for requirements.platform.[CUDA].txt first, then fall back to
     REM requirements.txt
@@ -670,21 +818,21 @@ shift & goto :%~1
 
     REM This is getting complicated. The order of priority for the requirements file is:
     REM
-    REM  requirements.windows.architecture.cuda.txt
-    REM  requirements.windows.cuda.txt
+    REM  requirements.os.architecture.(cuda|rocm).txt
+    REM  requirements.os.(cuda|rocm).txt
     REM  requirements.cuda.txt
-    REM  requirements.windows.architecture.gpu.txt
-    REM  requirements.windows.gpu.txt
+    REM  requirements.os.architecture.gpu.txt
+    REM  requirements.os.gpu.txt
     REM  requirements.gpu.txt
-    REM  requirements.windows.architecture.txt
-    REM  requirements.windows.txt
+    REM  requirements.os.architecture.txt
+    REM  requirements.os.txt
     REM  requirements.txt
     REM
     REM The logic here is that we go from most specific to least specific. The only
-    REM real tricky bit is the subtlety around .cuda vs .gpu. CUDA is a specific
-    REM type of card. We may not be able to support that, but may be able to support
-    REM other cards generically via OpenVINO or DirectML. So CUDA first, then GPU,
-    REM then CPU. With a query at each steo for OS and architecture.
+    REM real tricky bit is the subtlety around .cuda vs .gpu. CUDA / ROCm are specific
+    REM types of card. We may not be able to support that, but may be able to support
+    REM other cards generically via OpenVINO or DirectML. So CUDA or ROCm first,
+    REM then GPU, then CPU. With a query at each step for OS and architecture.
 
     set requirementsFilename=
 
@@ -695,6 +843,11 @@ shift & goto :%~1
 
     if /i "!enableGPU!" == "true" (
         if /i "!hasCUDA!" == "true" (
+
+            REM We probably need to have CUDA specific requirements files
+            call :GetCudaVersion
+            if "!cuda_version!" neq "" echo CUDA version is !cuda_version!
+
             if exist "!requirementsDir!\requirements.windows.!architecture!.cuda.txt" (
                 set requirementsFilename=requirements.windows.!architecture!.cuda.txt
             ) else if exist "!requirementsDir!\requirements.windows.cuda.txt" (
@@ -768,8 +921,16 @@ shift & goto :%~1
     if /i "%verbosity%" == "quiet" (
         "!pythonPath!" -m pip install --trusted-host pypi.python.org ^
                        --trusted-host files.pythonhosted.org ^
+                       --trusted-host pypi.org --upgrade setuptools !pipFlags! >NUL 2>&1
+
+        "!pythonPath!" -m pip install --trusted-host pypi.python.org ^
+                       --trusted-host files.pythonhosted.org ^
                        --trusted-host pypi.org --upgrade pip !pipFlags! >NUL 2>&1
     ) else (
+        "!pythonPath!" -m pip install --trusted-host pypi.python.org ^
+                       --trusted-host files.pythonhosted.org ^
+                       --trusted-host pypi.org --upgrade setuptools !pipFlags!
+
         "!pythonPath!" -m pip install --trusted-host pypi.python.org ^
                        --trusted-host files.pythonhosted.org ^
                        --trusted-host pypi.org --upgrade pip !pipFlags!
@@ -815,7 +976,7 @@ shift & goto :%~1
                 REM breakup line into module name and description
                 set module=!line!
                 for /F "tokens=1,2 delims=#" %%a in ("!line!") do (
-                    set module=%%a
+                    set "module=%%a"
                     set description=%%b
                 )
 
@@ -825,15 +986,35 @@ shift & goto :%~1
                     call :Write "  -!description!..."
 
                     if /i "%verbosity%" == "quiet" (
-                        "!pythonPath!" -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags! >NUL 2>&1
+                        "!pythonPath!" -m pip install "!module!" !currentOption! --target "!packagesPath!" !pipFlags! >NUL 2>&1
                     ) else (
                         if /i "%verbosity%" == "info" (
-                            "!pythonPath!" -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags! >nul 
+                            "!pythonPath!" -m pip install "!module!" !currentOption! --target "!packagesPath!" !pipFlags! >nul 
                         ) else (
-                            "!pythonPath!" -m pip install !module! !currentOption! --target "!packagesPath!" !pipFlags!
+                            "!pythonPath!" -m pip install "!module!" !currentOption! --target "!packagesPath!" !pipFlags!
                         )
                     )
 
+                    REM If the module's name isn't simply a URL or .whl then actually check it worked
+                    if /i "%module:~0,4%" neq "http" (
+                        if /i "%module:~-4%" neq ".whl" ( 
+
+                            REM Extract the module_name from the form "module_name[(<=|==|=>|)version[,<=|=>|)version]]  # comment"
+                            for /f "tokens=* delims=<==> " %%a in ("!module!") do set "module_name=%%a"
+
+                            "!pythonPath!" -m pip show !module_name! >NUL 2>&1
+                            if errorlevel 0 (
+                                call :Write "(✔️ checked) " !color_info!
+                            ) else (
+                                call :Write "(failed check) " !color_error!
+                            )
+                        ) else (
+                            call :Write "(not checked) " !color_mute!
+                        )
+                    ) else (
+                        call :Write "(not checked) " !color_mute!
+                    )
+                    
                     call :WriteLine "Done" %color_success%
                 )
 
@@ -843,6 +1024,7 @@ shift & goto :%~1
     )
 
     exit /b
+
 
 REM Call this, then test: if "%online%" == "true" echo 'online'
 :checkForInternet
@@ -896,8 +1078,29 @@ REM Thanks to https://stackoverflow.com/a/15809139/1128209
     for %%C in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do set "%~1=!%~1:%%C=.%%C!"
     exit /b
 
+:GetCudaVersion
 
-:GetVersionFromModuleSettings jsonFile key
+    set cuda_version=
+
+    setlocal enabledelayedexpansion
+    :: Run nvcc with the --version option and capture the output
+    for /f "tokens=*" %%a in ('nvcc --version 2^>^&1') do (
+        set "line=%%a"
+
+        :: Check if the line contains "release" to extract the CUDA version
+        echo !line! | find /i "release" > nul
+        if not errorlevel 1 (
+            :: Split the line by spaces to get the version part
+            for /f "tokens=5 delims=, " %%b in ("!line!") do (
+                EndLocal & set cuda_version=%%b
+                exit /b
+            )
+        )
+    )
+
+    exit /b
+
+:GetValueFromModuleSettings jsonFile key returnValue
     rem SetLocal EnableDelayedExpansion
 
     rem Code thanks to ChatGPT. Radically reworked to make it...work
@@ -917,8 +1120,11 @@ REM Thanks to https://stackoverflow.com/a/15809139/1128209
         set "jsonValue=%%a"
         set jsonValue=!jsonValue:"=!
         set jsonValue=!jsonValue: =!
-        rem echo jsonValue = !jsonValue!
     )
+
+    REM return value in 3rd parameter
+    rem echo jsonValue = !jsonValue!
+    set "%~3=!jsonValue!"
 
     exit /b
 
@@ -926,17 +1132,17 @@ REM Thanks to https://stackoverflow.com/a/15809139/1128209
 :: Jump points
 
 :SetupScriptHelp
-	call :Write "To install, run "
+    call :Write "To install, run "
     call :Write "from this directory" "!color_error!"
     call :Write ":"
 
-	if /i "%executionEnvironment%" == "Development" (
+    if /i "%executionEnvironment%" == "Development" (
         call :WriteLine "..\..\Installers\Live\setup.bat" "!color_info!"
-	) else (
+    ) else (
         call :WriteLine "..\..\..\Installers\Live\setup.bat" "!color_info!"
-	)
-	call :WriteLine "Ensure you run that command from the folder containing this script" "!color_warn!"
-	pause
+    )
+    call :WriteLine "Ensure you run that command from the folder containing this script" "!color_warn!"
+    pause
     exit /b
 
 

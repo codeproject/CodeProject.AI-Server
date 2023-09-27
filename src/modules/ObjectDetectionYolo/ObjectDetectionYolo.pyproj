@@ -17,27 +17,24 @@
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <PropertyGroup>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="__init__.py" />
     <Compile Include="init.py" />
     <Compile Include="detect_adapter.py" />
     <Compile Include="options.py" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />
     <Content Include="MODELS.md" />
+    <Content Include="test\pexels-huseyn-kamaladdin-667838.jpg" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="modulesettings.json" />
     <Content Include="modulesettings.windows.json">
@@ -56,7 +53,6 @@
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="requirements.txt" />
     <Content Include="requirements.windows.cuda.txt">
@@ -71,6 +67,9 @@
     <Content Include="requirements.linux.arm64.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
+    <Content Include="requirements.linux.arm64.cuda.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.macos.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
@@ -78,7 +77,6 @@
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <Interpreter Include="..\..\runtimes\bin\windows\python37\venv\">
       <Id>env</Id>
@@ -89,6 +87,9 @@
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="test\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

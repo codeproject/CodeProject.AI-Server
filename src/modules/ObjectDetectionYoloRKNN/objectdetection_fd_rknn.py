@@ -164,10 +164,10 @@ def do_detect(module_runner, models_dir, model_name, img: any, score_threshold: 
             message = "No objects found"
 
         return {
-            "success"     : True,
+            "message"     : message,
             "count"       : len(outputs),
             "predictions" : outputs,
-            "message"     : message,
+            "success"     : True,
             "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
             "inferenceMs" : inferenceMs
         }

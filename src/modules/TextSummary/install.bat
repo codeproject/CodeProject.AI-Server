@@ -5,20 +5,17 @@
 :: This script is only called from ..\..\src\setup.bat
 
 @if "%1" NEQ "install" (
-	echo This script is only called from ..\..\src\setup.bat
-	@pause
-	@goto:eof
+    echo This script is only called from ..\..\src\setup.bat
+    @pause
+    @goto:eof
 )
 
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Local"
-if errorlevel 1 exit /b 1
+:: set verbosity=loud
+set pythonLocation=Local
+set pythonVersion=3.7
 
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "Local"
-if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "Local"
-if errorlevel 1 exit /b 1
-
+:: Install python and the required dependencies
+call "%sdkScriptsPath%\utils.bat" SetupPython
 
 
 ::                         -- Install script cheatsheet -- 

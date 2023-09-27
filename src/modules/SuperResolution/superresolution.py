@@ -140,7 +140,7 @@ def superresolution(img: Image) -> Tuple[any, int]: # Tuple[Image, int]
 
     start_time = time.perf_counter()
     output = run_onnx(assets_path, img_norm)
-    inferenceMs : int = int((time.perf_counter() - start_time) * 1000),
+    inferenceMs : int = int((time.perf_counter() - start_time) * 1000)
 
     result = post_process_image(output, img_cb, img_cr)
 

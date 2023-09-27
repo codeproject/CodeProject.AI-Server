@@ -9,28 +9,21 @@
 :: The setup.bat file will find this install.bat file and execute it.
 
 @if "%1" NEQ "install" (
-	echo This script is only called from ..\..\src\setup.bat
-	@pause
-	@goto:eof
+    echo This script is only called from ..\..\src\setup.bat
+    @pause
+    @goto:eof
 )
 
-:: Install python and the required dependencies
+:: set verbosity=loud
+set pythonLocation=Local
 :: Note that PaddlePaddle requires Python <= 3.8
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Local"
-rem if errorlevel 1 exit /b 1
+set pythonVersion=3.7
 
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "Local"
-rem if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "Local"
-rem if errorlevel 1 exit /b 1
+:: Install python and the required dependencies
+call "%sdkScriptsPath%\utils.bat" SetupPython
 
 :: Download the OCR models and store in /paddleocr
 call "%sdkScriptsPath%\utils.bat" GetFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
-rem if errorlevel 1 exit /b 1
-
-:: Cleanup if you wish
-:: rmdir /S %downloadPath%
 
 
 ::                         -- Install script cheatsheet -- 

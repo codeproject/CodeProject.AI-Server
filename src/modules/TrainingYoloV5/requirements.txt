@@ -1,11 +1,13 @@
 # YOLOv5 requirements
 # Usage: pip install -r requirements.txt
 
+urllib3<1.27,>=1.25.4   # Installing urllib3, the HTTP client for Python
+
 # Base ----------------------------------------
 matplotlib>=3.2.2       # Installing matplotlib, the python plotting package
 numpy>=1.18.5           # Installing NumPy, a package for scientific computing
 opencv-python>=4.1.1    # Installing OpenCV, the Open source Computer Vision library
-Pillow<10.0.0			# Installing Pillow, a Python Image Library
+Pillow<10.0.0           # Installing Pillow, a Python Image Library
 PyYAML>=5.3.1           # Installing PyYAML, a library for reading configuration files
 requests>=2.23.0        # Installing request, the HTTP library
 scipy>=1.4.1            # Installing SciPy, a library for mathematics, science, and engineering

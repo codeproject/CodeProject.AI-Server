@@ -9,7 +9,7 @@
             "dependsOn": [
                 "build-server",
                 "build-analysisservices",
-				"build-tests"
+                "build-tests"
             ],
             "windows": {
                 "dependsOn": [
@@ -28,7 +28,7 @@
             "dependsOn": [
                 "build-server",
                 "build-analysisservices-arm64",
-				"build-tests"
+                "build-tests"
             ],
             "windows": {
                 "dependsOn": [
@@ -47,7 +47,7 @@
             "dependsOn": [
                 "build-yolo-net",
                 "build-portraitfilter",
-                "build-sentimentanalysis",
+                "build-sentimentanalysis"
             ]
         },
 
@@ -71,9 +71,25 @@
              "command": "dotnet",
              "args": [
                 "build",
-                "${workspaceFolder}/src/API/Server/FrontEnd",
+                "${workspaceFolder}/src/server",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        
+        {
+            "label": "build-server-release",    // Builds ONLY the API server, and not any backend analsysis or explorer apps
+             "type": "process",
+             "group": "build",
+             "command": "dotnet",
+             "args": [
+                "build",
+                "${workspaceFolder}/src/server",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary",
+                "-c",
+                "Release"
             ],
             "problemMatcher": "$msCompile"
         },
@@ -153,7 +169,7 @@
         {
             "label": "launch-server-win",       // Builds all projects then launches the front end API server
             "group": "none",
-            "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server.exe",
+            "command": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.exe",
             "dependsOrder": "sequence",
             "dependsOn": [
                 "build-all-win"
@@ -166,7 +182,7 @@
             // Windows form apps only work in Windows
             "command": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/win-x64/",
             "args": [],
-            "type": "process",
+            "type": "process"
         },
 
         {
@@ -191,7 +207,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "${workspaceFolder}/src/server/server.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -206,11 +222,28 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "${workspaceFolder}/src/server/server.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
-        }    
+        },
+        
+        {
+          "label": "Inno Setup: Compile Script",
+          "type": "process",
+          "command": "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
+          "args": [
+            "${file}"
+          ],
+          "presentation": {
+            "reveal": "always",
+            "echo": false
+          },
+          "group": {
+            "kind": "build",
+            "isDefault": true
+          }
+        }
     ]
 }

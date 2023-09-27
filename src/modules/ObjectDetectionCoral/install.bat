@@ -5,38 +5,28 @@
 :: This script is only called from ..\..\src\setup.bat
 
 @if "%1" NEQ "install" (
-	echo This script is only called from ..\..\src\setup.bat
-	@pause
-	@goto:eof
+    echo This script is only called from ..\..\src\setup.bat
+    @pause
+    @goto:eof
 )
 
 rem set verbosity=loud
+set pythonLocation=Local
+set pythonVersion=3.7
 
-REM Python setup
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Local"
-if errorlevel 1 exit /b 1
+:: Install python and the required dependencies
+call "%sdkScriptsPath%\utils.bat" SetupPython
 
-REM Do SDK first, since it's a little fussy
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "Local"
-if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "Local"
-if errorlevel 1 exit /b 1
-
+:: Install supporting Libraries
 if not exist edgetpu_runtime (
-	call "%sdkScriptsPath%\utils.bat" GetFromServer "edgetpu_runtime_20221024.zip" "." "Downloading edge TPU runtime..."
-
-	rem call "%sdkScriptsPath%\utils.bat" ExtractToDirectory "edgetpu_runtime_20221024.zip"
-	rem move edgetpu_runtime_20221024\edgetpu_runtime edgetpu_runtime
-	rem rmdir edgetpu_runtime_20221024
+    call "%sdkScriptsPath%\utils.bat" GetFromServer "edgetpu_runtime_20221024.zip" "." "Downloading edge TPU runtime..."
 )
-
 if exist edgetpu_runtime (
-	call "!sdkScriptsPath!\utils.bat" WriteLine "*** You may need to run !modulePath!\edgetpu_runtime\install.bat to complete this process. Attempting to run this script now." "!color_info!"
+    call "!sdkScriptsPath!\utils.bat" WriteLine "*** You may need to run !modulePath!\edgetpu_runtime\install.bat to complete this process. Attempting to run this script now." "!color_info!"
 
-	pushd edgetpu_runtime
-	call install.bat
-	popd
+    pushd edgetpu_runtime
+    call install.bat
+    popd
 )
 
 :: Download the MobileNet TFLite models and store in /assets

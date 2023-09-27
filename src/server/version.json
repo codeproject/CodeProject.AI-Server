@@ -1,0 +1,14 @@
+{
+  "versionSection": {
+    "versionInfo": {
+      "Major": 2,
+      "Minor": 2,
+      "Patch": 4,
+      "Build": 0,
+      "PreRelease": "Beta",
+      "SecurityUpdate": false,
+      "File": "CodeProject.AI-Server-win-x64-2.2.4.zip",
+      "ReleaseNotes": "fixed regression impacting Blue Iris integration."
+    }
+  }
+}

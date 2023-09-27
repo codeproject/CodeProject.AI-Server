@@ -3,7 +3,7 @@
   // we know works
   "Modules": {
     "YOLOv5-3.1": {
-      "Runtime": "python37"
+      "Runtime": "python3.7"
     }
   }
 }

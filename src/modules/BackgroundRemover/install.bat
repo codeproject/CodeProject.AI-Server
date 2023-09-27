@@ -5,20 +5,16 @@
 :: This script is only called from ..\..\setup.bat
 
 @if "%1" NEQ "install" (
-	echo This script is only called from ..\..\setup.bat
-	@pause
-	@goto:eof
+    echo This script is only called from ..\..\setup.bat
+    @pause
+    @goto:eof
 )
 
-:: Install python and the required dependencies in the shared Python environment
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.9 "Local"
-if errorlevel 1 exit /b 1
+set pythonLocation=Local
+set pythonVersion=3.9
 
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%modulePath%" "Local"
-if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.9 "%absoluteAppRootDir%\SDK\Python" "Local"
-if errorlevel 1 exit /b 1
+:: Install python and the required dependencies
+call "%sdkScriptsPath%\utils.bat" SetupPython
 
 :: Location of models as per original repo
 :: u2netp:          https://drive.google.com/uc?id=1tNuFmLv0TSNDjYIkjEdeH1IWKQdUA4HR
@@ -66,14 +62,12 @@ if errorlevel 1 exit /b 1
 ::                        will be extracted and saved
 ::        message       - Message to display during download
 ::
-::  SetupPython Version [install-location]
-::       Version - version number of python to setup. 3.7 and 3.9 currently supported. A virtual
-::                 environment will be created in the module's local folder if install-location is
-::                 "Local", otherwise in %runtimesPath%/bin/windows/python<version>/venv.
-::       install-location - [optional] "Local" or "Shared" (see above)
+::  SetupPython 
+::       This method requires pythonLocation and pythonVersion to be set
+::       pythonVersion - version number of python to setup. 3.7 and 3.9 currently supported. A virtual
+::                       environment will be created in the module's local folder if install-location is
+::                       "Local", otherwise in %runtimesPath%/bin/windows/python<version>/venv.
+::       pythonLocation - "Local" or "Shared" (see above)
 ::
-::  InstallPythonPackages Version requirements-file-directory [install-location]
-::       Version - version number, as per SetupPython
+::  InstallPythonPackages [requirements-file-directory]
 ::       requirements-file-directory - directory containing the requirements.txt file
-::       install-location - [optional] "Local" (installed in the module's local folder) or 
-::                          "Shared" (installed in the shared runtimes/bin directory)

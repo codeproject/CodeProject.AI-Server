@@ -44,7 +44,7 @@ def get_detector(module_runner, models_dir: str, model_name: str, resolution: in
 
                     print(f"GPU compute capability is {torch.cuda.get_device_capability()[0]}.{torch.cuda.get_device_capability()[1]}")
 
-                    # Use half-precision if possible. There's a bunch of Nvidia cards where
+                    # Use half-precision if possible. There's a bunch of NVIDIA cards where
                     # this won't work
                     half = half_precision != 'disable'
                     if half:
@@ -138,10 +138,8 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
         #  YoloV5?6 is 1280
 
         start_inference_time = time.perf_counter()
-
-        det = detector(img, size=640)
-
-        inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
+        det                  = detector(img, size=640)
+        inferenceMs          = int((time.perf_counter() - start_inference_time) * 1000)
 
         outputs = []
 
@@ -174,10 +172,10 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
             message = "No objects found"
 
         return {
-            "success"     : True,
+            "message"     : message,
             "count"       : len(outputs),
             "predictions" : outputs,
-            "message"     : message,
+            "success"     : True,
             "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
             "inferenceMs" : inferenceMs
         }

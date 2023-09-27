@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            SuperResolution
@@ -11,19 +13,18 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
+# verbosity="loud"
+pythonLocation="Local"
+pythonVersion=3.8
 
-# Install python and the required dependencies. 
-setupPython 3.8 "Local"
-if [ $? -ne 0 ]; then quit 1; fi
+# Install python and the required dependencies
+setupPython
+installPythonPackages
 
-installPythonPackages 3.8 "${modulePath}" "Local"
-if [ $? -ne 0 ]; then quit 1; fi
-
-installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "Local"
-if [ $? -ne 0 ]; then quit 1; fi
+module_install_success='true'
 
 
 #                         -- Install script cheatsheet -- 

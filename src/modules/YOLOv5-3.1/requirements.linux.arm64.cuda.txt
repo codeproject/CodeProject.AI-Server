@@ -1,0 +1,24 @@
+#! Python3.7
+# Requirements for Nvidia Jetson (Jetson is linux,Arm64, and has CUDA installed)
+
+# Already installed
+# OpenCV-Python  # Installing OpenCV, the Open source Computer Vision library
+
+# Installed later
+# Cython           # Installing the Cython compiler for C extensions for the Python language.
+# Pillow           # Installing Pillow, a Python Image Library
+
+SciPy            # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML           # Installing PyYAML, a library for reading configuration files
+
+# Installed later
+# tqdm           # Installing TDQM, the Fast, Extensible Progress Meter
+
+# Already installed
+# Matplotlib     # Installing Matplotlib, the Python plotting package
+
+# Torch and Torchvision get installed separately. 
+# Torch==1.10.0 will be the version installed. For torchvision compatibility see
+# TorchVision==0.11.1  # Installing TorchVision, for Computer Vision based AI
+
+# last line empty.

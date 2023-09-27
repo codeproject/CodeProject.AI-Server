@@ -3,7 +3,7 @@
   // we know works
   "Modules": {
     "TextSummary": {
-      "Runtime": "python37"
+      "Runtime": "python3.7"
     }
   }
 }

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Installation script ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                          ALPR
@@ -12,48 +14,39 @@ if [ "$1" != "install" ]; then
     echo
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
+
+# Note that PaddlePaddle requires Python <= 3.8
+pythonLocation="Local"
+pythonVersion=3.8
 
 # Work needs to be done to get Paddle to install on the Raspberry Pi and Orange Pi
 if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || [ "${systemName}" == "Jetson" ]; then
-    writeLine 'Unable to install PaddleOCR on Raspberry Pi, Orange Pi or Jetson. Quitting.' 'Red'
+    writeLine 'Unable to install PaddleOCR on Raspberry Pi, Orange Pi or Jetson. Quitting.' $color_error
 else
 
-    # Ensure CUDA and cuDNN is installed. Note this is only for native linux since 
-    # macOS no longer supports NVIDIA, WSL (Linux under Windows) uses the Windows 
-    # drivers, and docker images already contain the necessary SDKs and libraries
-    if [ "$os" == "linux" ] && [ "$hasCUDA" == "true" ] && [ "${inDocker}" == "false" ]; then
-    	correctLineEndings "${sdkScriptsPath}/install_cuDNN.sh"
-	    source "${sdkScriptsPath}/install_cuDNN.sh"
-    fi
-
     # Install python and the required dependencies.
-
-    setupPython 3.8 "Local"
-    if [ $? -ne 0 ]; then quit 1; fi
-    installPythonPackages 3.8 "${modulePath}" "Local"
-    if [ $? -ne 0 ]; then quit 1; fi
-    installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "Local"
-    if [ $? -ne 0 ]; then quit 1; fi
+    setupPython
+    installPythonPackages
 
     # Download the OCR models and store in /paddleocr
     getFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
-    if [ $? -ne 0 ]; then quit 1; fi
 
+    # We have a patch to apply for linux and macOS due to a numpy upgrade that 
+    # deprecates np.int that we can't downgrade
     if [ "${systemName}" != "Raspberry Pi" ] && [ "${systemName}" != "Orange Pi" ] && [ "${systemName}" != "Jetson" ]; then
-        # We have a patch to apply for linux and macOS due to a numpy upgrade that 
-        # deprecates np.int that we can't downgrade
         writeLine 'Applying PaddleOCR patch'
-        cp ${modulePath}/patch/paddleocr-2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
+        # remove "." from pythonVersion
+        pythonDir="${pythonVersion//.}"
+        cp ${modulePath}/patch/paddleocr-2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/${pythonDir}/venv/lib/python${pythonVersion}/site-packages/paddleocr/ppocr/postprocess/.
     fi
 
     # To test paddle was setup correctly, open a python prompt and do:
     # >>> import paddle
     # >>> paddle.utils.run_check()
 
-    # Cleanup if you wish
-    # rmdir /S %downloadPath%
+    module_install_success='true'
 fi
 
 #                         -- Install script cheatsheet -- 

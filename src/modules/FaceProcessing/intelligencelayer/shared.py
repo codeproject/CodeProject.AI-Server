@@ -3,21 +3,21 @@ import os
 class Settings:
     def __init__(
         self,
-        PLATFORM_PKGS,
-        DETECTION_HIGH,
-        DETECTION_MEDIUM,
-        DETECTION_LOW,
-        DETECTION_MODEL,
+        # PLATFORM_PKGS,
+        # DETECTION_HIGH,
+        # DETECTION_MEDIUM,
+        # DETECTION_LOW,
+        # DETECTION_MODEL,
         FACE_HIGH,
         FACE_MEDIUM,
         FACE_LOW,
         FACE_MODEL,
     ):
-        self.PLATFORM_PKGS    = PLATFORM_PKGS
-        self.DETECTION_HIGH   = DETECTION_HIGH
-        self.DETECTION_MEDIUM = DETECTION_MEDIUM
-        self.DETECTION_LOW    = DETECTION_LOW
-        self.DETECTION_MODEL  = DETECTION_MODEL
+        # self.PLATFORM_PKGS    = PLATFORM_PKGS
+        # self.DETECTION_HIGH   = DETECTION_HIGH
+        # self.DETECTION_MEDIUM = DETECTION_MEDIUM
+        # self.DETECTION_LOW    = DETECTION_LOW
+        # self.DETECTION_MODEL  = DETECTION_MODEL
         self.FACE_HIGH        = FACE_HIGH
         self.FACE_MEDIUM      = FACE_MEDIUM
         self.FACE_LOW         = FACE_LOW
@@ -30,11 +30,11 @@ class SharedOptions:
 
     PROFILE_SETTINGS = {
         "desktop_cpu": Settings(
-            PLATFORM_PKGS    = "cpufiles",
-            DETECTION_HIGH   = 640,
-            DETECTION_MEDIUM = 416,
-            DETECTION_LOW    = 256,
-            DETECTION_MODEL  = "yolov5m.pt",
+            # PLATFORM_PKGS    = "cpufiles",
+            # DETECTION_HIGH   = 640,
+            # DETECTION_MEDIUM = 416,
+            # DETECTION_LOW    = 256,
+            # DETECTION_MODEL  = "yolov5m.pt",
             FACE_HIGH        = 416,
             FACE_MEDIUM      = 320,
             FACE_LOW         = 256,
@@ -42,11 +42,11 @@ class SharedOptions:
         ),
 
         "desktop_gpu": Settings(
-            PLATFORM_PKGS    = "gpufiles",
-            DETECTION_HIGH   = 640,
-            DETECTION_MEDIUM = 416,
-            DETECTION_LOW    = 256,
-            DETECTION_MODEL  = "yolov5m.pt",
+            # PLATFORM_PKGS    = "gpufiles",
+            # DETECTION_HIGH   = 640,
+            # DETECTION_MEDIUM = 416,
+            # DETECTION_LOW    = 256,
+            # DETECTION_MODEL  = "yolov5m.pt",
             FACE_HIGH        = 416,
             FACE_MEDIUM      = 320,
             FACE_LOW         = 256,
@@ -54,11 +54,11 @@ class SharedOptions:
         ),
 
         "jetson": Settings(
-            PLATFORM_PKGS    = "cpufiles",
-            DETECTION_HIGH   = 416,
-            DETECTION_MEDIUM = 320,
-            DETECTION_LOW    = 256,
-            DETECTION_MODEL  = "yolov5s.pt",
+            # PLATFORM_PKGS    = "cpufiles",
+            # DETECTION_HIGH   = 416,
+            # DETECTION_MEDIUM = 320,
+            # DETECTION_LOW    = 256,
+            # DETECTION_MODEL  = "yolov5s.pt",
             FACE_HIGH        = 384,
             FACE_MEDIUM      = 256,
             FACE_LOW         = 192,
@@ -66,11 +66,11 @@ class SharedOptions:
         ),
 
         "windows_native": Settings(
-            PLATFORM_PKGS    = "python_packages",
-            DETECTION_HIGH   = 640,
-            DETECTION_MEDIUM = 416,
-            DETECTION_LOW    = 256,
-            DETECTION_MODEL  = "yolov5m.pt",
+            # PLATFORM_PKGS    = "python_packages",
+            # DETECTION_HIGH   = 640,
+            # DETECTION_MEDIUM = 416,
+            # DETECTION_LOW    = 256,
+            # DETECTION_MODEL  = "yolov5m.pt",
             FACE_HIGH        = 416,
             FACE_MEDIUM      = 320,
             FACE_LOW         = 256,

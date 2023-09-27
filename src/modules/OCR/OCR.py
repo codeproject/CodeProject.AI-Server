@@ -111,57 +111,57 @@ def read_text(module_runner: ModuleRunner, image: Image, rotate_deg: int = 0) ->
 """
 Options for the PaddleOCR object:
 
-Parameter  				Default	Description
+Parameter                  Default    Description
 -------------------------------------------------------------------------------
-use_gpu					TRUE	use GPU or not
-gpu_mem					8000M	GPU memory size used for initialization	
-image_dir						The images path or folder path for predicting 
-                                when used by the command line	
-det_algorithm			DB		Type of detection algorithm selected (DB = Differentiable Binarization)
-det_model_dir			None	the text detection inference model folder. There
-                                are two ways to transfer parameters, 1. None: Automatically download
-                                the built-in model to ~/.paddleocr/det; 
-                                2. The path of the inference model converted by yourself, the model
-                                and params files must be included in the model path
-det_max_side_len		960		The maximum size of the long side of the image. When the long side 
-                                exceeds this value, the long side will be resized to this size, and
-                                the short side will be scaled proportionally	
-det_db_thresh			0.3		Binarization threshold value of DB output map
-det_db_box_thresh		0.5		The threshold value of the DB output box. Boxes score lower than 
-                                this value will be discarded
-det_db_unclip_ratio		2		The expanded ratio of DB output box
-det_east_score_thresh	0.8		Binarization threshold value of EAST output map
-det_east_cover_thresh	0.1		The threshold value of the EAST output box. Boxes score lower than 
-                                this value will be discarded
-det_east_nms_thresh		0.2		The NMS threshold value of EAST model output box
-rec_algorithm			CRNN	Type of recognition algorithm selected
-rec_model_dir			None	the text recognition inference model folder. There are two ways to 
-                                transfer parameters, 1. None: Automatically download the built-in 
-                                model to ~/.paddleocr/rec; 2. The path of the inference model 
-                                converted by yourself, the model and params files must be included 
-                                in the model path
-rec_image_shape		"3,32,320"	image shape of recognition algorithm
-rec_char_type			ch		Character type of recognition algorithm, Chinese (ch) or English (en)
-rec_batch_num			30		When performing recognition, the batchsize of forward images
-max_text_length			25		The maximum text length that the recognition algorithm can recognize
-rec_char_dict_path	./ppocr/utils/ppocr_keys_v1.txt the alphabet path which needs to be modified to 
-                                your own path when rec_model_Name use mode 2
-use_space_char			TRUE	Whether to recognize spaces
-use_angle_cls			FALSE	Whether to load classification model
-cls_model_dir			None	the classification inference model folder. There are two ways to 
-                                transfer parameters, 1. None: Automatically download the built-in model 
-                                to ~/.paddleocr/cls; 2. The path of the inference model converted 
-                                by yourself, the model and params files must be included in the 
-                                model path
-cls_image_shape		"3,48,192"	image shape of classification algorithm
-label_list			['0','180']	label list of classification algorithm	
-cls_batch_num			30		When performing classification, the batchsize of forward images
-enable_mkldnn			FALSE	Whether to enable mkldnn
-use_zero_copy_run		FALSE	Whether to forward by zero_copy_run
-lang					ch		The support language, Only Chinese (ch), English (en), French (french), 
-                                German (german), Korean (korean), Japanese (japan) are supported
-det						TRUE	Enable detection when ppocr.ocr func exec
-rec						TRUE	Enable recognition when ppocr.ocr func exec
-cls						FALSE	Enable classification when ppocr.ocr func exec. This parameter only 
-                                exists in code usage mode	
+use_gpu                     TRUE      use GPU or not
+gpu_mem                     8000M     GPU memory size used for initialization    
+image_dir                             The images path or folder path for predicting 
+                                      when used by the command line    
+det_algorithm               DB        Type of detection algorithm selected (DB = Differentiable Binarization)
+det_model_dir               None      the text detection inference model folder. There
+                                      are two ways to transfer parameters, 1. None: Automatically download
+                                      the built-in model to ~/.paddleocr/det; 
+                                      2. The path of the inference model converted by yourself, the model
+                                      and params files must be included in the model path
+det_max_side_len            960       The maximum size of the long side of the image. When the long side 
+                                      exceeds this value, the long side will be resized to this size, and
+                                      the short side will be scaled proportionally    
+det_db_thresh               0.3       Binarization threshold value of DB output map
+det_db_box_thresh           0.5       The threshold value of the DB output box. Boxes score lower than 
+                                      this value will be discarded
+det_db_unclip_ratio         2         The expanded ratio of DB output box
+det_east_score_thresh       0.8       Binarization threshold value of EAST output map
+det_east_cover_thresh       0.1       The threshold value of the EAST output box. Boxes score lower than 
+                                      this value will be discarded
+det_east_nms_thresh         0.2       The NMS threshold value of EAST model output box
+rec_algorithm               CRNN      Type of recognition algorithm selected
+rec_model_dir               None      the text recognition inference model folder. There are two ways to 
+                                      transfer parameters, 1. None: Automatically download the built-in 
+                                      model to ~/.paddleocr/rec; 2. The path of the inference model 
+                                      converted by yourself, the model and params files must be included 
+                                      in the model path
+rec_image_shape             "3,32,320" image shape of recognition algorithm
+rec_char_type               ch        Character type of recognition algorithm, Chinese (ch) or English (en)
+rec_batch_num               30        When performing recognition, the batchsize of forward images
+max_text_length             25        The maximum text length that the recognition algorithm can recognize
+rec_char_dict_path          ./ppocr/utils/ppocr_keys_v1.txt the alphabet path which needs to be modified to 
+                                      your own path when rec_model_Name use mode 2
+use_space_char              TRUE      Whether to recognize spaces
+use_angle_cls               FALSE     Whether to load classification model
+cls_model_dir               None      the classification inference model folder. There are two ways to 
+                                      transfer parameters, 1. None: Automatically download the built-in model 
+                                      to ~/.paddleocr/cls; 2. The path of the inference model converted 
+                                      by yourself, the model and params files must be included in the 
+                                      model path
+cls_image_shape              "3,48,192"    image shape of classification algorithm
+label_list                  ['0','180']    label list of classification algorithm    
+cls_batch_num               30        When performing classification, the batchsize of forward images
+enable_mkldnn               FALSE     Whether to enable mkldnn
+use_zero_copy_run           FALSE     Whether to forward by zero_copy_run
+lang                        ch        The support language, Only Chinese (ch), English (en), French (french), 
+                                      German (german), Korean (korean), Japanese (japan) are supported
+det                         TRUE      Enable detection when ppocr.ocr func exec
+rec                         TRUE      Enable recognition when ppocr.ocr func exec
+cls                         FALSE     Enable classification when ppocr.ocr func exec. This parameter only 
+                                      exists in code usage mode    
 """

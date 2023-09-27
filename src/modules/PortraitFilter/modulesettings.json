@@ -72,6 +72,26 @@
               "Description": "The base64 encoded image that has had its background blurred."
             },
             {
+              "Name": "command",
+              "Type": "String",
+              "Description": "The command that was sent as part of this request. Can be detect, list, status."
+            },
+            {
+              "Name": "moduleId",
+              "Type": "String",
+              "Description": "The Id of the module that processed this request."
+            },
+            {
+              "Name": "executionProvider",
+              "Type": "String",
+              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
+            },
+            {
+              "Name": "canUseGPU",
+              "Type": "Boolean",
+              "Description": "True if this module can use the current GPU if one is present."
+            },
+            {
               "Name": "inferenceMs",
               "Type": "Integer",
               "Description": "The time (ms) to perform the AI inference."

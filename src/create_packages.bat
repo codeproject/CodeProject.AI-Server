@@ -83,7 +83,7 @@ if /i "!useColor!" == "true" call "!sdkScriptsPath!\utils.bat" setESC
 if /i "!executionEnvironment!" == "Development" (
     set scriptTitle=          Creating CodeProject.AI Module Downloads
 ) else (
-    echo Can't run in Production. Exiting.
+    writeLine "Can't run in Production. Exiting" "Red"
     goto:eof
 )
 
@@ -115,11 +115,17 @@ if /i "%verbosity%" neq "quiet" (
 set success=true
 
 REM  Walk through the modules directory and call the package script in each dir
-REM  TODO: This should be just a simple for /d %%D in ("!modulesPath!") do (
-for /f "delims=" %%D in ('dir /a:d /b "!modulesPath!"') do (
-    set packageModuleDir=%%~nxD
+rem Make this just "for /d %%D in ("%modulesPath%") do ("
+
+for /f "delims=" %%a in ('dir /a:d /b "!modulesPath!"') do (
+
+    set packageModuleDir=%%~nxa
     set packageModuleId=!packageModuleDir!
     set packageModulePath=!modulesPath!\!packageModuleDir!
+
+    if /i "%verbosity%" neq "quiet" (
+        call "!sdkScriptsPath!\utils.bat" WriteLine "packageModulePath           = !packageModulePath!" !color_mute!
+    )
 
     if exist "!packageModulePath!\package.bat" (
 
@@ -133,15 +139,13 @@ for /f "delims=" %%D in ('dir /a:d /b "!modulesPath!"') do (
             call "!sdkScriptsPath!\utils.bat" WriteLine "Skipping packaging module !packageModuleId!..." "Red"
         ) else (
 
-            call "!sdkScriptsPath!\utils.bat" Write "Packaging module !packageModuleId!..." "White"
-
             pushd "!packageModulePath!" 
 
             REM Read the version from the modulesettings.json file and then pass this 
             REM version to the package.bat file.
-            call "!sdkScriptsPath!\utils.bat" GetVersionFromModuleSettings "modulesettings.json" "Version"
-            set packageVersion=!jsonValue!
-            rem echo packageVersion is !packageVersion!
+            call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "modulesettings.json", "Version", packageVersion
+
+            call "!sdkScriptsPath!\utils.bat" Write "Packaging module !packageModuleId! !packageVersion!..." "White"
 
             rem Create module download package
             call package.bat !packageModuleId! !packageVersion!
@@ -155,8 +159,8 @@ for /f "delims=" %%D in ('dir /a:d /b "!modulesPath!"') do (
 
             if errorlevel 1 (
                 call "!sdkScriptsPath!\utils.bat" WriteLine "Error" "Red"
-            ) else (
                 set success=false
+            ) else (
                 call "!sdkScriptsPath!\utils.bat" WriteLine "Done" "DarkGreen"
             )
         )

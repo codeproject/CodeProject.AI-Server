@@ -386,12 +386,12 @@ class CodeProjectAIRunner:
         """
         Gets a command from the queue associated with this object. 
         CodeProject.AI works on the  basis of having a client pass requests to 
-        the frontend server, which in turns places each request into various 
-        command queues. The backend analysis services continually pull requests
-        from the queue that they can service. Each request for a queued command
-        is done via a long poll HTTP request.
+        the server's public facing API, which in turns places each request into
+        various command queues. The backend analysis services continually pull
+        requests from the queue that they can service. Each request for a queued
+        command is done via a long poll HTTP request.
 
-        Returns the Json package containing the raw request from the client 
+        Returns the JSON package containing the raw request from the client 
         that was sent to the server
 
         Remarks: The API server will currently only return a single command, 
@@ -557,14 +557,14 @@ class CodeProjectAIRunner:
         Sends the result of a comment to the analysis services back to the API
         server who will then pass this result back to the original calling 
         client. CodeProject.AI works on the basis of having a client pass 
-        requests to the frontend server, which in turns places each request 
-        into various command queues. The backend analysis services continually 
-        pull requests from the queue that they can service, process each 
-        request, and then send the results back to the server.
+        requests to the public facing API server, which in turns places each
+        request  into various command queues. The backend analysis services
+        continually pull requests from the queue that they can service, process
+        each request, and then send the results back to the server.
 
         Param: request_id - the ID of the request that was originally pulled 
                             from the command queue.
-        Param: body:      - the Json result (as a string) from the analysis of 
+        Param: body:      - the JSON result (as a string) from the analysis of 
                             the request.
 
         Returns:          - True on success; False otherwise

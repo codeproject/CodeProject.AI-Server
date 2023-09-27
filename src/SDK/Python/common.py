@@ -2,7 +2,7 @@
 from typing import Dict, List, Union
 import os
 
-# Define a Json type to allow type hints to be sensible.
+# Define a JSON type to allow type hints to be sensible.
 # See https://adamj.eu/tech/2021/06/14/python-type-hints-3-somewhat-unexpected-uses-of-typing-any-in-pythons-standard-library/
 _PlainJSON = Union[
     None, bool, int, float, str, List["_PlainJSON"], Dict[str, "_PlainJSON"]
@@ -76,11 +76,11 @@ def dump_tensors():
 # requirements_path = Path(__file__).parent.with_name("requirements.txt")
 # print(packageInstallReport(requirements_path))
 
-def packageInstallReport(requirements_path: str = None) -> str:
+def check_installed_packages(requirements_path: str = None, report_version_conflicts = True) -> str:
     """
     Generates a report on the packages that are missing or have version
     conflicts, based on the supplied requirements.txt file
-    # Ref: https://stackoverflow.com/a/45474387/
+    Ref: https://stackoverflow.com/a/45474387/
     """
 
     import pkg_resources
@@ -99,14 +99,30 @@ def packageInstallReport(requirements_path: str = None) -> str:
         # requirements = pkg_resources.parse_requirements(requirements_path.open())
 
         for requirement in requirements:
-            requirement = str(requirement)
+            requirement = str(requirement).strip()
+
+            if requirement.startswith('-'):
+                continue
+            
+            index = requirement.find('#')
+            if index != -1:
+                requirement = requirement[:index].strip()
+
             try:
                 pkg_resources.require(requirement)
             except pkg_resources.DistributionNotFound:
-                report += requirement + " not found\n";
+                report += requirement + " not found\n"
             except pkg_resources.VersionConflict:
-                report += requirement + " has a version conflict\n";
+                if report_version_conflicts:
+                    report += requirement + " has a version conflict\n"
+            except Exception as ex:
+                report += requirement + f" threw an exception: {str(ex)}\n"
     except:
         report = "Unable to open a requirements file"
+
+    if report:
+        report = "ERROR: " + report
+    else:
+        report = "SUCCESS: All packages in requirements file are present"
 
     return report.strip()

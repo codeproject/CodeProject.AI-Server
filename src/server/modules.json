@@ -1,0 +1,1172 @@
+[
+  {
+    "ModuleId": "ALPR",
+    "Name": "License Plate Reader",
+    "Version": "2.6",
+    "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
+    "Platforms": [
+      "windows",
+      "linux",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.7",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "2.1",
+        "ServerVersionRange": [
+          "2.0.9",
+          "2.0.9"
+        ],
+        "ReleaseDate": "2022-12-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "2.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "2.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-04-20",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "2.4",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-10",
+        "ReleaseNotes": "PaddlePaddle install more reliable",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "2.5",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-06-04",
+        "ReleaseNotes": "Updated PaddlePaddle",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "2.6",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      }
+    ],
+    "License": "SSPL",
+    "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "BackgroundRemover",
+    "Name": "Background Remover",
+    "Version": "1.5",
+    "Description": "Automatically removes the background from a picture",
+    "Platforms": [
+      "windows",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.9",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "1.6.9",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1.0",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1.0",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-04-20",
+        "ReleaseNotes": "Install improved for GPU enabled systems",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.1.7",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-04-29",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      }
+    ],
+    "License": "SSPL",
+    "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "Cartooniser",
+    "Name": "Cartooniser",
+    "Version": "1.2",
+    "Description": "Convert a photo into an anime style cartoon",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.9",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-03-28",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1.7",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-04-29",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      }
+    ],
+    "License": "MIT",
+    "LicenseUrl": "https://github.com/bryandlee/animegan2-pytorch/blob/main/LICENSE",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "FaceProcessing",
+    "Name": "Face Processing",
+    "Version": "1.7",
+    "Description": "A number of Face image APIs including detect, recognize, and compare.",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.7",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-03-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-17",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-08-05",
+        "ReleaseNotes": "Bugs in error reporting corrected",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-08-12",
+        "ReleaseNotes": "PyTorch version downgrade",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.6",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.7",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-16",
+        "ReleaseNotes": "Updates to help Blue Iris users",
+        "Importance": null
+      }
+    ],
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "ObjectDetectionCoral",
+    "Name": "ObjectDetection (Coral)",
+    "Version": "1.5.1",
+    "Description": "The object detection module uses the Coral TPU to locate and classify the objects the models have been trained on.",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.7",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-07-11",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-07-12",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-07-12",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-08-11",
+        "ReleaseNotes": "installer corrections, macOS/Ubuntu support improved",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer, updated TF-lite runtime",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-16",
+        "ReleaseNotes": "Updates to help Blue Iris users",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5.1",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-17",
+        "ReleaseNotes": "Better checks for admin rights when installing",
+        "Importance": null
+      }
+    ],
+    "License": "Apache-2.0",
+    "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "ObjectDetectionNet",
+    "Name": "Object Detection (YOLOv5 .NET)",
+    "Version": "1.6",
+    "Description": "Provides Object Detection using YOLOv5 ONNX models with DirectML. This module is best for those on Windows and Linux without CUDA enabled GPUs",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "execute",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-06-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1.0",
+          "2.1.0"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1.0",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-04-09",
+        "ReleaseNotes": "Corrected installer issues",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1.0",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-04-20",
+        "ReleaseNotes": "Corrected module launch command",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.1.8",
+          "2.1.8"
+        ],
+        "ReleaseDate": "2023-04-20",
+        "ReleaseNotes": "Minor changes in module setup",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.1.10",
+          ""
+        ],
+        "ReleaseDate": "2023-05-04",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.6",
+        "ServerVersionRange": [
+          "2.1.10",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Installer fix for Linux",
+        "Importance": null
+      }
+    ],
+    "License": "MIT",
+    "LicenseUrl": "https://opensource.org/licenses/MIT",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "ObjectDetectionYolo",
+    "Name": "Object Detection (YOLOv5 6.2)",
+    "Version": "1.6.1",
+    "Description": "Provides Object Detection using YOLOv5 6.2 targeting CUDA 11.7/Torch 1.13 for newer GPUs.",
+    "Platforms": [
+      "all"
+    ],
+    "Runtime": "python3.7",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-03-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1.0",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1.7",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-04-29",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-08-12",
+        "ReleaseNotes": "PyTorch version downgrade",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.6",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-16",
+        "ReleaseNotes": "Updates to help Blue Iris users",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.6.1",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-17",
+        "ReleaseNotes": "Install for Linux",
+        "Importance": null
+      }
+    ],
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "ObjectDetectionYoloRKNN",
+    "Name": "Object Detection (YOLOv5 RKNN)",
+    "Version": "1.3",
+    "Description": "Provides Object Detection using YOLOv5 RKNN models. This module only works with Rockchip RK3588/RK3588S NPUs like the Orange Pi 5/5B/5 Plus",
+    "Platforms": [
+      "linux-arm64"
+    ],
+    "Runtime": "python3.9",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-08-06",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-08-06",
+        "ReleaseNotes": "Corrected installer in docker environment",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-16",
+        "ReleaseNotes": "Updates to help Blue Iris users",
+        "Importance": null
+      }
+    ],
+    "License": "Apache-2.0",
+    "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "OCR",
+    "Name": "Optical Character Recognition",
+    "Version": "1.5",
+    "Description": "Provides OCR support using the PaddleOCR toolkit",
+    "Platforms": [
+      "windows",
+      "linux",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.7",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-15",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-10",
+        "ReleaseNotes": "PaddlePaddle install more reliable",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      }
+    ],
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "PortraitFilter",
+    "Name": "Portrait Filter",
+    "Version": "1.4",
+    "Description": "Provides a depth-of-field (bokeh) effect on images. Great for selfies.",
+    "Platforms": [
+      "windows"
+    ],
+    "Runtime": "execute",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-06-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.7"
+        ],
+        "ReleaseDate": "2023-04-20",
+        "ReleaseNotes": "Updated launch command",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.8"
+        ],
+        "ReleaseDate": "2023-05-03",
+        "ReleaseNotes": "Minor module initialisation changes",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.1",
+          ""
+        ],
+        "ReleaseDate": "2023-05-17",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      }
+    ],
+    "License": "MIT",
+    "LicenseUrl": "https://opensource.org/licenses/MIT",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "SceneClassifier",
+    "Name": "Scene Classification",
+    "Version": "1.4",
+    "Description": "Classifies an image according to one of 365 pre-trained scenes",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.7",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-03-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.8"
+        ],
+        "ReleaseDate": "2023-05-03",
+        "ReleaseNotes": "Minor module initialisation changes",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-17",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated module installer",
+        "Importance": null
+      }
+    ],
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "SentimentAnalysis",
+    "Name": "Sentiment Analysis",
+    "Version": "1.4",
+    "Description": "Provides an analysis of the sentiment of a piece of text. Positive or negative?",
+    "Platforms": [
+      "windows",
+      "macos"
+    ],
+    "Runtime": "execute",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-06-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.8"
+        ],
+        "ReleaseDate": "2023-05-03",
+        "ReleaseNotes": "Minor module initialisation changes",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-17",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      }
+    ],
+    "License": "CC-BY-4.0",
+    "LicenseUrl": "https://github.com/dotnet/samples/blob/main/LICENSE",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "SuperResolution",
+    "Name": "Super Resolution",
+    "Version": "1.6",
+    "Description": "Increases the resolution of an image using AI",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.9",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.6.8"
+        ],
+        "ReleaseDate": "2022-03-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.6.9",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-04-11",
+        "ReleaseNotes": "Missing assets restored",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-04-11",
+        "ReleaseNotes": "Corrected inferenceMs type",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-17",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.6",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      }
+    ],
+    "License": "Apache 2.0",
+    "LicenseUrl": "http://www.apache.org/licenses/",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "TextSummary",
+    "Name": "Text Summary",
+    "Version": "1.4",
+    "Description": "Summarizes text content by selecting a number of sentences that are most representitive of the content.",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos",
+      "macos-arm64"
+    ],
+    "Runtime": "python3.7",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "1.6.8"
+        ],
+        "ReleaseDate": "2022-11-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "1.6.9",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-17",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      }
+    ],
+    "License": "No License",
+    "LicenseUrl": "https://github.com/edubey/text-summarizer",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "TrainingYoloV5",
+    "Name": "Training for YoloV5 6.2",
+    "Version": "1.3",
+    "Description": "Train custom models for YOLOv5 v6.2 with support for CPUs, CUDA enabled GPUs, and Apple Silicon.",
+    "Platforms": [
+      "all"
+    ],
+    "Runtime": "python3.9",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "2.1.10",
+          "2.1.10"
+        ],
+        "ReleaseDate": "2022-08-02",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.1",
+        "ServerVersionRange": [
+          "2.1.11",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-08-12",
+        "ReleaseNotes": "Added \u0027patience\u0027, \u0027workers\u0027 as parameters",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1.11",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-08-17",
+        "ReleaseNotes": "Bug fix",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer, user-provided datasets supported",
+        "Importance": null
+      }
+    ],
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  },
+  {
+    "ModuleId": "YOLOv5-3.1",
+    "Name": "Object Detection (YOLOv5 3.1)",
+    "Version": "1.5",
+    "Description": "Provides Object Detection using YOLOv5 3.1 targeting CUDA 10.2/Torch 1.7 for older GPUs.",
+    "Platforms": [
+      "windows",
+      "linux",
+      "linux-arm64",
+      "macos"
+    ],
+    "Runtime": "python3.7",
+    "ModuleReleases": [
+      {
+        "ModuleVersion": "1.0",
+        "ServerVersionRange": [
+          "1.0",
+          "2.0.8"
+        ],
+        "ReleaseDate": "2022-11-01",
+        "ReleaseNotes": null,
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.2",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.6"
+        ],
+        "ReleaseDate": "2023-03-20",
+        "ReleaseNotes": "Updated for CodeProject.AI Server 2.1",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.1",
+          "2.1.12"
+        ],
+        "ReleaseDate": "2023-05-17",
+        "ReleaseNotes": "Updated module settings",
+        "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-09",
+        "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2",
+          ""
+        ],
+        "ReleaseDate": "2023-09-16",
+        "ReleaseNotes": "Updates to help Blue Iris users",
+        "Importance": null
+      }
+    ],
+    "License": "GPL-3.0",
+    "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+    "Downloads": 0
+  }
+]

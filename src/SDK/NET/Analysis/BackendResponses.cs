@@ -30,6 +30,11 @@
         public string? executionProvider { get; set; }
 
         /// <summary>
+        /// Gets or sets whether this module is able to make use of a GPU.
+        /// </summary>
+        public bool canUseGPU { get; set; }
+
+        /// <summary>
         /// Gets or sets the number of milliseconds required to perform the AI inference operation(s)
         /// for this response.
         /// </summary>

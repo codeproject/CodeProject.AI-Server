@@ -118,7 +118,7 @@ class AnalysisLogger():
 
         Param: logMethod - can be Info (console), Error (err output), Server 
                (sends the log to the API server), or File (write to file)
-        Param: data - a Json object (really: a dictionary) of the form:
+        Param: data - a JSON object (really: a dictionary) of the form:
            { 
               "process": "Name of process", 
               "filename": "filename.ext", 

@@ -1,8 +1,8 @@
 {
   "Modules": {
     "TrainingYoloV5": {
-      "Runtime": "python39",
-      "RequiredMb": 6000,       // ~6Gb needed in Windows
+      "Runtime": "python3.9",
+      "RequiredMb": 6000       // ~6Gb needed in Windows
     }
   }
 }

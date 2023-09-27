@@ -20,7 +20,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         public float? positive_probability { get; set; }
     }
 
-    public class SentimentAnalysisWorker : CommandQueueWorker
+    public class SentimentAnalysisWorker : ModuleWorkerBase
     {
         private readonly TextClassifier _textClassifier;
 
@@ -35,7 +35,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
                                        IConfiguration configuration)
             : base(logger, configuration)
         {
-            _textClassifier  = textClassifier;
+            _textClassifier   = textClassifier;
         }
 
         /// <summary>
@@ -45,6 +45,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         {
             HardwareType      = _textClassifier.HardwareType;
             ExecutionProvider = _textClassifier.ExecutionProvider;
+            CanUseGPU         = _textClassifier.CanUseGPU;
         }
 
         /// <summary>

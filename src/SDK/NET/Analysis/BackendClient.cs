@@ -47,10 +47,12 @@ namespace CodeProject.AI.SDK
         /// <param name="moduleId">The Id of the module making this request</param>
         /// <param name="token">A Cancellation Token.</param>
         /// <param name="executionProvider">The hardware acceleration execution provider</param>
+        /// <param name="canUseGPU">Whether or not this module can make use of the current GPU</param>
         /// <returns>The BackendRequest or Null if error</returns>
         public async Task<BackendRequest?> GetRequest(string queueName, string moduleId,
                                                       CancellationToken token = default,
-                                                      string? executionProvider = null)
+                                                      string? executionProvider = null,
+                                                      bool? canUseGPU = false)
         {
             // We're passing the moduleID as part of the GET request in order to give the server a
             // hint that this module is alive and well.
@@ -69,12 +71,24 @@ namespace CodeProject.AI.SDK
             string requestUri = $"v1/queue/{queueName.ToLower()}?moduleid={moduleId}";
             if (executionProvider != null)
                 requestUri += $"&executionProvider={executionProvider}";
+            if (canUseGPU != null)
+                requestUri += $"&canUseGPU={canUseGPU!.ToString()}";
 
             BackendRequest? request = null;
             try
             {
-                request = await _httpClient!.GetFromJsonAsync<BackendRequest>(requestUri, token)
-                                            .ConfigureAwait(false);
+                //request = await _httpClient!.GetFromJsonAsync<BackendRequest>(requestUri, token)
+                //                            .ConfigureAwait(false);
+                var response = await _httpClient!.GetAsync(requestUri, token);
+                // only process responses that have content
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    request = await response.Content.ReadFromJsonAsync<BackendRequest>();
+                }
+                else
+                {
+                    return null;
+                }
             }
             catch (JsonException)
             {
@@ -103,6 +117,8 @@ namespace CodeProject.AI.SDK
         /// <param name="moduleId">The module sending this response.</param>
         /// <param name="content">The content to send.</param>
         /// <param name="token">A Cancellation Token.</param>
+        /// <param name="executionProvider">The hardware acceleration execution provider</param>
+        /// <param name="canUseGPU">Whether or not this module can make use of the current GPU</param>
         /// <returns>A Task.</returns>
         public async Task SendResponse(string reqid, string moduleId, HttpContent content,
                                        CancellationToken token)
@@ -125,18 +141,15 @@ namespace CodeProject.AI.SDK
         /// <param name="category">The log category</param>
         /// <param name="logLevel">The log level.</param>
         /// <param name="label">The label</param>
-        /// <param name="token">A Cancellation Token.</param>
-        /// <returns>A Task.</returns>
-        public ValueTask LogToServer(string message, string category,
-                                      LogLevel logLevel, string label,
-                                      CancellationToken token)
+        /// <returns>True if added to the logging message queue, false if dropped.</returns>
+        public bool LogToServer(string message, string category,
+                                      LogLevel logLevel, string label)
         {
-            _loggingQueue.Writer.TryWrite(new LoggingData(message, category, logLevel, label));
-            return ValueTask.CompletedTask;
+            return _loggingQueue.Writer.TryWrite(new LoggingData(message, category, logLevel, label));
         }
 
         /// <summary>
-        /// Called to process the logging data pulled off a queue by a bacground task. See the
+        /// Called to process the logging data pulled off a queue by a background task. See the
         /// LogToServer method above.
         /// </summary>
         /// <param name="data"></param>

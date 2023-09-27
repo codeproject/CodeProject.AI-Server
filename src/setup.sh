@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # ============================================================================
 #
 # CodeProject.AI Server 
@@ -99,8 +100,13 @@ oneStepPIP="false"
 # Basic locations
 
 # The path to the directory containing the install scripts
-#installerScriptsPath=$(dirname "$0")
-installerScriptsPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+installerScriptsPath=$(dirname "$0")
+pushd "$installerScriptsPath" > /dev/null 2>&1
+installerScriptsPath=$(pwd -P)
+popd > /dev/null 2>&1
+
+# Old, 'clever' way that fails on macOS
+#installerScriptsPath=$( cd -- $(dirname "$0") >/dev/null 2>&1 ; pwd -P )
 
 # The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
 storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/'
@@ -152,16 +158,13 @@ if [ "$DOTNET_RUNNING_IN_CONTAINER" == "true" ]; then
     allowSharedPythonInstallsForModules="false"; 
 fi
 
-diskSpace=$(df $PWD | awk '/[0-9]%/{print $(NF-2)}')
-echo "${diskSpace} available"
-
 # Execution environment, setup mode and Paths ::::::::::::::::::::::::::::::::
 
 # If we're calling this script from the /src folder directly (and the /src
 # folder actually exists) then we're Setting up the dev environment. Otherwise
 # we're installing a module.
 setupMode='InstallModule'
-currentDirName=$(basename $(pwd))      # Get current dir name (not full path)
+currentDirName=$(basename "$(pwd)")    # Get current dir name (not full path)
 currentDirName=${currentDirName:-/}    # correct for the case where pwd=/
 if [ "$currentDirName" == "$srcDir" ]; then setupMode='SetupDevEnvironment'; fi
 
@@ -170,7 +173,7 @@ if [ "$currentDirName" == "$srcDir" ]; then setupMode='SetupDevEnvironment'; fi
 # containing this script and check the name of the parent folder to see if
 # we're in dev or production.
 pushd "$installerScriptsPath" >/dev/null
-installScriptDirName="$(basename ${installerScriptsPath})"
+installScriptDirName=$(basename "${installerScriptsPath}")
 installScriptDirName=${installScriptDirName:-/} # correct for the case where pwd=/
 popd >/dev/null
 executionEnvironment='Production'
@@ -185,6 +188,7 @@ fi
 
 # The absolute path to the installer script and the root directory. Note that
 # this script (and the SDK folder) is either in the /src dir or the root dir
+sdkPath="${installerScriptsPath}/SDK"
 sdkScriptsPath="${installerScriptsPath}/SDK/Scripts"
 pushd "$installerScriptsPath" >/dev/null
 if [ "$executionEnvironment" == 'Development' ]; then cd ..; fi
@@ -193,41 +197,48 @@ popd >/dev/null
 
 absoluteAppRootDir="${installerScriptsPath}"
 
-# import the utilities
+# import the utilities :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # A necessary evil due to cross platform editors and source control playing
 # silly buggers
 function correctLineEndings () {
 
-    local filePath=$1
+    local filePath="$1"
 
     # Force correct BOM and CRLF issues in the script. Just in case
     if [[ $OSTYPE == 'darwin'* ]]; then           # macOS
          if [[ ${OSTYPE:6} -ge 13 ]]; then        # Monterry is 'darwin21' -> "21"
-            sed -i'.bak' -e '1s/^\xEF\xBB\xBF//' "${filePath}" # remove BOM
-            sed -i'.bak' -e 's/\r$//' "${filePath}"            # CRLF to LF
-            rm "${filePath}.bak"                               # Clean up. macOS requires backups for sed
+            sed -i'.bak' -e '1s/^\xEF\xBB\xBF//' "${filePath}" > /dev/null 2>&1 # remove BOM
+            sed -i'.bak' -e 's/\r$//' "${filePath}"            > /dev/null 2>&1 # CRLF to LF
+            rm "${filePath}.bak"                               > /dev/null 2>&1 # Clean up. macOS requires backups for sed
          fi
     else                                          # Linux
-        sed -i '1s/^\xEF\xBB\xBF//' "${filePath}" # remove BOM
-        sed -i 's/\r$//' "${filePath}"            # CRLF to LF
+        sed -i '1s/^\xEF\xBB\xBF//' "${filePath}" > /dev/null 2>&1 # remove BOM
+        sed -i 's/\r$//' "${filePath}"            > /dev/null 2>&1 # CRLF to LF
     fi
 }
 
-correctLineEndings ${sdkScriptsPath}/utils.sh
+correctLineEndings "${sdkScriptsPath}/utils.sh"
 
 # "platform" will be set by this script
-source ${sdkScriptsPath}/utils.sh
+source "${sdkScriptsPath}/utils.sh"
+
 
 # Test for CUDA drivers and adjust supportCUDA if needed
 hasCUDA='false'
 if [ "$os" == "macos" ]; then 
     supportCUDA="false"
-else
+elif [ "${systemName}" == "Jetson" ]; then
+    hasCUDA='true'
+elif [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ]; then
+    hasCUDA='false'
+else 
     if [ "$supportCUDA" == "true" ]; then
-        # https://stackoverflow.com/a/66486390
-        cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
-        chmod ogu+x /usr/bin/nvidia-smi > /dev/null 2>&1
+        if [ "${systemName}" == "WSL" ]; then
+            # https://stackoverflow.com/a/66486390
+            cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
+            chmod a+x /usr/bin/nvidia-smi > /dev/null 2>&1
+        fi
 
         if [ -x "$(command -v nvidia-smi)" ]; then
             nvidia=$(nvidia-smi | grep -i -E 'CUDA Version: [0-9]+.[0-9]+') > /dev/null 2>&1
@@ -239,15 +250,19 @@ fi
 # Test for AMD ROCm drivers 
 hasROCm='false'
 if [ "$os" == "linux" ]; then 
-    if [ ! -x "$(command -v rocminfo)" ]; then
-        write "Checking for ROCm support..." $color_primary
-        sudo apt install rocminfo -y > /dev/null 2>&1 &
-        spin $!
-        writeLine "Done" $color_success
-    fi
-    if [ -x "$(command -v rocminfo)" ]; then
-        amdinfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
-        if [[ ${amdinfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm='true'; fi
+    if [ "${systemName}" != "Raspberry Pi" ] && [ "${systemName}" != "Orange Pi" ] && \
+       [ "${systemName}" != "Jetson" ]; then
+
+        if [ ! -x "$(command -v rocminfo)" ]; then
+            write "Checking for ROCm support..." $color_primary
+            sudo apt install rocminfo -y > /dev/null 2>&1 &
+            spin $!
+            writeLine "Done" $color_success
+        fi
+        if [ -x "$(command -v rocminfo)" ]; then
+            amdinfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
+            if [[ ${amdinfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm='true'; fi
+        fi
     fi
 fi
 
@@ -272,27 +287,21 @@ if [ "$os" == "macos" ]; then
     commonDataDir='/Library/Application Support/CodeProject/AI'
 else
     commonDataDir='/etc/codeproject/ai'
-
-    # Correct for mis-placed data
-    if [ -d "/usr/share/CodeProject/AI" ]; then
-        if [ ! -d "${commonDataDir}" ]; then
-            sudo mv "/usr/share/CodeProject/AI" "${commonDataDir}"
-        fi
-        sudo mv "/usr/share/CodeProject/AI" "/usr/share/CodeProject/AI.bak"
-    fi
 fi
 
 # Set Flags
 
 wgetFlags='-q --no-check-certificate'
-pipFlags='--quiet --quiet'
+# pipFlags='--quiet --quiet' - not actually supported, even though docs say it is
+pipFlags=''
 copyFlags='/NFL /NDL /NJH /NJS /nc /ns  >/dev/null'
 unzipFlags='-o -qq'
 tarFlags='-xf'
 
 if [ $verbosity == "info" ]; then
     wgetFlags='--no-verbose --no-check-certificate'
-    pipFlags='--quiet'
+    # pipFlags='--quiet' - not actually supported, even though docs say it is
+    pipFlags=''
     rmdirFlags='/q'
     copyFlags='/NFL /NDL /NJH'
     unzipFlags='-q -o'
@@ -306,11 +315,12 @@ elif [ $verbosity == "loud" ]; then
     tarFlags='-xvf'
 fi
 
-if [ "$os" == "macos" ]; then
-    pipFlags="${pipFlags} --no-cache-dir"
-else
-    pipFlags="${pipFlags} --progress-bar off"
-fi
+#if [ "$platform" == "macos" ]; then # not available on macs anymore?
+#    pipFlags="${pipFlags} --no-cache-dir"
+# elif [ "$setupMode" != 'SetupDevEnvironment' ]; then
+#    --progress-bar is in pip 22+. I have no stomach to sniff the pip version today
+#    pipFlags="${pipFlags} --progress-bar off"
+# fi
 
 # ** WARNING 2 ** Turns out PIP is more painful that we thought it could be:
 #  - For Windows, oneStep is necessary otherwise FaceProcessing fails.
@@ -328,7 +338,7 @@ if [ "$useColor" != "true" ]; then
     pipFlags="${pipFlags} --no-color"
 fi
 
-if [ "$setupMode" != 'SetupDevEnvironment' ]; then
+if [ "$setupMode" == 'SetupDevEnvironment' ]; then
     scriptTitle='          Setting up CodeProject.AI Development Environment'
 else
     scriptTitle='             Installing CodeProject.AI Analysis Module'
@@ -343,6 +353,11 @@ writeLine '                   CodeProject.AI Installer                          
 writeLine 
 writeLine '======================================================================' 'DarkGreen'
 writeLine 
+
+# -P = one line, -k = kb. NR=2 means get second row. $4=4th item. Add 000 = kb -> bytes
+diskSpace="$(df -Pk / | awk 'NR==2 {print $4}')000"
+formatted_space=$(bytesToHumanReadableKilo $diskSpace)
+writeLine "${formatted_space}  available" $color_mute
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
@@ -360,6 +375,10 @@ fi
 # ============================================================================
 # House keeping
 
+if [ "$os" == "linux" ]; then 
+    checkForTool curl
+    checkForTool bc
+fi
 checkForTool wget
 checkForTool unzip
 writeLine ""
@@ -386,15 +405,19 @@ writeLine "General CodeProject.AI setup" "White" "DarkGreen" $lineWidth
 writeLine
 
 # Create some directories
-write "Creating Directories..." $color_primary
 
 # For downloading assets
 if [ ! -d "${downloadPath}" ]; then
+    write "Creating download dir..." $color_primary
     mkdir -p "${downloadPath}"
+    writeLine "Done" $color_success
 fi
 if [ "$os" == "macos" ]; then 
     if [[ ! -w "${downloadPath}" ]]; then
-        sudo chmod 777 "${downloadPath}"
+        write "Setting permissions..." $color_primary
+        #sudo 
+        chmod -R a+w "${downloadPath}"
+        writeLine "Done" $color_success
     fi
 fi
 
@@ -410,22 +433,38 @@ fi
 
 # for the runtimes
 if [ ! -d "${runtimesPath}" ]; then
+    write "Creating runtimes dir..." $color_primary
     sudo mkdir -p "${runtimesPath}"
+    writeLine "Done" $color_success
 fi
-sudo chmod a+w "${runtimesPath}"
 
+write "Setting permissions..." $color_primary
+sudo chmod a+w "${runtimesPath}"
 writeLine "Done" $color_success
 
+# echo "setupMode = ${setupMode}"
 
 # And off we go...
 success='true'
+module_install_success='false'
+
+# Start with the core SDK
+writeLine
+writeLine "Processing SDK" "White" "Blue" $lineWidth
+writeLine
+correctLineEndings "${modulePath}/install.sh"
+moduleDir="SDK"
+modulePath="${absoluteAppRootDir}/${moduleDir}"
+source "${modulePath}/install.sh" "install"
+# if [ "$module_install_success" == "false" ]; then success='false'; fi
+
 
 if [ "$setupMode" == 'SetupDevEnvironment' ]; then 
 
     # Walk through the modules directory and call the setup script in each dir
     for d in ${modulesPath}/*/ ; do
 
-        moduleDir="$(basename $d)"
+        moduleDir=$(basename "$d")
         modulePath=$d
 
         if [ "${modulePath: -1}" == "/" ]; then
@@ -435,33 +474,41 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
         # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
         dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
 
+        pythonVersion=""
+
+        # Read the module version from the modulesettings.json file 
+        moduleVersion=""
+        if [ -f "${modulePath}/modulesettings.json" ]; then
+            moduleVersion=$(getVersionFromModuleSettings "${modulePath}/modulesettings.json" "Version")
+        fi
+
         if [ -f "${modulePath}/install.sh" ]; then
 
             writeLine
-            writeLine "Processing side-loaded module ${moduleDir}" "White" "Blue" $lineWidth
+            writeLine "Processing module ${moduleDir} ${moduleVersion}" "White" "Blue" $lineWidth
             writeLine
 
+            # Install module
+            module_install_success='false'
             correctLineEndings "${modulePath}/install.sh"
             source "${modulePath}/install.sh" "install"
-
-            # if [ $? -ne 0 ]; then success='false'; fi
+            
+            if [ "$module_install_success" == "true" ]; then
+                # Add SDK PIPs to module's python venv if python is the runtime of choice
+                if [ "${pythonVersion}" != "" ]; then
+                    writeLine "Installing Server SDK support:"
+                    installPythonPackages "${sdkPath}/Python"
+                fi
+                # success='false'
+            fi
         fi
     done
 
     writeLine
-    writeLine "Modules setup Complete" $color_success
-
-    # Now do SDK
-    moduleDir="SDK"
-    modulePath="${absoluteAppRootDir}/${moduleDir}"
+    writeLine "Module setup Complete" $color_success
     writeLine
-    writeLine "Processing SDK" "White" "Blue" $lineWidth
-    writeLine
-    correctLineEndings "${modulePath}/install.sh"
-    source "${modulePath}/install.sh" "install"
-    # if [ $? -ne 0 ]; then success='false'; fi
 
-    # And Demos
+    # Setup Demos
     moduleDir="demos"
     modulePath="${absoluteRootDir}/${moduleDir}"
     writeLine
@@ -469,64 +516,9 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
     writeLine
     correctLineEndings "${modulePath}/install.sh"
     source "${modulePath}/install.sh" "install"
-    # if [ $? -ne 0 ]; then success='false'; fi
-
-    # And finally, supporting library packages
-    # TODO: Move this into the DSK install.sh script
-
-    # libfontconfig1 is required for SkiaSharp, libgdplus is required for System.Drawing
-    if [ "${verbosity}" == "quiet" ]; then
-        write "Installing supporting image libraries..."
-    else
-        writeLine "Installing supporting image libraries..."
-    fi
-
-    if [ "$os" == "linux" ]; then
-        if [ "${verbosity}" == "quiet" ]; then
-
-            # install the cv2 dependencies that are normally present on the local machine, but sometimes aren't
-            sudo apt-get update >/dev/null 2>/dev/null &
-            spin $!
-            sudo apt-get install ffmpeg libsm6 libxext6 libfontconfig1 libgdiplus -y >/dev/null 2>/dev/null &
-            spin $!
-        else
-            sudo apt-get update
-            sudo apt-get install ffmpeg libsm6 libxext6 libfontconfig1 libgdiplus -y 
-        fi
-    else
-        if [ "${verbosity}" == "quiet" ]; then
-            brew install fontconfig  >/dev/null 2>/dev/null &
-            spin $!
-            # brew install mono-libgdiplus  >/dev/null 2>/dev/null &
-            brew install libomp  >/dev/null 2>/dev/null &
-            spin $!
-        else
-            brew install fontconfig
-            # brew install mono-libgdiplus
-            brew install libomp
-        fi
-    fi
+    
     writeLine "Done" $color_success
 
-    if [ "$os" == "linux" ]; then
-        if [ "${verbosity}" == "quiet" ]; then
-            write "Installing glxinfo so we can query GPU information..."
-            sudo apt install mesa-utils >/dev/null 2>/dev/null &
-            spin $!
-        else
-            writeLine "Installing glxinfo so we can query GPU information..."
-            sudo apt install mesa-utils
-        fi
-        writeLine "Done" $color_success
-    fi
-
-
-    # ============================================================================
-    # ...and we're done.
-
-    writeLine
-    writeLine "                Development Environment setup complete" "White" "DarkGreen" $lineWidth
-    writeLine
 else
 
     # Install an individual module
@@ -535,34 +527,51 @@ else
     if [ "${modulePath: -1}" == "/" ]; then
         modulePath="${modulePath:0:${#modulePath}-1}"
     fi
-    moduleDir="$(basename ${modulePath})"
+    moduleDir=$(basename "${modulePath}")
     # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
     dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
 
-    # We'll have all downloads go to the same place
-    # downloadPath=${modulePath}/${downloadDir}
+    pythonVersion=""
+
+    # Read the module version from the modulesettings.json file
+    moduleVersion=""
+    if [ -f "${modulePath}/modulesettings.json" ]; then
+        moduleVersion=$(getVersionFromModuleSettings "${modulePath}/modulesettings.json" "Version")
+    fi
 
     if [ -f "${modulePath}/install.sh" ]; then
 
         writeLine
-        writeLine "Installing module ${moduleDir}" "White" "Blue" $lineWidth
+        writeLine "Installing module ${moduleDir} ${moduleVersion}" "White" "Blue" $lineWidth
         writeLine
 
+        # Install module
         correctLineEndings "${modulePath}/install.sh"
         source "${modulePath}/install.sh" "install"
-
         # if [ $? -ne 0 ]; then success='false'; fi
+
+        # Add SDK PIPs to module's python venv if python is the runtime of choice
+        if [ "${pythonVersion}" != "" ]; then
+            writeLine "Installing Server SDK support:"
+            installPythonPackages "${sdkPath}/Python"
+        fi
+
+    else
+        writeLine "Unable to find install.sh in ${modulePath}" $color_error
     fi
 
-    # ============================================================================
-    # ...and we're done.
-
-    writeLine
-    writeLine "                Module setup complete" "White" "DarkGreen" $lineWidth
-    writeLine
 fi
 
-if [ "${success}" != "true" ]; then quit 1; fi
+# ==============================================================================
+# ...and we're done.
+
+writeLine
+writeLine "                Setup complete" "White" "DarkGreen" $lineWidth
+writeLine
+
+if [ "${success}" != "true" ]; then
+    quit 1
+fi
 
 quit 0
 

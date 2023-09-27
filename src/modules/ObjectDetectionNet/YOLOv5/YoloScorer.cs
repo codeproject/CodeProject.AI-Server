@@ -11,10 +11,9 @@ using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
 using SkiaSharp;
-
-using CodeProject.AI.SDK.Common;
 using Yolov5Net.Scorer.Models.Abstract;
 using System.Numerics;
+using CodeProject.AI.SDK.Utils;
 
 namespace Yolov5Net.Scorer
 {

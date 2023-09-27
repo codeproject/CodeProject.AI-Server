@@ -3,7 +3,7 @@
 
     "BackgroundRemover": {
       "Name": "Background Remover",
-      "Version": "1.4",
+      "Version": "1.5",
 
       // Publishing info
       "Description": "Automatically removes the background from a picture", 
@@ -13,17 +13,18 @@
 
       // Which server version is compatible with each version of this module.
       "ModuleReleases": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0",   "2.0.8" ], "ReleaseDate": "2022-11-01" },
-        { "ModuleVersion": "1.1", "ServerVersionRange": [ "1.6.9", "2.0.8" ], "ReleaseDate": "2022-11-01" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1.0", "2.1.6" ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
-        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1.0", "2.1.6" ], "ReleaseDate": "2023-04-20", "ReleaseNotes": "Install improved for GPU enabled systems" },
-        { "ModuleVersion": "1.4", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-08-05", "ReleaseNotes": "Bugs in error reporting corrected", "Importance": "Minor" }
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "1.6.9", "2.0.8"  ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1.0", "2.1.6"  ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
+        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1.0", "2.1.6"  ], "ReleaseDate": "2023-04-20", "ReleaseNotes": "Install improved for GPU enabled systems" },
+        { "ModuleVersion": "1.4", "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor"  },
+        { "ModuleVersion": "1.5", "ServerVersionRange": [ "2.2",   "" ],       "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" }
       ],
 
       // Launch instructions
       "AutoStart": true,
       "FilePath": "rembg_adapter.py",
-      "Runtime": "python39",
+      "Runtime": "python3.9",
       "RuntimeLocation": "Local", // Can be Local or Shared
       // Alternatively: "Command": "%RUNTIMES_PATH%\\bin\\windows\\python39\\venv\\Scripts\\python",
       
@@ -70,6 +71,26 @@
               "Name": "imageBase64",
               "Type": "Base64ImageData",
               "Description": "The base64 encoded image that has had its background removed."
+            },
+            {
+              "Name": "command",
+              "Type": "String",
+              "Description": "The command that was sent as part of this request. Can be detect, list, status."
+            },
+            {
+              "Name": "moduleId",
+              "Type": "String",
+              "Description": "The Id of the module that processed this request."
+            },
+            {
+              "Name": "executionProvider",
+              "Type": "String",
+              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
+            },
+            {
+              "Name": "canUseGPU",
+              "Type": "Boolean",
+              "Description": "True if this module can use the current GPU if one is present."
             },
             {
               "Name": "inferenceMs",

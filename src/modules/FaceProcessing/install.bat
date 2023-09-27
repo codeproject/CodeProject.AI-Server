@@ -5,20 +5,16 @@
 :: This script is only called from ..\..\setup.bat 
 
 @if "%1" NEQ "install" (
-	echo This script is only called from ..\..\setup.bat
-	@pause
-	@goto:eof
+    echo This script is only called from ..\..\setup.bat
+    @pause
+    @goto:eof
 )
 
+set pythonLocation=Shared
+set pythonVersion=3.7
+
 :: Install python and the required dependencies
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Shared"
-if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "Shared"
-if errorlevel 1 exit /b 1
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "Shared"
-if errorlevel 1 exit /b 1
+call "%sdkScriptsPath%\utils.bat" SetupPython
 
 :: Download the YOLO models and store in /assets
 call "%sdkScriptsPath%\utils.bat" GetFromServer "models.zip" "assets" "Downloading YOLO models..."

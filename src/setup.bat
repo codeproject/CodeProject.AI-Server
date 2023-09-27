@@ -34,6 +34,8 @@
 @echo off
 REM cls
 setlocal enabledelayedexpansion
+REM Set CodePage UTF-8 for our emojis
+chcp 65001 >NUL
 
 :: verbosity can be: quiet | info | loud
 set verbosity=quiet
@@ -85,9 +87,10 @@ REM Whether or not to install all python packages in one step (-r requirements.t
 REM or step by step. Doing this allows the PIP manager to handle incompatibilities 
 REM better.
 REM ** WARNING ** There is a big tradeoff on keeping the users informed and speed/
-REM reliability. Generally one-step shouldn't be needed. But it often is. And if
-REM often doesn't actually solve problems either. Overall it's safer, but not a panacea
-set oneStepPIP=true
+REM reliability. Generally one-step shouldn't be needed. But it often is. And it
+REM often doesn't actually solve problems either. Overall it's safer, but not a 
+REM panacea
+set oneStepPIP=false
 
 
 :: Basic locations
@@ -171,6 +174,7 @@ if /i "%CurrDirName%" == "%srcDir%" set executionEnvironment=Development
 :: The absolute path to the installer script and the root directory. Note that
 :: this script (and the SDK folder) is either in the /src dir or the root dir
 pushd "!installerScriptsPath!"
+set sdkPath=%cd%\SDK
 set sdkScriptsPath=%cd%\SDK\Scripts
 if /i "%executionEnvironment%" == "Development" cd ..
 set absoluteRootDir=%cd%
@@ -290,45 +294,64 @@ call "!sdkScriptsPath!\utils.bat" WriteLine "Done" "Green"
 
 set success=true
 
+REM Start with the core SDK
+call "!sdkScriptsPath!\utils.bat" WriteLine
+call "!sdkScriptsPath!\utils.bat" WriteLine "Processing Core SDK" "White" "Blue" !lineWidth!
+call "!sdkScriptsPath!\utils.bat" WriteLine
+set moduleDir=SDK
+set modulePath=!absoluteAppRootDir!!moduleDir!
+call "!modulePath!\install.bat" install
+if errorlevel 1 set success=false
+
+
 if /i "!setupMode!" == "SetupDevEnvironment" (
 
     REM  Walk through the modules directory and call the setup script in each dir
     REM  TODO: This should be just a simple for /d %%D in ("!modulesPath!") do (
     for /f "delims=" %%D in ('dir /a:d /b "!modulesPath!"') do (
+
         set moduleDir=%%~nxD
         set modulePath=!modulesPath!\!moduleDir!
 
-        if /i "!moduleDir!" NEQ "bin" (
-            if exist "!modulePath!\install.bat" (
+        set pythonVersion=
 
-                set announcement=Processing side-loaded module !moduleDir!
-                call "!sdkScriptsPath!\utils.bat" WriteLine
-                call "!sdkScriptsPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
-                call "!sdkScriptsPath!\utils.bat" WriteLine
+        REM Read the module version from the modulesettings.json file 
+        REM TODO: Get the module name, runtime location and python version from the modulesettings.
+        set moduleVersion=
+        if exist "!modulePath!\modulesettings.json" (
+            call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "!modulePath!\modulesettings.json", "Version", moduleVersion
+            REM call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "!modulePath!\modulesettings.json", "Runtime", runtime
+            call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "!modulePath!\modulesettings.json", "RuntimeLocation", runtimeLocation
+        )
+        
+        if exist "!modulePath!\install.bat" (
 
-                call "!modulePath!\install.bat" install
-                if errorlevel 1 set success=false
+            set announcement=Processing module !moduleDir! !moduleVersion!
+            call "!sdkScriptsPath!\utils.bat" WriteLine
+            call "!sdkScriptsPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
+            call "!sdkScriptsPath!\utils.bat" WriteLine
+
+            REM Install module
+            call "!modulePath!\install.bat" install
+            if errorlevel 1 set success=false
+
+            REM If a python version has been specified then we'll automatically look for, and
+            REM install, the requirements file for the module, and then also the requirements 
+            REM file for the SDK since it'll be assumed the Python SDK will come into play.
+            if "!pythonVersion!" neq "" (
+                call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Python packages for !moduleDir!" !color_info!
+                call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 
+
+                call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Python packages for the CodeProject.AI Server SDK" !color_info!
+                call "%sdkScriptsPath%\utils.bat" InstallPythonPackages "%sdkPath%\Python"
             )
         )
     )
 
     call "!sdkScriptsPath!\utils.bat" WriteLine
-    call "!sdkScriptsPath!\utils.bat" WriteLine "Sideloaded Modules setup Complete" "Green"
+    call "!sdkScriptsPath!\utils.bat" WriteLine "Module setup Complete" "Green"
 
-
-    REM Now do SDK
-    call "!sdkScriptsPath!\utils.bat" WriteLine
-    call "!sdkScriptsPath!\utils.bat" WriteLine "Processing SDK" "White" "Blue" !lineWidth!
-    call "!sdkScriptsPath!\utils.bat" WriteLine
-
-    set moduleDir=SDK
-    set modulePath=!absoluteAppRootDir!!moduleDir!
-    echo !modulePath!
-    call "!modulePath!\install.bat" install
-    if errorlevel 1 set success=false
-
-
-    REM And finally, Demos
+    REM Setup Demos
     call "!sdkScriptsPath!\utils.bat" WriteLine
     call "!sdkScriptsPath!\utils.bat" WriteLine "Processing Demos" "White" "Blue" !lineWidth!
     call "!sdkScriptsPath!\utils.bat" WriteLine
@@ -338,10 +361,6 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
     call "!modulePath!\install.bat" install
     if errorlevel 1 set success=false
 
-    call "!sdkScriptsPath!\utils.bat" WriteLine
-    call "!sdkScriptsPath!\utils.bat" WriteLine "                Development Environment setup complete" "White" "DarkGreen" !lineWidth!
-    call "!sdkScriptsPath!\utils.bat" WriteLine
-
 ) else (
 
     REM Install an individual module
@@ -349,20 +368,42 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
     for %%I in (.) do set moduleDir=%%~nxI
     set modulePath=%cd%
 
+    set pythonVersion=
+
+    REM Read the module version from the modulesettings.json file
+    set moduleVersion=
+    if exist "!modulePath!\modulesettings.json" (
+        call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "!modulePath!\modulesettings.json", "Version", moduleVersion
+    )
+
     if exist "!modulePath!\install.bat" (
 
-        set announcement=Installing module !moduleDir!
+        set announcement=Installing module !moduleDir! !moduleVersion!
         call "!sdkScriptsPath!\utils.bat" WriteLine
         call "!sdkScriptsPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
         call "!sdkScriptsPath!\utils.bat" WriteLine
 
+        REM Install module
         call "!modulePath!\install.bat" install
         if errorlevel 1 set success=false
-    )
 
-    call "!sdkScriptsPath!\utils.bat" WriteLine
-    call "!sdkScriptsPath!\utils.bat" WriteLine "Module setup complete" "White" "DarkGreen" !lineWidth!
-    call "!sdkScriptsPath!\utils.bat" WriteLine
+        REM If a python version has been specified then we'll automatically look for, and
+        REM install, the requirements file for the module, and then also the requirements 
+        REM file for the SDK since it'll be assumed the Python SDK will come into play.
+        if "!pythonVersion!" neq "" (
+            call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Python packages for !moduleDir!" !color_info!
+            call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 
+
+            call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Python packages for the CodeProject.AI Server SDK" !color_info!
+            call "%sdkScriptsPath%\utils.bat" InstallPythonPackages "%sdkPath%\Python"
+        )
+    )
 )
 
+call "!sdkScriptsPath!\utils.bat" WriteLine
+call "!sdkScriptsPath!\utils.bat" WriteLine "Setup complete" "White" "DarkGreen" !lineWidth!
+call "!sdkScriptsPath!\utils.bat" WriteLine
+
 if /i "!success!" == "false" exit /b 1
+
+exit /b 0

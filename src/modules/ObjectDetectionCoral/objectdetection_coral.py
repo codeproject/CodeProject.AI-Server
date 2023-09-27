@@ -91,6 +91,8 @@ def init_detect(options: Options) -> str:
 
     except Exception as ex:
         try:
+            print("Unable to find or initialise the Coral TPU. Falling back to CPU-only.")
+            
             device = "cpu"
             interpreter = make_interpreter(options.model_cpu_file, device="cpu", delegate=None)
         except Exception as ex:

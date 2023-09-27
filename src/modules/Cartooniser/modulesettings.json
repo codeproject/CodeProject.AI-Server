@@ -3,7 +3,7 @@
 
     "Cartooniser": {
       "Name": "Cartooniser",
-      "Version": "1.1",
+      "Version": "1.2",
 
       // Publishing info
       "Description": "Convert a photo into an anime style cartoon", 
@@ -13,14 +13,15 @@
 
       // Which server version is compatible with each version of this module.
       "ModuleReleases": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "2.1", "" ], "ReleaseDate": "2023-03-28" },
-        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1.7", "" ],      "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" }
-     ],
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "2.1",   "2.1.6"  ], "ReleaseDate": "2023-03-28" },
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.2",   "" ],       "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" }
+      ],
 
       // Launch instructions
       "AutoStart": true,
       "FilePath": "cartooniser_adapter.py",
-      "Runtime": "python39",
+      "Runtime": "python3.9",
       "RuntimeLocation": "Local", // Can be Local or Shared
       
       // These are all optional. Defaults are usually fine
@@ -67,6 +68,26 @@
               "Name": "imageBase64",
               "Type": "Base64ImageData",
               "Description": "The base64 encoded image."
+            },
+            {
+              "Name": "command",
+              "Type": "String",
+              "Description": "The command that was sent as part of this request. Can be detect, list, status."
+            },
+            {
+              "Name": "moduleId",
+              "Type": "String",
+              "Description": "The Id of the module that processed this request."
+            },
+            {
+              "Name": "executionProvider",
+              "Type": "String",
+              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
+            },
+            {
+              "Name": "canUseGPU",
+              "Type": "Boolean",
+              "Description": "True if this module can use the current GPU if one is present."
             },
             {
               "Name": "inferenceMs",

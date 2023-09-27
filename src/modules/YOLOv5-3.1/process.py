@@ -3,7 +3,14 @@ import time
 from typing import Tuple
 import cv2
 import numpy as np
+
+# https://github.com/pytorch/pytorch/issues/7082#issuecomment-483090607
+try:
+    import os
+    del os.environ['MKL_NUM_THREADS']
+except: pass
 import torch
+
 from models.experimental import attempt_load
 from PIL import Image
 from utils.datasets import LoadImages, LoadStreams, letterbox

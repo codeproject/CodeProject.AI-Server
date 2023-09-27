@@ -5,9 +5,9 @@
 :: This script is only called from ..\..\setup.bat 
 
 @if "%1" NEQ "install" (
-	echo This script is only called from ..\..\setup.bat
-	@pause
-	@goto:eof
+    echo This script is only called from ..\..\setup.bat
+    @pause
+    @goto:eof
 ) else set setupMode=SetupDevEnvironment
 
 :: NOTHING TO DO HERE

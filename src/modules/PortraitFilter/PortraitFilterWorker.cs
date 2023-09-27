@@ -9,9 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 
 using SkiaSharp.Views.Desktop;
-
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Modules.PortraitFilter
 {
@@ -21,9 +20,9 @@ namespace CodeProject.AI.Modules.PortraitFilter
     }
 
     /// <summary>
-    /// Implements the CommandQueueWorker for Portrait mode inference
+    /// Implements the ModuleWorkerBase for Portrait mode inference
     /// </summary>
-    public class PortraitFilterWorker : CommandQueueWorker
+    public class PortraitFilterWorker : ModuleWorkerBase
     {
         private const string _modelPath = "Lib\\deeplabv3_mnv2_pascal_train_aug.onnx";
 
@@ -122,19 +121,27 @@ namespace CodeProject.AI.Modules.PortraitFilter
         {
             var sessionOpts = new SessionOptions();
 
-            if (SupportGPU)
+            string[]? providers = null;
+            try
             {
-                string[]? providers = null;
-                try
-                {
-                    providers = OrtEnv.Instance().GetAvailableProviders();
-                }
-                catch
-                {
-                }
+                providers = OrtEnv.Instance().GetAvailableProviders();
+            }
+            catch
+            {
+            }
 
-                // Enable CUDA  -------------------
-                if (providers?.Any(p => p.StartsWithIgnoreCase("CUDA")) ?? false)
+            // foreach (var providerName in providers ?? Array.Empty<string>())
+            //    _logger.LogDebug($"PortraitFilter provider: {providerName}");
+
+            // Note on CanUseGPU: if !SupportGPU then we aren't actually going to attempt to load
+            // the provider, so we won't really know if we can truly use the GPU. 
+            // If SupportGPU = true then we set CanUseGPU true for the first provider that works,
+            // even if subsequent providers fail to load
+
+            // Enable CUDA  -------------------
+            if (providers?.Any(p => p.StartsWithIgnoreCase("CUDA")) ?? false)
+            {
+                if (SupportGPU)
                 {
                     try
                     {
@@ -142,15 +149,21 @@ namespace CodeProject.AI.Modules.PortraitFilter
 
                         ExecutionProvider = "CUDA";
                         HardwareType      = "GPU";
+                        CanUseGPU         = true;
                     }
                     catch
                     {
                         // do nothing, the provider didn't work so keep going
                     }
                 }
-
-                // Enable OpenVINO -------------------
-                if (providers?.Any(p => p.StartsWithIgnoreCase("OpenVINO")) ?? false)
+                else
+                    CanUseGPU = true;
+            }
+            
+            // Enable OpenVINO -------------------
+            if (providers?.Any(p => p.StartsWithIgnoreCase("OpenVINO")) ?? false)
+            {
+                if (SupportGPU)
                 {
                     try
                     {
@@ -160,15 +173,21 @@ namespace CodeProject.AI.Modules.PortraitFilter
 
                         ExecutionProvider = "OpenVINO";
                         HardwareType      = "GPU";
+                        CanUseGPU         = true;
                     }
                     catch
                     {
                         // do nothing, the provider didn't work so keep going
                     }
                 }
+                else
+                    CanUseGPU = true;
+            }
 
-                // Enable DirectML -------------------
-                if (providers?.Any(p => p.StartsWithIgnoreCase("DML")) ?? false)
+            // Enable DirectML -------------------
+            if (providers?.Any(p => p.StartsWithIgnoreCase("DML")) ?? false)
+            {
+                if (SupportGPU)
                 {
                     try
                     {
@@ -177,12 +196,15 @@ namespace CodeProject.AI.Modules.PortraitFilter
 
                         ExecutionProvider = "DirectML";
                         HardwareType      = "GPU";
+                        CanUseGPU         = true;
                     }
                     catch
                     {
                         // do nothing, the provider didn't work so keep going
                     }
                 }
+                else
+                    CanUseGPU = true;
             }
 
             sessionOpts.AppendExecutionProvider_CPU();

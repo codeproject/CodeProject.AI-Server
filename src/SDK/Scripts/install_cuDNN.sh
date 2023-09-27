@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # CodeProject.AI Server 
 #
 # Ubuntu / WSL cuDNN install script
@@ -34,18 +36,23 @@
 
 writeLine "Setting up cuDNN and CUDA for CodeProject.AI Server" $color_info
 
-linux_driver="530.30.02"	# > 450.80.02 for linux
-cudnn_version="8.9.4.*"		# latest, works with CUDA 11.8+
-cuda_version="11.8" 		# 12.1
-cuda_version_dash="11-8" 	# 12-1
-cuda_version_full="11.8.0" 	# 12.1.1
+linux_driver="530.30.02"    # > 450.80.02 for linux
+cudnn_version="8.9.4.*"     # latest, works with CUDA 11.8+
+cuda_version="11.8"         # 12.1
+cuda_version_dash="11-8"    # 12-1
+cuda_version_full="11.8.0"  # 12.1.1
 
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID) # eg "ubuntu20.04"
-OS_name="${distribution//./}" 	# eg "ubuntu2204"
+OS_name="${distribution//./}"     # eg "ubuntu2204"
 
+# Install kernel headers and development packages for the currently running kernel
+if [ "${systemName}" != 'WSL' ]; then
+    write " - Installing kernel headers and development packages for the currently running kernel..." $color_mute
+    sudo apt-get install linux-headers-$(uname -r)
+    writeLine "Done" $color_success
+fi
 
 # Updating Signing keys
-
 write " - Removing old signing key..." $color_mute
 apt-key del 7fa2af80 >/dev/null 2>/dev/null
 writeLine "Done" $color_success
@@ -56,8 +63,8 @@ keyring="cuda-keyring_1.0-1_all.deb"
 
 if [ ! -d "${downloadPath}" ]; then mkdir -p "${downloadPath}"; fi
 if [ ! -d "${downloadPath}/CUDA" ]; then mkdir -p "${downloadPath}//CUDA"; fi
-
 pushd "${downloadPath}/CUDA"  >/dev/null 2>/dev/null
+
 if [ ! -f "$keyring" ]; then 
     if [ "${architecture}" == "arm64" ]; then
         wget $wgetFlags https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/sbsa/${keyring}
@@ -89,8 +96,8 @@ spin $!
 writeLine "Done" $color_success
 
 # The only practical cases here are: Native Linux on x86 or arm64 with CUDA,
-# or WSL. Docker already contains the libs, macOS doesn't support CUDA. RPi
-# doesn't support CUDA and Jetson gets CUDA via Jetpack
+# or WSL. Docker already contains the libs, macOS doesn't support CUDA. RPi and
+# Orange Pi don't support CUDA and Jetson gets CUDA via Jetpack
 
 installer_repo="https://developer.download.nvidia.com/compute/cuda/${cuda_version_full}/local_installers/"
 if [ "${architecture}" == "arm64" ]; then

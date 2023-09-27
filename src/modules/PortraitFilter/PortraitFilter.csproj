@@ -87,7 +87,7 @@
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.13.1-dev-20221026-1209-861125ccb" Condition="'$(GpuType)'=='OpenVINO'" />
 		-->
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.13.1" Condition="'$(GpuType)'=='DirectML'" />
-		<PackageReference Include="Microsoft.AI.DirectML" Version="1.10.1" Condition="'$(GpuType)'=='DirectML'"/>
+		<PackageReference Include="Microsoft.AI.DirectML" Version="1.10.1" Condition="'$(GpuType)'=='DirectML'" />
 
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
 		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.3" />
@@ -95,7 +95,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\API\Common\Common.csproj" />
 		<ProjectReference Include="..\..\SDK\NET\NET.csproj" />
 	</ItemGroup>
 
@@ -103,5 +102,37 @@
 		<None Update="Lib\deeplabv3_mnv2_pascal_train_aug.onnx">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.Debug.pdb" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.pdb" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.Debug.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.Debug.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.Debug.pdb" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.pdb" />
 	</ItemGroup>
 </Project>

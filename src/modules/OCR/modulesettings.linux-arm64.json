@@ -2,7 +2,7 @@
   "Modules": {
     "OCR": {
       "SupportGPU": false, // see requirements.linux.cuda.txt for discussion
-      "Runtime": "python39"
+      "Runtime": "python3.9"
     }
   }
 }

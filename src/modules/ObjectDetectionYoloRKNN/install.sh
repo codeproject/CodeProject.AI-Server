@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            ObjectDetection (Fast Deploy RKNN)
@@ -11,40 +13,31 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
 # FastDeploy requires a version of GCLIB higher than what's in the RPi Ubuntu OS.
 # We need to work around this - except this lib is tied hard to the OS. Most likely
 # solution is we use the standard FastDeploy libs for non-RockNPU hardware
 
-# systemName wasn't getting the correct name in a docker environment. This fixes it.
-modelInfo=$(tr -d '\0' </sys/firmware/devicetree/base/model)
-if [[ "${modelInfo}" == *"Orange Pi"* ]]; then systemName="Orange Pi"; fi
-
 if [ "${systemName}" != "Orange Pi" ]; then
     writeLine "ObjectDetection (Fast Deploy RKNN) can only be installed on Orange Pi devices" "$color_error"
-    quit 0
+else
+
+    pythonLocation="Local"
+    pythonVersion=3.9
+
+    # Install python and the required dependencies
+    setupPython
+    installPythonPackages
+
+    # Download the models and store in /assets and /custom-models
+    getFromServer "objectdetect-rknn-models.zip"        "assets" "Downloading Standard YOLOv5 RKNN models..."
+    getFromServer "objectdetect-rknn-custom-models.zip" "custom-models" "Downloading Custom YOLOv5 RKNN models..."
+    
+    module_install_success='true'
+
 fi
-
-#if [ "${systemName}" == "Raspberry Pi" ]; then
-#    sudo apt install libc6
-#fi
-
-setupPython 3.9 "Local"
-if [ $? -ne 0 ]; then quit 1; fi
-
-# install the python packages for this module and the SDK
-installPythonPackages 3.9 "${modulePath}" "Local"
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages 3.9 "${absoluteAppRootDir}/SDK/Python" "Local"
-if [ $? -ne 0 ]; then quit 1; fi
-
-# Download the models and store in /assets and /custom-models
-getFromServer "objectdetect-rknn-models.zip"        "assets" "Downloading Standard YOLOv5 RKNN models..."
-if [ $? -ne 0 ]; then quit 1; fi
-getFromServer "objectdetect-rknn-custom-models.zip" "custom-models" "Downloading Custom YOLOv5 RKNN models..."
-
 
 #                         -- Install script cheatsheet -- 
 #

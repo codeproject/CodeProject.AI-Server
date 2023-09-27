@@ -141,7 +141,7 @@ IF exist "!cuDNNPattern!" (
         REM 1. When you set the PATH variable, %PATH% will not reflect the update you just made, so
         REM    doing "PATH = PATH + change1" followed by "PATH = PATH + change2" results in just Change2 
         REM    being added. So: do all the changes in one fell swoop.
-        REM 2. WWe can't use setx /M PATH "%PATH%;C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\dll_x64"
+        REM 2. We can't use setx /M PATH "%PATH%;C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\dll_x64"
         REM    because setx truncates the path to 1024 characters. In 2022. Insanity.
         REM 3. Only update the path if we need to. Check for existance before modifying!
 

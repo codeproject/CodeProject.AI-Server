@@ -3,4 +3,4 @@
 ## CodeProject.AI Demos
 imutils            # Installing the image utilities library
 opencv-python      # Installing OpenCV, the Computer Vision library for Python
-numpy			   # Installing NumPy, a package for scientific computing
+numpy              # Installing NumPy, a package for scientific computing

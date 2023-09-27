@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                           OCR
@@ -11,7 +13,7 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
 # Work needs to be done to get Paddle to install on the Raspberry Pi 
@@ -19,48 +21,32 @@ if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] |
     writeLine 'Unable to install PaddleOCR on Raspberry Pi, Orange Pi or Jetson. Quitting.' 'Red'
 else
 
-    # Ensure CUDA and cuDNN is installed. Note this is only for native linux since 
-    # macOS no longer supports NVIDIA, WSL (Linux under Windows) uses the Windows 
-    # drivers, and docker images already contain the necessary SDKs and libraries
-    if [ "$os" == "linux" ] && [ "$hasCUDA" == "true" ] && [ "${inDocker}" == "false" ]; then
-    	correctLineEndings "${sdkScriptsPath}/install_cuDNN.sh"
-	    source "${sdkScriptsPath}/install_cuDNN.sh"
+    pythonLocation="Local"
+    pythonVersion=3.8
+
+    if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || [ "${systemName}" == "Jetson" ]; then
+        pythonVersion=3.7
     fi
 
     # Install python and the required dependencies.
+    setupPython
+    installPythonPackages
 
-    # Note that PaddlePaddle requires Python3.8 or below. Except on RPi and Jetson? TODO: check 3.9 on all.
-    if [ "${systemName}" != "Raspberry Pi" ] && [ "${systemName}" != "Orange Pi" ] && [ "${systemName}" != "Jetson" ]; then
-        setupPython 3.8 "Local"
-        if [ $? -ne 0 ]; then quit 1; fi
-        installPythonPackages 3.8 "${modulePath}" "Local"
-        if [ $? -ne 0 ]; then quit 1; fi
-        installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "Local"
-        if [ $? -ne 0 ]; then quit 1; fi
-    fi
-
-    # Download the OCR models and store in /paddleocr
-    getFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
-    if [ $? -ne 0 ]; then quit 1; fi
+    # remove "." from pythonVersion
+    pythonDir="${pythonVersion//.}"
 
     if [ "${systemName}" != "Raspberry Pi" ] && [ "${systemName}" != "Orange Pi" ] && [ "${systemName}" != "Jetson" ]; then
+
         # We have a patch to apply for linux and macOS due to a numpy upgrade that 
         # deprecates np.int that we can't downgrade
         writeLine 'Applying PaddleOCR patch'
-        cp ${modulePath}/patch/paddleocr-2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/python38/venv/lib/python3.8/site-packages/paddleocr/ppocr/postprocess/.
-    fi
+        cp ${modulePath}/patch/paddleocr-2.6.0.1/db_postprocess.py ${modulePath}/bin/${os}/${pythonDir}/venv/lib/${pythonVersion}/site-packages/paddleocr/ppocr/postprocess/.
 
-    # Installing PaddlePaddle: Gotta do this the hard way for RPi.
-    # Thanks to https://qengineering.eu/install-paddlepaddle-on-raspberry-pi-4.html
-    # NOTE: This, so far, hasn't been working. Sorry.
-    if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || [ "${systemName}" == "Jetson" ]; then
+    else
 
-        setupPython 3.9 "Local"
-        if [ $? -ne 0 ]; then quit 1; fi
-        installPythonPackages 3.9 "${modulePath}" "Local"
-        if [ $? -ne 0 ]; then quit 1; fi
-        installPythonPackages 3.9 "${absoluteAppRootDir}/SDK/Python" "Local"
-        if [ $? -ne 0 ]; then quit 1; fi
+        # Installing PaddlePaddle: Gotta do this the hard way for RPi and Jetson.
+        # Thanks to https://qengineering.eu/install-paddlepaddle-on-raspberry-pi-4.html
+        # NOTE: This, so far, hasn't been working. Sorry.
 
         # a fresh start
         sudo apt-get update -y
@@ -70,7 +56,7 @@ else
         sudo apt-get install libatlas-base-dev libopenblas-dev libblas-dev -y
         sudo apt-get install liblapack-dev patchelf gfortran -y
 
-        cd ./bin/linux/python38/venv/bin
+        cd ./bin/linux/${pythonDir}/venv/bin
 
         # Using python -m pip instead of ./pip3 because pip3 may not be present
         # sudo -H ./pip3 install Cython
@@ -100,7 +86,15 @@ else
 
         popd
     fi
+
+    # Download the OCR models and store in /paddleocr
+    getFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
+
+    module_install_success='true'
+
 fi
+
+
 #                         -- Install script cheatsheet -- 
 #
 # Variables available:

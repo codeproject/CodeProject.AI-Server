@@ -1,28 +1,31 @@
 #! Python3.8
 
+# For Coral, we need Tensorflow (preferably TF-Lite) and the Coral library. 
 
-# neither tflite or tf-macos has versions that support new OSs. We will install via scripp
-# tflite-runtime==2.5.0.post1 # Installing Tensorflow Lite
-# tensorflow-macos            # Installing Tensorflow for macOS, the open source machine learning framework for everyone
-# tensorflow                  # Installing Tensorflow, the open source machine learning framework for everyone
+# TENSORFLOW
+# The last pre-built TF-Lite for macOS is for macOS 11 on Intel, or macOS 12 on
+# Apple silicon. However, TensorFlow does include TF-Lite (it's just a bigger-
+# than-needed download) so we can install TensorFlow for macOS.
+# For Tensorflow < 2.13, use tensorflow-macos, otherwise just tensorflow. If you
+# are running macOS 11 on x64, or macOS 12 on arm64, then you can use the TF-Lite
+# libraries directly. Due to this mix-n-match we'll install TF-Lite via script
 
-# Note: if we wanted to support Metal and keras directly, we can add 
-# https://developer.apple.com/metal/tensorflow-plugin/
+# tensorflow     # Installing Tensorflow, the open source machine learning framework for everyone
 
-numpy>=1.16.0                 # Installing NumPy, the fundamental package for array computing with Python.
-#numpy==1.16.2                # Installing NumPy, a package for scientific computing
+numpy>=1.16.0    # Installing NumPy, the fundamental package for array computing with Python.
+Pillow>=4.0.0    # Installing Pillow, a Python Image Library
 
-Pillow>=4.0.0                 # Installing Pillow, a Python Image Library
+# PYCORAL
+# The last pre-built pycoral for macOS is for macOS 11 on Intel, or macOS 12 on
+# Apple silicon. If you are running macOS 11 on x64, or macOS 12 on arm64, then
+# you can install pycoral directly. You don't necessarily *need* pycoral, though,
+# since this library just provides convenience functions, and we include the code
+# itself in this module. See https://google-coral.github.io/py-repo/pycoral/ for
+# the list of pre-built wheels.
 
-# Support for Python 3.6-3.9 on macOS 11 only
-# 3.6	https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp36-cp36m-macosx_11_0_x86_64.whl
-# 3.7	https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp37-cp37m-macosx_11_0_x86_64.whl
-# 3.8	https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp38-cp38-macosx_11_0_x86_64.whl
-# 3.9	https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp39-cp39-macosx_11_0_x86_64.whl
-
-# Not supported on macOS > 12
 # --extra-index-url https://google-coral.github.io/py-repo/ 
-# pycoral~=2.0
+# pycoral~=2.0   # Installing PyCoral, the edge TPU library for Coral.AI devices
+
 # We are going to have to build this library ourselves
 # - https://hub.docker.com/r/tensorflow/build for the docker build images
 # - https://www.tensorflow.org/lite/guide/build_cmake_pip - official instructions

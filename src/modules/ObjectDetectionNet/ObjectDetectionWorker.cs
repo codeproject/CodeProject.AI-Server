@@ -9,9 +9,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using CodeProject.AI.SDK;
-using CodeProject.AI.SDK.Common;
 
 using Yolov5Net.Scorer;
+using CodeProject.AI.SDK.Utils;
 
 #pragma warning disable CS0162 // unreachable code
 
@@ -24,7 +24,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
     /// While intended for development and tests, this also demonstrates how a backend service can
     /// be created with the .NET Core framework.
     /// </summary>
-    public class ObjectDetectionWorker : CommandQueueWorker
+    public class ObjectDetectionWorker : ModuleWorkerBase
     {
         private const bool ShowTrace = false;
 
@@ -60,14 +60,19 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 
             _modelDir  = Text.FixSlashes(_modelDir);
             _customDir = Text.FixSlashes(_customDir);
+
+            // Determine the GPU Hardware/ExecutionProvider
+            var modelPath = GetStandardModelPath();
+            var detector = GetDetector(modelPath, addToCache: false);
+            UpdateGpuInfo(detector);
         }
 
         protected override void InitModule()
         {
-            Logger.LogWarning("Please ensure you don't enable this module along side any other " +
-                              "Object Detection module using the 'vision/detection' route and " +
-                              "'objectdetection_queue' queue (eg. ObjectDetectionYolo). " +
-                              "There will be conflicts");
+            // Logger.LogWarning("Please ensure you don't enable this module along side any other " +
+            //                  "Object Detection module using the 'vision/detection' route and " +
+            //                  "'objectdetection_queue' queue (eg. ObjectDetectionYolo). " +
+            //                  "There will be conflicts");
 #if CPU
             Logger.LogInformation("ObjectDetection (.NET) built for CPU");
 #elif CUDA
@@ -123,7 +128,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 }
             }
             else if (payload.command.EqualsIgnoreCase("detect") == true)               // Perform 'standard' object detection
-            {               
+            {
                 var file = payload.files?.FirstOrDefault();
                 if (file is null)
                     return new BackendErrorResponse("No File supplied for object detection.");
@@ -132,14 +137,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 if (!float.TryParse(minConfidenceValue, out float minConfidence))
                     minConfidence = 0.4f;
 
-                string modelPath = (_mode ?? string.Empty.ToLower()) switch
-                {
-                    "large"  => _modelDir + "yolov5l.onnx",
-                    "medium" => _modelDir + "yolov5m.onnx",
-                    "small"  => _modelDir + "yolov5s.onnx",
-                    "tiny"   => _modelDir + "yolov5n.onnx",
-                    _        => _modelDir + "yolov5m.onnx"
-                };
+                string modelPath = GetStandardModelPath();
 
                 response = DoDetection(modelPath, file, minConfidence);
             }
@@ -175,6 +173,18 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             return response;
         }
 
+        private string GetStandardModelPath()
+        {
+            return (_mode ?? string.Empty.ToLower()) switch
+            {
+                "large" => _modelDir + "yolov5l.onnx",
+                "medium" => _modelDir + "yolov5m.onnx",
+                "small" => _modelDir + "yolov5s.onnx",
+                "tiny" => _modelDir + "yolov5n.onnx",
+                _ => _modelDir + "yolov5m.onnx"
+            };
+        }
+
         /// <summary>
         /// Performs detection of objects in an image using the given model
         /// </summary>
@@ -191,14 +201,10 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             if (ShowTrace)
                 Console.WriteLine($"Trace: Start DoDetection: {traceSW.ElapsedMilliseconds}ms");
 
-            if (!_detectors.TryGetValue(modelPath, out ObjectDetector? detector) || detector is null)
-            {
-                if (ShowTrace)
-                    Console.WriteLine($"Trace: Creating Detector: {traceSW.ElapsedMilliseconds}ms");
+            ObjectDetector? detector = GetDetector(modelPath);
 
-                detector = new ObjectDetector(modelPath, _logger);
-                _detectors.TryAdd(modelPath, detector);
-            }
+            if (ShowTrace)
+                Console.WriteLine($"Trace: Creating Detector: {traceSW.ElapsedMilliseconds}ms");
 
             if (detector is null)
                 return new BackendErrorResponse($"Unable to create detector for model {modelPath}");
@@ -206,8 +212,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             if (ShowTrace)
                 Console.WriteLine($"Trace: Setting hardware type: {traceSW.ElapsedMilliseconds}ms");
 
-            HardwareType      = detector.HardwareType;
-            ExecutionProvider = detector.ExecutionProvider;
+            UpdateGpuInfo(detector);
 
             if (ShowTrace)
                 Console.WriteLine($"Trace: Start Predict: {traceSW.ElapsedMilliseconds}ms");
@@ -226,7 +231,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 Console.WriteLine($"Trace: Start Processing results: {traceSW.ElapsedMilliseconds}ms");
 
             var results = yoloResult.Where(x => x?.Rectangle != null && x.Score >= minConfidence);
-            int count   = results.Count();
+            int count = results.Count();
             string message = string.Empty;
             if (count > 3)
                 message = "Found " + string.Join(", ", results.Take(3).Select(x => x?.Label?.Name ?? "item")) + "...";
@@ -237,11 +242,11 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 
             if (ShowTrace)
                 Console.WriteLine($"Trace: Sending results: {traceSW.ElapsedMilliseconds}ms");
-                
+
             return new BackendObjectDetectionResponse
             {
-                count       = count,
-                message     = message,
+                count = count,
+                message = message,
                 predictions = results.Select(x =>
                                 new DetectionPrediction
                                 {
@@ -254,6 +259,26 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                                 }).ToArray(),
                 inferenceMs = inferenceMs
             };
+        }
+
+        private void UpdateGpuInfo(ObjectDetector detector)
+        {
+            HardwareType = detector.HardwareType;
+            ExecutionProvider = detector.ExecutionProvider;
+            CanUseGPU = detector.CanUseGPU;
+        }
+
+        private ObjectDetector GetDetector(string modelPath, bool addToCache = true)
+        {
+            if (!_detectors.TryGetValue(modelPath, out ObjectDetector? detector) || detector is null)
+            {
+
+                detector = new ObjectDetector(modelPath, _logger);
+                if (addToCache)
+                    _detectors.TryAdd(modelPath, detector);
+            }
+
+            return detector;
         }
     }
 }

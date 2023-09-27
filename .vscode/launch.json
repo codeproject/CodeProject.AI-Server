@@ -12,13 +12,13 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-server",
-            "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server",
+            // "postDebugTask": "stop-all",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
             },
             "args": [],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "cwd": "${workspaceFolder}/src/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
             "serverReadyAction": {
@@ -37,16 +37,33 @@
                 "group": "3 Server"
             },
 
-            "name": "Build Server only",
+            "name": "Build Server Debug",
 
             "type": "python", 
-            "code":"#",  // dummy command
+            "code": "#",  // dummy command
             "console": "internalConsole",
             "request": "launch",
             "preLaunchTask": "build-server",
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "cwd": "${workspaceFolder}/src/server/",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+        {
+            "presentation": {
+                "group": "3 Server"
+            },
+
+            "name": "Build Server Release",
+
+            "type": "python", 
+            "code": "#",  // dummy command
+            "console": "internalConsole",
+            "request": "launch",
+            "preLaunchTask": "build-server-release",
+            "cwd": "${workspaceFolder}/src/server/",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Production"
             }
         },
 
@@ -60,13 +77,13 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-all",
-            "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server",
+            // "postDebugTask": "stop-all",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
             },
             "args": [],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "cwd": "${workspaceFolder}/src/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
             "serverReadyAction": {
@@ -104,7 +121,7 @@
             // "args": [ "--version" ], // dummy command
 
             "preLaunchTask": "build-all",
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "cwd": "${workspaceFolder}/src/server/",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
@@ -121,13 +138,13 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-all-arm64",
-            "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server",
+            // "postDebugTask": "stop-all",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
             },
             "args": [],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "cwd": "${workspaceFolder}/src/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
             "serverReadyAction": {
@@ -164,7 +181,7 @@
             // "args": [ "--version" ], // dummy command
 
             "preLaunchTask": "build-all-arm64",
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "cwd": "${workspaceFolder}/src/server/",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
@@ -181,12 +198,12 @@
             "name": "Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
             },
             "args": [],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/",
+            "cwd": "${workspaceFolder}/src/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
             "serverReadyAction": {
@@ -235,14 +252,14 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-server",
-            "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server.exe",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.exe",
             "linux": {
-                "program": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
             },
             "args": [
                 "--ModuleOptions:LaunchModules=false"
             ],
-            "cwd": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net7.0/",
+            "cwd": "${workspaceFolder}/src/server/bin/Debug/net7.0/",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
@@ -332,7 +349,8 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
-                "CPAI_PORT": "32168"
+                "CPAI_PORT": "32168",
+                "U2NET_HOME": "${workspaceFolder}/src/modules/BackgroundRemover/models"
             },
             "windows": {
                 "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/windows/python39/venv/Scripts/python.exe",
@@ -499,37 +517,6 @@
                 "group": "5 Launch Individual",
                 "hidden": false
             },
-            "name": "Object Detect TFLite",
-            "type": "python",
-            "request": "launch",
-            "python": "${workspaceFolder}/src/modules/ObjectDetectionTFLite/bin/windows/python39/venv/Scripts/python.exe",
-            "program": "objectdetection_tflite_adapter.py",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionTFLite",
-            "console": "integratedTerminal",
-            "justMyCode": false,
-            "env": {
-                "DEBUG_IN_VSCODE": "True",
-                "RUNNING_IN_VSCODE": "True",
-                "CPAI_PORT": "32168",
-                "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
-                "MODEL_SIZE": "tiny"
-            },
-            "windows": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionTFLite/bin/windows/python39/venv/Scripts/python.exe",
-            },
-            "linux": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionTFLite/bin/linux/python39/venv/bin/python",
-            },
-            "osx": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionTFLite/bin/macos/python39/venv/bin/python",
-            }
-        },
-
-        {
-            "presentation": {
-                "group": "5 Launch Individual",
-                "hidden": false
-            },
             "name": "Object Detect YOLO 6.2",
             "type": "python",
             "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
@@ -613,6 +600,29 @@
                 "python": "${workspaceFolder}/src/modules/OCR/bin/macos/python38/venv/bin/python",
             }
             */
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Portrait Filter",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-portraitfilter",
+            "program": "${workspaceFolder}/src/modules/PortraitFilter/bin/Debug/net7.0/PortraitFilter",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/modules/PortraitFilter",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true"
+            }
         },
 
         {

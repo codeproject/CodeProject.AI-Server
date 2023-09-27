@@ -27,7 +27,7 @@ class RequestData:
         else:
             self.request_id = ""
 
-        if not self.payload:
+        if not hasattr(self, 'payload') or not self.payload:
             self.payload = {
                 "queue":      "N/A",
                 "urlSegments": None,
@@ -107,15 +107,15 @@ class RequestData:
         self.payload["command"] = command_name
 
     @property
-    def urlSegments(self):
+    def segments(self):
         """ Gets the segments of the URL that was used to make the API call """
-        return self._urlSegments
+        return self._segments
       
-    @urlSegments.setter
-    def urlSegments(self, segments) -> None:
+    @segments.setter
+    def segments(self, segments) -> None:
         """ Sets the segments of the URL that was used to make the API call """
-        self._urlSegments = segments
-        self.payload["segments"] = segments
+        self._segments = segments
+        self.payload["urlSegments"] = segments
 
     def json(self) -> JSON:
         json_request_data = {
@@ -128,7 +128,7 @@ class RequestData:
     def add_value(self, key: str, value: any) -> None:
         if not key:
             return None       
-        self.payload["values"].append({key: value})
+        self.payload["values"].append({"key": key, "value" : [value]})
 
     def add_file(self, file_name: str) -> None:
         if not file_name:
@@ -207,7 +207,7 @@ class RequestData:
 
         except Exception as ex:
             if self._verbose_exceptions:
-                print(f"Error getting get_request_value: {str(ex)}")
+                print(f"Error getting {key} from request data payload: {str(ex)}")
             return defaultValue
 
     def get_int(self, key : str, defaultValue : int = None) -> int:

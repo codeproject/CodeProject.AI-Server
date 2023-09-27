@@ -13,7 +13,7 @@ namespace CodeProject.AI.SDK
         /// Loads a Bitmap from a file.
         /// </summary>
         /// <param name="filename">The file name.</param>
-        /// <returns>The Bitmap, or null.</returns>
+        /// <returns>The image, or null.</returns>
         /// <remarks>SkiSharp handles more image formats than System.Drawing.</remarks>
         public static SKImage? GetImage(string? filename)
         {
@@ -28,7 +28,11 @@ namespace CodeProject.AI.SDK
             return skiaImage; //.ToBitmap();
         }
 
-        // Using SkiaSharp as it handles more formats.
+        /// <summary>
+        /// Get an image from a byte array.
+        /// </summary>
+        /// <param name="imageStream">The stream</param>
+        /// <returns>An image</returns>
         public static SKImage? GetImage(byte[]? imageData)
         {
             if (imageData == null)

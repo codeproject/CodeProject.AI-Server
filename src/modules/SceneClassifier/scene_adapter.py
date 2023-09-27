@@ -65,6 +65,8 @@ class Scene_adapter(ModuleRunner):
 
         self.place_names = tuple(self.classes)
 
+        self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS
+
         if self.opts.use_CUDA:
             self.opts.use_CUDA = self.hasTorchCuda
 
@@ -95,10 +97,8 @@ class Scene_adapter(ModuleRunner):
             self.init_models()
 
             start_inference_time = time.perf_counter()
-
-            name, conf = self.classifier.predict(img)
-
-            inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
+            name, conf           = self.classifier.predict(img)
+            inferenceMs          = int((time.perf_counter() - start_inference_time) * 1000)
 
             name = self.place_names[name]
             conf = float(conf)

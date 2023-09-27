@@ -16,13 +16,13 @@ class Options:
 
         # Models at https://github.com/MikeLud/CodeProject.AI-Custom-IPcam-Models/tree/main/RKNN_Models/yolov5
         self.MODEL_SETTINGS = {
-            # Large:    yolov5-large 80 objects,    COCO 640x640x3	RKNN-2
+            # Large:    yolov5-large 80 objects,    COCO 640x640x3    RKNN-2
             "large":    Settings(640, 'yolov5-large'),
-            # Medium:   yolov5-medium  80 objects,  COCO 640x640x3	RKNN-2
+            # Medium:   yolov5-medium  80 objects,  COCO 640x640x3    RKNN-2
             "medium":   Settings(640, 'yolov5-medium'),
-            # Small:    yolov5-small 80 objects,    COCO 640x640x3	RKNN-2
+            # Small:    yolov5-small 80 objects,    COCO 640x640x3    RKNN-2
             "small":    Settings(640, 'yolov5-small'),
-            # Tiny:     yolov5-tiny 80 objects,     COCO 640x640x3  RKNN-2
+            # Tiny:     yolov5-tiny 80 objects,     COCO 640x640x3    RKNN-2
             "tiny":     Settings(640, 'yolov5-tiny')
         }
 

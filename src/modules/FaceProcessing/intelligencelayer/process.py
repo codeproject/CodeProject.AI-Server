@@ -6,13 +6,12 @@ from models.experimental import attempt_load
 from PIL import Image
 from utils.augmentations import letterbox
 from utils.general import non_max_suppression, scale_coords
-from module_runner import ModuleRunner
 
 class YOLODetector(object):
     def __init__(self, model_path: str, reso: int = 640, cuda: bool = False, 
                  mps: bool = False, half_precision: str = 'enable'):
 
-        # Use half-precision if possible. There's a bunch of Nvidia cards where
+        # Use half-precision if possible. There's a bunch of NVIDIA cards where
         # this won't work
         if cuda:
             device_type      = "cuda"
@@ -82,9 +81,7 @@ class YOLODetector(object):
             img = img.unsqueeze(0)
 
         pred = self.model(img, augment=False)[0]
-        pred = non_max_suppression(
-            pred, confidence, 0.45, classes=None, agnostic=False
-        )[0]
+        pred = non_max_suppression(pred, confidence, 0.45, classes=None, agnostic=False)[0]
 
         if pred is None:
             pred = []

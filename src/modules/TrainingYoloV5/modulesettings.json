@@ -3,7 +3,7 @@
 
     "TrainingYoloV5": {
       "Name": "Training for YoloV5 6.2",
-      "Version": "1.2",
+      "Version": "1.3",
 
       // Publishing info
       "Description": "Train custom models for YOLOv5 v6.2 with support for CPUs, CUDA enabled GPUs, and Apple Silicon.", 
@@ -13,15 +13,16 @@
 
       // Which server version is compatible with each version of this module.
       "ModuleReleases": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "2.1.10", "" ], "ReleaseDate": "2022-08-02" },
-        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1.11", "" ], "ReleaseDate": "2023-08-12", "ReleaseNotes": "Added 'patience', 'workers' as parameters" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1.11", "" ], "ReleaseDate": "2023-08-17", "ReleaseNotes": "Bug fix" }
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "2.1.10", "2.1.10" ], "ReleaseDate": "2022-08-02" },
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1.11", "2.1.12" ], "ReleaseDate": "2023-08-12", "ReleaseNotes": "Added 'patience', 'workers' as parameters" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1.11", "2.1.12" ], "ReleaseDate": "2023-08-17", "ReleaseNotes": "Bug fix" },
+        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.2",    "" ],       "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer, user-provided datasets supported" }
      ],
 
       // Launch instructions
       "AutoStart": true,
       "FilePath": "TrainingYoloV5.py",
-      "Runtime": "python38",
+      "Runtime": "python3.8",
       "RuntimeLocation": "Local",  // Can be Local or Shared. If Local, update install.* files.
 
       // These are all optional. Defaults are usually fine

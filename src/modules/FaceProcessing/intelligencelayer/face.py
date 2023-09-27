@@ -27,7 +27,8 @@ from shared import SharedOptions
 
 # Set the path based on Deepstack's settings so CPU / GPU packages can be correctly loaded
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "."))
-sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
+# Currently not using this
+# sys.path.append(os.path.join(SharedOptions.APPDIR, SharedOptions.SETTINGS.PLATFORM_PKGS))
 
 # Import libraries from the Python VENV using the correct packages dir
 from PIL import UnidentifiedImageError, Image
@@ -70,27 +71,32 @@ class Face_adapter(ModuleRunner):
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
         ])
 
-        self.resolution = SharedOptions.SETTINGS.DETECTION_MEDIUM
+        # self.resolution = SharedOptions.SETTINGS.DETECTION_MEDIUM
+        self.resolution = SharedOptions.SETTINGS.FACE_MEDIUM
         if SharedOptions.MODE == "High":
-            self.resolution = SharedOptions.SETTINGS.DETECTION_HIGH
+        #    self.resolution = SharedOptions.SETTINGS.DETECTION_HIGH
+             self.resolution = SharedOptions.SETTINGS.FACE_HIGH
         elif SharedOptions.MODE == "Medium":
-            self.resolution = SharedOptions.SETTINGS.DETECTION_MEDIUM
+        #    self.resolution = SharedOptions.SETTINGS.DETECTION_MEDIUM
+             self.resolution = SharedOptions.SETTINGS.FACE_MEDIUM
         elif SharedOptions.MODE == "Low":
-            self.resolution = SharedOptions.SETTINGS.DETECTION_LOW
+        #    self.resolution = SharedOptions.SETTINGS.DETECTION_LOW
+             self.resolution = SharedOptions.SETTINGS.FACE_LOW
 
 
     def initialise(self) -> None:
-        # This isn't actually necessary because SharedOptions already tests for
-        # CUDA and only sets USE_CUDA = True if PyTorch reports CUDA being
-        # available. That test should be done here. HOWEVER, SharedOptions
-        # chooses settings like resolution, package folders, model names etc 
-        # based on whether CUDA is used, and those settings need to be done
-        # before this point. This can (and should) be refactored, but not today.
-        #
-        # if SharedOptions.USE_CUDA:
-        #    SharedOptions.USE_CUDA = module_runner.hasTorchCuda
-        # if SharedOptions.USE_MPS:
-        #    SharedOptions.USE_MPS = module_runner.hasTorchMPS
+        # Note that SharedOptions already tests for CUDA and only sets 
+        # USE_CUDA = True if PyTorch reports CUDA being available, because
+        # settings like resolution, package folders, model names etc are
+        # based on whether CUDA is used. This can (and should) be refactored,
+        # but not today.
+        
+        self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS
+
+        if SharedOptions.USE_CUDA:
+            SharedOptions.USE_CUDA = self.hasTorchCuda
+        if SharedOptions.USE_MPS:
+            SharedOptions.USE_MPS = self.hasTorchMPS
 
         # We'll assume that USE_CUDA / USE_MPS are correct to avoid slow code
         if SharedOptions.USE_CUDA:
@@ -287,9 +293,7 @@ class Face_adapter(ModuleRunner):
             img: Image        = data.get_image(0)
 
             start_time        = time.perf_counter()
-
-            det = self.detector.predictFromImage(img, threshold)
-
+            det               = self.detector.predictFromImage(img, threshold)
             inferenceMs       = int((time.perf_counter() - start_time) * 1000)
 
             outputs = []
@@ -604,10 +608,10 @@ class Face_adapter(ModuleRunner):
                     predictions.append(user_data)
 
                 output = {
-                    "success": True,
-                    "predictions": predictions,
-                    "count": len(predictions),
                     "message": "No known faces",
+                    "count": len(predictions),
+                    "predictions": predictions,
+                    "success": True,
                     "inferenceMs": inferenceMs
                 }
 
@@ -672,9 +676,21 @@ class Face_adapter(ModuleRunner):
                     predictions.append(user_data)
 
                 if found_known:
-                    output = {"success": True, "predictions": predictions, "count": len(predictions), "message": "A face was recognised", "inferenceMs": inferenceMs}
+                    output = {
+                        "message": "A face was recognised",
+                        "count": len(predictions),
+                        "predictions": predictions,
+                        "success": True,
+                        "inferenceMs": inferenceMs
+                    }
                 else:
-                    output = {"success": True, "predictions": predictions, "count": len(predictions), "message": "No known faces", "inferenceMs": inferenceMs}
+                    output = {
+                        "message": "No known faces",
+                        "count": len(predictions),
+                        "predictions": predictions,
+                        "success": True,
+                        "inferenceMs": inferenceMs
+                    }
 
         except UnidentifiedImageError:
             message = "The image provided was of an unknown type"
@@ -758,10 +774,18 @@ class Face_adapter(ModuleRunner):
                     F.cosine_similarity(embed1, embed2).item() + 1
                 ) / 2
 
-                output = {"success": True, "similarity": similarity, "inferenceMs": inferenceMs }                      
+                output = {
+                    "success": True,
+                    "similarity": similarity,
+                    "inferenceMs": inferenceMs
+                }
 
             else:
-                output = {"success": False, "error": "No face found in one or both images", "inferenceMs": inferenceMs }
+                output = {
+                    "success": False,
+                    "error": "No face found in one or both images",
+                    "inferenceMs": inferenceMs
+                }
 
         except Exception as ex:
             trace = "".join(traceback.TracebackException.from_exception(ex).format())

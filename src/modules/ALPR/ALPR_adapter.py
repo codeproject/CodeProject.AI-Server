@@ -23,7 +23,8 @@ class ALPR_adapter(ModuleRunner):
         self.opts = Options()
 
     def initialise(self) -> None:
-        self.opts.use_gpu = self.support_GPU and self.hasPaddleGPU
+        self.can_use_GPU = self.hasPaddleGPU
+        self.opts.use_gpu = self.support_GPU and self.can_use_GPU
         if self.opts.use_gpu:
             self.processor_type     = "GPU"
             self.execution_provider = "CUDA"   # PaddleOCR supports only CUDA enabled GPUs at this point

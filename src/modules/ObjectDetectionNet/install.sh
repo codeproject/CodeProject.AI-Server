@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            .NET YOLO Object Detection
@@ -11,24 +13,21 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
-
-# version="1.2"
-version=$(getVersionFromModuleSettings "modulesettings.json" "Version") 
 
 # Pull down the correct .NET image of ObjectDetectionNet based on this OS / GPU combo
 if [ "${executionEnvironment}" == "Production" ]; then
-	imageName="ObjectDetectionNet-CPU-${version}.zip"
-	if [ "${enableGPU}" == "true" ]; then
-		imageName="ObjectDetectionNet-OpenVino-${version}.zip"
-		if [ "${supportCUDA}" == "true" ] && [ "${hasCUDA}" == "true" ]; then
-			imageName="ObjectDetectionNet-CUDA-${version}.zip"
-		fi
-	fi
-	getFromServer "${imageName}" "" "Downloading ObjectDetectionNet module..."
+    imageName="ObjectDetectionNet-CPU-${moduleVersion}.zip"
+    if [ "${enableGPU}" == "true" ] && [ "${os}" != "macos" ]; then
+        imageName="ObjectDetectionNet-OpenVINO-${moduleVersion}.zip"
+        if [ "${supportCUDA}" == "true" ] && [ "${hasCUDA}" == "true" ]; then
+            imageName="ObjectDetectionNet-CUDA-${moduleVersion}.zip"
+        fi
+    fi
+    getFromServer "${imageName}" "" "Downloading ${imageName}..."
 else
-	getFromServer "ObjectDetectionNetNugets.zip" "LocalNugets" "Downloading Nuget packages..."
+    getFromServer "ObjectDetectionNetNugets.zip" "LocalNugets" "Downloading Nuget packages..."
 fi
 
 # Download the models and store in /assets
@@ -39,10 +38,12 @@ getFromServer "yolonet-custom-models.zip" "custom-models" "Downloading Custom YO
 if [ "${platform}" == "macos" ]; then
     brew install onnxruntime
 elif [ "${platform}" == "macos-arm64" ]; then
-	# We need to ensure we use the correct brew on Applle Silicon
-    # brew install onnxruntime
-	/opt/homebrew/bin/brew install onnxruntime
+    # We need to ensure we use the correct brew on Apple Silicon
+    /opt/homebrew/bin/brew install onnxruntime
 fi
+
+module_install_success='true'
+
 
 #                         -- Install script cheatsheet -- 
 #

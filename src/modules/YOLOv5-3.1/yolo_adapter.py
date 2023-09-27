@@ -42,6 +42,8 @@ class YOLO31_adapter(ModuleRunner):
 
         init_detect(self.opts)
 
+        self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS
+
         if self.opts.use_CUDA:
             self.execution_provider = "CUDA"
         elif self.opts.use_MPS:
@@ -232,9 +234,10 @@ class YOLO31_adapter(ModuleRunner):
                 message = "No objects found"
 
             return {
-                "success"     : True, 
-                "predictions" : outputs,
                 "message"     : message,
+                "count"       : len(outputs),
+                "predictions" : outputs,
+                "success"     : True, 
                 "processMs"   : int((time.perf_counter() - start_time) * 1000),
                 "inferenceMs" : inferenceMs
             }

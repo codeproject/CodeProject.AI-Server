@@ -28,7 +28,7 @@ if current_python_dir:
 import aiohttp
 
 # CodeProject.AI SDK. Import these *after* we've set the import path
-from common import JSON
+from common import JSON, check_installed_packages
 from module_logging import LogMethod, ModuleLogger, LogVerbosity
 from request_data   import RequestData
 from module_options import ModuleOptions
@@ -79,8 +79,9 @@ class ModuleRunner:
         child classes
         """
         pass
+    
 
-    def __init__(self):
+    def __init__(self) -> None:
         """ 
         Constructor. 
         """
@@ -97,6 +98,7 @@ class ModuleRunner:
         self._current_error_pause_secs = 0
 
         self._hasTorchCuda          = None
+        self._hasTorchROCm          = None
         self._hasTorchDirectML      = None
         self._hasTorchHalfPrecision = None
         self._hasTorchMPS           = None
@@ -123,7 +125,6 @@ class ModuleRunner:
         # Module Descriptors
         self.module_id           = ModuleOptions.module_id
         self.module_name         = ModuleOptions.module_name
-        self.module_path         = ModuleOptions.module_path
 
         # Server API location and Queue
         self.base_api_url        = ModuleOptions.base_api_url
@@ -132,6 +133,7 @@ class ModuleRunner:
 
         # General Module and Server settings
         self.server_root_path    = ModuleOptions.server_root_path
+        self.module_path         = ModuleOptions.module_path
         self.python_dir          = current_python_dir
         self.log_verbosity       = ModuleOptions.log_verbosity
         self.launched_by_server  = ModuleOptions.launched_by_server
@@ -146,6 +148,7 @@ class ModuleRunner:
         self.cpu_brand           = ""
         self.cpu_vendor          = ""
         self.cpu_arch            = ""
+        self.can_use_GPU         = False # Whether or not this module provides GPU support for the current hardware
 
         # General purpose flags. These aren't currently supported as common flags
         # self.use_CUDA          = ModuleOptions.use_CUDA
@@ -154,9 +157,11 @@ class ModuleRunner:
         # self.use_ONNXRuntime   = ModuleOptions.use_ONNXRuntime
         # self.use_OpenVINO      = ModuleOptions.use_OpenVINO
 
-        # What system are we running on?
-        self.system = { 'Linux': 'Linux', 'Darwin': 'macOS', 'Windows': 'Windows'}[platform.system()]
-        self.in_WSL = self.system == 'Linux' and 'microsoft-standard-WSL' in uname().release
+        # What OS, architecture and system are we running on?
+        self.os     = { 'Linux': 'Linux', 'Darwin': 'macOS', 'Windows': 'Windows'}[platform.system()]
+        
+        self.in_WSL = self.os == 'Linux' and 'microsoft-standard-WSL' in uname().release
+        self.system = self.os
 
         # Further tests for Micro devices
         if self.system == 'Linux': 
@@ -167,9 +172,17 @@ class ModuleRunner:
                     if 'raspberry pi' in model_info:
                         self.system = 'Raspberry Pi'
                     elif 'orange pi' in model_info:
-                        self.system = 'Orange Pi'
+                        self.system = 'OrangePi'
                         
             except Exception: pass
+
+        # ...and for Jetson
+        if self.system == 'Linux': 
+            try:
+                import io
+                with io.open('/proc/device-tree/model', 'r') as m:
+                    if 'nvidia jetson' in m.read().lower(): self.system = 'Jetson'
+            except Exception: pass 
 
         # Need to hold off until we're ready to create the main logging loop.
         # self._logger           = ModuleLogger(self.port, self.server_root_path)
@@ -199,7 +212,7 @@ class ModuleRunner:
         self._base_queue_url = self.base_api_url + "queue/"
 
     @property
-    def hasTorchCuda(self):
+    def hasTorchCuda(self) -> bool:
         """ Is CUDA support via PyTorch available? """
 
         if self._hasTorchCuda == None:
@@ -211,7 +224,7 @@ class ModuleRunner:
         return self._hasTorchCuda
 
     @property
-    def hasTorchDirectML(self):
+    def hasTorchDirectML(self) -> bool:
         """ Is DirectML support via PyTorch available? """
 
         if self._hasTorchDirectML == None:
@@ -225,7 +238,37 @@ class ModuleRunner:
         return self._hasTorchDirectML
 
     @property
-    def hasTorchHalfPrecision(self):
+    def hasTorchROCm(self) -> bool:
+        """ Is ROCm (AMD GPU) support via PyTorch available? """
+        
+        if self._hasTorchROCm == None:
+            self._hasTorchROCm = False
+
+            if self.system == 'Linux' or self.system == 'Windows':
+                try:
+                    import subprocess
+
+                    devices = []
+                    process_result = subprocess.run(['rocminfo'], stdout=subprocess.PIPE)
+                    cmd_str = process_result.stdout.decode('utf-8')
+                    cmd_split = cmd_str.split('Agent ')
+                    for part in cmd_split:
+                        item_single = part[0:1]
+                        item_double = part[0:2]
+                        if item_single.isnumeric() or item_double.isnumeric():
+                            new_split = cmd_str.split('Agent '+item_double)
+                            output = new_split[1].split('Marketing Name:')[0]
+                            output = output.replace('  Name:                    ', '').replace('\n','')
+                            output = output.replace('                  ','')
+                            device = output.split('Uuid:')[0].split('*******')[1]
+                            devices.append(device)
+                    self._hasTorchROCm = len(devices) > 0
+                except: pass
+            
+        return self._hasTorchROCm
+
+    @property
+    def hasTorchHalfPrecision(self) -> bool:
         """ Can this (assumed) NVIDIA GPU support half-precision operations? """
 
         if self._hasTorchHalfPrecision == None:
@@ -240,6 +283,7 @@ class ModuleRunner:
                 # also seem to have issues
                 if self._hasTorchHalfPrecision:
                     problem_childs = [
+                        
                         # FAILED:
                         # GeForce GTX 1650, GeForce GTX 1660
                         # T400, T600, T1000
@@ -261,12 +305,13 @@ class ModuleRunner:
                     ]
                     card_name = torch.cuda.get_device_name()
         
-                    self._hasTorchHalfPrecision = not any(check_name in card_name for check_name in problem_childs)
+                    self._hasTorchHalfPrecision = not any(check_name in card_name for check_name in problem_childs)                
+
             except: pass
         return self._hasTorchHalfPrecision
 
     @property
-    def hasONNXRuntime(self):
+    def hasONNXRuntime(self) -> bool:
         """ Is the ONNX runtime available? """
         
         if self._hasONNXRuntime == None:
@@ -279,7 +324,7 @@ class ModuleRunner:
         return self._hasONNXRuntime
 
     @property
-    def hasONNXRuntimeGPU(self):
+    def hasONNXRuntimeGPU(self) -> bool:
         """ Is the ONNX runtime available and is there a GPU that will support it? """
 
         if self._hasONNXRuntimeGPU == None:
@@ -291,7 +336,7 @@ class ModuleRunner:
         return self._hasONNXRuntimeGPU
 
     @property
-    def hasOpenVINO(self):
+    def hasOpenVINO(self) -> bool:
         """ Is OpenVINO available? """
 
         if self._hasOpenVINO == None:
@@ -304,7 +349,7 @@ class ModuleRunner:
         return self._hasOpenVINO
 
     @property
-    def hasTorchMPS(self):
+    def hasTorchMPS(self) -> bool:
         """ Are we running on Apple Silicon and is MPS support in PyTorch available? """
 
         if self._hasTorchMPS == None:
@@ -317,7 +362,7 @@ class ModuleRunner:
         return self._hasTorchMPS
 
     @property
-    def hasPaddleGPU(self):
+    def hasPaddleGPU(self) -> bool:
         """ Is PaddlePaddle available and is there a GPU that supports it? """
 
         if self._hasPaddleGPU == None:
@@ -329,7 +374,7 @@ class ModuleRunner:
         return self._hasPaddleGPU
 
     @property
-    def hasCoralTPU(self):
+    def hasCoralTPU(self) -> bool:
         """ Is there a Coral.AI TPU connected and are the libraries in place to support it? """
 
         if self._hasCoralTPU == None:
@@ -369,7 +414,7 @@ class ModuleRunner:
         return self._hasCoralTPU
 
     @property
-    def hasFastDeployRockNPU(self):
+    def hasFastDeployRockNPU(self) -> bool:
         """ Is the Rockchip NPU present (ie. on a Orange Pi) and supported by
             the fastdeploy library? """
 
@@ -384,12 +429,12 @@ class ModuleRunner:
         return self._hasFastDeployRockNPU
 
     @property
-    def execution_provider(self):
+    def execution_provider(self) -> str:
         """ Gets the execution provider (eg. CPU, GPU, TPU, NPU etc) """
         return self._execution_provider
       
     @execution_provider.setter
-    def execution_provider(self, provider):
+    def execution_provider(self, provider) -> None:
         """ 
         Sets the execution provider, and in doing so will also ensure the
         hardware ID makes sense. (Yes, TMI on the hardware ID, but important.
@@ -405,7 +450,7 @@ class ModuleRunner:
             self.processor_type = "GPU"
 
 
-    def start_loop(self):
+    def start_loop(self) -> None:
         """
         Starts the tasks that will run the execution loops that check the 
         command queue and forwards commands to the module. Each task runs 
@@ -414,7 +459,7 @@ class ModuleRunner:
         """
 
         # SMOKE TEST: 
-        # If this module has been called from the command line and a smoke test
+        # If this module has been called from the command line and a self test
         # has been requested, then we'll run that test and exit immediately,
         # rather than firing up the loop to handle messages. 
         # We could call this from the __init__ method to be cleaner, but child
@@ -425,6 +470,7 @@ class ModuleRunner:
         if len(sys.argv) > 1 and sys.argv[1] == "--selftest":
             self._logger = ModuleLogger(self.port, self.server_root_path)
             self.initialise()
+            self.check_packages()
             self.selftest()
             quit()
 
@@ -706,12 +752,12 @@ class ModuleRunner:
         """
         Gets a command from the queue associated with this object. 
         CodeProject.AI works on the  basis of having a client pass requests to 
-        the frontend server, which in turns places each request into various 
+        the server's public API, which in turns places each request into various 
         command queues. The backend analysis services continually pull requests
         from the queue that they can service. Each request for a queued command
         is done via a long poll HTTP request.
 
-        Returns the Json package containing the raw request from the client 
+        Returns the JSON package containing the raw request from the client 
         that was sent to the server
 
         Remarks: The API server will currently only return a single command, 
@@ -727,6 +773,8 @@ class ModuleRunner:
             url = self._base_queue_url + self.queue_name + "?moduleId=" + self.module_id
             if self.execution_provider:
                 url += "&executionProvider=" + self.execution_provider
+            if self.can_use_GPU is not None:
+                url += "&canUseGPU=" + str(self.can_use_GPU).lower()
 
             # Send a request to query the queue and wait up to 30 seconds for a
             # response. We're basically long-polling here
@@ -876,14 +924,14 @@ class ModuleRunner:
         Sends the result of a comment to the analysis services back to the API
         server who will then pass this result back to the original calling 
         client. CodeProject.AI works on the basis of having a client pass 
-        requests to the frontend server, which in turns places each request 
+        requests to the server's public API, which in turns places each request 
         into various command queues. The backend analysis services continually 
         pull requests from the queue that they can service, process each 
         request, and then send the results back to the server.
 
         Param: request_id - the ID of the request that was originally pulled 
                             from the command queue.
-        Param: body:      - the Json result (as a string) from the analysis of 
+        Param: body:      - the JSON result (as a string) from the analysis of 
                             the request.
 
         Returns:          - True on success; False otherwise
@@ -896,6 +944,8 @@ class ModuleRunner:
             url = self._base_queue_url + request_id + "?moduleId=" + self.module_id
             if self.execution_provider is not None:
                 url += "&executionProvider=" + self.execution_provider
+            if self.can_use_GPU is not None:
+                url += "&canUseGPU=" + str(self.can_use_GPU).lower()
             
             # print("Sending response to server")
             async with self._request_session.post(
@@ -960,6 +1010,9 @@ class ModuleRunner:
         })
 
     async def report_error_async(self, exception: Exception, filename: str, message: str = None) -> None:
+        """
+        Shortcut method provided solely to allow a module to report an error asynchronously
+        """
 
         if not message and exception:
             message = "".join(traceback.TracebackException.from_exception(exception).format())
@@ -972,3 +1025,79 @@ class ModuleRunner:
             "message": message,
             "exception_type": exception.__class__.__name__ if exception else None
         })
+
+
+    def check_packages(self) -> None:
+        """
+        Checks that the packages defined in the requirements.*.txt file for this
+        platform are actually installed
+        """
+        requirements_filepath = self.get_requirements_filepath()
+        if requirements_filepath:
+            print(check_installed_packages(requirements_filepath, False))
+
+    def get_requirements_filepath(self) -> str:
+        """
+        Gets the requirements.*.txt file for the given system and hardware, ensuring
+        that this file actually exists
+        """
+
+        # This is getting complicated. The order of priority for the requirements file is:
+        #
+        #  requirements.os.architecture.(cuda|rocm).txt
+        #  requirements.os.(cuda|rocm).txt
+        #  requirements.cuda.txt
+        #  requirements.os.architecture.gpu.txt
+        #  requirements.os.gpu.txt
+        #  requirements.gpu.txt
+        #  requirements.os.architecture.txt
+        #  requirements.os.txt
+        #  requirements.txt
+        #
+        # The logic here is that we go from most specific to least specific. The only
+        # real tricky bit is the subtlety around .cuda vs .gpu. CUDA / ROCm are specific
+        # types of card. We may not be able to support that, but may be able to support
+        # other cards generically via OpenVINO or DirectML. So CUDA or ROCm first,
+        # then GPU, then CPU. With a query at each step for OS and architecture.
+
+        filename = ""
+        os_name  = self.os.lower()
+        arch     = self.cpu_arch.lower()
+
+        if self.support_GPU:
+            if self.hasTorchCuda:
+                if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.cuda.txt")):
+                    filename = f"requirements.{os_name}.{arch}.cuda.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.cuda.txt")):
+                    filename = f"requirements.{os_name}.cuda.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.cuda.txt")):
+                    filename = f"requirements.cuda.txt"
+
+            if self.hasTorchROCm:
+                if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.rocm.txt")):
+                    filename = f"requirements.{os_name}.{arch}.rocm.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.rocm.txt")):
+                    filename = f"requirements.{os_name}.rocm.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.rocm.txt")):
+                    filename = f"requirements.rocm.txt"
+
+            if not filename:
+                if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.gpu.txt")):
+                    filename = f"requirements.{os_name}.{arch}.gpu.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.gpu.txt")):
+                    filename = f"requirements.{os_name}.gpu.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.gpu.txt")):
+                    filename = f"requirements.gpu.txt"
+
+            if not filename:
+                if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.txt")):
+                    filename = f"requirements.{os_name}.{arch}.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.txt")):
+                    filename = f"requirements.{os_name}.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.txt")):
+                    filename = f"requirements.txt"
+
+        if filename:
+            return os.path.join(self.module_path, filename)
+
+        return None

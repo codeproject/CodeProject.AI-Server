@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            Cartooniser
@@ -11,20 +13,21 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
-# Install python and the required dependencies in the shared Python environment
-setupPython 3.9 "Local"
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages 3.9 "${modulePath}" "Local"
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages 3.9 "${absoluteAppRootDir}/SDK/Python" "Local"
-if [ $? -ne 0 ]; then quit 1; fi
+pythonLocation="Local"
+pythonVersion=3.9
+
+# Install python and the required dependencies
+setupPython
+installPythonPackages
 
 # Download the models and store in /models
 getFromServer "cartooniser-models.zip" "weights" "Downloading Cartooniser models..."
-if [ $? -ne 0 ]; then quit 1; fi
+
+module_install_success='true'
+
 
 # see https://pyimagesearch.com/2018/01/22/install-dlib-easy-complete-guide/ for notes on RPi
 

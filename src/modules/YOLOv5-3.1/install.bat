@@ -9,33 +9,20 @@
 :: The setup.bat file will find this install.bat file and execute it.
 
 @if "%1" NEQ "install" (
-	echo This script is only called from ..\..\setup.bat
-	@pause
-	@goto:eof
+    echo This script is only called from ..\..\setup.bat
+    @pause
+    @goto:eof
 )
 
+:: set verbosity=loud
+set pythonLocation=Local
+set pythonVersion=3.7
+
 :: Install python and the required dependencies
-call "%sdkScriptsPath%\utils.bat" SetupPython 3.7 "Local"
-if errorlevel 1 exit /b 1
-
-:: Installing the old Torch versions can cause havoc. This should help
-:: https://bobbyhadz.com/blog/python-no-module-named-setuptools
-call "%sdkScriptsPath%\utils.bat" WriteLine "Re-installing python setuptools. Just in case."
-"%modulePath%\bin\windows\python37\venv\Scripts\pip3" uninstall setuptools -y -q -q
-"%modulePath%\bin\windows\python37\venv\Scripts\python" -m pip install setuptools -q -q
-
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%modulePath%" "Local"
-if errorlevel 1 exit /b 1
-
-:: TODO: This needs to be a self contained 'SetupSDK Python 3.7 "Local"' call
-::       We'd also need 'SetupSDK Python 3.7 "Shared"' 
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 3.7 "%absoluteAppRootDir%\SDK\Python" "Local"
-if errorlevel 1 exit /b 1
+call "%sdkScriptsPath%\utils.bat" SetupPython
 
 :: Download the YOLO models and custom models and store in /assets
 call "%sdkScriptsPath%\utils.bat" GetFromServer "models-yolo5-31-pt.zip"        "assets" "Downloading Standard YOLOv5 models..."
-
-:: TODO: Move this to %ProgramData%\CodeProject\AI\custom-models
 call "%sdkScriptsPath%\utils.bat" GetFromServer "custom-models-yolo5-31-pt.zip" "custom-models" "Downloading Custom YOLOv5 models..."
 
 

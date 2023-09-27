@@ -1,0 +1,18 @@
+{
+  "Modules": {
+    "FaceProcessing": {
+      "EnvironmentVariables": {
+        "YOLOv5_AUTOINSTALL": "false",
+        "YOLOv5_VERBOSE": "false",
+
+        "PROFILE": "jetson",
+        "USE_CUDA": "False",
+        "MODE": "LOW",
+
+        "APPDIR": "%CURRENT_MODULE_PATH%\\intelligencelayer",
+        "DATA_DIR": "%DATA_DIR%",
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets"
+      }
+    }
+ }
+}

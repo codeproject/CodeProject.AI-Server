@@ -22,6 +22,7 @@ class cartooniser_adapter(ModuleRunner):
     def __init__(self):
         super().__init__()
         self.opts = Options()
+
     async def initialise(self) -> None:
         # GPU support not fully working in Linux
         # if self.opts.use_gpu and not self.hasTorchCuda:
@@ -41,7 +42,7 @@ class cartooniser_adapter(ModuleRunner):
 
             start_time = time.perf_counter()
             (cartoon, inferenceMs) = inference(img, self.opts.weights_dir, 
-                                                   model_name, device_type)
+                                               model_name, device_type)
 
             processMs = int((time.perf_counter() - start_time) * 1000)
 

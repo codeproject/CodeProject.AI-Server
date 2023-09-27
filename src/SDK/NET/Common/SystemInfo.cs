@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 using Hardware.Info;
+using CodeProject.AI.SDK.Utils;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 namespace CodeProject.AI.SDK.Common
@@ -122,7 +123,7 @@ namespace CodeProject.AI.SDK.Common
             get
             {
                 var info = base.Description
-                         + $" CUDA: {CudaVersionInstalled} (capable: {CudaVersionCapability})"
+                         + $" CUDA: {CudaVersionInstalled} (max supported: {CudaVersionCapability})"
                          + " Compute: " + ComputeCapacity;
 
                 return info;
@@ -270,8 +271,8 @@ namespace CodeProject.AI.SDK.Common
             get
             {
                 if (IsDevelopmentCode ||
-                    // Really should use the IHostEnvironment.IsDevelopment method, but needs a reference to
-                    // IHostEnvironment.
+                    // Really should use the IHostEnvironment.IsDevelopment method, but needs a
+                    // reference to IHostEnvironment.
                     Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").EqualsIgnoreCase("Development") ||
                     Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT").EqualsIgnoreCase("Development"))
                 {
@@ -386,9 +387,11 @@ namespace CodeProject.AI.SDK.Common
                 if (IsWindows)
                     return IsWSL? "WSL" : "Windows";
                     
-                if (HardwareVendor == "Raspberry Pi" || HardwareVendor == "Jetson" ||
-                    HardwareVendor == "Orange Pi")
+                if (HardwareVendor == "Raspberry Pi" || HardwareVendor == "Orange Pi")
                     return HardwareVendor;
+
+                if (HardwareVendor == "NVIDIA Jetson")
+                    return "Jetson";
 
                 if (IsDocker)
                     return "Docker";
@@ -424,7 +427,7 @@ namespace CodeProject.AI.SDK.Common
                     {
                         // string cpuInfo = File.ReadAllText("/proc/cpuinfo"); - no good for OrangePi
                         string cpuInfo = File.ReadAllText("/sys/firmware/devicetree/base/model");
-                        if (cpuInfo.Contains("Raspberry Pi"))
+                        if (cpuInfo.ContainsIgnoreCase("Raspberry Pi"))
                             _hardwareVendor = "Raspberry Pi";
                         else if (cpuInfo.ContainsIgnoreCase("Orange Pi"))
                             _hardwareVendor = "Orange Pi";
@@ -610,7 +613,9 @@ namespace CodeProject.AI.SDK.Common
 
             if (!string.IsNullOrWhiteSpace(gpuDesc))
             {
-                gpuDesc = gpuDesc.Replace("Driver:", "\n                  Driver:");
+                // Wrap the lines
+                gpuDesc = gpuDesc.Replace("Driver:",  "\n                  Driver:");
+                // gpuDesc = gpuDesc.Replace("Compute:", "\n                  Compute:");
                 info.AppendLine($"GPU:              {gpuDesc}");
             }
             if (Memory is not null)
@@ -1104,23 +1109,23 @@ namespace CodeProject.AI.SDK.Common
         /// <returns>A nullable NvidiaInfo object</returns>
         private async static ValueTask<NvidiaInfo?> ParseNvidiaSmiAsync()
         {
-            // Do an initial fast check to see if we have an NVIDIA card. This saves a process call
-            // and exception in the case there's not NVIDIA card. If _hardwareInfo is null then we
-            // just plow on ahead regardless.
-            /* LET'S NOT. This doesn't work in Docker, even though smi is available.
-            if (_hasNvidiaCard is null && _hardwareInfo is not null)
-            {
-                _hasNvidiaCard = false;
-                foreach (var videoController in _hardwareInfo.VideoControllerList)
-                {
-                    if (videoController.Manufacturer.ContainsIgnoreCase("NVIDIA"))
-                        _hasNvidiaCard = true;
-                }
-            }
-            */
+            // It would be nice to know if an NVIDIA card exists before calling the nvidia-smi
+            // utility in order to avoid unnecessary exception and error output. We could query
+            // _hardwareInfo.VideoControllerList and see if one contains "NVIDIA", but that won't
+            // work under docker. So, we can try looking for the nvidia-smi command directly.
+            // ** TO BE TESTED **
+            // if (_hasNvidiaCard is null)
+            //    _hasNvidiaCard = CheckCommandExists("nvidia-smi");
 
             if (HasNvidiaGPU == false)
                 return null;
+
+            // Quick test for NVidia card
+            if (SystemName == "Raspberry Pi" || SystemName == "Orange Pi" || IsMacOS)
+            {
+                _hasNvidiaCard = false;
+                return null;
+            }
 
             NvidiaInfo? gpu = null;
 
@@ -1208,10 +1213,12 @@ namespace CodeProject.AI.SDK.Common
                     ComputeCapacity       = computeCapacity,
                 };
             }
-            catch (Exception ex)
+            catch (Exception/* ex */)
             {
                 _hasNvidiaCard = false;
-                Debug.WriteLine(ex.ToString());
+#if DEBUG
+                // Debug.WriteLine(ex.ToString());
+#endif
                 return null;
             }
 
@@ -1571,6 +1578,39 @@ namespace CodeProject.AI.SDK.Common
             }
 #endif
             return values;
+        }
+
+        private static bool CheckCommandExists(string command)
+        {
+            try
+            {
+                string? paths = Environment.GetEnvironmentVariable("PATH");
+                if (string.IsNullOrWhiteSpace(paths))
+                    return File.Exists(command) || File.Exists(command + ".exe") || File.Exists(command + ".bat");
+
+                string[] pathDirs = paths.Split(Path.PathSeparator);
+
+                foreach (string pathDir in pathDirs)
+                {
+                    string commandPath = Path.Combine(pathDir, command);
+                    
+                    // Check if the file exists and is executable
+                    if (File.Exists(commandPath) || 
+                        File.Exists(commandPath + ".exe") || 
+                        File.Exists(commandPath + ".bat"))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions
+                Console.WriteLine($"Error checking for {command}: {ex.Message}");
+                return false;
+            }
         }
 
         private static string JetsonComputeCapability(string hardwareName)

@@ -17,20 +17,20 @@ class Options:
 
         # Models at https://coral.ai/models/object-detection/
         self.MODEL_SETTINGS = {
-            # Large: SSD/FPN MobileNet V1 90 objects, COCO 640x640x3	TF-lite v2	229.4 ms	31.1% mAP
+            # Large: SSD/FPN MobileNet V1 90 objects, COCO 640x640x3    TF-lite v2    229.4 ms    31.1% mAP
             "large":  Settings(640, 'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq.tflite',
                                     'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_edgetpu.tflite',
                                     'tf2_ssd_mobilenet_v1_coco_labels.txt'),
-            # Medium: EfficientDet-Lite3   90 objects, COCO 512x512x3	TF-lite v2	107.6 ms    39.4%  mAP
+            # Medium: EfficientDet-Lite3   90 objects, COCO 512x512x3    TF-lite v2    107.6 ms    39.4%  mAP
             "medium": Settings(512, 'efficientdet_lite3_512_ptq.tflite',
                                     'efficientdet_lite3_512_ptq_edgetpu.tflite',
                                     'efficientdet_lite3_512_ptq_labels.txt'),
-            # Small: SSD/FPN MobileNet V2 90 objects, COCO 300x300x3	TF-lite v2	7.6 ms	22.4% mAP
+            # Small: SSD/FPN MobileNet V2 90 objects, COCO 300x300x3    TF-lite v2    7.6 ms    22.4% mAP
             "small": Settings(300,  'tf2_ssd_mobilenet_v2_coco17_ptq.tflite',
                                     'tf2_ssd_mobilenet_v2_coco17_ptq_edgetpu.tflite',
                                     'tf2_ssd_mobilenet_v2_coco17_labels.txt'),
 
-            # Tiny: MobileNet V2 90 objects, COCO 300x300x3	TF-lite v2 Quant
+            # Tiny: MobileNet V2 90 objects, COCO 300x300x3    TF-lite v2 Quant
             "tiny": Settings(300,   'ssd_mobilenet_v2_coco_quant_postprocess.tflite',
                                     'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite',
                                     'ssd_mobilenet_v2_coco_quant_postprocess_labels.txt'),

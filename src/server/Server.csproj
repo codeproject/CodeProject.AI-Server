@@ -1,0 +1,175 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<!-- 
+To learn about what can be done with methods and variables in the project files read
+https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=vs-2022
+-->
+
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
+	<Import Project="../SDK/NET/Common.targets" />
+
+	<!-- Meta data -->
+	<PropertyGroup>
+		<Name>API Server</Name>
+		<!-- THIS MUST NOT CHANGE. It's the name of the Windows service -->
+		<Product>CodeProject.AI Server</Product>
+		<Description>CodeProject.AI API Server provides a plug-in API for hosting AI inference and training modules, accessible via any language, any platform.</Description>
+		<Company>CodeProject</Company>
+		<Authors>CodeProject</Authors>
+		<Version>2.2.4</Version>
+	</PropertyGroup>
+
+	<!-- Build properties -->
+	<PropertyGroup>
+		<RootNamespace>CodeProject.AI.Server</RootNamespace>
+		<AssemblyName>CodeProject.AI.Server</AssemblyName>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<Platform>AnyCPU</Platform>
+		<TargetFramework>net7.0</TargetFramework>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+		<DeleteExistingFiles>true</DeleteExistingFiles>
+		<!--
+		If this is in place then you can't launch this app inside VSCode, and when
+		launching from Explorer you get a UAC prompt.
+		
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		-->
+	</PropertyGroup>
+
+	<!-- Package properties -->
+	<PropertyGroup>
+		<PackageLicenseExpression>SSPL-1.0</PackageLicenseExpression>
+		<PackageProjectUrl>https://www.codeproject.com/ai</PackageProjectUrl>
+		<PackageIcon>codeproject125x125.png</PackageIcon>
+	</PropertyGroup>
+
+	<!-- Docker properties -->
+	<PropertyGroup>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DockerfileContext>..\..</DockerfileContext>
+		<DockerfileTag>codeproject/ai-server</DockerfileTag>
+	</PropertyGroup>
+
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>false</SelfContained>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
+		<!-- This forces the app into running in admin mode. THIS IS NOT OPTIMAL
+		     from a security point of view -->
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+	</PropertyGroup>
+
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Controllers\TextController.cs" />
+		<Compile Remove="Controllers\VisionController.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Remove="installconfig.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="7.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\SDK\NET\NET.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Update="wwwroot\assets\bootstrap.bundle.min.js">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\bootstrap-dark.min.css">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\bootstrap.min.css">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\codeproject-colour.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\codeproject60x60.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\codeprojectAI-black.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\codeprojectAI-white.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\dashboard.css">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\dashboard.js">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\favicon-16x16.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\favicon-32x32.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\logo135-bg.gif">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\logo250x135.gif">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\senseAI.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\styles.css">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\sw.js">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\index.html">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\vision.html">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="codeproject125x125.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Update="module_dir_readme.txt">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(IsWindows)'=='true'">
+		<Exec Command="call ..\SDK\Scripts\starttimer.bat $(ProjectName)" />
+	</Target>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(IsWindows)'=='true'">
+		<Exec Command="call ..\SDK\Scripts\endtimer.bat $(ProjectName)" />
+	</Target>
+
+</Project>

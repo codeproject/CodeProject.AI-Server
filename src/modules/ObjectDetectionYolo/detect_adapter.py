@@ -48,6 +48,13 @@ class YOLO62_adapter(ModuleRunner):
         # CUDA takes precedence
         if self.use_CUDA:
             self.use_CUDA = self.hasTorchCuda
+            # Potentially solve an issue around CUDNN_STATUS_ALLOC_FAILED errors
+            try:
+                import cudnn as cudnn
+                if cudnn.is_available():
+                    cudnn.benchmark = False
+            except:
+                pass
 
         # If no CUDA, maybe we're on an Apple Silicon Mac?
         if self.use_CUDA:
@@ -65,6 +72,8 @@ class YOLO62_adapter(ModuleRunner):
         # else:
         #     self.use_DirectML = False
         self.use_DirectML = False   # Unfortunately we can't get PyTorch-DirectML working
+
+        self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS # or self.use_DirectML
 
         if self.use_CUDA:
             self.execution_provider = "CUDA"
@@ -148,11 +157,11 @@ class YOLO62_adapter(ModuleRunner):
         request_data.queue   = self.queue_name
         request_data.command = "detect"
         request_data.add_file(file_name)
-        request_data.add_value("confidence", 0.4)
+        request_data.add_value("min_confidence", 0.4)
 
         result = self.process(request_data)
-        print(f"[INFO] Self-test for {self.module_id}. Success: {result['success']}")
-        print(f"[INFO] Self-test output for {self.module_id}: {result}")
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        print(f"Info: Self-test output for {self.module_id}: {result}")
 
 
     def list_models(self, models_path: str):

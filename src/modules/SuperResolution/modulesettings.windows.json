@@ -3,7 +3,7 @@
   // we know works
   "Modules": {
     "SuperResolution": {
-      "Runtime": "python39"
+      "Runtime": "python3.9"
     }
   }
 }

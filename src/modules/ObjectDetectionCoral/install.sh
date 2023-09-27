@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            ObjectDetection (Coral)
@@ -11,19 +13,19 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
 # verbosity="loud"
+pythonLocation="Local"
+pythonVersion=3.9
 
-# Python setup first
+# Install python and the required dependencies
+setupPython
+installPythonPackages
 
-setupPython 3.9 "Local"
-installPythonPackages 3.9 "${modulePath}" "Local"
-installPythonPackages 3.9 "${absoluteAppRootDir}/SDK/Python" "Local"    
 
 # Now the supporting libraries
-
 if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || \
    [ "${systemName}" == "Jetson" ]; then
 
@@ -38,11 +40,6 @@ if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] |
 fi
 
 if [ "$os" == "linux" ]; then
-
-    write "Ensuring curl is installed (just in case)..." $color_mute
-    apt-get install curl -y  >/dev/null 2>/dev/null &
-    spin $!
-    writeLine "Done" "$color_success"
 
     # Add the Debian package repository to your system
     echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
@@ -63,7 +60,7 @@ if [ "$os" == "linux" ]; then
     spin $!
     writeLine "Done" "$color_success"
 
-    popd "${downloadPath}/Coral" >/dev/null 2>/dev/null
+    popd >/dev/null 2>/dev/null
 
     if [[ $EUID -ne 0 ]]; then
         writeLine "=================================================================================" $color_error
@@ -73,9 +70,9 @@ if [ "$os" == "linux" ]; then
     else
         # Install the Edge TPU runtime (standard, meaning half speed, or max, meaning full speed)
         write "Installing libedgetpu1-std (the non-desk-melting version of libedgetpu1)..." $color_mute
-        sudo apt-get update  -y  >/dev/null 2>/dev/null &
+        apt-get update  -y  >/dev/null 2>/dev/null &
         spin $!
-        sudo apt-get install libedgetpu1-std -y  >/dev/null 2>/dev/null &
+        apt-get install libedgetpu1-std -y  >/dev/null 2>/dev/null &
         spin $!
         writeLine "Done" "$color_success"
 
@@ -95,30 +92,37 @@ elif [ "$os" == "macos" ]; then
     # We have modified the install.sh script in this zip so it forces the install of the throttled version
     getFromServer "edgetpu_runtime_20221024.zip" "" "Downloading edge TPU runtime..."
 
-    unzip edgetpu_runtime_20221024.zip
-    pushd edgetpu_runtime
-    bash install.sh
+    sudo chmod -R a+rwX "${modulePath}/edgetpu_runtime"
+    pushd "${modulePath}/edgetpu_runtime" >/dev/null
+    sudo bash install.sh
 
     # For whatever reason the libs don't seem to be getting put in place, so do this manually
-    sudo cp edgetpu_runtime/libedgetpu/throttled/darwin_x86_64/libedgetpu.1.0.dylib .
-    # sudo cp edgetpu_runtime/libedgetpu/throttled/darwin_x86_64/libedgetpu.1.dylib .
-    popd
-    
-    venvPath="${modulePath}/bin/${os}/python39/venv"
-    packagesPath="${venvPath}/lib/python3.9/site-packages/"
-
-    if [ "$os_name" == "Big Sur" ] && [ "$platform" == "macos" ]; then          # macOS 11.x on Intel
-        "${venvPath}/bin/python" -m pip install tflite-runtime==2.5.0.post1 pycoral --extra-index-url https://google-coral.github.io/py-repo/ 
-    elif [ "$os_name" == "Monterey" ] && [ "$platform" == "macos-arm64" ]; then # macOS 12.x on Apple Silicon
-        "${venvPath}/bin/python" -m pip install tflite-runtime==2.5.0.post1 pycoral --extra-index-url https://google-coral.github.io/py-repo/ 
+    if [ "$platform" == "macos-arm64" ]; then
+        cp libedgetpu/throttled/darwin_arm64/libedgetpu.1.0.dylib .
     else
-        "${venvPath}/bin/python" -m pip install tflite-runtime==2.5.0.post1 pycoral --extra-index-url https://google-coral.github.io/py-repo/ 
+        cp libedgetpu/throttled/darwin_x86_64/libedgetpu.1.0.dylib .
+    fi
+
+    popd >/dev/null
+    
+    package="tflite-runtime==2.5.0.post1 pycoral --extra-index-url https://google-coral.github.io/py-repo/"
+    package_desc="Tensorflow Lite for Coral"
+
+    if [ "$os_name" == "Big Sur" ] && [ "$architecture" == "x86_64" ]; then   # macOS 11.x on Intel
+        installSinglePythonPackage "$package" "$package_desc"
+    elif [ "$os_name" == "Monterey" ] && [ "$architecture" == "arm64" ]; then # macOS 12.x on Apple Silicon
+        installSinglePythonPackage "$package" "$package_desc"
+    else
+        # At this point we don't actually have a supported pre-built package, but
+        # we can still install and run, albeit without Coral hardware.
+        installSinglePythonPackage "tensorflow" "Tensorflow"
     fi
 fi
 
 # Download the MobileNet TFLite models and store in /assets
 getFromServer "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
-if [ $? -ne 0 ]; then quit 1; fi
+
+module_install_success='true'
 
 
 #                         -- Install script cheatsheet -- 

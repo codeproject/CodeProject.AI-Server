@@ -3,7 +3,7 @@
 
     "ALPR": {
       "Name": "License Plate Reader",
-      "Version": "2.5",
+      "Version": "2.6",
 
       // Publishing info
       "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
@@ -13,18 +13,19 @@
 
       // Which server version is compatible with each version of this module.
       "ModuleReleases": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0",   "2.0.8" ], "ReleaseDate": "2022-11-01" },
-        { "ModuleVersion": "2.1", "ServerVersionRange": [ "2.0.9", "2.0.9" ], "ReleaseDate": "2022-12-01" },
-        { "ModuleVersion": "2.2", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-03-20" },
-        { "ModuleVersion": "2.3", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-04-20", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
-        { "ModuleVersion": "2.4", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-05-10", "ReleaseNotes": "PaddlePaddle install more reliable", "Importance": "Minor" },
-        { "ModuleVersion": "2.5", "ServerVersionRange": [ "2.1",   "" ],      "ReleaseDate": "2023-06-04", "ReleaseNotes": "Updated PaddlePaddle" }
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "2.1", "ServerVersionRange": [ "2.0.9", "2.0.9"  ], "ReleaseDate": "2022-12-01" },
+        { "ModuleVersion": "2.2", "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-03-20" },
+        { "ModuleVersion": "2.3", "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-04-20", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+        { "ModuleVersion": "2.4", "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-05-10", "ReleaseNotes": "PaddlePaddle install more reliable", "Importance": "Minor" },
+        { "ModuleVersion": "2.5", "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-06-04", "ReleaseNotes": "Updated PaddlePaddle" },
+        { "ModuleVersion": "2.6", "ServerVersionRange": [ "2.2",   "" ],       "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" }
       ],
 
       // Launch instructions
       "AutoStart": true,
       "FilePath": "ALPR_adapter.py",
-      "Runtime": "python38",
+      "Runtime": "python3.8",
       "RuntimeLocation": "Local", // Can be Local or Shared
 
       // These are all optional. Defaults are usually fine
@@ -60,6 +61,20 @@
               "Description": "The image to ALPR."
             }
           ],
+
+          "message": "Found car",
+          "count": 1,
+          "predictions": [
+            {
+              "label": "car",
+              "confidence": 0.5860529,
+              "y_min": 1,
+              "x_min": 622,
+              "y_max": 89,
+              "x_max": 770
+            }
+          ],
+
           "Outputs": [
             {
               "Name": "success",
@@ -67,9 +82,44 @@
               "Description": "True if successful."
             },
             {
+              "Name": "message",
+              "Type": "String",
+              "Description": "A summary of the inference operation."
+            },
+            {
+              "Name": "error",
+              "Type": "String",
+              "Description": "(Optional) An description of the error if success was false."
+            },
+            {
               "Name": "predictions",
               "Type": "Object[]",
               "Description": "An array of objects with the x_max, x_min, max, y_min bounds of the plate, label, the plate chars and confidence."
+            },
+            {
+              "Name": "count",
+              "Type": "Integer",
+              "Description": "The number of objects found."
+            },
+            {
+              "Name": "command",
+              "Type": "String",
+              "Description": "The command that was sent as part of this request. Can be detect, list, status."
+            },
+            {
+              "Name": "moduleId",
+              "Type": "String",
+              "Description": "The Id of the module that processed this request."
+            },
+            {
+              "Name": "executionProvider",
+              "Type": "String",
+              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
+            },
+            {
+              "Name": "canUseGPU",
+              "Type": "Boolean",
+              "Description": "True if this module can use the current GPU if one is present."
             },
             {
               "Name": "inferenceMs",

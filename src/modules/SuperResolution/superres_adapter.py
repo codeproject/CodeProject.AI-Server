@@ -25,7 +25,10 @@ class SuperRes_adapter(ModuleRunner):
         assets_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "assets/"))
         load_pretrained_weights(assets_path)
 
-        if self.support_GPU and self.hasTorchCuda:
+        # TODO: This module also supports ONNX
+        self.can_use_GPU = self.hasTorchCuda
+
+        if self.support_GPU and self.can_use_GPU:
             self.execution_provider = "CUDA"
 
     def process(self, data: RequestData) -> JSON:

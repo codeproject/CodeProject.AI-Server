@@ -3,7 +3,7 @@
   // we know works
   "Modules": {
     "SceneClassifier": {
-      "Runtime": "python37"
+      "Runtime": "python3.7"
     }
   }
 }

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            .NET YOLO Object Detection
@@ -11,10 +13,12 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
 # NOTHING TO DO HERE
+module_install_success='true'
+
 
 #                         -- Install script cheatsheet -- 
 #

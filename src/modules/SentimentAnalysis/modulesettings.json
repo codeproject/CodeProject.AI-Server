@@ -4,7 +4,7 @@
   "Modules": {
     "SentimentAnalysis": {
       "Name": "Sentiment Analysis",
-      "Version": "1.3",
+      "Version": "1.4",
 
       // Publishing info
       "Description": "Provides an analysis of the sentiment of a piece of text. Positive or negative?", 
@@ -14,10 +14,11 @@
       
       // Which server version is compatible with each version of this module.
       "ModuleReleases": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-06-01" },
-        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1", "2.1.6" ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "2.1.8" ], "ReleaseDate": "2023-05-03", "ReleaseNotes": "Minor module initialisation changes" },
-        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-05-17", "ReleaseNotes": "Updated module settings", "Importance": "Minor" }
+        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8"  ], "ReleaseDate": "2022-06-01" },
+        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1", "2.1.6"  ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
+        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "2.1.8"  ], "ReleaseDate": "2023-05-03", "ReleaseNotes": "Minor module initialisation changes" },
+        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1", "2.1.12" ], "ReleaseDate": "2023-05-17", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+        { "ModuleVersion": "1.4", "ServerVersionRange": [ "2.2", ""       ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" }
       ],
       
       // Launch instructions
@@ -70,6 +71,26 @@
               "Name": "positive_probability",
               "Type": "Float",
               "Description": "The probability the input text has a positive sentiment."
+            },
+            {
+              "Name": "command",
+              "Type": "String",
+              "Description": "The command that was sent as part of this request. Can be detect, list, status."
+            },
+            {
+              "Name": "moduleId",
+              "Type": "String",
+              "Description": "The Id of the module that processed this request."
+            },
+            {
+              "Name": "executionProvider",
+              "Type": "String",
+              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
+            },
+            {
+              "Name": "canUseGPU",
+              "Type": "Boolean",
+              "Description": "True if this module can use the current GPU if one is present."
             },
             {
               "Name": "inferenceMs",

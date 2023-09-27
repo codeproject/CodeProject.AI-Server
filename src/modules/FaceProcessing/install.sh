@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            FaceProcessing
@@ -11,19 +13,15 @@
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
     echo
-	exit 1 
+    exit 1 
 fi
 
+pythonLocation="Shared"
+pythonVersion=3.7
 
-# Install python and the required dependencies.
-setupPython 3.8 "Shared"
-if [ $? -ne 0 ]; then quit 1; fi
-
-installPythonPackages 3.8 "${modulePath}" "Shared"
-if [ $? -ne 0 ]; then quit 1; fi
-
-installPythonPackages 3.8 "${absoluteAppRootDir}/SDK/Python" "Shared"
-if [ $? -ne 0 ]; then quit 1; fi
+# Install python and the required dependencies
+setupPython
+installPythonPackages
 
 # Download the models and store in /models
 getFromServer "models.zip" "assets" "Downloading YOLO models..."
@@ -34,14 +32,6 @@ if [ "$os" == "macos" ]; then
     commonDataDir='/Library/Application Support/CodeProject/AI'
 else
     commonDataDir='/etc/codeproject/ai'
-
-    # Correct for mis-placed data
-    if [ -d "/usr/share/CodeProject/AI" ]; then
-        if [ ! -d "${commonDataDir}" ]; then
-            sudo mv "/usr/share/CodeProject/AI" "${commonDataDir}"
-        fi
-        sudo mv "/usr/share/CodeProject/AI" "/usr/share/CodeProject/AI/bak"
-    fi
 fi
 
 if [ ! -d "${commonDataDir}" ]; then
@@ -50,11 +40,13 @@ if [ ! -d "${commonDataDir}" ]; then
             writeLine "Creating data directory at ${commonDataDir}. We'll need admin access..." $color_info
         fi
 
-        sudo mkdir -p "${commonDataDir}"   
+        #sudo 
+        mkdir -p "${commonDataDir}"   
         if [ $? -ne 0 ]; then
             displayMacOSDirCreatePermissionError "${commonDataDir}"
         fi
-        sudo chmod 777 "${commonDataDir}"
+        #sudo 
+        chmod 777 "${commonDataDir}"
     else
         mkdir -p "${commonDataDir}"
     fi
@@ -63,8 +55,10 @@ fi
 # ... also needs SQLite
 if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || \
    [ "${systemName}" == "Jetson" ]; then
-    sudo apt-get install sqlite3
+    sudo apt-get install sqlite3 -y
 fi
+
+module_install_success='true'
 
 
 #                         -- Install script cheatsheet -- 

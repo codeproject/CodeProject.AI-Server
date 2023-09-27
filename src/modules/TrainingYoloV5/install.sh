@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                    YOLO Object Detection Model Training
@@ -15,35 +17,16 @@ if [ "$1" != "install" ]; then
 fi
 
 verbosity="info"
-
-location="Local"
-pythonVersion=3.8
-
+# This is needed. It should be the default for linux anyway, but just in case, force it
 oneStepPIP="false"
 
-pythonName="python${pythonVersion/./}"
-if [ "$location" == "Local" ]; then
-    # echo "Setting up Training venv locally"
-    virtualEnv="${modulePath}/bin/${os}/${pythonName}/venv"
-else
-    virtualEnv="${runtimesPath}/bin/${os}/${pythonName}/venv"
-fi
-pythonCmd="${virtualEnv}/bin/python${pythonVersion}"
-packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
+pythonLocation="Local"
+pythonVersion=3.8
 
+# Install python
+setupPython
 
-# cuDNN needed for linux, but already installed in Docker
-if [ "$hasCUDA" == "true" ] && [ "$inDocker" != "true" ] && [ "$os" == "linux" ]; then
-    writeLine 'Installing nvidia-cudnn...'
-    sudo apt install nvidia-cudnn -y >/dev/null 2>/dev/null &
-    spin $!
-    writeLine "Done" "$color_success"
-fi
-
-# Install python and the required dependencies. If we find torch then asssume it's all there
-setupPython $pythonVersion "$location"
-if [ $? -ne 0 ]; then quit 1; fi
-
+# Supporting libraries so the PIP installs will work
 if [ "$os" == "linux" ]; then
 
     # ensure libcurl4 is present
@@ -92,20 +75,18 @@ if [ "$os" == "linux" ]; then
     ulimit -n 64000
 fi
 
+installPythonPackages
+
 # PyTorch-DirectML not working for this module
 # if [ "$hasCUDA" != "true" ] && [ "$os" == "linux" ]; then
-#     writeLine 'Installing PyTorch-DirectML...'
-#     "${pythonCmd}" -m pip install torch-directml --target "${packagesPath}"
+#    writeLine 'Installing PyTorch-DirectML...'
+#    installSinglePythonPackage "torch-directml" "PyTorch DirectML plugin"
 # fi
-
-installPythonPackages $pythonVersion "$modulePath" "$location"
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages $pythonVersion "${absoluteAppRootDir}/SDK/Python" "$location"
-if [ $? -ne 0 ]; then quit 1; fi
 
 # Download the models and store in /assets and /custom-models (already in place in docker)
 getFromServer "models-yolo5-pt.zip"       "assets" "Downloading Standard YOLO models..."
-if [ $? -ne 0 ]; then quit 1; fi
+
+module_install_success='true'
 
 
 #                         -- Install script cheatsheet -- 

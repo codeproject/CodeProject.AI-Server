@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     # Update model
     for k, m in model.named_modules():
-        m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
+        m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
         if isinstance(m, models.common.Conv) and isinstance(m.act, nn.Hardswish):
             m.act = Hardswish()  # assign activation
         # if isinstance(m, models.yolo.Detect):

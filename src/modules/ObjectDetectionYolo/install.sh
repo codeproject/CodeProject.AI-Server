@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
 #                            Object Detection (YOLO)
@@ -15,30 +17,47 @@ if [ "$1" != "install" ]; then
 fi
 
 # verbosity="loud"
+pythonLocation="Shared"
+pythonVersion=3.8
 
-location="Shared"
-pythonVersion="3.8"
+# Install python and the required dependencies
+setupPython
 
-pythonName="python${pythonVersion/./}"
-if [ "${location}" == "Local" ]; then
-    virtualEnv="${modulePath}/bin/${os}/${pythonName}/venv"
-else
-    virtualEnv="${runtimesPath}/bin/${os}/${pythonName}/venv"
+# For Jetson, we need to install Torch before the other packages.
+# A huge thanks to QEngineering: https://qengineering.eu/install-pytorch-on-jetson-nano.html
+if [ "$systemName" == "Jetson" ]; then 
+
+    # NOTE: Pytorch 2.0 and above uses CUDA 11. The Jetson Nano has CUDA 10.2.
+    # Due to low-level GPU incompatibility, installing CUDA 11 on your Nano is 
+    # impossible. Pytorch 2.0 can only be installed on Jetson family members using
+    # a JetPack 5.0 or higher, such as the Jetson Nano Orion. Unfortunately, it
+    # doesn't appear that this version will be available for the Jetson Nano soon.
+
+    sudo apt-get install python3-pip libjpeg-dev libopenblas-dev libopenmpi-dev libomp-dev -y
+    sudo -H pip3 install future
+    sudo pip3 install -U --user wheel mock pillow
+    sudo -H pip3 install testresources
+    # above 58.3.0 you get version issues
+    sudo -H pip3 install setuptools==58.3.0
+    sudo -H pip3 install Cython
+    # install gdown to download from Google drive
+    sudo -H pip3 install gdown
+    # download the wheel
+    gdown https://drive.google.com/uc?id=1TqC6_2cwqiYacjoLhLgrZoap6-sVL2sd
+
+    # install PyTorch 1.10.0
+    installSinglePythonPackage "torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl" "PyTorch"
+
+    # clean up
+    rm torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl
 fi
-pythonCmd="${virtualEnv}/bin/python${pythonVersion}"
-packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
 
-# Docker images already have the drivers installed
-if [ "$inDocker" != "true" ] && [ "$os" == "linux" ]; then
+# Install required dependencies
+installPythonPackages
 
-    # cuDNN needed for linux
-    if [ "$hasCUDA" == "true" ]; then
-        writeLine 'Installing nvidia-cudnn...'
-        sudo apt install nvidia-cudnn -y >/dev/null 2>/dev/null &
-        spin $!
-        writeLine "Done" "$color_success"
-    fi
-
+# Install drivers for non Docker images
+if [ "$inDocker" != "true" ] && [ "$os" == "linux" ] ; then
+    echo 
     # ROCm needed for linux
     # if [ "$hasROCm" == "true" ]; then
     #    writeLine 'Installing ROCm driver scripts...'
@@ -58,28 +77,14 @@ if [ "$inDocker" != "true" ] && [ "$os" == "linux" ]; then
     #    spin $!
     #    writeLine "Done" "$color_success"
     #fi
-
 fi
-
-# Install python and the required dependencies. If we find torch then asssume it's all there
-setupPython "${pythonVersion}" "${location}"
-if [ $? -ne 0 ]; then quit 1; fi
-
-# PyTorch-DirectML not working for this module
-# if [ "$hasCUDA" != "true" ] && [ "$os" == "linux" ]; then
-#     writeLine 'Installing PyTorch-DirectML...'
-#     "${pythonCmd}" -m pip install torch-directml --target "${packagesPath}"
-# fi
-
-installPythonPackages "${pythonVersion}" "${modulePath}" "${location}"
-if [ $? -ne 0 ]; then quit 1; fi
-installPythonPackages "${pythonVersion}" "${absoluteAppRootDir}/SDK/Python" "${location}"
-if [ $? -ne 0 ]; then quit 1; fi
 
 # Download the models and store in /assets and /custom-models (already in place in docker)
 getFromServer "models-yolo5-pt.zip"        "assets" "Downloading Standard YOLO models..."
-if [ $? -ne 0 ]; then quit 1; fi
 getFromServer "custom-models-yolo5-pt.zip" "custom-models" "Downloading Custom YOLO models..."
+
+module_install_success='true'
+
 
 #                         -- Install script cheatsheet -- 
 #

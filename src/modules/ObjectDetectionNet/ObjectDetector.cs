@@ -9,9 +9,8 @@ using Microsoft.ML.OnnxRuntime;
 using SkiaSharp;
 using Yolov5Net.Scorer;
 using Yolov5Net.Scorer.Models;
-
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 {
@@ -59,6 +58,11 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
         /// </summary>
         public string HardwareType { get; set; } = "CPU";
 
+        /// <summary>
+        /// Gets or sets a value indicating whether or not this detector can use the current GPU
+        /// </summary>
+        public bool CanUseGPU { get; set; } = false;
+
         public ObjectDetector(string modelPath, ILogger<ObjectDetector> logger)
         {
             _logger = logger;
@@ -100,27 +104,27 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 
         private SessionOptions GetSessionOptions()
         {
-            var sessionOpts = new SessionOptions();
-
             bool supportGPU = (Environment.GetEnvironmentVariable("CPAI_MODULE_SUPPORT_GPU") ?? "true").ToLower() == "true";
-            _logger.LogDebug($"ObjectDetection (.NET) supportGPU={supportGPU}");
+            _logger.LogDebug($"ObjectDetection (.NET) supportGPU = {supportGPU}");
+
+            var sessionOpts = new SessionOptions();
             
-            if (supportGPU)
+            string[]? providers = null;
+            try
             {
-                string[]? providers = null;
-                try
-                {
-                    providers = OrtEnv.Instance().GetAvailableProviders();
-                }
-                catch
-                {
-                }
+                providers = OrtEnv.Instance().GetAvailableProviders();
+            }
+            catch
+            {
+            }
 
-                foreach (var providerName in providers ?? Array.Empty<string>())
-                    _logger.LogDebug($"ObjectDetection (.NET) provider: {providerName}");
+            foreach (var providerName in providers ?? Array.Empty<string>())
+                _logger.LogDebug($"ObjectDetection (.NET) provider: {providerName}");
 
-                // Enable CUDA  -------------------
-                if (providers?.Any(p => p.StartsWithIgnoreCase("CUDA")) ?? false)
+            // Enable CUDA  -------------------
+            if (providers?.Any(p => p.StartsWithIgnoreCase("CUDA")) ?? false)
+            {
+                if (supportGPU)
                 {
                     try
                     {
@@ -130,16 +134,22 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 
                         ExecutionProvider = "CUDA";
                         HardwareType      = "GPU";
+                        CanUseGPU         = true;
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogDebug(ex, $"ObjectDetection (.NET) setting ExecutionProvider = \"CUDA\"");
+                        _logger.LogDebug(ex, $"Exception setting ExecutionProvider = \"CUDA\"");
                         // do nothing, the provider didn't work so keep going
                     }
                 }
+                else
+                    CanUseGPU = true;
+            }
 
-                // Enable OpenVINO -------------------
-                if (providers?.Any(p => p.StartsWithIgnoreCase("OpenVINO")) ?? false)
+            // Enable OpenVINO -------------------
+            if (providers?.Any(p => p.StartsWithIgnoreCase("OpenVINO")) ?? false)
+            {
+                if (supportGPU)
                 {
                     try
                     {
@@ -150,6 +160,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 
                         ExecutionProvider = "OpenVINO";
                         HardwareType      = "GPU";
+                        CanUseGPU         = true;
                     }
                     catch (Exception ex)
                     {
@@ -157,9 +168,14 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                         // do nothing, the provider didn't work so keep going
                     }
                 }
+                else
+                    CanUseGPU = true;
+            }
 
-                // Enable DirectML -------------------
-                if (providers?.Any(p => p.StartsWithIgnoreCase("DML")) ?? false)
+            // Enable DirectML -------------------
+            if (providers?.Any(p => p.StartsWithIgnoreCase("DML")) ?? false)
+            {
+                if (supportGPU)
                 {
                     try
                     {
@@ -171,6 +187,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 
                         ExecutionProvider = "DirectML";
                         HardwareType      = "GPU";
+                        CanUseGPU         = true;
                     }
                     catch(Exception ex)
                     {
@@ -178,6 +195,8 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                         _logger.LogDebug(ex, $"Exception setting ExecutionProvider = \"DML\"");
                     }
                 }
+                else
+                    CanUseGPU = true;
             }
 
             sessionOpts.AppendExecutionProvider_CPU();
