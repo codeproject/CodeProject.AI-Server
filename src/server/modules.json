@@ -2,7 +2,7 @@
   {
     "ModuleId": "ALPR",
     "Name": "License Plate Reader",
-    "Version": "2.6",
+    "Version": "2.7",
     "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
     "Platforms": [
       "windows",
@@ -76,10 +76,20 @@
         "ModuleVersion": "2.6",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "2.7",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -90,7 +100,7 @@
   {
     "ModuleId": "BackgroundRemover",
     "Name": "Background Remover",
-    "Version": "1.5",
+    "Version": "1.6",
     "Description": "Automatically removes the background from a picture",
     "Platforms": [
       "windows",
@@ -153,10 +163,20 @@
         "ModuleVersion": "1.5",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.6",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -167,7 +187,7 @@
   {
     "ModuleId": "Cartooniser",
     "Name": "Cartooniser",
-    "Version": "1.2",
+    "Version": "1.3",
     "Description": "Convert a photo into an anime style cartoon",
     "Platforms": [
       "windows",
@@ -202,10 +222,20 @@
         "ModuleVersion": "1.2",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.3",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -216,7 +246,7 @@
   {
     "ModuleId": "FaceProcessing",
     "Name": "Face Processing",
-    "Version": "1.7",
+    "Version": "1.8",
     "Description": "A number of Face image APIs including detect, recognize, and compare.",
     "Platforms": [
       "windows",
@@ -281,7 +311,7 @@
         "ModuleVersion": "1.6",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
@@ -291,10 +321,20 @@
         "ModuleVersion": "1.7",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-16",
         "ReleaseNotes": "Updates to help Blue Iris users",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.8",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -305,7 +345,7 @@
   {
     "ModuleId": "ObjectDetectionCoral",
     "Name": "ObjectDetection (Coral)",
-    "Version": "1.5.1",
+    "Version": "1.6",
     "Description": "The object detection module uses the Coral TPU to locate and classify the objects the models have been trained on.",
     "Platforms": [
       "windows",
@@ -360,7 +400,7 @@
         "ModuleVersion": "1.4",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer, updated TF-lite runtime",
@@ -370,7 +410,7 @@
         "ModuleVersion": "1.5",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-16",
         "ReleaseNotes": "Updates to help Blue Iris users",
@@ -380,10 +420,20 @@
         "ModuleVersion": "1.5.1",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-17",
         "ReleaseNotes": "Better checks for admin rights when installing",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.6",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -394,7 +444,7 @@
   {
     "ModuleId": "ObjectDetectionNet",
     "Name": "Object Detection (YOLOv5 .NET)",
-    "Version": "1.6",
+    "Version": "1.7",
     "Description": "Provides Object Detection using YOLOv5 ONNX models with DirectML. This module is best for those on Windows and Linux without CUDA enabled GPUs",
     "Platforms": [
       "windows",
@@ -459,7 +509,7 @@
         "ModuleVersion": "1.5",
         "ServerVersionRange": [
           "2.1.10",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-05-04",
         "ReleaseNotes": "Updated module settings",
@@ -469,10 +519,20 @@
         "ModuleVersion": "1.6",
         "ServerVersionRange": [
           "2.1.10",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Installer fix for Linux",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.7",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -483,7 +543,7 @@
   {
     "ModuleId": "ObjectDetectionYolo",
     "Name": "Object Detection (YOLOv5 6.2)",
-    "Version": "1.6.1",
+    "Version": "1.7",
     "Description": "Provides Object Detection using YOLOv5 6.2 targeting CUDA 11.7/Torch 1.13 for newer GPUs.",
     "Platforms": [
       "all"
@@ -534,7 +594,7 @@
         "ModuleVersion": "1.5",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
@@ -544,7 +604,7 @@
         "ModuleVersion": "1.6",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-16",
         "ReleaseNotes": "Updates to help Blue Iris users",
@@ -554,10 +614,20 @@
         "ModuleVersion": "1.6.1",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-17",
         "ReleaseNotes": "Install for Linux",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.7",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -568,7 +638,7 @@
   {
     "ModuleId": "ObjectDetectionYoloRKNN",
     "Name": "Object Detection (YOLOv5 RKNN)",
-    "Version": "1.3",
+    "Version": "1.4",
     "Description": "Provides Object Detection using YOLOv5 RKNN models. This module only works with Rockchip RK3588/RK3588S NPUs like the Orange Pi 5/5B/5 Plus",
     "Platforms": [
       "linux-arm64"
@@ -599,7 +669,7 @@
         "ModuleVersion": "1.2",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
@@ -609,10 +679,20 @@
         "ModuleVersion": "1.3",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-16",
         "ReleaseNotes": "Updates to help Blue Iris users",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -623,7 +703,7 @@
   {
     "ModuleId": "OCR",
     "Name": "Optical Character Recognition",
-    "Version": "1.5",
+    "Version": "1.6",
     "Description": "Provides OCR support using the PaddleOCR toolkit",
     "Platforms": [
       "windows",
@@ -677,10 +757,20 @@
         "ModuleVersion": "1.5",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.6",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -691,7 +781,7 @@
   {
     "ModuleId": "PortraitFilter",
     "Name": "Portrait Filter",
-    "Version": "1.4",
+    "Version": "1.5",
     "Description": "Provides a depth-of-field (bokeh) effect on images. Great for selfies.",
     "Platforms": [
       "windows"
@@ -742,11 +832,21 @@
         "ModuleVersion": "1.4",
         "ServerVersionRange": [
           "2.1",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-05-17",
         "ReleaseNotes": "Updated module settings",
         "Importance": "Minor"
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
+        "Importance": null
       }
     ],
     "License": "MIT",
@@ -756,7 +856,7 @@
   {
     "ModuleId": "SceneClassifier",
     "Name": "Scene Classification",
-    "Version": "1.4",
+    "Version": "1.5",
     "Description": "Classifies an image according to one of 365 pre-trained scenes",
     "Platforms": [
       "windows",
@@ -811,10 +911,20 @@
         "ModuleVersion": "1.4",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated module installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -825,7 +935,7 @@
   {
     "ModuleId": "SentimentAnalysis",
     "Name": "Sentiment Analysis",
-    "Version": "1.4",
+    "Version": "1.5",
     "Description": "Provides an analysis of the sentiment of a piece of text. Positive or negative?",
     "Platforms": [
       "windows",
@@ -877,10 +987,20 @@
         "ModuleVersion": "1.4",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -891,7 +1011,7 @@
   {
     "ModuleId": "SuperResolution",
     "Name": "Super Resolution",
-    "Version": "1.6",
+    "Version": "1.7",
     "Description": "Increases the resolution of an image using AI",
     "Platforms": [
       "windows",
@@ -966,10 +1086,20 @@
         "ModuleVersion": "1.6",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.7",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -980,8 +1110,8 @@
   {
     "ModuleId": "TextSummary",
     "Name": "Text Summary",
-    "Version": "1.4",
-    "Description": "Summarizes text content by selecting a number of sentences that are most representitive of the content.",
+    "Version": "1.5",
+    "Description": "Summarizes text content by selecting a number of sentences that are most representative of the content.",
     "Platforms": [
       "windows",
       "linux",
@@ -1035,10 +1165,20 @@
         "ModuleVersion": "1.4",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.5",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],
@@ -1049,12 +1189,12 @@
   {
     "ModuleId": "TrainingYoloV5",
     "Name": "Training for YoloV5 6.2",
-    "Version": "1.3",
+    "Version": "1.4",
     "Description": "Train custom models for YOLOv5 v6.2 with support for CPUs, CUDA enabled GPUs, and Apple Silicon.",
     "Platforms": [
       "all"
     ],
-    "Runtime": "python3.9",
+    "Runtime": "python3.7",
     "ModuleReleases": [
       {
         "ModuleVersion": "1.0",
@@ -1095,6 +1235,16 @@
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer, user-provided datasets supported",
         "Importance": null
+      },
+      {
+        "ModuleVersion": "1.4",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
+        "Importance": null
       }
     ],
     "License": "GPL-3.0",
@@ -1104,7 +1254,7 @@
   {
     "ModuleId": "YOLOv5-3.1",
     "Name": "Object Detection (YOLOv5 3.1)",
-    "Version": "1.5",
+    "Version": "1.6",
     "Description": "Provides Object Detection using YOLOv5 3.1 targeting CUDA 10.2/Torch 1.7 for older GPUs.",
     "Platforms": [
       "windows",
@@ -1148,7 +1298,7 @@
         "ModuleVersion": "1.4",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-09",
         "ReleaseNotes": "Updated installer",
@@ -1158,10 +1308,20 @@
         "ModuleVersion": "1.5",
         "ServerVersionRange": [
           "2.2",
-          ""
+          "2.2.4"
         ],
         "ReleaseDate": "2023-09-16",
         "ReleaseNotes": "Updates to help Blue Iris users",
+        "Importance": null
+      },
+      {
+        "ModuleVersion": "1.6",
+        "ServerVersionRange": [
+          "2.2.5",
+          ""
+        ],
+        "ReleaseDate": "2023-09-22",
+        "ReleaseNotes": "Updated to match new installer syntax",
         "Importance": null
       }
     ],

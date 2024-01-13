@@ -1,0 +1,21 @@
+#! Python3.8
+
+Pillow>=4.0.0               # Installing Pillow, a Python Image Library
+
+# This is only for Python 3.6 - 3.9. For anything else we will need to build our
+# own wheels.
+--extra-index-url https://google-coral.github.io/py-repo/ 
+tflite-runtime==2.5.0.post1 # Installing Tensorflow Lite
+
+# For just tensorflow lite, versions 2.11 - 2.13 can be found at
+# https://github.com/NexelOfficial/tflite-runtime-win. Note these are only for
+# Python 3.11 and do not include Coral support.
+
+# Or...Tensorflow 2.10 was the last version that supported GPU on windows. We 
+# avoid downloading the full TFLite on Windows due to the size. (not tested)
+# tensorflow==2.10          # Installing Tensorflow
+
+# Coral example has numpy>=1.16.0, but this works
+numpy==1.21.6               # Installing NumPy, a package for scientific computing
+
+# last line empty

@@ -83,6 +83,7 @@ namespace CodeProject.AI.Server
             // lower cased as Linux has case sensitive file names
             string  os           = SystemInfo.OperatingSystem.ToLower();
             string  architecture = SystemInfo.Architecture.ToLower();
+            string  systemName   = SystemInfo.SystemName.ToLower().Replace(" ", string.Empty);
             string? runtimeEnv   = SystemInfo.RuntimeEnvironment == SDK.Common.RuntimeEnvironment.Development
                                  ? "development" : string.Empty;
 
@@ -168,7 +169,8 @@ namespace CodeProject.AI.Server
                 // Setup our custom Configuration Loader pipeline and build the configuration.
                 IHost? host = CreateHostBuilder(args)
                             .ConfigureAppConfiguration(SetupConfigurationLoaders(args, os, architecture,
-                                                                                runtimeEnv, applicationDataDir,
+                                                                                systemName, runtimeEnv,
+                                                                                applicationDataDir,
                                                                                 inMemoryConfigData,
                                                                                 reloadConfigOnChange))
                             .Build()
@@ -279,16 +281,37 @@ namespace CodeProject.AI.Server
                     foreach (string dir in directories2del)
                     {
                         string path = Path.Combine(baseDir, offsetDir + dir);
-                        if (Directory.Exists(path))
-                            Directory.Delete(path, true);
+                        try
+                        {
+                            if (Directory.Exists(path))
+                                Directory.Delete(path, true);
+                        }
+                        catch
+                        {
+                            // Handle exception here
+                        }
                     }
 
                     string logPath = Path.Combine(baseDir, "logs");
-                    if (Directory.Exists(logPath))
-                         Directory.Delete(logPath, true);
+                    try
+                    {
+                        if (Directory.Exists(logPath))
+                        Directory.Delete(logPath, true);
+                    }
+                    catch
+                    {
+                        // Handle exception here
+                    }
 
-                    if (Directory.Exists(applicationDataDir))
+                    try
+                    {
+                        if (Directory.Exists(applicationDataDir))
                         Directory.Delete(applicationDataDir, true);
+                    }
+                    catch
+                    {
+                        // Handle exception here
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -307,9 +330,9 @@ namespace CodeProject.AI.Server
             if (!SystemInfo.IsWindows)
                 return;
                 
-            string baseDir   = GetAppRootPath();
-            string offsetDir = SystemInfo.IsDevelopmentCode? "src/" : string.Empty;
-            string scriptDir = Path.Combine(baseDir, offsetDir, "SDK/Scripts/");
+            string baseDir      = GetAppRootPath();
+            string offsetDir    = SystemInfo.IsDevelopmentCode? "src/" : string.Empty;
+            string utilitiesDir = Path.Combine(baseDir, offsetDir, "SDK/Utilities/");
 
             try
             {
@@ -317,14 +340,14 @@ namespace CodeProject.AI.Server
 
                 ProcessStartInfo procStartInfo;
                 if (SystemInfo.IsWindows)
-                    procStartInfo = new ProcessStartInfo(Path.Combine(scriptDir, "stop_all.bat"));
+                    procStartInfo = new ProcessStartInfo(Path.Combine(utilitiesDir, "stop_all.bat"));
                 else if (SystemInfo.IsMacOS)
-                    procStartInfo = new ProcessStartInfo("bash", '"' + Path.Combine(scriptDir, "stop_all.sh") + '"');
+                    procStartInfo = new ProcessStartInfo("bash", '"' + Path.Combine(utilitiesDir, "stop_all.sh") + '"');
                 else
-                    procStartInfo = new ProcessStartInfo("bash", Path.Combine(scriptDir, "stop_all.sh"));
+                    procStartInfo = new ProcessStartInfo("bash", Path.Combine(utilitiesDir, "stop_all.sh"));
 
                 procStartInfo.UseShellExecute  = false;
-                procStartInfo.WorkingDirectory = Path.GetDirectoryName(scriptDir);
+                procStartInfo.WorkingDirectory = Path.GetDirectoryName(utilitiesDir);
                 procStartInfo.CreateNoWindow   = false;
                 procStartInfo.WindowStyle      = ProcessWindowStyle.Hidden;
 
@@ -343,14 +366,16 @@ namespace CodeProject.AI.Server
         /// <param name="args">The command line arguments</param>
         /// <param name="os">The operating system</param>
         /// <param name="architecture">The architecture (x86, arm64 etc)</param>
+        /// <param name="systemName">The system name</param>
         /// <param name="runtimeEnv">Whether this is development or production</param>
         /// <param name="applicationDataDir">The path to the folder containing application data</param>
         /// <param name="inMemoryConfigData">The in-memory config data</param>
         /// <param name="reloadConfigOnChange">Whether to reload files if they are saved during runtime</param>
         /// <returns></returns>
         private static Action<HostBuilderContext, IConfigurationBuilder> SetupConfigurationLoaders(string[] args,
-            string os, string architecture, string? runtimeEnv, string applicationDataDir,
-            Dictionary<string, string?> inMemoryConfigData, bool reloadConfigOnChange)
+            string os, string architecture, string systemName, string? runtimeEnv,
+            string applicationDataDir, Dictionary<string, string?> inMemoryConfigData,
+            bool reloadConfigOnChange)
         {
             return (hostingContext, config) =>
             {
@@ -370,8 +395,8 @@ namespace CodeProject.AI.Server
                 // appsettings.os.development.json
                 // appsettings.os.architecture.json
                 // appsettings.os.architecture.development.json
-                // appsettings.docker.json
-                // appsettings.docker.development.json
+                // appsettings.system.json              system = raspberrypi, orangepi, jetson, docker etc
+                // appsettings.system.development.json
 
                 string settingsFile = Path.Combine(baseDir, "appsettings.json");
                 config.AddJsonFileSafe(settingsFile, optional: false, reloadOnChange: reloadConfigOnChange);
@@ -400,16 +425,13 @@ namespace CodeProject.AI.Server
                     config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
                 }
 
-                if (SystemInfo.IsDocker)
-                {
-                    settingsFile = Path.Combine(baseDir, $"appsettings.docker.json");
-                    config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
+                settingsFile = Path.Combine(baseDir, $"appsettings.{systemName}.json");
+                config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
 
-                    if (!string.IsNullOrWhiteSpace(runtimeEnv))
-                    {
-                        settingsFile = Path.Combine(baseDir, $"appsettings.docker.{runtimeEnv}.json");
-                        config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
-                    }                        
+                if (!string.IsNullOrWhiteSpace(runtimeEnv))
+                {
+                    settingsFile = Path.Combine(baseDir, $"appsettings.{systemName}.{runtimeEnv}.json");
+                    config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
                 }
 
                 // This allows us to add ad-hoc settings such as ApplicationDataDir
@@ -462,20 +484,20 @@ namespace CodeProject.AI.Server
             bool reloadOnChange = !SystemInfo.IsDocker;
 
             IConfiguration configuration = config.Build();
-            (var modulesPath, var preInstalledModulesPath) = EnsureDirectories(configuration);
+            (var modulesDirPath, var preInstalledModulesDirPath) = EnsureDirectories(configuration);
 
             // Scan the Modules' directories and add each modulesettings files to the config
-            if (!string.IsNullOrWhiteSpace(modulesPath) && Directory.Exists(modulesPath))
+            if (!string.IsNullOrWhiteSpace(modulesDirPath) && Directory.Exists(modulesDirPath))
             {
-                var directories = Directory.GetDirectories(modulesPath);
+                var directories = Directory.GetDirectories(modulesDirPath);
                 foreach (string? directory in directories)
                     ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
             }
 
             // Scan the pre-installed Modules' directories and add each modulesettings files
-            if (!string.IsNullOrWhiteSpace(preInstalledModulesPath) && Directory.Exists(preInstalledModulesPath))
+            if (!string.IsNullOrWhiteSpace(preInstalledModulesDirPath) && Directory.Exists(preInstalledModulesDirPath))
             {
-                var directories = Directory.GetDirectories(preInstalledModulesPath);
+                var directories = Directory.GetDirectories(preInstalledModulesDirPath);
                 foreach (string? directory in directories)
                     ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
             }
@@ -496,88 +518,88 @@ namespace CodeProject.AI.Server
                 return (null, null);
             }
 
-            var moduleOptions                  = configuration.GetSection("ModuleOptions");
-            string? runtimesPath               = moduleOptions["RuntimesPath"];
-            string? modulesPath                = moduleOptions["ModulesPath"];
-            string? preInstalledModulesPath    = moduleOptions["PreInstalledModulesPath"];
-            string? downloadedPackagesPath     = moduleOptions["DownloadedModulePackagesPath"];
-            string? moduleInstallerScriptsPath = moduleOptions["ModuleInstallerScriptsPath"];
+            var moduleOptions                     = configuration.GetSection("ModuleOptions");
+            string? runtimesDirPath               = moduleOptions["runtimesDirPath"];
+            string? modulesDirPath                = moduleOptions["modulesDirPath"];
+            string? preInstalledModulesDirPath    = moduleOptions["PreInstalledModulesDirPath"];
+            string? downloadedPackagesDirPath     = moduleOptions["DownloadedModulePackagesDirPath"];
+            string? moduleInstallerScriptsDirPath = moduleOptions["ModuleInstallerScriptsDirPath"];
 
             // make sure that all the require paths are defined
-            if (string.IsNullOrWhiteSpace(runtimesPath))
+            if (string.IsNullOrWhiteSpace(runtimesDirPath))
             {
                 Console.WriteLine("No runtime path provided");
                 return (null, null);
             }
 
-            if (string.IsNullOrWhiteSpace(modulesPath))
+            if (string.IsNullOrWhiteSpace(modulesDirPath))
             {
                 Console.WriteLine("No modules path provided");
                 return (null, null);
             }
 
-            if (string.IsNullOrWhiteSpace(downloadedPackagesPath))
+            if (string.IsNullOrWhiteSpace(downloadedPackagesDirPath))
             {
                 Console.WriteLine("No downloaded module Packages path provided");
                 return (null, null);
             }
 
-            if (string.IsNullOrWhiteSpace(moduleInstallerScriptsPath))
+            if (string.IsNullOrWhiteSpace(moduleInstallerScriptsDirPath))
             {
                 Console.WriteLine("No modules Installer path provided");
                 return (null, null);
             }
 
             // get the full paths
-            runtimesPath               = Text.FixSlashes(runtimesPath?.Replace("%ROOT_PATH%", rootPath));
-            runtimesPath               = Path.GetFullPath(runtimesPath);
-            downloadedPackagesPath     = Text.FixSlashes(downloadedPackagesPath?.Replace("%ROOT_PATH%", rootPath));
-            downloadedPackagesPath     = Path.GetFullPath(downloadedPackagesPath);
-            moduleInstallerScriptsPath = Text.FixSlashes(moduleInstallerScriptsPath?.Replace("%ROOT_PATH%", rootPath));
-            moduleInstallerScriptsPath = Path.GetFullPath(moduleInstallerScriptsPath);
-            modulesPath                = Text.FixSlashes(modulesPath?.Replace("%ROOT_PATH%", rootPath));
-            modulesPath                = Path.GetFullPath(modulesPath);
-            preInstalledModulesPath    = Text.FixSlashes(preInstalledModulesPath?.Replace("%ROOT_PATH%", rootPath));
-            preInstalledModulesPath    = Path.GetFullPath(preInstalledModulesPath);
+            runtimesDirPath               = Text.FixSlashes(runtimesDirPath?.Replace("%ROOT_PATH%", rootPath));
+            runtimesDirPath               = Path.GetFullPath(runtimesDirPath);
+            downloadedPackagesDirPath     = Text.FixSlashes(downloadedPackagesDirPath?.Replace("%ROOT_PATH%", rootPath));
+            downloadedPackagesDirPath     = Path.GetFullPath(downloadedPackagesDirPath);
+            moduleInstallerScriptsDirPath = Text.FixSlashes(moduleInstallerScriptsDirPath?.Replace("%ROOT_PATH%", rootPath));
+            moduleInstallerScriptsDirPath = Path.GetFullPath(moduleInstallerScriptsDirPath);
+            modulesDirPath                = Text.FixSlashes(modulesDirPath?.Replace("%ROOT_PATH%", rootPath));
+            modulesDirPath                = Path.GetFullPath(modulesDirPath);
+            preInstalledModulesDirPath    = Text.FixSlashes(preInstalledModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
+            preInstalledModulesDirPath    = Path.GetFullPath(preInstalledModulesDirPath);
 
             // create the directories if the don't exist
-            if (!Directory.Exists(runtimesPath))
+            if (!Directory.Exists(runtimesDirPath))
             {
-                Console.WriteLine($"Creating runtimes path '{runtimesPath}'");
-                Directory.CreateDirectory(runtimesPath);
+                Console.WriteLine($"Creating runtimes path '{runtimesDirPath}'");
+                Directory.CreateDirectory(runtimesDirPath);
             }
 
-            if (!Directory.Exists(downloadedPackagesPath))
+            if (!Directory.Exists(downloadedPackagesDirPath))
             {
-                Console.WriteLine($"Creating downloaded modules package path '{downloadedPackagesPath}'");
-                Directory.CreateDirectory(downloadedPackagesPath);
+                Console.WriteLine($"Creating downloaded modules package path '{downloadedPackagesDirPath}'");
+                Directory.CreateDirectory(downloadedPackagesDirPath);
             }
 
-            if (!Directory.Exists(moduleInstallerScriptsPath))
+            if (!Directory.Exists(moduleInstallerScriptsDirPath))
             {
-                Console.WriteLine($"Creating modules installer path '{moduleInstallerScriptsPath}'");
-                Directory.CreateDirectory(moduleInstallerScriptsPath);
+                Console.WriteLine($"Creating modules installer path '{moduleInstallerScriptsDirPath}'");
+                Directory.CreateDirectory(moduleInstallerScriptsDirPath);
             }
 
-            if (!Directory.Exists(modulesPath))
+            if (!Directory.Exists(modulesDirPath))
             {
-                Console.WriteLine($"Creating modules path '{modulesPath}'");
-                Directory.CreateDirectory(modulesPath);
+                Console.WriteLine($"Creating modules path '{modulesDirPath}'");
+                Directory.CreateDirectory(modulesDirPath);
             }
 
             var srcPath = Path.Combine(rootPath, "src");
 
             // copy over the SDK if required.
-            if (SystemInfo.IsDevelopmentCode && !srcPath.EqualsIgnoreCase(moduleInstallerScriptsPath))
+            if (SystemInfo.IsDevelopmentCode && !srcPath.EqualsIgnoreCase(moduleInstallerScriptsDirPath))
             {
                 Console.WriteLine("Copying SDK and Setup Scripts");
 
-                File.Copy(Path.Combine(srcPath, "setup.bat"), Path.Combine(moduleInstallerScriptsPath, "setup.bat"), true);
-                File.Copy(Path.Combine(srcPath, "setup.sh"),  Path.Combine(moduleInstallerScriptsPath, "setup.sh"), true);
-                CopyDirectory(Path.Combine(srcPath, "SDK"),   Path.Combine(moduleInstallerScriptsPath, "SDK"), true);
+                File.Copy(Path.Combine(srcPath, "setup.bat"), Path.Combine(moduleInstallerScriptsDirPath, "setup.bat"), true);
+                File.Copy(Path.Combine(srcPath, "setup.sh"),  Path.Combine(moduleInstallerScriptsDirPath, "setup.sh"), true);
+                CopyDirectory(Path.Combine(srcPath, "SDK"),   Path.Combine(moduleInstallerScriptsDirPath, "SDK"), true);
             }
 
-            return (modulesPath, preInstalledModulesPath);
+            return (modulesDirPath, preInstalledModulesDirPath);
         }
 
         private static void CopyDirectory(string sourceDir, string destinationDir, bool recursive)

@@ -31,13 +31,48 @@ YOLOv5_VERBOSE=false</Environment>
     <Compile Include="TrainingYoloV5.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="assets\yolov5l.pt" />
+    <Content Include="assets\yolov5m.pt" />
+    <Content Include="assets\yolov5n.pt" />
+    <Content Include="assets\yolov5s.pt" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="package.bat" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
-    <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.windows.json" />
-    <Content Include="requirements.cuda.txt" />
+    <Content Include="package.sh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="modulesettings.macos.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.windows.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="requirements.cuda11_5.txt" >
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.txt" />
+    <Content Include="requirements.cuda.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.cuda11.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.cuda12.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.macos.arm64.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.macos.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="bin\windows\python39\venv\">
@@ -49,6 +84,9 @@ YOLOv5_VERBOSE=false</Environment>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="assets\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

@@ -1,18 +1,17 @@
 #! Python3.9
 
-## Using the latest
+# numpy                     # Installing NumPy, a package for scientific computing
+# If there is an error regarding numba needing a higher version of numpy then use this
+numpy==1.22.4               # Installing NumPy, a package for scientific computing
+
 filetype                    # Installing FileType, a package to infer file types and MIME types
 gdown                       # Installing gdown, a package for downloading from Google Drive folders
 Pillow<10.0.0               # Installing Pillow, a Python Image Library
-
-## IF there is an error regarding numba needing a higher version of numpy then use this
-numpy==1.22.4               # Installing NumPy, a package for scientific computing
 pymatting==1.1.8            # Installing pymatting, a Python Library for Alpha Matting
 
 onnxruntime                 # Installing the ONNX runtime
 
 ## Not needed for our usage
-## numpy                    # Installing NumPy, a package for scientific computing
 ## pymatting                # Installing pymatting, a Python Library for Alpha Matting
 ## watchdog==2.1.7          # Installing watchdog, a set of utilities to monitor file system events
 ## asyncer==0.0.1           # Installing Asyncer, a library to make our networking/concurrency calls easier.

@@ -1,43 +1,47 @@
 {
-  // The processes (typically the backend analysis processes) that are to be started when the
-  // server starts. They will be started in order of appearance.
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
+
     "PortraitFilter": {
       "Name": "Portrait Filter",
-      "Version": "1.4",
+      "Version": "1.5.1",
 
       "Description": "Provides a depth-of-field (bokeh) effect on images. Great for selfies.", 
       "Platforms": [ "windows" ], // errors with Microsoft.ML.OnnxRuntime.NativeMethods in macOS, and System.Drawing issues in Linux
       "License": "MIT",
       "LicenseUrl": "https://opensource.org/licenses/MIT",
 
-      // Which server version is compatible with each version of this module.
-      "ModuleReleases": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ], "ReleaseDate": "2022-06-01" },
-        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1", "2.1.6" ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "2.1.7" ], "ReleaseDate": "2023-04-20", "ReleaseNotes": "Updated launch command" },
-        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1", "2.1.8" ], "ReleaseDate": "2023-05-03", "ReleaseNotes": "Minor module initialisation changes" },
-        { "ModuleVersion": "1.4", "ServerVersionRange": [ "2.1", "" ],      "ReleaseDate": "2023-05-17", "ReleaseNotes": "Updated module settings", "Importance": "Minor" }
-      ],
-      
       // Launch instructions
       "AutoStart": true,
       "FilePath": "PortraitFilter.exe",
       "Runtime": "execute",
-      "RuntimeLocation": "Shared", // Can be Local or Shared. .NET so moot point here
-
-      // These are all optional. Defaults are usually fine
-      "SupportGPU": true,
-      "AcceleratorDeviceName": null,  // = default
-      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
-      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
-      "PostStartPauseSecs": 1,        // 1 if using GPU, 0 for CPU
-
-      "Queue": "portraitfilter_queue",    // default is lower(modulename) + "_queue"
+      "RuntimeLocation": "Shared",    // Can be Local or Shared. .NET so moot point here
+      "PostStartPauseSecs": 1,        // Generally 1 if using GPU, 0 for CPU
 
       "EnvironmentVariables": {
       },
 
+      // GPU options
+      "InstallGPU": true,
+      "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+
+      "Queue": "portraitfilter_queue",    // default is lower(module_id) + '_queue'
+
+      // Which server version is compatible with each version of this module.
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "1.0",   "2.0.8" ], "ReleaseDate": "2022-06-01" },
+        { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1",   "2.1.6" ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
+        { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.1",   "2.1.7" ], "ReleaseDate": "2023-04-20", "ReleaseNotes": "Updated launch command" },
+        { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.1",   "2.1.8" ], "ReleaseDate": "2023-05-03", "ReleaseNotes": "Minor module initialisation changes" },
+        { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.1",   "2.2.4" ], "ReleaseDate": "2023-05-17", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+        { "ModuleVersion": "1.5",   "ServerVersionRange": [ "2.3.0", "2.3.0" ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.3.1", ""      ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." }
+      ],
+      
       "RouteMaps": [
         {
           "Name": "Portrait Filter",

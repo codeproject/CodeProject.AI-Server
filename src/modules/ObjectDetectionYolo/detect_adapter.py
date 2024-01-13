@@ -143,15 +143,18 @@ class YOLO62_adapter(ModuleRunner):
                                     self.use_DirectML, self.half_precision,
                                     img, threshold)
 
+        elif data.command == "Quit":
+            quit()
+            
         else:
             self.report_error(None, __file__, f"Unknown command {data.command}")
 
         return response
 
 
-    def selftest(self) -> None:
+    def selftest(self) -> JSON:
         
-        file_name = os.path.join("test", "pexels-huseyn-kamaladdin-667838.jpg")
+        file_name = os.path.join("test", "home-office.jpg")
 
         request_data = RequestData()
         request_data.queue   = self.queue_name
@@ -161,7 +164,9 @@ class YOLO62_adapter(ModuleRunner):
 
         result = self.process(request_data)
         print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
-        print(f"Info: Self-test output for {self.module_id}: {result}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Object detection test successful" }
 
 
     def list_models(self, models_path: str):

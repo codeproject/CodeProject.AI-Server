@@ -80,7 +80,7 @@ class SharedOptions:
 
     showEnvVariables = True
 
-    SUPPORT_GPU     = ModuleOptions.support_GPU
+    ENABLE_GPU     = ModuleOptions.enable_GPU
     PORT            = ModuleOptions.port
 
     print(f"Trace: Vision AI services setup: Retrieving environment variables...")
@@ -101,8 +101,8 @@ class SharedOptions:
     DATA_DIR        = os.path.normpath(ModuleOptions.getEnvVariable("DATA_DIR",   f"{APPDIR}/datastore"))
     MODELS_DIR      = os.path.normpath(ModuleOptions.getEnvVariable("MODELS_DIR", f"{APPDIR}/assets"))
 
-    USE_CUDA        = USE_CUDA.lower() == "true" and SUPPORT_GPU
-    USE_MPS         = USE_MPS.lower() == "true"  and SUPPORT_GPU
+    USE_CUDA        = USE_CUDA.lower() == "true" and ENABLE_GPU
+    USE_MPS         = USE_MPS.lower() == "true"  and ENABLE_GPU
     SLEEP_TIME      = 0.01
 
     if USE_CUDA:

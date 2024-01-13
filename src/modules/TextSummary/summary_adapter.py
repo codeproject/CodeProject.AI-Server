@@ -59,6 +59,21 @@ class TextSummary(ModuleRunner):
             #    os.remove(file_path)
             pass
 
+    def selftest(self) -> JSON:
+        
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "summarize"
+        request_data.add_value("text", "This is sentence 1. This is sentence 2. This is sentence 3.")
+        request_data.add_value("num_sentences", "2")
+
+        result = self.process(request_data)
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Text sumamry test successful" }
+
+
 
 if __name__ == "__main__":
     TextSummary().start_loop()

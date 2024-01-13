@@ -7,7 +7,7 @@ class Options:
         self.log_verbosity = ModuleOptions.log_verbosity
         
         # Cartooniser settings
-        self.use_gpu       = ModuleOptions.support_GPU  # We'll disable this if we can't find GPU libraries
+        self.use_gpu       = ModuleOptions.enable_GPU  # We'll disable this if we can't find GPU libraries
         self.weights_dir   = ModuleOptions.getEnvVariable("WEIGHTS_FOLDER", "weights")
         self.model_name    = ModuleOptions.getEnvVariable("MODEL_NAME",     "celeba_distill")
 

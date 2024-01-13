@@ -23,20 +23,44 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="detect.py" />
     <Compile Include="__init__.py" />
     <Compile Include="init.py" />
     <Compile Include="detect_adapter.py" />
     <Compile Include="options.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="assets\yolov5l.pt" />
+    <Content Include="assets\yolov5m.pt" />
+    <Content Include="assets\yolov5n.pt" />
+    <Content Include="assets\yolov5s.pt" />
+    <Content Include="custom-models\actionnetv2.pt" />
+    <Content Include="custom-models\ipcam-animal.pt" />
+    <Content Include="custom-models\ipcam-combined.pt" />
+    <Content Include="custom-models\ipcam-dark.pt" />
+    <Content Include="custom-models\ipcam-general.pt" />
+    <Content Include="custom-models\license-plate.pt" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />
     <Content Include="MODELS.md" />
-    <Content Include="test\pexels-huseyn-kamaladdin-667838.jpg" />
+    <Content Include="package.sh" />
+    <Content Include="test\home-office.jpg" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.docker.build.arm64.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.orangepi.json" >
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.jetson.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.raspberrypi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
@@ -55,6 +79,30 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
+    <Content Include="requirements.jetson.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda11.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda11_5.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda12.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.rocm.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.orangepi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.raspberrypi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.rocm.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.windows.cuda.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
@@ -62,12 +110,6 @@
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.linux.cuda.txt">
-      <DependentUpon>requirements.txt</DependentUpon>
-    </Content>
-    <Content Include="requirements.linux.arm64.txt">
-      <DependentUpon>requirements.txt</DependentUpon>
-    </Content>
-    <Content Include="requirements.linux.arm64.cuda.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.macos.txt">
@@ -89,6 +131,8 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="assets\" />
+    <Folder Include="custom-models\" />
     <Folder Include="test\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />

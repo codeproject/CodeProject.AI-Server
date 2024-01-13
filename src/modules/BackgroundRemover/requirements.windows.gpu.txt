@@ -1,5 +1,9 @@
 #! Python3.9
 
+# numpy                     # Installing NumPy, a package for scientific computing
+# If there is an error regarding numba needing a higher version of numpy then use this
+numpy==1.22.4               # Installing NumPy, a package for scientific computing
+
 ## Using the latest
 filetype                    # Installing FileType, a package to infer file types and MIME types
 gdown                       # Installing gdown, a package for downloading from Google Drive folders
@@ -7,8 +11,6 @@ Pillow<10.0.0               # Installing Pillow, a Python Image Library
 
 onnxruntime                 # Installing the ONNX runtime
 
-## IF there is an error regarding numba needing a higher version of numpy then use this
-numpy                       # Installing NumPy, a package for scientific computing
 pymatting                   # Installing pymatting, a Python Library for Alpha Matting
 
 ## Not needed for our usage

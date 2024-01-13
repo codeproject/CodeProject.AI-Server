@@ -34,14 +34,14 @@ class Options:
 
         self.sleep_time         = 0.01
 
-        self.model_size         = ModuleOptions.getEnvVariable("MODEL_SIZE", "Medium")   # small, medium, large //, nano, x-large
+        self.model_size         = ModuleOptions.getEnvVariable("MODEL_SIZE", "Medium")   # tiny, small, medium, large //, x-large
         self.use_CUDA           = ModuleOptions.getEnvVariable("USE_CUDA",   "True")     # True / False
         self.use_MPS            = True          # only if available...
         self.use_DirectML       = True          # only if available...
 
         # Normalise input
         self.model_size         = self.model_size.lower()
-        self.use_CUDA           = ModuleOptions.support_GPU and self.use_CUDA.lower() == "true"
+        self.use_CUDA           = ModuleOptions.enable_GPU and self.use_CUDA.lower() == "true"
 
         if self.model_size not in [ "tiny", "small", "medium", "large" ]:
             self.model_size = "medium"

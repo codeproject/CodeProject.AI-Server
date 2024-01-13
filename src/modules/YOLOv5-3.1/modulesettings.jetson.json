@@ -1,0 +1,19 @@
+{
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
+  "Modules": {
+
+    "YOLOv5-3.1": {
+      "Runtime": "python3.6",  // Jetson is kinda old
+      "AutoStart": true,
+
+      "EnvironmentVariables": {
+        "MODEL_SIZE": "Tiny", // tiny, small, medium, large
+        "USE_CUDA": "True",
+
+        "OPENBLAS_CORETYPE": "ARMV8", // Numpy 1.19.5 issue: https://github.com/numpy/numpy/issues/18131
+        "OPENBLAS_NUM_THREADS": "1"   // OpenBLAS Warning : Detect OpenMP Loop and this application may hang. see https://github.com/OpenMathLib/OpenBLAS/blob/develop/USAGE.md
+      }
+    }
+  }
+}

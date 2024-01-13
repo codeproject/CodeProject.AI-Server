@@ -1,7 +1,5 @@
 #! Python3.7
 
-urllib3<1.27,>=1.25.4   # Installing urllib3, the HTTP client for Python
-
 Pandas                  # Installing Pandas, a data analysis / data manipulation tool
 CoreMLTools             # Installing CoreMLTools, for working with .mlmodel format models
 OpenCV-Python           # Installing OpenCV, the Open source Computer Vision library

@@ -42,29 +42,35 @@
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />
+    <Content Include="test\quail.jpg" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="modulesettings.json" />
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
+    <Content Include="modulesettings.jetson.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
   </ItemGroup>
-	
   <ItemGroup>
+    <Content Include="package.sh" />
     <Content Include="requirements.linux.txt">
-		<DependentUpon>requirements.txt</DependentUpon>
-	</Content>
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.macos.txt">
-		<DependentUpon>requirements.txt</DependentUpon>
-	</Content>
-    <Content Include="requirements.txt" />
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.macos.arm64.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>
-	
   <ItemGroup>
     <Folder Include="assets\" />
+    <Folder Include="test\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

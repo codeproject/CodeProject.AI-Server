@@ -1,7 +1,10 @@
 {
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
+
     "ALPR": {
-      "SupportGPU": false // see requirements.linux.cuda.txt for discussion
+      "InstallGPU": false   // PaddlePaddle-GPU on CUDA is too fragile
     }
   }
 }

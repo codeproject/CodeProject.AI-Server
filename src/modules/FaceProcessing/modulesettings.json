@@ -1,46 +1,27 @@
 {
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "FaceProcessing": {
       "Name": "Face Processing",
-      "Version": "1.7",
+      "Version": "1.8.2",
 
       // Publishing info
       "Description": "A number of Face image APIs including detect, recognize, and compare.",
-      "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ],
+      "Platforms": [ "all", "!raspberrypi", "!jetson" ],
       "License": "GPL-3.0",
       "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
 
-      // Which server version is compatible with each version of this module.
-      "ModuleReleases": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "1.0", "2.0.8" ],  "ReleaseDate": "2022-03-01" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.1", "2.1.12" ], "ReleaseDate": "2023-03-20" },
-        { "ModuleVersion": "1.3", "ServerVersionRange": [ "2.1", "2.1.12" ], "ReleaseDate": "2023-05-17" },
-        { "ModuleVersion": "1.4", "ServerVersionRange": [ "2.1", "2.1.12" ], "ReleaseDate": "2023-08-05", "ReleaseNotes": "Bugs in error reporting corrected", "Importance": "Minor" },
-        { "ModuleVersion": "1.5", "ServerVersionRange": [ "2.1", "2.1.12" ], "ReleaseDate": "2023-08-12", "ReleaseNotes": "PyTorch version downgrade" },
-        { "ModuleVersion": "1.6", "ServerVersionRange": [ "2.2", "" ],       "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
-        { "ModuleVersion": "1.7", "ServerVersionRange": [ "2.2", "" ],       "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" }
-      ],
-
       // Launch instructions
       "AutoStart": true,
-      "FilePath": "intelligencelayer\\face.py",
+      "FilePath": "intelligencelayer/face.py",
       "Runtime": "python3.8",
-      "RuntimeLocation": "Shared", // Can be Local or Shared. If Local, update install.* files.
-                                   // NOTE: Installing this module after YOLO caused PIP conflicts.
-                                   //       Making this "local" will solve this, at the expense of space
-
-      // These are all optional. Defaults are usually fine
-      "SupportGPU": true,
-      "AcceleratorDeviceName": null,  // = default
-      "Parallelism": 0,               // 0 = Default (number of CPUs - 1)
-      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
+      "RuntimeLocation": "Shared", 
       "PostStartPauseSecs": 3,        // 1 if using GPU, 0 for CPU
-
-      "Queue": "faceprocessing_queue",    // default is lower(modulename) + "_queue"
+      "Queue": "faceprocessing_queue", // default is lower(module_id) + '_queue'
 
       "EnvironmentVariables": {
-
         "YOLOv5_AUTOINSTALL": "false",
         "YOLOv5_VERBOSE": "false",
 
@@ -52,6 +33,27 @@
         "DATA_DIR": "%DATA_DIR%",
         "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets"
       },
+
+      // GPU options
+      "InstallGPU": true,
+      "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 0,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+
+      // Which server version is compatible with each version of this module.
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-03-01" },
+        { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-03-20" },
+        { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-05-17" },
+        { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-08-05", "ReleaseNotes": "Bugs in error reporting corrected", "Importance": "Minor" },
+        { "ModuleVersion": "1.5",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-08-12", "ReleaseNotes": "PyTorch version downgrade" },
+        { "ModuleVersion": "1.6",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
+        { "ModuleVersion": "1.7",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" },
+        { "ModuleVersion": "1.8",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.8.1", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.8.2", "ServerVersionRange": [ "2.3.5", ""       ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Removed Raspberry Pi / Jetson support.", "Importance": "Minor" }
+      ],
 
       "RouteMaps": [
         {

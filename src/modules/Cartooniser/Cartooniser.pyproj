@@ -22,19 +22,45 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="demo.ipynb" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.jetson.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.orangepi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.raspberrypi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.windows.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
     <Content Include="package.bat" />
+    <Content Include="test.ipynb" />
+    <Content Include="test\chris-hemsworth-2.jpg" />
+    <Content Include="weights\celeba_distill.pt" />
+    <Content Include="weights\face_paint_512_v1.pt" />
+    <Content Include="weights\face_paint_512_v2.pt" />
+    <Content Include="weights\paprika.pt" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="package.sh" />
     <Content Include="requirements.txt" />
     <Content Include="requirements.gpu.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="cartooniser.py" />
     <Compile Include="cartooniser_adapter.py" />
+    <Compile Include="convert_weights.py" />
+    <Compile Include="hubconf.py" />
+    <Compile Include="model.py" />
+    <Compile Include="options.py" />
+    <Compile Include="test.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +73,10 @@
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="test\" />
+    <Folder Include="weights\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

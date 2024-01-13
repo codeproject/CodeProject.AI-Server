@@ -385,7 +385,7 @@ async function getModulesStatuses() {
 
                                 let rowHtml =
                                     `<div id='module-info-${moduleId}' class='${rowClass}'>`
-                                    + `<div class='module-name me-auto'><b>${moduleName}</b> <span class="ms-1 text-muted">${moduleInfo.version}</span></div>`
+                                    + `<div class='module-name me-auto'><b>${moduleName}</b> <span class="version ms-1 text-muted">${moduleInfo.version}</span></div>`
                                     + `<div class='status me-1'>${statusDesc}</div>`
                                     + `<div class='hardware text-end me-1'>${hardware}</div>`
 
@@ -453,8 +453,8 @@ async function getModulesStatuses() {
                                     // Toggle GPU support
                                     if (canUseGPU) {
                                         dropDown +=
-                                              `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'SupportGPU', false)\">Disable GPU</a></li>`
-                                            + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'SupportGPU', true)\">Enable GPU</a></li>`;
+                                              `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'EnableGPU', false)\">Disable GPU</a></li>`
+                                            + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'EnableGPU', true)\">Enable GPU</a></li>`;
                                     }
 
                                     // Half-precision  (PyTorch only)
@@ -507,6 +507,7 @@ async function getModulesStatuses() {
                             }
                             else {
                                 row.className = rowClass;
+                                row.querySelector("div span.version").innerHTML    = moduleInfo.version;
                                 row.querySelector("div.status").innerHTML          = statusDesc;
                                 row.querySelector("div.hardware").innerHTML        = hardware;
                                 
@@ -625,6 +626,9 @@ function addLogEntry(id, date, logLevel, label, entry, refreshDisplay = true) {
     // Transform xterm colour escapes into HTML. 
     logText = convertXtermToCss(logText);
 
+    // unicode gets messed up. TODO: Fix this!
+    logText = logText.replace("âœ”ï¸", "✔️");
+
     const html = id
                ? `<div id='log${id}' class='${logLevel} ${label} ${className}'>${idText}${dateText}:${requestIdMarker}${logText}${logMessage}</div>`
                : `<div class='${logLevel} ${label} ${className}'>${dateText}:${requestIdMarker}${logText}${logMessage}</div>`;
@@ -707,6 +711,12 @@ function displayLogs() {
 
     logsBrief.scroll({ top: logsBrief.scrollHeight, behaviour: 'smooth' });
     logsFull.scroll({ top: logsFull.scrollHeight, behaviour: 'smooth' });
+}
+
+function clearLogs() {
+    _logEntries.clear();
+    _displayDirty = true;
+    displayLogs();
 }
 
 /**
@@ -810,12 +820,12 @@ async function getDownloadableModules() {
                             let moduleId        = moduleInfo.moduleId;
                             let moduleName      = moduleInfo.name;
                             let currentVersion  = moduleInfo.version || '';
-                            let latestVersion   = moduleInfo.latestRelease.moduleVersion || '';
-                            let latestReleased  = moduleInfo.latestRelease.releaseDate;
-                            let importance      = moduleInfo.latestRelease.importance || '';
+                            let latestVersion   = moduleInfo.latestRelease?.moduleVersion || '';
+                            let latestReleased  = moduleInfo.latestRelease?.releaseDate   || '';
+                            let importance      = moduleInfo.latestRelease?.importance    || '';
                             let status          = moduleInfo.status;
                             let license         = moduleInfo.licenseUrl && moduleInfo.license 
-                                                ? `<a href='${moduleInfo.licenseUrl}'>${moduleInfo.license}</a>` : '';
+                                                ? `<a class='me-2' href='${moduleInfo.licenseUrl}'>${moduleInfo.license}</a>` : '';
                             
                             let downloadable    = moduleInfo.isDownloadable? '' 
                                                 : '<div title="This module is not downloadable" class="text-light me-2">Private</div>';
@@ -925,7 +935,7 @@ async function getDownloadableModules() {
                                 modulesTable.appendChild(row);
 
                                 let rowHtml =
-                                      `<div id='module-download-${moduleIdKey}' class='status-row py-2'>`
+                                      `<div id='module-download-${moduleIdKey}' class='status-row'>`
                                     +   `<div class='d-flex justify-content-between'>`
                                     +     `<div class='me-auto'><b>${moduleName}</b></div>${downloadable}`
                                     +     `<div class='me-3 version'>${currentVersion}</div>`
@@ -942,7 +952,7 @@ async function getDownloadableModules() {
                                         `<div class='text-info small update-available-${moduleIdKey}' style='margin-top:-0.5rem'>${updateDesc}</div>`;
                                 
                                 rowHtml +=                                
-                                        `<div class='text-muted small'>${license} ${moduleInfo.description || ''}</div>`
+                                        `<div class='text-muted small'>${license}${moduleInfo.description || ''}</div>`
                                     + `</div>`;
 
                                 row.outerHTML = rowHtml;
@@ -1002,12 +1012,13 @@ async function modifyModule(moduleId, version, action, downloadable) {
     let urlElm = document.getElementById('serviceUrl');
     let url = urlElm.value.trim() + '/v1/module/';
 
-    let noCache = document.getElementById('noCache').checked;
+    let noCache   = document.getElementById('noCache').checked;
+    let verbosity = document.getElementById('install-verbosity').value;
 
     switch (action.toLowerCase()) {
         case 'uninstall': url += `uninstall/${moduleId}`; break;
-        case 'install':   url += `install/${moduleId}/${version}/${noCache}`; break;
-        case 'update':    url += `install/${moduleId}/${version}/${noCache}`; break;
+        case 'install':   url += `install/${moduleId}/${version}/${noCache}/${verbosity}`; break;
+        case 'update':    url += `install/${moduleId}/${version}/${noCache}/${verbosity}`; break;
         default: alert(`Unknown module action ${action}`); return;
     }
 
@@ -1036,7 +1047,7 @@ async function modifyModule(moduleId, version, action, downloadable) {
                         .then(data => {
                             if (data.success) {
                                 setModuleUpdateStatus(`${action} of ${moduleId} has started and will continue on the server. See Server Logs for updates`, "success");
-                                addLogEntry(null, new Date(), "information", "", `${highlightMarker}Call to ${action} on module ${moduleId} has completed.`);
+                                addLogEntry(null, new Date(), "information", "", `${highlightMarker}Call to run ${action} on module ${moduleId} has completed.`);
                             } 
                             else {
                                 setModuleUpdateStatus(`Error in ${action} ${moduleId}: ${data.error}`);
@@ -1135,7 +1146,7 @@ async function uploadModule() {
 
 
 /**
- * Handles the verbositry slider updates (eg as a user switches from "Info" 
+ * Handles the verbosity slider updates (eg as a user switches from "Info" 
  * to just "Errors")
  */
 let lastSliderThatWasUpdated = null;

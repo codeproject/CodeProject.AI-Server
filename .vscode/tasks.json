@@ -95,6 +95,20 @@
         },
 
         {
+            "label": "build-parsejson",                  // Builds the ParseJSON utility
+             "type": "process",
+             "group": "build",
+             "command": "dotnet",
+             "args": [
+                "build",
+                "${workspaceFolder}/src/SDK/Utilities/ParseJSON",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
             "label": "build-yolo-net",      // Builds ONLY the Yolo .NET analysis module
             "type": "process",
             "group": "build",
@@ -190,10 +204,10 @@
             "group": "none",
             "type": "process",
             "command": "bash",
-            "args": [ "${workspaceFolder}/src/SDK/Scripts/stop_all.sh" ],
+            "args": [ "${workspaceFolder}/src/SDK/Utilities/stop_all.sh" ],
             "problemMatcher": "$msCompile",
             "windows": {
-                "command": "${workspaceFolder}/src/SDK/Scripts/stop_all.bat",
+                "command": "${workspaceFolder}/src/SDK/Utilities/stop_all.bat",
                 "args": []
             }
         },

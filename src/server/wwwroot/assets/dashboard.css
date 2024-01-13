@@ -41,7 +41,7 @@ a {
 .logs .text-black       { color: black !important; }
 .logs .text-darkred     { color: darkred; }
 .logs .text-darkgreen   { color: #15a815; }
-.logs .text-darkyellow  { color: #dddd00; }
+.logs .text-darkyellow  { color: #c7c700; }
 .logs .text-darkblue    { color: darkblue; }
 .logs .text-darkmagenta { color: #c000c0; }
 .logs .text-darkcyan    { color: darkcyan; }
@@ -50,7 +50,7 @@ a {
 .logs .text-white       { color: white; }
 .logs .text-red         { color: red; }
 .logs .text-green       { color: #00d300; }
-.logs .text-yellow      { color: #dddd22; }
+.logs .text-yellow      { color: #eeee00; }
 .logs .text-blue        { color: #0077ff; }
 .logs .text-magenta     { color: magenta; }
 .logs .text-cyan        { color: #00cfcf; } 
@@ -59,8 +59,7 @@ a {
 .dark-mode .logs .text-black       { color: white       !important; }
 .dark-mode .logs .text-darkred     { color: #c30000     !important; }
 .dark-mode .logs .text-darkblue    { color: blue        !important; }
-.dark-mode .logs .text-darkmagenta { color: #a003a0     !important; }
-.dark-mode .logs .text-yellow      { color: yellow      !important; }
+.dark-mode .logs .text-darkmagenta { color: #e300e3     !important; }
 .dark-mode .logs .text-cyan        { color: cyan        !important; } 
 .dark-mode .logs .text-white       { color: black       !important; }
 .dark-mode .logs .text-blue        { color: deepskyblue !important; }
@@ -102,11 +101,17 @@ a {
 
 .status-row {
     width: 100%;
-    padding: 0.25rem;
-    border-bottom: 1px solid #333;
+    padding: .5rem 1rem;
+    border-bottom: 1px solid rgb(51, 51, 51);
     color: var(--bs-body-color);
     align-items: center;
 }
+    .status-row:hover {
+        /*background-color: var(--bs-gray-300);*/
+        filter: brightness(110%);
+        /*filter: saturate(200%);*/
+        /*opacity: .9;*/
+    }
     .status-row .startup-summary,
     .status-row .current-summary,
     .status-row .install-summary {
@@ -137,7 +142,7 @@ svg:hover .action-path { opacity: 1; }
     width:9rem;
 }
 .status-row .hardware {
-    width:7rem;
+    width:8rem;
 }
 .module-name { 
     text-wrap: nowrap;
@@ -198,17 +203,19 @@ body:not(.dark-mode) {
     --bs-light:#f9f9f8;
 }
 .dark-mode .main-panel { background-color: var(--bs-dark-rgb); }
-.dark-mode .sub-panel { background-color: var(--bs-secondary-rgb); }
+.dark-mode .sub-panel  { background-color: var(--bs-secondary-rgb); }
 .dark-mode .info-panel { background-color: var(--bs-gray-700); }
 
 .dark-mode .status-row .startup-summary,
 .dark-mode .status-row .current-summary,
 .dark-mode .status-row .install-summary { color: #b6b5b5; background-color: var(--bs-gray-800); }
 .dark-mode .status-row .install-summary { background-color: var(--bs-gray-700); }
+/*.dark-mode .status-row:hover { background-color: #3c3b3b; }*/
+
 .dark-mode a { color: #ffbf61; }
 .dark-mode .top-nav-bar a { color:var(--bs-white); font-weight:200;}
 .dark-mode .logs .trace       { color: var(--bs-gray-500); }
-.dark-mode .logs .debug       { color: #d5d507; }
+.dark-mode .logs .debug       { color: #c2c205; }
 .dark-mode .logs .information { color: var(--bs-white); }
 .dark-mode .logs .warning     { color: var(--bs-warning); }
 .dark-mode .logs .error       { color: var(--bs-danger); }

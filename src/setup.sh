@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ============================================================================
+# =============================================================================
 #
 # CodeProject.AI Server 
 # 
@@ -28,85 +28,83 @@
 # Notes for Windows (WSL) users:
 #
 # 1. Always ensure this file is saved with line LF endings, not CRLF
-#    run: sed -i 's/\r$//' setup_dev_env_linux.sh
+#    run: sed -i 's/\r$//' setup.sh
 # 2. If you get the error '#!/bin/bash - no such file or directory' then this
-#    file is broken. Run head -1 setup_dev_env_linux.sh | od -c
+#    file is broken. Run head -1 setup.sh | od -c
 #    You should see: 0000000   #  !  /   b   i   n   /   b   a   s   h  \n
 #    But if you see: 0000000 357 273 277   #   !   /   b   i   n   /   b   a   s   h  \n
-#    Then run: sed -i '1s/^\xEF\xBB\xBF//' setup_dev_env_linux.sh
+#    Then run: sed -i '1s/^\xEF\xBB\xBF//' setup.sh
 #    This will correct the file. And also kill the #. You'll have to add it back
-# 3. To actually run this file: bash setup_dev_env_linux.sh. In Linux/macOS,
+# 3. To actually run this file: bash setup.sh. In Linux/macOS,
 #    obviously.
 #
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
 
 # clear
 
 # verbosity can be: quiet | info | loud
 verbosity="quiet"
 
-# Should we use GPU enabled libraries? If true, then any requirements.gpu.txt 
-# python packages will be used if available, with a fallback to requirements.txt.
-# This allows us the change to use libraries that may support GPUs if the
-# hardware is present, but with the understanding that if there's no suitable
-# hardware the libraries must still work on CPU. Setting this to false means
-# do not load libraries that provide potential GPU support.
-enableGPU="true"
-
-# Are we ready to support CUDA enabled GPUs? Setting this to true allows us to
-# test if there is CUDA enabled hardware, and if so, to request the 
-# requirements.cuda.txt python packages be installed, with a fallback to 
-# requirements.gpu.txt, then requirements.txt. 
-# DANGER: There is no assumption that the CUDA packages will work if there's 
-# no CUDA hardware. 
-# NOTE: CUDA packages will ONLY be installed used if CUDA hardware is found. 
-#       Setting this to false means do not load libraries that provide potential
-#       CUDA support.
-# NOTE: enableGPU must be true for this flag to work
-supportCUDA="true"
-
 # Show output in wild, crazy colours
-useColor="true"
+useColor=true
 
 # Width of lines
 lineWidth=70
 
 # Whether or not downloaded modules can have their Python setup installed in The
 # shared area
-allowSharedPythonInstallsForModules="true"
+allowSharedPythonInstallsForModules=true
+
+# Whether to make sudo calls even if it appears we have no admin rights. For a
+# script run at the command line this will usually prompt for a password. For
+# scripts run by the server this may result in a timeout or hang.
+attemptSudoWithoutAdminRights=true
+
 
 # Debug flags for downloads and installs
 
-# If files are already present, then don't overwrite if this is false
-forceOverwrite="false"
+# After a successful install, run a self-test for the module just installed
+doPostInstallSelfTest=true
 
-# If bandwidth is extremely limited, or you are actually offline, set this as true to
-# force all downloads to be retrieved from cached downloads. If the cached download
-# doesn't exist the install will fail.
-offlineInstall="false"
+# Perform *only* the post install self tests
+selfTestOnly=false
+
+# If files are already present, then don't overwrite if this is false
+forceOverwrite=false
+
+# If bandwidth is extremely limited, or you are actually offline, set this as
+# true to force all downloads to be retrieved from cached downloads. If the 
+# cached download doesn't exist the install will fail.
+offlineInstall=false
 
 # For speeding up debugging
-skipPipInstall="false"
+skipPipInstall=false
 
 # Whether or not to install all python packages in one step (-r requirements.txt)
 # or step by step. Doing this allows the PIP manager to handle incompatibilities 
 # better.
 # ** WARNING ** There is a big tradeoff on keeping the users informed and speed/
 # reliability. Generally one-step shouldn't be needed. But it often is. And if
-# often doesn't actually solve problems either. Overall it's safer, but not a panacea
-oneStepPIP="false"
+# often doesn't actually solve problems either. Overall it's safer, but not a
+# panacea
+oneStepPIP=false
+
+# Whether or not to use the jq utility for JSON parsing
+useJq=true
 
 
 # Basic locations
 
-# The path to the directory containing the install scripts
-installerScriptsPath=$(dirname "$0")
-pushd "$installerScriptsPath" > /dev/null 2>&1
-installerScriptsPath=$(pwd -P)
+# The path to the directory containing this setup script. Will end in "\"
+setupScriptDirPath=$(dirname "$0")
+pushd "$setupScriptDirPath" > /dev/null 2>&1
+setupScriptDirPath=$(pwd -P)
 popd > /dev/null 2>&1
 
-# Old, 'clever' way that fails on macOS
-#installerScriptsPath=$( cd -- $(dirname "$0") >/dev/null 2>&1 ; pwd -P )
+# The path to the application root dir. This is 'src' in dev, or / in production
+# This setup script always lives in the app root
+appRootDirPath="${setupScriptDirPath}"
 
 # The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
 storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/'
@@ -127,36 +125,83 @@ runtimesDir='runtimes'
 # The name of the dir holding the downloaded/sideloaded backend analysis services
 modulesDir="modules"
 
+# The location of directories relative to the root of the solution directory
+runtimesDirPath="${appRootDirPath}/${runtimesDir}"
+modulesDirPath="${appRootDirPath}/${modulesDir}"
+downloadDirPath="${appRootDirPath}/${downloadDir}"
+sdkPath="${appRootDirPath}/SDK"
+sdkScriptsDirPath="${sdkPath}/Scripts"
+
+# Who launched this script? user or server?
+launchedBy="user"
+
 # In development, we have the downloadable modules in /src/modules.
-# In production, the modules live in /opts/CodeProject/AI/modules.
-# In docker, the modules live in /app/modules.
-# BUT: 'production' for non-Windows means 'Docker', and for that we map folders
-#      to handle things. No need to make any changes at this point.
+# In production, we really should have modules live in /opts/CodeProject/AI/modules.
+# In docker, the modules live in /app/modules, but it's easy to map this to 
+# another folder on the host machine so modules are installed outside of the
+# docker container. (NOTE: alternative location for modules currently not used)
 # persistedModuleDataPath="/opt/CodeProject/AI/"
 
-# Override some values via parameters ::::::::::::::::::::::::::::::::::::::::
-while getopts ":h" option; do
-    param=$(echo $option | tr '[:upper:]' '[:lower:]')
+# Override some values via parameters :::::::::::::::::::::::::::::::::::::::::
 
-    if [ "$param" == "--no-color" ]; then set useColor="false"; fi
+while [[ $# -gt 0 ]]; do
+    # echo "There are $# parameters"
+    param=$(echo $1 | tr '[:upper:]' '[:lower:]')
+    # echo "Parm is $1 -> ${param}"
+
+    if [ "$param" = "--launcher" ]; then
+        shift
+        if [[ $# -gt 0 ]]; then
+            param_value=$(echo $1 | tr '[:upper:]' '[:lower:]')
+            if [ "$param_value" = "server" ]; then launchedBy="server"; fi
+        fi
+    fi    
+    if [ "$param" = "--no-color" ]; then useColor=false; fi
+    if [ "$param" = "--selftest-only" ]; then selfTestOnly=true; fi
+    if [ "$param" = "--verbosity" ]; then
+        shift
+        if [[ $# -gt 0 ]]; then
+            param_value=$(echo $1 | tr '[:upper:]' '[:lower:]')
+            if [[ "$param_value" =~ ^(quiet|info|loud)$ ]]; then
+                # echo "Verbosity is $1 -> ${param_value}"
+                verbosity="$param_value"
+                echo "Setting verbosity to ${verbosity}"
+            else
+                echo "No Verbosity value provided"
+            fi
+        else
+            echo "Verbosity does not match the expected values quiet|info|loud"
+        fi
+    fi
+    shift
 done
 
-# Pre-setup ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Pre-setup :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # If offline then force the system to use pre-downloaded files
-if [ "$offlineInstall" == "true" ]; then forceOverwrite="false"; fi
+if [ "$offlineInstall" = true ]; then forceOverwrite=false; fi
 
-# We can't do shared installs in Docker. They won't persist
-inDocker="false"
-if [ "$DOTNET_RUNNING_IN_CONTAINER" == "true" ]; then 
+# launching via the server means there's no opportunity to enter a sudo password
+# if required. It will eventually timeout but that's annoying. Just throw a 
+# warning and move on.
+if [ "$launchedBy" = "server" ]; then attemptSudoWithoutAdminRights=false; fi
 
-    inDocker="true"
+# We can't do shared installs in Docker. They won't necessarily persist
+inDocker=false
+if [ "$DOTNET_RUNNING_IN_CONTAINER" = "true" ]; then 
+
+    inDocker=true
 
     echo
     echo "Hi Docker! We will disable shared python installs for downloaded modules"
     echo
-    allowSharedPythonInstallsForModules="false"; 
+    allowSharedPythonInstallsForModules=false
 fi
+
+# Standard output may be used as a return value in the functions. Expose stream
+# 3 so we can do 'echo "Hello, World!" >&3' within these functions for debugging
+# wihtout interfering with return values.
+exec 3>&1
 
 # Execution environment, setup mode and Paths ::::::::::::::::::::::::::::::::
 
@@ -164,38 +209,266 @@ fi
 # folder actually exists) then we're Setting up the dev environment. Otherwise
 # we're installing a module.
 setupMode='InstallModule'
-currentDirName=$(basename "$(pwd)")    # Get current dir name (not full path)
-currentDirName=${currentDirName:-/}    # correct for the case where pwd=/
-if [ "$currentDirName" == "$srcDir" ]; then setupMode='SetupDevEnvironment'; fi
+setupScriptDirName=$(basename "$(pwd)")     # Get current dir name (not full path)
+setupScriptDirName=${setupScriptDirName:-/} # correct for the case where pwd=/
+if [ "$setupScriptDirName" = "$srcDir" ]; then setupMode='SetupDevEnvironment'; fi
 
 # In Development, this script is in the /src folder. In Production there is no
 # /src folder; everything is in the root folder. So: go to the folder
 # containing this script and check the name of the parent folder to see if
 # we're in dev or production.
-pushd "$installerScriptsPath" >/dev/null
-installScriptDirName=$(basename "${installerScriptsPath}")
-installScriptDirName=${installScriptDirName:-/} # correct for the case where pwd=/
+pushd "$setupScriptDirPath" >/dev/null
+setupScriptDirName=$(basename "${setupScriptDirPath}")
+setupScriptDirName=${setupScriptDirName:-/} # correct for the case where pwd=/
 popd >/dev/null
 executionEnvironment='Production'
-if [ "$installScriptDirName" == "$srcDir" ]; then executionEnvironment='Development'; fi
+if [ "$setupScriptDirName" = "$srcDir" ]; then executionEnvironment='Development'; fi
 
-# For Docker
-if [ "$inDocker" == "true" ]; then
-    # Yes, this is a little contradictory. Maybe "SetupDevEnvironment" should be "SetupAllModules"
-    if [ "$currentDirName" == "$appDir" ]; then setupMode='SetupDevEnvironment'; fi
+# If we're running this script in Docker from the /app folder directly then it 
+# means we're running the full dev environment setup script. This is handy when
+# you want to test the dev setup in Linux but you don't have a linux box.
+if [ "$inDocker" = true ]; then
+    if [ "$setupScriptDirName" = "$appDir" ]; then setupMode='SetupDevEnvironment'; fi
     executionEnvironment='Production'
 fi
 
-# The absolute path to the installer script and the root directory. Note that
-# this script (and the SDK folder) is either in the /src dir or the root dir
-sdkPath="${installerScriptsPath}/SDK"
-sdkScriptsPath="${installerScriptsPath}/SDK/Scripts"
-pushd "$installerScriptsPath" >/dev/null
-if [ "$executionEnvironment" == 'Development' ]; then cd ..; fi
-absoluteRootDir="$(pwd)"
+# The absolute path to the installer script and the app root directory.
+# Note that this script (and the SDK folder) is either in the /src dir or the
+# app root dir
+pushd "$setupScriptDirPath" >/dev/null
+if [ "$executionEnvironment" = 'Development' ]; then cd ..; fi
+rootDirPath="$(pwd)"
 popd >/dev/null
 
-absoluteAppRootDir="${installerScriptsPath}"
+
+# Helper method ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+function setupPythonPaths () {
+
+    pythonLocation="$1"
+    pythonVersion=$2
+
+    # Version with ".'s removed
+    pythonName="python${pythonVersion/./}"
+
+    # The path to the python installation, either local or shared. The
+    # virtual environment will live in here
+    if [ "${pythonLocation}" = "Local" ]; then
+        pythonDirPath="${moduleDirPath}/bin/${os}/${pythonName}"
+    else
+        pythonDirPath="${runtimesDirPath}/bin/${os}/${pythonName}"
+    fi
+    virtualEnvDirPath="${pythonDirPath}/venv"
+
+    # The path to the python intepreter for this venv
+    venvPythonCmdPath="${virtualEnvDirPath}/bin/python${pythonVersion}"
+
+    # The location where python packages will be installed for this venv
+    packagesDirPath="${virtualEnvDirPath}/lib/python${pythonVersion}/site-packages/"
+}
+
+function doModuleInstall () {
+
+    moduleDirName="$1"
+    moduleDirPath="${modulesDirPath}/${moduleDirName}"
+
+    # Get the module name, version, runtime location and python version from the
+    # modulesettings.
+
+    moduleName=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "Name")
+    if [ "$moduleName" = "" ]; then moduleName="$moduleDirName"; fi
+
+    moduleVersion=$(getValueFromModuleSettingsFile       "${moduleDirPath}" "${moduleDirName}" "Version" )
+    runtime=$(getValueFromModuleSettingsFile             "${moduleDirPath}" "${moduleDirName}" "Runtime")
+    pythonLocation=$(getValueFromModuleSettingsFile      "${moduleDirPath}" "${moduleDirName}" "RuntimeLocation")
+    installGPU=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "InstallGPU")
+    moduleStartFilePath=$(getValueFromModuleSettingsFile "${moduleDirPath}" "${moduleDirName}" "FilePath")
+    platforms=$(getValueFromModuleSettingsFile           "${moduleDirPath}" "${moduleDirName}" "Platforms")
+
+    writeLine
+    writeLine "Processing module ${moduleDirName} ${moduleVersion}" "White" "Blue" $lineWidth
+    writeLine
+
+    # Make sure we can actually install this here.
+    if [ "${useJq}" = true ]; then
+        platform_array=($(echo "$platforms" | jq -r '.[]'))
+    else
+        platform_array=( $(echo "$platforms" | tr -d '[]' | sed 's/"//g' | sed 's/,/ /g') )
+    fi
+
+    # writeLine "platforms = ${platforms}"
+
+    can_install=false
+    for item in "${platform_array[@]}"; do
+        # echo "Checking ${platform} against ${item}"
+        if [ "$item" = "!${platform}" ]; then
+            can_install=false
+            break
+        fi
+        if [ "$item" = "all" ] || [ "$item" = "${platform}" ]; then
+            can_install=true
+        fi
+    done
+
+    if [ "$can_install" = false ]; then
+        writeLine "This module cannot be installed on this system" $color_mute
+        return
+    fi
+
+    if [ "${pythonLocation}" = "" ]; then pythonLocation="Shared"; fi
+
+    if [ "${allowSharedPythonInstallsForModules}" = false ]; then
+        if [[ "${moduleDirPath}" == *"/modules/"* ]] && [ "${pythonLocation}" = "Shared" ]; then
+            writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
+            pythonLocation="Local"
+        fi
+    fi
+
+    # Get python version from runtime
+    # For python, the runtime is in the form "Python3.8", so get the "3.8".
+    # However, we also allow just "python" meaning "use whatever is default"
+    pythonVersion=""
+    runtime=$( echo $runtime | tr '[:upper:]' '[:lower:]' | tr -d [:space:] )
+
+    # TODO: Allow 'python<=3.9' type specifiers so it will use the native python
+    #       if it's <= 3.9, or install and use 3.9 otherwise
+    if [ "$runtime" = "python" ]; then
+
+        # Get current Python version, and trim down to just major.minor
+        currentPythonVersion=$(python3 --version 2>&1)
+
+        if [ "$currentPythonVersion" != "" ]; then 
+            versionNumber=$(echo $currentPythonVersion | awk -F ' ' '{print $2}')
+            # echo "Current Python = $versionNumber"
+            major=$(echo $versionNumber | awk -F '.' '{print $1}')
+            minor=$(echo $versionNumber | awk -F '.' '{print $2}')
+            pythonVersion="${major}.${minor}"
+        fi
+
+        if [ "$pythonVersion" == "" ]; then pythonVersion="3.9"; fi
+        # echo "Current Python = $pythonVersion"
+
+    elif [ "${runtime:0:6}" = "python" ]; then
+        pythonVersion="${runtime:6}";
+        pythonVersion=$(echo "${pythonVersion}" | tr -d [:space:])
+    fi
+
+    setupPythonPaths "${pythonLocation}" "$pythonVersion"
+
+    if [ "$verbosity" != "quiet" ]; then
+        writeLine "moduleName        = $moduleName"        $color_info
+        writeLine "moduleVersion     = $moduleVersion"     $color_info
+        writeLine "runtime           = $runtime"           $color_info
+        writeLine "installGPU        = $installGPU"        $color_info
+        writeLine "pythonLocation    = $pythonLocation"    $color_info
+        writeLine "pythonVersion     = $pythonVersion"     $color_info
+        writeLine "virtualEnvDirPath = $virtualEnvDirPath" $color_info
+        writeLine "venvPythonCmdPath = $venvPythonCmdPath" $color_info
+        writeLine "packagesDirPath   = $packagesDirPath"   $color_info
+    fi
+
+    module_install_errors=""
+
+    if [ -f "${moduleDirPath}/install.sh" ]; then
+
+        # If a python version has been specified then we'll automatically setup
+        # the correct python environment. We do this before the script runs so 
+        # the script can use python in the script.
+        if [ "${pythonVersion}" != "" ] && [ "$selfTestOnly" = false ]; then
+            writeLine "Installing Python ${pythonVersion}"
+            setupPython 
+            if [ $? -gt 0 ]; then
+                module_install_errors="Unable to install Python ${pythonVersion}"
+            fi
+        fi
+
+        # Install the module, but only if there were no issues installing python
+        # (or a python install wasn't needed)
+        if [ "${module_install_errors}" = "" ] && [ "$selfTestOnly" = false ]; then
+
+            currentDir="$(pwd)"
+            correctLineEndings "${moduleDirPath}/install.sh"
+            source "${moduleDirPath}/install.sh" "install"
+            # if [ $? -gt 0 ] && [ "${module_install_errors}" = "" ]; then
+            #    module_install_errors="${moduleName} failed to install"
+            # fi
+            cd "$currentDir" >/dev/null
+        fi
+
+        # If a python version has been specified then we'll automatically look 
+        # for, and install, the requirements file for the module, and then also 
+        # the requirements file for the SDK since it'll be assumed the Python SDK
+        # will come into play.
+        if [ "$module_install_errors" = "" ] && [ "${pythonVersion}" != "" ]; then
+            if [ "$selfTestOnly" = false ]; then
+
+                writeLine "Installing Python packages for ${moduleName}"
+
+                write "Installing GPU-enabled libraries: " $color_info
+                if [ "$installGPU" = "true" ]; then writeLine "If available" $color_success; else writeLine "No" $color_warn; fi
+
+                installRequiredPythonPackages 
+                if [ $? -gt 0 ]; then 
+                    module_install_errors="Unable to install Python packages for ${moduleName}"; 
+                fi
+
+                writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
+                installRequiredPythonPackages "${sdkPath}/Python"
+                if [ $? -gt 0 ]; then 
+                    module_install_errors="Unable to install Python packages for CodeProject SDK"; 
+                fi
+            fi
+        fi
+
+        # And finally, the post install script if one was provided
+        if [ "$module_install_errors" = "" ] && [ -f "${moduleDirPath}/post_install.sh" ]; then
+            if [ "$selfTestOnly" = false ]; then
+                writeLine "Executing post-install script for ${moduleName}"
+
+                currentDir="$(pwd)"
+                correctLineEndings "${moduleDirPath}/post_install.sh"
+                source "${moduleDirPath}/post_install.sh" "post-install"
+                if [ $? -gt 0 ]; then
+                    module_install_errors="Error running post-install script"
+                fi
+                cd "$currentDir" >/dev/null
+            fi
+        fi
+
+        # Perform a self-test
+        if [ "${doPostInstallSelfTest}" = true ] && [ "${module_install_errors}" = "" ]; then
+            if [ "${pythonVersion}" != "" ]; then
+
+                if [ "${verbosity}" = "quiet" ]; then
+                    write "Self test: "
+                    pushd "${moduleDirPath}" >/dev/null
+                    "$venvPythonCmdPath" "$moduleStartFilePath" --selftest >/dev/null
+                else
+                    pushd "${moduleDirPath}"
+                    writeLine "SELF TEST START ======================================================" $color_info
+                    "$venvPythonCmdPath" "$moduleStartFilePath" --selftest
+                fi
+                if [[ $? -eq 0 ]]; then # echo "good"; else echo "bad"; fi
+                    writeLine "Self-test passed" $color_success
+                else
+                    writeLine "Self-test failed" $color_error
+                fi
+
+                if [ "${verbosity}" != "quiet" ]; then
+                    writeLine "SELF TEST END   ======================================================" $color_info
+                fi
+                popd >/dev/null
+                
+            fi
+        fi
+
+    else
+        writeLine "No install.sh present in ${moduleDirPath}" $color_warn
+    fi
+
+    # return result
+    # echo "${module_install_errors}"
+}
 
 # import the utilities :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -218,127 +491,77 @@ function correctLineEndings () {
     fi
 }
 
-correctLineEndings "${sdkScriptsPath}/utils.sh"
-
-# "platform" will be set by this script
-source "${sdkScriptsPath}/utils.sh"
-
-
-# Test for CUDA drivers and adjust supportCUDA if needed
-hasCUDA='false'
-if [ "$os" == "macos" ]; then 
-    supportCUDA="false"
-elif [ "${systemName}" == "Jetson" ]; then
-    hasCUDA='true'
-elif [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ]; then
-    hasCUDA='false'
-else 
-    if [ "$supportCUDA" == "true" ]; then
-        if [ "${systemName}" == "WSL" ]; then
-            # https://stackoverflow.com/a/66486390
-            cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
-            chmod a+x /usr/bin/nvidia-smi > /dev/null 2>&1
-        fi
-
-        if [ -x "$(command -v nvidia-smi)" ]; then
-            nvidia=$(nvidia-smi | grep -i -E 'CUDA Version: [0-9]+.[0-9]+') > /dev/null 2>&1
-            if [[ ${nvidia} == *'CUDA Version: '* ]]; then hasCUDA='true'; fi
-        fi
-    fi
-fi
-
-# Test for AMD ROCm drivers 
-hasROCm='false'
-if [ "$os" == "linux" ]; then 
-    if [ "${systemName}" != "Raspberry Pi" ] && [ "${systemName}" != "Orange Pi" ] && \
-       [ "${systemName}" != "Jetson" ]; then
-
-        if [ ! -x "$(command -v rocminfo)" ]; then
-            write "Checking for ROCm support..." $color_primary
-            sudo apt install rocminfo -y > /dev/null 2>&1 &
-            spin $!
-            writeLine "Done" $color_success
-        fi
-        if [ -x "$(command -v rocminfo)" ]; then
-            amdinfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
-            if [[ ${amdinfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm='true'; fi
-        fi
-    fi
-fi
-
-# The location of directories relative to the root of the solution directory
-runtimesPath="${absoluteAppRootDir}/${runtimesDir}"
-
-# In development, we have the downloadable modules in /src/modules.
-# In production, the modules live in /opts/CodeProject/AI/modules.
-# In docker, the modules live in /app/modules.
-# BUT: 'production' for non-Windows means 'Docker', and for that we map folders
-#      to handle things. No need to make any changes at this point.
-# if [ "$executionEnvironment" == 'Development' ]; then
-    modulesPath="${absoluteAppRootDir}/${modulesDir}"
-    downloadPath="${absoluteAppRootDir}/${downloadDir}"
-# else
-#    modulesPath="${persistedModuleDataPath}/${modulesDir}"
-#    downloadPath="${persistedModuleDataPath}/${downloadDir}"
-# fi
+# $os, $platform and $architecture and $systemName will be set by this script
+correctLineEndings "${sdkScriptsDirPath}/utils.sh"
+source "${sdkScriptsDirPath}/utils.sh"
 
 # Create directories for persisted application data
-if [ "$os" == "macos" ]; then 
-    commonDataDir='/Library/Application Support/CodeProject/AI'
+if [ "$os" = "macos" ]; then 
+    commonDataDirPath='/Library/Application Support/CodeProject/AI'
 else
-    commonDataDir='/etc/codeproject/ai'
+    commonDataDirPath='/etc/codeproject/ai'
 fi
 
 # Set Flags
 
-wgetFlags='-q --no-check-certificate'
+wgetFlags='--no-check-certificate --tries 5'
+wgetFlags="${wgetFlags} --progress=bar:force:noscroll"
+if [[ $(wget -h 2>&1 | grep -E 'waitretry|connect-timeout') ]]; then
+    wgetFlags="${wgetFlags} --waitretry 2 --connect-timeout 15"
+fi
+
 # pipFlags='--quiet --quiet' - not actually supported, even though docs say it is
 pipFlags=''
 copyFlags='/NFL /NDL /NJH /NJS /nc /ns  >/dev/null'
 unzipFlags='-o -qq'
 tarFlags='-xf'
+curlFlags='-fL --retry 5'
 
-if [ $verbosity == "info" ]; then
-    wgetFlags='--no-verbose --no-check-certificate'
+if [ $verbosity = "info" ]; then
+    wgetFlags="${wgetFlags} --no-verbose"
     # pipFlags='--quiet' - not actually supported, even though docs say it is
     pipFlags=''
     rmdirFlags='/q'
     copyFlags='/NFL /NDL /NJH'
     unzipFlags='-q -o'
     tarFlags='-xf'
-elif [ $verbosity == "loud" ]; then
-    wgetFlags='-v --no-check-certificate'
+elif [ $verbosity = "loud" ]; then
+    wgetFlags="${wgetFlags} -v"
+    curlFlags="${curlFlags} --verbose"
     pipFlags=''
     rmdirFlags=''
     copyFlags=''
     unzipFlags='-o'
     tarFlags='-xvf'
+else
+    wgetFlags="${wgetFlags} -q"
+    curlFlags="${curlFlags} --silent"
 fi
 
-#if [ "$platform" == "macos" ]; then # not available on macs anymore?
-#    pipFlags="${pipFlags} --no-cache-dir"
-# elif [ "$setupMode" != 'SetupDevEnvironment' ]; then
-#    --progress-bar is in pip 22+. I have no stomach to sniff the pip version today
+# --progress-bar is in pip 22+. TODO: Sniff pip version, update if necessary,
+# and disable progress bar if we can
+# if [ "$setupMode" != 'SetupDevEnvironment' ]; then
 #    pipFlags="${pipFlags} --progress-bar off"
 # fi
 
-# ** WARNING 2 ** Turns out PIP is more painful that we thought it could be:
-#  - For Windows, oneStep is necessary otherwise FaceProcessing fails.
-#  - For Mac and Linux, oneStep will NOT work
-#  - For Docker, which is Linux, it DOES work. Sometimes. Or maybe not.
-if [ "$inDocker" == "true" ]; then 
-    oneStepPIP="true"
-elif [ "$os" == "linux" ] || [ "$os" == "macos" ]; then
-    oneStepPIP="false"
-elif [ "$os" == "windows" ]; then 
-    oneStepPIP="true"
+# oneStep means we install python packages using pip -r requirements.txt rather
+# than installing module by module. one-step allows the dependency manager to
+# make some better calls, but also means the entire install can fail on a single
+# bad (and potentially unnneeded) module. Turning one-step off means you get a
+# more granular set of error messages should things go wrong, and a nicer UX.
+if [ "$inDocker" = true ]; then 
+    oneStepPIP=false
+elif [ "$os" = "linux" ] || [ "$os" = "macos" ]; then
+    oneStepPIP=false
+elif [ "$os" = "windows" ]; then 
+    oneStepPIP=false
 fi
 
-if [ "$useColor" != "true" ]; then
+if [ "$useColor" != true ]; then
     pipFlags="${pipFlags} --no-color"
 fi
 
-if [ "$setupMode" == 'SetupDevEnvironment' ]; then
+if [ "$setupMode" = 'SetupDevEnvironment' ]; then
     scriptTitle='          Setting up CodeProject.AI Development Environment'
 else
     scriptTitle='             Installing CodeProject.AI Analysis Module'
@@ -357,47 +580,36 @@ writeLine
 # -P = one line, -k = kb. NR=2 means get second row. $4=4th item. Add 000 = kb -> bytes
 diskSpace="$(df -Pk / | awk 'NR==2 {print $4}')000"
 formatted_space=$(bytesToHumanReadableKilo $diskSpace)
-writeLine "${formatted_space}  available" $color_mute
+writeLine "${formatted_space} available on ${systemName}" $color_mute
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "setupMode             = ${setupMode}"             $color_mute
-    writeLine "executionEnvironment  = ${executionEnvironment}"  $color_mute
-    writeLine "installerScriptsPath  = ${installerScriptsPath}"  $color_mute
-    writeLine "sdkScriptsPath        = ${sdkScriptsPath}"        $color_mute
-    writeLine "absoluteAppRootDir    = ${absoluteAppRootDir}"    $color_mute
-    writeLine "runtimesPath          = ${runtimesPath}"          $color_mute
-    writeLine "modulesPath           = ${modulesPath}"           $color_mute
-    writeLine "downloadPath          = ${downloadPath}"          $color_mute
+    writeLine "setupMode            = ${setupMode}"            $color_mute
+    writeLine "executionEnvironment = ${executionEnvironment}" $color_mute
+    writeLine "rootDirPath          = ${rootDirPath}"          $color_mute
+    writeLine "appRootDirPath       = ${appRootDirPath}"       $color_mute
+    writeLine "setupScriptDirPath   = ${setupScriptDirPath}"   $color_mute
+    writeLine "sdkScriptsDirPath    = ${sdkScriptsDirPath}"    $color_mute
+    writeLine "runtimesDirPath      = ${runtimesDirPath}"      $color_mute
+    writeLine "modulesDirPath       = ${modulesDirPath}"       $color_mute
+    writeLine "downloadDirPath      = ${downloadDirPath}"      $color_mute
     writeLine 
 fi
 
-# ============================================================================
+# =============================================================================
 # House keeping
 
-if [ "$os" == "linux" ]; then 
-    checkForTool curl
-    checkForTool bc
-fi
+checkForAdminRights
+
+# Install tools that we know are available via apt-get or brew
+if [ "$os" = "linux" ]; then checkForTool curl; fi
 checkForTool wget
 checkForTool unzip
+if [ "${useJq}" = true ]; then checkForTool jq; fi
 writeLine ""
 
-# ============================================================================
-# Checks on GPU ability
 
-writeLine "Checking GPU support" "White" "Blue" $lineWidth
-writeLine
-
-write "CUDA Present..."
-if [ "$hasCUDA" == "true" ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
-write "Allowing GPU Support: "
-if [ "$enableGPU" == "true" ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
-write "Allowing CUDA Support: "
-if [ "$supportCUDA" == "true" ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
-
-
-# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # 1. Ensure directories are created and download required assets
 
 writeLine
@@ -405,102 +617,156 @@ writeLine "General CodeProject.AI setup" "White" "DarkGreen" $lineWidth
 writeLine
 
 # Create some directories
+CreateWriteableDir "${downloadDirPath}"   "downloads"
+CreateWriteableDir "${commonDataDirPath}" "persisted data"
+CreateWriteableDir "${runtimesDirPath}"   "runtimes"
 
-# For downloading assets
-if [ ! -d "${downloadPath}" ]; then
-    write "Creating download dir..." $color_primary
-    mkdir -p "${downloadPath}"
-    writeLine "Done" $color_success
-fi
-if [ "$os" == "macos" ]; then 
-    if [[ ! -w "${downloadPath}" ]]; then
-        write "Setting permissions..." $color_primary
-        #sudo 
-        chmod -R a+w "${downloadPath}"
-        writeLine "Done" $color_success
+writeLine
+
+
+# =============================================================================
+# Report on GPU ability
+
+# GPU / CPU support :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+writeLine "GPU support" "White" "DarkGreen" $lineWidth
+writeLine
+
+# Test for CUDA 
+
+hasCUDA=false
+
+if [ "$os" = "macos" ]; then 
+    cuda_version=""
+elif [ "${systemName}" = "Jetson" ]; then
+    hasCUDA=true
+    cuda_version=$(getCudaVersion)
+elif [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ]; then
+    cuda_version=""
+else 
+    cuda_version=$(getCudaVersion)
+
+    if [ "$cuda_version" != "" ]; then
+
+        hasCUDA=true
+
+        # disable this
+        if [ "${systemName}" = "ignoreWSL" ]; then # we're disabling this on purpose
+            checkForAdminRights
+            if [ "$isAdmin" = false ]; then
+                writeLine "insufficient permission to install CUDA toolkit. Rerun under sudo" $color_error
+            else
+                # https://stackoverflow.com/a/66486390
+                cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
+                chmod a+x /usr/bin/nvidia-smi > /dev/null 2>&1
+        
+                # Out of the box, WSL might come with CUDA 11.5, and no toolkit, 
+                # meaning we rely on nvidia-smi for version info, which is wrong.
+                # We also should be thinking about CUDA 11.8 as a minimum, so let's
+                # upgrade.
+                cuda_comparison=$(versionCompare $cuda_version "11.8")
+                if [ "$cuda_comparison" = "-1" ]; then
+                    writeLine "Upgrading WSL's CUDA install to 11.8" $color_info
+                    currentDir="$(pwd)"
+                    correctLineEndings "${sdkScriptsDirPath}/install_cuDNN.sh"
+                    source "${sdkScriptsDirPath}/install_cuDNN.sh" 11.8
+                    cd "$currentDir" >/dev/null
+                fi
+            fi
+        fi
+
+        # We may have nvidia-smi, but not nvcc (eg in WSL). Fix this.
+        if [ -x "$(command -v nvidia-smi)" ] && [ ! -x "$(command -v nvcc)" ]; then
+
+            installAptPackages "nvidia-cuda-toolkit"
+
+            # The initial version we got would have been from nvidia-smi, which
+            # is wrong. Redo.
+            cuda_version=$(getCudaVersion)
+        fi
     fi
 fi
 
-# For persisting settings
-if [ "$os" == "linux" ]; then 
-    if [ ! -d "${commonDataDir}" ]; then
-        sudo mkdir -p "${commonDataDir}"
-    fi
-    if [[ ! -w "${commonDataDir}" ]]; then
-        sudo chmod 777 "${commonDataDir}"
-    fi
+write "CUDA (NVIDIA) Present: "
+if [ "$hasCUDA" = true ]; then 
+    writeLine "Yes (version $cuda_version)" $color_success
+else 
+    writeLine "No" $color_warn;
 fi
 
-# for the runtimes
-if [ ! -d "${runtimesPath}" ]; then
-    write "Creating runtimes dir..." $color_primary
-    sudo mkdir -p "${runtimesPath}"
-    writeLine "Done" $color_success
+# Test for AMD ROCm drivers 
+write "ROCm (AMD) Present:    "
+
+hasROCm=false
+if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
+    hasROCm=false
+elif [ "$os" = "linux" ]; then 
+    if [ ! -x "$(command -v rocminfo)" ]; then
+        write "(attempt to install rocminfo..." $color_primary
+        # not using installAptPackages so we get a better UX
+        sudo apt install rocminfo -y > /dev/null 2>&1 &
+        spin $!
+        write ") " $color_primary
+    fi
+    if [ -x "$(command -v rocminfo)" ]; then
+        amdinfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
+        if [[ ${amdinfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm=true; fi
+    fi
 fi
+if [ "$hasROCm" = true ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
 
-write "Setting permissions..." $color_primary
-sudo chmod a+w "${runtimesPath}"
-writeLine "Done" $color_success
+hasMPS=false
+if [ "${platform}" = "macos-arm64" ]; then hasMPS=true; fi
+write "MPS (Apple) Present:   "
+if [ "$hasMPS" = true ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
 
-# echo "setupMode = ${setupMode}"
 
 # And off we go...
-success='true'
-module_install_success='false'
 
-# Start with the core SDK
-writeLine
-writeLine "Processing SDK" "White" "Blue" $lineWidth
-writeLine
-correctLineEndings "${modulePath}/install.sh"
-moduleDir="SDK"
-modulePath="${absoluteAppRootDir}/${moduleDir}"
-source "${modulePath}/install.sh" "install"
-# if [ "$module_install_success" == "false" ]; then success='false'; fi
+success=true
 
+if [ "$setupMode" = 'SetupDevEnvironment' ]; then 
 
-if [ "$setupMode" == 'SetupDevEnvironment' ]; then 
+    if [ "$selfTestOnly" = false ]; then
+        writeLine
+        writeLine "Processing CodeProject.AI SDK" "White" "DarkGreen" $lineWidth
+        writeLine
 
-    # Walk through the modules directory and call the setup script in each dir
-    for d in ${modulesPath}/*/ ; do
+        moduleDirName="SDK"
+        moduleDirPath="${appRootDirPath}/${moduleDirName}"
+        
+        currentDir="$(pwd)"
+        correctLineEndings "${moduleDirPath}/install.sh"
+        source "${moduleDirPath}/install.sh" "install"
+        if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi
+        cd "$currentDir" >/dev/null
 
-        moduleDir=$(basename "$d")
-        modulePath=$d
+        writeLine
+        writeLine "Processing CodeProject.AI Server" "White" "DarkGreen" $lineWidth
+        writeLine
 
-        if [ "${modulePath: -1}" == "/" ]; then
-            modulePath="${modulePath:0:${#modulePath}-1}"
-        fi
+        moduleDirName="server"
+        moduleDirPath="${appRootDirPath}/${moduleDirName}"
+        
+        currentDir="$(pwd)"
+        correctLineEndings "${moduleDirPath}/install.sh"
+        source "${moduleDirPath}/install.sh" "install"
+        if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi
+        cd "$currentDir" >/dev/null
+    fi
 
-        # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
-        dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
+    # Walk through the modules directory and call the setup script in each dir,
+    # as well as setting up the demos
 
-        pythonVersion=""
+    for d in ${modulesDirPath}/*/ ; do
+        moduleDirName=$(basename "$d")
+        currentDir="$(pwd)"
+        doModuleInstall "${moduleDirName}"
+        cd "$currentDir" >/dev/null
 
-        # Read the module version from the modulesettings.json file 
-        moduleVersion=""
-        if [ -f "${modulePath}/modulesettings.json" ]; then
-            moduleVersion=$(getVersionFromModuleSettings "${modulePath}/modulesettings.json" "Version")
-        fi
-
-        if [ -f "${modulePath}/install.sh" ]; then
-
-            writeLine
-            writeLine "Processing module ${moduleDir} ${moduleVersion}" "White" "Blue" $lineWidth
-            writeLine
-
-            # Install module
-            module_install_success='false'
-            correctLineEndings "${modulePath}/install.sh"
-            source "${modulePath}/install.sh" "install"
-            
-            if [ "$module_install_success" == "true" ]; then
-                # Add SDK PIPs to module's python venv if python is the runtime of choice
-                if [ "${pythonVersion}" != "" ]; then
-                    writeLine "Installing Server SDK support:"
-                    installPythonPackages "${sdkPath}/Python"
-                fi
-                # success='false'
-            fi
+        if [ "${module_install_errors}" != "" ]; then
+            success=false
+            writeLine "Install failed: ${module_install_errors}" "$color_error"
         fi
     done
 
@@ -509,71 +775,76 @@ if [ "$setupMode" == 'SetupDevEnvironment' ]; then
     writeLine
 
     # Setup Demos
-    moduleDir="demos"
-    modulePath="${absoluteRootDir}/${moduleDir}"
-    writeLine
-    writeLine "Processing demos" "White" "Blue" $lineWidth
-    writeLine
-    correctLineEndings "${modulePath}/install.sh"
-    source "${modulePath}/install.sh" "install"
-    
-    writeLine "Done" $color_success
+    if [ "$selfTestOnly" = false ]; then
+        writeLine
+        writeLine "Processing demos" "White" "Blue" $lineWidth
+        writeLine
 
+        moduleDirName="demos"
+        moduleDirPath="${rootDirPath}/${moduleDirName}"
+
+        currentDir="$(pwd)"
+        correctLineEndings "${moduleDirPath}/install.sh"
+        source "${moduleDirPath}/install.sh" "install"
+        # Ignoring this
+        # if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi   
+        cd "$currentDir" >/dev/null
+
+        writeLine "Done" $color_success
+    fi
+    
 else
 
     # Install an individual module
 
-    modulePath=$(pwd)
-    if [ "${modulePath: -1}" == "/" ]; then
-        modulePath="${modulePath:0:${#modulePath}-1}"
+    moduleDirPath=$(pwd)
+    if [ "${moduleDirPath: -1}" = "/" ]; then
+        moduleDirPath="${moduleDirPath:0:${#moduleDirPath}-1}"
     fi
-    moduleDir=$(basename "${modulePath}")
-    # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
-    dirname=$(echo $moduleDir | tr '[:upper:]' '[:lower:]')
+    moduleDirName=$(basename "${moduleDirPath}")
 
-    pythonVersion=""
-
-    # Read the module version from the modulesettings.json file
-    moduleVersion=""
-    if [ -f "${modulePath}/modulesettings.json" ]; then
-        moduleVersion=$(getVersionFromModuleSettings "${modulePath}/modulesettings.json" "Version")
-    fi
-
-    if [ -f "${modulePath}/install.sh" ]; then
-
-        writeLine
-        writeLine "Installing module ${moduleDir} ${moduleVersion}" "White" "Blue" $lineWidth
-        writeLine
-
-        # Install module
-        correctLineEndings "${modulePath}/install.sh"
-        source "${modulePath}/install.sh" "install"
-        # if [ $? -ne 0 ]; then success='false'; fi
-
-        # Add SDK PIPs to module's python venv if python is the runtime of choice
-        if [ "${pythonVersion}" != "" ]; then
-            writeLine "Installing Server SDK support:"
-            installPythonPackages "${sdkPath}/Python"
+    if [ "$moduleDirName" = "server" ]; then
+        if [ "$selfTestOnly" = false ]; then
+            moduleDirPath="${appRootDirPath}/${moduleDirName}"
+            
+            currentDir="$(pwd)"
+            correctLineEndings "${moduleDirPath}/install.sh"
+            source "${moduleDirPath}/install.sh" "install"
+            cd "$currentDir" >/dev/null
         fi
-
+    elif [ "$moduleDirName" = "demos" ]; then
+        if [ "$selfTestOnly" = false ]; then
+            moduleDirPath="${rootDirPath}/${moduleDirName}"
+            
+            currentDir="$(pwd)"
+            correctLineEndings "${moduleDirPath}/install.sh"
+            source "${moduleDirPath}/install.sh" "install"
+            cd "$currentDir" >/dev/null
+        fi
     else
-        writeLine "Unable to find install.sh in ${modulePath}" $color_error
+        doModuleInstall "${moduleDirName}"
+    fi
+
+    if [ "${module_install_errors}" != "" ]; then
+        success=false
+        writeLine "Install failed: ${module_install_errors}" "$color_error"
     fi
 
 fi
 
-# ==============================================================================
+# =============================================================================
 # ...and we're done.
 
 writeLine
 writeLine "                Setup complete" "White" "DarkGreen" $lineWidth
 writeLine
 
-if [ "${success}" != "true" ]; then
+if [ "${success}" != true ]; then
     quit 1
 fi
 
 quit 0
+
 
 # The return codes
 # 1 - General error
@@ -586,4 +857,5 @@ quit 0
 # 8 - unable to create file or directory
 # 9 - required parameter not supplied
 # 10 - failed to install required tool
+# 11 - unable to copy file or directory
 # 100 - impossible code path executed

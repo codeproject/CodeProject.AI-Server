@@ -1,0 +1,31 @@
+#! Python3.7
+
+# CUDA requirements for Linux with CUDA 12 installed
+
+Pandas                  # Installing Pandas, a data analysis / data manipulation tool
+CoreMLTools             # Installing CoreMLTools, for working with .mlmodel format models
+OpenCV-Python           # Installing OpenCV, the Open source Computer Vision library
+Pillow<10.0.0           # Installing Pillow, a Python Image Library
+SciPy                   # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML                  # Installing PyYAML, a library for reading configuration files
+
+## For CUDA 12.1 (nightly)
+# --pre
+# --index-url https://download.pytorch.org/whl/nightly/cu121
+# torch                   # Installing PyTorch, an open source machine learning framework
+# --pre
+# --index-url https://download.pytorch.org/whl/nightly/cu121
+# torchvision             # Installing TorchVision, for working with computer vision models
+
+## For CUDA 11.7 (will work in CUDA 12)
+--extra-index-url https://download.pytorch.org/whl/cu117
+torch==1.13.1+cu117         # Installing PyTorch, an open source machine learning framework
+--extra-index-url https://download.pytorch.org/whl/cu117
+torchvision==0.14.1+cu117   # Installing TorchVision, for working with computer vision models
+
+yolov5==6.2.3           # Installing Ultralytics YoloV5 package for object detection in images
+
+# We need this, but we don't need this.
+Seaborn                 # Installing Seaborn, a data visualization library based on matplotlib
+
+# last line empty..

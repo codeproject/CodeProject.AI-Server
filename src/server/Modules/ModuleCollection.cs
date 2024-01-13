@@ -9,7 +9,6 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using CodeProject.AI.SDK;
-using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Server.Modules
@@ -88,11 +87,22 @@ namespace CodeProject.AI.Server.Modules
         public string? FilePath { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this process should support GPUs. This doesn't
-        /// direct that a GPU must be used, but instead alerts that app that it should support a GPU
-        /// if possible. Setting this to false means "even if you can support a GPU, don't".
+        /// Gets or sets a value indicating whether the installer should install GPU support such as
+        /// GPU enabled libraries in order to provide GPU functionality when running. This doesn't
+        /// direct that a GPU must be used, but instead provides the means for an app to use GPUs
+        /// if it desires. Note that if InstallGPU = false, EnableGPU is set to false. Setting this
+        /// allows you to force a module to install in CPU mode to work around show-stoppers that
+        /// may occur when trying to install GPU enabled libraries.
         /// </summary>
-        public bool? SupportGPU { get; set; } = true;
+        public bool? InstallGPU { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this process should enable GPU functionality
+        /// when running. This doesn't direct that a GPU must be used, but instead alerts that app
+        /// that it should enable GPUs if possible. Setting this to false means "even if you can 
+        /// use a GPU, don't". Great for working around GPU issues that would sink the ship.
+        /// </summary>
+        public bool? EnableGPU { get; set; } = true;
 
         /// <summary>
         /// Gets or sets a value indicating the degree of parallelism (number of threads or number
@@ -142,22 +152,6 @@ namespace CodeProject.AI.Server.Modules
         public ModuleRouteInfo[] RouteMaps { get; set; } = Array.Empty<ModuleRouteInfo>();
 
         /// <summary>
-        /// Gets a value indicating whether or not this is a valid module that can actually be
-        /// started.
-        /// </summary>
-        public bool Valid
-        {
-            get
-            {
-                return !string.IsNullOrWhiteSpace(ModuleId) &&
-                       !string.IsNullOrWhiteSpace(Name)     &&
-                       (!string.IsNullOrWhiteSpace(Command) || !string.IsNullOrWhiteSpace(Runtime)) &&
-                       !string.IsNullOrWhiteSpace(FilePath) &&
-                       RouteMaps?.Length > 0;
-            }
-        }
-
-        /// <summary>
         /// Gets a text summary of the settings for this module.
         /// </summary>
         public string SettingsSummary
@@ -165,11 +159,11 @@ namespace CodeProject.AI.Server.Modules
             get
             {
                 // Allow the module path to wrap.
-                // var path = ModulePath.Replace("\\", "\\<wbr>");
+                // var path = moduleDirPath.Replace("\\", "\\<wbr>");
                 // path = path.Replace("/", "/<wbr>");
 
                 // or not...
-                var path = ModulePath;
+                var path = ModuleDirPath;
 
                 var summary = new StringBuilder();
                 summary.AppendLine($"Module '{Name}' {Version} (ID: {ModuleId})");
@@ -177,7 +171,8 @@ namespace CodeProject.AI.Server.Modules
                 summary.AppendLine($"AutoStart:     {AutoStart}");
                 summary.AppendLine($"Queue:         {Queue}");
                 summary.AppendLine($"Platforms:     {string.Join(',', Platforms)}");
-                summary.AppendLine($"GPU:           Support {((SupportGPU == true)? "enabled" : "disabled")}");
+                summary.AppendLine($"GPU Libraries: {((InstallGPU == true)? "installed if available" : "not installed")}");
+                summary.AppendLine($"GPU Enabled:   {((EnableGPU == true)? "enabled" : "disabled")}");
                 summary.AppendLine($"Parallelism:   {Parallelism}");
                 summary.AppendLine($"Accelerator:   {AcceleratorDeviceName}");
                 summary.AppendLine($"Half Precis.:  {HalfPrecision}");
@@ -185,7 +180,7 @@ namespace CodeProject.AI.Server.Modules
                 summary.AppendLine($"Runtime Loc:   {RuntimeLocation}");
                 summary.AppendLine($"FilePath:      {FilePath}");
                 summary.AppendLine($"Pre installed: {PreInstalled}");
-                //summary.AppendLine($"Module Dir:  {ModulePath}");
+                //summary.AppendLine($"Module Dir:  {moduleDirPath}");
                 summary.AppendLine($"Start pause:   {PostStartPauseSecs} sec");
                 summary.AppendLine($"LogVerbosity:  {LogVerbosity}");
                 summary.AppendLine($"Valid:         {Valid}");
@@ -199,6 +194,21 @@ namespace CodeProject.AI.Server.Modules
                 }
 
                 return summary.ToString().Trim();
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether or not this is a valid module that can actually be
+        /// started.
+        /// </summary>
+        public override bool Valid
+        {
+            get
+            {
+                return base.Valid && 
+                       (!string.IsNullOrWhiteSpace(Command) || !string.IsNullOrWhiteSpace(Runtime)) &&
+                       !string.IsNullOrWhiteSpace(FilePath) &&
+                       RouteMaps?.Length > 0;
             }
         }
     }
@@ -216,30 +226,30 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="module">This module that requires initialisation</param>
         /// <param name="moduleId">The id of the module. This isn't included in the object in JSON
         /// file, instead, the moduleId is the key for the module's object in the JSON file</param>
-        /// <param name="modulesPath">The path to the folder containing all downloaded and installed
+        /// <param name="modulesDirPath">The path to the folder containing all downloaded and installed
         /// modules</param>
-        /// <param name="preInstalledModulesPath">The path to the folder containing all pre-installed
+        /// <param name="preInstalledModulesDirPath">The path to the folder containing all pre-installed
         /// modules</param>
-        /// <remarks>Modules are usually downloaded and installed in the modulesPAth, but we can
+        /// <remarks>Modules are usually downloaded and installed in the modulesDirPath, but we can
         /// 'pre-install' them in situations like a Docker image. We pre-install modules in a
         /// separate folder than the downloaded and installed modules in order to avoid conflicts 
         /// (in Docker) when a user maps a local folder to the modules dir. Doing this to the 'pre
         /// installed' dir would make the contents (the preinstalled modules) disappear.</remarks>
-        public static void Initialise(this ModuleConfig module, string moduleId, string modulesPath,
-                                      string preInstalledModulesPath)
+        public static void Initialise(this ModuleConfig module, string moduleId, string modulesDirPath,
+                                      string preInstalledModulesDirPath)
         {
             if (module is null)
                 return;
 
             module.ModuleId = moduleId;
 
-            // Currently these are unused, but should replace calls to GetModulePath / GetWorkingDirectory
+            // Currently these are unused, but should replace calls to GetModuleDirPath / GetWorkingDirectory
             if (module.PreInstalled)
-                module.ModulePath = Path.Combine(preInstalledModulesPath, module.ModuleId!);
+                module.ModuleDirPath = Path.Combine(preInstalledModulesDirPath, module.ModuleId!);
             else
-                module.ModulePath = Path.Combine(modulesPath, module.ModuleId!);
+                module.ModuleDirPath = Path.Combine(modulesDirPath, module.ModuleId!);
 
-            module.WorkingDirectory = module.ModulePath; // This once was allowed to be different to ModulePath
+            module.WorkingDirectory = module.ModuleDirPath; // This once was allowed to be different to moduleDirPath
 
             if (string.IsNullOrEmpty(module.Queue))
                 module.Queue = moduleId.ToLower() + "_queue";
@@ -247,70 +257,10 @@ namespace CodeProject.AI.Server.Modules
             if (module.LogVerbosity == LogVerbosity.Unknown)
                 module.LogVerbosity = LogVerbosity.Info;
 
-            // Transfer old legacy value to new replacement property if it exists, and no new value
-            // was set
-            if (module.Activate is not null && module.AutoStart is null)
-                module.AutoStart = module.Activate;
-            if ((module.VersionCompatibililty?.Length ?? 0) > 0 && (module.ModuleReleases?.Length ?? 0) == 0)
-                module!.ModuleReleases = module!.VersionCompatibililty!;
-
-            // No longer used. These properties are still here to allow us to load legacy config files.
-            module.Activate              = null;
-            module.VersionCompatibililty = Array.Empty<ModuleRelease>();
+            if (!(module.InstallGPU ?? false))
+                module.EnableGPU = false;
         }
     
-        /// <summary>
-        /// Gets a value indicating whether or not this module is actually available. This depends 
-        /// on having valid commands, settings, and importantly, being supported on this platform.
-        /// </summary>
-        /// <param name="module">This module</param>
-        /// <param name="platform">The platform being tested</param>
-        /// <param name="currentServerVersion">The version of the server, or null to ignore version issues</param>
-        /// <returns>true if the module is available; false otherwise</returns>
-        public static bool Available(this ModuleConfig module, string platform, string? currentServerVersion)
-        {
-            if (module is null)
-                return false;
-
-            // First check: Does this module's version encompass a range of server versions that are
-            // compatible with the current server?
-            bool versionOK = string.IsNullOrWhiteSpace(currentServerVersion);
-            if (!versionOK)
-            {
-                if (module.ModuleReleases?.Any() ?? false)
-                {
-                    foreach (ModuleRelease release in module.ModuleReleases)
-                    {
-                        if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)
-                            continue;
-
-                        string? minServerVersion = release.ServerVersionRange[0];
-                        string? maxServerVersion = release.ServerVersionRange[1];
-
-                        if (string.IsNullOrEmpty(minServerVersion)) minServerVersion = "0.0";
-                        if (string.IsNullOrEmpty(maxServerVersion)) maxServerVersion = currentServerVersion;
-
-                        if (release.ModuleVersion == module.Version &&
-                            VersionInfo.Compare(minServerVersion, currentServerVersion) <= 0 &&
-                            VersionInfo.Compare(maxServerVersion, currentServerVersion) >= 0)
-                        {
-                            versionOK = true;
-                            break;
-                        }
-                    }
-                }
-                else // old modules will not have ModuleReleases, but we are backward compatible
-                {
-                    versionOK = true;
-                }
-            }
-
-            // Second check: Is this module available on this platform?
-            return module.Valid && versionOK &&
-                   ( module.Platforms!.Any(p => p.ToLower() == "all") ||
-                     module.Platforms!.Any(p => p.ToLower() == platform.ToLower()) );
-        }
-
         /// <summary>
         /// Sets or updates a value in the ModuleConfig.
         /// </summary>
@@ -325,9 +275,10 @@ namespace CodeProject.AI.Server.Modules
             {
                 module.AutoStart = value?.ToLower() == "true";
             }
-            else if (name.EqualsIgnoreCase("SupportGPU"))
+            else if (name.EqualsIgnoreCase("EnableGPU") ||
+                     name.EqualsIgnoreCase("SupportGPU")) // Legacy from 9Oct2023
             {
-                module.SupportGPU = value?.ToLower() == "true";
+                module.EnableGPU = value?.ToLower() == "true";
             }
             else if (name.EqualsIgnoreCase("Parallelism"))
             {
@@ -368,22 +319,23 @@ namespace CodeProject.AI.Server.Modules
         /// Gets a text summary of the settings for this module.
         /// </summary>
         public static string SettingsSummary(this ModuleConfig module, ModuleSettings moduleSettings,
-                                             string? currentModulePath = null)
+                                             string? currentModuleDirPath = null)
         {
             var summary = new StringBuilder();
             summary.AppendLine($"Module '{module.Name}' (ID: {module.ModuleId})");
             summary.AppendLine($"AutoStart:     {module.AutoStart}");
             summary.AppendLine($"Queue:         {module.Queue}");
+            summary.AppendLine($"Runtime:       {module.Runtime}");
+            summary.AppendLine($"Runtime Loc:   {module.RuntimeLocation}");
             summary.AppendLine($"Platforms:     {string.Join(',', module.Platforms)}");
-            summary.AppendLine($"GPU:           Support {((module.SupportGPU == true)? "enabled" : "disabled")}");
+            summary.AppendLine($"GPU Libraries: {((module.InstallGPU == true)? "installed if available" : "not installed")}");
+            summary.AppendLine($"GPU Enabled:   {((module.EnableGPU == true)? "enabled" : "disabled")}");
             summary.AppendLine($"Parallelism:   {module.Parallelism}");
             summary.AppendLine($"Accelerator:   {module.AcceleratorDeviceName}");
             summary.AppendLine($"Half Precis.:  {module.HalfPrecision}");
-            summary.AppendLine($"Runtime:       {module.Runtime}");
-            summary.AppendLine($"Runtime Loc:   {module.RuntimeLocation}");
             summary.AppendLine($"FilePath:      {module.FilePath}");
             summary.AppendLine($"Pre installed: {module.PreInstalled}");
-            //summary.AppendLine($"Module Dir:  {module.ModulePath}");
+            //summary.AppendLine($"Module Dir:  {module.ModuleDirPath}");
             summary.AppendLine($"Start pause:   {module.PostStartPauseSecs} sec");
             summary.AppendLine($"LogVerbosity:  {module.LogVerbosity}");
             summary.AppendLine($"Valid:         {module.Valid}");
@@ -395,7 +347,7 @@ namespace CodeProject.AI.Server.Modules
                 foreach (var envVar in module.EnvironmentVariables)
                 {
                     var value = moduleSettings.ExpandOption(envVar.Value?.ToString() ?? string.Empty,
-                                                            currentModulePath);
+                                                            currentModuleDirPath);
                     summary.AppendLine($"   {envVar.Key.PadRight(maxLength)} = {envVar.Value}");
                 }
             }
@@ -452,9 +404,10 @@ namespace CodeProject.AI.Server.Modules
                 {
                     moduleSettings["AutoStart"] = value?.ToLower() == "true";
                 }
-                else if (name.EqualsIgnoreCase("SupportGPU"))
+                else if (name.EqualsIgnoreCase("EnableGPU") ||
+                         name.EqualsIgnoreCase("SupportGPU")) // Legacy from 9Oct2023
                 {
-                    moduleSettings["SupportGPU"] = value?.ToLower() == "true";
+                    moduleSettings["EnableGPU"] = value?.ToLower() == "true";
                 }
                 else if (name.EqualsIgnoreCase("Parallelism"))
                 {
@@ -644,7 +597,7 @@ namespace CodeProject.AI.Server.Modules
         }
 
         /// <summary>
-        /// Creates a file containing the module information for all registered modules that is
+        /// Creates a file containing the module information for all modules provided, that is
         /// suitable for deploying to the module registry.
         /// </summary>
         /// <param name="modules">This set of module configs</param>

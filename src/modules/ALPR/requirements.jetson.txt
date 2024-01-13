@@ -1,0 +1,11 @@
+#! Python3.8
+
+#paddlepaddle==2.4.1            # Will install from bcebos.com
+paddleocr                       # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+
+imutils                         # Installing imutils, the image utilities library
+Pillow<10.0.0                   # Installing Pillow, a Python Image Library
+opencv-python                   # Installing OpenCV, the Computer Vision library for Python
+numpy==1.23.3                   # Installing NumPy, a package for scientific computing
+
+# end of file

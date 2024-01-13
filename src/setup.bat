@@ -17,10 +17,6 @@
 ::
 ::    ..\..\setup.bat
 :: 
-:: To toggle GPU and CUDA support (both true by default) use
-::
-::    ..\..\setup.bat [ enableGPU=(true|false) ] [ supportCUDA=(true|false) ]
-::
 :: This script will look for a install.bat script in the directory from whence
 :: it was called, and execute that script. The install.bat script is
 :: responsible for everything needed to ensure the module is ready to run.
@@ -40,26 +36,6 @@ chcp 65001 >NUL
 :: verbosity can be: quiet | info | loud
 set verbosity=quiet
 
-:: Should we use GPU enabled libraries? If true, then any requirements.gpu.txt 
-:: python packages will be used if available, with a fallback to requirements.txt.
-:: This allows us the change to use libraries that may support GPUs if the
-:: hardware is present, but with the understanding that if there's no suitable
-:: hardware the libraries must still work on CPU. Setting this to false means
-:: do not load libraries that provide potential GPU support.
-set enableGPU=true
-
-:: Are we ready to support CUDA enabled GPUs? Setting this to true allows us to
-:: test if there is CUDA enabled hardware, and if so, to request the 
-:: requirements.cuda.txt python packages be installed, with a fallback to 
-:: requirements.gpu.txt, then requirements.txt. 
-:: DANGER: There is no assumption that the CUDA packages will work if there's 
-:: no CUDA hardware. 
-:: NOTE: CUDA packages will ONLY be installed used if CUDA hardware is found. 
-::       Setting this to false means do not load libraries that provide potential
-::       CUDA support.
-:: NOTE: enableGPU must be true for this flag to work
-set supportCUDA=true
-
 :: Show output in wild, crazy colours
 set useColor=true
 
@@ -71,6 +47,12 @@ set allowSharedPythonInstallsForModules=true
 
 
 :: Debug flags for downloads and installs
+
+:: After a successful install, run a self-test for the module just installed
+set doPostInstallSelfTest=true
+
+:: Perform *only* the post install self tests
+set selfTestOnly=false
 
 :: If files are already present, then don't overwrite if this is false
 set forceOverwrite=false
@@ -92,11 +74,17 @@ REM often doesn't actually solve problems either. Overall it's safer, but not a
 REM panacea
 set oneStepPIP=false
 
+REM Whether or not to use the jq utility for JSON parsing
+set useJq=true
 
 :: Basic locations
 
-:: The path to the directory containing the install scripts. Will end in "\"
-set installerScriptsPath=%~dp0
+:: The path to the directory containing this setup script. Will end in "\"
+set setupScriptDirPath=%~dp0
+
+:: The path to the application root dir. This is 'src' in dev, or / in production
+:: This setup script always lives in the app root
+set appRootDirPath=!setupScriptDirPath!
 
 :: The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
 set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/
@@ -114,37 +102,50 @@ set runtimesDir=runtimes
 :: The name of the dir holding the downloaded/sideloaded backend analysis services
 set modulesDir=modules
 
+:: The location of directories relative to the root of the solution directory
+set sdkPath=!appRootDirPath!SDK
+set sdkScriptsDirPath=!sdkPath!\Scripts
+set runtimesDirPath=!appRootDirPath!!runtimesDir!
+set modulesDirPath=!appRootDirPath!!modulesDir!
+set downloadDirPath=!appRootDirPath!!downloadDir!
+
+:: Who launched this script? user or server?
+set launchedBy=user
 
 :: Override some values via parameters ::::::::::::::::::::::::::::::::::::::::
 
 :param_loop
-    set arg_name=%~1
-    set arg_value=%~2
-    if not "!arg_name!" == "" (
-        if not "!arg_name:enableGPU=!" == "!arg_name!" (
-            if /i "!arg_value!" == "true" ( 
-                set enableGPU=true
-            ) else ( 
-                set enableGPU=false 
-            )
+    if "%~1"=="" goto :end_param_loop
+    if "%~1"=="--launcher" (
+        set "launchedBy=%~2"
+        if /i "!launchedBy!" neq "server" if /i "!launchedBy!" neq "user" (
+            set launchedBy=user
         )
-
-        if not "!arg_name:supportCUDA=!" == "!arg_name!" (
-            if /i "!arg_value!" == "true" ( 
-                set supportCUDA=true
-            ) else ( 
-                set supportCUDA=false 
-            )
+        shift
+        shift
+        goto :param_loop
+    )
+    if "%~1"=="--verbosity" (
+        set "verbosity=%~2"
+        if /i "!verbosity!" neq "loud" if /i "!verbosity!" neq "info" if /i "!verbosity!" neq "quite" (
+            set verbosity=quiet
         )
-
-        if not "!arg_name:--no-color=!" == "!arg_name!" set useColor=false
-
-        REM if not "!arg_name:pathToInstall=!" == "!arg_name!" set installerScriptsPath=!arg_value!
+        shift
+        shift
+        goto :param_loop
+    )
+    if "%~1"=="--selftest-only" (
+        set selfTestOnly=true
+        shift
+        goto :param_loop
+    )
+    if "%~1"=="--no-color" (
+        set useColor=false
+        shift
+        goto :param_loop
     )
     shift
-    shift
-if not "!arg_name!"=="" goto param_loop
-
+:end_param_loop
 
 :: Pre-setup ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -165,7 +166,7 @@ if /i "%CurrDirName%" == "%srcDir%" set setupMode=SetupDevEnvironment
 :: /src folder; everything is in the root folder. So: go to the folder
 :: containing this script and check the name of the parent folder to see if
 :: we're in dev or production.
-pushd "!installerScriptsPath!"
+pushd "!setupScriptDirPath!"
 for /f "delims=\" %%a in ("%cd%") do @set CurrDirName=%%~nxa
 popd
 set executionEnvironment=Production
@@ -173,14 +174,10 @@ if /i "%CurrDirName%" == "%srcDir%" set executionEnvironment=Development
 
 :: The absolute path to the installer script and the root directory. Note that
 :: this script (and the SDK folder) is either in the /src dir or the root dir
-pushd "!installerScriptsPath!"
-set sdkPath=%cd%\SDK
-set sdkScriptsPath=%cd%\SDK\Scripts
+pushd "!setupScriptDirPath!"
 if /i "%executionEnvironment%" == "Development" cd ..
-set absoluteRootDir=%cd%
+set rootDirPath=%cd%
 popd
-
-set absoluteAppRootDir=!installerScriptsPath!
 
 :: Helper vars for OS, Platform (see note below), and system name. systemName is
 :: a no-op here because nothing exciting happens on Windows. In the corresponding
@@ -205,205 +202,443 @@ if /i "!architecture!" == "ARM64" (
     set platform=windows-arm64
 )
 
-:: GPU / CPU support ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-set hasCUDA=false
-if /i "!enableGPU!" == "true" (
-    if /i "!supportCUDA!" == "true" (
-        REM wmic PATH Win32_VideoController get Name | findstr /I /C:"NVIDIA" >NUL 2>&1
-        where nvidia-smi >nul 2>nul
-        if !errorlevel! EQU 0 set hasCUDA=true
-    )
-)
-if /i "!hasCUDA!" == "false" set supportCUDA=false
-
-set hasROCm=false
-if /i "!enableGPU!" == "true" (
-    where rocm-smi >nul 2>nul
-    if !errorlevel! EQU 0 set hasROCm=true
-)
-
-
-:: The location of directories relative to the root of the solution directory
-set runtimesPath=!absoluteAppRootDir!!runtimesDir!
-set modulesPath=!absoluteAppRootDir!!modulesDir!
-set downloadPath=!absoluteAppRootDir!!downloadDir!
 
 :: Let's go
-if /i "!useColor!" == "true" call "!sdkScriptsPath!\utils.bat" setESC
+if /i "!useColor!" == "true" call "!sdkScriptsDirPath!\utils.bat" setESC
 if /i "!setupMode!" == "SetupDevEnvironment" (
     set scriptTitle=          Setting up CodeProject.AI Development Environment
 ) else (
     set scriptTitle=             Installing CodeProject.AI Analysis Module
 )
 
-call "!sdkScriptsPath!\utils.bat" WriteLine 
-call "!sdkScriptsPath!\utils.bat" WriteLine "!scriptTitle!" "DarkYellow" "Default" !lineWidth!
-call "!sdkScriptsPath!\utils.bat" WriteLine 
-call "!sdkScriptsPath!\utils.bat" WriteLine "========================================================================" "DarkGreen" 
-call "!sdkScriptsPath!\utils.bat" WriteLine 
-call "!sdkScriptsPath!\utils.bat" WriteLine "                   CodeProject.AI Installer                             " "DarkGreen" 
-call "!sdkScriptsPath!\utils.bat" WriteLine 
-call "!sdkScriptsPath!\utils.bat" WriteLine "========================================================================" "DarkGreen" 
-call "!sdkScriptsPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "!scriptTitle!" "DarkYellow" "Default" !lineWidth!
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "======================================================================" "DarkGreen" 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "                   CodeProject.AI Installer                           " "DarkGreen" 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "======================================================================" "DarkGreen" 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
 
 
 if /i "%verbosity%" neq "quiet" (
-    call "!sdkScriptsPath!\utils.bat" WriteLine 
-    call "!sdkScriptsPath!\utils.bat" WriteLine "setupMode             = !setupMode!"             !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "executionEnvironment  = !executionEnvironment!"  !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "installerScriptsPath  = !installerScriptsPath!"  !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "sdkScriptsPath        = !sdkScriptsPath!"        !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "absoluteAppRootDir    = !absoluteAppRootDir!"    !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "runtimesPath          = !runtimesPath!"          !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "modulesPath           = !modulesPath!"           !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "downloadPath          = !downloadPath!"          !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupMode            = !setupMode!"            !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment = !executionEnvironment!" !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath          = !rootDirPath!"          !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "appRootDirPath       = !appRootDirPath!"       !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath   = !setupScriptDirPath!"   !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath    = !sdkScriptsDirPath!"    !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtimesDirPath      = !runtimesDirPath!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath       = !modulesDirPath!"       !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "downloadDirPath      = !downloadDirPath!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine
 )
-
-
-:: Checks on GPU ability
-
-call "!sdkScriptsPath!\utils.bat" WriteLine "Checking GPU support" "White" "Blue" !lineWidth!
-call "!sdkScriptsPath!\utils.bat" WriteLine ""
-
-call "!sdkScriptsPath!\utils.bat" Write "CUDA Present..."
-if /i "%hasCUDA%" == "true" (
-    call "!sdkScriptsPath!\utils.bat" WriteLine "True" !color_success!
-) else (
-    call "!sdkScriptsPath!\utils.bat" WriteLine "False" !color_warn!
-)
-call "!sdkScriptsPath!\utils.bat" Write "Allowing GPU Support: "
-if "!enableGPU!" == "true" (call "!sdkScriptsPath!\utils.bat" WriteLine "Yes" !color_success!) else (call "!sdkScriptsPath!\utils.bat" WriteLine "No" !color_warn!)
-call "!sdkScriptsPath!\utils.bat" Write "Allowing CUDA Support: "
-if "!supportCUDA!" == "true" (call "!sdkScriptsPath!\utils.bat" WriteLine "Yes" !color_success!) else (call "!sdkScriptsPath!\utils.bat" WriteLine "No" !color_warn!)
-
 
 :: Ensure directories are created and download required assets.
 
-call "!sdkScriptsPath!\utils.bat" WriteLine
-call "!sdkScriptsPath!\utils.bat" WriteLine "General CodeProject.AI setup" "White" "Blue" !lineWidth!
-call "!sdkScriptsPath!\utils.bat" WriteLine
+call "!sdkScriptsDirPath!\utils.bat" WriteLine
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "General CodeProject.AI setup" "White" "Blue" !lineWidth!
+call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
-call "!sdkScriptsPath!\utils.bat" Write "Creating Directories..."
-if not exist "!downloadPath!\" mkdir "!downloadPath!"
-if not exist "!runtimesPath!\" mkdir "!runtimesPath!"
-call "!sdkScriptsPath!\utils.bat" WriteLine "Done" "Green"
+:: Create some directories
+
+call "!sdkScriptsDirPath!\utils.bat" Write "Creating Directories..."
+if not exist "!downloadDirPath!\" mkdir "!downloadDirPath!"
+if not exist "!runtimesDirPath!\" mkdir "!runtimesDirPath!"
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "Done" "Green"
+call "!sdkScriptsDirPath!\utils.bat" WriteLine ""
+
+:: Report on GPU ability
+
+:: GPU / CPU support ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "GPU support" "White" "DarkGreen" !lineWidth!
+call "!sdkScriptsDirPath!\utils.bat" WriteLine ""
+
+REM Test for CUDA drivers 
+call "!sdkScriptsDirPath!\utils.bat" Write "CUDA Present..."
+
+set hasCUDA=false
+
+call "!sdkScriptsDirPath!\utils.bat" GetCudaVersion
+if "!cuda_version!" neq "" set hasCUDA=true
+
+if /i "!hasCUDA!" == "true" (
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Yes (version !cuda_version!)" !color_success!
+) else (
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "No" !color_warn!
+)
+
+REM Test for AMD ROCm drivers 
+call "!sdkScriptsDirPath!\utils.bat" Write "ROCm Present..."
+
+set hasROCm=false
+where rocm-smi >nul 2>nul
+if "!errorlevel!" == "0" set hasROCm=true
+
+if /i "%hasROCm%" == "true" (
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Yes" !color_success!
+) else (
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "No" !color_warn!
+)
+
 
 :: And off we go...
 
 set success=true
 
-REM Start with the core SDK
-call "!sdkScriptsPath!\utils.bat" WriteLine
-call "!sdkScriptsPath!\utils.bat" WriteLine "Processing Core SDK" "White" "Blue" !lineWidth!
-call "!sdkScriptsPath!\utils.bat" WriteLine
-set moduleDir=SDK
-set modulePath=!absoluteAppRootDir!!moduleDir!
-call "!modulePath!\install.bat" install
-if errorlevel 1 set success=false
-
-
 if /i "!setupMode!" == "SetupDevEnvironment" (
 
-    REM  Walk through the modules directory and call the setup script in each dir
-    REM  TODO: This should be just a simple for /d %%D in ("!modulesPath!") do (
-    for /f "delims=" %%D in ('dir /a:d /b "!modulesPath!"') do (
+    REM Start with the CodeProject.AI SDK and Server
 
-        set moduleDir=%%~nxD
-        set modulePath=!modulesPath!\!moduleDir!
+    if /i "!selfTestOnly!" == "false" (
 
-        set pythonVersion=
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing CodeProject.AI SDK" "White" "DarkGreen" !lineWidth!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
-        REM Read the module version from the modulesettings.json file 
-        REM TODO: Get the module name, runtime location and python version from the modulesettings.
-        set moduleVersion=
-        if exist "!modulePath!\modulesettings.json" (
-            call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "!modulePath!\modulesettings.json", "Version", moduleVersion
-            REM call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "!modulePath!\modulesettings.json", "Runtime", runtime
-            call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "!modulePath!\modulesettings.json", "RuntimeLocation", runtimeLocation
-        )
-        
-        if exist "!modulePath!\install.bat" (
+        set currentDir=%cd%
+        set moduleDirName=SDK
+        set moduleDirPath=!appRootDirPath!!moduleDirName!
 
-            set announcement=Processing module !moduleDir! !moduleVersion!
-            call "!sdkScriptsPath!\utils.bat" WriteLine
-            call "!sdkScriptsPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
-            call "!sdkScriptsPath!\utils.bat" WriteLine
+        call "!moduleDirPath!\install.bat" install   
 
-            REM Install module
-            call "!modulePath!\install.bat" install
-            if errorlevel 1 set success=false
+        if errorlevel 1 set success=false
+        if "!moduleInstallErrors!" NEQ "" set success=false
+        if "!moduleInstallErrors!" == "" if /i "!success!" == "false" set moduleInstallErrors=CodeProject.AI SDK install failed
+        cd "!currentDir!"
 
-            REM If a python version has been specified then we'll automatically look for, and
-            REM install, the requirements file for the module, and then also the requirements 
-            REM file for the SDK since it'll be assumed the Python SDK will come into play.
-            if "!pythonVersion!" neq "" (
-                call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Python packages for !moduleDir!" !color_info!
-                call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 
 
-                call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Python packages for the CodeProject.AI Server SDK" !color_info!
-                call "%sdkScriptsPath%\utils.bat" InstallPythonPackages "%sdkPath%\Python"
-            )
-        )
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing CodeProject.AI Server" "White" "DarkGreen" !lineWidth!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
+        set currentDir=%cd%
+        set moduleDirName=server
+        set moduleDirPath=!appRootDirPath!!moduleDirName!
+
+        call "!moduleDirPath!\install.bat" install   
+
+        if errorlevel 1 set success=false
+        if "!moduleInstallErrors!" NEQ "" set success=false
+        if "!moduleInstallErrors!" == "" if /i "!success!" == "false" set moduleInstallErrors=CodeProject.AI Server install failed
+        cd "!currentDir!"
     )
 
-    call "!sdkScriptsPath!\utils.bat" WriteLine
-    call "!sdkScriptsPath!\utils.bat" WriteLine "Module setup Complete" "Green"
+    REM Walk through the modules directory and call the setup script in each
+    REM dir, as well as setting up the demos
 
-    REM Setup Demos
-    call "!sdkScriptsPath!\utils.bat" WriteLine
-    call "!sdkScriptsPath!\utils.bat" WriteLine "Processing Demos" "White" "Blue" !lineWidth!
-    call "!sdkScriptsPath!\utils.bat" WriteLine
+    REM  TODO: This should be just a simple for /d %%D in ("!modulesDirPath!") do (
+    for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
+        set moduleDirName=%%~nxD
+        call :DoModuleInstall !moduleDirName! errors
+        if "!moduleInstallErrors!" NEQ "" set success=false
+    )
 
-    set moduleDir=demos
-    set modulePath=!absoluteRootDir!\!moduleDir!
-    call "!modulePath!\install.bat" install
-    if errorlevel 1 set success=false
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Module setup Complete" "Green"
 
+    REM Install Demos
+    if /i "!selfTestOnly!" == "false" (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing Demos" "White" "Blue" !lineWidth!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
+        set currentDir=%cd%
+        set moduleDirName=demos
+        set moduleDirPath=!appRootDirPath!\!moduleDirName!
+        call "!moduleDirPath!\install.bat" install
+
+        REM Don't really care about demos enough to fail the entire setup script
+        REM if errorlevel 1 set success=false
+        cd "!currentDir!"
+    )
 ) else (
 
     REM Install an individual module
 
-    for %%I in (.) do set moduleDir=%%~nxI
-    set modulePath=%cd%
+    for %%I in (.) do set moduleDirName=%%~nxI
 
-    set pythonVersion=
+    if /i "!moduleDirName!" == "server" (
+        if /i "!selfTestOnly!" == "false" (
+            set moduleDirPath=!appRootDirPath!\!moduleDirName!
 
-    REM Read the module version from the modulesettings.json file
-    set moduleVersion=
-    if exist "!modulePath!\modulesettings.json" (
-        call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "!modulePath!\modulesettings.json", "Version", moduleVersion
-    )
-
-    if exist "!modulePath!\install.bat" (
-
-        set announcement=Installing module !moduleDir! !moduleVersion!
-        call "!sdkScriptsPath!\utils.bat" WriteLine
-        call "!sdkScriptsPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
-        call "!sdkScriptsPath!\utils.bat" WriteLine
-
-        REM Install module
-        call "!modulePath!\install.bat" install
-        if errorlevel 1 set success=false
-
-        REM If a python version has been specified then we'll automatically look for, and
-        REM install, the requirements file for the module, and then also the requirements 
-        REM file for the SDK since it'll be assumed the Python SDK will come into play.
-        if "!pythonVersion!" neq "" (
-            call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Python packages for !moduleDir!" !color_info!
-            call "%sdkScriptsPath%\utils.bat" InstallPythonPackages 
-
-            call "!sdkScriptsPath!\utils.bat" WriteLine "Installing Python packages for the CodeProject.AI Server SDK" !color_info!
-            call "%sdkScriptsPath%\utils.bat" InstallPythonPackages "%sdkPath%\Python"
+            set currentDir=%cd%
+            call "!moduleDirPath!\install.bat" install
+            cd "!currentDir!"
         )
+    ) else if /i "!moduleDirName!" == "demos" (
+        if /i "!selfTestOnly!" == "false" (
+            set moduleDirPath=!rootDirPath!\!moduleDirName!
+
+            set currentDir=%cd%
+            call "!moduleDirPath!\install.bat" install
+            cd "!currentDir!"
+        )
+    ) else (
+        call :DoModuleInstall !moduleDirName! errors
+        if "!moduleInstallErrors!" NEQ "" set success=false
     )
 )
 
-call "!sdkScriptsPath!\utils.bat" WriteLine
-call "!sdkScriptsPath!\utils.bat" WriteLine "Setup complete" "White" "DarkGreen" !lineWidth!
-call "!sdkScriptsPath!\utils.bat" WriteLine
+call "!sdkScriptsDirPath!\utils.bat" WriteLine
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "Setup complete" "White" "DarkGreen" !lineWidth!
+call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
 if /i "!success!" == "false" exit /b 1
 
 exit /b 0
+
+
+REM Pop over the DoModuleInstall definition and leave.
+goto:eof
+
+:SetupPythonPaths
+
+    set pythonLocation=%~1
+    set pythonVersion=%~2
+
+    REM Name based on version (eg version is 3.8, name is then python38)
+    set pythonName=python!pythonVersion:.=!
+
+    REM The path to the python installation, either local or shared. The
+    REM virtual environment will live in here
+    if /i "!pythonLocation!" == "Local" (
+        set pythonDirPath=!moduleDirPath!\bin\!os!\!pythonName!
+    ) else (
+        set pythonDirPath=!runtimesDirPath!\bin\!os!\!pythonName!
+    )
+    set virtualEnvDirPath=!pythonDirPath!\venv
+
+    REM The path to the python intepreter for this venv
+    set venvPythonCmdPath=!virtualEnvDirPath!\Scripts\python.exe
+
+    REM The location where python packages will be installed for this venvvenv
+    set packagesDirPath=%virtualEnvDirPath%\Lib\site-packages
+
+    exit /b
+
+REM Installs a module in the 'moduleDirName' directory, and returns success 
+:DoModuleInstall moduleDirName errors
+
+    SetLocal EnableDelayedExpansion
+
+    set moduleDirName=%~1
+    set moduleDirPath=!modulesDirPath!\!moduleDirName!
+
+    REM Get the module name, version, runtime location and python version from
+    REM the modulesettings.
+    
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Name"
+    set moduleName=!moduleSettingsFileValue!
+    if "!moduleName!" == "" set moduleName=!moduleDirName!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Version"
+    set moduleVersion=!moduleSettingsFileValue!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Runtime"
+    set runtime=!moduleSettingsFileValue!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "RuntimeLocation"
+    set pythonLocation=!moduleSettingsFileValue!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallGPU"
+    set installGPU=!moduleSettingsFileValue!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "FilePath"
+    set moduleStartFilePath=!moduleSettingsFileValue!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Platforms"
+    set platforms=!moduleSettingsFileValue!
+
+    set announcement=Installing module !moduleName! !moduleVersion!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
+    REM remove spaces and [,] from ends of platforms value
+    set "platformArray=!platforms: =!"
+    set "platformArray=!platformArray:~1,-1!"
+
+    set can_install=false
+    for %%i in (!platformArray!) do (
+        set "item=%%~i"
+        REM echo Checking !platform! against !item!
+
+        REM Excluded?
+        if /i "!item!" == "^!!platform!" (
+            set can_install=false
+            echo FOUND NEGATER
+            goto :end_platform_loop
+        )
+
+        REM Included?
+        if /i "!item!" == "!platform!" set can_install=true
+        if /i "!item!" == "all"        set can_install=true
+    )
+:end_platform_loop
+
+    if /i "!can_install!" == "false" (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "This module cannot be installed on this system" !color_mute!
+        exit /b 1
+    )
+
+    if /i "!allowSharedPythonInstallsForModules!" == "false" (
+        REM if moduleDirPath contains '/modules/' and pythonLocation != 'Local'
+        if /i "!moduleDirPath:\modules\=!" neq "!moduleDirPath!" (
+            if /i "!pythonLocation!" neq "Local" (
+                call :WriteLine "Downloaded modules must have local Python install. Changing install location" "!color_warn!"
+                set pythonLocation=Local
+            )
+        )
+    )
+
+    REM For python, the runtime is in the form "Python3.8", so get the "3.8".
+    REM However, we also allow just "python" meaning "use whatever is default"
+    REM TODO: Allow 'python<=3.9' type specifiers so it will use the native python
+    REM       if it's <= 3.9, or install and use 3.9 otherwise
+    set pythonVersion=
+    if /i "!runtime!" == "python" (
+
+        REM Get current Python version, and trim down to just major.minor
+        set currentPythonVersion=
+        for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do (
+            set currentPythonVersion=%%v
+            echo Default Python version is: !currentPythonVersion!
+        )
+        if !currentPythonVersion! neq "" (
+            for /f "tokens=1,2 delims=." %%a in ("!currentPythonVersion!") do (
+                set major=%%a
+                set minor=%%b
+            )
+            set pythonVersion=!major!.!minor!
+        )
+
+        REM fallback
+        if "!pythonVersion!" == "" set pythonVersion=3.9
+
+    ) else if /i "!runtime:~0,6!" == "python" (
+        set pythonVersion=!runtime:~6!
+    )
+
+    call :SetupPythonPaths "!pythonLocation!" !pythonVersion!
+
+    if /i "!verbosity!" neq "quiet" (
+        set announcement=Variable Dump
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleName        = !moduleName!"        "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleVersion     = !moduleVersion!"     "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtime           = !runtime!"           "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "installGPU        = !installGPU!"        "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "pythonLocation    = !pythonLocation!"    "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "pythonVersion     = !pythonVersion!"     "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "virtualEnvDirPath = !virtualEnvDirPath!" "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "venvPythonCmdPath = !venvPythonCmdPath!" "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "packagesDirPath   = !packagesDirPath!"   "!color_info!"
+    )
+
+    REM Set the global error message value
+    set moduleInstallErrors=
+
+    if exist "!moduleDirPath!\install.bat" (
+
+        REM If a python version has been specified then we'll automatically setup
+        REM the correct python environment. We do this before the script runs so
+        REM the script can use python in the script.
+        if "!pythonVersion!" neq "" (
+            if /i "!selfTestOnly!" == "false" (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Installing Python !pythonVersion!"
+                call "%sdkScriptsDirPath%\utils.bat" SetupPython
+                if errorlevel 1 set moduleInstallErrors=Unable to install Python !pythonVersion!
+            )
+        )
+
+        REM Install the module, but only if there were no issues installing
+        REM python (or a python install wasn't needed)
+        if /i "!moduleInstallErrors!" == "" if /i "!selfTestOnly!" == "false" (
+            set currentDir=%cd%
+            call "!moduleDirPath!\install.bat" install
+            REM if errorlevel 1 if "!moduleInstallErrors!" == "" (
+            REM    set moduleInstallErrors=!moduleName! failed to install
+            REM )
+            cd "!currentDir!"
+        )
+
+        REM If a python version has been specified then we'll automatically
+        REM look for, and install, the requirements file for the module, and
+        REM then also the requirements file for the SDK since it'll be assumed
+        REM the Python SDK will come into play.
+        if "!pythonVersion!" neq "" (
+            if /i "!moduleInstallErrors!" == "" (
+                if /i "!selfTestOnly!" == "false" (
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Installing Python packages for !moduleName!"
+
+                    call "!sdkScriptsDirPath!\utils.bat" Write "Installing GPU-enabled libraries: " $color_info
+                    if "!installGPU!" == "true" (call "!sdkScriptsDirPath!\utils.bat" WriteLine "If available" !color_success!) else (call "!sdkScriptsDirPath!\utils.bat" WriteLine "No" !color_warn!)
+
+                    call "!sdkScriptsDirPath!\utils.bat" InstallRequiredPythonPackages 
+                    if errorlevel 1 set moduleInstallErrors=Unable to install Python packages for !moduleName!
+
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Installing Python packages for the CodeProject.AI Server SDK"
+                    call "!sdkScriptsDirPath!\utils.bat" InstallRequiredPythonPackages "%sdkPath%\Python"
+                    if errorlevel 1 set moduleInstallErrors=Unable to install Python packages for CodeProject SDK
+                )
+            ) else (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Skipping PIP installs due to install error (!moduleInstallErrors!)" !color_warn!
+            )
+        )
+
+        REM And finally, the post install script if one was provided
+        if exist "!moduleDirPath!\post_install.bat" (
+            if /i "!moduleInstallErrors!" == "" (
+                if /i "!selfTestOnly!" == "false" (
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Executing post-install script for !moduleName!"
+                    set currentDir=%cd%
+                    call "!moduleDirPath!\post_install.bat" post-install
+                    if errorlevel 1 set moduleInstallErrors=Error running post-install script
+                    cd "!currentDir!"
+                )
+            ) else (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Skipping post install due to install error (!moduleInstallErrors!)" !color_warn!
+            )
+        )
+
+        REM Perform a self-test
+        if /i "!doPostInstallSelfTest!" == "true" if "!moduleInstallErrors!" == "" if "!pythonVersion!" NEQ "" (
+
+            set currentDir=%cd%
+            cd "!moduleDirPath!"
+
+            if /i "%verbosity%" == "quiet" (
+                call "!sdkScriptsDirPath!\utils.bat" Write "Self test: "
+                "!venvPythonCmdPath!" "!moduleStartFilePath!" --selftest >NUL
+            ) else (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "SELF TEST START ======================================================" !color_info!
+                "!venvPythonCmdPath!" "!moduleStartFilePath!" --selftest
+            )
+
+            if "%errorlevel%" == "0" (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Self-test passed" !color_success!
+            ) else (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Self-test failed" !color_error!
+            )
+            
+            if /i "%verbosity%" NEQ "quiet" (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "SELF TEST END   ======================================================" !color_info!
+            )
+            
+            cd "!currentDir!"
+        )
+
+    ) else (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "No install.bat present for !moduleName!" "!color_warn!"
+    )
+
+    REM return result
+    set %~2=!moduleInstallErrors!
+
+    exit /b

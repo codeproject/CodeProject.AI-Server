@@ -103,36 +103,4 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.Debug.pdb" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.dll" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.pdb" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.Debug.dll" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.Debug.dll" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.Debug.pdb" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.dll" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Remove="C:\Users\Chris Maunder\.nuget\packages\microsoft.ai.directml\1.10.1\build\..\bin\x64-win\DirectML.pdb" />
-	</ItemGroup>
 </Project>

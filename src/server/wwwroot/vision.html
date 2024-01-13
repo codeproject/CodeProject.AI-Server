@@ -975,7 +975,7 @@
 
 			setResultsHtml("Summarizing text...");
 			submitRequest('text', 'summarize', null, params, function (data) {
-				setResultsHtml((data.summary || "No summary  was returned") +
+				setResultsHtml((data.summary || "No summary was returned") +
 				               getInferenceTimingHtml(data));
 			});
 		}
@@ -994,7 +994,8 @@
 			setResultsHtml("Performing sentiment analysis...");
 			submitRequest('text', 'sentiment', null, params, function (data) {
 				if (!data.success) {
-					setResultsHtml("Sentiment analysis failed");
+					setResultsHtml("Sentiment analysis failed<br/>" + data.error +
+                        getInferenceTimingHtml(data));
 				}
 				else {
 					setResultsHtml("Probability that text is positive is " +
@@ -1002,6 +1003,24 @@
 								   "Text sentiment is " + (data.is_positive ? "positive" : "negative") +
 								   getInferenceTimingHtml(data));
 				}
+			});
+		}
+
+		function onLlamaChat(prompt, maxTokens, temperature) {
+
+			clearCanvas();
+
+			if (!prompt) {
+				alert("No text was provided for text summary");
+				return;
+			}
+
+			let params = [ ['prompt', prompt], ['max_tokens', maxTokens], ['temperature', temperature] ]
+
+			setResultsHtml("Sending prompt...");
+			submitRequest('text', 'chat', null, params, function (data) {
+				let answer = data?.reply || "No response";
+				setResultsHtml(answer + getInferenceTimingHtml(data));
 			});
 		}
 
@@ -1938,6 +1957,32 @@
 
 							<div class="tab-pane fade show" id="text-panel" role="tabpanel" aria-labelledby="text-tab">
 
+								<div class="card mt-3 d-none llamachat_queue">
+									<div class="card-header h3">Llama Chat</div>
+									<div class="card-body">
+
+										<div class="form-group mt-1">
+											Ask a question:
+											<textarea id="promptText" class="w-100" style="height:200px"></textarea>
+										</div>
+
+										<div class="form-group row mt-1">
+											<div class="col-2">
+												<input class="btn-success col-form-label" type="button" value="Post"
+													   id="prompt" onclick="onLlamaChat(promptText.value, maxTokens.value, temperature.value)" />
+											</div>
+
+											<label class="col-3 col-form-label text-end">Max tokens</label>
+											<input class="form-control" value="256" id="maxTokens" type="number"
+												   style="width:5rem" />									
+
+											<label class="col-3 col-form-label text-end">Temperature</label>
+											<input class="form-control" value="0.5" id="temperature" type="text"
+												   style="width:5rem" />
+										</div>
+									</div>
+								</div>
+
 								<div class="card mt-3 d-none textsummary_queue">
 									<div class="card-header h3">Text Summary</div>
 									<div class="card-body">
@@ -1975,7 +2020,6 @@
 											</div>
 										</div>
 									</div>
-
 								</div>
 
 							</div>

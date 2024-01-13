@@ -22,8 +22,8 @@ set includeDotNet=true
 
 :: Basic locations
 
-:: The path to the directory containing the install scripts. Will end in "\"
-set installerScriptsPath=%~dp0
+:: The path to the directory containing the setup script. Will end in "\"
+set setupScriptDirPath=%~dp0
 
 :: The name of the source directory
 set srcDir=src
@@ -44,8 +44,8 @@ set modulesDir=modules
     if not "!arg_name!" == "" (
         if not "!arg_name:--no-color=!" == "!arg_name!" set useColor=false
         if not "!arg_name:--no-dotnet=!" == "!arg_name!" set includeDotNet=false
-        if not "!arg_name:pathToInstall=!" == "!arg_name!" (
-            set installerScriptsPath=!arg_value!
+        if not "!arg_name:--path-to-setup=!" == "!arg_name!" (
+            set setupScriptDirPath=!arg_value!
             shift
         )
     )
@@ -56,30 +56,31 @@ if not "!arg_name!"=="" goto param_loop
 :: /src folder; everything is in the root folder. So: go to the folder
 :: containing this script and check the name of the parent folder to see if
 :: we're in dev or production.
-pushd "!installerScriptsPath!"
-for /f "delims=\" %%a in ("%cd%") do @set CurrDirName=%%~nxa
+pushd "!setupScriptDirPath!"
+for /f "delims=\" %%a in ("%cd%") do @set setupScriptDirName=%%~nxa
 popd
+
 set executionEnvironment=Production
-if /i "%CurrDirName%" == "%srcDir%" set executionEnvironment=Development
+if /i "%setupScriptDirName%" == "%srcDir%" set executionEnvironment=Development
 
-:: The absolute path to the installer script and the root directory. Note that
+:: The absolute path to the setup script and the root directory. Note that
 :: this script (and the SDK folder) is either in the /src dir or the root dir
-pushd "!installerScriptsPath!"
-set sdkScriptsPath=%cd%\SDK\Scripts
+pushd "!setupScriptDirPath!"
+set sdkScriptsDirPath=%cd%\SDK\Scripts
 if /i "%executionEnvironment%" == "Development" cd ..
-set absoluteRootDir=%cd%
+set rootDirPath=%cd%
 popd
 
-set absoluteAppRootDir=!installerScriptsPath!
+set appRootDirPath=!setupScriptDirPath!
 
 :: Platform can define where things are located :::::::::::::::::::::::::::::::
 
 :: The location of directories relative to the root of the solution directory
-set modulesPath=!absoluteAppRootDir!!modulesDir!
-set downloadPath=!absoluteAppRootDir!!downloadDir!
+set modulesDirPath=!appRootDirPath!!modulesDir!
+set downloadDirPath=!appRootDirPath!!downloadDir!
 
 :: Let's go
-if /i "!useColor!" == "true" call "!sdkScriptsPath!\utils.bat" setESC
+if /i "!useColor!" == "true" call "!sdkScriptsDirPath!\utils.bat" setESC
 if /i "!executionEnvironment!" == "Development" (
     set scriptTitle=          Creating CodeProject.AI Module Downloads
 ) else (
@@ -89,25 +90,25 @@ if /i "!executionEnvironment!" == "Development" (
 
 set lineWidth=70
 
-call "!sdkScriptsPath!\utils.bat" WriteLine 
-call "!sdkScriptsPath!\utils.bat" WriteLine "!scriptTitle!" "DarkYellow" "Default" !lineWidth!
-call "!sdkScriptsPath!\utils.bat" WriteLine 
-call "!sdkScriptsPath!\utils.bat" WriteLine "========================================================================" "DarkGreen" 
-call "!sdkScriptsPath!\utils.bat" WriteLine 
-call "!sdkScriptsPath!\utils.bat" WriteLine "                   CodeProject.AI Packager                             " "DarkGreen" 
-call "!sdkScriptsPath!\utils.bat" WriteLine 
-call "!sdkScriptsPath!\utils.bat" WriteLine "========================================================================" "DarkGreen" 
-call "!sdkScriptsPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "!scriptTitle!" "DarkYellow" "Default" !lineWidth!
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "========================================================================" "DarkGreen" 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "                   CodeProject.AI Packager                             " "DarkGreen" 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "========================================================================" "DarkGreen" 
+call "!sdkScriptsDirPath!\utils.bat" WriteLine 
 
 
 if /i "%verbosity%" neq "quiet" (
-    call "!sdkScriptsPath!\utils.bat" WriteLine 
-    call "!sdkScriptsPath!\utils.bat" WriteLine "executionEnvironment  = !executionEnvironment!"  !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "installerScriptsPath  = !installerScriptsPath!"  !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "sdkScriptsPath        = !sdkScriptsPath!"        !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "absoluteAppRootDir    = !absoluteAppRootDir!"    !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine "modulesPath           = !modulesPath!"           !color_mute!
-    call "!sdkScriptsPath!\utils.bat" WriteLine
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment = !executionEnvironment!" !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "appRootDirPath       = !appRootDirPath!"       !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath   = !setupScriptDirPath!"   !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath    = !sdkScriptsDirPath!"    !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath       = !modulesDirPath!"       !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine
 )
 
 :: And off we go...
@@ -115,19 +116,19 @@ if /i "%verbosity%" neq "quiet" (
 set success=true
 
 REM  Walk through the modules directory and call the package script in each dir
-rem Make this just "for /d %%D in ("%modulesPath%") do ("
+rem Make this just "for /d %%D in ("%modulesDirPath%") do ("
 
-for /f "delims=" %%a in ('dir /a:d /b "!modulesPath!"') do (
+for /f "delims=" %%a in ('dir /a:d /b "!modulesDirPath!"') do (
 
-    set packageModuleDir=%%~nxa
-    set packageModuleId=!packageModuleDir!
-    set packageModulePath=!modulesPath!\!packageModuleDir!
+    set packageModuleDirName=%%~nxa
+    set packageModuleId=!packageModuleDirName!
+    set packageModuleDirPath=!modulesDirPath!\!packageModuleDirName!
 
     if /i "%verbosity%" neq "quiet" (
-        call "!sdkScriptsPath!\utils.bat" WriteLine "packageModulePath           = !packageModulePath!" !color_mute!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "packageModuleDirPath           = !packageModuleDirPath!" !color_mute!
     )
 
-    if exist "!packageModulePath!\package.bat" (
+    if exist "!packageModuleDirPath!\package.bat" (
 
         set doPackage=true
 
@@ -136,39 +137,40 @@ for /f "delims=" %%a in ('dir /a:d /b "!modulesPath!"') do (
         if "!includeDotNet!" == "false" if "!packageModuleId!" == "SentimentAnalysis"  set doPackage=false
 
         if "!doPackage!" == "false" (
-            call "!sdkScriptsPath!\utils.bat" WriteLine "Skipping packaging module !packageModuleId!..." "Red"
+            call "!sdkScriptsDirPath!\utils.bat" WriteLine "Skipping packaging module !packageModuleId!..." "Red"
         ) else (
 
-            pushd "!packageModulePath!" 
+            pushd "!packageModuleDirPath!" 
 
             REM Read the version from the modulesettings.json file and then pass this 
             REM version to the package.bat file.
-            call "!sdkScriptsPath!\utils.bat" GetValueFromModuleSettings "modulesettings.json", "Version", packageVersion
+            call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettings "modulesettings.json", "Version"   REM, packageVersion
+            set packageVersion=!moduleSettingValue!
 
-            call "!sdkScriptsPath!\utils.bat" Write "Packaging module !packageModuleId! !packageVersion!..." "White"
+            call "!sdkScriptsDirPath!\utils.bat" Write "Packaging module !packageModuleId! !packageVersion!..." "White"
 
             rem Create module download package
             call package.bat !packageModuleId! !packageVersion!
-            if errorlevel 1 call "!sdkScriptsPath!\utils.bat" WriteLine "Error in package.bat for !packageModuleDir!" "Red"
+            if errorlevel 1 call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error in package.bat for !packageModuleDirName!" "Red"
 
             popd
             
             rem Move package into modules download cache       
-            rem echo Moving !packageModulePath!\!packageModuleId!-!version!.zip to !downloadPath!\modules\
-            move /Y !packageModulePath!\!packageModuleId!-!packageVersion!.zip !downloadPath!\modules\  >NUL 2>&1
+            rem echo Moving !packageModuleDirPath!\!packageModuleId!-!version!.zip to !downloadDirPath!\modules\
+            move /Y !packageModuleDirPath!\!packageModuleId!-!packageVersion!.zip !downloadDirPath!\modules\  >NUL 2>&1
 
             if errorlevel 1 (
-                call "!sdkScriptsPath!\utils.bat" WriteLine "Error" "Red"
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error" "Red"
                 set success=false
             ) else (
-                call "!sdkScriptsPath!\utils.bat" WriteLine "Done" "DarkGreen"
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Done" "DarkGreen"
             )
         )
     )
 )
 
-call "!sdkScriptsPath!\utils.bat" WriteLine
-call "!sdkScriptsPath!\utils.bat" WriteLine "                Modules packaging Complete" "White" "DarkGreen" !lineWidth!
-call "!sdkScriptsPath!\utils.bat" WriteLine
+call "!sdkScriptsDirPath!\utils.bat" WriteLine
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "                Modules packaging Complete" "White" "DarkGreen" !lineWidth!
+call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
 if /i "!success!" == "false" exit /b 1

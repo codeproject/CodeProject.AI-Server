@@ -45,34 +45,34 @@ namespace CodeProject.AI.Server
         /// <summary>
         /// Gets or sets the root directory that contains the runtimes (eg Python interpreter).
         /// </summary>
-        public string? RuntimesPath { get; set; }
+        public string? RuntimesDirPath { get; set; }
 
         /// <summary>
         /// Gets or sets the root directory that contains the modules pre-installed when the server
         /// was setup. For instance, during a Docker image build.
         /// </summary>
-        /// <remarks>Modules are usually downloaded and installed in the modulesPAth, but we can
+        /// <remarks>Modules are usually downloaded and installed in the modulesDirPath, but we can
         /// 'pre-install' them in situations like a Docker image. We pre-install modules in a
         /// separate folder than the downloaded and installed modules in order to avoid conflicts 
         /// (in Docker) when a user maps a local folder to the modules dir. Doing this to the 'pre
-        /// insalled' dir would make the contents (the preinstalled modules) disappear.</remarks>
-        public string? PreInstalledModulesPath { get; set; }
+        /// installed' dir would make the contents (the preinstalled modules) disappear.</remarks>
+        public string? PreInstalledModulesDirPath { get; set; }
 
         /// <summary>
         /// Gets or sets the root directory that contains the downloaded / sideloaded modules.
         /// </summary>
-        public string? ModulesPath { get; set; }
+        public string? ModulesDirPath { get; set; }
 
          /// <summary>
         /// Gets the absolute path to the download modules zip packages that have been
         /// downloaded from the modules registry
         /// </summary>
-        public string? DownloadedModulePackagesPath {get; set; }
+        public string? DownloadedModulePackagesDirPath {get; set; }
 
         /// <summary>
         /// Gets or sets the directory that contains the Module Installers.
         /// </summary>
-        public string? ModuleInstallerScriptsPath { get; set; }
+        public string? ModuleInstallerScriptsDirPath { get; set; }
 
         /// <summary>
         /// Gets or sets the templated path to the Python interpreter. This path is relative to

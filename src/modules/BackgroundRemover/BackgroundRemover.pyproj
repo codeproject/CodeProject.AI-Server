@@ -25,12 +25,25 @@
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="LICENSE.txt" />
-    <Content Include="modulesettings.json" />
+    <Content Include="models\u2net.onnx" />
+    <Content Include="modulesettings.json">
+    </Content>
+    <Content Include="modulesettings.orangepi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.raspberrypi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
     <Content Include="package.bat" />
+    <Content Include="package.sh" />
     <Content Include="test.html" />
+    <Content Include="test\chris-hemsworth-2.jpg" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
+    <Content Include="requirements.linux.arm64.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.linux.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
@@ -58,7 +71,9 @@
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="models\" />
     <Folder Include="rembg\" />
+    <Folder Include="test\" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include=".\bin\windows\python39\venv\">

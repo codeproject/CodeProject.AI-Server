@@ -24,7 +24,7 @@ namespace CodeProject.AI.Server.Controllers
         private readonly VersionConfig    _versionConfig;
         private readonly ModuleOptions    _moduleOptions;
         private readonly ModuleSettings   _moduleSettings;
-        private readonly ModuleCollection _moduleCollection;
+        private readonly ModuleCollection _installedModules;
         private readonly ModuleInstaller  _moduleInstaller;
         private readonly ILogger          _logger;
 
@@ -34,13 +34,13 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="versionOptions">The server version Options</param>
         /// <param name="moduleSettings">The module settings instance</param>
         /// <param name="moduleOptions">The module options instance</param>
-        /// <param name="moduleCollection">The collection of modules.</param>
+        /// <param name="moduleCollectionOptions">The collection of modules.</param>
         /// <param name="moduleInstaller">The module installer instance.</param>
         /// <param name="logger">The logger</param>
         public ModuleController(IOptions<VersionConfig>    versionOptions,
                                 ModuleSettings             moduleSettings,
                                 IOptions<ModuleOptions>    moduleOptions,
-                                IOptions<ModuleCollection> moduleCollection,
+                                IOptions<ModuleCollection> moduleCollectionOptions,
                                 ModuleInstaller moduleInstaller,
                                 ILogger<LogController> logger)
         {
@@ -48,7 +48,7 @@ namespace CodeProject.AI.Server.Controllers
             _moduleOptions    = moduleOptions.Value;
             _moduleSettings   = moduleSettings;
             _moduleInstaller  = moduleInstaller;
-            _moduleCollection = moduleCollection.Value;
+            _installedModules = moduleCollectionOptions.Value;
             _logger           = logger;
         }
 
@@ -79,16 +79,16 @@ namespace CodeProject.AI.Server.Controllers
                     return CreateErrorResponse("The supplied module upload password was incorrect. Not proceeding.");
 
                 string tempName      = Guid.NewGuid().ToString();
-                string downloadPath  = _moduleSettings.DownloadedModulePackagesPath 
+                string downloadDirPath  = _moduleSettings.DownloadedModulePackagesDirPath 
                                      + Path.DirectorySeparatorChar + tempName + ".zip";
 
-                using (Stream fileStream = new FileStream(downloadPath, FileMode.Create, FileAccess.Write))
+                using (Stream fileStream = new FileStream(downloadDirPath, FileMode.Create, FileAccess.Write))
                 {
                     await uploadedFile.CopyToAsync(fileStream).ConfigureAwait(false);
                     fileStream.Close();
                 }
 
-                (bool success, string error) = await _moduleInstaller.InstallModuleAsync(downloadPath, null)
+                (bool success, string error) = await _moduleInstaller.InstallModuleAsync(downloadDirPath, null)
                                                                      .ConfigureAwait(false);
     
                 return success? new SuccessResponse() : CreateErrorResponse("Unable install module: " + error);
@@ -111,16 +111,16 @@ namespace CodeProject.AI.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ResponseBase> ListInstalledModules()
         {
-            if (_moduleCollection?.Count is null || _moduleCollection.Count == 0)
+            if (_installedModules?.Count is null || _installedModules.Count == 0)
                 return CreateErrorResponse("No backend modules have been registered");
 
             string currentServerVersion = _versionConfig.VersionInfo!.Version;
 
-            var modules = _moduleCollection?.Values?
+            var modules = _installedModules?.Values?
                             .Select(module => ModuleInstaller.ModuleDescriptionFromModuleConfig(module, true, 
                                                                                                 currentServerVersion,
-                                                                                                _moduleSettings.ModulesPath,
-                                                                                                _moduleSettings.PreInstalledModulesPath))
+                                                                                                _moduleSettings.ModulesDirPath,
+                                                                                                _moduleSettings.PreInstalledModulesDirPath))
                             .ToList() ?? new List<ModuleDescription>();
 
             // Mark those modules that can't be downloaded
@@ -177,7 +177,7 @@ namespace CodeProject.AI.Server.Controllers
             // Go through each module we currently have registered, and if that module doesn't 
             // appear in the available downloads then add it to the list of all modules and
             // ensure it's set as 'Installed'.
-            foreach (ModuleConfig? module in _moduleCollection.Values)
+            foreach (ModuleConfig? module in _installedModules.Values)
             {
                 if (module?.Valid != true)
                     continue;
@@ -190,8 +190,8 @@ namespace CodeProject.AI.Server.Controllers
                 {
                     var description = ModuleInstaller.ModuleDescriptionFromModuleConfig(module, true,
                                                                                         currentServerVersion,
-                                                                                        _moduleSettings.ModulesPath,
-                                                                                        _moduleSettings.PreInstalledModulesPath);
+                                                                                        _moduleSettings.ModulesDirPath,
+                                                                                        _moduleSettings.PreInstalledModulesDirPath);
                     description.IsDownloadable = false;  
                     installableModules.Add(description);
                 }
@@ -210,15 +210,18 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="version">The version of the module to install</param>
         /// <param name="noCache">Whether or not to ignore the download cache. If true, the module
         /// will always be freshly downloaded</param>
+        /// <param name="verbosity">The amount of noise to output when installing</param>
         /// <returns>A Response Object.</returns>
-        [HttpPost("install/{moduleId}/{version}/{nocache:bool?}", Name = "Install Module")]
+        [HttpPost("install/{moduleId}/{version}/{nocache:bool}/{verbosity?}", Name = "Install Module")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ResponseBase> InstallModuleAsync(string moduleId, string version,
-                                                           bool noCache = false)
+                                                           bool noCache = false, 
+                                                           LogVerbosity verbosity = LogVerbosity.Quiet)
         {
-            var downloadTask = _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version, noCache);
+            var downloadTask = _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version,
+                                                                         noCache, verbosity);
             (bool success, string error) = await downloadTask.ConfigureAwait(false);
             
             return success? new SuccessResponse() : CreateErrorResponse(error);

@@ -14,6 +14,7 @@ import random
 import re
 import shutil
 import signal
+import sys
 import threading
 import time
 import urllib
@@ -42,7 +43,12 @@ RANK = int(os.getenv('RANK', -1))
 
 # Settings
 DATASETS_DIR = ROOT.parent / 'datasets'  # YOLOv5 datasets directory
-NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+
+if (sys.version_info.major >= 3 and sys.version_info.minor >= 13):
+    NUM_THREADS = min(8, max(1, os.process_cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+else:
+    NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+    
 AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
 FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf

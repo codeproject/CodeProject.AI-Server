@@ -30,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="package.bat" />
+    <Content Include="package.sh" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>

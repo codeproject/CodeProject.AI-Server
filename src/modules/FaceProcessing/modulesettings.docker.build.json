@@ -1,5 +1,8 @@
 {
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
+
     "FaceProcessing": {
       /* In Docker, when building the image, we copy over the code and config files, which includes
          this special modulesettings.docker.build.json file that enables us to point the Python

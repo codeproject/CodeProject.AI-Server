@@ -14,9 +14,9 @@
 function quit () {
 
     local exit_code=$1
-    if [ "$exit_code" == "" ]; then exit_code=0; fi
+    if [ "$exit_code" = "" ]; then exit_code=0; fi
 
-    if [ "${useColor}" == "true" ] && [ "${darkmode}" == "true" ]; then
+    if [ "${useColor}" = true ] && [ "${darkmode}" = true ]; then
         # this resets the terminal, but also clears all colours from the screen
         # which isn't great
         # tput reset
@@ -42,17 +42,17 @@ function Color () {
     local background=$2
     local intense=$3
 
-    if [ "$foreground" == "" ]; then foreground='Default'; fi
-    if [ "$background" == "" ]; then background='Default'; fi
+    if [ "$foreground" = "" ]; then foreground='Default'; fi
+    if [ "$background" = "" ]; then background='Default'; fi
 
-    if [ "$foreground" == 'Contrast' ]; then
+    if [ "$foreground" = 'Contrast' ]; then
         foreground=$(ContrastForeground ${background})
     fi
 
     # Colour effect: <ESC>[(0|1)<code>m, where 0 = not intense / reset, 1 = intense    
     # See this most excellent answer: https://stackoverflow.com/a/33206814
     local colorString='\033['
-    if [ "$intense" == "true" ]; then 
+    if [ "$intense" = "true" ]; then 
         colorString="${colorString}1;"
     else
         colorString="${colorString}0;"
@@ -114,9 +114,9 @@ function Color () {
 function ContrastForeground () {
 
     local color=$1
-    if [ "$color" == '' ]; then color='Default'; fi
+    if [ "$color" = '' ]; then color='Default'; fi
 
-    if [ "$darkmode" == 'true' ]; then
+    if [ "$darkmode" = true ]; then
         case "$color" in
             'Default' )     echo 'White';;
             'Black' )       echo 'White';;
@@ -183,6 +183,15 @@ function spin () {
     spin[2]='|'
     spin[3]='/'
 
+    # spin[0]='⠏'
+    # spin[1]='⠛'
+    # spin[2]='⠹'
+    # spin[3]='⢸'
+    # spin[4]='⣰'
+    # spin[5]='⣤'
+    # spin[6]='⣆'
+    # spin[7]='⡇'
+
     while kill -0 $pid 2> /dev/null; do
         for i in "${spin[@]}"
         do
@@ -212,23 +221,23 @@ function writeLine () {
     local backcolor=$3
     local width=$4
 
-    if [ "$str" == "" ]; then
+    if [ "$str" = "" ]; then
         printf '\n'
         return;
     fi
 
     # Note the use of the format placeholder %s. This allows us to pass "--" as
     # strings without error
-    if [ "$useColor" == "true" ]; then
+    if [ "$useColor" = true ]; then
         local colorString=$(Color ${forecolor} ${backcolor})
 
-        if [ "$width" == "" ]; then
+        if [ "$width" = "" ]; then
             printf "${colorString}%s${resetColor}\n" "${str}"
         else
             printf "${colorString}%-${width}s${resetColor}\n" "${str}"
         fi
     else
-        if [ "$width" == "" ]; then
+        if [ "$width" = "" ]; then
             printf "%s\n" "${str}"
         else
             printf "%-${width}s\n" "${str}"
@@ -253,13 +262,13 @@ function write () {
     local forecolor=$2
     local backcolor=$3
 
-    if [ "$str" == "" ];  then
+    if [ "$str" = "" ];  then
         return;
     fi
 
     # Note the use of the format placeholder %s. This allows us to pass "--" as
     # strings without error
-    if [ "$useColor" == 'true' ]; then
+    if [ "$useColor" = true ]; then
         local colorString=$(Color ${forecolor} ${backcolor})
         printf "${colorString}%s${resetColor}" "${str}"
     else
@@ -267,22 +276,96 @@ function write () {
     fi
 }
 
+function CreateWriteableDir () {
+    local path=$1
+    local desc=$2
+
+    # for the runtimes
+    if [ ! -d "${path}" ]; then
+        write "Creating ${desc} folder..." $color_primary
+        #sudo 
+        mkdir -p "${path}" >/dev/null 2>/dev/null
+        if [ $? -eq 0 ]; then 
+            writeLine "Done" $color_success
+        else
+            writeLine "Needs admin permission" $color_error
+            displayMacOSDirCreatePermissionError
+        fi
+    fi
+
+    if [ -d "${path}" ]; then
+        write "Setting permissions on ${desc} folder..." $color_primary
+        #sudo 
+        chmod a+w "${path}" >/dev/null 2>/dev/null
+        if [ $? -eq 0 ]; then 
+            writeLine "Done" $color_success
+        else
+            writeLine "Needs admin permission" $color_error
+        fi
+    fi
+}
+
+function checkForAdminRights () {
+
+    # Setting this to true requests a password to elevate a script command, but it's a null-op and
+    # the permission elevation doesn't stick. We need to relaunch the current script, elevated, and
+    # then quit. Leaving this here as a sore thumb.
+    requestPassword=false
+
+    # Be defensive
+    isAdmin=false
+
+    # Check if they are root
+    if [[ $EUID = 0 ]]; then isAdmin=true; fi
+
+    # On RPi, you get root access
+    if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ]; then isAdmin=true; fi
+
+    # In Docker you have admin rights
+    if [ "${systemName}" = "Docker" ]; then isAdmin=true; fi
+
+    # Now check for sudo
+    if [ "$isAdmin" = false ]; then
+        # If there are two lines from the sudo call then it means sudo is available, otherwise not
+        # See https://unix.stackexchange.com/a/692109
+        # sudo_response=$(SUDO_ASKPASS=/bin/false sudo -A whoami 2>&1 | wc -l)
+        # if [ $sudo_response = 2 ]; then isAdmin=true; fi
+
+        # But this doesn't work on macOS, so we just look for "root"
+        sudo_response=$(SUDO_ASKPASS=/bin/false sudo -A whoami 2>&1 | grep root)
+        if [ "$sudo_response" = "root" ]; then isAdmin=true; fi
+    fi
+
+    if [ "$isAdmin" = false ] && [ "$requestPassword" = true ]; then
+        if [ "$os" == "macos" ]; then
+            /usr/bin/osascript -e 'do shell script "whoami 2>&1" with administrator privileges'
+
+            sudo_response=$(SUDO_ASKPASS=/bin/false sudo -A whoami 2>&1 | grep root)
+            if [ "$sudo_response" = "root" ]; then isAdmin=true; fi
+        fi
+    fi
+
+    # echo "CHECK: $EUID, isAdmin ${isAdmin}"
+}
+
 function checkForTool () {
 
     # Install the tool and move on, or warn and quit?
-    doInstall="true"
+    doInstall=true
 
     local name=$1
 
-    if command -v ${name} &> /dev/null; then
+    if command -v ${name} > /dev/null; then
         return 0 # all good
     fi
 
-    if [[ "${doInstall}" == "true" ]]; then
-        if [ "$os" == "macos" ]; then
+    if [ "${doInstall}" = true ]; then
 
-            # Ensure Brew is installed
-            if [ $"$architecture" == 'arm64' ]; then
+        if [ "$os" = "macos" ]; then
+
+            # Ensure Brew is installed. NOTE: macOS has curl built in, so no worries
+            # about recursion if calling checkForTool "curl"
+            if [ $"$architecture" = 'arm64' ]; then
                 if [ ! -f /usr/local/bin/brew ]; then
                     writeLine "Installing brew (x64 for arm64)..." $color_info
                     arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
@@ -291,9 +374,9 @@ function checkForTool () {
                     fi
                 fi
             else
-                if ! command -v brew &> /dev/null; then
+                if ! command -v brew > /dev/null; then
                     writeLine "Installing brew..." $color_info
-                    /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'
+                    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
                     if [ $? -ne 0 ]; then 
                         quit 10 # failed to install required tool
                     fi
@@ -301,19 +384,38 @@ function checkForTool () {
             fi
 
             writeLine "Installing ${name}..." $color_info
-            if [ $"$architecture" == 'arm64' ]; then
+            if [ $"$architecture" = 'arm64' ]; then
                 arch -x86_64 /usr/local/bin/brew install ${name} > /dev/null
             else
                 brew install ${name} > /dev/null
             fi
         else
-            writeLine "Installing ${name}..." $color_info
-            sudo apt install ${name} -y > /dev/null
+
+            checkForAdminRights
+            if [ "$isAdmin" = false ]; then
+                writeLine "We need to install a tool with admin rights. Please run " $color_info
+                writeLine ""
+                writeLine "   sudo apt install ${name}"                              $color_info
+                writeLine ""
+                writeLine "To ensure the installation completes"                     $color_info
+
+                if [ "$attemptSudoWithoutAdminRights" = true ]; then
+                    writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
+                    writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
+                fi
+            fi
+
+            if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                writeLine "Installing ${name}..." $color_info
+                sudo apt update -y & sudo apt install ${name} -y > /dev/null
+            fi
         fi
 
-        if [ $? -ne 0 ]; then 
-            quit 10 # failed to install required tool
-        fi
+        # Whilst a great idea, it doesn't work. A perfectly successful install 
+        # of jq, for instance, returns > 0 error code. Who needs sanity?
+        # if [ $? -ne 0 ]; then 
+        #    quit 10 # failed to install required tool
+        # fi
 
     else
         writeLine
@@ -321,15 +423,15 @@ function checkForTool () {
         writeLine '------------------------------------------------------------------------'
         writeLine "Error: ${name} is not installed on your system" $color_error
 
-        if [ "$os" == "macos" ]; then
+        if [ "$os" = "macos" ]; then
         
             writeLine "       Please run 'brew install ${name}'" $color_error
 
-            if ! command -v brew &> /dev/null; then
+            if ! command -v brew > /dev/null; then
                 writeLine
                 writeLine "Error: It looks like you don't have brew installed either" $color_warn
-                writeLine '       Please run:' $color_warn
-                writeLine "       /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'" $color_warn
+                writeLine 'Please run:' $color_warn
+                writeLine "   /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'" $color_warn
                 quit 4 # required tool missing, needs installing
             fi
         else
@@ -344,103 +446,198 @@ function checkForTool () {
     return 0
 }
 
+
+function getDotNetVersion() {
+
+    local requestedType=$1
+
+    highestDotNetVersion="0"
+
+    if [ "$requestedType" = "sdk" ]; then
+        
+        # dotnet --version gives the SDK version. 
+        if command -v dotnet >/dev/null 2>/dev/null; then
+            highestDotNetVersion=$(dotnet --version 2>/dev/null)
+            if [ "$?" != "0" ]; then
+                highestDotNetVersion="0"
+            fi
+        fi
+
+    else    # runtimes
+
+        # example output from 'dotnet --list-runtimes'
+        # Microsoft.AspNetCore.App 7.0.11 [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]
+        # Microsoft.NETCore.App 3.1.32 [C:\Program Files\dotnet\shared\Microsoft.NETCore.App]
+
+        comparison=-1
+
+        IFS=$'\n' # set the Internal Field Separator as end of line
+        while read -r line
+        do
+            if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
+                dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
+                current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
+
+                if (( $current_comparison > $comparison )); then
+                    highestDotNetVersion="$dotnet_version"
+                    comparison=$current_comparison
+                fi
+            fi
+        done <<< "$(dotnet --list-runtimes)"
+        unset IFS
+    fi
+
+    if [ "$highestDotNetVersion" = "0" ]; then highestDotNetVersion=""; fi
+
+    echo "$highestDotNetVersion"
+}
+
 function setupDotNet () {
 
-    # only major versions accepted
+    # only major/minor versions accepted (eg 7.0)
     local requestedNetVersion=$1
+    # allowed: sdk, dotnet, aspnetcore
+    local requestedType=$2
+
+    # echo "Setting up .NET ${requestedType}"
+
     local requestedNetMajorVersion=$(cut -d '.' -f 1 <<< "${requestedNetVersion}")
-    local sdkInstallVersion=${requestedNetMajorVersion}.$(cut -d '.' -f 2 <<< "${requestedNetVersion}")
+    local requestedNetMajorMinorVersion=${requestedNetMajorVersion}.$(cut -d '.' -f 2 <<< "${requestedNetVersion}")
     
+    if [ "$requestedType" = "" ]; then requestedType="aspnetcore"; fi
+
     write "Checking for .NET >= ${requestedNetVersion}..."
 
     currentDotNetVersion="(None)"
-    comparison=2
+    comparison=-1
 
-    if command -v dotnet &> /dev/null; then
-        currentDotNetVersion=$(dotnet --version) 2>/dev/null
-        if [ "$?" == "0" ]; then
-            comparison=$(versionCompare $currentDotNetVersion $requestedNetVersion)
+    if [ "$requestedType" = "sdk" ]; then
+        
+        # dotnet --version gives the SDK version. 
+        if command -v dotnet >/dev/null 2>/dev/null; then
+            currentDotNetVersion=$(dotnet --version 2>/dev/null)
+            if [ "$?" = "0" ]; then
+                comparison=$(versionCompare $currentDotNetVersion $requestedNetVersion)
+            else
+                currentDotNetVersion="(None)"
+            fi
         fi
-    fi
 
-    if [ "$comparison" == "0" ]; then
-        writeLine "All good. Current .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_success
-    elif [ "$comparison" == "-1" ]; then 
-        writeLine "Upgrading: Current .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_warn
     else
-        writeLine "All good. Current .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_success
+
+        # Let's test the runtimes only, since that's all we need
+        # example output from 'dotnet --list-runtimes'
+        # Microsoft.AspNetCore.App 7.0.11 [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]
+        # Microsoft.NETCore.App 3.1.32 [C:\Program Files\dotnet\shared\Microsoft.NETCore.App]
+
+        IFS=$'\n' # set the Internal Field Separator as end of line
+        while read -r line
+        do
+            if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
+                dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
+                current_comparison=$(versionCompare $dotnet_version $requestedNetVersion)
+
+                if (( $current_comparison > $comparison )); then
+                    currentDotNetVersion="$dotnet_version"
+                    comparison=$current_comparison
+                fi
+            fi
+        done <<< "$(dotnet --list-runtimes)"
+        unset IFS
     fi
 
-    if [ "$comparison" == "-1" ]; then
+    if (( $comparison == 0 )); then
+        writeLine "All good. .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_success
+    elif (( $comparison == -1 )); then 
+        writeLine "Upgrading: .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_warn
+    else # (( $comparison == 1 ))
+        writeLine "All good. .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_success
+    fi 
 
-        if [ "$offlineInstall" == "true" ]; then 
+    if (( $comparison < 0 )); then
+
+        if [ "$offlineInstall" = true ]; then 
             writeLine "Offline Installation: Unable to download and install .NET." $color_error
-            return 4 # required tool missing, needs installing
+            return 6 # unable to download required asset
         fi
 
-        # The script provides the warning: "To set up a development environment or to run apps,
-        # use installers rather than this script." This is because paths aren't set. No time to
-        # futz around with this right now so going the dodgy route
+        checkForAdminRights
+        if [ "$isAdmin" = false ]; then
+            writeLine "=========================================================" $color_info
+            writeLine "We need to install some system libraries. Please run "     $color_info
+            writeLine ""
 
-        # writeLine "Current .NET version is ${currentDotNetVersion}. Installing newer version." $color_info
-        # pushd "$sdkScriptsPath" >/dev/null
-        # bash dotnet-install.sh --version $requestedNetVersion
-        # popd
-
-        if [ "$os" == "linux" ]; then 
-
-            # Super naive
-            # local currentLinuxDistro=$(lsb_release -d | cut -f2 | cut -d ' ' -f1)
-            local currentLinuxDistro=$(. /etc/os-release;echo $ID)
-            currentLinuxDistro=`echo $currentLinuxDistro | tr '[:upper:]' '[:lower:]'`
-            
-            #local currentLinuxVersion=$(lsb_release -r | cut -f2)
-            local currentLinuxVersion=$(. /etc/os-release;echo $VERSION_ID)
-            
-            if [ "$architecture" == 'arm64' ]; then
-                sudo bash "${sdkScriptsPath}/dotnet-install-arm.sh" ${sdkInstallVersion}
-                if [ $? -ne 0 ]; then 
-                    return 2 # failed to install required runtime
-                fi
-
-            elif [ "$currentLinuxDistro" == "ubuntu" ] && [[ "$currentLinuxVersion" =~ ^(18|20|21|22|23)\.(04|10)$ ]]; then           
-
-                # echo "currentDotNetVersion = $currentDotNetVersion"
-                writeLine "Current .NET version is ${currentDotNetVersion}. Installing newer version." $color_info
-                wget https://packages.microsoft.com/config/${currentLinuxDistro}/${currentLinuxVersion}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-                sudo dpkg -i packages-microsoft-prod.deb
-                rm packages-microsoft-prod.deb 
-                sudo apt-get update && sudo apt-get install -y dotnet-sdk-${sdkInstallVersion}
-
-                if [ $? -ne 0 ]; then 
-                    return 2 # failed to install required runtime
-                fi
-
+            if [ "$architecture" = 'arm64' ]; then
+                 writeLine "   sudo bash '${sdkScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType" $color_info
             else
-
-                writeLine "Current .NET version is ${currentDotNetVersion}. Please download and install the latest .NET SDK." $color_error
-                writeLine "See https://learn.microsoft.com/en-au/dotnet/core/install/linux-ubuntu for details:" $color_error
-                writeLine
-                writeLine "wget https://packages.microsoft.com/config/ubuntu/<ubuntu-version>/packages-microsoft-prod.deb -O packages-microsoft-prod.deb" $color_info
-                writeLine "sudo dpkg -i packages-microsoft-prod.deb" $color_info
-                writeLine "rm packages-microsoft-prod.deb " $color_info
-                writeLine "sudo apt-get update && sudo apt-get install -y dotnet-sdk-${sdkInstallVersion}" $color_info
-                quit 3 # required runtime missing, needs installing
-
+                 writeLine "   sudo bash '${sdkScriptsDirPath}/dotnet-install.sh' --channel $requestedNetMajorMinorVersion --runtime $requestedType" $color_info
             fi
-        else
-            if [ "$architecture" == 'arm64' ]; then
-                writeLine "Please download and install the .NET SDK. For macOS Arm64 (Apple Silicon) use:"
-                writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-arm64-installer"
-                quit 3 # required runtime missing, needs installing
-            else
-                writeLine "Please download and install the .NET SDK. For macOS Intel machines use:"
-                writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-x64-installer"
-                # writeLine "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-${requestedNetVersion}-macos-x64-installer"
-                quit 3 # required runtime missing, needs installing
+            writeLine ""
+            writeLine "To ensure the installation is successful"                  $color_info
+            writeLine "=========================================================" $color_info
+            module_install_errors="Admin permissions are needed to install libraries"
+
+            if [ "$attemptSudoWithoutAdminRights" = true ]; then
+                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
+                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
             fi
-            quit 100 # impossible code path
         fi
+
+        if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+            if [ "$os" = "linux" ]; then
+                if [ "$architecture" = 'arm64' ]; then
+                    if [ $verbosity = "quiet" ]; then
+                        sudo bash "${sdkScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType" "quiet"
+                    else
+                        sudo bash "${sdkScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType"
+                    fi               
+                else
+                    if [ $verbosity = "quiet" ]; then
+                        sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
+                    else
+                        sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
+                    fi
+                fi
+            else
+                if [ $verbosity = "quiet" ]; then
+                    sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
+                else
+                    sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
+                fi
+            fi
+        fi
+
+        # if (( $? -ne 0 )); then 
+        #    return 2 # failed to install required runtime
+        #fi
+
+        if [ "$os" = "linux" ] && [ "$architecture" != "arm64" ]; then
+
+            # Add link
+            # ln -s /opt/dotnet/dotnet /usr/local/bin
+
+            # make link permanent
+            if grep -q 'export DOTNET_ROOT=' ~/.bashrc;  then
+                echo 'Already added link to .bashrc'
+            else
+                echo 'export DOTNET_ROOT=/usr/bin/' >> ~/.bashrc
+            fi
+        fi
+    fi
+
+    found_dotnet=$(getDotNetVersion "$requestedType")
+    if [ "$found_dotnet" = "" ] && [ "$os" = "linux" ]; then
+        writeLine ".NET was not installed correctly. You may need to run the following:" $color_error
+        echo "# Remove all .NET packages"
+        echo "sudo apt remove 'dotnet*'"
+        echo "sudo apt remove 'aspnetcore*'"
+        echo "# Delete PMC repository from APT, by deleting the repo .list file"
+        echo "sudo rm /etc/apt/sources.list.d/microsoft-prod.list"
+        echo "sudo apt update"
+        echo "# Install .NET SDK"
+        echo "sudo apt install dotnet-sdk-${requestedNetVersion}"
+    else
+        writeLine "Confirming .NET ${requestedType} install present. Version is ${found_dotnet}" $color_mute
     fi
 
     return 0
@@ -448,16 +645,49 @@ function setupDotNet () {
 
 function setupPython () {
 
-    if [ "$offlineInstall" == "true" ]; then 
+    # A number of global variables are assumed here
+    #  - pythonVersion     - version in X.Y format
+    #  - venvPythonCmdPath - the path to the python interpreter for this venv
+    #  - virtualEnvDirPath - the path to the virtual environment for this module
+
+    if [ "$offlineInstall" = true ]; then 
         writeLine "Offline Installation: Unable to download and install Python." $color_error
         return 6 # unable to download required asset
     fi
 
+    checkForAdminRights
+    if [ "$isAdmin" = false ]; then
+
+        writeLine "=========================================================" $color_info
+        writeLine "We need to install some system libraries. Please run "     $color_info
+        writeLine ""
+
+        if [ "$setupMode" = 'SetupDevEnvironment' ]; then 
+            writeLine "   cd ${setupScriptDirPath}"                           $color_info
+            writeLine "   sudo bash setup.sh"                                 $color_info
+            writeLine ""
+            writeLine "To install the dev environment"                        $color_info
+        else
+            writeLine "   cd ${moduleDirPath}"                                $color_info
+            writeLine "   sudo bash ../../setup.sh"                           $color_info
+            writeLine ""
+            writeLine "To install this module"                                $color_info
+        fi
+
+        writeLine "=========================================================" $color_info
+        # module_install_errors="Admin permissions are needed to install libraries"
+
+        if [ "$attemptSudoWithoutAdminRights" = true ]; then
+            writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
+            writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
+        fi
+    fi
+
     # M1 macs are trouble for python
-    if [ "$platform" == "macos-arm64" ]; then
+    if [ "$platform" = "macos-arm64" ]; then
         writeLine "Arm64 (Apple silicon) Mac detected. Not running under Rosetta. " $color_warn
         if [ $(/usr/bin/pgrep oahd >/dev/null 2>&1; echo $?) -gt 0 ]; then
-        #if [ "$(pkgutil --files com.apple.pkg.RosettaUpdateAuto)" == "" ]; then 
+        #if [ "$(pkgutil --files com.apple.pkg.RosettaUpdateAuto)" = "" ]; then 
             writeLine 'Rosetta is not installed' $color_error
             needRosettaAndiBrew
         else
@@ -465,48 +695,14 @@ function setupPython () {
         fi
     fi
 
-    # local pythonVersion=$1   - this is set in script calling this method
-    # local installLocation=$2 - this is set in script calling this method
-
-    # if [ "${verbosity}" == "loud" ]; then
-    #     writeLine "pythonVersion = ${pythonVersion}"  $color_mute
-    #     writeLine "pythonLocation = ${pythonLocation}"  $color_mute
-    # fi
-
-    if [ "${pythonLocation}" == "" ]; then pythonLocation="Shared"; fi
-
-    if [ "${allowSharedPythonInstallsForModules}" == "false" ]; then
-        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${pythonLocation}" == "Shared" ]]; then
-            writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
-            pythonLocation="Local"
-        fi
-    fi
-
-    # Version with ".'s removed
-    local pythonName="python${pythonVersion/./}"
-
-    # For now we will force all docker installs to be local
-    if [ "${pythonLocation}" == "Local" ]; then
-        installPath="${modulePath}/bin/${os}/${pythonName}"
-    else
-        installPath="${runtimesPath}/bin/${os}/${pythonName}"
-    fi
-
-    if [ "${forceOverwrite}" == "true" ]; then
+    if [ "${forceOverwrite}" = true ]; then
 
         writeLine "Cleaning Python directory to force re-install of Python VENV" $color_info
-        writeLine "This will mean any previous PIP installs wwill be lost." $color_error
-
-        # Force Re-download. Except we don't actually. We have a x64 version of
-        # python for macOS in our S3 bucket but it's easier simply to install 
-        # python natively
-        # if [ -d "${downloadPath}/${platform}/${pythonName}" ]; then 
-        #    rm -rf "${downloadPath}/${platform}/${pythonName}"
-        # fi
+        writeLine "This will mean any previous PIP installs will be lost." $color_error
 
         # Force overwrite
-        if [ -d "${installPath}" ]; then 
-            rm -rf "${installPath}"
+        if [ -d "${pythonDirPath}" ]; then 
+            rm -rf "${pythonDirPath}"
         fi
     fi
 
@@ -514,20 +710,33 @@ function setupPython () {
     # 1. Install Python. Using deadsnakes for Linux (not macOS), so be aware if
     #    you have concerns about potential late adoption of security patches.
 
-    if [ $verbosity == "loud" ]; then
-        writeLine "Python install path is ${installPath}" $color_info
+    if [ $verbosity = "loud" ]; then
+        writeLine "Python install path is ${pythonDirPath}" $color_info
     fi
 
-    if [ ! -d "${installPath}" ]; then
-        mkdir -p "${installPath}"
+    if [ ! -d "${pythonDirPath}" ]; then
+        mkdir -p "${pythonDirPath}"
     fi
 
-    globalPythonCmd="python${pythonVersion}"
-    if command -v $globalPythonCmd &> /dev/null; then
-         writeLine "Python ${pythonVersion} is already installed" $color_success
+    # We need to ensure the requested version Python is installed somewhere so
+    # we can use it to create virtual environments. In Windows we install Python
+    # in the /runtimes folder. In Linux/macOS we install Python directly into
+    # the standard system folders. 
+
+    # basePythonCmdPath is the path to the "base" python interpreter which will
+    # then be used to create virtual environments. We will test if the given 
+    # version of python is installed on the system, and if not we'll install it.
+    basePythonCmdPath="python${pythonVersion}"
+
+    if command -v "$basePythonCmdPath" > /dev/null; then
+
+        # All good - we have python
+        writeLine "Python ${pythonVersion} is already installed" $color_success
+
     else
+
         # For macOS we'll use brew to install python
-        if [ "$os" == "macos" ]; then
+        if [ "$os" = "macos" ]; then
 
             # We first need to ensure GCC is installed. 
             write "Checking for GCC and xcode tools..." $color_primary
@@ -540,21 +749,21 @@ function setupPython () {
                 writeLine "present" $color_success
             fi
 
-            write "Installing Python ${pythonVersion}..." $color_primary
+            write "Installing Python ${pythonVersion} application and libraries..." $color_primary
 
-            if [ "$platform" == "macos-arm64" ]; then
+            if [ "$platform" = "macos-arm64" ]; then
 
                 # Apple silicon requires Rosetta2 for python to run for Python < 3.9.1,
                 # so use the x86 version of Brew we installed earlier
-                if [ $(versionCompare "${pythonVersion}" '3.9.1') == "-1" ]; then
-                    if [ "${verbosity}" == "quiet" ]; then
+                if [ $(versionCompare "${pythonVersion}" '3.9.1') = "-1" ]; then
+                    if [ "${verbosity}" = "quiet" ]; then
                         arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
                         spin $!
                     else
                         arch -x86_64 /usr/local/bin/brew install python@${pythonVersion}
                     fi
                 else
-                    if [ "${verbosity}" == "quiet" ]; then
+                    if [ "${verbosity}" = "quiet" ]; then
                         brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
                         spin $!
                     else
@@ -567,11 +776,11 @@ function setupPython () {
                 # We have a x64 version of python for macOS (Intel) in our S3 bucket
                 # but it's easier to simply install python natively
 
-                # Download $storageUrl $downloadPath "python3.7.12-osx64.tar.gz" \
-                #                   "${platform}/${pythonDir}" "Downloading Python interpreter..."
-                # cp -R "${downloadPath}/${platform}/${pythonDir}" "${runtimesPath}/bin/${platform}"
+                # Download $storageUrl $downloadDirPath "python3.7.12-osx64.tar.gz" \
+                #                   "${platform}/${pythonName}" "Downloading Python interpreter..."
+                # cp -R "${downloadDirPath}/${platform}/${pythonName}" "${runtimesDirPath}/bin/${platform}"
 
-                if [ "${verbosity}" == "quiet" ]; then
+                if [ "${verbosity}" = "quiet" ]; then
                     brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
                     spin $!
                 else
@@ -583,31 +792,45 @@ function setupPython () {
             # Note that we only need the system-wide location of the python 
             # interpreter to setup the virtual environment. After it's setup,
             # all python calls are made using the venv's python
-            globalPythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+            if ! command -v "$basePythonCmdPath" > /dev/null; then
+                basePythonCmdPath="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+            fi 
 
             writeLine "Done" $color_success
 
         # macOS: With my M1 chip and Rosetta I make installing Python a real PITA.
         # Raspberry Pi: Hold my beer 
-        elif [ "${systemName}" == "Raspberry Pi" ]; then
+        elif [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
 
-            pushd "${pathToInstallerBase}" > /dev/null
+            if [ "$launchedBy" = "server" ]; then
+                writeLine "Installing Python needs to be done manually" $color_error
+                writeLine "Please run this command in a terminal:" $color_error
+                writeLine ""
+                writeLine "   cd ${moduleDirPath} && sudo bash ../../setup.sh" $color_error
+                writeLine ""
+                writeLine "then restart CodeProject.AI Server" $color_error
+                quit
+            else
+                writeLine "Installing Python. THIS COULD TAKE AN HOUR" "white" "red" 50
+            fi
+
+            pushd "${appRootDirPath}" > /dev/null
 
             # Update at your leisure. 
             # See https://www.python.org/ftp/python/ for a complete list.
             case "${pythonVersion}" in
-                "3.0")  pythonPatchVersion="3.0";;    # 3.0.1 avail
+                "3.0")  pythonPatchVersion="3.0.1";;
                 "3.1")  pythonPatchVersion="3.1.5";;
                 "3.2")  pythonPatchVersion="3.2.6";;
                 "3.3")  pythonPatchVersion="3.3.7";;
-                "3.4")  pythonPatchVersion="3.4.9";;  # 3.4.10 avail
+                "3.4")  pythonPatchVersion="3.4.19";; 
                 "3.5")  pythonPatchVersion="3.5.10";;
                 "3.6")  pythonPatchVersion="3.6.15";;
-                "3.7")  pythonPatchVersion="3.7.9";;  # 3.7.17 avail
-                "3.8")  pythonPatchVersion="3.8.10";; # 3.8.18 avail
-                "3.9")  pythonPatchVersion="3.9.2";;  # 3.9.18 avail
-                "3.10") pythonPatchVersion="3.10.4";; # 3.10.13 avail
-                "3.11") pythonPatchVersion="3.11.1";; # 3.11.5 avail
+                "3.7")  pythonPatchVersion="3.7.17";;
+                "3.8")  pythonPatchVersion="3.8.18";;
+                "3.9")  pythonPatchVersion="3.9.18";; 
+                "3.10") pythonPatchVersion="3.10.13";; 
+                "3.11") pythonPatchVersion="3.11.5";; 
                 "3.12") pythonPatchVersion="3.12.0";; 
                 *)      pythonPatchVersion="${pythonVersion}.0"
             esac
@@ -622,41 +845,52 @@ function setupPython () {
             installAptPackages "libsqlite3-dev zlib1g-dev libssl-dev openssl libffi-dev libncursesw5-dev"
             installAptPackages "libreadline6-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev"
 
-            # Get the Python tar ball and extract into our downloads dir
+            # Download, build and Install SSL
+            # https://www.aliengen.com/blog/install-python-3-7-on-a-raspberry-pi-with-raspbian-8
 
-            mkdir --parents downloads/Python
-            cd downloads/Python
+            # Download
+            cd $downloadDir
+            mkdir --parents "${os}/Lib"
+            cd "${os}/Lib"
+
+            if [ ! -f "openssl-1.1.1c.tar.gz" ]; then
+                curl $curlFlags --remote-name https://www.openssl.org/source/openssl-1.1.1c.tar.gz  
+                # If using wget
+                # wget $wgetFlags https://www.openssl.org/source/openssl-1.1.1c.tar.gz
+            fi
+            if [ ! -d "openssl-1.1.1c" ]; then
+                tar -xf openssl-1.1.1c.tar.gz
+            fi
+
+            # Build SS
+            cd openssl-1.1.1c/
+            ./config shared --prefix=/usr/local/
+            make -j $(nproc)
+
+            # Install
+            sudo make install
+            sudo apt-get install libssl-dev -y
+           
+            # cleanup
+            cd ..
+            sudo rm -rf openssl-1.1.1c
+            
+            # Get the Python tar ball and extract into our downloads dir
+            mkdir "${pythonName}"
+            cd "${pythonName}"
 
             if [ ! -f "Python-${pythonPatchVersion}.tar.xz" ]; then
                 # curl https://www.python.org/ftp/python/${pythonPatchVersion}/Python-${pythonPatchVersion}.tar.xz | tar -xf
-                curl https://www.python.org/ftp/python/${pythonPatchVersion}/Python-${pythonPatchVersion}.tar.xz --output Python-${pythonPatchVersion}.tar.xz
+                curl $curlFlags --remote-name https://www.python.org/ftp/python/${pythonPatchVersion}/Python-${pythonPatchVersion}.tar.xz
+                # If using wget
+                # wget $wgetFlags https://www.python.org/ftp/python/${pythonPatchVersion}/Python-${pythonPatchVersion}.tar.xz
             fi
 
             if [ ! -d "Python-${pythonPatchVersion}" ]; then
                 tar -xf Python-${pythonPatchVersion}.tar.xz
             fi
 
-            # Apply patch to enable SSL See https://joshspicer.com/python37-ssl--issue
-            # sudo cp "../../Patch/Python${pythonVersion}/Setup" /Python-${pythonPatchVersion}/Modules
-
-            # Install SSL
-            # https://www.aliengen.com/blog/install-python-3-7-on-a-raspberry-pi-with-raspbian-8
-            if [ ! -f "openssl-1.1.1c.tar.gz" ]; then
-                curl https://www.openssl.org/source/openssl-1.1.1c.tar.gz  --output openssl-1.1.1c.tar.gz
-            fi
-            if [ ! -d "openssl-1.1.1c" ]; then
-                tar -xf openssl-1.1.1c.tar.gz
-            fi
-
-            cd openssl-1.1.1c/
-            ./config shared --prefix=/usr/local/
-            make -j $(nproc)
-            sudo make install
-            cd ..
-            sudo rm -r openssl-1.1.1c
-            sudo apt-get install libssl-dev -y
-
-            # Build Python
+            # Build and install Python
             cd Python-${pythonPatchVersion}
             sudo ./configure --enable-optimizations  --prefix=/usr
             make -j $(nproc) < /dev/null
@@ -664,7 +898,7 @@ function setupPython () {
             cd ..
 
             # Cleanup
-            sudo rm -r Python-${pythonPatchVersion}
+            sudo rm -rf Python-${pythonPatchVersion}
             
             #. ~/.bashrc
 
@@ -674,77 +908,146 @@ function setupPython () {
             # Modified from https://stackoverflow.com/a/61605955
             sudo ln -s /usr/share/pyshared/lsb_release.py /usr/lib/python{pythonPatchVersion}/site-packages/lsb_release.py
 
-            # And sometims Pip just isn't here. So...
-            curl -O https://bootstrap.pypa.io/get-pip.py
-            sudo python3 get-pip.py pip==20.3.4
-            pip3 install --upgrade pip
+            # This was done above, but let's force it here in case it's been changed since
+            basePythonCmdPath="python${pythonVersion}"
+
+            # And sometimes Pip just isn't here. So...
+            curl --remote-name https://bootstrap.pypa.io/get-pip.py
+            # If using wget
+            # wget https://bootstrap.pypa.io/get-pip.py
+            sudo "${basePythonCmdPath}" get-pip.py pip==20.3.4
 
         # For Linux we'll use apt-get the deadsnakes PPA to get the old version
         # of python. Deadsnakes? Old python? Get it? Get it?! And who said 
         # developers have no sense of humour.
         else
 
-            if [ ! "${verbosity}" == "loud" ]; then
+            if [ "${verbosity}" = "loud" ]; then
+            
+                writeLine "Updating apt-get" $color_info
+                sudo apt-get update -y
+                
+                writeLine "Installing software-properties-common" $color_info
+                sudo apt install software-properties-common -y
+                
+                writeLine "Adding deadsnakes as a Python install source (PPA)" $color_info
+                apt policy | grep deadsnakes/ppa > /dev/null
+                if [ "$?" != "0" ]; then
+                    sudo add-apt-repository ppa:deadsnakes/ppa -y
+                else
+                    writeLine "(Already added)" $color_success
+                fi
 
-                write "Installing Python ${pythonVersion}..." $color_primary
+                writeLine "Updating apt" $color_info
+                sudo apt update -y
+                
+                writeLine "Upgrading apt" $color_info
+                sudo apt upgrade -y
 
-                if [ "${verbosity}" == "info" ]; then writeLine "Updating apt-get" $color_info; fi;
+                write "Installing Python ${pythonVersion} library..." $color_primary
+                sudo apt install python${pythonVersion} -y
+                writeLine "Done" $color_success
+
+            elif [ "${verbosity}" = "info" ]; then           
+
+                write "Updating apt-get " $color_info
+                sudo apt-get update -y >/dev/null &
+                spin $!
+                writeLine "Done" $color_success
+
+                write "Installing software-properties-common " $color_info
+                sudo apt install software-properties-common -y >/dev/null &
+                spin $!
+                writeLine "Done" $color_success
+
+                write "Adding deadsnakes as a Python install source (PPA) " $color_info
+                apt policy | grep deadsnakes/ppa > /dev/null
+                if [ "$?" != "0" ]; then
+                    sudo add-apt-repository ppa:deadsnakes/ppa -y >/dev/null &
+                    spin $!
+                    writeLine "Done" $color_success
+                else
+                    writeLine "Already added" $color_success
+                fi
+
+                write "Updating apt " $color_info
+                sudo apt update -y >/dev/null &
+                spin $!
+                writeLine "Done" $color_success
+
+                write "Upgrading apt " $color_info
+                sudo apt upgrade  -y >/dev/null  &
+                spin $!
+                writeLine "Done" $color_success
+
+                write "Installing Python Library ${pythonVersion} " $color_info
+                sudo apt install python${pythonVersion} -y >/dev/null  &
+                spin $!
+                writeLine "Done" $color_success
+
+            else
+
+                write "Installing Python Library ${pythonVersion}..." $color_info
+
                 sudo apt-get update -y >/dev/null 2>/dev/null &
                 spin $!
 
-                if [ "${verbosity}" == "info" ]; then writeLine "Installing software-properties-common" $color_info; fi;
                 sudo apt install software-properties-common -y >/dev/null 2>/dev/null &
                 spin $!
 
-                if [ "${verbosity}" == "info" ]; then writeLine "Adding deadsnakes as a Python install source (PPA)" $color_info; fi;
-                sudo add-apt-repository ppa:deadsnakes/ppa -y >/dev/null 2>/dev/null &
-                spin $!
+                apt policy | grep deadsnakes/ppa >/dev/null 2>/dev/null
+                if [ "$?" != "0" ]; then
+                    sudo add-apt-repository ppa:deadsnakes/ppa -y >/dev/null 2>/dev/null &
+                    spin $!
+                fi
 
-                if [ "${verbosity}" == "info" ]; then writeLine "Updating apt" $color_info; fi;
                 sudo apt update -y >/dev/null 2>/dev/null &
                 spin $!
 
-                if [ "${verbosity}" == "info" ]; then writeLine "Upgrading apt" $color_info; fi;
                 sudo apt upgrade  -y >/dev/null 2>/dev/null &
                 spin $!
 
-                if [ "${verbosity}" == "info" ]; then writeLine "Installing Python ${pythonVersion}" $color_info; fi;
-                sudo apt-get install python${pythonVersion} -y >/dev/null 2>/dev/null &
+                sudo apt install python${pythonVersion} -y >/dev/null 2>/dev/null &
                 spin $!
 
-                # apt-get install python3-pip - done later
-
                 writeLine "Done" $color_success
-            else
-                writeLine "Updating apt-get" $color_info
-                sudo apt-get update -y
-                writeLine "Installing software-properties-common" $color_info
-                sudo apt install software-properties-common -y
-                writeLine "Adding deadsnakes as a Python install source (PPA)" $color_info
-                sudo add-apt-repository ppa:deadsnakes/ppa -y
-                writeLine "Updating apt" $color_info
-                sudo apt update -y
-                writeLine "Upgrading apt" $color_info
-                sudo apt upgrade -y
-                writeLine "Installing Python ${pythonVersion}" $color_primary
-                sudo apt-get install python${pythonVersion} -y
 
-                # sudo apt-get install python3-pip - done later
-
-                writeLine "Done" $color_success
             fi
         fi
 
-        if ! command -v $globalPythonCmd &> /dev/null; then
+        if ! command -v "$basePythonCmdPath" > /dev/null; then
             return 2 # failed to install required runtime
         fi
-
     fi
+
+    # In WSL, getting: ModuleNotFoundError: No module named 'distutils.cmd'
+    if [ "$os" = "linux" ]; then
+        write "Ensuring PIP in base python install..." $color_primary
+        if [ "${verbosity}" = "quiet" ]; then
+            sudo apt-get install --reinstall python${pythonVersion}-distutils -y >/dev/null 2>/dev/null  &
+            spin $! # process ID of the python install call
+            "$venvPythonCmdPath" -m ensurepip >/dev/null 2>/dev/null  &
+            spin $! # process ID of the python install call
+        else
+            sudo apt-get install --reinstall python${pythonVersion}-distutils -y
+            "$venvPythonCmdPath" -m ensurepip
+        fi
+        writeLine 'done' $color_success
+    fi
+
+    write "Upgrading PIP in base python install..." $color_primary
+    if [ "${verbosity}" = "quiet" ]; then
+        "${basePythonCmdPath}" -m pip install --upgrade pip >/dev/null 2>/dev/null  &
+        spin $! # process ID of the python install call
+    else
+        "${basePythonCmdPath}" -m pip install --upgrade pip
+    fi
+    writeLine 'done' $color_success
 
     # =========================================================================
     # 2. Create Virtual Environment
 
-    if [ -d  "${installPath}/venv" ]; then
+    if [ -d  "${virtualEnvDirPath}" ]; then
         writeLine "Virtual Environment already present" $color_success
     else
 
@@ -759,35 +1062,24 @@ function setupPython () {
         # If venv creation fails, ensure you remove the old venv folder before 
         # trying again
 
-        if [ "$os" == "macos" ]; then
-            if [ "${verbosity}" == "quiet" ]; then
+        if [ "$os" = "macos" ]; then
+            if [ "${verbosity}" = "quiet" ]; then
                 write "Installing Virtual Environment tools for mac..." $color_primary
-                python3 -m pip install --upgrade pip >/dev/null &
-                pip3 $pipFlags install setuptools virtualenv virtualenvwrapper >/dev/null &
+                "${basePythonCmdPath}" -m pip $pipFlags install setuptools virtualenv virtualenvwrapper >/dev/null 2>/dev/null &
                 spin $!
                 writeLine "Done" $color_success
-
             else
                 writeLine "Installing Virtual Environment tools for mac..." $color_primary
-                python3 -m pip install --upgrade pip
-                # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
-                if [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
-                    writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
-                fi
+                "${basePythonCmdPath}" -m pip $pipFlags install setuptools virtualenv virtualenvwrapper
 
-                pip3 $pipFlags install setuptools virtualenv virtualenvwrapper
+                # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
+                if [ $(versionCompare "${pythonVersion}" '3.10.2') = "-1" ]; then
+                    writeLine "Ignore the DEPRECATION warning above. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
+                fi
             fi
         else
-            if [ "${verbosity}" == "quiet" ]; then
-                write 'Installing Virtual Environment tools for Linux...' $color_primary
-
-                sudo apt install python3-pip python3-setuptools python${pythonVersion}-venv -y >/dev/null 2>/dev/null &
-                spin $!
-                writeLine "Done" $color_success
-            else
-                writeLine 'Installing Virtual Environment tools for Linux...' $color_primary
-                sudo apt install python3-pip python3-setuptools python${pythonVersion}-venv -y
-            fi
+            writeLine 'Installing Virtual Environment tools for Linux...' $color_primary
+            installAptPackages "python3-pip python3-setuptools python${pythonVersion}-venv"
         fi
 
         # Create the virtual environments. All sorts of things can go wrong here
@@ -795,187 +1087,288 @@ function setupPython () {
         # retrying.
         write "Creating Virtual Environment (${pythonLocation})..." $color_primary
         
-        if [ $verbosity == "loud" ]; then
-            writeLine "Install path is ${installPath}"
+        if [ $verbosity = "loud" ]; then
+            writeLine "Install path is ${pythonDirPath}"
         fi
 
-        if [ "$os" == "macos" ]; then
-            $globalPythonCmd -m venv "${installPath}/venv"
-        else            
-            $globalPythonCmd -m venv "${installPath}/venv" &
+        if [ $verbosity = "quiet" ]; then
+            "$basePythonCmdPath" -m venv "${virtualEnvDirPath}" >/dev/null &
             spin $! # process ID of the python install call
+        else            
+            "$basePythonCmdPath" -m venv "${virtualEnvDirPath}"
         fi
 
-        if [ ! -d "${installPath}/venv" ]; then
+        if [ ! -d "${virtualEnvDirPath}" ]; then
+            writeLine ""
+            writeLine "Virtual Environment was not created" $color_error
             return 5 # unable to create Python virtual environment
         fi
 
         writeLine "Done" $color_success
     fi
 
-    # our DIY version of Python 'Activate' for virtual environments
-    pushd "${installPath}" >/dev/null
-    venvPath="$(pwd)/venv"
-    pythonInterpreterPath="${venvPath}/bin/python3"
-    popd >/dev/null
-
-    # Ensure Python Exists
+    # Ensure Python Exists in the venv
     write "Checking for Python ${pythonVersion}..." $color_primary
-    pyVersion=$("$pythonInterpreterPath" --version)
-    write "Found ${pyVersion}. " $color_mute
+    pyVersion=$("$venvPythonCmdPath" --version)
+    write "(Found ${pyVersion}) " $color_mute
 
     echo $pyVersion | grep "${pythonVersion}" >/dev/null
     if [ $? -ne 0 ]; then
         errorNoPython
     fi 
-    writeLine 'present' $color_success
+    writeLine 'All good' $color_success
+
+    write "Upgrading PIP in virtual environment..." $color_primary
+    "${venvPythonCmdPath}" -m pip install --upgrade pip >/dev/null 2>/dev/null &
+    spin $!
+    writeLine 'done' $color_success
+
+    #hack
+    if [ "$os" = "linux" ]; then
+        write 'Installing updated setuptools in venv (this could take a few mins)...' $color_primary
+        "$venvPythonCmdPath" -m pip install -U setuptools >/dev/null 2>/dev/null &
+        spin $!
+        writeLine "Done" $color_success
+    fi
 
     return 0
 }
 
-function installSinglePythonPackage () {
+function installPythonPackagesByName () {
 
-    package_name=$1
-    package_desc=$2 
+    # A number of global variables are assumed here
+    #  - pythonVersion     - version in X.Y format
+    #  - venvPythonCmdPath - the path to the python interpreter for this venv
+    #  - virtualEnvDirPath - the path to the virtual environment for this module
+    #  - packagesDirPath   - site-packages location for this module
 
-    if [ "$offlineInstall" == "true" ]; then 
+    # List of packages to install separate by spaces
+    packages=$1
+    # Description to use when describing the packages. Can be null.
+    packages_desc=$2 
+    # Options to specify for the pip command (eg --index-url ...). Can be null.
+    pip_options=$3 
+
+    if [ "$offlineInstall" = true ]; then 
         writeLine "Offline Installation: Unable to download and install Python packages." $color_error
         return 6 # unable to download required asset
     fi
 
-    if [ "${pythonLocation}" == "" ]; then pythonLocation="Shared"; fi
-    if [ "${allowSharedPythonInstallsForModules}" == "false" ]; then
-        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${pythonLocation}" == "Shared" ]]; then
-            writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
-            pythonLocation="Local"
-        fi
+    # For speeding up debugging
+    if [ "${skipPipInstall}" = true ]; then return; fi
+
+    if ! command -v "${venvPythonCmdPath}" > /dev/null; then
+        writeLine "Virtual Environment was not created successfully." $color_error
+        writeLine "You may need to run 'sudo dpkg --configure -a' to correct apt errors" $color_warn
+        return 1
     fi
 
-    # Version with ".'s removed
-    local pythonName="python${pythonVersion/./}"
-    pythonCmd="./python${pythonVersion}"
-
-    if [ "${pythonLocation}" == "Local" ]; then
-        virtualEnv="${modulePath}/bin/${os}/${pythonName}/venv"
-    else
-        virtualEnv="${runtimesPath}/bin/${os}/${pythonName}/venv"
-    fi
-    # echo "virtualEnv = ${virtualEnv}"
-
-    pythonCmd="${virtualEnv}/bin/python${pythonVersion}"
-
-    if [ "$os" == "macos" ]; then
+    # NOTE: This code will never be run because we bail before we get here if isn't working.
+    if [ "$os" = "macos" ]; then
         # Running "PythonX.Y" should work, but may not. Check, and if it doesn't work then set the
-        # pythonCmd var to point to the absolute pather where we think the python launcher should be
-        $pythonCmd --version >/dev/null  2>/dev/null
+        # venvPythonCmdPath var to point to the absolute pathe where we think the python launcher
+        # should be
+        "$venvPythonCmdPath" --version >/dev/null  2>/dev/null
         if [ $? -ne 0 ]; then
             writeLine "Setting python command to point to global install location" $color_warn
-            pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+            venvPythonCmdPath="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
         fi
     fi
+
+    # Before installing packages, check to ensure PIP is installed and up to 
+    # date. This slows things down a bit, but it's worth it in the end.
+    if [ "${verbosity}" = "quiet" ]; then
+
+        if [ "$os" = "linux" ]; then
+            installAptPackages "python3-pip"
+        fi
+
+        # Ensure we have the current python compatible version of pip
+        write 'Ensuring PIP compatibility...' $color_primary
+        "$venvPythonCmdPath" -m ensurepip >/dev/null 2>/dev/null &
+        spin $!
+        writeLine 'Done' $color_success
+
+    else
+        
+        writeLine 'Ensuring PIP is installed and up to date...' $color_primary
+    
+        if [ "$os" = "linux" ]; then
+            installAptPackages "python3-pip"
+        fi
+
+        writeLine 'Ensuring PIP compatibility ...' $color_primary
+        "$venvPythonCmdPath" -m ensurepip
+    fi 
 
     # =========================================================================
     # Install PIP package
 
-    packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
+    pushd "${virtualEnvDirPath}/bin" >/dev/null
 
-    pushd "${virtualEnv}/bin" >/dev/null
-
-    write "Installing ${package_desc}..." $color_primary
-
-    if [ "${verbosity}" != "loud" ]; then
-        $pythonCmd -m pip install ${pipFlags} "${package_name}" ${currentOption} --target "${packagesPath}" >/dev/null  2>/dev/null &
-        spin $!
-    else
-        $pythonCmd -m pip install ${pipFlags} "${package_name}" ${currentOption}  --target "${packagesPath}"
-    fi
-
-    # Get the return value of the install op
-    status=$?
-
-    # If the package isn't simply a URL or .whl then actually check it worked
-    if [ "${package_name:0:4}" != "http" ] && [ "${package_name:(-4)}" != ".whl" ]; then
-        module_name=$(echo "$package_name" | sed 's/[<=>].*//g')
-        # echo "$pythonCmd -m pip show ${module_name}"
-        $pythonCmd -m pip show ${module_name} >/dev/null  2>/dev/null
-        if [ $? -eq 0 ]; then
-            write "(✔️ checked) " $color_info
-        else
-            write "(failed check) " $color_error
+    for package_name in $packages
+    do
+        # If the module specifier isn't a URL or .whl then extract the module's name
+        module_name=""
+        if [ "${module:0:4}" != "http" ] && [ "${package_name:(-4)}" != ".whl" ]; then
+            module_name=$(echo "$package_name" | sed 's/[<=>,~].*//g')
         fi
-    else
-        write "(not checked) " $color_mute
-    fi
 
-    if [ $status -eq 0 ]; then
-        writeLine "Done" $color_success
-    else
-        writeLine "Failed" $color_error
-    fi
+        package_desc=$packages_desc
+        if [ "$package_desc" = "" ]; then package_desc="$module_name";  fi
+        if [ "$package_desc" = "" ]; then package_desc="$package_name"; fi
+
+        write "Installing ${package_desc}..." $color_primary
+
+        # Check if the module name is already installed
+        module_installed=false
+
+        if [ "${module_name}" != "" ]; then
+            if [ "${verbosity}" != "quiet" ]; then
+                write "Processing ${module_name}..." $color_info
+            fi
+            "$venvPythonCmdPath" -m pip show ${module_name} >/dev/null 2>/dev/null
+            if [ $? -eq 0 ]; then module_installed=true; fi
+        fi
+
+        if [ "$module_installed" = false ]; then
+
+            if [ "${verbosity}" != "quiet" ]; then
+                write "Installing ${package_name}..." $color_info
+            fi
+        
+            # echo "[DEBUG] '${venvPythonCmdPath}' -m pip install ${pipFlags} '${package_name}' --target '${packagesDirPath}' ${pip_options}" 
+            if [ "${os}" = "Linux" ]; then
+                if [ "${verbosity}" = "loud" ]; then
+                    eval "$venvPythonCmdPath" -m pip install "${package_name}" --target "${packagesDirPath}" ${pip_options} ${pipFlags} 
+                else
+                    eval "$venvPythonCmdPath" -m pip install "${package_name}" --target "${packagesDirPath}" ${pip_options} ${pipFlags} >/dev/null  2>/dev/null &
+                    spin $!
+                fi
+            else
+                if [ "${verbosity}" = "loud" ]; then
+                    "$venvPythonCmdPath" -m pip install "${package_name}" --target "${packagesDirPath}" ${pip_options} ${pipFlags} 
+                else
+                    "$venvPythonCmdPath" -m pip install "${package_name}" --target "${packagesDirPath}" ${pip_options} ${pipFlags} >/dev/null  2>/dev/null &
+                    spin $!
+                fi
+            fi
+
+            # Get the return value of the install op
+            status=$?
+
+            # Now check if it actually worked
+            if [ "${module_name}" != "" ]; then
+
+                "$venvPythonCmdPath" -m pip show "${module_name}" >/dev/null  2>/dev/null
+                if [ $? -eq 0 ]; then
+                    write "(✔️ checked) " $color_info
+                else
+                    write "(failed check) " $color_error
+                fi
+            else
+                write "(not checked) " $color_mute
+            fi
+
+            if [ $status -eq 0 ]; then
+                writeLine "Done" $color_success
+            else
+                writeLine "Failed" $color_error
+            fi
+        else
+            writeLine "Already installed" $color_success
+        fi
+    done
 
     popd  >/dev/null
 
     return 0
 }
 
+function installRequiredPythonPackages () {
 
-function installPythonPackages () {
+    # A number of global variables are assumed here
+    #  - pythonVersion     - version in X.Y format
+    #  - venvPythonCmdPath - the path to the python interpreter for this venv
+    #  - virtualEnvDirPath - the path to the virtual environment for this module
+    #  - packagesDirPath   - site-packages location for this module
 
-    if [ "$offlineInstall" == "true" ]; then 
+    if [ "$offlineInstall" = true ]; then 
         writeLine "Offline Installation: Unable to download and install Python packages." $color_error
         return 6 # unable to download required asset
     fi
 
-    # pythonVersion=$1    - this is set in script calling this method
-    # Either "Local" or "Shared"
-    # installLocation=$3  - this is set in script calling this method
+    # For speeding up debugging
+    if [ "${skipPipInstall}" = true ]; then return; fi
+
+    if ! command -v "${venvPythonCmdPath}" > /dev/null; then
+        writeLine "Virtual Environment was not created successfully." $color_error
+        writeLine "You may need to run 'sudo dpkg --configure -a' to correct apt errors" $color_warn
+        return 1
+    fi
+
+    # NOTE: This code will never run because we bail before we get here.
+    if [ "$os" = "macos" ]; then
+        # Running "PythonX.Y" should work, but may not. Check, and if it doesn't work then set the
+        # venvPythonCmdPath var to point to the absolute pather where we think the python launcher should be
+        "$venvPythonCmdPath" --version >/dev/null  2>/dev/null
+        if [ $? -ne 0 ]; then
+            writeLine "Setting python command to point to global install location" $color_warn
+            venvPythonCmdPath="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
+        fi
+    fi
+
+    # ==========================================================================
+    # Install pre-requisites
+
+    # Before installing packages, check to ensure PIP is installed and up to 
+    # date. This slows things down a bit, but it's worth it in the end.
+    if [ "${verbosity}" = "quiet" ]; then
+
+        if [ "$os" = "linux" ]; then
+            installAptPackages "python3-pip"
+        fi
+
+        # Ensure we have the current python compatible version of pip
+        write 'Ensuring PIP compatibility...' $color_primary
+        "$venvPythonCmdPath" -m ensurepip >/dev/null 2>/dev/null &
+        spin $!
+        writeLine 'Done' $color_success
+
+    else
+        
+        writeLine 'Ensuring PIP is installed and up to date...' $color_primary
+    
+        if [ "$os" = "linux" ]; then
+            installAptPackages "python3-pip"
+        fi
+
+        writeLine 'Ensuring PIP compatibility ...' $color_primary
+        "$venvPythonCmdPath" -m ensurepip
+    fi 
+
+    # =========================================================================
+    # Install PIP packages
+
+    pushd "${virtualEnvDirPath}/bin" >/dev/null
+
+    # Getting the correct requirements file ------------------------------------
 
     requirementsDir=$1
-    if [ "${requirementsDir}" == "" ]; then requirementsDir=$modulePath; fi
-
-    if [ "${pythonLocation}" == "" ]; then pythonLocation="Shared"; fi
-    if [ "${allowSharedPythonInstallsForModules}" == "false" ]; then
-        if [[ "${modulePath}" == *"/modules/"* ]] && [[ "${pythonLocation}" == "Shared" ]]; then
-            writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
-            pythonLocation="Local"
-        fi
-    fi
-
-    # hasCUDA is actually already set in /src/setup.sh, but no harm in keeping this check here.
-    # Note that CUDA is only available on non-macOS systems
-    hasCUDA='false'
-    if [ "$os" == "linux" ] && [ "$supportCUDA" == "true" ]; then
-        write 'Checking for CUDA...'
-
-        if [ "${systemName}" == "Jetson" ]; then
-            hasCUDA='true'
-        else
-            if [ -x "$(command -v nvidia-smi)" ]; then
-                nvidia=$(nvidia-smi | grep -i -E 'CUDA Version: [0-9]+.[0-9]+') > /dev/null 2>&1
-                if [[ ${nvidia} == *'CUDA Version: '* ]]; then 
-                    hasCUDA='true'
-                fi
-            fi
-        fi
-
-        if [ "$hasCUDA" == "true" ]; then
-            writeLine 'CUDA Present' $color_success
-        else 
-            writeLine 'Not found' $color_mute
-        fi
-    fi
+    if [ "${requirementsDir}" = "" ]; then requirementsDir=$moduleDirPath; fi
 
     # This is getting complicated. The order of priority for the requirements file is:
     #
-    #  requirements.os.architecture.cuda.cuda_version.txt   (version is in form 11_7, 12_2 etc)
-    #  requirements.os.architecture.cuda.cuda_major.txt     (major is in form 11, 12 etc)
+    #  requirements.device.txt                            (device = "raspberrypi", "orangepi" or "jetson" )
+    #  requirements.os.architecture.cudaMajor_Minor.txt   (eg cuda12_0)
+    #  requirements.os.architecture.cudaMajor.txt         (eg cuda12)
     #  requirements.os.architecture.(cuda|rocm).txt
-    #  requirements.os.cuda.cuda_version.txt
-    #  requirements.os.cuda.cuda_major.txt
+    #  requirements.os.cudaMajor_Minor.txt
+    #  requirements.os.cudaMajor.txt
     #  requirements.os.(cuda|rocm).txt
-    #  requirements.cuda.cuda_version.txt
-    #  requirements.cuda.cuda_major.txt
-    #  requirements.cuda.txt
+    #  requirements.cudaMajor_Minor.txt
+    #  requirements.cudaMajor.txt
+    #  requirements.(cuda|rocm).txt
     #  requirements.os.architecture.gpu.txt
     #  requirements.os.gpu.txt
     #  requirements.gpu.txt
@@ -991,59 +1384,71 @@ function installPythonPackages () {
 
     requirementsFilename=""
 
-    if [ "$enableGPU" == "true" ]; then
-        if [ "$hasCUDA" == "true" ]; then
+    device_specifier=""
+    if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
+        device_specifier="${platform}"
+    fi
 
-            # We probably need to have CUDA specific requirements files
-            cuda_version=$(getCudaVersion)
-            cuda_specifier=$(echo "$cuda_version" | sed 's/\./_/g')
-            cuda_major_version=${cuda_version%%.*}
-            
-            writeLine "CUDA version is $cuda_version (Specifier ${cuda_specifier}, major version ${cuda_major_version})" $color_info
+    if [ "$device_specifier" != "" ] && [ -f "${requirementsDir}/requirements.${device_specifier}.txt" ]; then
+        requirementsFilename="requirements.${device_specifier}.txt"
+    fi
 
-            if [ -f "${requirementsDir}/requirements.${os}.${architecture}.cuda.${cuda_specifier}.txt" ]; then
-                requirementsFilename="requirements.${os}.${architecture}.cuda.${cuda_specifier}.txt"
-            elif [ -f "${requirementsDir}/requirements.${os}.${architecture}.${cuda_major_version}.cuda.txt" ]; then
-                requirementsFilename="requirements.${os}.${architecture}.cuda.${cuda_major_version}.txt"
-            elif [ -f "${requirementsDir}/requirements.${os}.${architecture}.cuda.txt" ]; then
-                requirementsFilename="requirements.${os}.${architecture}.cuda.txt"
-            elif [ -f "${requirementsDir}/requirements.${os}.cuda.${cuda_specifier}.txt" ]; then
-                requirementsFilename="requirements.${os}.cuda.${cuda_specifier}.txt"
-            elif [ -f "${requirementsDir}/requirements.${os}.${cuda_major_version}.cuda.txt" ]; then
-                requirementsFilename="requirements.${os}.cuda.${cuda_major_version}.txt"
-            elif [ -f "${requirementsDir}/requirements.${os}.cuda.txt" ]; then
-                requirementsFilename="requirements.${os}.cuda.txt"
-            elif [ -f "${requirementsDir}/requirements.cuda.${cuda_specifier}.txt" ]; then
-                requirementsFilename="requirements.cuda.${cuda_specifier}.txt"
-            elif [ -f "${requirementsDir}/requirements.${cuda_major_version}.cuda.txt" ]; then
-                requirementsFilename="requirements.cuda.${cuda_major_version}.txt"
-            elif [ -f "${requirementsDir}/requirements.cuda.txt" ]; then
-                requirementsFilename="requirements.cuda.txt"
+    if [ "$requirementsFilename" = "" ]; then
+        if [ "$installGPU" = "true" ]; then
+            if [ "$cuda_version" != "" ]; then
+
+                cuda_major_version=${cuda_version%%.*}
+
+                cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
+                
+                if [ "${verbosity}" != "quiet" ]; then
+                    writeLine "CUDA version is $cuda_version (${cuda_major_minor} / ${cuda_major_version})" $color_info
+                fi
+
+                if [ -f "${requirementsDir}/requirements.${os}.${architecture}.cuda${cuda_major_minor}.txt" ]; then
+                        requirementsFilename="requirements.${os}.${architecture}.cuda${cuda_major_minor}.txt"
+                elif [ -f "${requirementsDir}/requirements.${os}.${architecture}.cuda${cuda_major_version}.cuda.txt" ]; then
+                        requirementsFilename="requirements.${os}.${architecture}.cuda${cuda_major_version}.txt"
+                elif [ -f "${requirementsDir}/requirements.${os}.${architecture}.cuda.txt" ]; then
+                        requirementsFilename="requirements.${os}.${architecture}.cuda.txt"
+                elif [ -f "${requirementsDir}/requirements.${os}.cuda${cuda_major_minor}.txt" ]; then
+                        requirementsFilename="requirements.${os}.cuda${cuda_major_minor}.txt"
+                elif [ -f "${requirementsDir}/requirements.${os}.cuda${cuda_major_version}.txt" ]; then
+                        requirementsFilename="requirements.${os}.cuda${cuda_major_version}.txt"
+                elif [ -f "${requirementsDir}/requirements.${os}.cuda.txt" ]; then
+                        requirementsFilename="requirements.${os}.cuda.txt"
+                elif [ -f "${requirementsDir}/requirements.cuda${cuda_major_minor}.txt" ]; then
+                        requirementsFilename="requirements.cuda${cuda_major_minor}.txt"
+                elif [ -f "${requirementsDir}/requirements.cuda${cuda_major_version}.txt" ]; then
+                        requirementsFilename="requirements.cuda${cuda_major_version}.txt"
+                elif [ -f "${requirementsDir}/requirements.cuda.txt" ]; then
+                        requirementsFilename="requirements.cuda.txt"
+                fi
             fi
-        fi
 
-        if [ "$hasROCm" == "true" ]; then
-            if [ -f "${requirementsDir}/requirements.${os}.${architecture}.rocm.txt" ]; then
-                requirementsFilename="requirements.${os}.${architecture}.rocm.txt"
-            elif [ -f "${requirementsDir}/requirements.${os}.rocm.txt" ]; then
-                requirementsFilename="requirements.${os}.rocm.txt"
-            elif [ -f "${requirementsDir}/requirements.rocm.txt" ]; then
-                requirementsFilename="requirements.rocm.txt"
+            if [ "$hasROCm" = true ]; then
+                if [ -f "${requirementsDir}/requirements.${os}.${architecture}.rocm.txt" ]; then
+                    requirementsFilename="requirements.${os}.${architecture}.rocm.txt"
+                elif [ -f "${requirementsDir}/requirements.${os}.rocm.txt" ]; then
+                    requirementsFilename="requirements.${os}.rocm.txt"
+                elif [ -f "${requirementsDir}/requirements.rocm.txt" ]; then
+                    requirementsFilename="requirements.rocm.txt"
+                fi
             fi
-        fi
 
-        if [ "$requirementsFilename" == "" ]; then
-            if [ -f "${requirementsDir}/requirements.${os}.${architecture}.gpu.txt" ]; then
-                requirementsFilename="requirements.${os}.${architecture}.gpu.txt"
-            elif [ -f "${requirementsDir}/requirements.${os}.gpu.txt" ]; then
-                requirementsFilename="requirements.${os}.gpu.txt"
-            elif [ -f "${requirementsDir}/requirements.gpu.txt" ]; then
-                requirementsFilename="requirements.gpu.txt"
+            if [ "$requirementsFilename" = "" ]; then
+                if [ -f "${requirementsDir}/requirements.${os}.${architecture}.gpu.txt" ]; then
+                    requirementsFilename="requirements.${os}.${architecture}.gpu.txt"
+                elif [ -f "${requirementsDir}/requirements.${os}.gpu.txt" ]; then
+                    requirementsFilename="requirements.${os}.gpu.txt"
+                elif [ -f "${requirementsDir}/requirements.gpu.txt" ]; then
+                    requirementsFilename="requirements.gpu.txt"
+                fi
             fi
         fi
     fi
 
-    if [ "$requirementsFilename" == "" ]; then
+    if [ "$requirementsFilename" = "" ]; then
         if [ -f "${requirementsDir}/requirements.${os}.${architecture}.txt" ]; then
             requirementsFilename="requirements.${os}.${architecture}.txt"
         elif [ -f "${requirementsDir}/requirements.${os}.txt" ]; then
@@ -1057,7 +1462,7 @@ function installPythonPackages () {
         requirementsPath="${requirementsDir}/${requirementsFilename}"
     fi
 
-    if [ "$requirementsFilename" == "" ]; then
+    if [ "$requirementsFilename" = "" ]; then
         writeLine "No suitable requirements.txt file found." $color_warn
         return
     fi
@@ -1066,103 +1471,20 @@ function installPythonPackages () {
         writeLine "Can't find ${requirementsPath} file." $color_warn
         return
     fi
+    # --------------------------------------------------------------------------
 
-    # For speeding up debugging
-    if [ "${skipPipInstall}" == "true" ]; then return; fi
+    writeLine "Python packages will be specified by ${requirementsFilename}" $color_info
 
-    # Version with ".'s removed
-    local pythonName="python${pythonVersion/./}"
-    pythonCmd="./python${pythonVersion}"
-
-    if [ "${pythonLocation}" == "Local" ]; then
-        virtualEnv="${modulePath}/bin/${os}/${pythonName}/venv"
-    else
-        virtualEnv="${runtimesPath}/bin/${os}/${pythonName}/venv"
-    fi
-
-    pythonCmd="${virtualEnv}/bin/python${pythonVersion}"
-
-    if [ "$os" == "macos" ]; then
-        # Running "PythonX.Y" should work, but may not. Check, and if it doesn't work then set the
-        # pythonCmd var to point to the absolute pather where we think the python launcher should be
-        $pythonCmd --version >/dev/null  2>/dev/null
-        if [ $? -ne 0 ]; then
-            writeLine "Setting python command to point to global install location" $color_warn
-            pythonCmd="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
-        fi
-    fi
-
-    # Before installing packages, check to ensure PIP is installed and up to 
-    # date. This slows things down a bit, but it's worth it in the end.
-    if [ "${verbosity}" == "quiet" ]; then
-
-        if [ "$os" == "linux" ]; then
-            write 'Installing PIP...' $color_primary
-            sudo apt-get install python3-pip -y >/dev/null 2>/dev/null &
-            spin $!
-            writeLine 'Done' $color_success
-        fi
-
-        # Ensure we have the current python compatible version of pip
-        write 'Ensuring PIP compatibility...' $color_primary
-        $pythonCmd -m ensurepip >/dev/null 2>/dev/null &
-        spin $!
-        writeLine 'Done' $color_success
-
-        write 'Updating PIP...' $color_primary
-        $pythonCmd -m pip install --upgrade pip >/dev/null 2>/dev/null &
-        spin $!
-        writeLine 'Done' $color_success
-
-    else
-        
-        writeLine 'Ensuring PIP is installed and up to date...' $color_primary
-    
-        # if [ "$os" == "macos" ]; then
-        #     # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
-        #     if [ $(versionCompare "${pythonVersion}" '3.10.2') == "-1" ]; then
-        #         writeLine "Ignore the DEPRECATION warning. See https://github.com/Homebrew/homebrew-core/issues/76621 for details" $color_info
-        #     fi
-        # fi
-    
-        if [ "$os" == "linux" ]; then
-            writeLine 'Installing PIP...' $color_primary
-            sudo apt-get install python3-pip -y
-        fi
-
-        writeLine 'Ensuring PIP compatibility ...' $color_primary
-        $pythonCmd -m ensurepip
-
-        writeLine 'Updating PIP...' $color_primary
-        $pythonCmd -m pip install --upgrade pip
-    fi 
-
-    # =========================================================================
-    # Install PIP packages
-
-    packagesPath="${virtualEnv}/lib/python${pythonVersion}/site-packages/"
-
-    pushd "${virtualEnv}/bin" >/dev/null
-
-    #hack
-    write 'Installing setuptools...' $color_primary
-    # pip3 install setuptools
-    $pythonCmd -m pip install -U setuptools >/dev/null 2>/dev/null &
-    spin $!
-    writeLine "Done" $color_success
-
-    writeLine "Choosing packages from ${requirementsFilename}" $color_info
-
-    if [ "${oneStepPIP}" == "true" ]; then
+    if [ "${oneStepPIP}" = true ]; then
 
         # Install the Python Packages in one fell swoop. Not much feedback, but it works
-        # writeLine "${pythonCmd} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}" $color_info
+        # writeLine "${venvPythonCmdPath} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesDirPath}" $color_info
         write 'Installing Packages into Virtual Environment...' $color_primary
-        if [ "${verbosity}" != "loud" ]; then
-            $pythonCmd -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath} > /dev/null &
-            spin $!
+        if [ "${verbosity}" = "loud" ]; then
+            "$venvPythonCmdPath" -m pip install $pipFlags -r "${requirementsPath}" --target ${packagesDirPath}
         else
-            $pythonCmd -m pip install $pipFlags -r ${requirementsPath} --target ${packagesPath}
+            "$venvPythonCmdPath" -m pip install $pipFlags -r "${requirementsPath}" --target ${packagesDirPath} > /dev/null &
+            spin $!
         fi
         writeLine 'Success' $color_success
 
@@ -1178,55 +1500,76 @@ function installPythonPackages () {
 
             line="$(echo $line | tr -d '\r\n')"    # trim newlines / CRs
 
-            if [ "${line}" == "" ]; then
+            if [ "${line}" = "" ]; then
                 currentOption=''
-            elif [ "${line:0:1}" == "#" ]; then
+            elif [ "${line:0:1}" = "#" ]; then
                 currentOption=''
-            elif [ "${line:0:1}" == "-" ]; then
+            elif [ "${line:0:1}" = "-" ]; then
                 currentOption="${currentOption} ${line}"
             else
         
-                module="${line}"
+                package_name="${line}"
                 description=''
 
-                # breakup line into module name and description
-                IFS='#'; tokens=($module); IFS=$'\n';
+                # breakup line into package name and description
+                IFS='#'; tokens=($package_name); IFS=$'\n';
 
                 if [ ${#tokens[*]} -gt 1 ]; then
-                    module="${tokens[0]}"
+                    package_name="${tokens[0]}"
                     description="${tokens[1]}"
                 fi
 
-                if [ "${description}" == "" ]; then
-                    description="Installing ${module}"
+                if [ "${description}" = "" ]; then
+                    description="Installing ${package_name}"
                 fi
     
                 # remove all whitespaces
-                module=$(trim "$module")
-                # echo "Module = [${module}]"
+                package_name=$(trim "$package_name")
+                # echo "Package = [${package_name}]"
 
-                if [ "${module}" != "" ]; then
+                if [ "${package_name}" != "" ]; then
 
                     write "  -${description}..." $color_primary
 
-                    # Get the module name so we can check if it's installed
+                    # If the module specifier isn't a URL or .whl then extract the package's name
                     module_name=""
-                    if [ "${module:0:4}" != "http" ] && [ "${module:(-4)}" != ".whl" ]; then
-                        module_name=$(echo "$module" | sed 's/[<=>].*//g')
+                    if [ "${package_name:0:4}" != "http" ] && [ "${package_name:(-4)}" != ".whl" ]; then
+                        module_name=$(echo "$package_name" | sed 's/[<=>].*//g')
                     fi
 
-                    module_exists="false"
+                    # Check if the module name is already installed
+                    module_installed=false
                     if [ "${module_name}" != "" ]; then
-                        $pythonCmd -m pip show ${module_name} >/dev/null  2>/dev/null
-                        if [ $? -eq 0 ]; then module_exists="true"; fi
+                        if [ "${verbosity}" != "quiet" ]; then
+                            write "Processing ${module_name}..." $color_info
+                        fi
+                        # echo "[DEBUG] ${venvPythonCmdPath} -m pip show ${module_name}"
+                        "${venvPythonCmdPath}" -m pip show ${module_name} >/dev/null  2>/dev/null
+                        if [ $? -eq 0 ]; then module_installed=true; fi
                     fi
 
-                    if [ "$module_exists" == "false" ]; then
-                       if [ "${verbosity}" != "loud" ]; then
-                            $pythonCmd -m pip install ${pipFlags} "${module}" ${currentOption} --target "${packagesPath}" >/dev/null 2>/dev/null &
-                            spin $!
+                    if [ "$module_installed" = false ]; then
+                       
+                        if [ "${verbosity}" != "quiet" ]; then
+                            write "Installing ${package_name}..." $color_info
+                        fi
+
+                        # echo "[DEBUG] '${venvPythonCmdPath}' -m pip install '${package_name}' --target '${packagesDirPath}' ${currentOption} ${pipFlags}"
+                        if [ "${os}" = "Linux" ]; then
+                            # No, I don't know why eval is needed in Linux but not elsewhere
+                            if [ "${verbosity}" = "loud" ]; then
+                                eval "${venvPythonCmdPath}" -m pip install "${package_name}" --target "${packagesDirPath}" ${currentOption} ${pipFlags}
+                            else
+                                eval "${venvPythonCmdPath}" -m pip install "${package_name}" --target "${packagesDirPath}" ${currentOption} ${pipFlags} >/dev/null 2>/dev/null &
+                                spin $!
+                            fi
                         else
-                            $pythonCmd -m pip install ${pipFlags} "${module}" ${currentOption} --target "${packagesPath}"
+                            if [ "${verbosity}" = "loud" ]; then
+                                "${venvPythonCmdPath}" -m pip install "${package_name}" --target "${packagesDirPath}" ${currentOption} ${pipFlags}
+                            else
+                                "${venvPythonCmdPath}" -m pip install "${package_name}" --target "${packagesDirPath}" ${currentOption} ${pipFlags} >/dev/null 2>/dev/null &
+                                spin $!
+                            fi
                         fi
 
                         # Get the return value of the install op
@@ -1234,8 +1577,7 @@ function installPythonPackages () {
 
                         # If the module's name isn't simply a URL or .whl then actually check it worked
                         if [ "${module_name}" != "" ]; then
-                            #...but actually check it worked
-                            $pythonCmd -m pip show ${module_name} >/dev/null  2>/dev/null
+                            "$venvPythonCmdPath" -m pip show ${module_name} >/dev/null  2>/dev/null
                             if [ $? -eq 0 ]; then
                                 write "(✔️ checked) " $color_info
                             else
@@ -1269,37 +1611,81 @@ function installPythonPackages () {
     return 0
 }
 
-
 function installAptPackages () {
 
+    # If you get a 'Could not get lock' error, then do this:
+    #
+    # Step 1: stop the processes locking dpkg
+    #   sudo fuser -vki -TERM /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend
+    # Step 2: clean up the mess
+    #   sudo dpkg --configure --pending
+
     local packageList=$1
+    local options=$2
 
     pkgs_to_install=""
-    write "Checking for installed dependencies (from ${packageList})..."
+    if [ "${verbosity}" = "quiet" ]; then
+        write "Searching for ${packageList:0:40}..."
+    else
+        writeLine "Searching for installed dependencies:"
+        write " -> ${packageList}"
+    fi
+
     for pkg in $packageList; do
         apt list "${pkg}" 2>/dev/null | grep installed >/dev/null 2>/dev/null
         if [ "$?" != "0" ]; then
             pkgs_to_install+=" ${pkg}"
         fi
     done
-    writeLine "Done" $color_success
+
+    if [ "${verbosity}" != "quiet" ]; then
+        writeLine " Done" $color_success
+    fi
 
     if [[ -n "${pkgs_to_install}" ]]; then
     
-        if [ "${verbosity}" == "quiet" ]; then
-            write "Installing missing dependencies:${pkgs_to_install}..."
-            apt-get update -y -qq #>/dev/null 2>/dev/null  &
-            #spin $!
-            apt-get install -y -qq ${pkgs_to_install} # >/dev/null 2>/dev/null &
-            #spin $!
-            writeLine "Done" $color_success
-        else
-            writeLine "Installing missing dependencies:${pkgs_to_install}..."
-            apt-get update -y && apt-get install -y --no-install-recommends ${pkgs_to_install} >/dev/null 2>/dev/null &
+        checkForAdminRights
+        if [ "$isAdmin" = false ]; then
+             writeLine "=================================================================" $color_info
+             writeLine "This script does not have sufficient permissions. Please run:"     $color_info
+             writeLine ""
+             writeLine "  sudo apt-get update -y && sudo apt-get install -y ${options} ${pkgs_to_install}" $color_info
+             writeLine ""
+             writeLine "to complete this installation"                                     $color_info
+             writeLine "=================================================================" $color_info
+
+            if [ "$attemptSudoWithoutAdminRights" = true ]; then
+                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
+                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
+            fi
+        fi
+
+        if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+            if [ "${verbosity}" = "quiet" ]; then
+                write "installing..."
+                sudo apt-get update -y -qq >/dev/null 2>/dev/null  &
+                spin $!
+                sudo apt-get install -y -qq ${options} ${pkgs_to_install} >/dev/null 2>/dev/null &
+                spin $!
+                writeLine " Done" $color_success
+            else
+                writeLine "Installing missing dependencies:"
+                writeLine " -> ${pkgs_to_install}"
+
+                if [ "${verbosity}" = "loud" ]; then
+                    sudo apt-get update -y && apt-get install -y --no-install-recommends ${options} ${pkgs_to_install} 
+                else
+                    sudo apt-get update -y 2>/dev/null && apt-get install -y --no-install-recommends ${options} ${pkgs_to_install} >/dev/null 
+                fi
+            fi
         fi
 
     else
-        writeLine "All dependencies already installed." $color_success
+        if [ "${verbosity}" = "quiet" ]; then
+            writeLine "All good." $color_success
+        else
+            writeLine "All dependencies already installed." $color_success
+        fi
     fi
 }
 
@@ -1315,47 +1701,51 @@ function getFromServer () {
     local message=$3
 
     # Clean up directories to force a re-copy if necessary
-    if [ "${forceOverwrite}" == "true" ]; then
+    if [ "${forceOverwrite}" = true ]; then
         # if [ $verbosity -ne "quiet" ]; then echo "Forcing overwrite"; fi
 
-        rm -rf "${downloadPath}/${moduleDir}"
-        rm -rf "${modulePath}/${moduleAssetsDir}"
+        rm -rf "${downloadDirPath}/${moduleDirName}"
+        rm -rf "${moduleDirPath}/${moduleAssetsDir}"
     fi
 
-    # Download !$storageUrl$fileToGet to $downloadPath and extract into $downloadPath/$moduleDir
+    # Download !$storageUrl$fileToGet to $downloadDirPath and extract into $downloadDirPath/$moduleDirName
     # Params are: S3 storage bucket | fileToGet     | downloadToDir     | dirToSaveTo | message
     # eg           "$S3_bucket"   "rembg-models.zip" /downloads/module/"    "assets"    "Downloading Background Remover models..."
-    downloadAndExtract $storageUrl $fileToGet "${downloadPath}" "${moduleDir}" "${message}"
+    downloadAndExtract $storageUrl $fileToGet "${downloadDirPath}" "${moduleDirName}" "${message}"
 
-    # Copy contents of downloadPath\moduleDir to modules\moduleDir\moduleAssetsDir
-    if [ -d "${downloadPath}/${moduleDir}" ]; then
+    # Copy contents of downloadDirPath\moduleDirName to modules\moduleDirName\moduleAssetsDir
+    if [ -d "${downloadDirPath}/${moduleDirName}" ]; then
 
-        if [ ! -d "${modulePath}/${moduleAssetsDir}" ]; then
-            mkdir -p "${modulePath}/${moduleAssetsDir}"
+        if [ ! -d "${moduleDirPath}/${moduleAssetsDir}" ]; then
+            mkdir -p "${moduleDirPath}/${moduleAssetsDir}"
         fi;
 
         # pushd then cp to stop "cannot stat" error
-        pushd "${downloadPath}/${moduleDir}/" >/dev/null 2>/dev/null
+        pushd "${downloadDirPath}/${moduleDirName}/" >/dev/null 2>/dev/null
 
         # This code (below) will have issues if you download more than 1 zip to a download folder.
         # 0. Download and extract
         # 1. Copy *everything* over (including the downloaded zip)        
         # 2. Remove the original download archive which was copied over along with everything else.
         # 3. Delete all but the downloaded archive from the downloads dir
-        # cp * "${modulePath}/${moduleAssetsDir}/"
-        # rm "${modulePath}/${moduleAssetsDir}/${fileToGet}"  #>/dev/null 2>/dev/null
+        # cp * "${moduleDirPath}/${moduleAssetsDir}/"
+        # rm "${moduleDirPath}/${moduleAssetsDir}/${fileToGet}"  #>/dev/null 2>/dev/null
         # ls | grep -xv *.zip | xargs rm
 
         # The safer way to do it:
         # 0. Download and extract
         # 1. Copy all non-zip files to the module's installation dir
         # 2. Delete all non-zip files in the download dir
-        if [ $verbosity == "quiet" ]; then 
-            rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${modulePath}/${moduleAssetsDir}/"  >/dev/null 
+        if [ $verbosity = "quiet" ]; then 
+            rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${moduleDirPath}/${moduleAssetsDir}/"  >/dev/null  2>/dev/null
+            if [ "$?" != "0" ]; then
+                writeLine "Unable to copy extracted files from ${fileToGet} to the downloads folder." $color_error
+                return 11 # Unable to copy file or directory
+            fi
             find . -type f -not -name '*.zip' | xargs rm >/dev/null 2>/dev/null
             find . -type d -not -name . -not -name ..| xargs rm -rf >/dev/null 2>/dev/null
         else
-            rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${modulePath}/${moduleAssetsDir}/"
+            rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${moduleDirPath}/${moduleAssetsDir}/" 
             find . -type f -not -name '*.zip' | xargs rm 2>/dev/null
             find . -type d -not -name . -not -name ..| xargs rm -rf  2>/dev/null
         fi
@@ -1381,12 +1771,12 @@ function downloadAndExtract () {
     # fileToGet = packages_for_gpu.zip
     # dirToSave = packages
    
-    if [ "${fileToGet}" == "" ]; then
+    if [ "${fileToGet}" = "" ]; then
         writeLine 'No download file was specified' $color_error
         quit 9 # required parameter not supplied
     fi
 
-    if [ "${message}" == "" ]; then
+    if [ "${message}" = "" ]; then
         message="Downloading ${fileToGet}..."
     fi
 
@@ -1397,9 +1787,9 @@ function downloadAndExtract () {
     write "$message" $color_primary
 
     extension="${fileToGet:(-3)}"
-    if [ ! "${extension}" == ".gz" ]; then
+    if [ ! "${extension}" = ".gz" ]; then
         extension="${fileToGet:(-4)}"
-        if [ ! "${extension}" == ".zip" ]; then
+        if [ ! "${extension}" = ".zip" ]; then
             writeLine "Unknown and unsupported file type for file ${fileToGet}" $color_error
             quit    # no point in carrying on
         fi
@@ -1409,7 +1799,7 @@ function downloadAndExtract () {
         write " already exists..." $color_info
     else
 
-        if [ "$offlineInstall" == "true" ]; then 
+        if [ "$offlineInstall" = true ]; then 
             writeLine "Offline Installation: Unable to download ${fileToGet}." $color_error
             return 6  # unable to download required asset
         fi
@@ -1420,11 +1810,7 @@ function downloadAndExtract () {
             chmod -R a+w "${downloadToDir}/${dirToSave}"
         fi
 
-        # writeLine "Downloading ${fileToGet} to ${dirToSave}.zip in ${downloadToDir}"  $color_warn
-        # wget $wgetFlags --show-progress -O "${downloadToDir}/${dirToSave}/${fileToGet}" -P "${downloadToDir}/${dirToSave}" \
-        #                                   "${storageUrl}${fileToGet}"
-
-        wget $wgetFlags --progress=bar:force -P "${downloadToDir}/${dirToSave}" "${storageUrl}${fileToGet}"
+        wget $wgetFlags -P "${downloadToDir}/${dirToSave}" "${storageUrl}${fileToGet}"
         status=$?    
         if [ $status -ne 0 ]; then
             writeLine "The wget command failed for file ${fileToGet}." $color_error
@@ -1441,8 +1827,8 @@ function downloadAndExtract () {
 
     pushd "${downloadToDir}/${dirToSave}" >/dev/null
   
-    if [ $verbosity == "quiet" ]; then 
-        if [ "${extension}" == ".gz" ]; then
+    if [ $verbosity = "quiet" ]; then 
+        if [ "${extension}" = ".gz" ]; then
             tar $tarFlags "${fileToGet}" >/dev/null &  # execute and continue
             spin $! # process ID of the unzip/tar call
         else
@@ -1450,7 +1836,7 @@ function downloadAndExtract () {
             spin $! # process ID of the unzip/tar call
         fi
     else
-        if [ "${extension}" == ".gz" ]; then
+        if [ "${extension}" = ".gz" ]; then
             tar $tarFlags "${fileToGet}"
         else
             unzip $unzipFlags "${fileToGet}"
@@ -1471,6 +1857,229 @@ function downloadAndExtract () {
     writeLine 'Done.' $color_success
 
     return 0
+}
+
+
+# TO BE DONE
+# function getRequirementsFile () {
+# }
+
+
+function getCudaVersion () { 
+
+    if [ "${systemName}" = "Jetson" ]; then
+        cuda_version="${JETSON_CUDA}"
+        if [ "$cuda_version" = "" ]; then
+            # Contains something like "CUDA Version 10.2.300"We'll just grab the '10.2'
+            cuda_version=$( cat /usr/local/cuda/version.txt | grep -o 'CUDA Version [0-9]*\.[0-9]*' | cut  -d ' ' -f 3 )
+        fi
+    else
+        if command -v nvcc >/dev/null; then
+       
+            # Search for the line containing "release" to extract the CUDA version
+            cuda_version_line=$(nvcc --version | grep -i "release")
+            if [[ ${cuda_version_line} == *'release'* ]]; then 
+                # example from nvcc:
+                #   nvcc: NVIDIA (R) Cuda compiler driver
+                #   Copyright (c) 2005-2021 NVIDIA Corporation
+                #   Built on Thu_Nov_18_09:45:30_PST_2021
+                #   Cuda compilation tools, release 11.5, V11.5.119
+                #   Build cuda_11.5.r11.5/compiler.30672275_0
+                cuda_version=$(echo "$cuda_version_line" | cut -d ' ' -f 5 | cut -d ',' -f 1)
+            fi
+
+        elif command -v /usr/local/cuda/bin/nvcc >/dev/null; then
+       
+            # Search for the line containing "release" to extract the CUDA version
+            cuda_version_line=$(/usr/local/cuda/bin/nvcc --version | grep -i "release")
+            if [[ ${cuda_version_line} == *'release'* ]]; then 
+                # example from nvcc:
+                #   nvcc: NVIDIA (R) Cuda compiler driver
+                #   Copyright (c) 2005-2021 NVIDIA Corporation
+                #   Built on Thu_Nov_18_09:45:30_PST_2021
+                #   Cuda compilation tools, release 11.5, V11.5.119
+                #   Build cuda_11.5.r11.5/compiler.30672275_0
+                cuda_version=$(echo "$cuda_version_line" | cut -d ' ' -f 5 | cut -d ',' -f 1)
+            fi
+            
+        elif command -v nvidia-smi >/dev/null; then
+
+            cuda_version_line=$(nvidia-smi | grep -i -E 'CUDA Version: [0-9]+.[0-9]+') > /dev/null 2>&1
+            if [[ ${cuda_version_line} == *'CUDA Version: '* ]]; then 
+                # "| NVIDIA-SMI 510.39.01    Driver Version: 510.39.01    CUDA Version: 11.4     |"
+                # -> " 11.4     |"
+                # -> "11.4"
+                cuda_version=$(echo "$cuda_version_line" | cut -d ':' -f 3 | cut -d ' ' -f 2)
+            fi
+
+        fi
+    fi
+
+    echo $cuda_version
+}
+
+# Gets a value from the correct modulesettings.json file based on the current OS
+# and architecture, based purely on the name of the propery. THIS METHOD DOES NOT
+# TAKE INTO ACCOUNT THE DEPTH OF A PROPERTY. If the property is at the root level
+# or 10 levels down, it's all the same. The extraction is done purely by grep/sed,
+# so is very niaive. 
+function getValueFromModuleSettingsFile () {
+
+    local moduleDirPath=$1
+    local moduleId=$2
+    local property=$3
+
+    if [ "$verbosity" = "loud" ]; then
+        echo "Searching for '${property}' in a suitable modulesettings.json file in ${moduleDirPath}" >&3
+    fi
+
+    # escape '-'s
+    if [[ $property == *-* ]]; then property="\"${property}\""; fi
+    if [[ $moduleId == *-* ]]; then moduleId="\"${moduleId}\""; fi
+
+    if [ "${useJq}" = true ]; then
+        key=".Modules.${moduleId}.${property}"
+    else
+        key=$".Modules.${moduleId}.${property}"
+    fi
+
+    # The order in which modulesettings files are added is
+    # WE DO NOT SUPPORT DOCKER IN Windows, plus we are ONLY searching non-development files here
+    #   modulesettings.json
+    #   (not searched) modulesettings.development.json 
+    #   modulesettings.os.json
+    #   (not searched) modulesettings.os.development.json
+    #   modulesettings.os.architecture.json
+    #   (not searched) modulesettings.os.architecture.development.json
+    #   (not supported) modulesettings.docker.json
+    #   (not supported) modulesettings.docker.development.json
+    #   modulesettings.device.json (device = raspberrypi, orangepi, jetson)
+    # So we need to check each modulesettings file in reverse order until we find a value for 'key'
+    
+    device_specifier=""
+    if [ "${systemName}" = "Raspberry Pi" ]; then
+        device_specifier="raspberrypi"
+    elif [ "${systemName}" = "Orange Pi" ]; then
+        device_specifier="orangepi"
+    elif [ "${systemName}" = "Jetson" ]; then
+        device_specifier="jetson"
+    fi
+
+    if [ "$device_specifier" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${device_specifier}.json" "${key}")
+    fi
+    if [ "${moduleSettingValue}" = "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.json" "${key}")
+    fi
+    if [ "${moduleSettingValue}" = "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.json" "${key}")
+    fi
+    if [ "${moduleSettingValue}" = "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.json" "${key}")
+    fi
+
+    if [ false ] && [ "$verbosity" = "loud" ]; then
+       if [ "${moduleSettingValue}" = "" ]; then
+           echo "Cannot find ${key} in modulesettings in ${moduleDirPath}" >&3
+       else
+           echo "${key} is ${moduleSettingValue} in modulesettings in ${moduleDirPath}" >&3
+       fi
+    fi
+
+    echo $moduleSettingValue
+}
+
+# Gets a value from the modulesettings.json file (any JSON file, really) based
+# purely on the name of the propery. 
+# If use_jq=true then key can be whatever the jq command accepts, with the 
+# caveat that a "." is prefixed to "key" when doing the search (so don't add a
+# "." to key yourself).
+# if use_jq=false then the extraction is done purely by grep/sed, so is very
+# niaive, and does NOT take into account the depth of a property. If the
+# property is at the root level or 10 levels down, it's all the same. 
+function getValueFromModuleSettings () { 
+
+    local json_file=$1
+    local key=$2
+
+    # RANT: Douglas Crockford decided that people were abusing the comment 
+    # syntax in JSON and so he removed it. Devs immediately added hack work-
+    # arounds which nullified his 'fix' and instead has left us with a crippled
+    # data format that has wasted countless developer hours. Explaining one's
+    # work so the next person can maintain it is critical. J in JSON stands for
+    # Javascript. The Industry needs to stop honouring a pointless short-sighted
+    # decision and standardise Javascript-style comments in JSON. 
+
+    # Options are 'jq' for the jq utility, 'parsejson' for our .NET utility, or
+    # 'sed', which is what one would use if they have given up all hope for 
+    # humanity. jq is solid but doesn't do comments. See above. ParseJSON does
+    # some comments but not all, so not helpful enough for the overhead. 
+    if [ "${useJq}" = true ]; then
+        parse_mode='jq' 
+    else
+        parse_mode='parsejson' 
+    fi
+
+    # echo jsonFile is $json_file >&3
+
+    if [ -f "$json_file" ]; then
+        if [ "$parse_mode" = "jq" ]; then
+
+            # jq can't deal with comments so let's strip comments first.
+            
+            # remove single line comments from the file text
+            file_contents=$(cat "$json_file" | sed -e 's|//[^"]*||')
+            # echo "file_contents = $file_contents" >&3
+
+            # now remove /* ...*/ multiline comments. (split to make debug easier)
+            file_contents=$(echo "$file_contents" | perl -0777 -pe 's#/\*.*?\*/|//.*?$##gs')
+            # echo "file_contents = $file_contents" >&3
+
+            jsonValue=$(echo "$file_contents" | jq -r "$key")
+            # echo "jsonValue = $jsonValue" >&3
+
+        elif ["$parse_mode" = "parsejson" ]; then
+
+            # Let's back in this huge earth mover to plant my flower pots.
+            # Added bonus: System.Text.Json.JsonSerializer.Deserialize will handle
+            # comments when deserialising a strongly typed object, but (at least
+            # in Linux) it can't deal with "//" comments when deserialising to
+            # a JsonNode object. Yay!
+
+            # remove single line comments from the file text
+            file_contents=$(cat "$json_file" | sed -e 's|//[^"]*||')
+
+            jsonValue=$(echo "${file_contents}" | dotnet "${sdkPath}/Utilities/ParseJSON/ParseJSON.dll" "$key")
+
+        else # I have given up all hope. I abandon myself to the fates. May God have mercy on my soul
+
+            # 1. look for "name" : "text" (with text having optional quotes)
+            # 2. pipe the result to sed and replace the entire string with whatever is
+            #    after the '"name" : ' part. So '"name" : "value" // comment' becomes
+            #    '"value" // comment'
+            # 3. Trim "// ..." off the string if present 
+            # 4. remove quotes
+            jsonValue=$( grep -o "\"${key}\"\s*:\s*[^,}]*" "$json_file" | sed 's/.*: "\{0,1\}\(.*\)"\{0,1\}.*/\1/' | sed 's#//.*##' | tr -d '"' )
+
+            # if [ "$verbosity" = "loud" ]; then grep -o "\"${key}\"\s*:\s*[^,}]*" "$json_file" >&3; fi
+        fi
+    else
+        jsonValue=""
+    fi
+
+    # Really?? 
+    if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
+
+    # debug
+    # if [ "$verbosity" = "loud" ]; then echo "${key} = $jsonValue" >&3; fi
+
+    echo $jsonValue
+}
+
+# Call this, then test: if [ $online -eq 0 ]; then echo 'online'; fi
+function checkForInternet () {
+    nc -w 2 -z 8.8.8.8 53  >/dev/null 2>&1
+    online=$?
 }
 
 # Thanks: https://stackoverflow.com/a/4025065 with mods
@@ -1561,51 +2170,15 @@ function getDisplaySize () {
     echo "Rows=$(tput lines) Cols=$(tput cols)"
 }
 
-# Call this, then test: if [ $online -eq 0 ]; then echo 'online'; fi
-function checkForInternet () {
-    nc -w 2 -z 8.8.8.8 53  >/dev/null 2>&1
-    online=$?
-}
-
-function getCudaVersion () { 
-    # Run nvcc with the --version option and capture the output
-    output=$(nvcc --version 2>&1)
-    
-    # Search for the line containing "release" to extract the CUDA version
-    cuda_version=$(echo "$output" | grep -i "release" | awk '{print $6}')
-
-    echo $cuda_version
-}
-
-# jsonFile key
-function getVersionFromModuleSettings () { 
-
-    local json_file=$1
-    local key=$2
-
-    # echo jsonFile is $json_file
-    # echo key is $key
-
-    # Use the jq command to extract the value of the property from the JSON file.
-    # ...except jq needs to be installed using sudo apt install jq
-    #  jsonValue=$(jq -r ".$key" "$json_file")
-
-    # or use inbuilt bash commands.
-    jsonValue=$(grep -o "\"${key}\"\s*:\s*[^,}]*" "$json_file" | sed 's/.*: "\(.*\)".*/\1/')
-
-    echo $jsonValue
-}
-
+haveDisplayedMacOSDirCreatePermissionError=false
 function displayMacOSDirCreatePermissionError () {
-    writeLine
-    writeLine 'Unable to Create a Directory'  $color_error
 
-    if [[ $OSTYPE == 'darwin'* ]]; then
+    if [[ $OSTYPE == 'darwin'* ]] && [ "$haveDisplayedMacOSDirCreatePermissionError" = false ]; then
 
-        local commonDir=$1
+        haveDisplayedMacOSDirCreatePermissionError=true
 
-        writeLine
-        writeLine 'But we may be able to suggest something:'  $color_info
+        writeLine ''
+        writeLine 'We may be able to suggest something:'  $color_info
 
         # Note that  will appear as the Apple symbol on macOS, but probably not on Windows or Linux
         writeLine '1. Pull down the  Apple menu and choose "System Preferences"'
@@ -1623,7 +2196,7 @@ function displayMacOSDirCreatePermissionError () {
         writeLine 'Thanks to https://osxdaily.com/2018/10/09/fix-operation-not-permitted-terminal-error-macos/'
     fi
 
-    quit 8 # unable to create file or directory
+    # quit 8 # unable to create file or directory
 }
 
 function needRosettaAndiBrew () {
@@ -1631,7 +2204,7 @@ function needRosettaAndiBrew () {
     writeLine
     writeLine "You're on a Mac running Apple silicon but Python3 only works on Intel."  $color_error
 
-    if [ "$offlineInstall" == "true" ]; then 
+    if [ "$offlineInstall" = true ]; then 
         writeLine "You will need to install Rosetta2 to continue, once you are back online." $color_error
         return 6 # unable to download required asset
     fi
@@ -1640,7 +2213,7 @@ function needRosettaAndiBrew () {
     writeLine
     
     read -p 'Install Rosetta2 (Y/N)?' installRosetta
-    if [ "${installRosetta}" == "y" ] || [ "${installRosetta}" == "Y" ]; then
+    if [ "${installRosetta}" = "y" ] || [ "${installRosetta}" = "Y" ]; then
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
     else
         quit 4 # required tool missing, needs installing
@@ -1648,11 +2221,15 @@ function needRosettaAndiBrew () {
 
     writeLine "Then you need to install brew under Rosetta (We'll alias it as ibrew)"
     read -p 'Install brew for x86 (Y/N)?' installiBrew
-    if [ "${installiBrew}" == "y" ] || [ "${installiBrew}" == "Y" ]; then
+    if [ "${installiBrew}" = "y" ] || [ "${installiBrew}" = "Y" ]; then
         arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
     else
         quit 4 # required tool missing, needs installing
     fi
+}
+
+function extract_dpkg_version() {
+    echo $(dpkg -l | grep $1 | awk '{print $3}')
 }
 
 # =================================================================================================
@@ -1665,7 +2242,7 @@ function needRosettaAndiBrew () {
 # macOS-x64 rather than macOS-x86_64. To simplify further, if the platform value
 # doesn't have a suffix then it's assumed to be -x64. This may change in the future.
 
-if [ $(uname -m) == 'arm64' ] || [ $(uname -m) == 'aarch64' ]; then
+if [ $(uname -m) = 'arm64' ] || [ $(uname -m) = 'aarch64' ]; then
     architecture='arm64'
 else
     architecture='x86_64'
@@ -1679,27 +2256,33 @@ if [[ $OSTYPE == 'darwin'* ]]; then
 
     systemName=$os
 
-    if [[ "$architecture" == 'arm64' ]]; then platform='macos-arm64'; fi
+    if [ "$architecture" = 'arm64' ]; then platform='macos-arm64'; fi
 else
     os='linux'
     platform='linux'
     os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu"
     os_vers=$(. /etc/os-release;echo $VERSION_ID) # eg "22.04" for Ubuntu 22.04
 
-    if [[ "$architecture" == 'arm64' ]]; then platform='linux-arm64'; fi
+    if [ "$architecture" = 'arm64' ]; then platform='linux-arm64'; fi
 
     modelInfo=""
     if [ -f "/sys/firmware/devicetree/base/model" ]; then
         modelInfo=$(tr -d '\0' </sys/firmware/devicetree/base/model) >/dev/null 2>&1
     fi
 
-    if [[ "${modelInfo}" == *"Raspberry Pi"* ]]; then # elif [ $(uname -n) == "raspberrypi" ]; then
+    if [[ "${modelInfo}" == *"Raspberry Pi"* ]]; then       # elif [ $(uname -n) = "raspberrypi" ]; then
         systemName='Raspberry Pi'
-    elif [[ "${modelInfo}" == *"Orange Pi"* ]]; then    # elif [ $(uname -n) == "orangepi5" ]; then
+        platform='raspberrypi'
+    elif [[ "${modelInfo}" == *"Orange Pi"* ]]; then        # elif [ $(uname -n) = "orangepi5" ]; then
         systemName='Orange Pi'
-    elif [ $(uname -n) == "nano" ]; then
+        platform='orangepi'
+    elif [[ "${modelInfo}" == *"NVIDIA Jetson"* ]]; then    # elif [ $(uname -n) = "nano" ]; then
         systemName='Jetson'
-    elif [ "$inDocker" == "true" ]; then 
+        platform='jetson'
+        # Get the good stuff
+        source "${sdkScriptsDirPath}/jetson_libraries.sh"
+        source "${sdkScriptsDirPath}/jetson_variables.sh"
+    elif [ "$inDocker" = true ]; then 
         systemName='Docker'
     elif [[ $(uname -a) =~ microsoft-standard-WSL ]]; then
         systemName='WSL'
@@ -1709,12 +2292,12 @@ else
 fi
 
 # See if we can spot if it's a dark or light background
-darkmode='false'
-if [ "$os" == "macos" ]; then
+darkmode=false
+if [ "$os" = "macos" ]; then
     interfaceStyle=$(defaults read -g AppleInterfaceStyle 2>/dev/null)
     if [ $? -eq 0 ]; then
-        if [ "${interfaceStyle}" == "Dark" ]; then
-            darkmode='true'
+        if [ "${interfaceStyle}" = "Dark" ]; then
+            darkmode=true
         fi
     else
         termBg=$(osascript -e \
@@ -1725,14 +2308,14 @@ if [ "$os" == "macos" ]; then
         if [[ $termBg ]]; then
             IFS=','; colors=($termBg); IFS=' ';
             if [ ${colors[0]} -lt 2000 ] && [ ${colors[1]} -lt 2000 ] && [ ${colors[2]} -lt 2000 ]; then
-                darkmode='true'
+                darkmode=true
             else
-                darkmode='false'
+                darkmode=false
             fi
         fi
     fi
 else
-    darkmode='true'
+    darkmode=true
     terminalBg=$(gsettings get org.gnome.desktop.background primary-color)
 
     if [ "${terminalBg}" != "no schemas installed" ] && [ "${terminalBg}" != "" ]; then
@@ -1746,15 +2329,30 @@ else
             b=`echo $terminalBg | cut -c4-5`
             c=`echo $terminalBg | cut -c6-7`
 
-            r=`echo "ibase=16; $a" | bc`
-            g=`echo "ibase=16; $b" | bc`
-            b=`echo "ibase=16; $c" | bc`
+            # convert from hex to decimal
+            # checkForTool bc
+            # if command -v bc > /dev/null; then
+            # r=`echo "ibase=16; $a" | bc`
+            # g=`echo "ibase=16; $b" | bc`
+            # b=`echo "ibase=16; $c" | bc`
+            # else
+            r=`echo $((16#${a}))`
+            g=`echo $((16#${b}))`
+            b=`echo $((16#${c}))`
+            # fi
 
-            luma=$(echo "(0.2126 * $r) + (0.7152 * $g) + (0.0722 * $b)" | bc)
+            # calculate luminosity
+            # luma=$(echo "(0.2126 * $r) + (0.7152 * $g) + (0.0722 * $b)" | bc)
+
+            # Whatever warped version of Ubuntu WSL has, it doesn't like decimal points
+            # luma=`$(( (0.2126 * ${r}) + (0.7152 * ${g}) + (0.0722 * ${b}) ))`
+            luma=$(( ( (21 * ${r}) + (72 * ${g}) + (7 * ${b}) ) / 100 ))
+
+            # remove everything after the decimal point
             luma=${luma%.*}
             
             if (( luma > 127 )); then 
-                darkmode='false'
+                darkmode=false
             fi
 
             # echo "terminalBg = ${terminalBg}, darkmode = ${darkmode}, luminosity = ${luma}"
@@ -1770,10 +2368,10 @@ fi
 # color of the terminal so we avoid specifically setting black or white for the foreground
 # or background. You can always just use "White" and "Black" if you specifically want
 # this combo, but test thoroughly
-if [ "$darkmode" == "true" ]; then
+if [ "$darkmode" = true ]; then
     color_primary='White'
     color_mute='Gray'
-    color_info='Yellow'
+    color_info='DarkMagenta'
     color_success='Green'
     color_warn='DarkYellow'
     color_error='Red'
@@ -1787,7 +2385,7 @@ else
 fi
 
 # For VSCode, the terminal depends on the color theme installed, so who knows?
-if [ "$TERM_PROGRAM" == "vscode" ]; then color_primary='Default'; fi
+if [ "$TERM_PROGRAM" = "vscode" ]; then color_primary='Default'; fi
 
 
 # Outputs the version of the currently installed xcode tools. It's placed at the bottom because

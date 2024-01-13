@@ -1,7 +1,10 @@
 {
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
+
     "OCR": {
-      "SupportGPU": false
+      "InstallGPU": false   // PaddlePaddle-GPU isn't supported on macOS
     }
   }
 }

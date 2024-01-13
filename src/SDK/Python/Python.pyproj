@@ -25,6 +25,7 @@
     <Compile Include="analysis\analysislogging.py" />
     <Compile Include="analysis\codeprojectai.py" />
     <Compile Include="analysis\requestdata.py" />
+    <Compile Include="cpuinfo.py" />
     <Compile Include="training\augmentation.py" />
     <Compile Include="common.py" />
     <Compile Include="image_utils.py" />

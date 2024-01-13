@@ -1,0 +1,14 @@
+#! Python3.9
+
+# Note that this wheel was built on, and for, an Orange Pi. It will not run on a Raspberry Pi
+https://github.com/MikeLud/CodeProject.AI-Custom-IPcam-Models/raw/main/RKNN_Models/fastdeploy_python-1.4.2b0-cp39-cp39-linux_aarch64.whl # Installing the RK NPU specific FastDeploy 1.4
+
+# numpy>=1.16.0               # Installing NumPy, the fundamental package for array computing with Python.
+numpy                         # Installing NumPy, a package for scientific computing
+Pillow>=4.0.0,<10.0           # Installing Pillow, a Python Image Library
+
+#OpenCV-Python                # Installing OpenCV, the Open source Computer Vision library
+# See https://raspberrypi-guide.github.io/programming/install-opencv
+opencv-python==4.5.3.56       # Installing OpenCV, the Open source Computer Vision library
+
+# last line empty test

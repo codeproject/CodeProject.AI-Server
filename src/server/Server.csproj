@@ -15,7 +15,7 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Description>CodeProject.AI API Server provides a plug-in API for hosting AI inference and training modules, accessible via any language, any platform.</Description>
 		<Company>CodeProject</Company>
 		<Authors>CodeProject</Authors>
-		<Version>2.2.4</Version>
+		<Version>2.3.4</Version>
 	</PropertyGroup>
 
 	<!-- Build properties -->
@@ -164,12 +164,16 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		</None>
 	</ItemGroup>
 
+	<!--
+	Start/End timer scripts use powershell to set a persistant environment variable and this
+	single operation takes seconds. Not worth it.
+
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call ..\SDK\Scripts\starttimer.bat $(ProjectName)" />
+		<Exec Command="call ..\SDK\Utilities\starttimer.bat $(ProjectName)" />
 	</Target>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(IsWindows)'=='true'">
-		<Exec Command="call ..\SDK\Scripts\endtimer.bat $(ProjectName)" />
+		<Exec Command="call ..\SDK\Utilities\endtimer.bat $(ProjectName)" />
 	</Target>
-
+	-->
 </Project>

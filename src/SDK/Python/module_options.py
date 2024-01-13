@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 import os
 import sys
 
@@ -8,7 +8,7 @@ def _get_env_var(name: str, default: any = "") -> any:
     value = os.getenv(name, "")
     if value == "" and default != "":
         value = default
-        print(f"Debug: {name} not found. Setting to default {str(default)}")
+        # print(f"Debug: {name} not found. Setting to default {str(default)}")
 
     return value
 
@@ -63,18 +63,18 @@ class ModuleOptions:
 
     # Whether to *allow* support for GPU. Doesn't mean it's possibly it can or will
     # support GPU. More often used to disable GPU when a GPU causes problems
-    support_GPU         = _get_env_var("CPAI_MODULE_SUPPORT_GPU", "True")
+    enable_GPU         = _get_env_var("CPAI_MODULE_ENABLE_GPU",   "True")
 
-    # Implementation specific GPU device name. Depends on hardware and libary being
+    # Implementation specific GPU device name. Depends on hardware and library being
     # used. Generally not specified, so don't use _get_env_var (otherwise needless warnings)
-    accel_device_name   = os.getenv("CPAI_ACCEL_DEVICE_NAME", None) 
+    accel_device_name   = os.getenv("CPAI_ACCEL_DEVICE_NAME",     None) 
 
     # Whether or not to enable, disable or force half-precision operations. This
     # is module, library and hardware specific, but common for PyTorch
     half_precision      = _get_env_var("CPAI_HALF_PRECISION",     "enable")
 
     # Can be Quiet, Info or Loud. Module specific, requires module implementation
-    log_verbosity       = _get_env_var("CPAI_LOG_VERBOSITY",      LogVerbosity.Info)
+    log_verbosity       = _get_env_var("CPAI_LOG_VERBOSITY",      LogVerbosity.Quiet)
 
     # General purpose flags. These aren't currently supported as common flags
     # use_CUDA          = False
@@ -92,7 +92,7 @@ class ModuleOptions:
     # Normalise input
     launched_by_server  = str(launched_by_server).lower() == "true"
     port                = int(port) if port.isnumeric() else 32168
-    support_GPU         = str(support_GPU).lower() == "true"
+    enable_GPU          = str(enable_GPU).lower() == "true"
 
     if half_precision not in [ "force", "enable", "disable" ]:
         half_precision = "enable"
@@ -104,5 +104,7 @@ class ModuleOptions:
 
     parallelism = int(parallelism) if isinstance(parallelism, int) else 0
     if parallelism <= 0:
-        # parallelism = os.cpu_count() - 1
-        parallelism = os.cpu_count() // 2
+        if (sys.version_info.major >= 3 and sys.version_info.minor >= 13):
+            parallelism = os.process_cpu_count() // 2
+        else:
+            parallelism = os.cpu_count() // 2

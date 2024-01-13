@@ -1,47 +1,53 @@
 {
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "Cartooniser": {
       "Name": "Cartooniser",
-      "Version": "1.2",
+      "Version": "1.3.2",
 
       // Publishing info
       "Description": "Convert a photo into an anime style cartoon", 
-      "Platforms": [ "windows" , "linux", "linux-arm64", "macos", "macos-arm64" ], // only tested on windows
+      "Platforms": [ "all", "!raspberrypi", "!orangepi", "!jetson" ], 
       "License": "MIT",
       "LicenseUrl": "https://github.com/bryandlee/animegan2-pytorch/blob/main/LICENSE",
-
-      // Which server version is compatible with each version of this module.
-      "ModuleReleases": [
-        { "ModuleVersion": "1.0", "ServerVersionRange": [ "2.1",   "2.1.6"  ], "ReleaseDate": "2023-03-28" },
-        { "ModuleVersion": "1.1", "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
-        { "ModuleVersion": "1.2", "ServerVersionRange": [ "2.2",   "" ],       "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" }
-      ],
-
+      
       // Launch instructions
       "AutoStart": true,
       "FilePath": "cartooniser_adapter.py",
-      "Runtime": "python3.9",
-      "RuntimeLocation": "Local", // Can be Local or Shared
+      "Runtime": "python3.8",
+      "RuntimeLocation": "Local",     // Can be Local or Shared
       
-      // These are all optional. Defaults are usually fine
-      "SupportGPU": false,
-      "AcceleratorDeviceName": null,  // = default
-      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
-      "HalfPrecision": "enable",      // "Force", "Enable", "Disable": whether to force on, allow, or disable half-precision ops
-      "PostStartPauseSecs": 0,        // 1 if using GPU, 0 for CPU
-
       "EnvironmentVariables": {
         "WEIGHTS_FOLDER": "%CURRENT_MODULE_PATH%\\weights"
-        // "LD_LIBRARY_PATH": "%CURRENT_MODULE_PATH%/bin/%OS%/python39/venv/lib/python3.9/site-packages/nvidia/cudnn/lib/"
+        /* "LD_LIBRARY_PATH": "%CURRENT_MODULE_PATH%/bin/%OS%/python39/venv/lib/python3.9/site-packages/nvidia/cudnn/lib/" */
       },
+      
+      // GPU options
+      "InstallGPU": false,            // GPU support not provided
+      "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 0,        // Generally 1 if using GPU, 0 for CPU
+
+      // Which server version is compatible with each version of this module.
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.1",   "2.1.6"  ], "ReleaseDate": "2023-03-28" },
+        { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+        { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
+        { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.3.1", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.3.2", "ServerVersionRange": [ "2.3.5", ""       ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
+      ],
 
       "RouteMaps": [
         {
           "Name": "Cartooniser",
           "Path": "image/cartoonise",
           "Method": "POST",
-          "Command": "Cartoonise",
+          "Command": "cartoonise",
           "Description": "Convert a photo into an anime style cartoon.",
           "Inputs": [
             {

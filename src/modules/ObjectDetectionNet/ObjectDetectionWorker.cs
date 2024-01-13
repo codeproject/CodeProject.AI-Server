@@ -49,8 +49,8 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             _logger = logger;
 
             _mode      = config.GetValue("MODEL_SIZE", "Medium") ?? "Medium";
-            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(ModulePath!, "assets")) ?? "assets";
-            _customDir = config.GetValue("CUSTOM_MODELS_DIR", Path.Combine(ModulePath!, "custom-models")) ?? "custom-models";
+            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(moduleDirPath!, "assets")) ?? "assets";
+            _customDir = config.GetValue("CUSTOM_MODELS_DIR", Path.Combine(moduleDirPath!, "custom-models")) ?? "custom-models";
 
             if (!_modelDir.EndsWith("/") || !_modelDir.EndsWith("\\"))
                 _modelDir += "/";
@@ -74,13 +74,13 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             //                  "'objectdetection_queue' queue (eg. ObjectDetectionYolo). " +
             //                  "There will be conflicts");
 #if CPU
-            Logger.LogInformation("ObjectDetection (.NET) built for CPU");
+            Console.WriteLine("ObjectDetection (.NET) built for CPU");
 #elif CUDA
-            Logger.LogInformation("ObjectDetection (.NET) built for CUDA");
+            Console.WriteLine("ObjectDetection (.NET) built for CUDA");
 #elif OpenVINO
-            Logger.LogInformation("ObjectDetection (.NET) built for OpenVINO");
+            Console.WriteLine("ObjectDetection (.NET) built for OpenVINO");
 #elif DirectML
-            Logger.LogInformation("ObjectDetection (.NET) built for DirectML");
+            Console.WriteLine("ObjectDetection (.NET) built for DirectML");
 #endif
             base.InitModule();
         }
@@ -177,11 +177,11 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
         {
             return (_mode ?? string.Empty.ToLower()) switch
             {
-                "large" => _modelDir + "yolov5l.onnx",
+                "large"  => _modelDir + "yolov5l.onnx",
                 "medium" => _modelDir + "yolov5m.onnx",
-                "small" => _modelDir + "yolov5s.onnx",
-                "tiny" => _modelDir + "yolov5n.onnx",
-                _ => _modelDir + "yolov5m.onnx"
+                "small"  => _modelDir + "yolov5s.onnx",
+                "tiny"   => _modelDir + "yolov5n.onnx",
+                _        => _modelDir + "yolov5m.onnx"
             };
         }
 
@@ -263,16 +263,15 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 
         private void UpdateGpuInfo(ObjectDetector detector)
         {
-            HardwareType = detector.HardwareType;
+            HardwareType      = detector.HardwareType;
             ExecutionProvider = detector.ExecutionProvider;
-            CanUseGPU = detector.CanUseGPU;
+            CanUseGPU         = detector.CanUseGPU;
         }
 
         private ObjectDetector GetDetector(string modelPath, bool addToCache = true)
         {
             if (!_detectors.TryGetValue(modelPath, out ObjectDetector? detector) || detector is null)
             {
-
                 detector = new ObjectDetector(modelPath, _logger);
                 if (addToCache)
                     _detectors.TryAdd(modelPath, detector);

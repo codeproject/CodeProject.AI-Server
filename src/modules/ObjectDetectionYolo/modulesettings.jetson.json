@@ -1,0 +1,16 @@
+{
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
+  "Modules": {
+
+    "ObjectDetectionYolo": {
+      "Runtime": "python3.6",
+      "AutoStart": false,
+
+      "EnvironmentVariables": {
+        "MODEL_SIZE": "Tiny", // tiny, small, medium, large
+        "USE_CUDA": "True"
+      }
+    }
+  }
+}

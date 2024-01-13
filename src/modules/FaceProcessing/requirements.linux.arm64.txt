@@ -1,4 +1,4 @@
-#! Python3.7
+#! Python3.8
 
 Pandas                  # Installing Pandas, a data analysis / data manipulation tool
 CoreMLTools             # Installing CoreMLTools, for working with .mlmodel format models

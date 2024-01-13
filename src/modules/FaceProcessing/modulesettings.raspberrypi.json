@@ -1,0 +1,16 @@
+{
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
+  "Modules": {
+
+    "FaceProcessing": {
+      "AutoStart": false,
+      "Runtime": "python3.8",
+      "EnvironmentVariables": {
+        "PROFILE": "jetson",
+        "USE_CUDA": "False",
+        "MODE": "LOW"
+      }
+    }
+  }
+}

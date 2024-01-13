@@ -53,11 +53,20 @@ namespace CodeProject.AI.Server.Utilities
                 uri = uri.Substring("file://".Length);
                 if (SystemInfo.IsWindows)
                 {
-                    if (uri.StartsWith("/"))
-                        uri = "C:" + uri;
+                    if (uri.StartsWith("/"))    // url = "file:///Program Files\\CodeProject\\..."
+                    {
+                        string drive = Directory.GetCurrentDirectory().Split('\\')[0];
+                        uri = drive + uri;
+                    }
                 }
-                else if (uri.StartsWithIgnoreCase("c:\\"))
-                    uri = uri.Substring("c:".Length);
+                else 
+                {
+                    // HACK
+                    if (uri.StartsWithIgnoreCase("c:\\"))
+                        uri = "/" + uri.Substring("c:\\".Length);
+                    else if (uri.StartsWithIgnoreCase("d:\\"))
+                        uri = "/" + uri.Substring("d:\\".Length);
+                }
 
                 uri = Text.FixSlashes(uri);
                 return await File.ReadAllTextAsync(uri).ConfigureAwait(false);
@@ -84,6 +93,26 @@ namespace CodeProject.AI.Server.Utilities
             {
                 error = $"{nameof(uri)} is null or empty.";
                 throw new ArgumentOutOfRangeException(error);
+            }
+
+            // HACK to prevent us copying files over one another in file: mode
+            if (uri.StartsWithIgnoreCase("file://"))
+            {
+                string filename = uri.Substring(7);
+                filename = Text.FixSlashes(filename);
+
+                if (!File.Exists(filename))
+                    return (false, $"File '{filename}' does not exist");
+
+                // REVIEW: [CHRIS] Should we overwrite the file if it exists?
+                // if (File.Exists(outputPath))
+                //     return (true, error);
+
+                File.Copy(filename, outputPath);
+                if (File.Exists(outputPath))
+                    return (true, error);
+
+                return (false, "Unable to copy file to destination");
             }
 
             if (!Uri.TryCreate(uri, UriKind.Absolute, out _))

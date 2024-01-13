@@ -113,6 +113,7 @@ class Face_adapter(ModuleRunner):
         self.load_faces()
 
         # refresh the copy of face embeddings every 5 seconds.
+        self._update_faces_active = True
         faceupdate_thread = threading.Thread(None, self.update_faces, args = (5,))
         faceupdate_thread.start()
 
@@ -138,10 +139,10 @@ class Face_adapter(ModuleRunner):
         elif command == "match":
             output = self.match_faces(data)
 
-        if output["success"]:
+        if hasattr(output, "success") and output["success"]:
             output["processMs"] = int((time.perf_counter() - start_time) * 1000)
         else:
-            message = output["error"]
+            message = output["error"] if hasattr(output, "error") else "Error occurred"
             if output.get("err_trace", ""):
                 message += ': ' + output["err_trace"]
 
@@ -154,6 +155,31 @@ class Face_adapter(ModuleRunner):
             })
 
         return output
+
+
+    def selftest(self) -> JSON:
+        
+        file_name = os.path.join("test", "person.jpg")
+
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "detect"
+        request_data.add_file(file_name)
+        request_data.add_value("min_confidence", 0.4)
+
+        result = self.process(request_data)
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Face detection test successful" }
+
+    def shutdown(self) -> None:
+        """
+        Called when this module has been asked to shutdown.
+        """
+        # Request for the face update thread to stop
+        self._update_faces_active = False
+    
 
     def init_models(self, re_entered: bool = False) -> None:
 
@@ -272,6 +298,9 @@ class Face_adapter(ModuleRunner):
     def update_faces(self, delay: int) -> None:
 
         while True:
+            if not self._update_faces_active:
+                return
+
             self.load_faces()
             time.sleep(delay)
 

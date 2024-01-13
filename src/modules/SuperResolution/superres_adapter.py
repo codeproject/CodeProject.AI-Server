@@ -28,7 +28,7 @@ class SuperRes_adapter(ModuleRunner):
         # TODO: This module also supports ONNX
         self.can_use_GPU = self.hasTorchCuda
 
-        if self.support_GPU and self.can_use_GPU:
+        if self.enable_GPU and self.can_use_GPU:
             self.execution_provider = "CUDA"
 
     def process(self, data: RequestData) -> JSON:
@@ -49,6 +49,22 @@ class SuperRes_adapter(ModuleRunner):
         except Exception as ex:
             self.report_error(ex, __file__)
             return {"success": False, "error": "unable to process the image"}
+
+    def selftest(self) -> JSON:
+        
+        import os
+        file_name = os.path.join("test", "quail.jpg")
+
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "superresolution"
+        request_data.add_file(file_name)
+
+        result = self.process(request_data)
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Super resolution test successful" }
 
 
 if __name__ == "__main__":

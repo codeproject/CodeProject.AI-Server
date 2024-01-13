@@ -14,7 +14,11 @@
 verbosity="quiet"
 
 # Show output in wild, crazy colours
-useColor="true"
+useColor=true
+
+# Set this to false (or call script with --no-dotnet) to exclude .NET packages
+# This saves time to allow for quick packaging of the easier, non-compiled modules
+includeDotNet=true
 
 # Width of lines
 lineWidth=70
@@ -22,9 +26,9 @@ lineWidth=70
 
 # Basic locations
 
-# The path to the directory containing the install scripts
-#installerScriptsPath=$(dirname "$0")
-installerScriptsPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+# The path to the directory containing the setup scripts
+#setupScriptDirPath=$(dirname "$0")
+setupScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 # The name of the source directory (in development)
 srcDir='src'
@@ -38,32 +42,36 @@ modulesDir="modules"
 
 
 # Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
-while getopts ":h" option; do
-    param=$(echo $option | tr '[:upper:]' '[:lower:]')
-
-    if [ "$param" == "--no-color" ]; then set useColor="false"; fi
+for i in "$@"; do
+  case $i in
+    --no-dotnet) includeDotNet=false ;;
+    --no-color)  useColor=false ;;
+    -*|--*)      echo "Unknown option $i" ;;
+    *) ;;
+  esac
 done
 
 # In Development, this script is in the /src folder. In Production there is no
 # /src folder; everything is in the root folder. So: go to the folder
 # containing this script and check the name of the parent folder to see if
 # we're in dev or production.
-pushd "$installerScriptsPath" >/dev/null
-installScriptDirName="$(basename ${installerScriptsPath})"
-installScriptDirName=${installScriptDirName:-/} # correct for the case where pwd=/
+pushd "$setupScriptDirPath" >/dev/null
+setupScriptDirName="$(basename ${setupScriptDirPath})"
+setupScriptDirName=${setupScriptDirName:-/} # correct for the case where pwd=/
 popd >/dev/null
+
 executionEnvironment='Production'
-if [ "$installScriptDirName" == "$srcDir" ]; then executionEnvironment='Development'; fi
+if [ "$setupScriptDirName" == "$srcDir" ]; then executionEnvironment='Development'; fi
 
 # The absolute path to the installer script and the root directory. Note that
 # this script (and the SDK folder) is either in the /src dir or the root dir
-sdkScriptsPath="${installerScriptsPath}/SDK/Scripts"
-pushd "$installerScriptsPath" >/dev/null
+sdkScriptsDirPath="${setupScriptDirPath}/SDK/Scripts"
+pushd "$setupScriptDirPath" >/dev/null
 if [ "$executionEnvironment" == 'Development' ]; then cd ..; fi
-absoluteRootDir="$(pwd)"
+rootDirPath="$(pwd)"
 popd >/dev/null
 
-absoluteAppRootDir="${installerScriptsPath}"
+appRootDirPath="${setupScriptDirPath}"
 
 # import the utilities :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -86,27 +94,21 @@ function correctLineEndings () {
     fi
 }
 
-correctLineEndings ${sdkScriptsPath}/utils.sh
+correctLineEndings ${sdkScriptsDirPath}/utils.sh
 
 # "platform" will be set by this script
-source ${sdkScriptsPath}/utils.sh
+source ${sdkScriptsDirPath}/utils.sh
 
 
 # Platform can define where things are located :::::::::::::::::::::::::::::::
 
 # The location of directories relative to the root of the solution directory
-modulesPath="${absoluteAppRootDir}/${modulesDir}"
-downloadPath="${absoluteAppRootDir}/${downloadDir}"
+modulesDirPath="${appRootDirPath}/${modulesDir}"
+downloadDirPath="${appRootDirPath}/${downloadDir}"
 
 # Let's go
 
-if [ "$setupMode" != 'SetupDevEnvironment' ]; then
-    scriptTitle='          Creating CodeProject.AI Module Downloads'
-else
-    writeLine "Can't run in Production. Exiting." "Red"
-    exit
-fi
-
+scriptTitle='          Creating CodeProject.AI Module Downloads'
 writeLine 
 writeLine "$scriptTitle" 'DarkCyan' 'Default' $lineWidth
 writeLine 
@@ -120,11 +122,11 @@ writeLine
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "executionEnvironment  = ${executionEnvironment}"  $color_mute
-    writeLine "installerScriptsPath  = ${installerScriptsPath}"  $color_mute
-    writeLine "sdkScriptsPath        = ${sdkScriptsPath}"        $color_mute
-    writeLine "absoluteAppRootDir    = ${absoluteAppRootDir}"    $color_mute
-    writeLine "modulesPath           = ${modulesPath}"           $color_mute
+    writeLine "executionEnvironment = ${executionEnvironment}" $color_mute
+    writeLine "appRootDirPath       = ${appRootDirPath}"       $color_mute
+    writeLine "setupScriptDirPath   = ${setupScriptDirPath}"   $color_mute
+    writeLine "sdkScriptsDirPath    = ${sdkScriptsDirPath}"    $color_mute
+    writeLine "modulesDirPath       = ${modulesDirPath}"       $color_mute
     writeLine
 fi
 
@@ -132,47 +134,61 @@ fi
 success='true'
 
 # Walk through the modules directory and call the setup script in each dir
-for d in ${modulesPath}/*/ ; do
+for d in ${modulesDirPath}/*/ ; do
 
-    packageModuleDir="$(basename $d)"
-    packageModuleId=$packageModuleDir
-    packageModulePath=$d
+    packageModuleDirName="$(basename $d)"
+    packageModuleId=$packageModuleDirName
+    packageModuleDirPath=$d
 
-    if [ "${packageModulePath: -1}" == "/" ]; then
-        packageModulePath="${packageModulePath:0:${#packageModulePath}-1}"
+    if [ "${packageModuleDirPath: -1}" == "/" ]; then
+        packageModuleDirPath="${packageModuleDirPath:0:${#packageModuleDirPath}-1}"
     fi
 
-    # dirname=${moduleDir,,} # requires bash 4.X, which isn't on macOS by default
-    dirname=$(echo $packageModuleDir | tr '[:upper:]' '[:lower:]')
+    # dirname=${moduleDirName,,} # requires bash 4.X, which isn't on macOS by default
+    dirname=$(echo $packageModuleDirName | tr '[:upper:]' '[:lower:]')
 
-    if [ -f "${packageModulePath}/package.sh" ]; then
+    if [ -f "${packageModuleDirPath}/package.sh" ]; then
 
-        pushd "$packageModulePath" >/dev/null
+        doPackage=true
 
-        # Read the version from the modulesettings.json file and then pass this 
-        # version to the package.bat file.
-        packageVersion=$(getVersionFromModuleSettings "modulesettings.json" "Version")
-
-        write "Packaging module ${packageModuleId} ${packageVersion}..." "White"
-
-        correctLineEndings package.sh
-        bash package.sh ${packageModuleId} ${packageVersion}
-
-        if [ $? -ne 0 ]; then
-            writeLine "Error in package.sh for ${packageModuleDir}" "Red"
+        # TODO: Sniff the modulesettings.json file to get the runtime, and if it's
+        # .NET do the test.
+        if [ "$includeDotNet" = false ]; then
+            if [ "$packageModuleId" = "ObjectDetectionNet" ]; then doPackage=false; fi
+            if [ "$packageModuleId" = "PortraitFilter" ];     then doPackage=false; fi
+            if [ "$packageModuleId" = "SentimentAnalysis" ];  then doPackage=false; fi
         fi
-       
-        popd >/dev/null
-        
-        # Move package into modules download cache       
-        # echo Moving ${packageModulePath}/${packageModuleId}-${packageVersion}.zip to ${downloadPath}/modules/
-        mv -f ${packageModulePath}/${packageModuleId}-${packageVersion}.zip ${downloadPath}/modules/  >/dev/null
 
-        if [ $? -ne 0 ]; then
-            writeLine "Error" "Red"
-            success="false"
+        if [ "$doPackage" = false ]; then
+            writeLine "Skipping packaging module ${packageModuleId}..." $color_info
         else
-            writeLine "Done" "DarkGreen"
+            pushd "$packageModuleDirPath" >/dev/null
+
+            # Read the version from the modulesettings.json file and then pass this 
+            # version to the package.bat file.
+            packageVersion=$(getValueFromModuleSettings "modulesettings.json" "Version")
+
+            write "Packaging module ${packageModuleId} ${packageVersion}..." "White"
+
+            correctLineEndings package.sh
+            bash package.sh ${packageModuleId} ${packageVersion}
+
+            if [ $? -ne 0 ]; then
+                writeLine "Error in package.sh for ${packageModuleDirName}" "Red"
+            fi
+        
+            popd >/dev/null
+            
+            # Move package into modules download cache       
+            # echo Moving ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip to ${downloadDirPath}/modules/
+            mv -f ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip ${downloadDirPath}/modules/  >/dev/null
+
+            if [ $? -ne 0 ]; then
+                writeLine "Error" "Red"
+                success="false"
+            else
+                writeLine "Done" "DarkGreen"
+            fi
         fi
     fi
 done

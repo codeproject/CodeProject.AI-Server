@@ -89,7 +89,7 @@
             },
             "name": "ALPR",
             "type": "python",
-            "python": "python3.8",
+            "python": "/app/modules/ALPR/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "ALPR_adapter.py",
             "console": "integratedTerminal",
@@ -109,7 +109,7 @@
             },
             "name": "Cartooniser",
             "type": "python",
-            "python": "python3.9",
+            "python": "/app/modules/Cartooniser/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "cartooniser_adapter.py",
             "console": "integratedTerminal",
@@ -162,27 +162,6 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
                 "DOTNET_NOLOGO": "true",
-                "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
-            }
-        },
-
-        {
-            "presentation": {
-                "group": "5 Launch Individual",
-                "hidden": false
-            },
-            "name": "Object Detect TFLite",
-            "type": "python",
-            "request": "launch",
-            "python": "python3.9",
-            "program": "objectdetection_tflite_adapter.py",
-            "cwd": "/app/modules/ObjectDetectionTFLite",
-            "console": "integratedTerminal",
-            "justMyCode": false,
-            "env": {
-                "DEBUG_IN_VSCODE": "True",
-                "RUNNING_IN_VSCODE": "True",
-                "CPAI_PORT": "32168",
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
             }
         },
@@ -248,6 +227,28 @@
             }
         },
 
+{
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Portrait Filter",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "/app/modules/PortraitFilter/PortraitFilter",
+            "args": [],
+            "cwd": "/app/modules/PortraitFilter",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true"
+            }
+        },
+
         {
             "presentation": {
                 "group": "5 Launch Individual",
@@ -255,7 +256,7 @@
             },
             "name": "Scene Classifier",
             "type": "python",
-            "python": "/app/modules/SceneClassifier/bin/linux/python38/venv/bin/python",
+            "python": "python3.8",
             "request": "launch",
             "program": "scene_adapter.py",
             "console": "integratedTerminal",
@@ -328,7 +329,9 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
-                "CPAI_PORT": "32168"
+                "CPAI_PORT": "32168",
+                
+                "NLTK_DATA": "/app/modules/TextSummary/nltk_data"
             }
         }
     ]

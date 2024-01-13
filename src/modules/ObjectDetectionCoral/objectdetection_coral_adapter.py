@@ -1,4 +1,5 @@
 # Import our general libraries
+import os
 import sys
 import time
 import threading
@@ -29,10 +30,10 @@ class CoralObjectDetector_adapter(ModuleRunner):
         if not self.launched_by_server:
             self.queue_name = "objectdetection_queue"
 
-        if self.support_GPU:
-            self.support_GPU = self.hasCoralTPU
+        if self.enable_GPU:
+            self.enable_GPU = self.hasCoralTPU
 
-        if self.support_GPU:
+        if self.enable_GPU:
             print("Edge TPU detected")
             self.execution_provider = "TPU"
 
@@ -63,6 +64,22 @@ class CoralObjectDetector_adapter(ModuleRunner):
 
         return response
 
+
+    def selftest(self) -> JSON:
+        
+        file_name = os.path.join("test", "home-office.jpg")
+
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "detect"
+        request_data.add_file(file_name)
+        request_data.add_value("min_confidence", 0.4)
+
+        result = self.process(request_data)
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Object detection test successful" }
 
     # async 
     def do_detection(self, img: any, score_threshold: float):

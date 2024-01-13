@@ -1,17 +1,14 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.Server.Modules;
 using CodeProject.AI.SDK.API;
-using CodeProject.AI.SDK;
 
 namespace CodeProject.AI.Server.Controllers
 {
@@ -27,29 +24,21 @@ namespace CodeProject.AI.Server.Controllers
         /// </summary>
         private readonly ServerVersionService  _versionService;
         private readonly ModuleSettings        _moduleSettings;
-        private readonly ServerOptions         _serverOptions;
         private readonly ModuleProcessServices _moduleProcessService;
-        private readonly ModuleCollection      _moduleCollection;
 
         /// <summary>
         /// Initializes a new instance of the StatusController class.
         /// </summary>
         /// <param name="versionService">The Version instance.</param>
         /// <param name="moduleSettings">The module settings instance</param>
-        /// <param name="serverOptions">The server options</param>
         /// <param name="moduleProcessService">The Module Process Services.</param>
-        /// <param name="moduleCollection">The Module Collection.</param>
         public StatusController(ServerVersionService versionService,
                                 ModuleSettings moduleSettings,
-                                IOptions<ServerOptions> serverOptions,
-                                ModuleProcessServices moduleProcessService,
-                                IOptions<ModuleCollection> moduleCollection)
+                                ModuleProcessServices moduleProcessService)
         {
             _versionService       = versionService;
             _moduleSettings       = moduleSettings;
-            _serverOptions        = serverOptions.Value;
             _moduleProcessService = moduleProcessService;
-            _moduleCollection     = moduleCollection.Value;
         }
 
         /// <summary>
@@ -94,7 +83,7 @@ namespace CodeProject.AI.Server.Controllers
         }
 
         /// <summary>
-        /// Allows for a client to retrieve the current system status (GPU imfo mainly)
+        /// Allows for a client to retrieve the current system status (GPU info mainly)
         /// </summary>
         /// <returns>A ResponseBase object.</returns>
         [HttpGet("system-status", Name = "System Status")]

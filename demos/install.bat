@@ -3,6 +3,9 @@
 ::                           CodeProject.AI Demos
 ::
 :: This script is only called from ..\src\setup.bat
+::
+:: For help with install scripts, notes on variables and methods available, tips,
+:: and explanations, see /src/modules/install_script_help.md
 
 @if "%1" NEQ "install" (
     echo This script is only called from ..\src\setup.bat
@@ -10,9 +13,36 @@
     @goto:eof
 )
 
+:: set verbosity=info
 set pythonLocation=Shared
 set pythonVersion=3.9
 
-call "%sdkScriptsPath%\utils.bat" SetupPython
-call "%sdkScriptsPath%\utils.bat" InstallPythonPackages "%modulePath%\Python"
+REM Can't do this
+REM call :SetupPythonPaths "%pythonLocation%" %pythonVersion%
 
+REM This is a copy and paste ===================================================
+
+REM Name based on version (eg version is 3.8, name is then python38)
+set pythonName=python!pythonVersion:.=!
+
+REM The path to the python installation, either local or shared. The
+REM virtual environment will live in here
+if /i "!pythonLocation!" == "Local" (
+    set pythonDirPath=!moduleDirPath!\bin\!os!\!pythonName!
+) else (
+    set pythonDirPath=!runtimesDirPath!\bin\!os!\!pythonName!
+)
+set virtualEnvDirPath=!pythonDirPath!\venv
+
+REM The path to the python intepreter for this venv
+set venvPythonCmdPath=!virtualEnvDirPath!\Scripts\python.exe
+
+REM The location where python packages will be installed for this venvvenv
+set packagesDirPath=%virtualEnvDirPath%\Lib\site-packages
+
+REM ============================================================================
+
+
+:: the Python Demo is in <root>\demos\Python
+call "%sdkScriptsDirPath%\utils.bat" SetupPython
+call "%sdkScriptsDirPath%\utils.bat" InstallRequiredPythonPackages "%moduleDirPath%\Python"

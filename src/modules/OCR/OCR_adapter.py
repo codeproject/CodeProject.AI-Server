@@ -7,6 +7,7 @@ sys.path.append("../../SDK/Python")
 from common import JSON
 from request_data import RequestData
 from module_runner import ModuleRunner
+from module_options import ModuleOptions
 
 from options import Options
 
@@ -23,7 +24,22 @@ class OCR_adapter(ModuleRunner):
 
     def initialise(self) -> None:
         self.can_use_GPU = self.hasPaddleGPU
-        self.opts.use_gpu = self.support_GPU and self.can_use_GPU
+
+        # HACK: We're seeing problems with GPU support on older cards. Allow
+        # some checks to be done
+        if self.hasPaddleGPU:
+            import paddle
+
+            if not paddle.device.cuda.device_count() or \
+                paddle.device.cuda.get_device_capability()[0] < self.opts.min_compute_capability:
+                self.can_use_GPU = False
+
+            if paddle.device.get_cudnn_version() / 100.0 < self.opts.min_cuDNN_version: 
+                self.can_use_GPU = False
+        # end hack
+
+        self.opts.use_gpu = self.enable_GPU and self.can_use_GPU
+
         if self.opts.use_gpu:
             self.processor_type     = "GPU"
             self.execution_provider = "CUDA"   # PaddleOCR supports only CUDA enabled GPUs at this point
@@ -55,6 +71,16 @@ class OCR_adapter(ModuleRunner):
         except Exception as ex:
             self.report_error(ex, __file__)
             return { "success": False, "error": "unable to process the image" }
+
+
+    def selftest(slf) -> JSON:
+        try:
+            import paddle
+            paddle.utils.run_check()
+            return { "success": True, "message": "PaddlePaddle self test successful" }
+        except:
+            return { "success": False, "message": "PaddlePaddle self test failed" }
+        
 
     def shutdown(self) -> None:
         pass

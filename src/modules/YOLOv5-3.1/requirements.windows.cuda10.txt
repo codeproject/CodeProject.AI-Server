@@ -1,0 +1,19 @@
+#! Python3.7
+# Requirements for Windows with CUDA 10
+
+OpenCV-Python               # Installing OpenCV, the Open source Computer Vision library
+Cython                      # Installing the Cython compiler for C extensions for the Python language.
+Pillow<10.0.0               # Installing Pillow, a Python Image Library
+SciPy                       # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML                      # Installing PyYAML, a library for reading configuration files
+
+tqdm                        # Installing TDQM, the Fast, Extensible Progress Meter
+Matplotlib                  # Installing Matplotlib, the Python plotting package
+
+# We want to target CUDA 10.1 for this one
+-f https://download.pytorch.org/whl/torch_stable.html
+torch==1.7.0+cu101          # Installing PyTorch, for Tensor computation and Deep neural networks
+-f https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.8.1+cu101    # Installing TorchVision, for Computer Vision based AI
+
+# last line empty.

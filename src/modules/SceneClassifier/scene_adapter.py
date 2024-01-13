@@ -56,6 +56,7 @@ class Scene_adapter(ModuleRunner):
         self.place_names = None
         self.classifier  = None # Lazy load later on
 
+
     def initialise(self) -> None:
     
         # TODO: Read this file async
@@ -77,6 +78,7 @@ class Scene_adapter(ModuleRunner):
             self.execution_provider = "CUDA"
         elif self.opts.use_MPS:
             self.execution_provider = "MPS"
+
 
     def process(self: ModuleRunner, data: RequestData) -> JSON:
 
@@ -120,6 +122,23 @@ class Scene_adapter(ModuleRunner):
             self.report_error(ex, __file__)
             return { "success": False, "error": "Error occurred on the server" }
     
+    def selftest(self) -> None:
+        
+        file_name = os.path.join("test", "beach.jpg")
+
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "classify"
+        request_data.add_file(file_name)
+        request_data.add_value("min_confidence", 0.4)
+
+        result = self.process(request_data)
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Scene classification test successful" }
+
+
     def init_models(self, re_entered: bool = False) -> None:
 
         """

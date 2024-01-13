@@ -134,6 +134,23 @@ class YOLO31_adapter(ModuleRunner):
         return { "success": True, "models": self.model_names }
 
 
+    def selftest(self) -> JSON:
+        
+        file_name = os.path.join("test", "home-office.jpg")
+
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "detect"
+        request_data.add_file(file_name)
+        request_data.add_value("min_confidence", 0.4)
+
+        result = self.process(request_data)
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Object detection test successful" }
+
+
     def get_detector(self, models_dir: str, model_name: str, resolution: int,
                     use_Cuda: bool, accel_device_name: str, use_MPS: bool,
                     half_precision: str) -> any:

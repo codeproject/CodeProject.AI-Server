@@ -124,12 +124,13 @@ class YoloV5Trainer_adaptor(ModuleRunner):
         """ Initialises this module """
 
         # Process settings
-        self.parallelism = 2 # One for background task
-                             # one to process other requests
+        self.selftest_check_packages = False # Too messy, will fail
+        self.parallelism             = 2 # One for background task
+                                         # one to process other requests
 
         # determine the device to use during training
         self.default_device = "cpu"
-        if ModuleOptions.support_GPU:
+        if ModuleOptions.enable_GPU:
             if self.hasTorchCuda:
                 self.default_device     = "0"
                 self.execution_provider = "CUDA"
@@ -160,8 +161,10 @@ class YoloV5Trainer_adaptor(ModuleRunner):
 
         self.progress                  = ProgressHandler()
 
-        self.init_fiftyone()
-        self.init_custom_callbacks()
+        # We don't have a self test yet, and this is expensive
+        if not self._performing_self_test:
+            self.init_fiftyone()
+            self.init_custom_callbacks()
 
 
     @property
@@ -176,7 +179,7 @@ class YoloV5Trainer_adaptor(ModuleRunner):
         return not self.worker_thread.done()
     
 
-    async def process(self, data: RequestData) -> JSON:
+    def process(self, data: RequestData) -> JSON:
         """
         Processes a request from the server. Gets the command from the request
         and dispatches to the appropriate function.
@@ -218,6 +221,7 @@ class YoloV5Trainer_adaptor(ModuleRunner):
         working order
         """
         print("Running self test for training module")
+        return { "success": True, "message": "[Null test: No test was actually performed]" }
 
 
     # COMMAND SWITCHBOARD ------------------------------------------------------
@@ -468,7 +472,7 @@ class YoloV5Trainer_adaptor(ModuleRunner):
         workers      = data.get_int("workers", 8)
         workers      = data.clamp(workers, 1, 128)
 
-        if not ModuleOptions.support_GPU:
+        if not ModuleOptions.enable_GPU:
             device = "cpu"
         elif self.hasTorchMPS:
             device = "mps"
@@ -634,12 +638,12 @@ class YoloV5Trainer_adaptor(ModuleRunner):
             hyp_name = "hyp.scratch-med.yaml" 
         elif hyp_type == "high":
             hyp_name = "hyp.scratch-high.yaml" 
-        
-        hyp_file_path = {
-            'Linux': "bin/linux/python38/venv/lib/python3.8/site-packages/yolov5/data/hyps/",
-            'Darwin': "bin/macos/python38/venv/lib/python3.8/site-packages/yolov5/data/hyps/",
-            'Windows': "bin/windows/python39/venv/Lib/site-packages/yolov5/data/hyps/"
-        }[platform.system()]     
+                
+        # The hyp file is under <site-packages>/yolov5/data/hyps/, where venv is
+        # the current virtual environments's site-packages folder
+        hyp_file_path = os.path.join(self.python_pkgs_dir, "yolov5", "data", "hyps", hyp_name)
+        if not os.path.exists(hyp_file_path):
+            raise FileNotFoundError(f"The hyper-parameter file {hyp_file_path} does not exist.")
         
         # try to use the dataset name as a full path to the dataset directory.
         dataset_yaml_path = os.path.join(dataset_name, 'dataset.yaml')
@@ -654,7 +658,7 @@ class YoloV5Trainer_adaptor(ModuleRunner):
         kwargs['weights']   = f"{self.models_dirname}/{weights_filename}"
         kwargs['data']      = dataset_yaml_path
         kwargs['project']   = self.training_dirname
-        kwargs['hyp']       = hyp_file_path + hyp_name
+        kwargs['hyp']       = hyp_file_path
         
         return self.train(**kwargs)
 

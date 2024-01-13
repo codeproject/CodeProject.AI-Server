@@ -36,12 +36,12 @@ namespace CodeProject.AI.SDK
         /// <summary>
         /// Gets or sets the path to this Module
         /// </summary>
-        public string? ModulePath { get; set; }
+        public string? moduleDirPath { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether or not this module supports GPU acceleration
         /// </summary>
-        public bool   SupportGPU  { get; set; } = true;
+        public bool   EnableGPU  { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the name of the hardware acceleration execution provider
@@ -73,13 +73,13 @@ namespace CodeProject.AI.SDK
             _cancelled = false;
             _logger    = logger;
 
-            string currentModulePath = GetModuleDirectory();
-            string currentDirName = new DirectoryInfo(currentModulePath).Name;
+            string currentModuleDirPath = GetModuleDirectoryPath();
+            string currentDirName       = new DirectoryInfo(currentModuleDirPath).Name;
 
-            _moduleId  = configuration.GetValue<string?>("CPAI_MODULE_ID", null)        ?? currentDirName;
-            ModuleName = configuration.GetValue<string?>("CPAI_MODULE_NAME", null)      ?? _moduleId;
-            ModulePath = configuration.GetValue<string?>("CPAI_MODULE_PATH", null)      ?? currentModulePath;
-            _queueName = configuration.GetValue<string?>("CPAI_MODULE_QUEUENAME", null) ?? _moduleId.ToLower() + "_queue";
+            _moduleId     = configuration.GetValue<string?>("CPAI_MODULE_ID", null)        ?? currentDirName;
+            ModuleName    = configuration.GetValue<string?>("CPAI_MODULE_NAME", null)      ?? _moduleId;
+            moduleDirPath = configuration.GetValue<string?>("CPAI_MODULE_PATH", null)      ?? currentModuleDirPath;
+            _queueName    = configuration.GetValue<string?>("CPAI_MODULE_QUEUENAME", null) ?? _moduleId.ToLower() + "_queue";
 
             int port = configuration.GetValue<int>("CPAI_PORT", 32168);
 
@@ -90,7 +90,7 @@ namespace CodeProject.AI.SDK
             if (_parallelism == 0)
                 _parallelism = Environment.ProcessorCount/2;
 
-            SupportGPU       = configuration.GetValue<bool>("CPAI_MODULE_SUPPORT_GPU",   true);
+            EnableGPU       = configuration.GetValue<bool>("CPAI_MODULE_ENABLE_GPU",   true);
             _accelDeviceName = configuration.GetValue<string?>("CPAI_ACCEL_DEVICE_NAME", null);
             _halfPrecision   = configuration.GetValue<string?>("CPAI_HALF_PRECISION", null) ?? "enable"; // Can be enable, disable or force
             _logVerbosity    = configuration.GetValue<string?>("CPAI_LOG_VERBOSITY", null)  ?? "info";   // Can be Quiet, Info or Loud
@@ -98,13 +98,6 @@ namespace CodeProject.AI.SDK
             var token = _cancellationTokenSource.Token;
 #if DEBUG
             _apiClient = new BackendClient($"http://localhost:{port}/", TimeSpan.FromSeconds(30), token);
-
-            /*
-            _logger.LogInformation($"CPAI_PORT:               {port}");
-            _logger.LogInformation($"CPAI_MODULE_ID:          {defaultModuleId}");
-            _logger.LogInformation($"CPAI_MODULE_PARALLELISM: {_parallelism}");
-            _logger.LogInformation($"CPAI_MODULE_SUPPORT_GPU: {_supportGPU}");
-            */
 #else
             _apiClient = new BackendClient($"http://localhost:{port}/", token: token);
 #endif
@@ -137,10 +130,10 @@ namespace CodeProject.AI.SDK
             GC.SuppressFinalize(this);
         }
 
-        protected string GetModuleDirectory()
+        protected string GetModuleDirectoryPath()
         {
-            string moduleDir = AppContext.BaseDirectory;
-            DirectoryInfo? info = new DirectoryInfo(moduleDir);
+            string moduleDirPath = AppContext.BaseDirectory;
+            DirectoryInfo? info  = new DirectoryInfo(moduleDirPath);
 
             // HACK: If we're running this server from the build output dir in dev environment
             // then the root path will be wrong.
@@ -160,7 +153,7 @@ namespace CodeProject.AI.SDK
             if (info != null)
                 return info.FullName;
 
-            return moduleDir;
+            return moduleDirPath;
         }
 
         /* No longer really needed in this form
@@ -271,7 +264,7 @@ namespace CodeProject.AI.SDK
             await Task.Delay(1_000, token).ConfigureAwait(false);
 
             _apiClient.LogToServer($"{ModuleName} module started.", $"{ModuleName}",
-                                        LogLevel.Information, string.Empty);
+                                   LogLevel.Information, string.Empty);
 
             InitModule();
 
@@ -294,14 +287,11 @@ namespace CodeProject.AI.SDK
             {
                 try
                 {
-                    //Console.Write($" -{i}");
-                    request = await requestTask.ConfigureAwait(false);
-                    //Console.Write($" ?{i}");
+                    request     = await requestTask.ConfigureAwait(false);
                     requestTask = _apiClient.GetRequest(_queueName!, _moduleId!, token,
                                                        ExecutionProvider, CanUseGPU);
                     if (request is null)
                         continue;
-                    //Console.Write($"!{i} ");
 
                     // Special shutdown request
                     string? requestModuleId = request.payload?.GetValue("moduleId");

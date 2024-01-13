@@ -62,7 +62,7 @@ def load_pretrained_weights(path: str):
     batch_size = 1    # just a random number
 
     # Initialize model with the pretrained weights
-    if ModuleOptions.support_GPU and torch.cuda.is_available():
+    if ModuleOptions.enable_GPU and torch.cuda.is_available():
         map_location = None     # default GPU
     # elif use_MPS:
     #    map_location = torch.device('mps')
@@ -106,10 +106,13 @@ def run_onnx(asset_path: str, processed_img: Image) -> any:
     # onnxruntime.InferenceSession(path/to/model, providers=['CUDAExecutionProvider'])
     model_path = os.path.normpath(asset_path + "/super-resolution-10.onnx")
 
-    if ModuleOptions.support_GPU and torch.cuda.is_available():
-        ort_session = onnxruntime.InferenceSession(model_path, providers=['CUDAExecutionProvider'])
-    else:
-        ort_session = onnxruntime.InferenceSession(model_path)
+    # if ModuleOptions.enable_GPU and torch.cuda.is_available():
+    #     ort_session = onnxruntime.InferenceSession(model_path, providers=['CUDAExecutionProvider'])
+    # else:
+    #     ort_session = onnxruntime.InferenceSession(model_path)
+    providers = onnxruntime.get_available_providers()
+    ort_session = onnxruntime.InferenceSession(model_path,  providers=providers)
+    
         
     ort_inputs = {ort_session.get_inputs()[0].name: processed_img} 
     ort_outs = ort_session.run(None, ort_inputs)   

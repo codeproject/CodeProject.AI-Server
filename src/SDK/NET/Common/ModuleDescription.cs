@@ -2,8 +2,6 @@
 using System.Text.Json.Serialization;
 
 using CodeProject.AI.SDK.API;
-using CodeProject.AI.SDK.Common;
-using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.SDK
 {
@@ -128,14 +126,11 @@ namespace CodeProject.AI.SDK
         /// Gets a value indicating whether or not this is a valid module that can actually be
         /// started.
         /// </summary>
-        public bool Valid
+        public override bool Valid
         {
             get
             {
-                return !string.IsNullOrWhiteSpace(ModuleId)    &&
-                       !string.IsNullOrWhiteSpace(DownloadUrl) &&
-                       !string.IsNullOrWhiteSpace(Name)        &&
-                       Platforms?.Length > 0;
+                return base.Valid && !string.IsNullOrWhiteSpace(DownloadUrl);
             }
         }
     }
@@ -149,80 +144,41 @@ namespace CodeProject.AI.SDK
         /// ModuleDescription objects are typically created by deserialising a JSON file so we don't
         /// get a chance at create time to supply supplementary information or adjust values that
         /// may not have been set (eg moduleId). Specifically, this function will set the status and
-        /// the ModulePath / WorkingDirectory, as well as setting the latest compatible version from
+        /// the moduleDirPath / WorkingDirectory, as well as setting the latest compatible version from
         /// the module's ModuleRelease list. But this could change without notice.
         /// </summary>
         /// <param name="module">This module that requires initialisation</param>
         /// <param name="currentServerVersion">The current version of the server</param>
-        /// <param name="modulesPath">The path to the folder containing all downloaded and installed
+        /// <param name="modulesDirPath">The path to the folder containing all downloaded and installed
         /// modules</param>
-        /// <param name="preInstalledModulesPath">The path to the folder containing all pre-installed
+        /// <param name="preInstalledModulesDirPath">The path to the folder containing all pre-installed
         /// modules</param>
-        /// <remarks>Modules are usually downloaded and installed in the modulesPAth, but we can
+        /// <remarks>Modules are usually downloaded and installed in the modulesDirPath, but we can
         /// 'pre-install' them in situations like a Docker image. We pre-install modules in a
         /// separate folder than the downloaded and installed modules in order to avoid conflicts 
         /// (in Docker) when a user maps a local folder to the modules dir. Doing this to the 'pre
         /// installed' dir would make the contents (the preinstalled modules) disappear.</remarks>
         public static void Initialise(this ModuleDescription module, string currentServerVersion, 
-                                      string modulesPath, string preInstalledModulesPath)
+                                      string modulesDirPath, string preInstalledModulesDirPath)
         {
             // Currently these are unused. There are here only as an experiment
             if (module.PreInstalled)
-                module.ModulePath = Path.Combine(preInstalledModulesPath, module.ModuleId!);
+                module.ModuleDirPath = Path.Combine(preInstalledModulesDirPath, module.ModuleId!);
             else
-                module.ModulePath = Path.Combine(modulesPath, module.ModuleId!);
-            module.WorkingDirectory = module.ModulePath; // This once was allowed to be different to ModulePath
+                module.ModuleDirPath = Path.Combine(modulesDirPath, module.ModuleId!);
+            module.WorkingDirectory = module.ModuleDirPath; // This once was allowed to be different to moduleDirPath
 
             // Find the most recent version of this module that's compatible with the current server
             SetLatestCompatibleVersion(module, currentServerVersion);
 
             // Set the status of all entries based on availability on this platform
             module.Status = string.IsNullOrWhiteSpace(module?.LatestRelease?.ModuleVersion) 
-                          || !module.IsAvailable(SystemInfo.Platform, currentServerVersion)
-                          ? ModuleStatusType.NotAvailable : ModuleStatusType.Available;                          
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether or not this module is actually available. This depends 
-        /// on having valid commands, settings, and importantly, being supported on this platform.
-        /// </summary>
-        /// <param name="module">This module</param>
-        /// <param name="platform">The platform being tested</param>
-        /// <param name="serverVersion">The version of the server, or null to ignore version issues</param>
-        /// <returns>true if the module is available; false otherwise</returns>
-        public static bool IsAvailable(this ModuleDescription module, string platform, string? serverVersion)
-        {
-            if (module is null)
-                return false;
-
-            // First check: Is there a version of this module that's compatible with the current server?
-            if (serverVersion is not null && string.IsNullOrWhiteSpace(module?.LatestRelease?.ModuleVersion))
-                SetLatestCompatibleVersion(module!, serverVersion);
-
-            bool versionOK = serverVersion is null || 
-                             !string.IsNullOrWhiteSpace(module?.LatestRelease?.ModuleVersion);
-
-            // Second check: Is this module available on this platform?
-            return module!.Valid && versionOK &&
-                   ( module.Platforms!.Any(p => p.EqualsIgnoreCase("all")) ||
-                     module.Platforms!.Any(p => p.EqualsIgnoreCase(platform)) );
+                          || !module.IsCompatible(currentServerVersion)
+                          ? ModuleStatusType.NotAvailable : ModuleStatusType.Available;
         }
 
         private static void SetLatestCompatibleVersion(ModuleDescription module, string currentServerVersion)
         {
-            // HACK: To be removed after CPAI 2.1 is released. The Versions array wasn't added to
-            // the downloadable list of modules until server version 2.1. All modules pre-server
-            // 2.1 are compatible with server 2.1+, so 
-            if ((module.ModuleReleases?.Length ?? 0) == 0)
-            {
-                module.LatestRelease = new ModuleRelease() 
-                {
-                    ModuleVersion = module.Version,
-                    ReleaseDate   = "2022-03-20"
-                };
-                return;
-            }
-
             foreach (ModuleRelease release in module!.ModuleReleases!)
             {
                 if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)

@@ -104,11 +104,11 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
 
         private SessionOptions GetSessionOptions()
         {
-            bool supportGPU = (Environment.GetEnvironmentVariable("CPAI_MODULE_SUPPORT_GPU") ?? "true").ToLower() == "true";
-            _logger.LogDebug($"ObjectDetection (.NET) supportGPU = {supportGPU}");
+            bool enableGPU = (Environment.GetEnvironmentVariable("CPAI_MODULE_ENABLE_GPU") ?? "true").ToLower() == "true";
+            _logger.LogDebug($"ObjectDetection (.NET) enableGPU = {enableGPU}");
 
             var sessionOpts = new SessionOptions();
-            
+#if !CPU
             string[]? providers = null;
             try
             {
@@ -117,14 +117,14 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
             catch
             {
             }
-
             foreach (var providerName in providers ?? Array.Empty<string>())
                 _logger.LogDebug($"ObjectDetection (.NET) provider: {providerName}");
-
+#endif
+#if CUDA
             // Enable CUDA  -------------------
             if (providers?.Any(p => p.StartsWithIgnoreCase("CUDA")) ?? false)
             {
-                if (supportGPU)
+                if (enableGPU)
                 {
                     try
                     {
@@ -145,11 +145,12 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 else
                     CanUseGPU = true;
             }
-
+#endif
+#if OpenVINO
             // Enable OpenVINO -------------------
             if (providers?.Any(p => p.StartsWithIgnoreCase("OpenVINO")) ?? false)
             {
-                if (supportGPU)
+                if (enableGPU)
                 {
                     try
                     {
@@ -171,11 +172,12 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 else
                     CanUseGPU = true;
             }
-
+#endif
+#if DirectML
             // Enable DirectML -------------------
             if (providers?.Any(p => p.StartsWithIgnoreCase("DML")) ?? false)
             {
-                if (supportGPU)
+                if (enableGPU)
                 {
                     try
                     {
@@ -198,7 +200,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.Yolo
                 else
                     CanUseGPU = true;
             }
-
+#endif
             sessionOpts.AppendExecutionProvider_CPU();
             return sessionOpts;
         }

@@ -9,6 +9,9 @@
 #    bash ../../setup.sh
 #
 # The setup.sh script will find this install.sh file and execute it.
+#
+# For help with install scripts, notes on variables and methods available, tips,
+# and explanations, see /src/modules/install_script_help.md
 
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
@@ -16,167 +19,193 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-# verbosity="loud"
-pythonLocation="Local"
-pythonVersion=3.9
+# If false, we install the non-desk-melting version. If true, wear gloves
+full_speed=false
 
-# Install python and the required dependencies
-setupPython
-installPythonPackages
+if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || \
+   [ "${systemName}" = "Jetson" ]; then
 
+    checkForAdminRights
+    if [ "$isAdmin" = false ]; then
+    
+        PACKAGES=""
+        # for pkg in libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools; do
+        for pkg in libopenblas-dev libblas-dev cmake python3-dev python3-setuptools; do
+            if ! dpkg -l "${pkg}" > /dev/null; then PACKAGES+=" ${pkg}"; fi
+        done
 
-# Now the supporting libraries
-if [ "${systemName}" == "Raspberry Pi" ] || [ "${systemName}" == "Orange Pi" ] || \
-   [ "${systemName}" == "Jetson" ]; then
+        if [[ -n "${PACKAGES}" ]]; then
+            writeLine "=================================================================================" $color_info
+            writeLine "Please run:" $color_info
+            writeLine ""
+            writeLine "  sudo apt install ${PACKAGES} " $color_info
+            writeLine ""
+            writeLine "to complete the setup for ObjectDetectionCoral" $color_info
+            writeLine "=================================================================================" $color_info
+            
+            if [ "$attemptSudoWithoutAdminRights" = true ]; then
+                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
+                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
+            fi
 
-    if [[ $EUID -ne 0 ]]; then
-        writeLine "=================================================================================" $color_error
-        writeLine "Please run: sudo apt install libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools " $color_info
-        writeLine "to complete the setup for ObjectDetectionCoral" $color_info
-        writeLine "=================================================================================" $color_error
-    else
-        sudo apt install libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools -y
+            # We won't set an error because once the user runs this script everything else will work
+            # module_install_errors="Admin permissions are needed to install libraries"
+        fi
+    fi
+
+    if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+        module_install_errors=""
+        installAptPackages "libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools"
+
+        if [ "${systemName}" = "Jetson" ]; then
+            sudo apt install libc-bin=2.29 libc6=2.29
+        fi
     fi
 fi
 
-if [ "$os" == "linux" ]; then
+if [ "$os" = "linux" ]; then
 
-    # Add the Debian package repository to your system
-    echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
-
-    if [ ! -d "${downloadPath}" ]; then mkdir -p "${downloadPath}"; fi
-    if [ ! -d "${downloadPath}/Coral" ]; then mkdir -p "${downloadPath}/Coral"; fi
-    pushd "${downloadPath}/Coral" >/dev/null 2>/dev/null
-
-    write "Downloading signing keys..." $color_mute
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg >/dev/null 2>/dev/null &
-    spin $!
-    writeLine "Done" "$color_success"
-
-    write "Installing signing keys..." $color_mute
-    # NOTE: 'add' is deprecated. We should, instead, name apt-key.gpg as coral.ai-apt-key.gpg and
-    # place it directly in the /etc/apt/trusted.gpg.d/ directory
-    sudo apt-key add apt-key.gpg >/dev/null 2>/dev/null &
-    spin $!
-    writeLine "Done" "$color_success"
-
-    popd >/dev/null 2>/dev/null
-
-    if [[ $EUID -ne 0 ]]; then
-        writeLine "=================================================================================" $color_error
-        writeLine "Please run the following commands to complete the setup for ObjectDetectionCoral:" $color_info
-        writeLine "sudo apt-get update && sudo apt-get install libedgetpu1-std" $color_info
-        writeLine "=================================================================================" $color_error
+    # Select the Edge TPU library version
+    if [ "$full_speed" = true ]; then
+        edgetpu_library="libedgetpu1-max"
+        desc="the full-speed, desk-melting version of libedgetpu1"
     else
-        # Install the Edge TPU runtime (standard, meaning half speed, or max, meaning full speed)
-        write "Installing libedgetpu1-std (the non-desk-melting version of libedgetpu1)..." $color_mute
-        apt-get update  -y  >/dev/null 2>/dev/null &
-        spin $!
-        apt-get install libedgetpu1-std -y  >/dev/null 2>/dev/null &
-        spin $!
-        writeLine "Done" "$color_success"
-
-        # BE CAREFUL. If you want your TPU to go to 11 and choose 'max' you may burn a hole in your desk
-        # sudo apt-get update && apt-get install libedgetpu1-max
+        edgetpu_library="libedgetpu1-std"
+        desc="the non-desk-melting version of libedgetpu1"
     fi
 
-elif [ "$os" == "macos" ]; then
+    # Quick check before we get messy
+    found_edgelib=false
+    if [ "$full_speed" = true ]; then
+        apt list libedgetpu1-max 2>/dev/null | grep installed >/dev/null 2>/dev/null
+        if [ "$?" = "0" ]; then found_edgelib=true; fi
+    else
+        apt list libedgetpu1-std 2>/dev/null | grep installed >/dev/null 2>/dev/null
+        if [ "$?" = "0" ]; then found_edgelib=true; fi
+    fi
+
+    if [ "$found_edgelib" = true ]; then
+        writeLine "Edge TPU library found." $color_success
+    else
+        if [ "$isAdmin" = false ]; then
+
+            # Download the Edge TPU instal package for the user to install manually. If we have
+            # admin rights then we'll be doing this work within this script ourselves
+            getFromServer "edgetpu_runtime_20221024.zip" "" "Downloading edge TPU runtime..."
+            sudo chmod -R a+rwX "${moduleDirPath}/edgetpu_runtime"
+
+            writeLine "=================================================================================" $color_info
+            writeLine "Please run the following to complete the setup for ObjectDetectionCoral:" $color_info
+            writeLine ""
+            writeLine "   sudo bash ${moduleDirPath}/edgetpu_runtime/install.sh"                 $color_info
+            writeLine ""
+            # writeLine " echo 'deb https://packages.cloud.google.com/apt coral-edgetpu-stable main' | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list" $color_info
+            # writeLine " curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg" $color_info
+            # writeLine " sudo apt-key add apt-key.gpg"                                          $color_info
+            # writeLine " apt-get update -y && apt-get install -y ${edgetpu_library}"            $color_info
+            writeLine "=================================================================================" $color_info
+
+            if [ "$attemptSudoWithoutAdminRights" = true ]; then
+                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
+                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
+            fi
+
+        fi
+
+        if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then   
+
+            # There is a perfectly good install script in ${moduleDirPath}/edgetpu_runtime/install.sh
+            # but it handles a lot of stuff that's not needed. Pulling out the core of that into here
+            # provides a little more control
+
+            # Add the Debian package repository to your system
+            echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
+
+            if [ ! -d "${downloadDirPath}" ]; then mkdir -p "${downloadDirPath}"; fi
+            if [ ! -d "${downloadDirPath}/Coral" ]; then mkdir -p "${downloadDirPath}/Coral"; fi
+            pushd "${downloadDirPath}/Coral" >/dev/null 2>/dev/null
+
+            write "Downloading signing keys..." $color_mute
+            curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg >/dev/null 2>/dev/null &
+            spin $!
+            writeLine "Done" "$color_success"
+
+            write "Installing signing keys..." $color_mute
+            # TODO: We need to transition away from apt key. See https://opensource.com/article/22/9/deprecated-linux-apt-key
+            # NOTE: 'add' is deprecated. We should, instead, name apt-key.gpg as coral.ai-apt-key.gpg and
+            # place it directly in the /etc/apt/trusted.gpg.d/ directory
+            sudo apt-key add apt-key.gpg >/dev/null 2>/dev/null &
+            spin $!
+            writeLine "Done" "$color_success"
+    
+            popd >/dev/null 2>/dev/null
+
+            installAptPackages ${edgetpu_library} ""
+        fi
+    fi
+
+elif [ "$os" = "macos" ]; then
     
     # brew install doesn't seem to be enough. Macports gets it right
     if ! command -v /opt/local/bin/port >/dev/null; then 
-        writeLine "Please install Macports from https://www.macports.org/install.php before you run this script" "$color_success"
-        quit 1
+        writeLine "Please install Macports from https://www.macports.org/install.php before you run this script" "$color_error"
+        module_install_errors="Macports (https://www.macports.org/install.php) must be installed"
     fi
 
-    # curl -LO https://github.com/google-coral/libedgetpu/releases/download/release-grouper/edgetpu_runtime_20221024.zip
-    # We have modified the install.sh script in this zip so it forces the install of the throttled version
-    getFromServer "edgetpu_runtime_20221024.zip" "" "Downloading edge TPU runtime..."
+    # Wouldn't this be nice! Except... to run port selfupdate you need to have an updated version of port.
+    # write "Updating macports..."
+    # sudo /opt/local/bin/port selfupdate >/dev/null
+    # spin $!
+    # writeLine "Done" "$color_success"
 
-    sudo chmod -R a+rwX "${modulePath}/edgetpu_runtime"
-    pushd "${modulePath}/edgetpu_runtime" >/dev/null
-    sudo bash install.sh
-
-    # For whatever reason the libs don't seem to be getting put in place, so do this manually
-    if [ "$platform" == "macos-arm64" ]; then
-        cp libedgetpu/throttled/darwin_arm64/libedgetpu.1.0.dylib .
-    else
-        cp libedgetpu/throttled/darwin_x86_64/libedgetpu.1.0.dylib .
+    /opt/local/bin/port version 2>/dev/null
+    if [ "$?" != "0" ]; then
+        writeLine "Please update Macports (see https://www.macports.org/install.php)" "$color_error"
+        module_install_errors="Macports (https://www.macports.org/install.php) must be updated"
     fi
 
-    popd >/dev/null
-    
-    package="tflite-runtime==2.5.0.post1 pycoral --extra-index-url https://google-coral.github.io/py-repo/"
-    package_desc="Tensorflow Lite for Coral"
+    if [ "$module_install_errors" == "" ]; then
+        # curl -LO https://github.com/google-coral/libedgetpu/releases/download/release-grouper/edgetpu_runtime_20221024.zip
+        # We have modified the install.sh script in this zip so it forces the install of the throttled version
+        getFromServer "edgetpu_runtime_20221024.zip" "" "Downloading edge TPU runtime..."
 
-    if [ "$os_name" == "Big Sur" ] && [ "$architecture" == "x86_64" ]; then   # macOS 11.x on Intel
-        installSinglePythonPackage "$package" "$package_desc"
-    elif [ "$os_name" == "Monterey" ] && [ "$architecture" == "arm64" ]; then # macOS 12.x on Apple Silicon
-        installSinglePythonPackage "$package" "$package_desc"
-    else
-        # At this point we don't actually have a supported pre-built package, but
-        # we can still install and run, albeit without Coral hardware.
-        installSinglePythonPackage "tensorflow" "Tensorflow"
+        sudo chmod -R a+rwX "${moduleDirPath}/edgetpu_runtime"
+        pushd "${moduleDirPath}/edgetpu_runtime" >/dev/null
+        sudo bash install.sh
+
+        # For whatever reason the libs don't seem to be getting put in place, so do this manually
+        if [ "$platform" = "macos-arm64" ]; then
+            cp libedgetpu/throttled/darwin_arm64/libedgetpu.1.0.dylib .
+        else
+            cp libedgetpu/throttled/darwin_x86_64/libedgetpu.1.0.dylib .
+        fi
+
+        popd >/dev/null
+        
+        # Install Tensorflow-Lite runtime. See https://google-coral.github.io/py-repo/tflite-runtime/
+        # for all available versions
+        package="tflite-runtime==2.5.0.post1"
+        package_desc="Tensorflow Lite for Coral"
+        pip_options="--extra-index-url https://google-coral.github.io/py-repo/"
+
+        if [ "$os_name" = "Big Sur" ] && [ "$architecture" = "x86_64" ]; then   # macOS 11.x on Intel
+            installPythonPackagesByName "$package" "$package_desc" "$pip_options"
+            installPythonPackagesByName "pycoral"
+        elif [ "$os_name" = "Monterey" ] && [ "$architecture" = "arm64" ]; then # macOS 12.x on Apple Silicon
+            installPythonPackagesByName "$package" "$package_desc" "$pip_options"
+            installPythonPackagesByName "pycoral"
+        else
+            # At this point we don't actually have a supported pre-built package,
+            # but we can still install and run, albeit without Coral hardware.
+            installPythonPackagesByName "Tensorflow"
+        fi
     fi
 fi
 
-# Download the MobileNet TFLite models and store in /assets
-getFromServer "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
+if [ "$module_install_errors" == "" ]; then
+    # Download the MobileNet TFLite models and store in /assets
+    getFromServer "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
 
-module_install_success='true'
-
-
-#                         -- Install script cheatsheet -- 
-#
-# Variables available:
-#
-#  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/SDK/Scripts)
-#  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
-#  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
-#  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
-#  moduleDir             - the name of the directory containing this module
-#  modulePath            - the path to this module ($modulesPath/$moduleDir)
-#  os                    - "linux" or "macos"
-#  architecture          - "x86_64" or "arm64"
-#  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
-#  systemName            - General name for the system. "Linux", "macOS", "Raspberry Pi", "Orange Pi"
-#                          "Jetson" or "Docker"
-#  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
-#  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
-#                          getFromServer will honour this value. Do it yourself for downloadAndExtract 
-#
-# Methods available
-#
-#  write     text [foreground [background]] (eg write "Hi" "green")
-#  writeLine text [foreground [background]]
-#  Download  storageUrl downloadPath filename moduleDir message
-#        storageUrl    - Url that holds the compressed archive to Download
-#        downloadPath  - Path to where the downloaded compressed archive should be downloaded
-#        filename      - Name of the compressed archive to be downloaded
-#        dirNameToSave - name of directory, relative to downloadPath, where contents of archive 
-#                        will be extracted and saved
-#
-#  getFromServer filename moduleAssetDir message
-#        filename       - Name of the compressed archive to be downloaded
-#        moduleAssetDir - Name of folder in module's directory where archive will be extracted
-#        message        - Message to display during download
-#
-#  downloadAndExtract  storageUrl filename downloadPath dirNameToSave message
-#        storageUrl    - Url that holds the compressed archive to Download
-#        filename      - Name of the compressed archive to be downloaded
-#        downloadPath  - Path to where the downloaded compressed archive should be downloaded
-#        dirNameToSave - name of directory, relative to downloadPath, where contents of archive 
-#                        will be extracted and saved
-#        message       - Message to display during download
-#
-#  setupPython Version [install-location]
-#       Version - version number of python to setup. 3.8 and 3.9 currently supported. A virtual
-#                 environment will be created in the module's local folder if install-location is
-#                 "Local", otherwise in $runtimesPath/bin/$platform/python<version>/venv.
-#       install-location - [optional] "Local" or "Shared" (see above)
-#
-#  installPythonPackages Version requirements-file-directory
-#       Version - version number, as per SetupPython
-#       requirements-file-directory - directory containing the requirements.txt file
-#       install-location - [optional] "Local" (installed in the module's local venv) or 
-#                          "Shared" (installed in the shared $runtimesPath/bin venv folder)
+    # TODO: Check assets created and has files
+    # module_install_errors=...
+fi

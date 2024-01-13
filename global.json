@@ -10,9 +10,9 @@
     //
     // If you can't do 1 and 2 then you cannot pin the version.
     //
-    // "version": "7.0.203",
+     "version": "7.0.114",
 
-    //"rollForward": "latestFeature",
+    "rollForward": "latestFeature",
     "allowPrerelease": false
   }
 }

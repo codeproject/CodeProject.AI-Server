@@ -1,17 +1,10 @@
 {
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
+
     "FaceProcessing": {
       "EnvironmentVariables": {
-        "YOLOv5_AUTOINSTALL": "false",
-        "YOLOv5_VERBOSE": "false",
-
-        "PROFILE": "desktop_gpu",
-        "USE_CUDA": "False",
-        "MODE": "MEDIUM",
-
-        "APPDIR": "%CURRENT_MODULE_PATH%\\intelligencelayer",
-        "DATA_DIR": "%DATA_DIR%",
-        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets"
       }
     }
  }

@@ -48,9 +48,11 @@ say_err() {
 }
 
 say() {
-    # using stream 3 (defined in the beginning) to not interfere with stdout of functions
-    # which may be used as return value
-    printf "%b\n" "${cyan:-}dotnet-install:${normal:-} $1" >&3
+    if [ "$quiet" != true ]; then
+        # using stream 3 (defined in the beginning) to not interfere with stdout of functions
+        # which may be used as return value
+        printf "%b\n" "${cyan:-}dotnet-install:${normal:-} $1" >&3
+    fi
 }
 
 say_verbose() {
@@ -494,6 +496,8 @@ get_normalized_product() {
         product="dotnet-runtime"
     elif [[ "$runtime" == "aspnetcore" ]]; then
         product="aspnetcore-runtime"
+    elif [[ "$runtime" == "sdk" ]]; then
+        product="dotnet-sdk"
     elif [ -z "$runtime" ]; then
         product="dotnet-sdk"
     fi
@@ -554,6 +558,8 @@ get_version_from_latestversion_file() {
         version_file_url="$azure_feed/Runtime/$channel/latest.version"
     elif [[ "$runtime" == "aspnetcore" ]]; then
         version_file_url="$azure_feed/aspnetcore/Runtime/$channel/latest.version"
+    elif [[ "$runtime" == "sdk" ]]; then
+         version_file_url="$azure_feed/Sdk/$channel/latest.version"
     elif [ -z "$runtime" ]; then
          version_file_url="$azure_feed/Sdk/$channel/latest.version"
     else
@@ -661,7 +667,9 @@ construct_download_link() {
         download_link="$azure_feed/Runtime/$specific_version/dotnet-runtime-$specific_product_version-$osname-$normalized_architecture.tar.gz"
     elif [[ "$runtime" == "aspnetcore" ]]; then
         download_link="$azure_feed/aspnetcore/Runtime/$specific_version/aspnetcore-runtime-$specific_product_version-$osname-$normalized_architecture.tar.gz"
-    elif [ -z "$runtime" ]; then
+    elif [[ "$runtime" == "sdk" ]]; then
+        download_link="$azure_feed/Sdk/$specific_version/dotnet-sdk-$specific_product_version-$osname-$normalized_architecture.tar.gz"
+    elif [[ "$runtime" == "aspnetcore" ]]; then
         download_link="$azure_feed/Sdk/$specific_version/dotnet-sdk-$specific_product_version-$osname-$normalized_architecture.tar.gz"
     else
         return 1
@@ -743,6 +751,8 @@ get_specific_product_version_url() {
     if [ "$is_flattened" = true ]; then
         if [ -z "$runtime" ]; then
             pvFileName="sdk-productVersion.txt"
+        elif [[ "$runtime" == "sdk" ]]; then
+            pvFileName="sdk-productVersion.txt"
         elif [[ "$runtime" == "dotnet" ]]; then
             pvFileName="runtime-productVersion.txt"
         else
@@ -757,6 +767,8 @@ get_specific_product_version_url() {
             download_link="$azure_feed/Runtime/$specific_version/${pvFileName}"
         elif [[ "$runtime" == "aspnetcore" ]]; then
             download_link="$azure_feed/aspnetcore/Runtime/$specific_version/${pvFileName}"
+        elif [[ "$runtime" == "sdk" ]]; then
+            download_link="$azure_feed/Sdk/$specific_version/${pvFileName}"
         elif [ -z "$runtime" ]; then
             download_link="$azure_feed/Sdk/$specific_version/${pvFileName}"
         else
@@ -824,6 +836,8 @@ construct_legacy_download_link() {
     local legacy_download_link=null
     if [[ "$runtime" == "dotnet" ]]; then
         legacy_download_link="$azure_feed/Runtime/$specific_version/dotnet-$distro_specific_osname-$normalized_architecture.$specific_version.tar.gz"
+    elif [[ "$runtime" == "sdk" ]]; then
+        legacy_download_link="$azure_feed/Sdk/$specific_version/dotnet-dev-$distro_specific_osname-$normalized_architecture.$specific_version.tar.gz"
     elif [ -z "$runtime" ]; then
         legacy_download_link="$azure_feed/Sdk/$specific_version/dotnet-dev-$distro_specific_osname-$normalized_architecture.$specific_version.tar.gz"
     else
@@ -1371,6 +1385,8 @@ print_dry_run() {
         repeatable_command+=" --runtime "\""dotnet"\"""
     elif [[ "$runtime" == "aspnetcore" ]]; then
         repeatable_command+=" --runtime "\""aspnetcore"\"""
+    elif [[ "$runtime" == "sdk" ]]; then
+        repeatable_command+=" --runtime "\""sdk"\"""
     fi
 
     repeatable_command+="$non_dynamic_parameters"
@@ -1407,6 +1423,9 @@ calculate_vars() {
     elif [[ "$runtime" == "aspnetcore" ]]; then
         asset_relative_path="shared/Microsoft.AspNetCore.App"
         asset_name="ASP.NET Core Runtime"
+    elif [[ "$runtime" == "sdk" ]]; then
+        asset_relative_path="sdk"
+        asset_name=".NET Core SDK"
     elif [ -z "$runtime" ]; then
         asset_relative_path="sdk"
         asset_name=".NET Core SDK"
@@ -1507,6 +1526,7 @@ azure_feed=""
 uncached_feed=""
 feed_credential=""
 verbose=false
+quiet=false
 runtime=""
 runtime_id=""
 quality=""
@@ -1556,7 +1576,7 @@ do
         --runtime|-[Rr]untime)
             shift
             runtime="$1"
-            if [[ "$runtime" != "dotnet" ]] && [[ "$runtime" != "aspnetcore" ]]; then
+            if [[ "$runtime" != "dotnet" ]] && [[ "$runtime" != "aspnetcore" ]] && [[ "$runtime" != "sdk" ]]; then
                 say_err "Unsupported value for --runtime: '$1'. Valid values are 'dotnet' and 'aspnetcore'."
                 if [[ "$runtime" == "windowsdesktop" ]]; then
                     say_err "WindowsDesktop archives are manufactured for Windows platforms only."
@@ -1573,6 +1593,10 @@ do
             ;;
         --verbose|-[Vv]erbose)
             verbose=true
+            non_dynamic_parameters+=" $name"
+            ;;
+        --quiet|-[Q]uiet)
+            quiet=true
             non_dynamic_parameters+=" $name"
             ;;
         --no-cdn|-[Nn]o[Cc]dn)
@@ -1665,6 +1689,7 @@ do
             echo "  --dry-run,-DryRun                  Do not perform installation. Display download link."
             echo "  --no-path, -NoPath                 Do not set PATH for the current process."
             echo "  --verbose,-Verbose                 Display diagnostics information."
+            echo "  --quiet,-Quiet                     Display only warnings and errors."
             echo "  --azure-feed,-AzureFeed            For internal use only."
             echo "                                     Allows using a different storage to download SDK archives from."
             echo "                                     This parameter is only used if --no-cdn is false."
@@ -1694,10 +1719,6 @@ do
     shift
 done
 
-say "Note that the intended use of this script is for Continuous Integration (CI) scenarios, where:"
-say "- The SDK needs to be installed without user interaction and without admin rights."
-say "- The SDK installation doesn't need to persist across multiple CI runs."
-say "To set up a development environment or to run apps, use installers rather than this script. Visit https://dotnet.microsoft.com/download to get the installer.\n"
 
 if [ "$internal" = true ] && [ -z "$(echo $feed_credential)" ]; then
     message="Provide credentials via --feed-credential parameter."
@@ -1713,6 +1734,11 @@ check_min_reqs
 calculate_vars
 # generate_regular_links call below will 'exit' if the determined version is already installed.
 generate_download_links
+
+say "Note that the intended use of this script is for Continuous Integration (CI) scenarios, where:"
+say "- The SDK needs to be installed without user interaction and without admin rights."
+say "- The SDK installation doesn't need to persist across multiple CI runs."
+say "To set up a development environment or to run apps, use installers rather than this script. Visit https://dotnet.microsoft.com/download to get the installer.\n"
 
 if [[ "$dry_run" = true ]]; then
     print_dry_run

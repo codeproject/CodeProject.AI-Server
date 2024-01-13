@@ -31,27 +31,8 @@
     <Compile Include="__init__.py" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.linux-arm64.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.linux.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.macos.arm64.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.macos.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.windows.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="package.bat" />
+    <Content Include="package.sh" />
     <Content Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\inference.pdiparams" />
     <Content Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\inference.pdiparams.info" />
     <Content Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\inference.pdmodel" />
@@ -62,7 +43,37 @@
     <Content Include="paddleocr\en_PP-OCRv3_rec_infer\inference.pdiparams" />
     <Content Include="paddleocr\en_PP-OCRv3_rec_infer\inference.pdiparams.info" />
     <Content Include="paddleocr\en_PP-OCRv3_rec_infer\inference.pdmodel" />
+    <Content Include="post_install.sh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.orangepi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.jetson.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.raspberrypi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.linux.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.macos.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.windows.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="requirements.txt" />
+    <Content Include="requirements.linux.cuda11.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.raspberrypi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.linux.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
@@ -72,13 +83,43 @@
     <Content Include="requirements.linux.arm64.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-    <Content Include="requirements.linux.cuda-no-luck.txt">
-      <DependentUpon>requirements.txt</DependentUpon>
-    </Content>
     <Content Include="requirements.macos.arm64.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.macos.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda10.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda11_6.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda11_7.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda11_8.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda12.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda10.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda11.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda11_6.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda11_7.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda11_8.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda12.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>

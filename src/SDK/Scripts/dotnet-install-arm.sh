@@ -1,37 +1,24 @@
 #!/bin/bash
 
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m          .NET 7 Installer"
-echo -e "\e[1m----------------------------------------"
-echo ""
-echo -e "\e[1mPete Codes / PJG Creations 2021"
-echo ""
+darkred="\e[1;31m"
+bold="\e[1m"
+underline="\e[1;4m"
+reset="\e[0m"
+
+echo -e "${bold}.NET 7 Installer${reset}"
+echo -e "${bold}Pete Codes / PJG Creations 2021${reset}"
+echo -e "${bold}CodeProject.AI edition${reset}"   # Drastically trimming output / SDK is optional
+
 echo -e "Latest update 01/10/2022"
-echo ""
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m     Fetching Latest .NET Versions"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+if [ "$Admin" = "" ]; then
+    if [[ $EUID -eq 0 ]]; then isAdmin=true; else isAdmin=false; fi
+fi
 
-dotnetver=7.0
-
-#
-# We can add this back in when this release becomes recommended
-#
-#dotnetver=$1
-#
-#if [[ "$dotnetver" = "" ]]; then
-#  versionspage=$(wget -qO - https://dotnet.microsoft.com/download/dotnet)
-#  matchrecommended='\.NET ([^]*) \(recommended\)'
-
-#  [[ $versionspage =~ $matchrecommended ]]
-#  dotnetver=${BASH_REMATCH[1]}
-#fi
-
-sdkfile=/tmp/dotnetsdk.tar.gz
-aspnetfile=/tmp/aspnetcore.tar.gz
+if [ "$isAdmin" = false ]; then
+   echo -e "${darkred}This script must be run as root (sudo $0)${reset}" 
+   exit 1
+fi
 
 download() {
     [[ $downloadspage =~ $1 ]]
@@ -54,153 +41,165 @@ detectArch() {
     fi
 }
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m        Installation information"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
 
-echo ""
-echo "This will install the latest versions of the following:"
-echo ""
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
-echo "- .NET SDK $dotnetver"
-echo "- ASP.NET Runtime $dotnetver"
-echo ""
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
-echo -e "Any suggestions or questions, email \e[1;4mpete@pjgcreations.co.uk"
-echo -e "\e[0mSend me a tweet \e[1;4m@pete_codes"
-echo -e "\e[0mTutorials on \e[1;4mhttps://www.petecodes.co.uk"
-echo ""
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+#dotnetver=7.0
+#requestedType=runtime
 
-if [[ $EUID -ne 0 ]]; then
-   echo -e "\e[1;31mThis script must be run as root (sudo $0)" 
-   exit 1
+# input parameters
+dotnetver=$1
+requestedType=$2
+
+# Constants
+dotnettype="dotnet-core"
+always_install_runtime=true
+sdkfile=/tmp/dotnetsdk.tar.gz
+aspnetfile=/tmp/aspnetcore.tar.gz
+
+# flags
+quiet='false'
+if [ "$3" = "quiet" ]; then quiet='true'; fi
+
+
+echo -e "${bold}Fetching Latest .NET Versions${reset}"
+
+if [ "$dotnetver" = "" ]; then
+    versionspage=$(wget -qO - https://dotnet.microsoft.com/download/dotnet)
+    matchrecommended='\.NET ([^]*) \(recommended\)'
+
+    [[ $versionspage =~ $matchrecommended ]]
+    dotnetver=${BASH_REMATCH[1]}
 fi
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m         Installing Dependencies"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
 
-apt-get -y install libunwind8 gettext
+echo -e "${bold}Installation information${reset}"
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m           Remove Old Binaries"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+echo "This will install the latest versions of the following:"
 
-rm -f $sdkfile
-rm -f $aspnetfile
+if [ "$requestedType" = "sdk" ]; then
+    echo "- .NET SDK $dotnetver"
+fi
+if [ "$requestedType" = "runtime" ] || [ "$always_install_runtime" = "true" ]; then
+    echo "- ASP.NET Runtime $dotnetver"
+fi
+echo ""
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m        Getting .NET SDK $dotnetver"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+# echo -e "Any suggestions or questions, email ${underline}pete@pjgcreations.co.uk${reset}"
+# echo -e "Send me a tweet ${underline}@pete_codes${reset}"
+# echo -e "Tutorials on ${underline}https://www.petecodes.co.uk${reset}"
+# echo ""
+# echo ""
 
-[[ "$dotnetver" > "5" ]] && dotnettype="dotnet" || dotnettype="dotnet-core"
-downloadspage=$(wget -qO - https://dotnet.microsoft.com/download/$dotnettype/$dotnetver)
+
+echo -e "${bold}Installing Dependencies${reset}"
+
+if [ "$quiet" = "true" ]; then
+    apt-get -y install libunwind8 gettext > /dev/null
+else
+    apt-get -y install libunwind8 gettext
+fi
+
+
+echo -e "${bold}Remove Old Binaries${reset}"
+
+if [ "$quiet" = "true" ]; then
+    rm -f $sdkfile > /dev/null
+    rm -f $aspnetfile > /dev/null
+else
+    rm -f $sdkfile
+    rm -f $aspnetfile
+fi
 
 detectArch
 
-download 'href="([^"]*sdk-[^"/]*linux-'$arch'-binaries)"' $sdkfile
+echo -e "${bold}Getting download links for .NET ${dotnetver}${reset}"
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m       Getting ASP.NET Runtime $dotnetver"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+# Download the downloads page to get some links
+[[ "$dotnetver" > "5" ]] && dotnettype="dotnet" || dotnettype="dotnet-core"
+downloadspage=$(wget -qO - https://dotnet.microsoft.com/download/$dotnettype/$dotnetver)
 
-download 'href="([^"]*aspnetcore-[^"/]*linux-'$arch'-binaries)"' $aspnetfile
+if [ "$requestedType" = "sdk" ]; then
+    echo -e "${bold}Getting .NET SDK ${dotnetver}${reset}"
+    download 'href="([^"]*sdk-[^"/]*linux-'$arch'-binaries)"' $sdkfile
+fi
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m       Creating Main Directory"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+if [ "$requestedType" = "runtime" ] || [ "$always_install_runtime" = "true" ]; then
+    echo -e "${bold}Getting ASP.NET Runtime ${dotnetver}${reset}"
+    download 'href="([^"]*aspnetcore-[^"/]*linux-'$arch'-binaries)"' $aspnetfile
+fi
+
+
+echo -e "${bold}Creating Main Directory${reset}"
 
 if [[ -d /opt/dotnet ]]; then
     echo "/opt/dotnet already  exists on your filesystem."
 else
     echo "Creating Main Directory"
-    echo ""
     mkdir /opt/dotnet
 fi
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m    Extracting .NET SDK $dotnetver"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+if [ "$requestedType" = "sdk" ]; then
 
-tar -xvf $sdkfile -C /opt/dotnet/
+    echo -e "${bold}Extracting .NET SDK ${dotnetver}${reset}"
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m    Extracting ASP.NET Runtime $dotnetver"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+    if [ "$quiet" = "true" ]; then
+        tar -xvf $sdkfile -C /opt/dotnet/ > /dev/null
+    else
+        tar -xvf $sdkfile -C /opt/dotnet/
+    fi
 
-tar -xvf $aspnetfile -C /opt/dotnet/
-
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m    Link Binaries to User Profile"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
-
-ln -s /opt/dotnet/dotnet /usr/local/bin
-
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m    Make Link Permanent"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
-
-if grep -q 'export DOTNET_ROOT=' /home/pi/.bashrc;  then
-  echo 'Already added link to .bashrc'
-else
-  echo 'Adding Link to .bashrc'
-  echo 'export DOTNET_ROOT=/opt/dotnet' >> /home/pi/.bashrc
 fi
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m         Download Debug Stub"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+if [ "$requestedType" = "runtime" ] || [ "$always_install_runtime" = "true" ]; then
 
-cd ~
+    echo -e "${bold}Extracting ASP.NET Runtime ${dotnetver}${reset}"
 
-wget -O /home/pi/dotnetdebug.sh https://raw.githubusercontent.com/pjgpetecodes/dotnet7pi/master/dotnetdebug.sh
-chmod +x /home/pi/dotnetdebug.sh 
+    if [ "$quiet" = "true" ]; then
+        tar -xvf $aspnetfile -C /opt/dotnet/ > /dev/null
+    else
+        tar -xvf $aspnetfile -C /opt/dotnet/
+    fi
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m          Run dotnet --info"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[0m"
+fi
 
+echo -e "${bold}Link Binaries to User Profile${reset}"
+ln -s /opt/dotnet/dotnet /usr/local/bin
+
+echo -e "${bold}Make Link Permanent${reset}"
+if [ -d /home/pi/ ]; then
+    if grep -q 'export DOTNET_ROOT=' /home/pi/.bashrc;  then
+        echo 'Already added link to .bashrc'
+    else
+        echo 'Adding Link to .bashrc'
+        echo 'export DOTNET_ROOT=/opt/dotnet' >> /home/pi/.bashrc
+    fi
+else
+    if grep -q 'export DOTNET_ROOT=' ~/.bashrc;  then
+        echo 'Already added link to .bashrc'
+    else
+        echo 'Adding Link to .bashrc'
+        echo 'export DOTNET_ROOT=/opt/dotnet' >> ~/.bashrc
+    fi
+fi
+
+# echo ""
+# echo -e "${bold}Download Debug Stub${reset}"
+# echo ""
+#
+# cd ~
+# wget -O /home/pi/dotnetdebug.sh https://raw.githubusercontent.com/pjgpetecodes/dotnet7pi/master/dotnetdebug.sh
+# chmod +x /home/pi/dotnetdebug.sh 
+
+echo -e "${bold}Run dotnet --info${reset}"
 dotnet --info
 
-echo -e "\e[0m"
-echo -e "\e[1m----------------------------------------"
-echo -e "\e[1m              ALL DONE!"
-echo ""
-echo -e "\e[1mNote: It's highly recommended that you perform a reboot at this point"
-echo ""
-#echo -e "\e[0mGo ahead and run \e[1mdotnet new console \e[0min a new directory!"
+echo -e "${bold}ALL DONE!${reset}"
+echo -e "${bold}Note: It's highly recommended that you perform a reboot at this point${reset}"
+
+#echo -e "Go ahead and run ${bold}dotnet new console ${reset}in a new directory!"
 #echo ""
 #echo ""
 #echo ""
-#echo -e "\e[0mLet me know how you get on by tweeting me at \e[1;5m@pete_codes\e[0m"
+#echo -e "Let me know how you get on by tweeting me at \e[1;5m@pete_codes${reset}"
 #echo ""
-#echo -e "\e[1m----------------------------------------"
-#echo -e "\e[0m"
+#echo -e "${bold}----------------------------------------${reset}"
+#echo ""

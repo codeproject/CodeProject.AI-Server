@@ -23,8 +23,16 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="assets\categories_places365.txt" />
+    <Content Include="assets\scene.pt" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
+    <Content Include="test\beach.jpg" />
+    <Content Include="package.bat" />
+    <Content Include="package.sh" />
+  </ItemGroup>
+
+  <ItemGroup>    
     <Content Include="modulesettings.json" />
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>
@@ -36,9 +44,18 @@
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
   </ItemGroup>
+
   <ItemGroup>
-    <Content Include="package.bat" />
     <Content Include="requirements.txt" />
+    <Content Include="requirements.jetson.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.raspberrypi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.orangepi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
     <Content Include="requirements.linux.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
@@ -81,7 +98,9 @@
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="assets\" />
     <Folder Include="models" />
+    <Folder Include="test\" />
     <Folder Include="utils" />
   </ItemGroup>
   <ItemGroup>

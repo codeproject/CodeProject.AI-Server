@@ -1,8 +1,0 @@
-{
-  "Modules": {
-    "ObjectDetectionCoral": {
-      "Runtime": "python3.9",
-      "AutoStart": true
-    }
-  }
-}

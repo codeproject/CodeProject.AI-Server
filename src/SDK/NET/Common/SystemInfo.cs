@@ -197,6 +197,7 @@ namespace CodeProject.AI.SDK.Common
         private static bool?        _isDevelopment;
         private static bool?        _hasNvidiaCard;
         private static bool         _isWSL;
+        private static string?      _defaultPythonVersion;
 
         private static TimeSpan     _nvidiaInfoRefreshTime = TimeSpan.FromSeconds(10);
         private static TimeSpan     _systemInfoRefreshTime = TimeSpan.FromSeconds(1);
@@ -324,15 +325,13 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
-        /// Gets the current platform name. This will be OS[-architecture]. eg Windows, macOS,
-        /// Linux-Arm64.  Note that x64 won't have a suffix.
+        /// Returns OS[-architecture]. eg Windows, macOS, Linux-Arm64. Note that x64 won't have a
+        /// suffix.
         /// </summary>
-        public static string Platform
+        public static string OSAndArchitecture
         {
             get
             {
-                // RuntimeInformation.GetPlatform() or RuntimeInformation.Platform would have been
-                // too easy.
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     return Architecture == "Arm64" ? "Windows-Arm64" : "Windows";
 
@@ -346,6 +345,24 @@ namespace CodeProject.AI.SDK.Common
                     return "FreeBSD";
 
                 return "Windows"; // Gotta be something...
+            }
+        }
+
+        /// <summary>
+        /// Gets the current platform name. This will be OS[-architecture]. eg Windows, macOS,
+        /// Linux-Arm64.  Note that x64 won't have a suffix.
+        /// </summary>
+        public static string Platform
+        {
+            get
+            {
+                if (HardwareVendor == "Raspberry Pi" || HardwareVendor == "Orange Pi")
+                    return HardwareVendor.Replace(" ", string.Empty);
+
+                if (HardwareVendor == "NVIDIA Jetson")
+                    return "Jetson";
+
+                return OSAndArchitecture;
             }
         }
 
@@ -384,17 +401,17 @@ namespace CodeProject.AI.SDK.Common
         {
             get
             {
-                if (IsWindows)
-                    return IsWSL? "WSL" : "Windows";
-                    
+                if (IsDocker)
+                    return "Docker";
+
+                if (IsWSL)
+                    return "WSL";
+                   
                 if (HardwareVendor == "Raspberry Pi" || HardwareVendor == "Orange Pi")
                     return HardwareVendor;
 
                 if (HardwareVendor == "NVIDIA Jetson")
                     return "Jetson";
-
-                if (IsDocker)
-                    return "Docker";
 
                 return OperatingSystem;
             }
@@ -425,8 +442,8 @@ namespace CodeProject.AI.SDK.Common
                 {
                     try
                     {
-                        // string cpuInfo = File.ReadAllText("/proc/cpuinfo"); - no good for OrangePi
-                        string cpuInfo = File.ReadAllText("/sys/firmware/devicetree/base/model");
+                        // string cpuInfo = File.ReadAllText("/proc/cpuinfo"); - no good for Orange Pi
+                        string cpuInfo = File.ReadAllText/*Async*/("/sys/firmware/devicetree/base/model");
                         if (cpuInfo.ContainsIgnoreCase("Raspberry Pi"))
                             _hardwareVendor = "Raspberry Pi";
                         else if (cpuInfo.ContainsIgnoreCase("Orange Pi"))
@@ -540,6 +557,14 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
+        /// Returns the default Python version for the current system (only returns Major.Minor)
+        /// </summary>
+        public static string DefaultPythonVersion
+        {
+            get { return _defaultPythonVersion is null? string.Empty : _defaultPythonVersion; }
+        }
+
+        /// <summary>
         /// Returns a value indicating whether system resources (Memory, CPU) are being monitored.
         /// </summary>
         public static bool IsResourceUsageMonitoring  => _monitorSystemUsageTask != null;
@@ -565,6 +590,12 @@ namespace CodeProject.AI.SDK.Common
             
             await CheckForWslAsync().ConfigureAwait(false);
 
+            var pattern = "python (?<version>\\d\\.\\d+)";
+            var options = RegexOptions.IgnoreCase;
+            var results = await GetProcessInfoAsync("python", "--version", pattern, options).ConfigureAwait(false);
+            if ((results?.Count ?? 0) > 0)
+                _defaultPythonVersion = results!["version"];
+
             _monitorSystemUsageTask = MonitorSystemUsageAsync();
             _monitoryGpuUsageTask   = MonitorNvidiaGpuUsageAsync();
                 
@@ -581,6 +612,7 @@ namespace CodeProject.AI.SDK.Common
 
             string? gpuDesc = GPU?.Description;
 
+            info.AppendLine($"System:           {SystemName}");
             info.AppendLine($"Operating System: {OperatingSystem} ({OperatingSystemDescription})");
 
             if (CPU is not null)
@@ -618,14 +650,16 @@ namespace CodeProject.AI.SDK.Common
                 // gpuDesc = gpuDesc.Replace("Compute:", "\n                  Compute:");
                 info.AppendLine($"GPU:              {gpuDesc}");
             }
+
             if (Memory is not null)
                 info.AppendLine($"System RAM:       {FormatSizeBytes(Memory.Total, 0)}");
+
             info.AppendLine($"Target:           {Platform}");
             info.AppendLine($"BuildConfig:      {BuildConfig}");
             info.AppendLine($"Execution Env:    {ExecutionEnvironment}");
             info.AppendLine($"Runtime Env:      {RuntimeEnvironment}");
             info.AppendLine($".NET framework:   {RuntimeInformation.FrameworkDescription}");
-            // info.AppendLine($"Python versions:  {PythonVersions}");
+            info.AppendLine($"Default Python:   {DefaultPythonVersion}");
 
             return info.ToString().Trim();
         }
@@ -689,7 +723,7 @@ namespace CodeProject.AI.SDK.Common
         /// </summary>
         /// <returns>An int representing the percentage of CPU capacity used</returns>
         /// <remarks>This method could be (and was) a property, but to stick to the format we had
-        /// where we use 'Get' to query an instantaneous value it's been switched to a method.</remartks>
+        /// where we use 'Get' to query an instantaneous value it's been switched to a method.</remarks>
         public static int GetCpuUsage()
         {
             CheckMonitoringStarted();
@@ -702,7 +736,7 @@ namespace CodeProject.AI.SDK.Common
         /// </summary>
         /// <returns>A long representing bytes</returns>
         /// <remarks>This method could be (and was) a property, but to stick to the format we had
-        /// where we use 'Get' to query an instantaneous value it's been switched to a method.</remartks>
+        /// where we use 'Get' to query an instantaneous value it's been switched to a method.</remarks>
         public static ulong GetSystemMemoryUsage()
         {
             CheckMonitoringStarted();
@@ -1445,6 +1479,7 @@ namespace CodeProject.AI.SDK.Common
             {
                 Host = new
                 {
+                    SystemName      = SystemName,
                     OperatingSystem = OperatingSystem,
                     OSVersion       = OperatingSystemVersion,
                     TotalMemory     = Memory?.Total ?? 0,
@@ -1515,6 +1550,7 @@ namespace CodeProject.AI.SDK.Common
         /// <param name="args">The args for the command</param>
         /// <param name="pattern">The regex pattern to apply to the output of the command. Each
         /// named expression in that pattern will be the name of an entry in the return dictionary</param>
+        /// <param name="options">The regex options</param>
         /// <returns>A Dictionary</returns>
         /// <remarks>Suppose you call the process "dotnet" with args "--version". Say you want to 
         /// extract the Major/Minor version, so your pattern is @"(?<major>\d+)\.(?<minor>\d+)".
@@ -1527,8 +1563,12 @@ namespace CodeProject.AI.SDK.Common
         /// </remarks>
         private async static ValueTask<Dictionary<string, string>?> GetProcessInfoAsync(string command,
                                                                                         string args,
-                                                                                        string? pattern = null)
+                                                                                        string? pattern = null,
+                                                                                        RegexOptions options = RegexOptions.None)
         {
+            // We always need this
+            options |= RegexOptions.ExplicitCapture;
+
             var values = new Dictionary<string, string>();
 
             try
@@ -1550,7 +1590,7 @@ namespace CodeProject.AI.SDK.Common
                 if (!string.IsNullOrEmpty(pattern))
                 {
                     // Match values in the output against the pattern
-                    Match valueMatch = Regex.Match(output, pattern, RegexOptions.ExplicitCapture);
+                    Match valueMatch = Regex.Match(output, pattern, options);
 
                     // Match the names in the pattern against our match name pattern
                     Regex expression = new Regex(@"\(\?\<(?<matchName>([a-zA-Z_-]+))\>");

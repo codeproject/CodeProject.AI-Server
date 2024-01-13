@@ -5,45 +5,131 @@
 # Ubuntu / WSL cuDNN install script
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#wsl
 #
+# CUDA support:
+# 
+# Signing key:
+#
+# 11.8+     - use key management package
+# 11.6-11.7 - 3bf863cc
+# <= 11.5   - 7fa2af80
+# 
+# Ubuntu support
+#
+# 12.x      Ubuntu 22.04, 20.04 + WSL
+# 11.7-11.8 Ubuntu 22.04, 20.04, 18.04 + WSL
+# 11.4-11.6 Ubuntu 20.04, 18.04 + WSL
+# 11.1-11.3 Ubuntu 20.04, 18.04, 16.04 + WSL
+# 10.2-11.0 Ubuntu 18.04, 16.04
+
+# To install: (OS_name = ubunut2204 etc or wsl-ubuntu, arch = x86_64 or arm64, key = 3bf863cc or 7fa2af80)
+#
+# - Using Key management package:
+# wget https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/${arch}/cuda-keyring_1.1-1_all.deb
+# sudo dpkg -i cuda-keyring_1.1-1_all.deb
+# 
+# - Using signing key
+# wget https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/${arch}/cuda-${OS_name}.pin
+# sudo mv cuda-${OS_name}.pin /etc/apt/preferences.d/cuda-repository-pin-600
+# sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/${arch}/${key}.pub
+# sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/${arch}/ /"
+#
+#-  and then for all...
+#   sudo apt-get update -y
+#   sudo apt-get -y install cuda-X.Y
+
+
+cuda_version=$1
 
 # This script is intended to be called from setup.sh, which includes architecture
-# and os vars as well as writeline methods
-#
-# echo "========================================================================"
-# echo ""
-# echo "        Setting up cuDNN and CUDA for CodeProject.AI Server             "
-# echo ""
-# echo "========================================================================"
-# echo ""
-#
-# if [ $(uname -m) == 'arm64' ] || [ $(uname -m) == 'aarch64' ]; then
-#     architecture='arm64'
-# else
-#     architecture='x86_64'
-# fi
-#
-# if [ $(uname -n) == "raspberrypi" ]; then
-#     systemName='Raspberry Pi'
-# elif [ $(uname -n) == "nano" ]; then
-#     systemName='Jetson'
-# elif [[ $(uname -a) =~ microsoft-standard-WSL ]]; then
-#     systemName='WSL'
-# elif [[ $OSTYPE == 'darwin'* ]]; then
-#     systemName="macOS"
-# else
-#     systemName='Linux'
-# fi
+# and os vars as well as writeline methods. If we don't find them, do quick checks
 
-writeLine "Setting up cuDNN and CUDA for CodeProject.AI Server" $color_info
+if [[ $(type -t writeLine) != function ]]; then
 
-linux_driver="530.30.02"    # > 450.80.02 for linux
-cudnn_version="8.9.4.*"     # latest, works with CUDA 11.8+
-cuda_version="11.8"         # 12.1
-cuda_version_dash="11-8"    # 12-1
-cuda_version_full="11.8.0"  # 12.1.1
+    function spin () {
+        local pid=$1
+        while kill -0 $pid 2> /dev/null; do
+            [ ]
+        done
+    }
+    function write () {
+        printf "%s" "$1"
+    }
+    function writeLine () {
+        printf "%s\n" "$1"
+    }
+
+    if [ $(uname -m) == 'arm64' ] || [ $(uname -m) == 'aarch64' ]; then
+        architecture='arm64'
+    else
+        architecture='x86_64'
+    fi
+
+    downloadDirPath=../../downloads
+
+    modelInfo=""
+    if [ -f "/sys/firmware/devicetree/base/model" ]; then
+        modelInfo=$(tr -d '\0' </sys/firmware/devicetree/base/model) >/dev/null 2>&1
+    fi
+
+    if [[ "${modelInfo}" == *"Raspberry Pi"* ]]; then       # elif [ $(uname -n) = "raspberrypi" ]; then
+        systemName='Raspberry Pi'
+    elif [[ "${modelInfo}" == *"Orange Pi"* ]]; then        # elif [ $(uname -n) = "orangepi5" ]; then
+        systemName='Orange Pi'
+    elif [[ "${modelInfo}" == *"NVIDIA Jetson"* ]]; then    # elif [ $(uname -n) = "nano" ]; then
+        systemName='Jetson'
+    elif [ "$inDocker" = true ]; then 
+        systemName='Docker'
+    elif [[ $(uname -a) =~ microsoft-standard-WSL ]]; then
+        systemName='WSL'
+   elif [[ $OSTYPE == 'darwin'* ]]; then
+        systemName="macOS"
+    else
+        systemName='Linux'
+    fi
+fi
+
+writeLine "Setting up CUDA ${cuda_version} and cuDNN" $color_info
+
+# ==============================================================================
+# GET SETTINGS
+
+cuda_GPGpublicKey=""
+
+case "$cuda_version" in
+  "12.2") cuda_version_full="12.2.1";  cuda_GPGpublicKey="3bf863cc" ;;
+  "12.1") cuda_version_full="12.1.1";  cuda_GPGpublicKey="3bf863cc" ;;
+  "12.0") cuda_version_full="12.0.1";  cuda_GPGpublicKey="3bf863cc" ;;
+  "11.8") cuda_version_full="11.8.0";  cuda_GPGpublicKey="3bf863cc" ;;
+  "11.7") cuda_version_full="11.7.1";  cuda_GPGpublicKey="3bf863cc" ;;
+  "11.6") cuda_version_full="11.6.2";  cuda_GPGpublicKey="3bf863cc" ;;
+  "11.5") cuda_version_full="11.5.2";  cuda_GPGpublicKey="3bf863cc" ;;
+  "11.4") cuda_version_full="11.4.4";  cuda_GPGpublicKey="7fa2af80" ;;
+  "11.3") cuda_version_full="11.3.1";  cuda_GPGpublicKey="7fa2af80" ;;
+  "11.2") cuda_version_full="11.2.2";  cuda_GPGpublicKey="7fa2af80" ;;
+  "11.1") cuda_version_full="11.1.1";  cuda_GPGpublicKey="7fa2af80" ;;
+  "11.0") cuda_version_full="11.0.1";  cuda_GPGpublicKey="7fa2af80" ;;
+  "10.2") cuda_version_full="10.2.89"; cuda_GPGpublicKey="7fa2af80" ;;
+  *) cuda_version_full="${cuda_version}.0" ;;
+esac
+
+cudnn_version="8.9.5.*"             # latest, works with CUDA 11.8+
 
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID) # eg "ubuntu20.04"
-OS_name="${distribution//./}"     # eg "ubuntu2204"
+
+OS_name="${distribution//./}"       # eg "ubuntu2204"
+if [ "${systemName}" == 'WSL' ]; then OS_name="wsl-ubuntu"; fi
+
+system_arch="$architecture"
+
+amd_or_arm="amd64"
+# Adjust for arm64 
+if [ "$architecture" = "arm64" ]; then 
+    system_arch="ssba"              # SBSA (server based system architecture)
+    amd_or_arm="arm64"
+fi
+
+# ==============================================================================
+# UPDATE SYSTEM
 
 # Install kernel headers and development packages for the currently running kernel
 if [ "${systemName}" != 'WSL' ]; then
@@ -52,37 +138,47 @@ if [ "${systemName}" != 'WSL' ]; then
     writeLine "Done" $color_success
 fi
 
-# Updating Signing keys
-write " - Removing old signing key..." $color_mute
+
+# ==============================================================================
+### CUDA 
+### https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#wsl
+
+# REMOVE KEY
+
+# even though apt-key is now deprecated...
+
+write " - Removing signing key 7fa2af80..." $color_mute
 apt-key del 7fa2af80 >/dev/null 2>/dev/null
 writeLine "Done" $color_success
 
-write " - Downloading new key..." $color_mute
-
-keyring="cuda-keyring_1.0-1_all.deb"
-
-if [ ! -d "${downloadPath}" ]; then mkdir -p "${downloadPath}"; fi
-if [ ! -d "${downloadPath}/CUDA" ]; then mkdir -p "${downloadPath}//CUDA"; fi
-pushd "${downloadPath}/CUDA"  >/dev/null 2>/dev/null
-
-if [ ! -f "$keyring" ]; then 
-    if [ "${architecture}" == "arm64" ]; then
-        wget $wgetFlags https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/sbsa/${keyring}
-    elif [ "${systemName}" == 'WSL' ]; then
-        wget $wgetFlags https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/${keyring}
-    else
-        wget $wgetFlags https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/x86_64/${keyring}
-    fi
-    status=$?    
-    if [ $status -ne 0 ]; then
-        writeLine "Unable to download ${keyring}" "$color_error"
-    fi
-fi
+write " - Removing signing key 3bf863cc..." $color_mute
+apt-key del 3bf863cc >/dev/null 2>/dev/null
 writeLine "Done" $color_success
+
+# INSTALL NEW KEY
+
+keyring_package="cuda-keyring_1.1-1_all.deb"
+
+if [ ! -d "${downloadDirPath}" ]; then mkdir -p "${downloadDirPath}"; fi
+if [ ! -d "${downloadDirPath}/CUDA" ]; then mkdir -p "${downloadDirPath}//CUDA"; fi
+pushd "${downloadDirPath}/CUDA"  >/dev/null 2>/dev/null
+
+if [ ! -f "$keyring_package" ]; then 
+    write " - Downloading new key..." $color_mute
+    wget $wgetFlags https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/${system_arch}/${keyring_package} >/dev/null
+    if [ ! -f "$keyring_package" ]; then 
+        writeLine "Unable to download ${keyring_package}" "$color_error"
+    else
+        writeLine "Done" $color_success
+    fi
+else
+    writeLine "Key management package already exists" "$color_info"
+fi
 
 if [ -f "$keyring" ]; then 
     write " - Installing key..." $color_mute
-    dpkg -E -G -i ${keyring}  >/dev/null 2>/dev/null # don't install same or older package
+    dpkg -E -G -i ${keyring_package}  >/dev/null 2>/dev/null # don't install same or older package
+    sudo rm ${keyring_package}
     writeLine "Done" $color_success
 fi
 popd  >/dev/null 2>/dev/null
@@ -90,82 +186,20 @@ popd  >/dev/null 2>/dev/null
 
 # Install the CUDA SDK
 
-write " - Installing libgomp1..." $color_mute
-sudo apt install libgomp1 -y >/dev/null 2>/dev/null &
-spin $!
-writeLine "Done" $color_success
-
-# The only practical cases here are: Native Linux on x86 or arm64 with CUDA,
-# or WSL. Docker already contains the libs, macOS doesn't support CUDA. RPi and
-# Orange Pi don't support CUDA and Jetson gets CUDA via Jetpack
-
-installer_repo="https://developer.download.nvidia.com/compute/cuda/${cuda_version_full}/local_installers/"
-if [ "${architecture}" == "arm64" ]; then
-    pin="cuda-${OS_name}.pin"
-    pin_repo="https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/sbsa/"
-    installer="cuda-repo-${OS_name}-${cuda_version_dash}-local_${cuda_version_full}-${linux_driver}-1_arm64.deb"
-    installed_ring="/var/cuda-repo-${OS_name}-${cuda_version_dash}-local/cuda-*-keyring.gpg"
-elif [ "${systemName}" == 'WSL' ]; then
-    pin="cuda-wsl-ubuntu.pin"
-    pin_repo="https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/"
-    installer="cuda-repo-wsl-ubuntu-${cuda_version_dash}-local_${cuda_version_full}-1_amd64.deb"
-    installed_ring="/var/cuda-repo-wsl-ubuntu-${cuda_version_dash}-local/cuda-*-keyring.gpg"
-else
-    pin="cuda-${OS_name}.pin"
-    pin_repo="https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/x86_64/"
-    installer="cuda-repo-${OS_name}-${cuda_version_dash}-local_${cuda_version_full}-${linux_driver}-1_amd64.deb"
-    installed_ring="/var/cuda-repo-${OS_name}-${cuda_version_dash}-local/cuda-*-keyring.gpg"
-fi
-
-pushd "${downloadPath}/CUDA"  >/dev/null 2>/dev/null
-if [ ! -f "${pin}" ]; then 
-    write " - Downloading ${pin}..." $color_mute
-    wget $wgetFlags ${pin_repo}${pin} &
-    spin $!
-    if [ -f "$pin" ]; then 
-        writeLine "Done" "$color_success"
-    else
-        writeLine "Unable to download ${pin}" "$color_error"
-    fi
-fi
-if [ -f "$pin" ]; then 
-    write " - Installing cuda-repository-pin..." $color_mute
-    sudo cp ${pin} /etc/apt/preferences.d/cuda-repository-pin-600 >/dev/null 2>/dev/null
-    writeLine "Done" "$color_success"
-fi
-
-if [ ! -f "${installer}" ]; then
-    write " - Downloading ${installer}..." $color_mute
-    wget $wgetFlags ${installer_repo}${installer} &
-    spin $!
-    if [ -f "$installer" ]; then 
-        writeLine "Done" "$color_success"
-    else
-        writeLine "Unable to download ${installer}" "$color_error"
-    fi
-fi
-if [ -f "$installer" ]; then 
-    write " - Installing cuda-*-keyring.gpg..." $color_mute
-    sudo dpkg -E -G -i "${installer}" >/dev/null 2>/dev/null
-    status=$?    
-    if [ $status -ne 0 ]; then
-        writeLine "Unable to install ${installer}" "$color_error"
-    else
-        sudo cp "${installed_ring}" /usr/share/keyrings/ >/dev/null 2>/dev/null
-        writeLine "Done" "$color_success"
-    fi
-fi
-popd "${downloadPath}/CUDA"  >/dev/null 2>/dev/null
+# write " - Removing existing CUDA toolkit..." $color_mute
+# sudo apt-get remove nvidia-cuda-toolkit
+# writeLine "Done" $color_success
 
 write " - Installing CUDA library..." $color_mute
 sudo apt-get update -y >/dev/null 2>/dev/null &
 spin $!
-sudo apt-get install cuda -y >/dev/null 2>/dev/null &
+sudo apt-get install cuda-${cuda_version} -y >/dev/null 2>/dev/null &
 spin $!
 writeLine "Done" $color_success
 
 
-# Now Install cuDNN
+# ==============================================================================
+# cuDNN
 
 # Ensure zlib is installed
 write " - Installing zlib1g..." $color_mute
@@ -173,45 +207,88 @@ sudo apt-get install zlib1g -y >/dev/null 2>/dev/null &
 spin $!
 writeLine "Done" $color_success
 
-# Enable the repo
-write " - Enabling the CUDA repository..." "$color_mute"
-if [ "${architecture}" == "arm64" ]; then
-    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/arm64/3bf863cc.pub  >/dev/null 2>/dev/null &
-    spin $!
-    sudo add-apt-repository -y "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/arm64/ /"  >/dev/null 2>/dev/null &
-    spin $!
-else
-    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/x86_64/3bf863cc.pub  >/dev/null 2>/dev/null &
-    spin $!
-    sudo add-apt-repository -y "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/x86_64/ /"  >/dev/null 2>/dev/null &
-    spin $!
-fi
-writeLine "Done" $color_success
+# wget https://developer.download.nvidia.com/compute/cuda/repos/<distro>/<arch>/cuda-archive-keyring.gpg
+# sudo mv cuda-archive-keyring.gpg /usr/share/keyrings/cuda-archive-keyring.gpg
+#
+# echo "deb [signed-by=/usr/share/keyrings/cuda-archive-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/<distro>/<arch>/ /" | sudo tee /etc/apt/sources.list.d/cuda-<distro>-<arch>.list
+#
+# wget https://developer.download.nvidia.com/compute/cuda/repos/<distro>/<arch>/cuda-<distro>.pin
+# sudo mv cuda-<distro>.pin /etc/apt/preferences.d/cuda-repository-pin-600
 
 # install the cuDNN library
 write " - Installing cuDNN libraries..." $color_mute
-sudo apt-get update -y >/dev/null 2>/dev/null &
-spin $!
 sudo apt-get install libcudnn8=${cudnn_version}-1+cuda${cuda_version} -y >/dev/null 2>/dev/null &
 spin $!
 sudo apt-get install libcudnn8-dev=${cudnn_version}-1+cuda${cuda_version} -y >/dev/null 2>/dev/null &
 spin $!
 writeLine "Done" $color_success
 
+# ==============================================================================
+# EXPORTING PATHS
+
+# To remove a directory 'Directory1' from path:
+# export PATH="$( echo $PATH| tr : '\n' |grep -v Directory1 | paste -s -d: )"
 
 write " - Exporting PATHs..." $color_mute
-export PATH=/usr/local/cuda-${cuda_version}/bin${PATH:+:${PATH}}
-export LD_LIBRARY_PATH=/usr/local/cuda-${cuda_version}/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+cuda_path="/usr/local/cuda-${cuda_version}/bin"
+if [ -d "${cuda_path}" ]; then 
+    if ! grep -q "${cuda_path}" "${HOME}/.bashrc";  then
+        # echo "cuda path not in bashrc"
+        echo "export PATH=${cuda_path}${PATH:+:${PATH}}" >> "${HOME}/.bashrc"
+    # else
+    #     echo "** CUDA IS IN BASHRC"
+    #     grep -n "${cuda_path}" "${HOME}/.bashrc"
+    fi
+    if ! echo ${PATH} | grep "${cuda_path}"; then
+        # echo "cuda path not in current path: $PATH"
+        export PATH=${cuda_path}${PATH:+:${PATH}}
+    fi
+else
+    echo "${cuda_path} doesn't exist"
+fi
+
+# for WSL, libcuda.so is in /usr/lib/wsl/lib/libcuda.so
+
+library_path="/usr/local/cuda-${cuda_version}/lib64"
+if [ -d "${library_path}" ]; then 
+    if ! grep -q "${library_path}" "${HOME}/.bashrc";  then
+      echo "export LD_LIBRARY_PATH=${library_path}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" >> "${HOME}/.bashrc"
+    fi
+    if ! echo ${LD_LIBRARY_PATH} | grep "${library_path}"; then
+        export LD_LIBRARY_PATH=${cuda_path}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+    fi
+else
+    echo "${library_path} doesn't exist"
+fi
+
+library_path="/usr/local/cuda-${cuda_version}/include"
+if [ -d "${library_path}" ]; then 
+    if ! grep -q "${library_path}" "${HOME}/.bashrc";  then
+      echo "export LD_LIBRARY_PATH=${library_path}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" >> "${HOME}/.bashrc"
+    fi
+    if ! echo ${LD_LIBRARY_PATH} | grep "${library_path}"; then
+        export LD_LIBRARY_PATH=${cuda_path}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+    fi
+else
+    echo "${library_path} doesn't exist"
+fi
+
+# cat "${HOME}/.bashrc"
+
 writeLine "Done" $color_success
 
+# ==============================================================================
+# FINAL
 
-# And finally, include all GDS packages:
-write " - Installing nvidia-gds..." $color_mute
+# GDS enables a direct data path for direct memory access transfers between GPU
+# memory and storage
+write " - Installing NVIDIA GPU Direct Storage..." $color_mute
 sudo apt-get install nvidia-gds -y >/dev/null 2>/dev/null &
 spin $!
 writeLine "Done" $color_success
 
-writeLine "==================================================================" $color_warn
-writeLine "A number of packages have been installed and are no longer needed." $color_warn
-writeLine "Use 'sudo apt autoremove' to remove them." $color_warn
-writeLine "==================================================================" $color_warn
+# writeLine "==================================================================" $color_warn
+# writeLine "A number of packages have been installed and are no longer needed." $color_warn
+# writeLine "Use 'sudo apt autoremove' to remove them."                          $color_warn
+# writeLine "==================================================================" $color_warn

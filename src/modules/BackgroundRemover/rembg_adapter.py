@@ -38,7 +38,10 @@ class rembg_adapter(ModuleRunner):
 
     def initialise(self) -> None:   
         """ Initialises the module """
-        if self.support_GPU:
+
+        self.selftest_check_packages = False # Too messy, will fail
+
+        if self.enable_GPU:
             if self.hasONNXRuntimeGPU:
                 self.execution_provider = "ONNX"
 
@@ -63,6 +66,24 @@ class rembg_adapter(ModuleRunner):
         except Exception as ex:
             self.report_error(ex, __file__)
             return {"success": False, "error": "unable to process the image"}
+
+    def selftest(self) -> JSON:
+        
+        import os
+        os.environ["U2NET_HOME"] = os.path.join(self.module_path, "models")
+        file_name = os.path.join("test", "chris-hemsworth-2.jpg")
+
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "removebackground"
+        request_data.add_file(file_name)
+        request_data.add_value("use_alphamatting", "true")
+
+        result = self.process(request_data)
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Remove background test successful" }
 
     def shutdown(self) -> None:
         pass

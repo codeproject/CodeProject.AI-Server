@@ -1,6 +1,12 @@
 {
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
+
     "SceneClassifier": {
+      "InstallGPU": false,            // GPU support not provided
+      "EnableGPU": false,             // Will be coerced to false if InstallGPU = false
+
       "EnvironmentVariables": {
         "USE_CUDA": "False"
       }

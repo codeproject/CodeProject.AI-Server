@@ -17,14 +17,30 @@
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <PropertyGroup>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
-
   <ItemGroup>
+    <Compile Include="imageclassification_coral.py" />
+    <Compile Include="imageclassification_coral_adapter.py" />
+    <Compile Include="pycoral\adapters\classify.py" />
+    <Compile Include="pycoral\adapters\common.py" />
+    <Compile Include="pycoral\adapters\detect.py" />
+    <Compile Include="pycoral\adapters\segment.py" />
+    <Compile Include="pycoral\adapters\__init__.py" />
+    <Compile Include="pycoral\learn\backprop\softmax_regression.py" />
+    <Compile Include="pycoral\learn\backprop\__init__.py" />
+    <Compile Include="pycoral\learn\imprinting\engine.py" />
+    <Compile Include="pycoral\learn\imprinting\__init__.py" />
+    <Compile Include="pycoral\learn\__init__.py" />
+    <Compile Include="pycoral\pipeline\pipelined_model_runner.py" />
+    <Compile Include="pycoral\pipeline\__init__.py" />
+    <Compile Include="pycoral\utils\dataset.py" />
+    <Compile Include="pycoral\utils\edgetpu.py" />
+    <Compile Include="pycoral\utils\__init__.py" />
+    <Compile Include="pycoral\__init__.py" />
     <Compile Include="__init__.py" />
     <Compile Include="label_util.py" />
     <Compile Include="objectdetection_coral.py" />
@@ -32,33 +48,141 @@
     <Compile Include="options.py" />
     <Compile Include="coral_util.py" />
   </ItemGroup>
-  
   <ItemGroup>
+    <Content Include="assets\edgetpu_runtime\install.bat" />
+    <Content Include="assets\edgetpu_runtime\install.sh" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\direct\aarch64\libedgetpu.so.1.0" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\direct\armv7a\libedgetpu.so.1.0" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\direct\darwin_arm64\libedgetpu.1.0.dylib" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\direct\darwin_x86_64\libedgetpu.1.0.dylib" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\direct\k8\libedgetpu.so.1.0" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\direct\x64_windows\edgetpu.dll" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\direct\x64_windows\edgetpu.dll.if.lib" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\edgetpu-accelerator.rules" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\edgetpu.h" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\edgetpu_c.h" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\LICENSE" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\throttled\aarch64\libedgetpu.so.1.0" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\throttled\armv7a\libedgetpu.so.1.0" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\throttled\darwin_arm64\libedgetpu.1.0.dylib" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\throttled\darwin_x86_64\libedgetpu.1.0.dylib" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\throttled\k8\libedgetpu.so.1.0" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\throttled\x64_windows\edgetpu.dll" />
+    <Content Include="assets\edgetpu_runtime\libedgetpu\throttled\x64_windows\edgetpu.dll.if.lib" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\amd64\license.rtf" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\amd64\WdfCoInstaller01009.dll" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\amd64\winusbcoinstaller2.dll" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\coral.cat" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\coral.inf" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\coral.man" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\coral.sys" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\Coral_USB_Accelerator.cat" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\Coral_USB_Accelerator.inf" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\Coral_USB_Accelerator_%28DFU%29.cat" />
+    <Content Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\Coral_USB_Accelerator_%28DFU%29.inf" />
+    <Content Include="assets\edgetpu_runtime\third_party\libusb_win\libusb-1.0.dll" />
+    <Content Include="assets\edgetpu_runtime\third_party\libusb_win\README" />
+    <Content Include="assets\edgetpu_runtime\third_party\usbdk\LICENSE" />
+    <Content Include="assets\edgetpu_runtime\third_party\usbdk\UsbDk_1.0.22_x64.msi" />
+    <Content Include="assets\edgetpu_runtime\uninstall.bat" />
+    <Content Include="assets\edgetpu_runtime\uninstall.sh" />
+    <Content Include="assets\efficientdet_lite3_512_ptq.tflite" />
+    <Content Include="assets\efficientdet_lite3_512_ptq_edgetpu.tflite" />
+    <Content Include="assets\efficientdet_lite3_512_ptq_labels.txt" />
+    <Content Include="assets\ssd_mobilenet_v2_coco_quant_postprocess.tflite" />
+    <Content Include="assets\ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite" />
+    <Content Include="assets\ssd_mobilenet_v2_coco_quant_postprocess_labels.txt" />
+    <Content Include="assets\tf2_ssd_mobilenet_v1_coco_labels.txt" />
+    <Content Include="assets\tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq.tflite" />
+    <Content Include="assets\tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_edgetpu.tflite" />
+    <Content Include="assets\tf2_ssd_mobilenet_v2_coco17_labels.txt" />
+    <Content Include="assets\tf2_ssd_mobilenet_v2_coco17_ptq.tflite" />
+    <Content Include="assets\tf2_ssd_mobilenet_v2_coco17_ptq_edgetpu.tflite" />
+    <Content Include="edgetpu_runtime\install.bat" />
+    <Content Include="edgetpu_runtime\install.sh" />
+    <Content Include="edgetpu_runtime\libedgetpu\direct\aarch64\libedgetpu.so.1.0" />
+    <Content Include="edgetpu_runtime\libedgetpu\direct\armv7a\libedgetpu.so.1.0" />
+    <Content Include="edgetpu_runtime\libedgetpu\direct\darwin_arm64\libedgetpu.1.0.dylib" />
+    <Content Include="edgetpu_runtime\libedgetpu\direct\darwin_x86_64\libedgetpu.1.0.dylib" />
+    <Content Include="edgetpu_runtime\libedgetpu\direct\k8\libedgetpu.so.1.0" />
+    <Content Include="edgetpu_runtime\libedgetpu\direct\x64_windows\edgetpu.dll" />
+    <Content Include="edgetpu_runtime\libedgetpu\direct\x64_windows\edgetpu.dll.if.lib" />
+    <Content Include="edgetpu_runtime\libedgetpu\edgetpu-accelerator.rules" />
+    <Content Include="edgetpu_runtime\libedgetpu\edgetpu.h" />
+    <Content Include="edgetpu_runtime\libedgetpu\edgetpu_c.h" />
+    <Content Include="edgetpu_runtime\libedgetpu\LICENSE" />
+    <Content Include="edgetpu_runtime\libedgetpu\throttled\aarch64\libedgetpu.so.1.0" />
+    <Content Include="edgetpu_runtime\libedgetpu\throttled\armv7a\libedgetpu.so.1.0" />
+    <Content Include="edgetpu_runtime\libedgetpu\throttled\darwin_arm64\libedgetpu.1.0.dylib" />
+    <Content Include="edgetpu_runtime\libedgetpu\throttled\darwin_x86_64\libedgetpu.1.0.dylib" />
+    <Content Include="edgetpu_runtime\libedgetpu\throttled\k8\libedgetpu.so.1.0" />
+    <Content Include="edgetpu_runtime\libedgetpu\throttled\x64_windows\edgetpu.dll" />
+    <Content Include="edgetpu_runtime\libedgetpu\throttled\x64_windows\edgetpu.dll.if.lib" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\amd64\license.rtf" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\amd64\WdfCoInstaller01009.dll" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\amd64\winusbcoinstaller2.dll" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\coral.cat" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\coral.inf" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\coral.man" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\coral.sys" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\Coral_USB_Accelerator.cat" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\Coral_USB_Accelerator.inf" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\Coral_USB_Accelerator_%28DFU%29.cat" />
+    <Content Include="edgetpu_runtime\third_party\coral_accelerator_windows\Coral_USB_Accelerator_%28DFU%29.inf" />
+    <Content Include="edgetpu_runtime\third_party\libusb_win\libusb-1.0.dll" />
+    <Content Include="edgetpu_runtime\third_party\libusb_win\README" />
+    <Content Include="edgetpu_runtime\third_party\usbdk\LICENSE" />
+    <Content Include="edgetpu_runtime\third_party\usbdk\UsbDk_1.0.22_x64.msi" />
+    <Content Include="edgetpu_runtime\uninstall.bat" />
+    <Content Include="edgetpu_runtime\uninstall.sh" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />
+    <Content Include="package.sh" />
+    <Content Include="test\home-office.jpg" />
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.macos.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.orangepi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
     <Content Include="modulesettings.docker.build.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
     <Content Include="modulesettings.docker.build.rpi64.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
+    <Content Include="modulesettings.jetson.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.raspberrypi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.windows.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="requirements.txt" />
-    <Content Include="requirements.linux.txt">
+    <Content Include="requirements.jetson.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-    <Content Include="requirements.linux.arm64.txt">
+    <Content Include="requirements.orangepi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.raspberrypi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.macos.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <Interpreter Include="..\..\runtimes\bin\windows\python37\venv\">
       <Id>env</Id>
@@ -69,6 +193,59 @@
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="assets\" />
+    <Folder Include="assets\edgetpu_runtime\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\direct\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\direct\aarch64\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\direct\armv7a\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\direct\darwin_arm64\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\direct\darwin_x86_64\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\direct\k8\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\direct\x64_windows\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\throttled\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\throttled\aarch64\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\throttled\armv7a\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\throttled\darwin_arm64\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\throttled\darwin_x86_64\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\throttled\k8\" />
+    <Folder Include="assets\edgetpu_runtime\libedgetpu\throttled\x64_windows\" />
+    <Folder Include="assets\edgetpu_runtime\third_party\" />
+    <Folder Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\" />
+    <Folder Include="assets\edgetpu_runtime\third_party\coral_accelerator_windows\amd64\" />
+    <Folder Include="assets\edgetpu_runtime\third_party\libusb_win\" />
+    <Folder Include="assets\edgetpu_runtime\third_party\usbdk\" />
+    <Folder Include="edgetpu_runtime\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\direct\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\direct\aarch64\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\direct\armv7a\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\direct\darwin_arm64\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\direct\darwin_x86_64\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\direct\k8\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\direct\x64_windows\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\throttled\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\throttled\aarch64\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\throttled\armv7a\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\throttled\darwin_arm64\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\throttled\darwin_x86_64\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\throttled\k8\" />
+    <Folder Include="edgetpu_runtime\libedgetpu\throttled\x64_windows\" />
+    <Folder Include="edgetpu_runtime\third_party\" />
+    <Folder Include="edgetpu_runtime\third_party\coral_accelerator_windows\" />
+    <Folder Include="edgetpu_runtime\third_party\coral_accelerator_windows\amd64\" />
+    <Folder Include="edgetpu_runtime\third_party\libusb_win\" />
+    <Folder Include="edgetpu_runtime\third_party\usbdk\" />
+    <Folder Include="pycoral\" />
+    <Folder Include="pycoral\adapters\" />
+    <Folder Include="pycoral\learn\" />
+    <Folder Include="pycoral\learn\backprop\" />
+    <Folder Include="pycoral\learn\imprinting\" />
+    <Folder Include="pycoral\pipeline\" />
+    <Folder Include="pycoral\utils\" />
+    <Folder Include="test\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

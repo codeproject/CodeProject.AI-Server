@@ -292,9 +292,6 @@ ASALocalRun/
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
 
-# Heat Generated Wix files.
-**/*Files.wxs
-
 *.DS_Store
 
 /demos/Python/detected
@@ -302,25 +299,17 @@ MigrationBackup/
 
 /Installers/downloads
 
-/Installers/Windows/Python37.Installer/Python37Files.wxs
-/Installers/Windows/Python37.Installer/PythonSdkFiles.wxs
-/Installers/Windows/BackgroundRemover.Installer/BackgroundRemoverFiles.wxs
-/Installers/Windows/CodeProjectAI.Server.Installer/FrontendInstallFiles.wxs
-/Installers/Windows/DeepStack.Installer/DeepStackFiles.wxs
-/Installers/Windows/ObjectDetectionYolo.Installer/ObjectDetectionYoloFiles.wxs
-/Installers/Windows/ObjectDetectionYolo.Installer/ObjectDetectionYoloFiles.wxs
-/Installers/Windows/PortraitFilter.Installer/PortraitFilterInstallFiles.wxs
-/Installers/Windows/Python37.Installer/Python37Files.wxs
-/Installers/Windows/PortraitFilter.Installer/PortraitFilterInstallFiles.wxs
-/Installers/Windows/CodeProjectAI.Server.Installer/DemoImangesFiles.wxs
-/Installers/Windows/Python39.Installer/Python39Files.wxs
-/Installers/Windows/YoloNet.Installer/YoloNetInstallFiles.wxs
+/Installers/macOS/application
+/Installers/macOS/target
+/Installers/macOS/*.pkg
+/Installers/macOS/CodeProject.AI-Server_*_macOS_*.zip
+/Installers/Ubuntu/*.deb
+/Installers/Ubuntu/codeproject.ai-server_*_Ubuntu_*.zip
+/Installers/Windows/Inno Setup/Output
+/Installers/Windows/Inno Setup/assets/dotnet-hosting-*.exe
+/Installers/Windows/WIX Toolset/CodeProjectAI.Server.Installer/ServerInstallFiles.wxs
 
-/Installers/zlib123dllx64.zip
-/Installers/cudnn-windows-x86_64-8.5.0.96_cuda11-archive.zip
-
-/src/API/Server/FrontEnd/installconfig.json
-/src/API/Server/FrontEnd/modules.json
+/src/server/installconfig.json
 
 # keep the folder structure but don't git commit the cached downloads
 !/src/downloads
@@ -332,10 +321,13 @@ MigrationBackup/
 # Downloaded assets for modules
 /src/modules/ALPR/paddleocr
 /src/modules/ALPR/plate.png
+/src/modules/ALPR-RKNN/paddleocr
+/src/modules/ALPR-RKNN/plate.png
 /src/modules/BackgroundRemover/models
 /src/modules/Cartooniser/weights
 /src/modules/FaceProcessing/assets
 /src/modules/FaceProcessing/datastore/
+/src/modules/LlamaChat/models/
 /src/modules/ObjectDetectionCoral/assets
 src/modules/ObjectDetectionCoral/edgetpu_runtime
 src/modules/ObjectDetectionCoral/libedgetpu.*
@@ -344,7 +336,6 @@ src/modules/ObjectDetectionCoral/libedgetpu.*
 /src/modules/ObjectDetectionNet/LocalNugets
 src/modules/ObjectDetectionYoloRKNN/assets
 src/modules/ObjectDetectionYoloRKNN/custom-models
-/src/modules/ObjectDetectionTFLite/assets
 /src/modules/ObjectDetectionYolo/assets
 /src/modules/ObjectDetectionYolo/custom-models
 /src/modules/OCR/paddleocr
@@ -361,23 +352,16 @@ src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/modules/YOLOv5-3.1/windows_packages_cpu
 /src/modules/YOLOv5-3.1/windows_packages_gpu
 
-# Generated module packages
-/src/modules/ALPR/ALPR-[0-9].[0-9].zip
-/src/modules/BackgroundRemover/BackgroundRemover-[0-9].[0-9].zip
-/src/modules/Cartooniser/Cartooniser-[0-9].[0-9].zip
-/src/modules/FaceProcessing/FaceProcessing-[0-9].[0-9].zip
-/src/modules/ObjectDetectionNet/ObjectDetectionNet-CPU-[0-9].[0-9].zip
-/src/modules/ObjectDetectionNet/ObjectDetectionNet-OpenVINO-[0-9].[0-9].zip
-/src/modules/ObjectDetectionNet/ObjectDetectionNet-DirectML-[0-9].[0-9].zip
-/src/modules/ObjectDetectionNet/ObjectDetectionNet-CUDA-[0-9].[0-9].zip
-/src/modules/ObjectDetectionNet/ObjectDetectionNet-CPU-[0-9].[0-9].zip
-/src/modules/ObjectDetectionTFLite/ObjectDetectionTFLite-1.0.zip
+# Generated exe packages
+/src/modules/ObjectDetectionNet/ObjectDetectionNet-*-[0-9].[0-9].zip
+/src/modules/ObjectDetectionNet/ObjectDetectionNet-*-[0-9].[0-9].[0-9].zip
 /src/modules/ObjectDetectionYolo/ObjectDetectionYolo-[0-9].[0-9].zip
-/src/modules/OCR/OCR-[0-9].[0-9].zip
-/src/modules/PortraitFilter/PortraitFilter-[0-9].[0-9].zip
-/src/modules/SceneClassifier/SceneClassifier-[0-9].[0-9].zip
-/src/modules/SentimentAnalysis/SentimentAnalysis-[0-9].[0-9].zip
-/src/modules/SuperResolution/SuperResolution-[0-9].[0-9].zip
-/src/modules/TextSummary/TextSummary-[0-9].[0-9].zip
-/src/modules/YOLOv5-3.1/YOLOv5-3.1-[0-9].[0-9].zip
-/src/modules/ObjectDetectionNet/ObjectDetectionNet-1.1.zip
+/src/modules/ObjectDetectionYolo/ObjectDetectionYolo-[0-9].[0-9].[0-9].zip
+
+# The compiled form of the ParseJSON utility. We move it for convenience
+/src/SDK/Utilities/ParseJSON/ParseJSON
+/src/SDK/Utilities/ParseJSON/ParseJSON.exe
+src/SDK/Utilities/ParseJSON/ParseJSON.deps.json
+src/SDK/Utilities/ParseJSON/ParseJSON.dll
+src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json
+src/SDK/Utilities/ParseJSON/ParseJSON.xml

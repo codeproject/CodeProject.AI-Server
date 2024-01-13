@@ -48,7 +48,7 @@ namespace CodeProject.AI.Server.Controllers
     {
         private readonly CommandDispatcher _dispatcher;
         private readonly BackendRouteMap   _routeMap;
-        private readonly ModuleCollection  _modules;
+        private readonly ModuleCollection  _installedModules;
         private readonly TriggersConfig    _triggersConfig;
         private readonly TriggerTaskRunner _commandRunner;
 
@@ -57,20 +57,20 @@ namespace CodeProject.AI.Server.Controllers
         /// </summary>
         /// <param name="dispatcher">The Command Dispatcher instance.</param>
         /// <param name="routeMap">The Route Manager</param>
-        /// <param name="modulesConfig">Contains the Collection of modules</param>
+        /// <param name="ModuleCollectionOptions">Contains the Collection of modules</param>
         /// <param name="triggersConfig">Contains the triggers</param>
         /// <param name="commandRunner">The command runner</param>
         public ProxyController(CommandDispatcher dispatcher, 
                                BackendRouteMap routeMap,
-                               IOptions<ModuleCollection> modulesConfig,
+                               IOptions<ModuleCollection> ModuleCollectionOptions,
                                IOptions<TriggersConfig> triggersConfig,
                                TriggerTaskRunner commandRunner)
         {
-            _dispatcher     = dispatcher;
-            _routeMap       = routeMap;
-            _modules        = modulesConfig.Value;
-            _triggersConfig = triggersConfig.Value;
-            _commandRunner  = commandRunner;
+            _dispatcher       = dispatcher;
+            _routeMap         = routeMap;
+            _installedModules = ModuleCollectionOptions.Value;
+            _triggersConfig   = triggersConfig.Value;
+            _commandRunner    = commandRunner;
         }
 
         /// <summary>
@@ -133,9 +133,9 @@ namespace CodeProject.AI.Server.Controllers
             TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
             var summary = new StringBuilder();
 
-            var moduleList = _modules.Values
-                                     .Where(module => module.RouteMaps?.Length > 0)
-                                     .OrderBy(module => module.RouteMaps[0].Path);
+            var moduleList = _installedModules.Values
+                                              .Where(module => module.RouteMaps?.Length > 0)
+                                              .OrderBy(module => module.RouteMaps[0].Path);
 
             string currentCategory = string.Empty;
 

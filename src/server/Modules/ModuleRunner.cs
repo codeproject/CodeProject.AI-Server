@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,12 +25,12 @@ namespace CodeProject.AI.Server.Modules
 
         // TODO: this really should be a singleton global that is initialized from the configuration
         //       but can be updated after.
-        private readonly ModuleCollection        _modules;
+        private readonly ModuleCollection      _installedModules;
 
         // This gets returned by the Modules property so could end up non-empty. We don't populate
         // it in our code, but there is potential that this object may be modified. Maybe a name
         // change?
-        private readonly ModuleCollection       _emptyModuleList = new();
+        private readonly ModuleCollection      _emptyModuleList = new();
 
         /// <summary>
         /// Gets the environment variables applied to all processes.
@@ -42,7 +43,7 @@ namespace CodeProject.AI.Server.Modules
         /// <summary>
         /// Gets a list of the startup processes.
         /// </summary>
-        public ModuleCollection Modules => _modules ?? _emptyModuleList;
+        public ModuleCollection InstalledModules => _installedModules ?? _emptyModuleList;
 
         /// <summary>
         /// Gets a collection of the processes names and statuses.
@@ -59,39 +60,39 @@ namespace CodeProject.AI.Server.Modules
         /// </summary>
         /// <param name="moduleId">The module ID</param>
         /// <returns>A ModuleConfig object, or null if non found</returns>
-        public ModuleConfig? GetModule(string moduleId) => Modules.GetModule(moduleId);
+        public ModuleConfig? GetModule(string moduleId) => InstalledModules.GetModule(moduleId);
 
         /// <summary>
-        /// Initialises a new instance of the AiModuleRunner.
+        /// Initialises a new instance of the ModuleRunner.
         /// </summary>
         /// <param name="versionOptions">The server version Options</param>
         /// <param name="serverOptions">The server Options</param>
-        /// <param name="modules">The Modules configuration.</param>
+        /// <param name="moduleOptions">The Modules configuration.</param>
         /// <param name="moduleSettings">The Module settings manager object.</param>
-        /// <param name="moduleInstaller">The AiModuleInstaller.</param>
+        /// <param name="moduleInstaller">The ModuleInstaller.</param>
         /// <param name="processService">The Module Process Status Service.</param>
         /// <param name="logger">The logger.</param>
         public ModuleRunner(IOptions<VersionConfig> versionOptions,
                             IOptions<ServerOptions> serverOptions,
-                            IOptions<ModuleCollection> modules,
+                            IOptions<ModuleCollection> moduleOptions,
                             ModuleSettings moduleSettings,
                             ModuleInstaller moduleInstaller,
                             ModuleProcessServices processService,   
                             ILogger<ModuleRunner> logger)
         {
-            _versionConfig   = versionOptions.Value;
-            _serverOptions   = serverOptions.Value;
-            _modules         = modules.Value;
-            ModuleSettings   = moduleSettings;
-            _moduleInstaller = moduleInstaller;
-            ProcessService   = processService;
-            _logger          = logger;
+            _versionConfig    = versionOptions.Value;
+            _serverOptions    = serverOptions.Value;
+            _installedModules = moduleOptions.Value;
+            ModuleSettings    = moduleSettings;
+            _moduleInstaller  = moduleInstaller;
+            ProcessService    = processService;
+            _logger           = logger;
 
             // The very first thing we need to do is twofold:
             // 1. Update missing or optional properties. In the JSON settings file, ModuleId is
             //    specified as a key for the module info object, but not a property. Queue can be
             //    specified, or can be left blank to allow a default to be used. Fix these, and
-            //    a couple of other things up.
+            //    a couple of other things, up.
             // 2. Remove invalid modules. This can happen in the case where a module was installed,
             //    a setting for that module then persisted in the settings override .json file, and
             //    then the module is removed. Our config system will load up the persisted override
@@ -101,24 +102,25 @@ namespace CodeProject.AI.Server.Modules
 
             _logger.LogInformation($"** Server version:   {_versionConfig.VersionInfo!.Version}");
 
-            List<string> keys = _modules!.Keys.ToList();
+            List<string> keys = _installedModules!.Keys.ToList();
             foreach (string moduleId in keys)
             {
-                ModuleConfig? module = _modules[moduleId];
+                ModuleConfig? module = _installedModules[moduleId];
 
                 // Complete the ModuleConfig's setup
                 if (module is not null)
                 {
-                    module.Initialise(moduleId, moduleSettings.ModulesPath,
-                                      moduleSettings.PreInstalledModulesPath);
+                    module.Initialise(moduleId, moduleSettings.ModulesDirPath,
+                                      moduleSettings.PreInstalledModulesDirPath);
                 }
                 
                 if (module is null || !module.Valid)
-                    _modules.Remove(moduleId, out _);
+                    _installedModules.Remove(moduleId, out _);
             }
 #if DEBUG
             // Create a modules.json file each time we run
-            Task.Run(() => _modules.CreateModulesListing("modules.json"));
+            string path = Path.Combine(ModuleSettings.DownloadedModulePackagesDirPath, "modules.json");
+            Task.Run(() => _installedModules.CreateModulesListing(path));
 #endif
         }
 
@@ -135,7 +137,7 @@ namespace CodeProject.AI.Server.Modules
             _logger.LogTrace("ModuleRunner Stop");
 
             var tasks = new List<Task>();
-            foreach (var module in _modules.Values)
+            foreach (var module in _installedModules.Values)
                 tasks.Add(KillProcess(module));
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -148,7 +150,7 @@ namespace CodeProject.AI.Server.Modules
         {
             await Task.Delay(100).ConfigureAwait(false); // let everything else start up as well
 
-            if (_modules is null)
+            if (_installedModules is null)
             {
                 _logger.LogError("No Background AI Modules specified");
                 return;
@@ -160,7 +162,7 @@ namespace CodeProject.AI.Server.Modules
             int  preLaunchModuleDelaySecs = ModuleSettings.DelayBeforeLaunchingModulesSecs;
 
             // Setup routes.  Do this first so they are active during debug without launching services.
-            foreach (var entry in _modules!)
+            foreach (var entry in _installedModules!)
             {
                 ModuleConfig? module = entry.Value;
                 if (!module.Valid)
@@ -182,7 +184,7 @@ namespace CodeProject.AI.Server.Modules
                 await Task.Delay(TimeSpan.FromSeconds(preLaunchModuleDelaySecs), stoppingToken)
                           .ConfigureAwait(false);
 
-                foreach (var entry in _modules!)
+                foreach (var entry in _installedModules!)
                 {
                     ModuleConfig? module = entry.Value;
                     string moduleId = entry.Key;
@@ -230,7 +232,7 @@ namespace CodeProject.AI.Server.Modules
             if (module?.ModuleId is null)
                 return false;
 
-            if (ProcessService.TryGetProcessStatus(module.ModuleId, out ProcessStatus? _))
+            if (!ProcessService.TryGetProcessStatus(module.ModuleId, out ProcessStatus? _))
             {
                 string? installSummary = await _moduleInstaller.GetInstallationSummary(module.ModuleId)
                                                                .ConfigureAwait(false);

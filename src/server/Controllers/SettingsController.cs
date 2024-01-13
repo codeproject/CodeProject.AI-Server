@@ -39,10 +39,7 @@ namespace CodeProject.AI.Server.Controllers
     /// </remarks>
     /// <example>
     /// {
-    ///     "Global":{
-    ///         "USE_CUDA" : "True"
-    ///     },
-    ///     "Objectdetectionyolo": {
+    ///     "ObjectdetectionYolo": {
     ///         "CUSTOM_MODELS_DIR" : "C:\\BlueIris\\AI",
     ///         "MODEL_SIZE" : "Large"
     ///     },
@@ -64,7 +61,7 @@ namespace CodeProject.AI.Server.Controllers
         private readonly IConfiguration        _config;
         private readonly ServerOptions         _serverOptions;
         private readonly ModuleSettings        _moduleSettings;
-        private readonly ModuleCollection      _moduleCollection;
+        private readonly ModuleCollection      _installedModules;
         private readonly ModuleProcessServices _moduleProcessServices;
         private readonly string                _storagePath;
 
@@ -74,18 +71,18 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="config">The configuration</param>
         /// <param name="serverOptions">The server options</param>
         /// <param name="moduleSettings">The moduleSettings.</param>
-        /// <param name="moduleCollection">The collection of modules.</param>
+        /// <param name="moduleCollectionOptions">The collection of modules.</param>
         /// <param name="moduleProcessServices">The Module Process Services.</param>
         public SettingsController(IConfiguration config,
                                   IOptions<ServerOptions> serverOptions,
                                   ModuleSettings moduleSettings,
-                                  IOptions<ModuleCollection> moduleCollection,
+                                  IOptions<ModuleCollection> moduleCollectionOptions,
                                   ModuleProcessServices moduleProcessServices)
         {
             _config                = config;
             _serverOptions         = serverOptions.Value;
             _moduleSettings        = moduleSettings;
-            _moduleCollection      = moduleCollection.Value;
+            _installedModules      = moduleCollectionOptions.Value;
             _moduleProcessServices = moduleProcessServices;
             _storagePath           = _config["ApplicationDataDir"] 
                                    ?? throw new ApplicationException("ApplicationDataDir is not defined in configuration");
@@ -112,7 +109,7 @@ namespace CodeProject.AI.Server.Controllers
             if (settings == null || string.IsNullOrWhiteSpace(settings.Name))
                return new ErrorResponse("No setting or setting name provided");
 
-            ModuleConfig? module = _moduleCollection.GetModule(moduleId);
+            ModuleConfig? module = _installedModules.GetModule(moduleId);
             if (module is null)
                 return new ErrorResponse($"No module with ID {moduleId} found");
 
@@ -180,14 +177,14 @@ namespace CodeProject.AI.Server.Controllers
                     // Update all settings based on what's in the global settings. We'll get back a
                     // list of affected modules that need restarting.
                     Dictionary<string, string> globalSettings = moduleSetting.Value;
-                    moduleIdsToRestart = LegacyParams.UpdateSettings(globalSettings, _moduleCollection,
+                    moduleIdsToRestart = LegacyParams.UpdateSettings(globalSettings, _installedModules,
                                                                      overrideSettings);
 
                     continue;
                 }
 
                 // Targeting a specific module
-                ModuleConfig? module = _moduleCollection.GetModule(moduleId);
+                ModuleConfig? module = _installedModules.GetModule(moduleId);
                 if (module is null)
                     continue;
 
@@ -209,7 +206,7 @@ namespace CodeProject.AI.Server.Controllers
             // Restart the modules that were updated
             foreach (string moduleId in moduleIdsToRestart)
             {
-                ModuleConfig? module = _moduleCollection.GetModule(moduleId);
+                ModuleConfig? module = _installedModules.GetModule(moduleId);
                 if (module is not null)
                 {
                     var restartTask = _moduleProcessServices.RestartProcess(module);
@@ -241,7 +238,7 @@ namespace CodeProject.AI.Server.Controllers
             if (string.IsNullOrWhiteSpace(moduleId))
                 return new ErrorResponse("No module ID provided");
 
-            ModuleConfig? module = _moduleCollection.GetModule(moduleId);
+            ModuleConfig? module = _installedModules.GetModule(moduleId);
             if (module is null)
                 return new ErrorResponse($"No module found with ID {moduleId}");
 
@@ -258,12 +255,14 @@ namespace CodeProject.AI.Server.Controllers
                 success  = true,
                 settings = new
                 {
-                    autostart          = module.AutoStart ?? false,
-                    supportGPU         = module.SupportGPU,
-                    logVerbosity       = module.LogVerbosity,
-                    halfPrecision      = module.HalfPrecision,
-                    parallelism        = module.Parallelism,
-                    postStartPauseSecs = module.PostStartPauseSecs
+                    autostart             = module.AutoStart ?? false,
+                    installGPU            = module.InstallGPU,
+                    enableGPU             = module.EnableGPU,
+                    acceleratorDeviceName = module.AcceleratorDeviceName,
+                    logVerbosity          = module.LogVerbosity,
+                    halfPrecision         = module.HalfPrecision,
+                    parallelism           = module.Parallelism,
+                    postStartPauseSecs    = module.PostStartPauseSecs
                 },
                 environmentVariables = processEnvironmentVars
             };

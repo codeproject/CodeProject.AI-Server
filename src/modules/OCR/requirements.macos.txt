@@ -1,13 +1,14 @@
-#! Python3.9
+#! Python3.8
 
-# -i https://pypi.tuna.tsinghua.edu.cn/simple
-paddlepaddle==2.3.2     # Installing PaddelPaddle, the R and D deep learning platform
-paddleocr==2.6.0.1      # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+# These currently work on Intel Apple 
+paddlepaddle==2.3.2             # Installing PaddelPaddle, the R and D deep learning platform
 
-# Do these after paddlepaddle because paddlepaddle requires specific versions 
-imutils                 # Installing imutils, the image utilities library
-Pillow<10.0.0           # Installing Pillow, a Python Image Library
-opencv-python           # Installing OpenCV, the Computer Vision library for Python
-numpy                   # Installing NumPy, a package for scientific computing
+#paddleocr==2.6.0.1             # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+paddleocr==2.7.0.3              # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+
+opencv-python                   # Installing OpenCV, the Computer Vision library for Python
+numpy                           # Installing NumPy, a package for scientific computing
+imutils                         # Installing imutils, the image utilities library
+Pillow<10.0.0                   # Installing Pillow, a Python Image Library
 
 # end of file

@@ -9,6 +9,10 @@ import time
 import traceback
 from typing import Tuple
 
+# These are annoying and often unavoidable
+import warnings
+warnings.simplefilter("ignore", DeprecationWarning)
+
 # TODO: All I/O should be async, non-blocking so that logging doesn't impact 
 # the throughput of the requests. Switching to HTTP2 or some persisting 
 # connection mechanism would speed things up as well.
@@ -19,10 +23,15 @@ from typing import Tuple
 # This depends on the VENV we're actually running in. So: get the location of 
 # the current exe and work from that.
 current_python_dir = os.path.dirname(sys.executable)
+package_path=None
 if current_python_dir:
-    package_path = os.path.normpath(os.path.join(current_python_dir, '../lib/python' + sys.version[:3] + '/site-packages/'))
+    if platform.system() == "Windows":
+        package_path = os.path.normpath(os.path.join(current_python_dir, "..\\lib\\site-packages\\"))
+    else:
+        package_path = os.path.normpath(os.path.join(current_python_dir, '../lib/python' + sys.version[:3] + '/site-packages/'))
+
     sys.path.insert(0, package_path)
-    # print("Adding " + package_path + " to packages search path")
+
 
 # We can now import these from the appropriate VENV location
 import aiohttp
@@ -71,7 +80,8 @@ class ModuleRunner:
         working order. Typically this should run unit and/or integration tests
         and report back the results. Used for post-install checks.
         """
-        pass
+        return { "success": True }
+
 
     def shutdown(self) -> None:
         """
@@ -87,27 +97,29 @@ class ModuleRunner:
         """
 
         # Constants
-        self._error_pause_secs      = 1.0   # For general errors
-        self._conn_error_pause_secs = 5.0   # for connection / timeout errors
-        self._log_timing_events     = True
-        self._verbose_exceptions    = True
+        self._error_pause_secs       = 1.0   # For general errors
+        self._conn_error_pause_secs  = 5.0   # for connection / timeout errors
+        self._log_timing_events      = True
+        self._verbose_exceptions     = True
 
         # Private fields
-        self._execution_provider    = "" # backing field for self.execution_provider
-        self._cancelled             = False
+        self._execution_provider     = "" # backing field for self.execution_provider
+        self._cancelled              = False
         self._current_error_pause_secs = 0
+        self._performing_self_test   = False
+        self.selftest_check_packages = True
 
-        self._hasTorchCuda          = None
-        self._hasTorchROCm          = None
-        self._hasTorchDirectML      = None
-        self._hasTorchHalfPrecision = None
-        self._hasTorchMPS           = None
-        self._hasONNXRuntime        = None
-        self._hasONNXRuntimeGPU     = None
-        self._hasOpenVINO           = None
-        self._hasPaddleGPU          = None
-        self._hasCoralTPU           = None
-        self._hasFastDeployRockNPU  = None
+        self._hasTorchCuda           = None
+        self._hasTorchROCm           = None
+        self._hasTorchDirectML       = None
+        self._hasTorchHalfPrecision  = None
+        self._hasTorchMPS            = None
+        self._hasONNXRuntime         = None
+        self._hasONNXRuntimeGPU      = None
+        self._hasOpenVINO            = None
+        self._hasPaddleGPU           = None
+        self._hasCoralTPU            = None
+        self._hasFastDeployRockNPU   = None
 
         # Public fields -------------------------------------------------------
 
@@ -135,12 +147,13 @@ class ModuleRunner:
         self.server_root_path    = ModuleOptions.server_root_path
         self.module_path         = ModuleOptions.module_path
         self.python_dir          = current_python_dir
+        self.python_pkgs_dir     = package_path
         self.log_verbosity       = ModuleOptions.log_verbosity
         self.launched_by_server  = ModuleOptions.launched_by_server
 
         # Hardware / accelerator info
         self.required_MB         = int(ModuleOptions.required_MB or 0)
-        self.support_GPU         = ModuleOptions.support_GPU
+        self.enable_GPU          = ModuleOptions.enable_GPU
         self.accel_device_name   = ModuleOptions.accel_device_name
         self.half_precision      = ModuleOptions.half_precision
         self.parallelism         = ModuleOptions.parallelism
@@ -172,7 +185,7 @@ class ModuleRunner:
                     if 'raspberry pi' in model_info:
                         self.system = 'Raspberry Pi'
                     elif 'orange pi' in model_info:
-                        self.system = 'OrangePi'
+                        self.system = 'Orange Pi'
                         
             except Exception: pass
 
@@ -205,7 +218,7 @@ class ModuleRunner:
             elif self.cpu_brand.find("Intel(R)") != -1:
                 self.cpu_vendor = 'Intel'
 
-        if self.support_GPU and self.hasTorchMPS:
+        if self.enable_GPU and self.hasTorchMPS:
             os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
         # Private fields
@@ -469,12 +482,21 @@ class ModuleRunner:
 
         if len(sys.argv) > 1 and sys.argv[1] == "--selftest":
             self._logger = ModuleLogger(self.port, self.server_root_path)
+            self._performing_self_test = True
+            
             self.initialise()
-            self.check_packages()
-            self.selftest()
-            quit()
+            if self.selftest_check_packages:
+                self.check_packages()
+            result = self.selftest()
+            self.shutdown()
 
-        # No smoke test, so on to the main show
+            self._performing_self_test = False
+            if result and hasattr(result, "success") and not result["success"]:
+                quit(1)
+            else:
+                quit(0)
+
+        # No self test, so on to the main show
 
         try:
             asyncio.run(self.main_init())
@@ -496,7 +518,11 @@ class ModuleRunner:
         #
         # self._logger = ModuleLogger(self.port, self.server_root_path)
         # 
-        # nThreads = os.cpu_count() -1
+        # if (sys.version_info.major >= 3 and sys.version_info.minor >= 13):
+        #    nThreads = os.process_cpu_count() // 2
+        # else:
+        #    nThreads = os.cpu_count() // 2
+        #
         # theThreads = []
         # for i in range(nThreads):
         #     t = Thread(target=self.main_loop)
@@ -607,7 +633,9 @@ class ModuleRunner:
                 # Special requests
                 if data.command:
                     
-                    if self.module_id == data.get_value("moduleId") and data.command.lower() == "quit":
+                    command = data.command.lower()
+
+                    if command == "quit" and self.module_id.lower() == data.get_value("moduleId").lower():
                         await self.log_async(LogMethod.Info | LogMethod.File | LogMethod.Server, { 
                             "process":  self.module_name,
                             "filename": __file__,
@@ -620,7 +648,9 @@ class ModuleRunner:
                     elif data.command.lower() == "status":
                         method_to_call = self.status
                         suppress_timing_log = True
-                    elif data.command.lower() == "selftest":
+                    # NOTE: selftest generally won't actually be called here - it'll be called via 
+                    #       command line. This is here in case selftest is triggered via API
+                    elif command == "selftest":
                         method_to_call = self.selftest
 
                 if not suppress_timing_log:
@@ -683,6 +713,7 @@ class ModuleRunner:
                         output["command"]           = data.command or ''
                         output["moduleId"]          = self.module_id
                         output["executionProvider"] = self.execution_provider or 'CPU'
+                        output["canUseGPU"]         = self.can_use_GPU
                         
                         # print("creating new send task")
                         send_response_task = asyncio.create_task(self.send_response(data.request_id, output))
@@ -1044,6 +1075,9 @@ class ModuleRunner:
 
         # This is getting complicated. The order of priority for the requirements file is:
         #
+        #  requirements.device.txt                              (device = "raspberrypi", "orangepi" or "jetson" )
+        #  requirements.os.architecture.cuda.cuda_version.txt   (version is in form 11_7, 12_2 etc)
+        #  requirements.os.architecture.cuda.cuda_major.txt     (major is in form 11, 12 etc)
         #  requirements.os.architecture.(cuda|rocm).txt
         #  requirements.os.(cuda|rocm).txt
         #  requirements.cuda.txt
@@ -1064,8 +1098,19 @@ class ModuleRunner:
         os_name  = self.os.lower()
         arch     = self.cpu_arch.lower()
 
-        if self.support_GPU:
+        if self.system == 'Raspberry Pi':
+            if os.path.exists(os.path.join(self.module_path, f"requirements.raspberrypi.txt")):
+                filename = f"requirements.raspberrypi.txt"
+        elif self.system == 'Orange Pi':
+            if os.path.exists(os.path.join(self.module_path, f"requirements.orangepi.txt")):
+                filename = f"requirements.orangepi.txt"
+        elif self.system == 'Jetson':
+            if os.path.exists(os.path.join(self.module_path, f"requirements.jetson.txt")):
+                filename = f"requirements.jetson.txt"
+
+        if not filename and self.enable_GPU:
             if self.hasTorchCuda:
+                # TODO: Get the specific CUDA version and then add tests for .cudaMajor, .cudaMajor_Minor
                 if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.cuda.txt")):
                     filename = f"requirements.{os_name}.{arch}.cuda.txt"
                 elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.cuda.txt")):
@@ -1089,13 +1134,13 @@ class ModuleRunner:
                 elif os.path.exists(os.path.join(self.module_path, f"requirements.gpu.txt")):
                     filename = f"requirements.gpu.txt"
 
-            if not filename:
-                if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.txt")):
-                    filename = f"requirements.{os_name}.{arch}.txt"
-                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.txt")):
-                    filename = f"requirements.{os_name}.txt"
-                elif os.path.exists(os.path.join(self.module_path, f"requirements.txt")):
-                    filename = f"requirements.txt"
+        if not filename:
+            if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.txt")):
+                filename = f"requirements.{os_name}.{arch}.txt"
+            elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.txt")):
+                filename = f"requirements.{os_name}.txt"
+            elif os.path.exists(os.path.join(self.module_path, f"requirements.txt")):
+                filename = f"requirements.txt"
 
         if filename:
             return os.path.join(self.module_path, filename)

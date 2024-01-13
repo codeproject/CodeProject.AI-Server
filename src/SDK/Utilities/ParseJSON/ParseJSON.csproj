@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
+	<Import Project="../../NET/Common.targets" />
+
+	<!-- Meta data -->
+	<PropertyGroup>
+		<Name>ParseJSON</Name>
+		<!-- THIS MUST NOT CHANGE. It's the name of the Windows service -->
+		<Product>CodeProject.AI Server</Product>
+		<Description>A simple JSON parsing app for use in scripts.</Description>
+		<Company>CodeProject</Company>
+		<Authors>CodeProject</Authors>
+		<Version>1.0.0</Version>
+	</PropertyGroup>
+
+	<!-- Build properties -->
+	<PropertyGroup>
+    <OutputType>Exe</OutputType>
+		<RootNamespace>CodeProject.AI.Utilities</RootNamespace>
+		<AssemblyName>ParseJSON</AssemblyName>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<Platform>AnyCPU</Platform>
+		<TargetFramework>net7.0</TargetFramework>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<DeleteExistingFiles>true</DeleteExistingFiles>
+	</PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<SelfContained>false</SelfContained>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+  </PropertyGroup>
+
+</Project>

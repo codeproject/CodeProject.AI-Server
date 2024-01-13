@@ -34,35 +34,35 @@ namespace CodeProject.AI.Server.Modules
         private readonly ModuleSettings           _moduleSettings;
         private readonly ModuleProcessServices    _moduleProcessService;
         private readonly PackageDownloader        _packageDownloader;
-        private readonly ModuleCollection         _moduleCollection;
+        private readonly ModuleCollection         _installedModules;
         private readonly ModuleOptions            _moduleOptions;
         private readonly ServerOptions            _serverOptions;
         private readonly ILogger<ModuleInstaller> _logger;
 
         /// <summary>
-        /// Initialises a new instance of the AiModuleInstaller.
+        /// Initialises a new instance of the ModuleInstaller.
         /// </summary>
         /// <param name="versionOptions">The server version Options</param>
         /// <param name="moduleSettings">The module settings instance</param>
         /// <param name="serverOptions">The server options</param>
-        /// <param name="moduleCollection">The module collection instance.</param>
+        /// <param name="moduleCollectionOptions">The module collection instance.</param>
         /// <param name="moduleOptions">The module Options</param>
         /// <param name="moduleProcessServices">The moduleProcessServices.</param>
         /// <param name="packageDownloader">The Package Downloader.</param>
         /// <param name="logger">The logger.</param>
         public ModuleInstaller(IOptions<VersionConfig> versionOptions,
-                                 ModuleSettings moduleSettings,
-                                 IOptions<ServerOptions> serverOptions,
-                                 IOptions<ModuleCollection> moduleCollection,
-                                 IOptions<ModuleOptions> moduleOptions,
-                                 ModuleProcessServices moduleProcessServices,
-                                 PackageDownloader packageDownloader,
-                                 ILogger<ModuleInstaller> logger)
+                               ModuleSettings moduleSettings,
+                               IOptions<ServerOptions> serverOptions,
+                               IOptions<ModuleCollection> moduleCollectionOptions,
+                               IOptions<ModuleOptions> moduleOptions,
+                               ModuleProcessServices moduleProcessServices,
+                               PackageDownloader packageDownloader,
+                               ILogger<ModuleInstaller> logger)
         {
             _versionConfig        = versionOptions.Value;
             _moduleSettings       = moduleSettings;
             _serverOptions        = serverOptions.Value;
-            _moduleCollection     = moduleCollection.Value;
+            _installedModules     = moduleCollectionOptions.Value;
             _moduleOptions        = moduleOptions.Value;
             _moduleProcessService = moduleProcessServices;
             _packageDownloader    = packageDownloader;
@@ -181,16 +181,16 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="isInstalled">Is this module currently installed?</param>
         /// <param name="serverVersion">The version of the current server, or null to ignore
         /// version checks</param>
-        /// <param name="modulesPath">The absolute path to the folder containing all downloaded and
+        /// <param name="modulesDirPath">The absolute path to the folder containing all downloaded and
         /// installed modules</param>
-        /// <param name="preInstalledModulesPath">The absolute path to the folder containing all
+        /// <param name="preInstalledModulesDirPath">The absolute path to the folder containing all
         /// pre-installed modules</param>
         /// <returns>A ModuleDescription object</returns>
         public static ModuleDescription ModuleDescriptionFromModuleConfig(ModuleConfig module,
                                                                           bool isInstalled,
                                                                           string serverVersion,
-                                                                          string modulesPath,
-                                                                          string preInstalledModulesPath)
+                                                                          string modulesDirPath,
+                                                                          string preInstalledModulesDirPath)
         {
             var moduleDescription = new ModuleDescription()
             {
@@ -208,7 +208,7 @@ namespace CodeProject.AI.Server.Modules
             };
 
             // Set initial properties. Most importantly it sets the status. 
-            moduleDescription.Initialise(serverVersion, modulesPath, preInstalledModulesPath);
+            moduleDescription.Initialise(serverVersion, modulesDirPath, preInstalledModulesDirPath);
 
             // if a module is installed then that beats any other status
             if (isInstalled)
@@ -268,10 +268,10 @@ namespace CodeProject.AI.Server.Modules
                         // HACK: for debug
                         if (_moduleOptions.ModuleListUrl.StartsWithIgnoreCase("file://"))
                         {
-                            int basUrlLength = _moduleOptions.ModuleListUrl!.Length - "modules.json".Length;
-                            string baseDownloadUrl = _moduleOptions.ModuleListUrl![..basUrlLength];
+                            int baseUrlLength = _moduleOptions.ModuleListUrl!.Length - "modules.json".Length;
+                            string baseDownloadUrl = _moduleOptions.ModuleListUrl![..baseUrlLength].TrimEnd('\\', '/');
                             if (baseDownloadUrl == "file://")
-                                baseDownloadUrl = _moduleSettings.DownloadedModulePackagesPath;
+                                baseDownloadUrl = _moduleSettings.DownloadedModulePackagesDirPath;
                             foreach (var module in moduleList)
                                 module.DownloadUrl = baseDownloadUrl + Path.DirectorySeparatorChar + $"{module.ModuleId}-{module.Version}.zip";
                         }
@@ -279,13 +279,13 @@ namespace CodeProject.AI.Server.Modules
                         string currentServerVersion = _versionConfig.VersionInfo?.Version ?? string.Empty;
                         foreach (var module in moduleList)
                         {
-                            module.Initialise(currentServerVersion, _moduleSettings.ModulesPath,
-                                              _moduleSettings.PreInstalledModulesPath);
+                            module.Initialise(currentServerVersion, _moduleSettings.ModulesDirPath,
+                                              _moduleSettings.PreInstalledModulesDirPath);
                         }
 
                         // Update the status to 'Installed' or 'UpdateAvailable' for all listed
                         // modules that we are currently running.
-                        foreach (ModuleConfig? module in _moduleCollection.Values)
+                        foreach (ModuleConfig? module in _installedModules.Values)
                         {
                             if (module?.Valid != true)
                                 continue;
@@ -333,9 +333,9 @@ namespace CodeProject.AI.Server.Modules
                                 {
                                     // If the uninstall failed but ultimately the module's dir was
                                     //  emptied, then mark it as done.
-                                    string moduleDir = _moduleSettings.GetModulePath(existingDescription);
-                                    if (!Directory.Exists(moduleDir) ||
-                                        !Directory.EnumerateFileSystemEntries(moduleDir).Any())
+                                    string moduleDirName = _moduleSettings.GetModuleDirPath(existingDescription);
+                                    if (!Directory.Exists(moduleDirName) ||
+                                        !Directory.EnumerateFileSystemEntries(moduleDirName).Any())
                                     {
                                         existingDescription.Status = ModuleStatusType.Uninstalled;
                                         module.Status              = ModuleStatusType.Available;
@@ -376,11 +376,13 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="version">The version of the module to install</param>
         /// <param name="noCache">Whether or not to ignore the download cache. If true, the module
         /// will always be freshly downloaded</param>
+        /// <param name="verbosity">The amount of noise to output when installing</param>
         /// <returns>A Tuple containing true for success; false otherwise, and a string containing
         /// the error message if the operation was not successful.</returns>
         public async Task<(bool, string)> DownloadAndInstallModuleAsync(string moduleId, 
                                                                         string version,
-                                                                        bool noCache = false)
+                                                                        bool noCache = false,
+                                                                        LogVerbosity verbosity = LogVerbosity.Quiet)
         {           
             if (string.IsNullOrWhiteSpace(moduleId))
                 return (false, "No module ID provided");
@@ -399,7 +401,7 @@ namespace CodeProject.AI.Server.Modules
                 version = moduleDownload.Version!;
 
             // Check we don't have a current or newer version already installed            
-            ModuleConfig? module = _moduleCollection.GetModule(moduleId);
+            ModuleConfig? module = _installedModules.GetModule(moduleId);
 
             // Sanity check
             if (module is not null && module.PreInstalled)
@@ -417,9 +419,9 @@ namespace CodeProject.AI.Server.Modules
             }
 
             // Download and unpack the module's installation package FOR THE REQUESTED VERSION
-            string moduleDir     = _moduleSettings.GetModulePath(moduleDownload);
-            string downloadPath  = _moduleSettings.DownloadedModulePackagesPath 
-                                 + Path.DirectorySeparatorChar + moduleId + "-" + version + ".zip";
+            string moduleDirName   = _moduleSettings.GetModuleDirPath(moduleDownload);
+            string downloadDirPath = _moduleSettings.DownloadedModulePackagesDirPath 
+                                   + Path.DirectorySeparatorChar + moduleId + "-" + version + ".zip";
 
             // Console.WriteLine("Setting ModuleStatusType.Downloading");
             moduleDownload.Status = ModuleStatusType.Downloading;
@@ -428,18 +430,18 @@ namespace CodeProject.AI.Server.Modules
             bool downloaded = false;
             string error = string.Empty;
 
-            if (!noCache && System.IO.File.Exists(downloadPath))
+            if (!noCache && System.IO.File.Exists(downloadDirPath))
             {
                 _logger.LogInformation($" (using cached download for '{moduleId}')");
                 downloaded = true;               
             }
             else
             {
-                (downloaded, error) = await _packageDownloader.DownloadFileAsync(moduleDownload.DownloadUrl!, downloadPath)
+                (downloaded, error) = await _packageDownloader.DownloadFileAsync(moduleDownload.DownloadUrl!, downloadDirPath)
                                                               .ConfigureAwait(false);
             }
 
-            if (downloaded && !System.IO.File.Exists(downloadPath))
+            if (downloaded && !System.IO.File.Exists(downloadDirPath))
             {
                 downloaded = false;
                 error      = "Module was downloaded but was not saved";
@@ -452,32 +454,36 @@ namespace CodeProject.AI.Server.Modules
                 return (false, $"Unable to download module '{moduleId}' from {moduleDownload.DownloadUrl}. Error: {error}");
             }
 
-            return await InstallModuleAsync(downloadPath, moduleId).ConfigureAwait(false);
+            return await InstallModuleAsync(downloadDirPath, moduleId, verbosity).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Installs the module in stored in given file.
+        /// Installs the module that is stored in the package file given my moduleId in the path
+        /// given by installPackagePath.
         /// </summary>
         /// <param name="installPackagePath">The path to the installer zip package</param>
         /// <param name="moduleId">The module to install</param>
+        /// <param name="verbosity">The amount of noise to output when installing</param>
         /// <returns>A Tuple containing true for success; false otherwise, and a string containing
         /// the error message if the operation was not successful.</returns>
-        public async Task<(bool, string)> InstallModuleAsync(string installPackagePath, string? moduleId)
+        public async Task<(bool, string)> InstallModuleAsync(string installPackagePath,
+                                                             string? moduleId,
+                                                             LogVerbosity verbosity = LogVerbosity.Quiet)
         {
             ModuleDescription? moduleDownload = null;
-            string? moduleDir                 = null;
+            string? moduleDirName             = null;
 
             // A module that was uploaded via the API won't have a moduleID provided. It will be in
             // the modulesettings.json file in the module's install package.
-            bool uploadedModule = string.IsNullOrWhiteSpace(moduleId);
+            bool isUploadedModule = string.IsNullOrWhiteSpace(moduleId);
 
-            // If we do not know the module we're installing then base filenames on the filepath
+            // If we do not know the module we're installing then base the filenames on the filepath
             // until we can determine the actual module Id. Otherwise, if we know the module then
             // we can update its progress now. 
             if (string.IsNullOrWhiteSpace(moduleId))
             {
                 string tempName = Path.GetFileNameWithoutExtension(installPackagePath);
-                moduleDir = Path.Combine(_moduleSettings.ModulesPath, Text.FixSlashes(tempName));
+                moduleDirName = Path.Combine(_moduleSettings.ModulesDirPath, Text.FixSlashes(tempName));
             }
             else
             {
@@ -485,15 +491,18 @@ namespace CodeProject.AI.Server.Modules
                 if (moduleDownload is not null)
                 {
                     moduleDownload.Status = ModuleStatusType.Unpacking;
-                    moduleDir = _moduleSettings.GetModulePath(moduleDownload);
+                    moduleDirName = _moduleSettings.GetModuleDirPath(moduleDownload);
                 }
             }
 
-            if (string.IsNullOrWhiteSpace(moduleDir))
+            if (string.IsNullOrWhiteSpace(moduleDirName))
                 return (false, $"Unable to determine module directory for '{installPackagePath}'");
 
-            bool extracted = _packageDownloader.Extract(installPackagePath, moduleDir!, out var _);
+            // At this point we have the directory name of the module we're to install, so we can
+            // extract the install package into this directory
+            bool extracted = _packageDownloader.Extract(installPackagePath, moduleDirName!, out var _);
     
+            // Only delete the installer zip package if we're not in dev mode
             if (SystemInfo.RuntimeEnvironment != RuntimeEnvironment.Development)
                 DeletePackageFile(installPackagePath);
 
@@ -505,6 +514,10 @@ namespace CodeProject.AI.Server.Modules
                 return (false, $"Unable to unpack module in '{installPackagePath}'");
             }
 
+            // We have extracted the package into the appropriate folder. The name of the folder
+            // should be the same as the module ID. We're paranoid, so we're going to load up the
+            // module's modulesettings.json file and read the module ID directly from that file.
+
             /* - Doesn't yet work but the vague idea here is to use the same method we use
                  to load modulesettings files. Using this method means we handle all the
                  possible modulesettings.*.json names, meaning only one has to exist for this
@@ -512,17 +525,17 @@ namespace CodeProject.AI.Server.Modules
                  exists.
 
             var config = new ConfigurationBuilder();
-            ModuleSettings.LoadModuleSettings(config, moduleDir, false);
+            ModuleSettings.LoadModuleSettings(config, moduleDirName, false);
             IConfiguration configuration  = config.Build();
             var moduleCollection = new ModuleCollection();
             configuration.Bind($"Modules", moduleCollection);
             var settings = configuration.GetSection("Modules");
             */
 
-            string? settingsModuleId = null;
+            string? moduleIdFromSettingsFile = null;
             try
             {
-                string content = await File.ReadAllTextAsync(Path.Combine(moduleDir, "modulesettings.json"))
+                string content = await File.ReadAllTextAsync(Path.Combine(moduleDirName, "modulesettings.json"))
                                            .ConfigureAwait(false);
 
                 var documentOptions = new JsonDocumentOptions
@@ -533,20 +546,20 @@ namespace CodeProject.AI.Server.Modules
                 var jsonSettings = JsonDocument.Parse(content, documentOptions).RootElement;
                 var jsonModules  = jsonSettings.EnumerateObject().FirstOrDefault();
                 var jsonModule   = jsonModules.Value.EnumerateObject().FirstOrDefault();
-                settingsModuleId = jsonModule.Name;
+                moduleIdFromSettingsFile = jsonModule.Name;
             }
             catch
             {
                 if (SystemInfo.RuntimeEnvironment != RuntimeEnvironment.Development)
-                    DeletePackageDirectory(moduleDir);
+                    DeletePackageDirectory(moduleDirName);
 
                 return (false, $"Unable to load module configuration from '{installPackagePath}'");
             }
 
-            if (string.IsNullOrWhiteSpace(settingsModuleId))
+            if (string.IsNullOrWhiteSpace(moduleIdFromSettingsFile))
             {
-                if (uploadedModule && SystemInfo.RuntimeEnvironment != RuntimeEnvironment.Development)
-                    DeletePackageDirectory(moduleDir);
+                if (isUploadedModule && SystemInfo.RuntimeEnvironment != RuntimeEnvironment.Development)
+                    DeletePackageDirectory(moduleDirName);
 
                 return (false, $"Unable to read module Id from settings in '{installPackagePath}'");
             }
@@ -556,23 +569,24 @@ namespace CodeProject.AI.Server.Modules
             // exist.
             if (string.IsNullOrWhiteSpace(moduleId))
             {
-                if (_moduleCollection.ContainsKey(settingsModuleId))
+                if (_installedModules.ContainsKey(moduleIdFromSettingsFile))
                 {
-                    DeletePackageDirectory(moduleDir);
-                    return (false, $"A module of id {settingsModuleId} has already been installed. Please uninstall before uploading again.");
+                    DeletePackageDirectory(moduleDirName);
+                    return (false, $"A module of id {moduleIdFromSettingsFile} has already been installed. Please uninstall before uploading again.");
                 }
 
-                string newModuleDir = Path.Combine(_moduleSettings.ModulesPath, Text.FixSlashes(settingsModuleId));
-                Directory.Move(moduleDir, newModuleDir);
+                string newModuleDirName = Path.Combine(_moduleSettings.ModulesDirPath, 
+                                                       Text.FixSlashes(moduleIdFromSettingsFile));
+                Directory.Move(moduleDirName, newModuleDirName);
 
-                moduleId  = settingsModuleId;
-                moduleDir = newModuleDir;
+                moduleId  = moduleIdFromSettingsFile;
+                moduleDirName = newModuleDirName;
             }
             else
             {
                 // Not strictly necessary, but probably a good idea
-                if (!moduleId.EqualsIgnoreCase(settingsModuleId))
-                    return (false, $"The module to install ({settingsModuleId}) has a different module ID than was specified ({moduleId}). Quitting.");
+                if (!moduleId.EqualsIgnoreCase(moduleIdFromSettingsFile))
+                    return (false, $"The module to install ({moduleIdFromSettingsFile}) has a different module ID than was specified ({moduleId}). Quitting.");
             }
 
             // Run the install script
@@ -592,17 +606,19 @@ namespace CodeProject.AI.Server.Modules
 
             ProcessStartInfo procStartInfo;
             if (SystemInfo.IsWindows)
-                procStartInfo = new ProcessStartInfo(_moduleSettings.ModuleInstallerScriptPath);
-            else if (SystemInfo.IsMacOS)
-                procStartInfo = new ProcessStartInfo("bash", '"' + _moduleSettings.ModuleInstallerScriptPath + '"');
+            {
+                string command = _moduleSettings.ModuleInstallerScriptPath;
+                procStartInfo = new ProcessStartInfo(command);
+                procStartInfo.Arguments = $" --verbosity {verbosity} --launcher server";
+            }
             else
-                procStartInfo = new ProcessStartInfo("bash", _moduleSettings.ModuleInstallerScriptPath);
-
-            // Don't stop the colour! We use the colours in the dashboard, and will strip them for
-            // our log output.
-            // procStartInfo.Arguments           = "--no-color";
+            {
+                string command = $"\"{_moduleSettings.ModuleInstallerScriptPath}\" --verbosity {verbosity}  --launcher server";
+                procStartInfo = new ProcessStartInfo("bash", command);
+            }
+            
             procStartInfo.UseShellExecute        = false;
-            procStartInfo.WorkingDirectory       = moduleDir;
+            procStartInfo.WorkingDirectory       = moduleDirName;
             procStartInfo.CreateNoWindow         = false;
             procStartInfo.RedirectStandardOutput = true;
             procStartInfo.RedirectStandardError  = true;
@@ -614,7 +630,7 @@ namespace CodeProject.AI.Server.Modules
             process.Exited             += ModuleInstallComplete;
 
             // Setup log file
-            using StreamWriter logWriter = File.AppendText(Path.Combine(moduleDir, _installLogFileName));
+            using StreamWriter logWriter = File.AppendText(Path.Combine(moduleDirName, _installLogFileName));
 
             // Setup handling of install script output
             process.OutputDataReceived += (object s, DataReceivedEventArgs e) => SendOutputToLog(logWriter, s, e);
@@ -657,16 +673,16 @@ namespace CodeProject.AI.Server.Modules
 
                 await logWriter.WriteLineAsync($"Timed out attempting to install Module '{moduleId}'")
                                .ConfigureAwait(false);
-                return (false, $"Timed out attempting to install Module '{moduleId}' (${e.Message})");
+                return (false, $"Timed out attempting to install Module '{moduleId}' ({e.Message})");
             }
             catch (Exception e)
             {
                 if (moduleDownload is not null)
                     moduleDownload.Status = ModuleStatusType.FailedInstall;
 
-                await logWriter.WriteLineAsync($"Unable to install Module '{moduleId}' (${e.Message})")
+                await logWriter.WriteLineAsync($"Unable to install Module '{moduleId}' ({e.Message})")
                                .ConfigureAwait(false);
-                return (false, $"Unable to install Module '{moduleId}' (${e.Message})");
+                return (false, $"Unable to install Module '{moduleId}' ({e.Message})");
             }
 
             return (true, string.Empty);
@@ -686,17 +702,12 @@ namespace CodeProject.AI.Server.Modules
             // if (SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development)
             //    return (false, $"Can't uninstall {moduleId} when running in Development");
 
-            if (_moduleCollection is null)
+            if (_installedModules is null)
                 return (false, "Unable to locate analysis module collection");
 
-            ModuleConfig? module = _moduleCollection.GetModule(moduleId);
+            ModuleConfig? module = _installedModules.GetModule(moduleId);
             if (module is null)
                 return (false, $"Unable to find module {moduleId}");
-
-            // GetProcessStatus the module's directory
-            string moduleDir = _moduleSettings.GetModulePath(module); 
-            if (!Directory.Exists(moduleDir))
-                return (false, $"Unable to find {moduleId}'s install directory {moduleDir ?? "null"}");
 
             ModuleDescription? moduleDownload = await GetInstallableModuleDescription(moduleId).ConfigureAwait(false);
 
@@ -706,8 +717,8 @@ namespace CodeProject.AI.Server.Modules
             {
                 moduleDownload = ModuleDescriptionFromModuleConfig(module, true,
                                                                    _versionConfig.VersionInfo!.Version,
-                                                                   _moduleSettings.ModulesPath,
-                                                                   _moduleSettings.PreInstalledModulesPath);
+                                                                   _moduleSettings.ModulesDirPath,
+                                                                   _moduleSettings.PreInstalledModulesDirPath);
                 moduleDownload.IsDownloadable = false;
             }
 
@@ -731,10 +742,17 @@ namespace CodeProject.AI.Server.Modules
 
             _moduleProcessService.RemoveProcessStatus(moduleId);
 
+            // GetProcessStatus the module's directory
+            string moduleDirPath = _moduleSettings.GetModuleDirPath(module); 
+
             try
             {
-                Directory.Delete(moduleDir, true);
-                Console.WriteLine("Setting newly deleted module to ModuleStatusType.Available");
+                if (Directory.Exists(moduleDirPath))
+                    Directory.Delete(moduleDirPath, true);
+                else    
+                    Console.WriteLine($"Unable to find {moduleId}'s install directory {moduleDirPath ?? "null"}");
+
+                Console.WriteLine("Module files removed. Setting module state to Available");
 
                 moduleDownload = await GetInstallableModuleDescription(moduleId).ConfigureAwait(false);
                 if (moduleDownload is not null)
@@ -747,7 +765,7 @@ namespace CodeProject.AI.Server.Modules
                 await Task.Delay(3).ConfigureAwait(false);
             }
 
-            if (Directory.Exists(moduleDir)) // shouldn't actually be possible to get here if delete failed
+            if (Directory.Exists(moduleDirPath)) // shouldn't actually be possible to get here if delete failed
             {
                 Console.WriteLine("Setting ModuleStatusType.UninstallFailed");
                 moduleDownload = await GetInstallableModuleDescription(moduleId).ConfigureAwait(false);
@@ -759,8 +777,8 @@ namespace CodeProject.AI.Server.Modules
                 return (false, $"Unable to delete install folder for {moduleId}");
             }
 
-            if (_moduleCollection.ContainsKey(moduleId) && 
-                !_moduleCollection.TryRemove(moduleId, out _))
+            if (_installedModules.ContainsKey(moduleId) && 
+                !_installedModules.TryRemove(moduleId, out _))
             {
                 if (moduleDownload is not null)
                     moduleDownload.Status = ModuleStatusType.UninstallFailed;
@@ -790,16 +808,16 @@ namespace CodeProject.AI.Server.Modules
             // if (SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development)
             //    return (false, $"Can't uninstall {moduleId} when running in Development");
 
-            if (_moduleCollection is null)
+            if (_installedModules is null)
                 return null; // (null, "Unable to locate analysis module collection");
 
-            ModuleConfig? module = _moduleCollection.GetModule(moduleId);
+            ModuleConfig? module = _installedModules.GetModule(moduleId);
             if (module is null)
                 return null; // (null, $"Unable to find module {moduleId}");
         
             try
             {
-                string path = Path.Combine(module.ModulePath, _installLogFileName);
+                string path = Path.Combine(module.ModuleDirPath, _installLogFileName);
                 string? logs = null;
 
                 if (File.Exists(path))
@@ -916,11 +934,11 @@ namespace CodeProject.AI.Server.Modules
 
             _logger.LogInformation($"Module {moduleId} installed successfully.");
 
-            string moduleDir = _moduleSettings.ModulesPath + Path.DirectorySeparatorChar + moduleId;
+            string moduleDirName = _moduleSettings.ModulesDirPath + Path.DirectorySeparatorChar + moduleId;
 
             // Load up the module's settings and start the module
             var config = new ConfigurationBuilder();
-            ModuleSettings.LoadModuleSettings(config, moduleDir, false);
+            ModuleSettings.LoadModuleSettings(config, moduleDirName, false);
             IConfiguration configuration  = config.Build();
 
             // Bind the values in the configuration to a ModuleConfig object
@@ -928,15 +946,21 @@ namespace CodeProject.AI.Server.Modules
             configuration.Bind($"Modules:{moduleId}", moduleConfig);
 
             // Complete the ModuleConfig's setup
-            moduleConfig.Initialise(moduleId, _moduleSettings.ModulesPath,
-                                    _moduleSettings.PreInstalledModulesPath);
+            moduleConfig.Initialise(moduleId, _moduleSettings.ModulesDirPath,
+                                    _moduleSettings.PreInstalledModulesDirPath);
 
             if (moduleConfig.Valid)
             {
-                _moduleCollection.TryAdd(moduleId, moduleConfig);
+                // If we're updating a module then we'll have the old info on this module in our
+                // list of installed modules. Remove the old one so we can replace with the updated
+                // info.
+                if (_installedModules.ContainsKey(moduleId))
+                    _installedModules.Remove(moduleId, out ModuleConfig? _);
+                _installedModules.TryAdd(moduleId, moduleConfig);
 
+                // CHECK that the module id gets updated
                 string? installSummary = await GetInstallationSummary(moduleId);
-                _moduleProcessService.AddProcess(moduleConfig, true, installSummary);
+                _moduleProcessService.AddProcess(moduleConfig, true, installSummary, true);
 
                 if (!(moduleConfig.AutoStart ?? false))
                     _logger.LogInformation($"Module {moduleId} not configured to AutoStart.");

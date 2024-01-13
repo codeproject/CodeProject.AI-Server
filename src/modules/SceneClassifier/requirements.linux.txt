@@ -1,27 +1,22 @@
 #! Python3.7
 
-Pandas           # Installing Pandas, a data analysis / data manipulation tool
-CoreMLTools      # Installing CoreMLTools, for working with .mlmodel format models
-OpenCV-Python    # Installing OpenCV, the Open source Computer Vision library
-Pillow<10.0.0    # Installing Pillow, a Python Image Library
-SciPy            # Installing SciPy, a library for mathematics, science, and engineering
-PyYAML           # Installing PyYAML, a library for reading configuration files
+Pandas                          # Installing Pandas, a data analysis / data manipulation tool
+CoreMLTools                     # Installing CoreMLTools, for working with .mlmodel format models
+OpenCV-Python                   # Installing OpenCV, the Open source Computer Vision library
+Pillow<10.0.0                   # Installing Pillow, a Python Image Library
+SciPy                           # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML                          # Installing PyYAML, a library for reading configuration files
 
+Torch                           # Installing Torch, for Tensor computation and Deep neural networks
+TorchVision                     # Installing TorchVision, for Computer Vision based AI
 
-# Specific versions that match the models we're using. Size is ~830Mb
-# ** Don't do this if we're installing Torch-DirectML **
---extra-index-url https://download.pytorch.org/whl/cpu
-Torch==1.10.2+cpu     # Installing Torch, for Tensor computation and Deep neural networks
---extra-index-url https://download.pytorch.org/whl/cpu
-TorchVision==0.11.3+cpu  # Installing TorchVision, for Computer Vision based AI
-
-# CPU specific Torch for Linux. This is Torch 2.0, though, which seems to be...troublesome.
-# --index-url https://download.pytorch.org/whl/cpu
-# Torch                   # Installing Torch, for Tensor computation and Deep neural networks
-# --index-url https://download.pytorch.org/whl/cpu
-# TorchVision             # Installing TorchVision, for Computer Vision based AI
+# CPU only
+# --extra-index-url https://download.pytorch.org/whl/cpu
+# torch==1.13.1+cpu             # Installing Torch, for Tensor computation and Deep neural networks
+# --extra-index-url https://download.pytorch.org/whl/cpu
+# torchvision==0.14.1+cpu       # Installing TorchVision, for Computer Vision based AI
 
 ## These to be removed (not needed for inference)
-Seaborn         # Installing Seaborn, a data visualization library based on matplotlib
+Seaborn                         # Installing Seaborn, a data visualization library based on matplotlib
 
 ## last line empty.

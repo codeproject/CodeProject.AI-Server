@@ -1,0 +1,16 @@
+{
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
+  "Modules": {
+
+    "YOLOv5-3.1": {
+      "AutoStart": true,
+      "InstallGPU": false,
+
+      "EnvironmentVariables": {
+        "MODEL_SIZE": "Tiny", // tiny, small, medium, large
+        "USE_CUDA": "False"
+      }
+    }
+  }
+}

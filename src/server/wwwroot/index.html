@@ -21,9 +21,9 @@
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="assets/dashboard.css?v=2.2.0">
+    <link rel="stylesheet" type="text/css" href="assets/dashboard.css?v=2.3.2">
 
-    <script type="text/javascript" src="assets/dashboard.js?v=2.2.0"></script>
+    <script type="text/javascript" src="assets/dashboard.js?v=2.3.2"></script>
     <script type="text/javascript">
     /*
     const registerServiceWorker = async () => {
@@ -143,16 +143,24 @@
 
             <div class="card my-3">
                 <div class="card-body sub-panel">
-                    Your self contained AI server. Learn how to
-                    <a href="https://www.codeproject.com/AI/docs/api/api_reference.html" target="_blank">integrate
-                    with other programs</a> or
+                    Your self-contained AI server. 
+                    
+                    &nbsp;&nbsp; Need help?
+                    <a href="https://www.codeproject.com/AI/docs/devguide/common_errors.html" target="_blank">Common solutions</a> or
+                    <a href="https://www.codeproject.com/Feature/CodeProjectAI-Discussions.aspx" target="_blank">ask a Question</a>.
+                    
+                    &nbsp;&nbsp;
+
+                    Use in your apps:
+                    <a href="https://www.codeproject.com/AI/docs/api/api_reference.html" target="_blank">API guide</a> or
                     <a href="https://www.codeproject.com/AI/docs/devguide/module_examples/adding_new_modules.html" target="_blank">add
-                    your own AI module</a>. Having problems? See our
-                    <a href="https://www.codeproject.com/AI/docs/devguide/common_errors.html" target="_blank">common solutions</a> or
-                    <a href="https://www.codeproject.com/Feature/CodeProjectAI-Discussions.aspx" target="_blank">ask a question</a>.
-                    <b>Blue Iris users</b>: please read our
-                    <a href="https://www.codeproject.com/Articles/5345399/Setting-Up-a-Wyze-Cam-with-Blue-Iris-and-CodeProje" target="_blank">Wyze cam setup guide</a> and
-                    <a href="https://www.codeproject.com/Articles/5346151/Solutions-for-Common-Issues-with-Blue-Iris-and-Cod" target="_blank">common issues</a> pages.
+                    your own AI module</a>.
+
+                    &nbsp;
+
+                    <b>FAQs</b>: <a href="https://www.codeproject.com/ai/docs/faq/blue-iris.html" target="_blank">Blue Iris</a>, 
+                    <a href="https://www.codeproject.com/ai/docs/faq/home-assistant.html" target="_blank">Home Assistant</a>, 
+                    <a href="https://www.codeproject.com/Articles/5345399/Setting-Up-a-Wyze-Cam-with-Blue-Iris-and-CodeProje" target="_blank">Wyze cams</a>.
                 </div>
             </div>
 
@@ -203,6 +211,8 @@
                                     <option>6</option>
                                 </datalist>
                                 <div id="verbosity">Info</div>
+                                <div class="ms-auto"><a class="text-muted" href="javascript:0" onclick="clearLogs()">Clear logs</a></div>
+
                             </div>
                             <div class="small mt-1" id="latestTiming"></div>
                         </div>
@@ -260,7 +270,7 @@
                 <div class="tab-pane fade show" id="modules-panel" role="tabpanel" aria-labelledby="modules-tab">
                     <div class="card">
 
-                        <div class="card-body sub-panel">
+                        <div class="card-body sub-panel p-0">
                             <div id="availableModules" class="w-100"></div>
                         </div>
 
@@ -273,12 +283,23 @@
                             <input class="form-control btn-warning ms-2" style="width: 5rem;" id="install" type="button" value="Install" onclick="uploadModule()">
                         </div>
 -->
-
-                        <div class="form-check form-switch mx-4">
-                            <input class="form-check-input" type="checkbox" id="noCache">
-                            <label class="form-check-label text-muted" for="noCache">Do not use download cache</label>
+                        <div class="d-flex justify-content-between">
+                            <div class="form-check form-switch ms-4 me-auto">
+                                <input class="form-check-input" type="checkbox" id="noCache">
+                                <label class="form-check-label text-muted" for="noCache">Do not use download cache</label>
+                            </div>
+                            <div class="text-nowrap">
+                                Install verbosity 
+                            </div>
+                            <div class="mx-2">
+                                <select class="d-inline-block form-select-sm ms-2" aria-label="Default select example" id="install-verbosity">
+                                <option selected value="quiet">Quiet</option>
+                                <option value="info">Info</option>
+                                <option value="loud">Loud</option>
+                                </select>                            
+                            </div>
                         </div>
-                          <div>
+                        <div>
                             <span class="font-weight-bold ms-3" id="moduleUpdateStatus"></span>
                         </div>
                     </div>                   

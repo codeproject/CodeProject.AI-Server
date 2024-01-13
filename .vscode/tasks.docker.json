@@ -9,7 +9,7 @@
             "group": "none",
             "type": "process",
             "command": "bash",
-            "args": [ "/app/SDK/Scripts/stop_all.sh" ],
+            "args": [ "/app/SDK/Utilities/stop_all.sh" ],
             "problemMatcher": "$msCompile"
         }
     ]

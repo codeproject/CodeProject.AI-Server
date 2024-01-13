@@ -80,7 +80,7 @@ class CodeProjectAIRunner:
         self.port                = os.getenv("CPAI_PORT",               "32168")
         self.server_root_path    = os.getenv("CPAI_APPROOTPATH",        os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../..")))
         self.parallelism         = os.getenv("CPAI_MODULE_PARALLELISM", "0");
-        self.support_GPU         = os.getenv("CPAI_MODULE_SUPPORT_GPU", "True")
+        self.enable_GPU          = os.getenv("CPAI_MODULE_ENABLE_GPU", "True")
 
         self.use_openvino        = False
         self.use_onnxruntime     = False
@@ -104,7 +104,7 @@ class CodeProjectAIRunner:
             self.parallelism = os.cpu_count()//2
 
         # Setup GPU libraries
-        if self.support_GPU:
+        if self.enable_GPU:
             if self.use_openvino:
                 import openvino.utils as utils
                 utils.add_openvino_libs_to_path()

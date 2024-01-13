@@ -35,10 +35,10 @@ class FastDeploy_adapter(ModuleRunner):
         if not self.launched_by_server:
             self.queue_name = "objectdetection_queue"
 
-        if self.support_GPU:
-            self.support_GPU = self.hasFastDeployRockNPU
+        if self.enable_GPU:
+            self.enable_GPU = self.hasFastDeployRockNPU
 
-        if self.support_GPU:
+        if self.enable_GPU:
             print("Rockchip NPU detected")
             self.execution_provider = "RKNPU"
 
@@ -111,6 +111,23 @@ class FastDeploy_adapter(ModuleRunner):
             self.models_last_checked = time()
         
         return { "success": True, "models": self.model_names }
+
+
+    def selftest(self) -> JSON:
+        
+        file_name = os.path.join("test", "home-office.jpg")
+
+        request_data = RequestData()
+        request_data.queue   = self.queue_name
+        request_data.command = "detect"
+        request_data.add_file(file_name)
+        request_data.add_value("min_confidence", 0.4)
+
+        result = self.process(request_data)
+        print(f"Info: Self-test for {self.module_id}. Success: {result['success']}")
+        # print(f"Info: Self-test output for {self.module_id}: {result}")
+
+        return { "success": result['success'], "message": "Object detection test successful" }
 
 
 if __name__ == "__main__":

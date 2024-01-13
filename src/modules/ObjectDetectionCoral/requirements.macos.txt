@@ -1,34 +1,23 @@
 #! Python3.8
 
-# For Coral, we need Tensorflow (preferably TF-Lite) and the Coral library. 
-
-# TENSORFLOW
-# The last pre-built TF-Lite for macOS is for macOS 11 on Intel, or macOS 12 on
-# Apple silicon. However, TensorFlow does include TF-Lite (it's just a bigger-
-# than-needed download) so we can install TensorFlow for macOS.
-# For Tensorflow < 2.13, use tensorflow-macos, otherwise just tensorflow. If you
-# are running macOS 11 on x64, or macOS 12 on arm64, then you can use the TF-Lite
-# libraries directly. Due to this mix-n-match we'll install TF-Lite via script
-
-# tensorflow     # Installing Tensorflow, the open source machine learning framework for everyone
-
-numpy>=1.16.0    # Installing NumPy, the fundamental package for array computing with Python.
-Pillow>=4.0.0    # Installing Pillow, a Python Image Library
-
-# PYCORAL
-# The last pre-built pycoral for macOS is for macOS 11 on Intel, or macOS 12 on
-# Apple silicon. If you are running macOS 11 on x64, or macOS 12 on arm64, then
-# you can install pycoral directly. You don't necessarily *need* pycoral, though,
-# since this library just provides convenience functions, and we include the code
-# itself in this module. See https://google-coral.github.io/py-repo/pycoral/ for
-# the list of pre-built wheels.
-
-# --extra-index-url https://google-coral.github.io/py-repo/ 
-# pycoral~=2.0   # Installing PyCoral, the edge TPU library for Coral.AI devices
-
-# We are going to have to build this library ourselves
-# - https://hub.docker.com/r/tensorflow/build for the docker build images
+# For Coral, we need Tensorflow (preferably TF-Lite) and the Coral library. The
+# last pre-built TF-Lite for macOS that supports Coral is for macOS 11 on Intel,
+# or macOS 12 on Apple silicon. However, TensorFlow does include TF-Lite (it's
+# just a bigger- than-needed download) so we can install TensorFlow for macOS.
+#
+# For Coral support outside of these two macOS versions, we are going to have to
+# build Tensorflow ourselves. See
+#
+# - https://github.com/jkjung-avt/jetson_nano/blob/master/install_tensorflow-2.0.0.sh - full example of build/install
+# - https://hub.docker.com/r/tensorflow/build - for the docker build images
 # - https://www.tensorflow.org/lite/guide/build_cmake_pip - official instructions
 # - https://medium.com/@andrewlr/building-the-tensorflow-lite-python-tflite-runtime-on-a-raspberry-pi-zero-116bfa38be3f - useful instructions
+
+# We don't install tensorflow here: we install it in the install.sh to set the 
+# library version correctly
+# tensorflow            # Installing Tensorflow, the open source machine learning framework for everyone
+
+numpy>=1.16.0           # Installing NumPy, the fundamental package for array computing with Python.
+Pillow>=4.0.0,<10.0     # Installing Pillow, a Python Image Library
 
 # last line empty

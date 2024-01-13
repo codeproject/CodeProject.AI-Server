@@ -27,8 +27,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\SDK\NET\NET.csproj" />
-		<ProjectReference Include="..\..\src\API\Server\Backend\Backend.csproj" />
-		<ProjectReference Include="..\..\src\API\Common\Common.csproj" />
+		<ProjectReference Include="..\..\src\server\Server.csproj" />
 	</ItemGroup>
 
 </Project>

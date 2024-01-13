@@ -62,7 +62,7 @@ def init_classify(options: Options):
     global interpreter_created
     global labels
 
-    # edge_tpu   = options.support_GPU # Assuming this correctly tests for Coral TPU
+    # edge_tpu   = options.enable_GPU # Assuming this correctly tests for Coral TPU
     # model_file = options.model_tpu_file if edge_tpu else options.model_cpu_file
    
     # Read labels
@@ -124,7 +124,7 @@ def do_classify(options: Options, img: Image, score_threshold: float = 0.5):
     print("Debug: Input(height, width): ", h, w)
 
     size = common.input_size(interpreter)
-    resize_im = img.convert('RGB').resize(size, Image.ANTIALIAS)
+    resize_im = img.convert('RGB').resize(size, Image.LANCZOS) # replaces deprecated Image.ANTIALIAS
 
     # numpy_image = np.array(img)
     # input_im = cv2.cvtColor(numpy_image, cv2.COLOR_BGR2RGB)

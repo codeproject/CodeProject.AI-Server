@@ -49,8 +49,8 @@ from PIL import Image
 
 # For Linux we have installed the pycoral libs via apt-get, not PIP in the venv,
 # So make sure the interpreter can find the coral libraries
-if platform.system() == "Linux":
-    sys.path.insert(0, "/usr/lib/python3.9/site-packages/")
+#if platform.system() == "Linux":
+#    sys.path.insert(0, "/usr/lib/python3.9/site-packages/")
 
 from pycoral.adapters import common
 from pycoral.adapters import detect
@@ -73,7 +73,7 @@ def init_detect(options: Options) -> str:
     global labels
 
 
-    # edge_tpu   = options.support_GPU # Assuming this correctly tests for Coral TPU
+    # edge_tpu   = options.enable_GPU # Assuming this correctly tests for Coral TPU
     # model_file = options.model_tpu_file if edge_tpu else options.model_cpu_file
    
     # Read labels
@@ -255,7 +255,7 @@ def main():
 
   image = Image.open(args.input)
   _, scale = common.set_resized_input(
-      interpreter, image.size, lambda size: image.resize(size, Image.ANTIALIAS))
+      interpreter, image.size, lambda size: image.resize(size, Image.LANCZOS)) # replaces deprecated Image.ANTIALIAS
 
   print('----INFERENCE TIME----')
   print('Note: The first inference is slow because it includes',

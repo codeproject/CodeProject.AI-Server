@@ -11,7 +11,7 @@ Pillow<10.0.0           # Installing Pillow, a Python Image Library
 PyYAML>=5.3.1           # Installing PyYAML, a library for reading configuration files
 requests>=2.23.0        # Installing request, the HTTP library
 scipy>=1.4.1            # Installing SciPy, a library for mathematics, science, and engineering
---find-links https://download.pytorch.org/whl/torch_stable.html
+# --find-links https://download.pytorch.org/whl/torch_stable.html
 torch>=1.7.0            # Installing Torch, for Tensor computation and Deep neural networks
 torchvision>=0.8.1      # Installing TorchVision, for Computer Vision based AI
 tqdm>=4.64.0            # Installing tdqm, the Fast, Extensible Progress Meter

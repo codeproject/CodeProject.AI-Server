@@ -1,9 +1,0 @@
-#! Python3.8
-
-# Install Tensorflow-Lite runtime.
-https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.5.0.post1-cp39-cp39-linux_aarch64.whl  # Installing Tensorflow Lite
-
-numpy>=1.16.0                 # Installing NumPy, the fundamental package for array computing with Python.
-Pillow>=4.0.0                 # Installing Pillow, a Python Image Library
-
-# last line empty

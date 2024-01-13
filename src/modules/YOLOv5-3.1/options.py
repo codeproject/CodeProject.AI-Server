@@ -40,10 +40,10 @@ class Options:
 
         # Normalise input
         self.model_size         = self.model_size.lower()
-        self.use_CUDA           = ModuleOptions.support_GPU and self.use_CUDA.lower() == "true"
+        self.use_CUDA           = ModuleOptions.enable_GPU and self.use_CUDA.lower() == "true"
 
-        if self.model_size not in [ "tiny", "small", "medium", "large" ]:
-            self.model_size = "medium"
+        if self.model_size not in [ "small", "medium", "large" ]:
+            self.model_size = "small"
 
         # Get settings
         settings = self.MODEL_SETTINGS[self.model_size]   

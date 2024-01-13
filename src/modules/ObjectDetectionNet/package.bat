@@ -63,7 +63,7 @@ set "index=0"
     if /i "!Method!" == "Build" (
         tar -caf ObjectDetectionNet-%FileSuffix%-%Version%.zip --exclude=assets --exclude=custom-models -C .\bin\%Configuration%\%Target%\ *
     ) else (
-        tar -caf ObjectDetectionNet-%FileSuffix%-%Version%.zip --exclude=assets --exclude=custom-models -C ./bin/%Configuration%/%Target%/publish *
+        tar -caf ObjectDetectionNet-%FileSuffix%-%Version%.zip --exclude=assets --exclude=custom-models -C .\bin\%Configuration%\%Target%publish *
     )
 
     rem Cleanup

@@ -1,5 +1,8 @@
 {
+  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
+  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
+
     "PortraitFilter": {
       "Runtime": "dotnet",
       "FilePath": "PortraitFilter.dll"

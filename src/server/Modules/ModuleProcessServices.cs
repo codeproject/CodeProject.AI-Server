@@ -6,13 +6,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-using CodeProject.AI.SDK;
-using CodeProject.AI.SDK.Common;
-using CodeProject.AI.SDK.Utils;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Backend;
 
 namespace CodeProject.AI.Server.Modules
@@ -213,19 +213,22 @@ namespace CodeProject.AI.Server.Modules
         /// process</param>
         /// <param name="installSummary">The installation summary, in case we want to display this
         /// later on</param>
-        public void AddProcess(ModuleConfig module, bool launchingProcess, string? installSummary)
+        /// <param name="allowOverwrite">If true, we can replace an existing process in the list
+        /// with updated info</param>
+        public void AddProcess(ModuleConfig module, bool launchingProcess, string? installSummary,
+                               bool allowOverwrite = false)
         {
             if (module?.ModuleId is null)
                 return;
                 
-            if (TryGetProcessStatus(module?.ModuleId!, out ProcessStatus? _))
+            if (!allowOverwrite && TryGetProcessStatus(module?.ModuleId!, out ProcessStatus? _))
                 return;
 
             string? summary = module!.SettingsSummary;
             if (!string.IsNullOrEmpty(summary))
             {
                 // Expanding out the macros causes the display to be too wide
-                summary = _moduleSettings.ExpandOption(summary, module.ModulePath);
+                summary = _moduleSettings.ExpandOption(summary, module.ModuleDirPath);
 
                 // But we can mitigate this somewhat  
                 string appRoot = CodeProject.AI.Server.Program.ApplicationRootPath!;
@@ -242,6 +245,9 @@ namespace CodeProject.AI.Server.Modules
                 StartupSummary = summary ?? string.Empty,
                 InstallSummary = installSummary ?? string.Empty,
             };
+
+            if (allowOverwrite)
+                RemoveProcessStatus(module.ModuleId);
             _processStatuses.TryAdd(module.ModuleId, status);
 
             // Set the status of the Process prior to launching. This will be updated post launch.
@@ -398,7 +404,7 @@ namespace CodeProject.AI.Server.Modules
                 status.Status = ProcessStatusType.Stopped;
 
             // If we're actually meant to be killing this process, then just leave now.
-            if (module.AutoStart == false || !module.Available(SystemInfo.Platform, _versionConfig.VersionInfo?.Version))
+            if (module.AutoStart == false || !module.IsCompatible(_versionConfig.VersionInfo?.Version))
                 return true;
 
             return await StartProcess(module).ConfigureAwait(false);
@@ -421,7 +427,7 @@ namespace CodeProject.AI.Server.Modules
             }
 
             // setup the routes for this module.
-            if (module.Available(SystemInfo.Platform, _versionConfig.VersionInfo?.Version))
+            if (module.IsCompatible(_versionConfig.VersionInfo?.Version))
             {
                 if (!module.AutoStart == true)
                     status.Status = ProcessStatusType.NotEnabled;
@@ -467,7 +473,7 @@ namespace CodeProject.AI.Server.Modules
         {
             // We could combine these into a single method that returns a tuple
             // but this is not a place that needs optimisation. It needs clarity.
-            string modulePath = _moduleSettings.GetModulePath(module);
+            string moduleDirPath = _moduleSettings.GetModuleDirPath(module);
             string workingDir = _moduleSettings.GetWorkingDirectory(module);
             string filePath   = _moduleSettings.GetFilePath(module);
             string? command   = _moduleSettings.GetCommandPath(module);
@@ -502,7 +508,7 @@ namespace CodeProject.AI.Server.Modules
                 };
 
             // Set the environment variables
-            Dictionary<string, string?> environmentVars = BuildBackendEnvironmentVar(module, modulePath);
+            Dictionary<string, string?> environmentVars = BuildBackendEnvironmentVar(module, moduleDirPath);
             foreach (var kv in environmentVars)
                 procStartInfo.Environment.TryAdd(kv.Key.ToUpper(), kv.Value);
 
@@ -621,9 +627,9 @@ namespace CodeProject.AI.Server.Modules
         /// Creates the collection of backend environment variables.
         /// </summary>
         /// <param name="module">The current module</param>
-        /// <param name="currentModulePath">The path to the current module, if appropriate.</param>
+        /// <param name="currentModuleDirPath">The path to the current module, if appropriate.</param>
         private Dictionary<string, string?> BuildBackendEnvironmentVar(ModuleConfig module,
-                                                                       string? currentModulePath = null)
+                                                                       string? currentModuleDirPath = null)
         {
             Dictionary<string, string?> processEnvironmentVars = new();
             _serverOptions.AddEnvironmentVariables(processEnvironmentVars);
@@ -639,19 +645,21 @@ namespace CodeProject.AI.Server.Modules
             foreach (string key in keys)
             {
                 string? value = processEnvironmentVars[key.ToUpper()];
-                processEnvironmentVars[key.ToUpper()] = _moduleSettings.ExpandOption(value, currentModulePath);
+                processEnvironmentVars[key.ToUpper()] = _moduleSettings.ExpandOption(value, currentModuleDirPath);
             }
 
             // And now add general vars
+            bool enableGPU = (module.InstallGPU ?? false) && (module.EnableGPU ?? false);
+
             processEnvironmentVars.TryAdd("CPAI_MODULE_SERVER_LAUNCHED", "true");
             processEnvironmentVars.TryAdd("CPAI_MODULE_ID",          module.ModuleId);
             processEnvironmentVars.TryAdd("CPAI_MODULE_NAME",        module.Name);
-            processEnvironmentVars.TryAdd("CPAI_MODULE_PATH",        _moduleSettings.GetModulePath(module));
+            processEnvironmentVars.TryAdd("CPAI_MODULE_PATH",        _moduleSettings.GetModuleDirPath(module));
             processEnvironmentVars.TryAdd("CPAI_MODULE_PARALLELISM", module.Parallelism.ToString());
             processEnvironmentVars.TryAdd("CPAI_MODULE_QUEUENAME",   module.Queue);
             if ((module.RequiredMb ?? 0) > 0)
                 processEnvironmentVars.TryAdd("CPAI_MODULE_REQUIRED_MB", module.RequiredMb?.ToString());
-            processEnvironmentVars.TryAdd("CPAI_MODULE_SUPPORT_GPU", (module.SupportGPU ?? false).ToString());
+            processEnvironmentVars.TryAdd("CPAI_MODULE_ENABLE_GPU",  enableGPU.ToString());
             processEnvironmentVars.TryAdd("CPAI_ACCEL_DEVICE_NAME",  module.AcceleratorDeviceName);
             processEnvironmentVars.TryAdd("CPAI_HALF_PRECISION",     module.HalfPrecision);
             processEnvironmentVars.TryAdd("CPAI_LOG_VERBOSITY",      (module.LogVerbosity ?? LogVerbosity.Info).ToString());

@@ -2,13 +2,13 @@
   "versionSection": {
     "versionInfo": {
       "Major": 2,
-      "Minor": 2,
-      "Patch": 4,
+      "Minor": 3,
+      "Patch": 6,
       "Build": 0,
       "PreRelease": "Beta",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.2.4.zip",
-      "ReleaseNotes": "fixed regression impacting Blue Iris integration."
+      "File": "CodeProject.AI-Server-win-x64-2.3.6.zip",
+      "ReleaseNotes": "Improved installation for Raspberry Pi."
     }
   }
 }

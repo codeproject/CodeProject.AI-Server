@@ -1,0 +1,20 @@
+OpenCV-Python               # Installing OpenCV, the Open source Computer Vision library
+Cython                      # Installing the Cython compiler for C extensions for the Python language.
+Pillow<10.0.0               # Installing Pillow, a Python Image Library
+SciPy                       # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML                      # Installing PyYAML, a library for reading configuration files
+
+tqdm                        # Installing TDQM, the Fast, Extensible Progress Meter
+Matplotlib                  # Installing Matplotlib, the Python plotting package
+
+# We want to target CUDA 10.2 for this one
+-f https://download.pytorch.org/whl/cu102/torch_stable.html
+torch==1.10.1+cu102          # Installing PyTorch, for Tensor computation and Deep neural networks
+-f https://download.pytorch.org/whl/cu102/torch_stable.html
+# torchvision==0.11.2+cu102  # Installing TorchVision, for Computer Vision based AI
+torchvision==0.11.2          # Installing TorchVision, for Computer Vision based AI
+
+# We need this, but we don't need this.
+Seaborn                     # Installing Seaborn, a data visualization library based on matplotlib
+
+# last line empty.

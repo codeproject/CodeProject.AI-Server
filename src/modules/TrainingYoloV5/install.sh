@@ -9,6 +9,9 @@
 #    bash ../../setup.sh
 #
 # The setup.sh script will find this install.sh file and execute it.
+#
+# For help with install scripts, notes on variables and methods available, tips,
+# and explanations, see /src/modules/install_script_help.md
 
 if [ "$1" != "install" ]; then
     read -t 3 -p "This script is only called from: bash ../../setup.sh"
@@ -16,131 +19,81 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-verbosity="info"
-# This is needed. It should be the default for linux anyway, but just in case, force it
-oneStepPIP="false"
+# This is needed. 
+oneStepPIP=false
 
-pythonLocation="Local"
-pythonVersion=3.8
-
-# Install python
-setupPython
-
-# Supporting libraries so the PIP installs will work
-if [ "$os" == "linux" ]; then
-
-    # ensure libcurl4 is present
-    write 'Ensuring libcurl4 present...'
-    libcurl4_present==$(dpkg-query -W --showformat='${Status}\n' libcurl4|grep "install ok installed")
-    if [ "${libcurl4_present}" == "" ]; then   
-        sudo apt install libcurl4 -y >/dev/null &
-        spin $1
-    fi
-    writeLine "Done" $color_success
-
-    # fiftyone on linux hardwires an ancient version of mongod that depends on the ancient
-    # libssl1.1. This is 2 major versions old. Well done. 
-    if [ ! -L /usr/lib/libcrypto.so.1.1 ] && [ ! -f /usr/lib/libcrypto.so.1.1 ]; then
-
-        write 'Downloading ancient SSL libraries for ancient MongoDB...'
-        sudo wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.19_amd64.deb \
-              -O libssl1.1_1.1.1f-1ubuntu2.19_amd64.deb >/dev/null
-        sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.19_amd64.deb >/dev/null
-        sudo rm libssl1.1_1.1.1f-1ubuntu2.19_amd64.deb >/dev/null
-        writeLine "Done" $color_success
-
-        write 'Installing ancient SSL libraries for ancient MongoDB...'
-
-        # Install
-        if [ "${inDocker}" == "true" ]; then
-            sudo apt update && sudo apt install libssl1.1 -y  >/dev/null
-        else
-            sudo apt update && sudo apt install libssl1.1.1 -y  >/dev/null
-        fi
-
-        # Create symlinks
-        if [ ! -e /usr/lib/libcrypto.so.1.1 ]; then
-            # Add link at /usr/lib/libcrypto.so.1.1 that points to /lib/x86_64-linux-gnu
-            sudo ln -s /lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1  >/dev/null
-        fi
-        if [ ! -e /usr/lib/libssl.so.1.1 ]; then
-            # Add link at /usr/lib/libssl.so.1.1 that points to /lib/x86_64-linux-gnu
-            sudo ln -s /lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1  >/dev/null
-        fi
-        writeLine "Done" $color_success
-
-    fi
-
-    # https://docs.voxel51.com/getting_started/troubleshooting.html#database-exits
-    ulimit -n 64000
+if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
+    module_install_errors="Unable to install on Pi or Jetson hardware."
 fi
 
-installPythonPackages
+# Supporting libraries so the PIP installs will work
+if [ "$module_install_errors" = "" ] && [ "$os" = "linux" ] && [ "$architecture" == "x86_64" ]; then
 
+    # ensure libcurl4 is present
+    installAptPackages "libcurl4"
+
+    if [ ! -f /usr/lib/x86_64-linux-gnu/libssl.so.1.1 ] || [ ! -e /usr/lib/libcrypto.so.1.1 ]; then
+
+        checkForAdminRights
+        if [ "$isAdmin" = false ]; then
+            writeLine "=========================================================" $color_info
+            writeLine "We need to install some system libraries. Please run "     $color_info
+            writeLine ""
+            writeLine "   cd ${moduleDirPath}"                                    $color_info
+            writeLine "   sudo bash ../../setup.sh"                               $color_info
+            writeLine ""
+            writeLine "To install this module"                                    $color_info
+            writeLine "=========================================================" $color_info
+            module_install_errors="Admin permissions are needed to install libraries"
+
+            if [ "$attemptSudoWithoutAdminRights" = true ]; then
+                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
+                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
+            fi
+        fi
+
+        if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+
+            module_install_errors=""
+
+            echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
+            installAptPackages "libssl1.1"
+
+            # LIBSSL: Add link at /usr/lib/libssl.so.1.1 that points to /lib/x86_64-linux-gnu/libssl.so.1.1
+            if [ -f /lib/x86_64-linux-gnu/libssl.so.1.1 ] && [ ! -e /usr/lib/libssl.so.1.1 ]; then
+                if [ "${verbosity}" = "loud" ]; then
+                    sudo ln -s /lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1
+                else
+                    sudo ln -s /lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1 >/dev/null 2>/dev/null
+                fi
+            fi
+
+            # LIBRYPTO: Add link at /usr/lib/libcrypto.so.1.1 that points to /lib/x86_64-linux-gnu/libcrypto.so.1.1
+            if [ -f /lib/x86_64-linux-gnu/libcrypto.so.1.1 ] && [ ! -e /usr/lib/libcrypto.so.1.1 ]; then
+                if [ "${verbosity}" = "loud" ]; then
+                    sudo ln -s /lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
+                else
+                    sudo ln -s /lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1 >/dev/null 2>/dev/null
+                fi
+            fi
+
+            # https://docs.voxel51.com/getting_started/troubleshooting.html#database-exits
+            sudo ulimit -n 64000
+
+        fi
+    fi
+fi
+ 
 # PyTorch-DirectML not working for this module
-# if [ "$hasCUDA" != "true" ] && [ "$os" == "linux" ]; then
+# if [ "$module_install_errors" = "" ] && [ "$hasCUDA" != true ] && [ "$os" = "linux" ]; then
 #    writeLine 'Installing PyTorch-DirectML...'
-#    installSinglePythonPackage "torch-directml" "PyTorch DirectML plugin"
+#    installPythonPackagesByName "torch-directml" "PyTorch DirectML plugin"
 # fi
 
-# Download the models and store in /assets and /custom-models (already in place in docker)
-getFromServer "models-yolo5-pt.zip"       "assets" "Downloading Standard YOLO models..."
+if [ "$module_install_errors" = "" ]; then
+    # Download the models and store in /assets and /custom-models (already in place in docker)
+    getFromServer "models-yolo5-pt.zip"       "assets" "Downloading Standard YOLO models..."
 
-module_install_success='true'
-
-
-#                         -- Install script cheatsheet -- 
-#
-# Variables available:
-#
-#  absoluteRootDir       - the root path of the installation (eg: ~/CodeProject/AI)
-#  sdkScriptsPath        - the path to the installation utility scripts ($rootPath/SDK/Scripts)
-#  downloadPath          - the path to where downloads will be stored ($sdkScriptsPath/downloads)
-#  runtimesPath          - the path to the installed runtimes ($rootPath/src/runtimes)
-#  modulesPath           - the path to all the AI modules ($rootPath/src/modules)
-#  moduleDir             - the name of the directory containing this module
-#  modulePath            - the path to this module ($modulesPath/$moduleDir)
-#  os                    - "linux" or "macos"
-#  architecture          - "x86_64" or "arm64"
-#  platform              - "linux", "linux-arm64", "macos" or "macos-arm64"
-#  systemName            - General name for the system. "Linux", "macOS", "Raspberry Pi", "Orange Pi"
-#                          "Jetson" or "Docker"
-#  verbosity             - quiet, info or loud. Use this to determines the noise level of output.
-#  forceOverwrite        - if true then ensure you force a re-download and re-copy of downloads.
-#                          getFromServer will honour this value. Do it yourself for downloadAndExtract 
-#
-# Methods available
-#
-#  write     text [foreground [background]] (eg write "Hi" "green")
-#  writeLine text [foreground [background]]
-#  Download  storageUrl downloadPath filename moduleDir message
-#        storageUrl    - Url that holds the compressed archive to Download
-#        downloadPath  - Path to where the downloaded compressed archive should be downloaded
-#        filename      - Name of the compressed archive to be downloaded
-#        dirNameToSave - name of directory, relative to downloadPath, where contents of archive 
-#                        will be extracted and saved
-#
-#  getFromServer filename moduleAssetDir message
-#        filename       - Name of the compressed archive to be downloaded
-#        moduleAssetDir - Name of folder in module's directory where archive will be extracted
-#        message        - Message to display during download
-#
-#  downloadAndExtract  storageUrl filename downloadPath dirNameToSave message
-#        storageUrl    - Url that holds the compressed archive to Download
-#        filename      - Name of the compressed archive to be downloaded
-#        downloadPath  - Path to where the downloaded compressed archive should be downloaded
-#        dirNameToSave - name of directory, relative to downloadPath, where contents of archive 
-#                        will be extracted and saved
-#        message       - Message to display during download
-#
-#  setupPython Version [install-location]
-#       Version - version number of python to setup. 3.8 and 3.9 currently supported. A virtual
-#                 environment will be created in the module's local folder if install-location is
-#                 "Local", otherwise in $runtimesPath/bin/$platform/python<version>/venv.
-#       install-location - [optional] "Local" or "Shared" (see above)
-#
-#  installPythonPackages Version requirements-file-directory
-#       Version - version number, as per SetupPython
-#       requirements-file-directory - directory containing the requirements.txt file
-#       install-location - [optional] "Local" (installed in the module's local venv) or 
-#                          "Shared" (installed in the shared $runtimesPath/bin venv folder)
+    # TODO: Check assets created and has files
+    # module_install_errors=...
+fi

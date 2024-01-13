@@ -64,7 +64,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
             long inferenceMs = sw.ElapsedMilliseconds;
 
             if (result is null)
-                return new BackendErrorResponse($"{ModuleName} PredictSentiment returned null.");
+                return new BackendErrorResponse($"{ModuleName} PredictSentiment returned null. Try reducing the length of the input text.");
 
             var response = new SentimentAnalysisResponse
             {

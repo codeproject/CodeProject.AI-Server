@@ -34,17 +34,21 @@ namespace CodeProject.AI.Server.Modules
 
             // HACK: The binding of the Dictionary has issues in NET 7.0.0 but was 'fixed'
             // in NET 7.0.2. We can't, however, assume all platforms will have this fix available
-            // (currently not available on macOS for instance) so we stick with our brute force hack:
+            // (currently not available on macOS for instance) so we stick with our brute force hack.
+
+            // We should be able to just do:
             // services.Configure<ModuleCollection>(configuration.GetSection("Modules"));
+            //
+            // Instead we do...
             services.AddOptions<ModuleCollection>()
-                    .Configure(moduleCollection =>
+                    .Configure(installedModules =>
                     {
-                        List<string>? moduleIds        = configuration.GetSection("Modules")
-                                                                      .GetChildren()
-                                                                      .Select(x => x.Key).ToList();                       
-                        IConfigurationSection? section = configuration.GetSection("ModuleOptions");
-                        string modulesPath             = section["ModulesPath"] ?? string.Empty;
-                        string preInstalledModulesPath = section["PreInstalledModulesPath"] ?? string.Empty;
+                        List<string>? moduleIds           = configuration.GetSection("Modules")
+                                                                         .GetChildren()
+                                                                         .Select(x => x.Key).ToList();
+                        IConfigurationSection? section    = configuration.GetSection("ModuleOptions");
+                        string modulesDirPath             = section["modulesDirPath"] ?? string.Empty;
+                        string preInstalledModulesDirPath = section["PreInstalledModulesDirPath"] ?? string.Empty;
 
                         foreach (var moduleId in moduleIds)
                         {
@@ -53,16 +57,16 @@ namespace CodeProject.AI.Server.Modules
                                 ModuleConfig moduleConfig = new ModuleConfig();
 
                                 configuration.Bind($"Modules:{moduleId}", moduleConfig);
-                                moduleCollection.TryAdd(moduleId, moduleConfig);
+                                installedModules.TryAdd(moduleId, moduleConfig);
 
                                 // Complete the ModuleConfig's setup
-                                moduleConfig.Initialise(moduleId, modulesPath, preInstalledModulesPath);
+                                moduleConfig.Initialise(moduleId, modulesDirPath, preInstalledModulesDirPath);
                             }
                         }
                     });
 
             services.AddSingleton<ModuleSettings,    ModuleSettings>();
-            services.AddSingleton<ModuleInstaller, ModuleInstaller>();
+            services.AddSingleton<ModuleInstaller,   ModuleInstaller>();
             services.AddSingleton<PackageDownloader, PackageDownloader>();
 
             services.Configure<HostOptions>(hostOptions =>

@@ -157,7 +157,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
             _model = pipeline.Fit(dataView);
         }
 
-        public SentimentPrediction PredictSentiment(string inputText)
+        public SentimentPrediction? PredictSentiment(string inputText)
         {
             var engine = _mlContext.Model.CreatePredictionEngine<InputData, SentimentPrediction>(_model);
 
@@ -166,9 +166,17 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
                 Text = inputText
             };
 
-            // Predict with TensorFlow pipeline.
-            var sentimentPrediction = engine.Predict(review);
-            return sentimentPrediction;
+            try
+            {
+                // Predict with TensorFlow pipeline.
+                var sentimentPrediction = engine.Predict(review);
+                return sentimentPrediction;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error predicting sentiment.");
+                return null;
+            }
         }
     }
 }

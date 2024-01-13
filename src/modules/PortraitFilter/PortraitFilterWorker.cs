@@ -133,15 +133,15 @@ namespace CodeProject.AI.Modules.PortraitFilter
             // foreach (var providerName in providers ?? Array.Empty<string>())
             //    _logger.LogDebug($"PortraitFilter provider: {providerName}");
 
-            // Note on CanUseGPU: if !SupportGPU then we aren't actually going to attempt to load
+            // Note on CanUseGPU: if !EnableGPU then we aren't actually going to attempt to load
             // the provider, so we won't really know if we can truly use the GPU. 
-            // If SupportGPU = true then we set CanUseGPU true for the first provider that works,
+            // If EnableGPU = true then we set CanUseGPU true for the first provider that works,
             // even if subsequent providers fail to load
 
             // Enable CUDA  -------------------
             if (providers?.Any(p => p.StartsWithIgnoreCase("CUDA")) ?? false)
             {
-                if (SupportGPU)
+                if (EnableGPU)
                 {
                     try
                     {
@@ -163,7 +163,7 @@ namespace CodeProject.AI.Modules.PortraitFilter
             // Enable OpenVINO -------------------
             if (providers?.Any(p => p.StartsWithIgnoreCase("OpenVINO")) ?? false)
             {
-                if (SupportGPU)
+                if (EnableGPU)
                 {
                     try
                     {
@@ -187,7 +187,7 @@ namespace CodeProject.AI.Modules.PortraitFilter
             // Enable DirectML -------------------
             if (providers?.Any(p => p.StartsWithIgnoreCase("DML")) ?? false)
             {
-                if (SupportGPU)
+                if (EnableGPU)
                 {
                     try
                     {
@@ -221,7 +221,7 @@ namespace CodeProject.AI.Modules.PortraitFilter
             // We'll disabled the warnings around the cross platform issues with System.Drawing.
             // We have enabled System.Drawing.EnableUnixSupport in the runtimeconfig.template.json
             // file, but understand that in .NET7 that option won't be available. We will port to
-            // a different libary in the future. For more info see
+            // a different library in the future. For more info see
             // https://github.com/dotnet/designs/blob/main/accepted/2021/system-drawing-win-only/system-drawing-win-only.md
             #pragma warning disable CA1416 // Validate platform compatibility
             img.Save(stream, System.Drawing.Imaging.ImageFormat.Png);

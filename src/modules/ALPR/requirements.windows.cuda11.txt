@@ -1,0 +1,14 @@
+#! Python3.7
+
+-f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+paddlepaddle-gpu==2.5.1.post112 # Installing PaddlePaddle, Parallel Distributed Deep Learning
+
+#paddleocr==2.6.1.3             # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+paddleocr                       # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+
+imutils                         # Installing imutils, the image utilities library
+Pillow<10.0.0                   # Installing Pillow, a Python Image Library
+opencv-python                   # Installing OpenCV, the Computer Vision library for Python
+numpy                           # Installing NumPy, a package for scientific computing
+
+# end of file
