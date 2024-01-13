@@ -1,0 +1,16 @@
+#! Python3.7
+
+SciPy==1.7.3                    # Installing SciPy, a library for mathematics, science, and engineering
+numpy>=1.16.5,<1.23.0           # Installing NumPy, a package for scientific computing
+Pillow>=4.0.0,<10.0             # Installing Pillow, a Python Image Library
+# PyYAML                        # Installing PyYAML, a library for reading configuration files
+
+resampy==0.2.2                  # Installing ReSampy, the library for Efficient sample rate conversion in Python
+# scikit-learn==1.0.1
+soundfile==0.10.3.post1
+
+tf_slim                         # Installing TF-Slim, the lightweight library for defining, training and evaluating complex models in TensorFlow
+tensorflow                      # Installing Tensorflow
+#tensorflow-gpu==1.13.1         # Installing Tensorflow (GPU enabled)
+
+# last line empty

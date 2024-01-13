@@ -139,10 +139,10 @@ class Face_adapter(ModuleRunner):
         elif command == "match":
             output = self.match_faces(data)
 
-        if hasattr(output, "success") and output["success"]:
+        if "success" in output and output["success"]:
             output["processMs"] = int((time.perf_counter() - start_time) * 1000)
         else:
-            message = output["error"] if hasattr(output, "error") else "Error occurred"
+            message = output["error"] if "error" in output else "Error occurred"
             if output.get("err_trace", ""):
                 message += ': ' + output["err_trace"]
 
@@ -173,7 +173,7 @@ class Face_adapter(ModuleRunner):
 
         return { "success": result['success'], "message": "Face detection test successful" }
 
-    def shutdown(self) -> None:
+    def cleanup(self) -> None:
         """
         Called when this module has been asked to shutdown.
         """
@@ -190,7 +190,7 @@ class Face_adapter(ModuleRunner):
             with self.models_lock:
                 if self.faceclassifier is None:
                     model_path = os.path.join(SharedOptions.SHARED_APP_DIR,
-                                              "facerec-high.model")
+                                              SharedOptions.SETTINGS.FACE_RECOG_MODEL)
                     self.faceclassifier = FaceRecognitionModel(model_path,
                                                                cuda=SharedOptions.USE_CUDA)
 

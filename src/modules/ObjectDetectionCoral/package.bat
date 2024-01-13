@@ -5,4 +5,4 @@ set moduleId=%~1
 set version=%~2
 
 tar -caf %moduleId%-%version%.zip --exclude=__pycache__  --exclude=edgetpu_runtime --exclude=*.development.* --exclude=*.log ^
-    pycoral\* *.py modulesettings.* requirements.* install.sh install.bat
+    pycoral\* *.py modulesettings.* requirements.* install.sh install.bat test\*

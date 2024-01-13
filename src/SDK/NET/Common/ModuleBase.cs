@@ -73,6 +73,11 @@ namespace CodeProject.AI.SDK
         public string? Description { get; set; }
 
         /// <summary>
+        /// Gets or sets the Category of this module.
+        /// </summary>
+        public string? Category { get; set; }
+
+        /// <summary>
         /// Gets or sets the version of this module
         /// </summary>
         public string? Version { get; set; }
@@ -101,7 +106,6 @@ namespace CodeProject.AI.SDK
 
         /// <summary>
         /// Gets or sets the absolute path to this module. 
-        /// NOTE: This is not yet used, but here purely as an option.
         /// </summary>
         [JsonIgnore]
         public string ModuleDirPath { get; set; } = string.Empty;

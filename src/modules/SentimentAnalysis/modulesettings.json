@@ -1,28 +1,27 @@
 {
-  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
-  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "SentimentAnalysis": {
       "Name": "Sentiment Analysis",
-      "Version": "1.5.1",
+      "Version": "1.5.3",
 
       // Publishing info
       "Description": "Provides an analysis of the sentiment of a piece of text. Positive or negative?", 
+      "Category": "Natural Language",
       "Platforms": [ "windows", "macos" ], // No tensorflow found in linux, and no '*-arm64' because ML.NET only supports x86 and x64 chips
       "License": "CC-BY-4.0",
       "LicenseUrl": "https://github.com/dotnet/samples/blob/main/LICENSE",
       
       // Launch instructions
       "AutoStart": false,
-      "Runtime": "execute",
+      "Runtime": "dotnet",
       "FilePath": "SentimentAnalysis.exe",
       "RuntimeLocation": "Shared",    // Can be Local or Shared. .NET so moot point here
       "PostStartPauseSecs": 0,        // Generally 1 if using GPU, 0 for CPU
 
       "EnvironmentVariables": {
         "MODELS_DIR": "%CURRENT_MODULE_PATH%\\sentiment_model",
-        "TF_CPP_MIN_LOG_LEVEL": 2 // 0=Debug, 1=Info, 2=Warning, 3=Error
+        "TF_CPP_MIN_LOG_LEVEL": "3" // 0=Debug, 1=Info, 2=Warning, 3=Error
       },
 
       // GPU options
@@ -40,13 +39,15 @@
         { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-05-17", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
         { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
         { "ModuleVersion": "1.5",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." }
+        { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.5.2", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.5.3", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
       ],
       
       "RouteMaps": [
         {
           "Name": "Sentiment Analysis",
-          "Path": "text/sentiment",
+          "Route": "text/sentiment",
           "Method": "POST",
           "Command": "sentiment",
           "Description": "Determines if the supplied text has a positive or negative sentiment",

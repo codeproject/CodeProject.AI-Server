@@ -8,12 +8,26 @@ set Configuration=Release
 set Target=net7.0
 
 rem Build
-dotnet build -c %Configuration%  >nul 2>nul
+dotnet build -c %Configuration%  >nul 
 
 rem Create the module package
-tar -caf %moduleId%-%version%.zip --exclude=*.development.* ^
-    install.sh install.bat -C .\bin\%Configuration%\%Target%\ *.*
+if exist ".\bin\windows\%Configuration%\%Target%\" (        REM No idea why this is happening.
 
-rem Cleanup
-del /s /f /q .\bin\%Configuration%\%Target%\ >nul 2>nul
-del /s /f /q .\obj\%Configuration%\%Target%\ >nul 2>nul
+    tar -caf %moduleId%-%version%.zip --exclude=*.development.* ^
+        install.sh install.bat -C .\bin\windows\%Configuration%\%Target%\ *.*
+
+    rem Cleanup
+    del /s /f /q .\bin\windows\%Configuration%\%Target%\ >nul 2>nul
+    del /s /f /q .\obj\windows\%Configuration%\%Target%\ >nul 2>nul
+
+) else ( 
+
+    tar -caf %moduleId%-%version%.zip --exclude=*.development.* ^
+        install.sh install.bat -C .\bin\%Configuration%\%Target%\ *.*
+
+    rem Cleanup
+    del /s /f /q .\bin\%Configuration%\%Target%\ >nul 2>nul
+    del /s /f /q .\obj\%Configuration%\%Target%\ >nul 2>nul
+
+)
+

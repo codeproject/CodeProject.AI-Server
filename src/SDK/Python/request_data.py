@@ -2,10 +2,10 @@
 import base64
 import io
 from io import BytesIO
+import wave
 import json
 
 from PIL import Image
-
 from common import JSON
 # from logging import LogMethod
 
@@ -179,6 +179,38 @@ class RequestData:
                 "exception_type": ex.__class__.__name__
             })
             """
+            return None
+
+    def get_file_bytes(self, index : int) -> bytearray:
+        """
+        Gets a byte array from a file from the requests 'files' array that was
+        passed in as part of a HTTP POST.
+        Param: index - the index of the WAV file to return
+        Returns: An image if successful; None otherwise.
+
+        Example usage: Reading a WAV file:
+            wav_bytes = request_data.get_wave_bytes(0)
+            with io.BytesIO(wav_bytes) as wav_stream:
+                with wave.open(wav_stream, 'rb') as wav_file:
+                    frames       = wav_file.readframes(wav_file.getnframes())
+                    sample_width = wav_file.getsampwidth()
+                    channels     = wav_file.getnchannels()
+                    frame_rate   = wav_file.getframerate()  
+        """
+
+        try:
+            if self.files is None or len(self.files) <= index:
+                return None
+
+            file_data    = self.files[index]
+            file_dataB64 = file_data["data"]
+            file_bytes   = base64.b64decode(file_dataB64)
+
+            return file_bytes
+
+        except Exception as ex:
+            if self._verbose_exceptions:
+                print(f"Error getting WAV file {index} from request")
             return None
 
     def get_value(self, key : str, defaultValue : str = None) -> str:

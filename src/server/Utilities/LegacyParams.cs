@@ -34,7 +34,7 @@ namespace CodeProject.AI.Server
         /// may have "USE_CUDA" in the EnvironmentVariable section, but its fully qualified name
         /// for the command line would be ServerOptions:EnvironmentVariables:CPAI_PORT. In the
         /// object detection module's variables in modulesettings.json, changing the value USE_CUDA
-        /// requires the command line parameter Modules:ObjectDetectionYolo:EnvironmentVariables:USE_CUDA.
+        /// requires the command line parameter Modules:ObjectDetectionYOLOv5-6.2:EnvironmentVariables:USE_CUDA.
         /// 
         /// So, to override these values at the command line is ludicrously verbose. Instead we
         /// will choose a subset of these variables that we know are in use in the wild and provide
@@ -69,7 +69,7 @@ namespace CodeProject.AI.Server
                     pair.Key.Equals("VISION_DETECTION", StringComparison.InvariantCultureIgnoreCase))
                 {
                     keyValues["Modules:VisionObjectDetection:EnvironmentVariables:AutoStart"] = pair.Value;
-                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:AutoStart"]   = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5-6.2:EnvironmentVariables:AutoStart"]   = pair.Value;
                 }
 
                 // Mode, which convolutes resolution and model size
@@ -85,8 +85,8 @@ namespace CodeProject.AI.Server
                     else if (pair.Value?.Equals("Low", StringComparison.InvariantCultureIgnoreCase) ?? false)
                         modelSize = "Small";
 
-                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:MODEL_SIZE"] = modelSize;
-                    keyValues["Modules:ObjectDetectionNet:EnvironmentVariables:MODEL_SIZE"]  = modelSize;
+                    keyValues["Modules:ObjectDetectionYOLOv5-6.2:EnvironmentVariables:MODEL_SIZE"] = modelSize;
+                    keyValues["Modules:ObjectDetectionYOLOv5Net:EnvironmentVariables:MODEL_SIZE"]  = modelSize;
                 }
 
                 // Using CUDA?
@@ -96,11 +96,11 @@ namespace CodeProject.AI.Server
                     keyValues["Modules:SceneClassification:EnvironmentVariables:USE_CUDA"]   = pair.Value;
                     keyValues["Modules:VisionObjectDetection:EnvironmentVariables:USE_CUDA"] = pair.Value;
 
-                    keyValues["Modules:ObjectDetectionNet:EnvironmentVariables:USE_CUDA"]  = pair.Value;
-                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:USE_CUDA"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5Net:EnvironmentVariables:USE_CUDA"]  = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5-6.2:EnvironmentVariables:USE_CUDA"] = pair.Value;
 
-                    keyValues["Modules:ObjectDetectionNet:EnvironmentVariables:CPAI_MODULE_ENABLE_GPU"]    = pair.Value;
-                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:CPAI_MODULE_ENABLE_GPU"]   = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5Net:EnvironmentVariables:CPAI_MODULE_ENABLE_GPU"]    = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5-6.2:EnvironmentVariables:CPAI_MODULE_ENABLE_GPU"]   = pair.Value;
                     keyValues["Modules:VisionObjectDetection:EnvironmentVariables:CPAI_MODULE_ENABLE_GPU"] = pair.Value;
                 }
 
@@ -116,7 +116,7 @@ namespace CodeProject.AI.Server
                 // Custom Model Directories. Deepstack compatibility and thge docs are ambiguous
                 if (pair.Key.Equals("MODELSTORE-DETECTION", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("MODELSTORE_DETECTION", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["Modules:ObjectDetectionYolo:EnvironmentVariables:CUSTOM_MODELS_DIR"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5-6.2:EnvironmentVariables:CUSTOM_MODELS_DIR"] = pair.Value;
 
                 // Temp Directories
                 if (pair.Key.Equals("TEMP_PATH", StringComparison.InvariantCultureIgnoreCase))
@@ -134,7 +134,7 @@ namespace CodeProject.AI.Server
         /// in a format like</para>
         /// <example>
         /// {
-        ///     "Objectdetectionyolo": {
+        ///     "ObjectDetectionYOLOv5-6.2": {
         ///         EnableGpu: "True"
         ///     },
         ///     "FaceProcessing": {
@@ -175,9 +175,9 @@ namespace CodeProject.AI.Server
                 if (setting.Key.Equals("VISION-DETECTION", StringComparison.InvariantCultureIgnoreCase) ||
                     setting.Key.Equals("VISION_DETECTION", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYolo",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-6.2",
                                       "AutoStart", setting.Value, modulesUpdated);
-                    // MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionNet",
+                    // MakeSettingUpdate(modules, overrideSettings, "ObjectDetectionYOLOv5Net",
                     //                  "AutoStart", setting.Value, modulesUpdated);
                 }
                 if (setting.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase) ||
@@ -207,11 +207,11 @@ namespace CodeProject.AI.Server
                     else if (setting.Value.Equals("Low", StringComparison.InvariantCultureIgnoreCase))
                         modelSize = "Small";
 
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYolo",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-6.2",
                                       "MODEL_SIZE", modelSize, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionNet",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5Net",
                                       "MODEL_SIZE", modelSize, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "YOLOv5-3.1",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-3.1",
                                       "MODEL_SIZE", modelSize, modulesUpdated);
                 }
 
@@ -223,11 +223,11 @@ namespace CodeProject.AI.Server
                     MakeSettingUpdate(installedModules, overrideSettings, "SceneClassification",
                                       "USE_CUDA", setting.Value, modulesUpdated);
 
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYolo",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-6.2",
                                       "USE_CUDA", setting.Value, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionNet",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5Net",
                                       "USE_CUDA", setting.Value, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "YOLOv5-3.1",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-3.1",
                                       "USE_CUDA", setting.Value, modulesUpdated);
 
                     MakeSettingUpdate(installedModules, overrideSettings, "FaceProcessing",
@@ -235,11 +235,11 @@ namespace CodeProject.AI.Server
                     MakeSettingUpdate(installedModules, overrideSettings, "SceneClassification",
                                       "CPAI_MODULE_ENABLE_GPU", setting.Value, modulesUpdated);
 
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYolo",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-6.2",
                                       "CPAI_MODULE_ENABLE_GPU", setting.Value, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionNet",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5Net",
                                       "CPAI_MODULE_ENABLE_GPU", setting.Value, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "YOLOv5-3.1",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-3.1",
                                       "CPAI_MODULE_ENABLE_GPU", setting.Value, modulesUpdated);
                 }
 
@@ -252,9 +252,9 @@ namespace CodeProject.AI.Server
                                       "DATA_DIR", setting.Value, modulesUpdated);
                     MakeSettingUpdate(installedModules, overrideSettings, "SceneClassification",
                                       "DATA_DIR", setting.Value, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYolo",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-6.2",
                                       "DATA_DIR", setting.Value, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "YOLOv5-3.1",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-3.1",
                                       "DATA_DIR", setting.Value, modulesUpdated);
                 }
 
@@ -264,7 +264,7 @@ namespace CodeProject.AI.Server
                 {
                     MakeSettingUpdate(installedModules, overrideSettings, "VisionObjectDetection",
                                       "MODELSTORE_DETECTION", setting.Value, modulesUpdated);
-                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYolo",
+                    MakeSettingUpdate(installedModules, overrideSettings, "ObjectDetectionYOLOv5-6.2",
                                       "CUSTOM_MODELS_DIR", setting.Value, modulesUpdated);
                 }
             }

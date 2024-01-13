@@ -1,15 +1,14 @@
 {
-  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
-  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "LlamaChat": {
       "Name": "LlamaChat",
-      "Version": "1.1",
+      "Version": "1.1.2",
 
       // Publishing info
       "Description": "A Large Language Model based on the Machine Learning Compilation for LLMs",
-      "Platforms": [ "all", "!linux", "!raspberrypi", "!orangepi", "!jetson"],
+      "Platforms": [ ],
+      "Category": "Generative AI",
       "License": "MIT",
       "LicenseUrl": "https://github.com/abetlen/llama-cpp-python/blob/main/LICENSE.md",
 
@@ -33,16 +32,19 @@
 
       // Which server version is compatible with each version of this module.
       "ModuleReleases": [
-        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.3.1",   ""  ], "ReleaseDate": "2022-11-01" },
-        { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.3.5",   ""  ], "ReleaseDate": "2022-11-10", "ReleaseNotes": "Updated to match new installer SDK." }
+        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.3.1", "2.3.5" ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.3.5", "2.4.0" ], "ReleaseDate": "2022-11-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.1.1", "ServerVersionRange": [ "2.4.1", "2.4.1" ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.1.2", "ServerVersionRange": [ "2.4.2", ""      ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
       ],
 
       "RouteMaps": [
         {
           "Name": "LlamaChat",
-          "Path": "text/chat",
+          "Route": "text/chat",
           "Method": "POST",
           "Command": "prompt",
+          "MeshEnabled": false,
           "Description": "Uses the Llama LLM to answer simple wiki-based questions.",
           "Inputs": [
             {

@@ -1,14 +1,13 @@
 {
-  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
-  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "FaceProcessing": {
       "Name": "Face Processing",
-      "Version": "1.8.2",
+      "Version": "1.8.5",
 
       // Publishing info
       "Description": "A number of Face image APIs including detect, recognize, and compare.",
+      "Category": "Computer Vision",
       "Platforms": [ "all", "!raspberrypi", "!jetson" ],
       "License": "GPL-3.0",
       "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
@@ -51,14 +50,17 @@
         { "ModuleVersion": "1.6",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
         { "ModuleVersion": "1.7",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" },
         { "ModuleVersion": "1.8",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.8.1", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.8.2", "ServerVersionRange": [ "2.3.5", ""       ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Removed Raspberry Pi / Jetson support.", "Importance": "Minor" }
+        { "ModuleVersion": "1.8.1", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.8.2", "ServerVersionRange": [ "2.3.5", "2.3.5"  ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Removed Raspberry Pi / Jetson support.", "Importance": "Minor" },
+        { "ModuleVersion": "1.8.3", "ServerVersionRange": [ "2.4.0", "2.4.0"  ], "ReleaseDate": "2023-12-03", "ReleaseNotes": "Installer updates, Mesh support.", "Importance": "Minor" },
+        { "ModuleVersion": "1.8.4", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.8.5", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
       ],
 
       "RouteMaps": [
         {
           "Name": "Face Detection",
-          "Path": "vision/face",
+          "Route": "vision/face",
           "Method": "POST",
           "Command": "detect",
           "Description": "Detects faces in an image and returns the coordinates of the faces.",
@@ -104,11 +106,6 @@
               "Description": "The command that was sent as part of this request. Can be detect, list, status."
             },
             {
-              "Name": "command",
-              "Type": "String",
-              "Description": "The command that was sent as part of this request. Can be detect, list, status."
-            },
-            {
               "Name": "moduleId",
               "Type": "String",
               "Description": "The Id of the module that processed this request."
@@ -142,7 +139,7 @@
         },
         {
           "Name": "Face Comparison",
-          "Path": "vision/face/match",
+          "Route": "vision/face/match",
           "Method": "POST",
           "Command": "match",
           "Description": "Compares two faces in two images and returns a value indicating how similar the faces are.",
@@ -188,9 +185,10 @@
         },
         {
           "Name": "List Registered Faces",
-          "Path": "vision/face/list",
+          "Route": "vision/face/list",
           "Method": "POST",
           "Command": "list",
+          "MeshEnabled": false,
           "Description": "Lists the users that have images registered in the Face Recognition database.",
           "Inputs": [ // no inputs
           ],
@@ -209,9 +207,10 @@
         },
         {
           "Name": "Register Face",
-          "Path": "vision/face/register",
+          "Route": "vision/face/register",
           "Method": "POST",
           "Command": "register",
+          "MeshEnabled": false,
           "Description": "Registers one or more images for a user for recognition. This trains the face recognition model and allows the face recognition to report back a userId based on an image you supply that may or may not contain that user's face.",
           "Inputs": [
             {
@@ -256,9 +255,10 @@
         },
         {
           "Name": "Delete Registered Face",
-          "Path": "vision/face/delete",
+          "Route": "vision/face/delete",
           "Method": "POST",
           "Command": "delete",
+          "MeshEnabled": false,
           "Description": "Removes a userid and images from the Face Registration database.",
           "Inputs": [
             {
@@ -277,9 +277,10 @@
         },
         {
           "Name": "Face Recognition",
-          "Path": "vision/face/recognize",
+          "Route": "vision/face/recognize",
           "Method": "POST",
           "Command": "recognize",
+          "MeshEnabled": false,
           "Description": "Recognizes all faces in an image and returns the userId and coordinates of each face in the image. If a new (unregistered) face is detected then no userid for that face will be returned.",
           "Inputs": [
             {

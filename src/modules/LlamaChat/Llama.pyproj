@@ -3,14 +3,14 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{470d3417-36a4-49a4-b719-496466fa92fb}</ProjectGuid>
+    <ProjectGuid>{d56ca115-830a-4007-bb9b-bf0fc72da9b0}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>Llama_adapter.py</StartupFile>
     <SearchPath>..\SDK\Python</SearchPath>
     <Name>Llama LLM</Name>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d72}</ProjectTypeGuids>
+    <!-- <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d72}</ProjectTypeGuids> -->
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>

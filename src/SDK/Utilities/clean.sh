@@ -170,8 +170,11 @@ useColor=true
 doDebug=false
 lineWidth=70
 
-dotNetModules=( "ObjectDetectionNet" "PortraitFilter" "SentimentAnalysis" )
-pythonModules=( "ALPR" "BackgroundRemover" "Cartooniser" "FaceProcessing" "ObjectDetectionCoral" "ObjectDetectionYolo" "ObjectDetectionYoloRKNN" "OCR" "SceneClassifier" "SuperResolution" "TextSummary" "TrainingYoloV5" "YOLOv5-3.1" )
+dotNetModules=( "ObjectDetectionYOLOv5Net" "PortraitFilter" "SentimentAnalysis" )
+pythonModules=( "ALPR" "BackgroundRemover" "Cartooniser" "FaceProcessing"                         \
+                "ObjectDetectionCoral" "ObjectDetectionYOLOv5-3.1" "ObjectDetectionYOLOv5-6.2"    \
+                "ObjectDetectionYOLOv8" "ObjectDetectionYoloRKNN" "TrainingObjectDetectionYOLOv5" \
+                "OCR" "SceneClassifier" "SuperResolution" "TextSummary")
 
 
 if [ "$1" = "" ]; then
@@ -252,7 +255,7 @@ if [ "$cleanBuild" = true ]; then
         removeDir "${rootDir}/src/modules/${name}/obj/"
     done
 
-    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionNet"   "bin"
+    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionYOLOv5Net"   "bin"
     cleanSubDirs "${rootDir}/src/modules/PortraitFilter"       "bin"
     cleanSubDirs "${rootDir}/src/modules/SentimentAnalysis"    "bin"
 
@@ -332,21 +335,21 @@ if [ "$cleanAssets" = true ]; then
     removeDir "${rootDir}/src/modules/FaceProcessing/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionCoral/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionCoral/edgetpu_runtime"
-    removeDir "${rootDir}/src/modules/ObjectDetectionNet/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionNet/custom-models"
-    removeDir "${rootDir}/src/modules/ObjectDetectionNet/LocalNugets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYolo/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYolo/custom-models"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/assets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/custom-models"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/LocalNugets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/assets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/custom-models"
     removeDir "${rootDir}/src/modules/ObjectDetectionYoloRKNN/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionYoloRKNN/custom-models"
     removeDir "${rootDir}/src/modules/OCR/paddleocr"
     removeDir "${rootDir}/src/modules/SceneClassifier/assets"
-    removeDir "${rootDir}/src/modules/TrainingYoloV5/datasets"
-    removeDir "${rootDir}/src/modules/TrainingYoloV5/fiftyone"
-    removeDir "${rootDir}/src/modules/TrainingYoloV5/training"
-    removeDir "${rootDir}/src/modules/TrainingYoloV5/zoo"
-    removeDir "${rootDir}/src/modules/YOLOv5-3.1/assets"
-    removeDir "${rootDir}/src/modules/YOLOv5-3.1/custom-models"
+    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/datasets"
+    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/fiftyone"
+    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/training"
+    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/zoo"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/assets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/custom-models"
 fi
 
 if [ "$cleanDownloadCache" = true ]; then

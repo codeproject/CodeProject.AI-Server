@@ -88,7 +88,7 @@ class ALPR_adapter(ModuleRunner):
             return { "success": False, "message": "PaddlePaddle self test failed" }
 
 
-    def shutdown(self) -> None:
+    def cleanup(self) -> None:
         pass
 
 if __name__ == "__main__":

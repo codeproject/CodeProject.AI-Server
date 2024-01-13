@@ -38,7 +38,6 @@ namespace CodeProject.AI.Server
         static private int _port = defaultPort;
         // static private int _sPort = 5001; - eventually for SSL
 
-
         /// <summary>
         /// Gets or sets the Root Directory of the installation.
         /// </summary>
@@ -153,26 +152,22 @@ namespace CodeProject.AI.Server
                 return;
             }
 
+            // Make sure any processes that didn't get killed on the Service shutdown are now killed
+            KillOrphanedProcesses();
+
+            // Store this dir in the config settings so we can get to it later.
+            var inMemoryConfigData = new Dictionary<string, string?> {
+                { "ApplicationDataDir", applicationDataDir }
+            };
+
             try
             {
-                // make sure any processes that didn't get killed on the Service shutdown get killed
-                // now.
-                KillOrphanedProcesses();
-
-                // Store this dir in the config settings so we can get to it later.
-                var inMemoryConfigData = new Dictionary<string, string?> {
-                    { "ApplicationDataDir", applicationDataDir }
-                };
-
-                bool reloadConfigOnChange = !SystemInfo.IsDocker;
-
                 // Setup our custom Configuration Loader pipeline and build the configuration.
                 IHost? host = CreateHostBuilder(args)
                             .ConfigureAppConfiguration(SetupConfigurationLoaders(args, os, architecture,
                                                                                 systemName, runtimeEnv,
                                                                                 applicationDataDir,
-                                                                                inMemoryConfigData,
-                                                                                reloadConfigOnChange))
+                                                                                inMemoryConfigData))
                             .Build()
                             ;
 
@@ -208,6 +203,25 @@ namespace CodeProject.AI.Server
                 await hostTask.ConfigureAwait(false);
 
                 Console.WriteLine("Shutting down");
+            }
+            catch (IOException ioex)
+            {
+                if (ioex.Message.Contains("the number of inotify instances has been reached"))
+                {
+                    Console.WriteLine("\n\nUnable to start the server due to too many file " +
+                                      "watchers being in place. This is a system limit. Run\n\n" +
+                                      "   sysctl fs.inotify\n\n to view your machine's limits. " +
+                                      "To change the limits for this session only, run\n\n" +
+                                      "   sudo sysctl fs.inotify.max_user_instances=1024\n\n" +
+                                      "to set the max instance for you to 1024. This may help.");
+                }
+                else
+                {
+                    Console.WriteLine($"\n\nUnable to start the server due to IO error: {ioex.Message}.");
+                }
+
+                Console.Write("Press Enter to close.");
+                Console.ReadLine();
             }
             catch (Exception ex)
             {
@@ -370,13 +384,14 @@ namespace CodeProject.AI.Server
         /// <param name="runtimeEnv">Whether this is development or production</param>
         /// <param name="applicationDataDir">The path to the folder containing application data</param>
         /// <param name="inMemoryConfigData">The in-memory config data</param>
-        /// <param name="reloadConfigOnChange">Whether to reload files if they are saved during runtime</param>
-        /// <returns></returns>
+        /// <returns>An Action object</returns>
         private static Action<HostBuilderContext, IConfigurationBuilder> SetupConfigurationLoaders(string[] args,
             string os, string architecture, string systemName, string? runtimeEnv,
-            string applicationDataDir, Dictionary<string, string?> inMemoryConfigData,
-            bool reloadConfigOnChange)
+            string applicationDataDir, Dictionary<string, string?> inMemoryConfigData)
         {
+            // We don't want to put file watches on files, unless absolutely necessary
+            bool reloadConfigOnChange = false;
+
             return (hostingContext, config) =>
             {
                 // We assume the json files are in the same directory as the main assembly (which
@@ -446,14 +461,14 @@ namespace CodeProject.AI.Server
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
 
                 // Load the triggers.json file to load the triggers
-                config.AddJsonFileSafe(Path.Combine(baseDir, TriggersConfig.TriggersCfgFilename),
-                                       reloadOnChange: reloadConfigOnChange, optional: true);
+                settingsFile = Path.Combine(baseDir, TriggersConfig.TriggersCfgFilename);
+                config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
 
-                // Load the modulesettings.json files to get analysis module settings
-                LoadModulesConfiguration(config);
+                // Add the modulesettings.json files to get analysis module settings
+                AddModulesConfigurationFiles(config);
 
-                // Load the last saved config values as set by the user
-                LoadUserOverrideConfiguration(config, applicationDataDir, runtimeEnv, reloadConfigOnChange);
+                // Add the last saved config values as set by the user
+                AddUserOverrideConfigurationFiles(config, applicationDataDir, runtimeEnv, !SystemInfo.IsLinux);
 
                 // Load Environment Variables into Configuration
                 config.AddEnvironmentVariables();
@@ -461,6 +476,13 @@ namespace CodeProject.AI.Server
                 // Add command line back in to force it to have full override powers.
                 if (args != null)
                     config.AddCommandLine(args);
+
+                // Turn off reload on change for Linux
+                if (SystemInfo.IsLinux)
+                {
+                    config.Sources.Where(s => s is FileConfigurationSource).ToList()
+                                  .ForEach(s => ((FileConfigurationSource)s).ReloadOnChange = false);
+                }
 
                 // For debug
                 // ListConfigSources(config.Sources);
@@ -479,7 +501,7 @@ namespace CodeProject.AI.Server
         //      - use this configuration to load the module settings
         // The module class will have methods and properties to get the ModuleConfigs, and other
         // things. To be done at a later date.
-        private static void LoadModulesConfiguration(IConfigurationBuilder config)
+        private static void AddModulesConfigurationFiles(IConfigurationBuilder config)
         {
             bool reloadOnChange = !SystemInfo.IsDocker;
 
@@ -636,13 +658,13 @@ namespace CodeProject.AI.Server
         }
 
         /// <summary>
-        /// Loads the last-saved user configuration file
+        /// Adds the last-saved user configuration files to the configuration
         /// </summary>
         /// <param name="config"></param>
         /// <param name="applicationDataDir">The directory containing the persisted user data</param>
         /// <param name="runtimeEnv">The current runtime environment (production or development)</param>
         /// <param name="reloadOnChange">Whether to reload the config files if they change</param>
-        private static void LoadUserOverrideConfiguration(IConfigurationBuilder config, 
+        private static void AddUserOverrideConfigurationFiles(IConfigurationBuilder config, 
                                                           string applicationDataDir, 
                                                           string? runtimeEnv, bool reloadOnChange)
         {
@@ -654,13 +676,21 @@ namespace CodeProject.AI.Server
 
             if (!Directory.Exists(applicationDataDir))
             {
-                Console.WriteLine($"The provided application data directory path '{applicationDataDir}' doesn't exist");
-                return;
+                Console.WriteLine($"The provided application data directory path '{applicationDataDir}' doesn't exist. Creating ...");
+                try
+                {
+                    Directory.CreateDirectory(applicationDataDir);
+                }
+                catch
+                {
+                    Console.WriteLine("Unable to create app data directory");
+                    return;
+                }
             }
 
             runtimeEnv = runtimeEnv?.ToLower();
 
-            // For now, we'll store ALL module settings in the same file
+            // The settings for each module are combined into a single modulesettings.json file
             string settingsFile = Path.Combine(applicationDataDir, "modulesettings.json");
             config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
 
@@ -668,6 +698,35 @@ namespace CodeProject.AI.Server
             {
                 settingsFile = Path.Combine(applicationDataDir, $"modulesettings.{runtimeEnv}.json");
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
+            }
+
+            // We store any updates to server (including mesh) settings in a separate file
+            settingsFile = Path.Combine(applicationDataDir, "serversettings.json");
+            // If the file doesn't exist, create it with an empty object
+            WriteEmptyConfigFileIfMissing(settingsFile);
+            config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: true);
+
+            if (!string.IsNullOrEmpty(runtimeEnv))
+            {
+                settingsFile = Path.Combine(applicationDataDir, $"serversettings.{runtimeEnv}.json");
+                // If the file doesn't exist, create it with an empty object
+                WriteEmptyConfigFileIfMissing(settingsFile);
+                config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: true);
+            }
+        }
+
+        private static void WriteEmptyConfigFileIfMissing(string settingsFile)
+        {
+            if (File.Exists(settingsFile))
+                return;
+
+            try
+            {
+                File.WriteAllText(settingsFile, "{}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unable to create empty config file '{settingsFile}': {ex.Message}");
             }
         }
 

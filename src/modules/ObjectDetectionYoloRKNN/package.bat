@@ -7,4 +7,4 @@ set version=%~2
 REM NOTE: No install.bat. This doesn't work on Windows
 
 tar -caf %moduleId%-%version%.zip --exclude=__pycache__  --exclude=*.development.* --exclude=*.log  ^
-    utils\* *.py modulesettings.* requirements.* install.sh
+    utils\* *.py modulesettings.* requirements.* install.sh test\*

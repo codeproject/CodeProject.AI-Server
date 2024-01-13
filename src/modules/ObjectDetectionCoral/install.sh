@@ -19,13 +19,22 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-# If false, we install the non-desk-melting version. If true, wear gloves
-full_speed=false
+# There is a perfectly good install script in ${moduleDirPath}/edgetpu_runtime/install.sh but it
+# handles a lot of stuff that's not needed. Pulling out the core of that into here provides a
+# little more control. NOTE this only applies for Linux. macOS always uses the script.
+use_edge_install_script=true
+
+# If false, we install the non-desk-melting version. If true, wear gloves. Allow
+# this to be overridden by a parameter
+tpu_speed="throttle"
+if [ "$2" = "max" ]; then tpu_speed="max"; fi
+
+# We may need admin rights, so we may as well check now.
+checkForAdminRights
 
 if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || \
    [ "${systemName}" = "Jetson" ]; then
 
-    checkForAdminRights
     if [ "$isAdmin" = false ]; then
     
         PACKAGES=""
@@ -35,19 +44,11 @@ if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || 
         done
 
         if [[ -n "${PACKAGES}" ]]; then
-            writeLine "=================================================================================" $color_info
-            writeLine "Please run:" $color_info
-            writeLine ""
-            writeLine "  sudo apt install ${PACKAGES} " $color_info
-            writeLine ""
-            writeLine "to complete the setup for ObjectDetectionCoral" $color_info
-            writeLine "=================================================================================" $color_info
-            
-            if [ "$attemptSudoWithoutAdminRights" = true ]; then
-                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
-                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
-            fi
 
+            # output a warning message if no admin rights and instruct user on manual steps
+            install_instructions="sudo apt install ${PACKAGES}"
+            checkForAdminAndWarn "$install_instructions"
+            
             # We won't set an error because once the user runs this script everything else will work
             # module_install_errors="Admin permissions are needed to install libraries"
         fi
@@ -58,25 +59,32 @@ if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || 
         installAptPackages "libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools"
 
         if [ "${systemName}" = "Jetson" ]; then
-            sudo apt install libc-bin=2.29 libc6=2.29
+            installAptPackages "libc-bin=2.29 libc6=2.29"
         fi
     fi
 fi
 
 if [ "$os" = "linux" ]; then
 
+    # for curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add... we need gnupg (_, 1 or 2)
+    # if [ ! dpkg -l gnupg > /dev/null ] && [ ! dpkg -l gnupg2 > /dev/null ] && [ ! dpkg -l gnupg1 > /dev/null ]; then
+        installAptPackages "gnupg"
+    # fi
+
     # Select the Edge TPU library version
-    if [ "$full_speed" = true ]; then
+    if [ "$tpu_speed" = "max" ]; then
+        edgetpu_folder="direct"
         edgetpu_library="libedgetpu1-max"
         desc="the full-speed, desk-melting version of libedgetpu1"
     else
+        edgetpu_folder="throttled"
         edgetpu_library="libedgetpu1-std"
         desc="the non-desk-melting version of libedgetpu1"
     fi
 
     # Quick check before we get messy
     found_edgelib=false
-    if [ "$full_speed" = true ]; then
+    if [ "$tpu_speed" = "max" ]; then
         apt list libedgetpu1-max 2>/dev/null | grep installed >/dev/null 2>/dev/null
         if [ "$?" = "0" ]; then found_edgelib=true; fi
     else
@@ -87,60 +95,67 @@ if [ "$os" = "linux" ]; then
     if [ "$found_edgelib" = true ]; then
         writeLine "Edge TPU library found." $color_success
     else
-        if [ "$isAdmin" = false ]; then
+        # getFromServer "libraries/" "edgetpu_runtime-20221024.zip" "edgetpu_runtime" "Downloading edge TPU runtime..."
 
-            # Download the Edge TPU instal package for the user to install manually. If we have
-            # admin rights then we'll be doing this work within this script ourselves
-            getFromServer "edgetpu_runtime_20221024.zip" "" "Downloading edge TPU runtime..."
-            sudo chmod -R a+rwX "${moduleDirPath}/edgetpu_runtime"
-
-            writeLine "=================================================================================" $color_info
-            writeLine "Please run the following to complete the setup for ObjectDetectionCoral:" $color_info
-            writeLine ""
-            writeLine "   sudo bash ${moduleDirPath}/edgetpu_runtime/install.sh"                 $color_info
-            writeLine ""
-            # writeLine " echo 'deb https://packages.cloud.google.com/apt coral-edgetpu-stable main' | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list" $color_info
-            # writeLine " curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg" $color_info
-            # writeLine " sudo apt-key add apt-key.gpg"                                          $color_info
-            # writeLine " apt-get update -y && apt-get install -y ${edgetpu_library}"            $color_info
-            writeLine "=================================================================================" $color_info
-
-            if [ "$attemptSudoWithoutAdminRights" = true ]; then
-                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
-                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
-            fi
-
+        if [ "$use_edge_install_script" = true ]; then
+            install_instructions="sudo bash ${moduleDirPath}/edgetpu_runtime/install.sh"
+        else
+            install_instructions="echo 'deb https://packages.cloud.google.com/apt coral-edgetpu-stable main' | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list"
+            install_instructions+="${newline}curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg"
+            install_instructions+="${newline}sudo apt-key add apt-key.gpg"
+            install_instructions+="${newline}apt-get update -y && apt-get install -y ${edgetpu_library}"
+            # TODO: We're missing the instruction to copy the lib to the GNU folder
         fi
+        checkForAdminAndWarn "$install_instructions"
 
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then   
 
-            # There is a perfectly good install script in ${moduleDirPath}/edgetpu_runtime/install.sh
-            # but it handles a lot of stuff that's not needed. Pulling out the core of that into here
-            # provides a little more control
+            if [ "$use_edge_install_script" = true ]; then
 
-            # Add the Debian package repository to your system
-            echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
+                pushd "${moduleDirPath}/edgetpu_runtime" >/dev/null
+                
+                sudo bash "install.sh" "$tpu_speed" "install"
+                
+                # Use the following 2 lines if running install as part of this process, rather than
+                # as a sub-process
+                # source "install.sh" "$tpu_speed" "install"
+                # set +e    # Remove the -e set in install.sh because it kills our error handling ability
 
-            if [ ! -d "${downloadDirPath}" ]; then mkdir -p "${downloadDirPath}"; fi
-            if [ ! -d "${downloadDirPath}/Coral" ]; then mkdir -p "${downloadDirPath}/Coral"; fi
-            pushd "${downloadDirPath}/Coral" >/dev/null 2>/dev/null
+                popd >/dev/null
 
-            write "Downloading signing keys..." $color_mute
-            curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg >/dev/null 2>/dev/null &
-            spin $!
-            writeLine "Done" "$color_success"
+            else
 
-            write "Installing signing keys..." $color_mute
-            # TODO: We need to transition away from apt key. See https://opensource.com/article/22/9/deprecated-linux-apt-key
-            # NOTE: 'add' is deprecated. We should, instead, name apt-key.gpg as coral.ai-apt-key.gpg and
-            # place it directly in the /etc/apt/trusted.gpg.d/ directory
-            sudo apt-key add apt-key.gpg >/dev/null 2>/dev/null &
-            spin $!
-            writeLine "Done" "$color_success"
-    
-            popd >/dev/null 2>/dev/null
+                # Add the Debian package repository to your system
+                echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
 
-            installAptPackages ${edgetpu_library} ""
+                if [ ! -d "${downloadDirPath}/${ModuleDirName}" ]; then mkdir -p "${downloadDirPath}/${ModuleDirName}"; fi
+                pushd "${downloadDirPath}/${ModuleDirName}" >/dev/null 2>/dev/null
+
+                write "Downloading signing keys..." $color_mute
+                curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg >/dev/null 2>/dev/null &
+                spin $!
+                writeLine "Done" "$color_success"
+
+                write "Installing signing keys..." $color_mute
+                # TODO: We need to transition away from apt key. See https://opensource.com/article/22/9/deprecated-linux-apt-key
+                # NOTE: 'add' is deprecated. We should, instead, name apt-key.gpg as coral.ai-apt-key.gpg and
+                # place it directly in the /etc/apt/trusted.gpg.d/ directory
+                sudo apt-key add apt-key.gpg >/dev/null 2>/dev/null &
+                spin $!
+                writeLine "Done" "$color_success"
+        
+                popd >/dev/null 2>/dev/null
+
+                installAptPackages ${edgetpu_library} ""
+
+                if [ "$architecture" = "arm64" ]; then
+                    cp "${moduleDirPath}/edgetpu_runtime/${edgetpu_folder}/aarch64/libedgetpu.so.1.0" "/usr/lib/aarch64-linux-gnu/libedgetpu.so.1.0"
+                else
+                    cp "${moduleDirPath}/edgetpu_runtime/${edgetpu_folder}/k8/libedgetpu.so.1.0" "/usr/lib/x86_64-linux-gnu/libedgetpu.so.1.0"
+                fi
+                ldconfig  # Generates libedgetpu.so.1 symlink
+
+            fi
         fi
     fi
 
@@ -167,11 +182,21 @@ elif [ "$os" = "macos" ]; then
     if [ "$module_install_errors" == "" ]; then
         # curl -LO https://github.com/google-coral/libedgetpu/releases/download/release-grouper/edgetpu_runtime_20221024.zip
         # We have modified the install.sh script in this zip so it forces the install of the throttled version
-        getFromServer "edgetpu_runtime_20221024.zip" "" "Downloading edge TPU runtime..."
+        getFromServer "libraries/" "edgetpu_runtime-20221024.zip" "edgetpu_runtime" "Downloading edge TPU runtime..."
+        
+        # Correction for badly formed zip
+        # getFromServer "libraries/" "edgetpu_runtime_20221024.zip" "edgetpu_runtime_temp" "Downloading edge TPU runtime..."
+        # move_recursive "${moduleDirPath}/edgetpu_runtime_temp/edgetpu_runtime" "${moduleDirPath}/edgetpu_runtime"
+        # rm -rf "${moduleDirPath}/edgetpu_runtime_temp"
 
         sudo chmod -R a+rwX "${moduleDirPath}/edgetpu_runtime"
         pushd "${moduleDirPath}/edgetpu_runtime" >/dev/null
-        sudo bash install.sh
+        if [ "$full_speed" = true ]; then
+            source "install.sh" "max"
+        else
+            source "install.sh" "throttle"
+        fi
+        set +e    # Remove the -e set in install.sh because it kills our error handling ability
 
         # For whatever reason the libs don't seem to be getting put in place, so do this manually
         if [ "$platform" = "macos-arm64" ]; then
@@ -204,7 +229,7 @@ fi
 
 if [ "$module_install_errors" == "" ]; then
     # Download the MobileNet TFLite models and store in /assets
-    getFromServer "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
+    getFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
 
     # TODO: Check assets created and has files
     # module_install_errors=...

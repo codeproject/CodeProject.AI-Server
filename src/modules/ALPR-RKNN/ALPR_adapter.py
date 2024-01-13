@@ -64,7 +64,7 @@ class ALPR_adapter(ModuleRunner):
             "inferenceMs" : result["inferenceMs"]
         }
 
-    def shutdown(self) -> None:
+    def cleanup(self) -> None:
         pass
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ namespace CodeProject.AI.Server.Modules
         const string OSMarker                         = "%OS%";  
         const string DataDirMarker                    = "%DATA_DIR%";
         const string PythonPathMarker                 = "%PYTHON_PATH%";
-        const string PythonDirectoryMarker            = "%PYTHON_DIRECTORY%";
+        const string PythonNameMarker                 = "%PYTHON_NAME%";
 
         private readonly ServerOptions           _serverOptions;
         private readonly ModuleOptions           _moduleOptions;
@@ -190,10 +190,10 @@ namespace CodeProject.AI.Server.Modules
             ExpandMacros();
         }
 
+        /*
         /// <summary>
         /// Returns a string that represents the path to the current directory a module lives in.
         /// Note that a module's folder is always the same name as its Id.
-        /// REVIEW: [Matthew] module.moduleDirPath is set safely and can be used instead of this 
         /// </summary>
         /// <param name="module">The module to launch</param>
         /// <returns>A string object</returns>
@@ -206,8 +206,8 @@ namespace CodeProject.AI.Server.Modules
         }
 
         /// <summary>
-        /// Returns a string that represents the working directory for a module.
-        /// REVIEW: [Matthew] module.WorkingDirectory is set safely and can be used instead of this if you wish
+        /// Returns a string that represents the working directory for a module. Note,
+        /// module.WorkingDirectory can be used instead of this.
         /// </summary>
         /// <param name="module">The module to launch</param>
         /// <returns>A string object</returns>
@@ -215,6 +215,7 @@ namespace CodeProject.AI.Server.Modules
         {
             return GetModuleDirPath(module);
         }
+        */
 
         /// <summary>
         /// Returns a string that represents the command to run to launch a module. Order of 
@@ -224,7 +225,8 @@ namespace CodeProject.AI.Server.Modules
         /// <returns>A string object</returns>
         public string? GetCommandPath(ModuleConfig module)
         {
-            string? command = ExpandOption(module.Command, GetModuleDirPath(module)) ??
+            // string? command = ExpandOption(module.Command, GetModuleDirPath(module)) ??
+            string? command = ExpandOption(module.Command, module.ModuleDirPath) ??
                               GetCommandByRuntime(module) ??
                               GetCommandByFilepath(module);
             return command;
@@ -239,7 +241,8 @@ namespace CodeProject.AI.Server.Modules
         public string GetFilePath(ModuleConfig module)
         {
             // Correcting for cross platform (win = \, linux = /)
-            return Path.Combine(GetModuleDirPath(module), Text.FixSlashes(module.FilePath));
+            // return Path.Combine(GetModuleDirPath(module), Text.FixSlashes(module.FilePath));
+            return Path.Combine(module.ModuleDirPath, Text.FixSlashes(module.FilePath));
         }
 
         /// <summary>
@@ -284,14 +287,19 @@ namespace CodeProject.AI.Server.Modules
                 if (SystemInfo.IsDocker && module.RuntimeLocation == "Shared")
                     module.RuntimeLocation = "Local";
 
-                string pythonDir = runtime.Replace(".", "").ToLower();
+                string pythonName = runtime.Replace(".", string.Empty).ToLower();
                 string commandPath = _moduleOptions.PythonRelativeInterpreterPath!
-                                                   .Replace(PythonDirectoryMarker, pythonDir);
+                                                   .Replace(PythonNameMarker, pythonName);
                 commandPath = commandPath.TrimStart('\\','/');
                 if (module.RuntimeLocation == "Shared")
+                {
                     commandPath = Path.Combine(_moduleOptions.RuntimesDirPath!, commandPath);
+                }
                 else
-                    commandPath = Path.Combine(GetModuleDirPath(module), commandPath);
+                {
+                    // commandPath = Path.Combine(GetModuleDirPath(module), commandPath);
+                    commandPath = Path.Combine(module.ModuleDirPath, commandPath);
+                }
 
                 // Correct the path to handle any path traversals (eg ../) in the path
                 if (commandPath?.Contains(Path.DirectorySeparatorChar) ?? false)
@@ -302,12 +310,12 @@ namespace CodeProject.AI.Server.Modules
 
             // Trim the dotnet version. The launcher handles it all for us.
             if (runtime.StartsWith("dotnet"))
-                return "dotnet";
+                return SystemInfo.IsWindows ? "launcher" : "dotnet";
 
             // Everything else is just a straight pass-through (note that 'execute' and 'launcher'
             // are just markers that say 'call the module's file directly - it is runnable')
             if (runtime == "execute" || runtime == "launcher")
-                return runtime;
+                return "launcher";
 
             return null;
         }

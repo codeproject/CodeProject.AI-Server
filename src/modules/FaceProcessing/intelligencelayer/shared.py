@@ -3,25 +3,17 @@ import os
 class Settings:
     def __init__(
         self,
-        # PLATFORM_PKGS,
-        # DETECTION_HIGH,
-        # DETECTION_MEDIUM,
-        # DETECTION_LOW,
-        # DETECTION_MODEL,
         FACE_HIGH,
         FACE_MEDIUM,
         FACE_LOW,
         FACE_MODEL,
+        FACE_RECOG_MODEL,
     ):
-        # self.PLATFORM_PKGS    = PLATFORM_PKGS
-        # self.DETECTION_HIGH   = DETECTION_HIGH
-        # self.DETECTION_MEDIUM = DETECTION_MEDIUM
-        # self.DETECTION_LOW    = DETECTION_LOW
-        # self.DETECTION_MODEL  = DETECTION_MODEL
         self.FACE_HIGH        = FACE_HIGH
         self.FACE_MEDIUM      = FACE_MEDIUM
         self.FACE_LOW         = FACE_LOW
         self.FACE_MODEL       = FACE_MODEL
+        self.FACE_RECOG_MODEL = FACE_RECOG_MODEL
 
 # CodeProject.AI module options helper
 from module_options import ModuleOptions
@@ -30,57 +22,41 @@ class SharedOptions:
 
     PROFILE_SETTINGS = {
         "desktop_cpu": Settings(
-            # PLATFORM_PKGS    = "cpufiles",
-            # DETECTION_HIGH   = 640,
-            # DETECTION_MEDIUM = 416,
-            # DETECTION_LOW    = 256,
-            # DETECTION_MODEL  = "yolov5m.pt",
             FACE_HIGH        = 416,
             FACE_MEDIUM      = 320,
             FACE_LOW         = 256,
             FACE_MODEL       = "face.pt",
+            FACE_RECOG_MODEL = "facerec-high.model"
         ),
 
         "desktop_gpu": Settings(
-            # PLATFORM_PKGS    = "gpufiles",
-            # DETECTION_HIGH   = 640,
-            # DETECTION_MEDIUM = 416,
-            # DETECTION_LOW    = 256,
-            # DETECTION_MODEL  = "yolov5m.pt",
             FACE_HIGH        = 416,
             FACE_MEDIUM      = 320,
             FACE_LOW         = 256,
             FACE_MODEL       = "face.pt",
+            FACE_RECOG_MODEL = "facerec-high.model"
         ),
 
         "jetson": Settings(
-            # PLATFORM_PKGS    = "cpufiles",
-            # DETECTION_HIGH   = 416,
-            # DETECTION_MEDIUM = 320,
-            # DETECTION_LOW    = 256,
-            # DETECTION_MODEL  = "yolov5s.pt",
             FACE_HIGH        = 384,
             FACE_MEDIUM      = 256,
             FACE_LOW         = 192,
             FACE_MODEL       = "face_lite.pt",
+            FACE_RECOG_MODEL = "facerec-high.model"
         ),
 
         "windows_native": Settings(
-            # PLATFORM_PKGS    = "python_packages",
-            # DETECTION_HIGH   = 640,
-            # DETECTION_MEDIUM = 416,
-            # DETECTION_LOW    = 256,
-            # DETECTION_MODEL  = "yolov5m.pt",
             FACE_HIGH        = 416,
             FACE_MEDIUM      = 320,
             FACE_LOW         = 256,
             FACE_MODEL       = "face.pt",
+            FACE_RECOG_MODEL = "facerec-high.model"
         ),
     }
 
     showEnvVariables = True
 
-    ENABLE_GPU     = ModuleOptions.enable_GPU
+    ENABLE_GPU      = ModuleOptions.enable_GPU
     PORT            = ModuleOptions.port
 
     print(f"Trace: Vision AI services setup: Retrieving environment variables...")

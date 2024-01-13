@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Diagnostics;
+using System.Text.Json.Serialization;
 
 using SkiaSharp;
 
@@ -85,7 +86,7 @@ namespace CodeProject.AI.SDK
         {
             this.command = command;
         }
-
+       
         /// <summary>
         /// Sets a string value in payload.
         /// </summary>
@@ -190,6 +191,33 @@ namespace CodeProject.AI.SDK
         public bool TryGet(string key, out bool boolValue, bool? defaultValue = null)
         {
             return bool.TryParse(GetValue(key, defaultValue?.ToString()), out boolValue);
+        }
+
+        /// <summary>
+        /// Adds a file to the payload
+        /// </summary>
+        /// <param name="filePath">The path to the file to add</param>
+        public void AddFile(string filePath)
+        {
+            try
+            {
+                var formFile = new RequestFormFile()
+                {
+                    name        = "image",
+                    filename    = Path.GetFileName(filePath),
+                    contentType = "image/" + Path.GetExtension(filePath).Substring(1),
+                    data        = File.ReadAllBytes(filePath)
+                };
+
+                var allFiles = files as List<RequestFormFile> ?? new List<RequestFormFile>();                
+                allFiles.Add(formFile);
+
+                files = allFiles;
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
         }
 
         /// <summary>

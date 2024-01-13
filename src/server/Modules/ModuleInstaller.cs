@@ -333,9 +333,10 @@ namespace CodeProject.AI.Server.Modules
                                 {
                                     // If the uninstall failed but ultimately the module's dir was
                                     //  emptied, then mark it as done.
-                                    string moduleDirName = _moduleSettings.GetModuleDirPath(existingDescription);
-                                    if (!Directory.Exists(moduleDirName) ||
-                                        !Directory.EnumerateFileSystemEntries(moduleDirName).Any())
+                                    // string moduleDirPath = _moduleSettings.GetModuleDirPath(existingDescription);
+                                    string moduleDirPath = existingDescription.ModuleDirPath;
+                                    if (!Directory.Exists(moduleDirPath) ||
+                                        !Directory.EnumerateFileSystemEntries(moduleDirPath).Any())
                                     {
                                         existingDescription.Status = ModuleStatusType.Uninstalled;
                                         module.Status              = ModuleStatusType.Available;
@@ -419,7 +420,8 @@ namespace CodeProject.AI.Server.Modules
             }
 
             // Download and unpack the module's installation package FOR THE REQUESTED VERSION
-            string moduleDirName   = _moduleSettings.GetModuleDirPath(moduleDownload);
+            // string moduleDirName = _moduleSettings.GetModuleDirPath(moduleDownload);
+            // string moduleDirName = moduleDownload.ModuleDirPath;
             string downloadDirPath = _moduleSettings.DownloadedModulePackagesDirPath 
                                    + Path.DirectorySeparatorChar + moduleId + "-" + version + ".zip";
 
@@ -437,7 +439,7 @@ namespace CodeProject.AI.Server.Modules
             }
             else
             {
-                (downloaded, error) = await _packageDownloader.DownloadFileAsync(moduleDownload.DownloadUrl!, downloadDirPath)
+                (downloaded, error) = await _packageDownloader.DownloadFileAsync(moduleDownload.DownloadUrl!, downloadDirPath, true)
                                                               .ConfigureAwait(false);
             }
 
@@ -491,7 +493,8 @@ namespace CodeProject.AI.Server.Modules
                 if (moduleDownload is not null)
                 {
                     moduleDownload.Status = ModuleStatusType.Unpacking;
-                    moduleDirName = _moduleSettings.GetModuleDirPath(moduleDownload);
+                    // moduleDirName = _moduleSettings.GetModuleDirPath(moduleDownload);
+                    moduleDirName = moduleDownload.ModuleDirPath;
                 }
             }
 
@@ -743,7 +746,8 @@ namespace CodeProject.AI.Server.Modules
             _moduleProcessService.RemoveProcessStatus(moduleId);
 
             // GetProcessStatus the module's directory
-            string moduleDirPath = _moduleSettings.GetModuleDirPath(module); 
+            // string moduleDirPath = _moduleSettings.GetModuleDirPath(module); 
+            string moduleDirPath = module.ModuleDirPath; 
 
             try
             {

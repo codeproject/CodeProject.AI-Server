@@ -17,11 +17,10 @@ fi
 module_install_errors=""
 
 if [ "${systemName}" != "Orange Pi" ]; then
-    # writeLine "ObjectDetection (Fast Deploy RKNN) can only be installed on Orange Pi devices" "$color_error"
     module_install_errors="Unable to install on non-Orange Pi hardware."
 else
     # Download the OCR models and store in /paddleocr
-    getFromServer "paddleocr-rknn-models.zip" "paddleocr" "Downloading Plate and OCR models..."
+    getFromServer "models/" "paddleocr-rknn-models.zip" "paddleocr" "Downloading Plate and OCR models..."
 
     # TODO: Check paddleocr created and has files, maybe run paddle check too
     # module_install_errors=...

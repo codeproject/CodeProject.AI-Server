@@ -6,4 +6,4 @@ moduleId=$1
 version=$2
 
 tar -caf ${moduleId}-${version}.zip --exclude=__pycache__  --exclude=*.development.* --exclude=*.log \
-    intelligencelayer/* modulesettings.* requirements.* install.sh install.bat
+    intelligencelayer/* modulesettings.* requirements.* install.sh install.bat test/*

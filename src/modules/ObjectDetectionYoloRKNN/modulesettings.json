@@ -1,14 +1,13 @@
 {
-  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
-  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "ObjectDetectionYoloRKNN": {
       "Name": "Object Detection (YOLOv5 RKNN)",
-      "Version": "1.4.2",
+      "Version": "1.4.4",
 
       // Publishing info
       "Description": "Provides Object Detection using YOLOv5 RKNN models. This module only works with Rockchip RK3588/RK3588S NPUs like the Orange Pi 5/5B/5 Plus",
+      "Category": "Computer Vision",
       "Platforms": [ "orangepi" ],
       "License": "Apache-2.0",
       "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
@@ -41,14 +40,16 @@
         { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
         { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" },
         { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.4.1", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.4.2", "ServerVersionRange": [ "2.3.5", ""       ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Updated installer", "Importance": "Minor" }
+        { "ModuleVersion": "1.4.1", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.4.2", "ServerVersionRange": [ "2.3.5", "2.3.4"  ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Updated installer", "Importance": "Minor" },
+        { "ModuleVersion": "1.4.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.4.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
       ],
 
       "RouteMaps": [
         {
           "Name": "Object Detector",
-          "Path": "vision/detection",
+          "Route": "vision/detection",
           "Method": "POST",
           "Command": "detect",
           "Description": "Detects multiple objects in an image.",
@@ -133,7 +134,7 @@
 
         {
           "Name": "Custom Object Detector RKNN",
-          "Path": "vision/custom",
+          "Route": "vision/custom",
           "Method": "POST",
           "Command": "custom",
           "Description": "Detects objects based on YOLO PyTorch models. Models are stored as .rknn files in the /ObjectDetectionYoloRKNN/custom-models directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's .rknn file",
@@ -180,7 +181,7 @@
 
         {
           "Name": "Object Detector List Custom Models (RKNN)",
-          "Path": "vision/custom/list",
+          "Route": "vision/custom/list",
           "Method": "POST",
           "Command": "list-custom",
           "Description": "Returns a list of models available.",

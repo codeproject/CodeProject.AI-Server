@@ -14,8 +14,8 @@ dotnet build -c ${configuration} >/dev/null 2>/dev/null
 # Zip it up.
 pushd ./bin/${configuration}/${target}/  >/dev/null 2>/dev/null
 
-tar -a -cf ../../../${moduleId}-${version}.zip \
-    --exclude=*.development.* --exclude=*.docker.build.* *.*
+tar -a -cf ../../../${moduleId}-${version}.zip   --exclude=*.development.* --exclude=*.docker.build.* \
+   *.*  test/*
 
 popd >/dev/null 2>/dev/null
 

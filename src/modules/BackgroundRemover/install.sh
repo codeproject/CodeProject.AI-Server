@@ -26,7 +26,7 @@ fi
 # u2net_cloth_seg: https://drive.google.com/uc?id=15rKbQSXQzrKCQurUjZFg8HqzZad8bcyz
 
 # Download the models and store in /models
-getFromServer "rembg-models.zip" "models" "Downloading Background Remover models..."
+getFromServer "models/" "rembg-models.zip" "models" "Downloading Background Remover models..."
 
 # TODO: Check models created and has files
 # module_install_errors=...

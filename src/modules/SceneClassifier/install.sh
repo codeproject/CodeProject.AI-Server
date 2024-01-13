@@ -20,7 +20,7 @@ if [ "$1" != "install" ]; then
 fi
 
 # Download the models and store in /models
-getFromServer "scene-classification-models.zip" "assets" "Downloading Scene classification models..."
+getFromServer "models/" "scene-classification-models.zip" "assets" "Downloading Scene classification models..."
 
 # TODO: Check assets created and has files
 # module_install_errors=...

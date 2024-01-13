@@ -20,7 +20,7 @@ if [ "$1" != "install" ]; then
 fi
 
 # Download the models and store in /models
-getFromServer "cartooniser-models.zip" "weights" "Downloading Cartooniser models..."
+getFromServer "models/" "cartooniser-models.zip" "weights" "Downloading Cartooniser models..."
 
 # TODO: Check weights created and has files
 # module_install_errors=...

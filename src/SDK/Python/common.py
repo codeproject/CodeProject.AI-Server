@@ -71,16 +71,17 @@ def dump_tensors():
         except:
             pass
 
-# Test availability of required packages.
 
-# requirements_path = Path(__file__).parent.with_name("requirements.txt")
-# print(packageInstallReport(requirements_path))
-
+# NOTE: This is now DEPRECATED. Please use `check_requirements` in utils/environment_check.py instead
 def check_installed_packages(requirements_path: str = None, report_version_conflicts = True) -> str:
     """
     Generates a report on the packages that are missing or have version
     conflicts, based on the supplied requirements.txt file
     Ref: https://stackoverflow.com/a/45474387/
+
+    example:
+        requirements_path = Path(__file__).parent.with_name("requirements.txt")
+        print(packageInstallReport(requirements_path))
     """
 
     import pkg_resources

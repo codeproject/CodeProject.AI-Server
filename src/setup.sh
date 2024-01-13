@@ -98,16 +98,16 @@ useJq=true
 
 # The path to the directory containing this setup script. Will end in "\"
 setupScriptDirPath=$(dirname "$0")
-pushd "$setupScriptDirPath" > /dev/null 2>&1
+pushd "$setupScriptDirPath" > /dev/null
 setupScriptDirPath=$(pwd -P)
-popd > /dev/null 2>&1
+popd > /dev/null
 
 # The path to the application root dir. This is 'src' in dev, or / in production
 # This setup script always lives in the app root
 appRootDirPath="${setupScriptDirPath}"
 
 # The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
-storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/'
+storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/'
 
 # The name of the source directory (in development)
 srcDir='src'
@@ -178,6 +178,9 @@ done
 
 # Pre-setup :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+inDocker=false
+if [ "$DOTNET_RUNNING_IN_CONTAINER" = "true" ]; then inDocker=true; fi
+
 # If offline then force the system to use pre-downloaded files
 if [ "$offlineInstall" = true ]; then forceOverwrite=false; fi
 
@@ -186,12 +189,27 @@ if [ "$offlineInstall" = true ]; then forceOverwrite=false; fi
 # warning and move on.
 if [ "$launchedBy" = "server" ]; then attemptSudoWithoutAdminRights=false; fi
 
-# We can't do shared installs in Docker. They won't necessarily persist
-inDocker=false
-if [ "$DOTNET_RUNNING_IN_CONTAINER" = "true" ]; then 
+# Speaking of sudo: if we're in Docker, or any other environment where sudo
+# doesn't exist, then ensure the sudo command is present so calls to it in
+# scripts won't simply fail. For Docker and macOS we create a no-op proxy. For
+# others, we install the Real Deal
+if ! command -v sudo &> /dev/null; then
+    if [ "$inDocker" = true ] || [ "$os" = "macos" ]; then 
+        cat > "/usr/sbin/sudo" <<EOF
+#!/bin/sh
+\${@}
+EOF
+        if [ -f /usr/sbin/sudo ]; then chmod +x /usr/sbin/sudo; fi
+    else
+        apt-get install sudo -y
+    fi
+fi
 
-    inDocker=true
-
+# We can't do shared installs for downloaded modules in Docker. They won't
+# necessarily persist because the shared venv is in /runtimes which is in the 
+# container itself, rather than then venv being in a mapped folder outside of the
+# container.
+if [ "$inDocker" = true ]; then 
     echo
     echo "Hi Docker! We will disable shared python installs for downloaded modules"
     echo
@@ -209,9 +227,15 @@ exec 3>&1
 # folder actually exists) then we're Setting up the dev environment. Otherwise
 # we're installing a module.
 setupMode='InstallModule'
-setupScriptDirName=$(basename "$(pwd)")     # Get current dir name (not full path)
-setupScriptDirName=${setupScriptDirName:-/} # correct for the case where pwd=/
-if [ "$setupScriptDirName" = "$srcDir" ]; then setupMode='SetupDevEnvironment'; fi
+currentDirName=$(basename "$(pwd)")     # Get current dir name (not full path)
+currentDirName=${currentDirName:-/} # correct for the case where pwd=/
+
+# when executionEnvironment = "Development" this may be the case
+if [ "$currentDirName" = "$srcDir" ]; then setupMode='SetupDevEnvironment'; fi
+
+# when executionEnvironment = "Production" this may be the case
+if [ "$currentDirName" = "$appDir" ]; then setupMode='SetupDevEnvironment'; fi
+
 
 # In Development, this script is in the /src folder. In Production there is no
 # /src folder; everything is in the root folder. So: go to the folder
@@ -221,31 +245,35 @@ pushd "$setupScriptDirPath" >/dev/null
 setupScriptDirName=$(basename "${setupScriptDirPath}")
 setupScriptDirName=${setupScriptDirName:-/} # correct for the case where pwd=/
 popd >/dev/null
+
 executionEnvironment='Production'
 if [ "$setupScriptDirName" = "$srcDir" ]; then executionEnvironment='Development'; fi
 
-# If we're running this script in Docker from the /app folder directly then it 
-# means we're running the full dev environment setup script. This is handy when
-# you want to test the dev setup in Linux but you don't have a linux box.
-if [ "$inDocker" = true ]; then
-    if [ "$setupScriptDirName" = "$appDir" ]; then setupMode='SetupDevEnvironment'; fi
-    executionEnvironment='Production'
-fi
-
-# The absolute path to the installer script and the app root directory.
-# Note that this script (and the SDK folder) is either in the /src dir or the
-# app root dir
+# The absolute path to the installer script and the app root directory. Note that
+# this script (and the SDK folder) is either in the "/src" dir (for Development) 
+# or the app root dir "/" (for Production)
 pushd "$setupScriptDirPath" >/dev/null
 if [ "$executionEnvironment" = 'Development' ]; then cd ..; fi
 rootDirPath="$(pwd)"
 popd >/dev/null
 
+# Check if we're in a SSH session. If so it means we need to avoid anything GUI
+inSSH=false
+if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
+  inSSH=true
+else
+  case $(ps -o comm= -p "$PPID") in sshd|*/sshd) inSSH=true;; esac
+fi
+if [ "$os" = 'linux' ] && [ "$inSSH" = false ]; then
+    pstree -s $$ | grep sshd >/dev/null
+    if [[ $? -eq 0 ]]; then inSSH=true; fi
+fi
 
 # Helper method ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 function setupPythonPaths () {
 
-    pythonLocation="$1"
+    runtimeLocation="$1"
     pythonVersion=$2
 
     # Version with ".'s removed
@@ -253,7 +281,7 @@ function setupPythonPaths () {
 
     # The path to the python installation, either local or shared. The
     # virtual environment will live in here
-    if [ "${pythonLocation}" = "Local" ]; then
+    if [ "${runtimeLocation}" = "Local" ]; then
         pythonDirPath="${moduleDirPath}/bin/${os}/${pythonName}"
     else
         pythonDirPath="${runtimesDirPath}/bin/${os}/${pythonName}"
@@ -275,52 +303,59 @@ function doModuleInstall () {
     # Get the module name, version, runtime location and python version from the
     # modulesettings.
 
+    writeLine
+    write "Reading module settings" $color_mute
     moduleName=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "Name")
+    write "." $color_mute
+    moduleVersion=$(getValueFromModuleSettingsFile       "${moduleDirPath}" "${moduleDirName}" "Version" )
+    write "." $color_mute
+    runtime=$(getValueFromModuleSettingsFile             "${moduleDirPath}" "${moduleDirName}" "Runtime")
+    write "." $color_mute
+    runtimeLocation=$(getValueFromModuleSettingsFile     "${moduleDirPath}" "${moduleDirName}" "RuntimeLocation")
+    write "." $color_mute
+    installGPU=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "InstallGPU")
+    write "." $color_mute
+    moduleStartFilePath=$(getValueFromModuleSettingsFile "${moduleDirPath}" "${moduleDirName}" "FilePath")
+    write "." $color_mute
+    platforms=$(getValueFromModuleSettingsFile           "${moduleDirPath}" "${moduleDirName}" "Platforms")
+    write "." $color_mute
+    writeLine "Done" $color_success
+    
     if [ "$moduleName" = "" ]; then moduleName="$moduleDirName"; fi
 
-    moduleVersion=$(getValueFromModuleSettingsFile       "${moduleDirPath}" "${moduleDirName}" "Version" )
-    runtime=$(getValueFromModuleSettingsFile             "${moduleDirPath}" "${moduleDirName}" "Runtime")
-    pythonLocation=$(getValueFromModuleSettingsFile      "${moduleDirPath}" "${moduleDirName}" "RuntimeLocation")
-    installGPU=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "InstallGPU")
-    moduleStartFilePath=$(getValueFromModuleSettingsFile "${moduleDirPath}" "${moduleDirName}" "FilePath")
-    platforms=$(getValueFromModuleSettingsFile           "${moduleDirPath}" "${moduleDirName}" "Platforms")
-
-    writeLine
+    # writeLine
     writeLine "Processing module ${moduleDirName} ${moduleVersion}" "White" "Blue" $lineWidth
     writeLine
 
-    # Make sure we can actually install this here.
-    if [ "${useJq}" = true ]; then
-        platform_array=($(echo "$platforms" | jq -r '.[]'))
-    else
-        platform_array=( $(echo "$platforms" | tr -d '[]' | sed 's/"//g' | sed 's/,/ /g') )
-    fi
-
-    # writeLine "platforms = ${platforms}"
+    # Convert brackets, quotes, commas and newlines to spaces
+    platform_list=${platforms//[$'\r\n'\",\[\]]/ }
+    # convert to array
+    platform_array=($platform_list)
 
     can_install=false
-    for item in "${platform_array[@]}"; do
+    for item in ${platform_array[@]}; do
+        item=$( echo "$item" | tr '[:upper:]' '[:lower:]' )
         # echo "Checking ${platform} against ${item}"
         if [ "$item" = "!${platform}" ]; then
             can_install=false
             break
         fi
-        if [ "$item" = "all" ] || [ "$item" = "${platform}" ]; then
+        if [ "$item" = "all" ] || [ "$item" = "$platform" ]; then
             can_install=true
         fi
     done
 
     if [ "$can_install" = false ]; then
-        writeLine "This module cannot be installed on this system" $color_mute
+        writeLine "This module cannot be installed on this system" $color_warn
         return
     fi
 
-    if [ "${pythonLocation}" = "" ]; then pythonLocation="Shared"; fi
+    if [ "${runtimeLocation}" = "" ]; then runtimeLocation="Shared"; fi
 
     if [ "${allowSharedPythonInstallsForModules}" = false ]; then
-        if [[ "${moduleDirPath}" == *"/modules/"* ]] && [ "${pythonLocation}" = "Shared" ]; then
+        if [[ "${moduleDirPath}" == *"/modules/"* ]] && [ "${runtimeLocation}" = "Shared" ]; then
             writeLine "Downloaded modules must have local Python install. Changing install location" $color_warn
-            pythonLocation="Local"
+            runtimeLocation="Local"
         fi
     fi
 
@@ -353,14 +388,14 @@ function doModuleInstall () {
         pythonVersion=$(echo "${pythonVersion}" | tr -d [:space:])
     fi
 
-    setupPythonPaths "${pythonLocation}" "$pythonVersion"
+    setupPythonPaths "${runtimeLocation}" "$pythonVersion"
 
     if [ "$verbosity" != "quiet" ]; then
         writeLine "moduleName        = $moduleName"        $color_info
         writeLine "moduleVersion     = $moduleVersion"     $color_info
         writeLine "runtime           = $runtime"           $color_info
+        writeLine "runtimeLocation   = $runtimeLocation"   $color_info
         writeLine "installGPU        = $installGPU"        $color_info
-        writeLine "pythonLocation    = $pythonLocation"    $color_info
         writeLine "pythonVersion     = $pythonVersion"     $color_info
         writeLine "virtualEnvDirPath = $virtualEnvDirPath" $color_info
         writeLine "venvPythonCmdPath = $venvPythonCmdPath" $color_info
@@ -437,29 +472,69 @@ function doModuleInstall () {
 
         # Perform a self-test
         if [ "${doPostInstallSelfTest}" = true ] && [ "${module_install_errors}" = "" ]; then
+
+            pushd "${moduleDirPath}" >/dev/null
+            if [ "${verbosity}" = "quiet" ]; then
+                write "Self test: "
+            else
+                writeLine "SELF TEST START ======================================================" $color_info
+            fi
+
+            # TODO: Load these values from the module settings and set them as env variables
+            #   CPAI_MODULE_ID, CPAI_MODULE_NAME, CPAI_MODULE_PATH, CPAI_MODULE_ENABLE_GPU,
+            #   CPAI_ACCEL_DEVICE_NAME, CPAI_HALF_PRECISION"
+            # Then load and set all env vars in modulesettings "EnvironmentVariables" collection
+
+            testRun=false
             if [ "${pythonVersion}" != "" ]; then
 
+                testRun=true
                 if [ "${verbosity}" = "quiet" ]; then
-                    write "Self test: "
-                    pushd "${moduleDirPath}" >/dev/null
                     "$venvPythonCmdPath" "$moduleStartFilePath" --selftest >/dev/null
                 else
-                    pushd "${moduleDirPath}"
-                    writeLine "SELF TEST START ======================================================" $color_info
                     "$venvPythonCmdPath" "$moduleStartFilePath" --selftest
                 fi
-                if [[ $? -eq 0 ]]; then # echo "good"; else echo "bad"; fi
-                    writeLine "Self-test passed" $color_success
+
+            elif [ "${runtime}" = "dotnet" ]; then
+
+                # should probably generalise this to:
+                #   $runtime "$moduleStartFilePath" --selftest
+
+                exePath="./"
+                # if [ "${executionEnvironment}" = "Development" ]; then
+                #     exePath="./bin/Debug/net7.0/"
+                # fi
+                exePath="${exePath}${moduleStartFilePath//\\//}"
+
+                if [ -f "${exePath}" ]; then
+                    testRun=true
+                    if [ "${verbosity}" = "quiet" ]; then
+                        dotnet "${exePath}" --selftest >/dev/null
+                    else
+                        dotnet "${exePath}" --selftest
+                    fi
                 else
-                    writeLine "Self-test failed" $color_error
+                    writeLine "${exePath} does not exist" $color_error
                 fi
 
-                if [ "${verbosity}" != "quiet" ]; then
-                    writeLine "SELF TEST END   ======================================================" $color_info
-                fi
-                popd >/dev/null
-                
             fi
+
+            if [[ $? -eq 0 ]]; then
+                if  [ "$testRun" = "true" ]; then
+                    writeLine "Self-test passed" $color_success
+                else
+                    writeLine "No self-test available" $color_warn
+                fi
+            else
+                writeLine "Self-test failed" $color_error
+            fi
+
+            if [ "${verbosity}" != "quiet" ]; then
+                writeLine "SELF TEST END   ======================================================" $color_info
+            fi
+            
+            popd >/dev/null
+                
         fi
 
     else
@@ -584,22 +659,30 @@ writeLine "${formatted_space} available on ${systemName}" $color_mute
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "setupMode            = ${setupMode}"            $color_mute
-    writeLine "executionEnvironment = ${executionEnvironment}" $color_mute
-    writeLine "rootDirPath          = ${rootDirPath}"          $color_mute
-    writeLine "appRootDirPath       = ${appRootDirPath}"       $color_mute
-    writeLine "setupScriptDirPath   = ${setupScriptDirPath}"   $color_mute
-    writeLine "sdkScriptsDirPath    = ${sdkScriptsDirPath}"    $color_mute
-    writeLine "runtimesDirPath      = ${runtimesDirPath}"      $color_mute
-    writeLine "modulesDirPath       = ${modulesDirPath}"       $color_mute
-    writeLine "downloadDirPath      = ${downloadDirPath}"      $color_mute
+    writeLine "os, arch             = ${os} ${architecture}"      $color_mute
+    writeLine "systemName, platform = ${systemName}, ${platform}" $color_mute
+    writeLine "SSH                  = ${inSSH}"                   $color_mute
+    writeLine "setupMode            = ${setupMode}"               $color_mute
+    writeLine "executionEnvironment = ${executionEnvironment}"    $color_mute
+    writeLine "rootDirPath          = ${rootDirPath}"             $color_mute
+    writeLine "appRootDirPath       = ${appRootDirPath}"          $color_mute
+    writeLine "setupScriptDirPath   = ${setupScriptDirPath}"      $color_mute
+    writeLine "sdkScriptsDirPath    = ${sdkScriptsDirPath}"       $color_mute
+    writeLine "runtimesDirPath      = ${runtimesDirPath}"         $color_mute
+    writeLine "modulesDirPath       = ${modulesDirPath}"          $color_mute
+    writeLine "downloadDirPath      = ${downloadDirPath}"         $color_mute
     writeLine 
 fi
 
 # =============================================================================
 # House keeping
 
-checkForAdminRights
+# if [ "$inSSH" = false ] && [ "$os" = "linux" ]; then
+#     Here it would be great to install a ASKPASS help app that would prompt
+#     for passwords in a GUI rather than on the terminal. This would allow us
+#     to request passwords for scripts called via the CodeProject.AI dashboard.
+#     Read this awesome article https://blog.djnavarro.net/posts/2022-09-04_sudo-askpass/
+# fi
 
 # Install tools that we know are available via apt-get or brew
 if [ "$os" = "linux" ]; then checkForTool curl; fi
@@ -616,10 +699,11 @@ writeLine
 writeLine "General CodeProject.AI setup" "White" "DarkGreen" $lineWidth
 writeLine
 
-# Create some directories
+# Create some directories (run under a subshell, all with sudo)
+
 CreateWriteableDir "${downloadDirPath}"   "downloads"
-CreateWriteableDir "${commonDataDirPath}" "persisted data"
 CreateWriteableDir "${runtimesDirPath}"   "runtimes"
+CreateWriteableDir "${commonDataDirPath}" "persisted data"
 
 writeLine
 
@@ -636,11 +720,13 @@ writeLine
 
 hasCUDA=false
 
+cuDNN_version=""
 if [ "$os" = "macos" ]; then 
     cuda_version=""
 elif [ "${systemName}" = "Jetson" ]; then
     hasCUDA=true
     cuda_version=$(getCudaVersion)
+    cuDNN_version=$(getcuDNNVersion)
 elif [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ]; then
     cuda_version=""
 else 
@@ -649,9 +735,10 @@ else
     if [ "$cuda_version" != "" ]; then
 
         hasCUDA=true
+        cuDNN_version=$(getcuDNNVersion)
 
         # disable this
-        if [ "${systemName}" = "ignoreWSL" ]; then # we're disabling this on purpose
+        if [ "${systemName}" = "WSL-but-we're-ignoring-this-for-now" ]; then # we're disabling this on purpose
             checkForAdminRights
             if [ "$isAdmin" = false ]; then
                 writeLine "insufficient permission to install CUDA toolkit. Rerun under sudo" $color_error
@@ -689,7 +776,11 @@ fi
 
 write "CUDA (NVIDIA) Present: "
 if [ "$hasCUDA" = true ]; then 
-    writeLine "Yes (version $cuda_version)" $color_success
+    if [ "$cuDNN_version" = "" ]; then
+        writeLine "Yes (CUDA $cuda_version, No cuDNN found)" $color_success
+    else
+        writeLine "Yes (CUDA $cuda_version, cuDNN $cuDNN_version)" $color_success
+    fi
 else 
     writeLine "No" $color_warn;
 fi
@@ -835,9 +926,9 @@ fi
 # =============================================================================
 # ...and we're done.
 
-writeLine
+writeLine ""
 writeLine "                Setup complete" "White" "DarkGreen" $lineWidth
-writeLine
+writeLine ""
 
 if [ "${success}" != true ]; then
     quit 1
@@ -858,4 +949,5 @@ quit 0
 # 9 - required parameter not supplied
 # 10 - failed to install required tool
 # 11 - unable to copy file or directory
+# 12 - parameter value invalid
 # 100 - impossible code path executed

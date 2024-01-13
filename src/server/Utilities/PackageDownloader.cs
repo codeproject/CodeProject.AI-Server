@@ -83,9 +83,11 @@ namespace CodeProject.AI.Server.Utilities
         /// </summary>
         /// <param name="uri">The location of the download</param>
         /// <param name="outputPath">Where to write the output</param>
+        /// <param name="overwrite">If true, overwrite a file if it already exists</param>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="FileNotFoundException"></exception>
-        public async Task<(bool, string)> DownloadFileAsync(string uri, string outputPath)
+        public async Task<(bool, string)> DownloadFileAsync(string uri, string outputPath,
+                                                            bool overwrite = true)
         {
             string error = string.Empty;
 
@@ -95,20 +97,19 @@ namespace CodeProject.AI.Server.Utilities
                 throw new ArgumentOutOfRangeException(error);
             }
 
+            if (!overwrite && File.Exists(outputPath))
+                return (false, $"File '{outputPath}' exists. Delete first, or set overwrite = true");
+
             // HACK to prevent us copying files over one another in file: mode
             if (uri.StartsWithIgnoreCase("file://"))
             {
-                string filename = uri.Substring(7);
-                filename = Text.FixSlashes(filename);
+                string localUrlfilename = uri.Substring(7);
+                localUrlfilename = Text.FixSlashes(localUrlfilename);
 
-                if (!File.Exists(filename))
-                    return (false, $"File '{filename}' does not exist");
+                if (!File.Exists(localUrlfilename))
+                    return (false, $"File '{localUrlfilename}' does not exist");
 
-                // REVIEW: [CHRIS] Should we overwrite the file if it exists?
-                // if (File.Exists(outputPath))
-                //     return (true, error);
-
-                File.Copy(filename, outputPath);
+                File.Copy(localUrlfilename, outputPath);
                 if (File.Exists(outputPath))
                     return (true, error);
 

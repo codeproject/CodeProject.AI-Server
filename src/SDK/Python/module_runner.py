@@ -37,10 +37,11 @@ if current_python_dir:
 import aiohttp
 
 # CodeProject.AI SDK. Import these *after* we've set the import path
-from common import JSON, check_installed_packages
-from module_logging import LogMethod, ModuleLogger, LogVerbosity
+from common import JSON
+from module_logging import LogMethod, ModuleLogger
 from request_data   import RequestData
 from module_options import ModuleOptions
+# from utils.environment_check import check_requirements
 
 class ModuleRunner:
     """
@@ -83,10 +84,10 @@ class ModuleRunner:
         return { "success": True }
 
 
-    def shutdown(self) -> None:
+    def cleanup(self) -> None:
         """
         Called when this module has been asked to shutdown. To be overridden by
-        child classes
+        child classes to provide the means to cleanup resource use
         """
         pass
     
@@ -197,8 +198,9 @@ class ModuleRunner:
                     if 'nvidia jetson' in m.read().lower(): self.system = 'Jetson'
             except Exception: pass 
 
-        # Need to hold off until we're ready to create the main logging loop.
-        # self._logger           = ModuleLogger(self.port, self.server_root_path)
+        # Needs to be setup as part of the asyncio loop later down the path
+        # self._logger = ModuleLogger(self.port, self.server_root_path)
+        self._logger = None
 
         # Get some (very!) basic CPU info
         try:
@@ -233,6 +235,10 @@ class ModuleRunner:
             try:
                 import torch
                 self._hasTorchCuda = torch.cuda.is_available()
+
+                # TODO: Should also run torch.utils.collect_env to ensure a 
+                # PyTorch version with a CUDA runtime is installed.
+                
             except: pass
         return self._hasTorchCuda
 
@@ -471,7 +477,7 @@ class ModuleRunner:
         command queue and sending commands to the (same) callback function.
         """
 
-        # SMOKE TEST: 
+        # SELF TEST: 
         # If this module has been called from the command line and a self test
         # has been requested, then we'll run that test and exit immediately,
         # rather than firing up the loop to handle messages. 
@@ -488,7 +494,7 @@ class ModuleRunner:
             if self.selftest_check_packages:
                 self.check_packages()
             result = self.selftest()
-            self.shutdown()
+            self.cleanup()
 
             self._performing_self_test = False
             if result and hasattr(result, "success") and not result["success"]:
@@ -499,7 +505,20 @@ class ModuleRunner:
         # No self test, so on to the main show
 
         try:
-            asyncio.run(self.main_init())
+            # asyncio.run was only added in Python 3.7
+            if (sys.version_info.major == 3 and sys.version_info.minor < 7):
+                # loop = asyncio.get_event_loop()
+                # loop.run_until_complete(self.main_init())
+                self.log(LogMethod.Error | LogMethod.Server, { 
+                    "process":        self.module_name,
+                    "filename":       __file__,
+                    "method":         sys._getframe().f_code.co_name,
+                    "loglevel":       "error",
+                    "message":        "Python < 3.7 isn't supported"
+                })
+            else:
+                asyncio.run(self.main_init())
+
         except Exception as ex:
             message = "".join(traceback.TracebackException.from_exception(ex).format())
             self.log(LogMethod.Error | LogMethod.Server, { 
@@ -518,6 +537,7 @@ class ModuleRunner:
         #
         # self._logger = ModuleLogger(self.port, self.server_root_path)
         # 
+        # # cpu_count => process_cpu_count in Python 3.13
         # if (sys.version_info.major >= 3 and sys.version_info.minor >= 13):
         #    nThreads = os.process_cpu_count() // 2
         # else:
@@ -543,9 +563,9 @@ class ModuleRunner:
         """
         async with aiohttp.ClientSession() as session:
             self._request_session = session
-            self._logger          = ModuleLogger(self.port, self.server_root_path)
 
             # Start with just running one logging loop
+            self._logger = ModuleLogger(self.port, self.server_root_path)
             logging_task = asyncio.create_task(self._logger.logging_loop())
 
             # Call the init callback if available
@@ -645,12 +665,14 @@ class ModuleRunner:
                         })
                         self._cancelled = True
                         break
+                    
                     elif data.command.lower() == "status":
                         method_to_call = self.status
                         suppress_timing_log = True
-                    # NOTE: selftest generally won't actually be called here - it'll be called via 
-                    #       command line. This is here in case selftest is triggered via API
+
                     elif command == "selftest":
+                        # NOTE: selftest generally won't actually be called here - it'll be called 
+                        #       via command line. This is here in case selftest is triggered via API
                         method_to_call = self.selftest
 
                 if not suppress_timing_log:
@@ -722,7 +744,7 @@ class ModuleRunner:
                         print(f"An exception occurred sending the inference response (#reqid {data.request_id})")
         
         # Cleanup
-        self.shutdown()
+        self.cleanup()
 
         # method is ending. Let's clean up. self._cancelled == True at this point.
         self._logger.cancel_logging()
@@ -760,7 +782,7 @@ class ModuleRunner:
     # Service Commands and Responses ==========================================
 
     async def log_async(self, log_method: LogMethod, data: JSON) -> None:
-        if not data:
+        if not data or not self._logger:
             return
 
         if not data.get("process"):
@@ -769,12 +791,12 @@ class ModuleRunner:
         await self._logger.log_async(log_method, data)
 
     def log(self, log_method: LogMethod, data: JSON) -> None:
-        if not data:
+        if not data or not self._logger:
             return
 
         if not data.get("process"):
             data["process"] = self.module_name 
-                            
+
         self._logger.log(log_method, data)
 
         
@@ -1065,7 +1087,12 @@ class ModuleRunner:
         """
         requirements_filepath = self.get_requirements_filepath()
         if requirements_filepath:
-            print(check_installed_packages(requirements_filepath, False))
+            # DISABLED: check_installed_packages is deprecated
+            # print(check_installed_packages(requirements_filepath, False))
+            # DISABLED: check_requirements causes Paddle to explode with warnings 
+            # about Setuptools replacing distutils
+            # print(check_requirements(requirements_filepath, False))
+            pass
 
     def get_requirements_filepath(self) -> str:
         """

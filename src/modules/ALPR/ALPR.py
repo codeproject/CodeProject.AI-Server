@@ -83,12 +83,14 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
                                                                  data={"min_confidence": opts.plate_confidence})
             inferenceMs += int((time.perf_counter() - start_time) * 1000)
 
-            if not detect_plate_response["success"]:
+            if not "success" in detect_plate_response or not detect_plate_response["success"]:
+                message = detect_plate_response["error"] if "error" in detect_plate_response \
+                                                         else "Unable to find plate"
                 return { "error": detect_plate_response["error"], "inferenceMs": inferenceMs }
 
             # Note: we will only get plates that have at least opts.plate_confidence 
             # confidence. 
-            if not detect_plate_response["predictions"]:
+            if not "predictions" in detect_plate_response or not detect_plate_response["predictions"]:
                 return { "predictions": [], "inferenceMs": inferenceMs }
 
         except Exception as ex:

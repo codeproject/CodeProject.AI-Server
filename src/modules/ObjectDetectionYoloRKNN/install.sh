@@ -28,8 +28,8 @@ if [ "${systemName}" != "Orange Pi" ]; then
     module_install_errors="Unable to install on non-Orange Pi hardware."
 else
     # Download the models and store in /assets and /custom-models
-    getFromServer "objectdetect-rknn-models.zip"        "assets" "Downloading Standard YOLOv5 RKNN models..."
-    getFromServer "objectdetect-rknn-custom-models.zip" "custom-models" "Downloading Custom YOLOv5 RKNN models..."
+    getFromServer "models/" "objectdetect-rknn-models.zip"        "assets" "Downloading Standard YOLOv5 RKNN models..."
+    getFromServer "models/" "objectdetect-rknn-custom-models.zip" "custom-models" "Downloading Custom YOLOv5 RKNN models..."
     
     # TODO: Check assets created and has files
     # module_install_errors=...

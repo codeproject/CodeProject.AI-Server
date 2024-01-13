@@ -1,14 +1,13 @@
 {
-  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
-  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "BackgroundRemover": {
       "Name": "Background Remover",
-      "Version": "1.6.2",
+      "Version": "1.6.4",
 
       // Publishing info
       "Description": "Automatically removes the background from a picture", 
+      "Category": "Image Processing",
       "Platforms": [ "all", "!linux", "!raspberrypi", "!orangepi", "!jetson" ], // issues with numpy on linux
       "License": "SSPL",
       "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
@@ -41,14 +40,16 @@
         { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor"  },
         { "ModuleVersion": "1.5",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
         { "ModuleVersion": "1.6",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.3.5", ""       ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
+        { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.3.5", "2.4.0"  ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "1.6.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.6.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
       ],
 
       "RouteMaps": [
         {
           "Name": "Background Remover",
-          "Path": "image/removebackground",
+          "Route": "image/removebackground",
           "Method": "POST",
           "Command": "removebackground",
           "Description": "Removes the background from behind the main subjects in images.",

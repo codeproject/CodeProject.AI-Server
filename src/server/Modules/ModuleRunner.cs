@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.Common;
+using CodeProject.AI.Server.Mesh;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -50,6 +51,8 @@ namespace CodeProject.AI.Server.Modules
         /// </summary>
         public ModuleProcessServices ProcessService { get; }
 
+        private readonly MeshMonitor _meshMonitor;
+
         /// <summary>
         /// Gets a reference to the ModuleSettings object.
         /// </summary>
@@ -71,13 +74,15 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="moduleSettings">The Module settings manager object.</param>
         /// <param name="moduleInstaller">The ModuleInstaller.</param>
         /// <param name="processService">The Module Process Status Service.</param>
+        /// <param name="meshMonitor">The mesh monitor.</param>
         /// <param name="logger">The logger.</param>
         public ModuleRunner(IOptions<VersionConfig> versionOptions,
                             IOptions<ServerOptions> serverOptions,
                             IOptions<ModuleCollection> moduleOptions,
                             ModuleSettings moduleSettings,
                             ModuleInstaller moduleInstaller,
-                            ModuleProcessServices processService,   
+                            ModuleProcessServices processService, 
+                            MeshMonitor meshMonitor,
                             ILogger<ModuleRunner> logger)
         {
             _versionConfig    = versionOptions.Value;
@@ -86,6 +91,7 @@ namespace CodeProject.AI.Server.Modules
             ModuleSettings    = moduleSettings;
             _moduleInstaller  = moduleInstaller;
             ProcessService    = processService;
+            _meshMonitor      = meshMonitor;
             _logger           = logger;
 
             // The very first thing we need to do is twofold:
@@ -120,7 +126,7 @@ namespace CodeProject.AI.Server.Modules
 #if DEBUG
             // Create a modules.json file each time we run
             string path = Path.Combine(ModuleSettings.DownloadedModulePackagesDirPath, "modules.json");
-            Task.Run(() => _installedModules.CreateModulesListing(path));
+            Task.Run(() => _installedModules.CreateModulesListing(path, _versionConfig.VersionInfo));
 #endif
         }
 
@@ -209,6 +215,7 @@ namespace CodeProject.AI.Server.Modules
                 await _moduleInstaller.InstallInitialModules().ConfigureAwait(false);
 
             await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
+            await _meshMonitor.StopMonitoringAsync();
             _logger.LogInformation("ModuleRunner Stopped");
         }
 

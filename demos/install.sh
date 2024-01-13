@@ -19,11 +19,11 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-pythonLocation="Shared"
+runtimeLocation="Shared"
 pythonVersion=3.9
 if [ "${systemName}" == "Jetson" ]; then pythonVersion=3.8; fi
 
-setupPythonPaths "$pythonLocation" "$pythonVersion"
+setupPythonPaths "$runtimeLocation" "$pythonVersion"
 
 # Install python and the required dependencies.
 setupPython 

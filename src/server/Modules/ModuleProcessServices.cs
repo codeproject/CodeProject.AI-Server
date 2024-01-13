@@ -62,6 +62,11 @@ namespace CodeProject.AI.Server.Modules
         public int Count => _processStatuses.Count;
 
         /// <summary>
+        /// An event that is raised when a module's state changes.
+        /// </summary>
+        public Func<ModuleConfig, Task>? OnModuleStateChange { get; set; } = null;
+
+        /// <summary>
         /// Gets the environment variables applied to all processes.
         /// </summary>
         public Dictionary<string, object>? GlobalEnvironmentVariables
@@ -201,6 +206,9 @@ namespace CodeProject.AI.Server.Modules
             else
                 _logger.LogInformation($"{module.ModuleId} has left the building");
 
+            // fire the event
+            if (OnModuleStateChange != null)
+                await OnModuleStateChange(module);
 
             return true;
         }
@@ -372,6 +380,10 @@ namespace CodeProject.AI.Server.Modules
             if (process is null)
                 _runningProcesses.TryRemove(module.ModuleId, out _);
 
+            // fire the event
+            if (OnModuleStateChange != null)
+                await OnModuleStateChange(module);
+
             return process != null;
         }
 
@@ -473,12 +485,13 @@ namespace CodeProject.AI.Server.Modules
         {
             // We could combine these into a single method that returns a tuple
             // but this is not a place that needs optimisation. It needs clarity.
-            string moduleDirPath = _moduleSettings.GetModuleDirPath(module);
-            string workingDir = _moduleSettings.GetWorkingDirectory(module);
-            string filePath   = _moduleSettings.GetFilePath(module);
-            string? command   = _moduleSettings.GetCommandPath(module);
+            // string moduleDirPath = _moduleSettings.GetModuleDirPath(module);
+            string moduleDirPath = module.ModuleDirPath;
+            string workingDir    = module.WorkingDirectory;
+            string filePath      = _moduleSettings.GetFilePath(module);
+            string? command      = _moduleSettings.GetCommandPath(module);
 
-            _logger.LogTrace($"Command: {command}");
+            _logger.LogTrace($"Running module using: {command}");
 
             // Setup the process we're going to launch
 #if Windows
@@ -489,8 +502,12 @@ namespace CodeProject.AI.Server.Modules
             // because the Process.Start is choking on the quotes
             var executableName = filePath;
 #endif
-            ProcessStartInfo? procStartInfo = (command == "execute" || command == "launcher")
-                ? new ProcessStartInfo(executableName)
+            bool useLauncher = command == "execute" || command == "launcher";
+            if (SystemInfo.IsWindows && command == "dotnet")
+                useLauncher = true;
+
+            ProcessStartInfo? procStartInfo = useLauncher ? 
+                new ProcessStartInfo(executableName)
                 {
                     UseShellExecute        = false,
                     WorkingDirectory       = workingDir,
@@ -498,7 +515,8 @@ namespace CodeProject.AI.Server.Modules
                     RedirectStandardOutput = true,
                     RedirectStandardError  = true
                 }
-                : new ProcessStartInfo($"{command}", $"\"{filePath}\"")
+                :
+                new ProcessStartInfo($"{command}", $"\"{filePath}\"")
                 {
                     UseShellExecute        = false,
                     WorkingDirectory       = workingDir,
@@ -508,7 +526,7 @@ namespace CodeProject.AI.Server.Modules
                 };
 
             // Set the environment variables
-            Dictionary<string, string?> environmentVars = BuildBackendEnvironmentVar(module, moduleDirPath);
+            Dictionary<string, string?> environmentVars = BuildBackendEnvironmentVar(module);
             foreach (var kv in environmentVars)
                 procStartInfo.Environment.TryAdd(kv.Key.ToUpper(), kv.Value);
 
@@ -627,9 +645,7 @@ namespace CodeProject.AI.Server.Modules
         /// Creates the collection of backend environment variables.
         /// </summary>
         /// <param name="module">The current module</param>
-        /// <param name="currentModuleDirPath">The path to the current module, if appropriate.</param>
-        private Dictionary<string, string?> BuildBackendEnvironmentVar(ModuleConfig module,
-                                                                       string? currentModuleDirPath = null)
+        private Dictionary<string, string?> BuildBackendEnvironmentVar(ModuleConfig module)
         {
             Dictionary<string, string?> processEnvironmentVars = new();
             _serverOptions.AddEnvironmentVariables(processEnvironmentVars);
@@ -645,7 +661,8 @@ namespace CodeProject.AI.Server.Modules
             foreach (string key in keys)
             {
                 string? value = processEnvironmentVars[key.ToUpper()];
-                processEnvironmentVars[key.ToUpper()] = _moduleSettings.ExpandOption(value, currentModuleDirPath);
+                processEnvironmentVars[key.ToUpper()] = _moduleSettings.ExpandOption(value, 
+                                                                                     module.ModuleDirPath);
             }
 
             // And now add general vars
@@ -654,7 +671,8 @@ namespace CodeProject.AI.Server.Modules
             processEnvironmentVars.TryAdd("CPAI_MODULE_SERVER_LAUNCHED", "true");
             processEnvironmentVars.TryAdd("CPAI_MODULE_ID",          module.ModuleId);
             processEnvironmentVars.TryAdd("CPAI_MODULE_NAME",        module.Name);
-            processEnvironmentVars.TryAdd("CPAI_MODULE_PATH",        _moduleSettings.GetModuleDirPath(module));
+            // processEnvironmentVars.TryAdd("CPAI_MODULE_PATH",     _moduleSettings.GetModuleDirPath(module));
+            processEnvironmentVars.TryAdd("CPAI_MODULE_PATH",        module.ModuleDirPath);
             processEnvironmentVars.TryAdd("CPAI_MODULE_PARALLELISM", module.Parallelism.ToString());
             processEnvironmentVars.TryAdd("CPAI_MODULE_QUEUENAME",   module.Queue);
             if ((module.RequiredMb ?? 0) > 0)

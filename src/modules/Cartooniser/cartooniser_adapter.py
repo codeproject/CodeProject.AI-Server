@@ -75,7 +75,7 @@ class cartooniser_adapter(ModuleRunner):
 
         return { "success": result['success'], "message": "cartoonise test successful" }
 
-    def shutdown(self) -> None:
+    def cleanup(self) -> None:
         pass
 
 if __name__ == "__main__":

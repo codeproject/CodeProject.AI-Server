@@ -6,9 +6,11 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Server.Modules
@@ -147,6 +149,12 @@ namespace CodeProject.AI.Server.Modules
         public Dictionary<string, object>? EnvironmentVariables { get; set; }
 
         /// <summary>
+        /// Gets or sets the UI components to be included in the Explorer web app that provides the
+        /// means to explore and test this module.
+        /// </summary>
+        public ExplorerUI? ExplorerUI { get; set; }
+
+        /// <summary>
         /// Gets or sets a list of RouteMaps.
         /// </summary>
         public ModuleRouteInfo[] RouteMaps { get; set; } = Array.Empty<ModuleRouteInfo>();
@@ -243,7 +251,6 @@ namespace CodeProject.AI.Server.Modules
 
             module.ModuleId = moduleId;
 
-            // Currently these are unused, but should replace calls to GetModuleDirPath / GetWorkingDirectory
             if (module.PreInstalled)
                 module.ModuleDirPath = Path.Combine(preInstalledModulesDirPath, module.ModuleId!);
             else
@@ -541,6 +548,47 @@ namespace CodeProject.AI.Server.Modules
                 return false;
             }
         }
+
+        /// <summary>
+        /// Gets the UI (HTML, CSS and JavaScript) to be inserted into the AI Explorer UI at runtime.
+        /// </summary>
+        /// <param name="module">This module</param>
+        /// <returns>A UiInsertion object</returns>
+        public static ExplorerUI? GetExplorerUI(this ModuleConfig module)
+        {
+            const string testHtmlFilename = "test.html";
+
+            if (module.ExplorerUI is null)
+            {
+                module.ExplorerUI = new ExplorerUI();
+                
+                string testHtmlFilepath = Path.Combine(module.ModuleDirPath, testHtmlFilename);
+                if (File.Exists(testHtmlFilepath))
+                {
+                    string contents = File.ReadAllText/*Async*/(testHtmlFilepath);
+
+                    module.ExplorerUI.Css    = ExtractComponent(contents, "/\\* START EXPLORER STYLE \\*/",
+                                                                          "/\\* END EXPLORER STYLE \\*/");
+                    module.ExplorerUI.Script = ExtractComponent(contents, "// START EXPLORER SCRIPT",
+                                                                          "// END EXPLORER SCRIPT");
+                    module.ExplorerUI.Html   = ExtractComponent(contents, "\\<!-- START EXPLORER MARKUP --\\>",
+                                                                          "\\<!-- END EXPLORER MARKUP --\\>");
+                }
+            }
+
+            return module.ExplorerUI;
+        }
+
+        private static string ExtractComponent(string input, string startMarker, string endMarker)
+        {
+            string pattern = startMarker + "([\\s\\S]*)" + endMarker;
+            Match match = Regex.Match(input, pattern, RegexOptions.Singleline);
+
+            if (match.Success)
+                return match.Groups[1].Value.Trim();
+
+            return string.Empty;
+        }        
     }
 
     /// <summary>
@@ -602,8 +650,10 @@ namespace CodeProject.AI.Server.Modules
         /// </summary>
         /// <param name="modules">This set of module configs</param>
         /// <param name="path">The path to save</param>
+        /// <param name="versionInfo">The version info for the current server</param>
         /// <returns>true on success; false otherwise</returns>
-        public async static Task<bool> CreateModulesListing(this ModuleCollection modules, string path)
+        public async static Task<bool> CreateModulesListing(this ModuleCollection modules,
+                                                            string path, VersionInfo versionInfo)
         {
             if (modules is null || string.IsNullOrWhiteSpace(path))
                 return false;
@@ -614,23 +664,81 @@ namespace CodeProject.AI.Server.Modules
                 if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
 
+                // HACK: Add the modules we renamed
+                var corrections = new dynamic [] {
+                    new { OldModuleId = "ObjectDetectionNet",  NewModuleId = "ObjectDetectionYOLOv5Net"      },
+                    new { OldModuleId = "ObjectDetectionYolo", NewModuleId = "ObjectDetectionYOLOv5-6.2"     },
+                    new { OldModuleId = "Yolov5-3.1",          NewModuleId = "ObjectDetectionYOLOv5-3.1"     },
+                    new { OldModuleId = "TrainingYoloV5",      NewModuleId = "TrainingObjectDetectionYOLOv5" }
+                };
+
                 var moduleList = modules.Values
+                                        .Where(m => !corrections.Any(c => c.NewModuleId == m.ModuleId)) // Don't do modules with new names yet
                                         .OrderBy(m => m.ModuleId)
                                         .Select(m => new {
                                             ModuleId       = m.ModuleId,
                                             Name           = m.Name,
                                             Version        = m.Version,
                                             Description    = m.Description,
+                                            Category       = m.Category,
                                             Platforms      = m.Platforms,
                                             Runtime        = m.Runtime,
                                             ModuleReleases = m.ModuleReleases,
                                             License        = m.License,
                                             LicenseUrl     = m.LicenseUrl,
                                             Downloads      = 0
-                                        });
+                                        }).ToList();
+
+                // Add renamed modules, but with their names, but only server revisions v2.4+
+                foreach (var pair in corrections)
+                {
+                    ModuleConfig? module = modules.Values.Where(m => m.ModuleId == pair.NewModuleId).FirstOrDefault();
+                    if (module is not null)
+                    {
+                        moduleList.Add(new {
+                            ModuleId       = module.ModuleId,
+                            Name           = module.Name,
+                            Version        = module.Version,
+                            Description    = module.Description,
+                            Category       = module.Category,
+                            Platforms      = module.Platforms,
+                            Runtime        = module.Runtime,
+                            ModuleReleases = module.ModuleReleases.Where(r => string.IsNullOrWhiteSpace(r.ServerVersionRange?[0]) ||
+                                                                              VersionInfo.Compare(r.ServerVersionRange[0], "2.4") >= 0).ToArray(),
+                            License        = module.License,
+                            LicenseUrl     = module.LicenseUrl,
+                            Downloads      = 0
+                        });
+                    }
+                }
+
+                // Add renamed modules, but with their old names, and only up to server v2.4
+                foreach (var pair in corrections)
+                {
+                    ModuleConfig? module = modules.Values.Where(m => m.ModuleId == pair.NewModuleId).FirstOrDefault();
+                    if (module is not null)
+                    {
+                        moduleList.Add(new {
+                            ModuleId       = (string?)pair.OldModuleId,
+                            Name           = module.Name,
+                            Version        = module.Version,
+                            Description    = module.Description,
+                            Category       = module.Category,
+                            Platforms      = module.Platforms,
+                            Runtime        = module.Runtime,
+                            ModuleReleases = module.ModuleReleases.Where(r => string.IsNullOrWhiteSpace(r.ServerVersionRange?[0]) ||
+                                                                              VersionInfo.Compare(r.ServerVersionRange[0], "2.4") < 0).ToArray(),
+                            License        = module.License,
+                            LicenseUrl     = module.LicenseUrl,
+                            Downloads      = 0
+                        });
+                    }
+                }
 
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string configJson = JsonSerializer.Serialize(moduleList, options);
+
+                configJson += "\n/*\n\n" + CreateModulesListingHtml(modules, versionInfo) + "\n*/";
 
                 await File.WriteAllTextAsync(path, configJson).ConfigureAwait(false);
 
@@ -641,6 +749,92 @@ namespace CodeProject.AI.Server.Modules
                 // _logger.LogError($"Exception saving module settings: {ex.Message}");
                 return false;
             }
-        }        
+        }
+
+        /// <summary>
+        /// Creates markdown representing the file modules available.
+        /// </summary>
+        /// <param name="modules">This set of module configs</param>
+        /// <param name="versionInfo">The version info for the current server</param>
+        /// <returns>A string</returns>
+        private static string CreateModulesListingHtml(ModuleCollection modules,
+                                                       VersionInfo versionInfo)
+        {
+            var moduleList = modules.Values.OrderBy(m => m.Category)
+                                           .ThenBy(m => m.Name);
+
+            StringBuilder list;
+            if (versionInfo is not null)
+                list = new StringBuilder($"<p>Supporting CodeProject.AI Server {versionInfo.Version}.</p>");
+            else
+                list = new StringBuilder();
+                
+            string? currentCategory = string.Empty;
+            foreach (var module in moduleList)
+            {
+                if (currentCategory != module.Category)
+                {
+                    if (list.Length > 0)
+                        list.AppendLine("</ul>");
+
+                    list.AppendLine($"<h3>{module.Category}</h3>");
+                    list.Append("<ul>");
+                    currentCategory = module.Category;
+                }
+
+                list.AppendLine($"<li><b>{module.Name}</b>");
+                list.AppendLine("<div class='small-text'>");
+                list.AppendLine($"v{module.Version}");
+                list.AppendLine($"<span class='tags mx-3'>{PlatformList(module.Platforms)}</span>");
+                list.AppendLine($"{RuntimeString(module.Runtime)}");
+                list.AppendLine("</div>");
+
+                list.AppendLine($"{module.Description}");
+                list.AppendLine("<br><br></li>");
+            }
+
+            if (list.Length > 0)
+                list.AppendLine("</ul>");
+
+            return list.ToString();
+        }
+
+        private static string RuntimeString(string? runtime)
+        {
+            if (runtime is null)
+                return string.Empty;
+
+            if (runtime == "dotnet") 
+                return ".NET";
+
+            if (runtime.StartsWith("python"))
+                return string.Concat("P", runtime.AsSpan(1));
+
+            return runtime;
+        }
+
+        private static string PlatformList(string[] platforms)
+        {
+            var realNames = platforms.Select(p => {
+                string suffix = string.Empty;
+                if (p.StartsWith('!')) { suffix = "!"; p = p[1..]; }
+
+                if (p.StartsWithIgnoreCase("macos"))       return suffix + "macOS";
+                if (p.StartsWithIgnoreCase("raspberrypi")) return suffix + "Raspberry Pi";
+                if (p.StartsWithIgnoreCase("orangepi"))    return suffix + "Orange Pi";
+                return suffix + string.Concat(char.ToUpper(p[0]), p[1..]);
+            });
+
+            var removes = string.Join(" ", realNames.Where(p => p.StartsWith('!'))
+                                                    .Select(p => $"<span class='t'>{p[1..]}</span>"));
+            var keeps   = string.Join(" ", realNames.Where(p => !p.StartsWith('!'))
+                                                    .Select(p => $"<span class='t'>{p}</span>"));
+
+            string platformString = keeps;
+            if (!string.IsNullOrEmpty(removes))
+                platformString += " except " + removes;
+
+            return platformString;
+        }
     }
 }

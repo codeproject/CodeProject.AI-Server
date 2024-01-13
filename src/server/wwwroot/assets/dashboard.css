@@ -158,7 +158,7 @@ svg:hover .action-path { opacity: 1; }
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.server-summary {
+.server-summary, .mesh-summary {
     color: #b6b5b5;
     white-space: pre;
     /* max-width: 42rem; */
@@ -187,10 +187,14 @@ li:hover .submenu {
     .site-title .front { font-weight: 200; }
     .site-title .end   { font-weight: 600; }
 
+input[type="range"].tight::-webkit-slider-thumb { margin-top: -7px; }
+input[type="range"].tight::-webkit-slider-runnable-track { height: 2px; }
+
 body:not(.dark-mode) .alert-success { background-color: #d5ffd5; }
 body:not(.dark-mode) .nav-tabs .nav-item .nav-link { font-weight: 400; color: var(--bs-body-color); }
 body:not(.dark-mode) { background-color: #ccc; }
 body:not(.dark-mode) .server-summary    { color: #1f1f1f; }
+body:not(.dark-mode) .mesh-summary      { color: #1f1f1f; } 
 body:not(.dark-mode) .card { background-color: var(--bs-light); border:0; }
 body:not(.dark-mode) .nav-tabs { background-color:white;}
 body:not(.dark-mode) .btn { color:#333; }
@@ -205,6 +209,9 @@ body:not(.dark-mode) {
 .dark-mode .main-panel { background-color: var(--bs-dark-rgb); }
 .dark-mode .sub-panel  { background-color: var(--bs-secondary-rgb); }
 .dark-mode .info-panel { background-color: var(--bs-gray-700); }
+
+.dark-mode input[type=range]::-webkit-slider-runnable-track { background-color: lightgray; }
+.dark-mode input[type="range"] { background-color: grey; }
 
 .dark-mode .status-row .startup-summary,
 .dark-mode .status-row .current-summary,

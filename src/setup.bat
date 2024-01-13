@@ -74,8 +74,9 @@ REM often doesn't actually solve problems either. Overall it's safer, but not a
 REM panacea
 set oneStepPIP=false
 
-REM Whether or not to use the jq utility for JSON parsing
-set useJq=true
+REM Whether or not to use the jq utility for JSON parsing. If false, use ParseJSON
+set useJq=false
+set debug_json_parse=false
 
 :: Basic locations
 
@@ -87,7 +88,7 @@ set setupScriptDirPath=%~dp0
 set appRootDirPath=!setupScriptDirPath!
 
 :: The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
-set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/
+set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/
 
 :: The name of the source directory
 set srcDir=src
@@ -202,7 +203,6 @@ if /i "!architecture!" == "ARM64" (
     set platform=windows-arm64
 )
 
-
 :: Let's go
 if /i "!useColor!" == "true" call "!sdkScriptsDirPath!\utils.bat" setESC
 if /i "!setupMode!" == "SetupDevEnvironment" (
@@ -224,15 +224,17 @@ call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
 if /i "%verbosity%" neq "quiet" (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine 
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupMode            = !setupMode!"            !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment = !executionEnvironment!" !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath          = !rootDirPath!"          !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "appRootDirPath       = !appRootDirPath!"       !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath   = !setupScriptDirPath!"   !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath    = !sdkScriptsDirPath!"    !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtimesDirPath      = !runtimesDirPath!"      !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath       = !modulesDirPath!"       !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "downloadDirPath      = !downloadDirPath!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "os, arch             = !os! !architecture!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "systemName, platform = !systemName!, !platform!" !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupMode            = !setupMode!"              !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment = !executionEnvironment!"   !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath          = !rootDirPath!"            !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "appRootDirPath       = !appRootDirPath!"         !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath   = !setupScriptDirPath!"     !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath    = !sdkScriptsDirPath!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtimesDirPath      = !runtimesDirPath!"        !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath       = !modulesDirPath!"         !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "downloadDirPath      = !downloadDirPath!"        !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine
 )
 
@@ -266,7 +268,12 @@ call "!sdkScriptsDirPath!\utils.bat" GetCudaVersion
 if "!cuda_version!" neq "" set hasCUDA=true
 
 if /i "!hasCUDA!" == "true" (
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Yes (version !cuda_version!)" !color_success!
+    call "!sdkScriptsDirPath!\utils.bat" GetCuDNNVersion
+    if "!cuDNN_version!" == "" (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Yes (CUDA !cuda_version!, No cuDNN found)" !color_success!
+    ) else (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Yes (CUDA !cuda_version!, cuDNN !cuDNN_version!)" !color_success!
+    )
 ) else (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "No" !color_warn!
 )
@@ -348,7 +355,7 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
 
         set currentDir=%cd%
         set moduleDirName=demos
-        set moduleDirPath=!appRootDirPath!\!moduleDirName!
+        set moduleDirPath=!rootDirPath!\!moduleDirName!
         call "!moduleDirPath!\install.bat" install
 
         REM Don't really care about demos enough to fail the entire setup script
@@ -397,15 +404,24 @@ goto:eof
 
 :SetupPythonPaths
 
-    set pythonLocation=%~1
+    set runtimeLocation=%~1
     set pythonVersion=%~2
+
+    REM No Python
+    if "!pythonVersion!" == "" (
+        set "pythonDirPath="
+        set "virtualEnvDirPath="
+        set "venvPythonCmdPath="
+        set "packagesDirPath="
+        exit /b
+    )
 
     REM Name based on version (eg version is 3.8, name is then python38)
     set pythonName=python!pythonVersion:.=!
 
     REM The path to the python installation, either local or shared. The
     REM virtual environment will live in here
-    if /i "!pythonLocation!" == "Local" (
+    if /i "!runtimeLocation!" == "Local" (
         set pythonDirPath=!moduleDirPath!\bin\!os!\!pythonName!
     ) else (
         set pythonDirPath=!runtimesDirPath!\bin\!os!\!pythonName!
@@ -431,30 +447,42 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
     REM Get the module name, version, runtime location and python version from
     REM the modulesettings.
     
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine
+    call "!sdkScriptsDirPath!\utils.bat" Write "Reading !moduleDirName! settings" !color_mute!
+
     call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Name"
     set moduleName=!moduleSettingsFileValue!
-    if "!moduleName!" == "" set moduleName=!moduleDirName!
+    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
     call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Version"
     set moduleVersion=!moduleSettingsFileValue!
+    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
     call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Runtime"
     set runtime=!moduleSettingsFileValue!
+    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
     call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "RuntimeLocation"
-    set pythonLocation=!moduleSettingsFileValue!
+    set runtimeLocation=!moduleSettingsFileValue!
+    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
     call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallGPU"
     set installGPU=!moduleSettingsFileValue!
+    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
     call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "FilePath"
     set moduleStartFilePath=!moduleSettingsFileValue!
+    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
     call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Platforms"
     set platforms=!moduleSettingsFileValue!
+    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
+
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Done" !color_success!
+
+    if "!moduleName!" == "" set moduleName=!moduleDirName!
 
     set announcement=Installing module !moduleName! !moduleVersion!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
@@ -481,16 +509,16 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
 :end_platform_loop
 
     if /i "!can_install!" == "false" (
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "This module cannot be installed on this system" !color_mute!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "This module cannot be installed on this system" !color_warn!
         exit /b 1
     )
 
     if /i "!allowSharedPythonInstallsForModules!" == "false" (
-        REM if moduleDirPath contains '/modules/' and pythonLocation != 'Local'
+        REM if moduleDirPath contains '/modules/' and runtimeLocation != 'Local'
         if /i "!moduleDirPath:\modules\=!" neq "!moduleDirPath!" (
-            if /i "!pythonLocation!" neq "Local" (
+            if /i "!runtimeLocation!" neq "Local" (
                 call :WriteLine "Downloaded modules must have local Python install. Changing install location" "!color_warn!"
-                set pythonLocation=Local
+                set runtimeLocation=Local
             )
         )
     )
@@ -523,22 +551,23 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
         set pythonVersion=!runtime:~6!
     )
 
-    call :SetupPythonPaths "!pythonLocation!" !pythonVersion!
+    call :SetupPythonPaths "!runtimeLocation!" !pythonVersion!
 
     if /i "!verbosity!" neq "quiet" (
         set announcement=Variable Dump
         call "!sdkScriptsDirPath!\utils.bat" WriteLine
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
         call "!sdkScriptsDirPath!\utils.bat" WriteLine
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleName        = !moduleName!"        "!color_info!"
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleVersion     = !moduleVersion!"     "!color_info!"
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtime           = !runtime!"           "!color_info!"
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "installGPU        = !installGPU!"        "!color_info!"
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "pythonLocation    = !pythonLocation!"    "!color_info!"
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "pythonVersion     = !pythonVersion!"     "!color_info!"
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "virtualEnvDirPath = !virtualEnvDirPath!" "!color_info!"
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "venvPythonCmdPath = !venvPythonCmdPath!" "!color_info!"
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "packagesDirPath   = !packagesDirPath!"   "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleName          = !moduleName!"          "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleVersion       = !moduleVersion!"       "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtime             = !runtime!"             "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtimeLocation     = !runtimeLocation!"     "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "installGPU          = !installGPU!"          "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "pythonVersion       = !pythonVersion!"       "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "virtualEnvDirPath   = !virtualEnvDirPath!"   "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "venvPythonCmdPath   = !venvPythonCmdPath!"   "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "packagesDirPath     = !packagesDirPath!"     "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleStartFilePath = !moduleStartFilePath!" "!color_info!"
     )
 
     REM Set the global error message value
@@ -608,21 +637,63 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
         )
 
         REM Perform a self-test
-        if /i "!doPostInstallSelfTest!" == "true" if "!moduleInstallErrors!" == "" if "!pythonVersion!" NEQ "" (
+        if /i "!doPostInstallSelfTest!" == "true" if "!moduleInstallErrors!" == "" (
 
             set currentDir=%cd%
             cd "!moduleDirPath!"
 
             if /i "%verbosity%" == "quiet" (
                 call "!sdkScriptsDirPath!\utils.bat" Write "Self test: "
-                "!venvPythonCmdPath!" "!moduleStartFilePath!" --selftest >NUL
             ) else (
                 call "!sdkScriptsDirPath!\utils.bat" WriteLine "SELF TEST START ======================================================" !color_info!
-                "!venvPythonCmdPath!" "!moduleStartFilePath!" --selftest
+            )
+
+            REM TODO: Load these values from the module settings and set them as env variables
+            REM   CPAI_MODULE_ID, CPAI_MODULE_NAME, CPAI_MODULE_PATH, CPAI_MODULE_ENABLE_GPU,
+            REM   CPAI_ACCEL_DEVICE_NAME, CPAI_HALF_PRECISION"
+            REM Then load and set all env vars in modulesettings "EnvironmentVariables" collection
+
+            set testRun=false
+            if "!pythonVersion!" NEQ "" (
+
+                set testRun=true
+                if /i "%verbosity%" == "quiet" (
+                    "!venvPythonCmdPath!" "!moduleStartFilePath!" --selftest >NUL
+                ) else (
+                    "!venvPythonCmdPath!" "!moduleStartFilePath!" --selftest
+                )
+
+            ) else if /i "!runtime!" == "dotnet" (
+
+                REM should probably generalise this to:
+                REM   !Runtime! "!moduleStartFilePath!" --selftest
+
+                set "exePath=.\"
+                if /i "!executionEnvironment!" == "Development" set "exePath=.\bin\Debug\net7.0\"
+
+                if exist "!exePath!!moduleStartFilePath!" (
+                    set testRun=true
+                    if /i "%verbosity%" == "quiet" (
+                        REM if the filepath is a DLL
+                        REM dotnet "!exePath!!moduleStartFilePath!" --selftest >NUL
+                        "!exePath!!moduleStartFilePath!" --selftest >NUL
+                    ) else (
+                        REM if the filepath is a DLL
+                        REM dotnet "!exePath!!moduleStartFilePath!" --selftest
+                        "!exePath!!moduleStartFilePath!" --selftest
+                    )
+                ) else (
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine  "!exePath!!moduleStartFilePath! does not exist" !color_error!
+                )
+
             )
 
             if "%errorlevel%" == "0" (
-                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Self-test passed" !color_success!
+                if /i "!testRun!" == "true" (
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Self-test passed" !color_success!
+                ) else (
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "No self-test available" !color_warn!
+                )
             ) else (
                 call "!sdkScriptsDirPath!\utils.bat" WriteLine "Self-test failed" !color_error!
             )

@@ -14,7 +14,7 @@
 )
 
 :: Download the YOLO models and store in /assets
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models.zip" "assets" "Downloading YOLO models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "models-face-pt.zip" "assets" "Downloading Face models..."
 
 :: Persisted data storage dir for dev mode
 if not exist "%moduleDirPath%\datastore\" mkdir "%moduleDirPath%\datastore"

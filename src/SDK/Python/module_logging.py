@@ -44,14 +44,15 @@ class ModuleLogger():
 
         # Hardcoding localhost because the current plans are to never have
         # backend analysis servers NOT on the same machine as the server
-        self.base_log_url        = f"http://localhost:{server_port}/v1/log/"
-        self.log_dir             = log_dir
-        self.defaultLogging      = LogMethod.File | LogMethod.Info   # Always included
-        self._sync_log_lock      = Lock()
-        self._verbose_exceptions = True
-        self._logging_queue      = Queue(1024)
-        self._cancelled          = False
-        self._server_healthy     = True # We'll be optimistic to start
+        self.base_log_url         = f"http://localhost:{server_port}/v1/log/"
+        self.log_dir              = log_dir
+        self.defaultLogging       = LogMethod.File | LogMethod.Info   # Always included
+        self._sync_log_lock       = Lock()
+        self._verbose_exceptions  = True
+        self._logging_queue       = Queue(1024)
+        self._cancelled           = False
+        self._server_healthy      = True # We'll be optimistic to start
+        self.logging_loop_started = False
 
 
     async def logging_loop(self):
@@ -64,6 +65,8 @@ class ModuleLogger():
             self._request_session = session
 
             while not self._cancelled:
+                self.logging_loop_started = True
+
                 try:
                     log_item: LogItem = await self._logging_queue.get()
                     await self.do_log(log_item.method, log_item.data)
@@ -73,7 +76,9 @@ class ModuleLogger():
                 except Exception as ex:
                     print(f"Exception while logging: {ex}")
 
-            self._request_session = None
+            self._request_session     = None
+            self.logging_loop_started = False
+
 
     async def log_async (self, logMethod: LogMethod, data: JSON) -> None:
 
@@ -96,10 +101,16 @@ class ModuleLogger():
         # if not data or not data.get("message", ""):
         #    return
 
-        try:
-            await self._logging_queue.put(LogItem(logMethod, data))
-        except:
-            print("The logging queue is full: unable to accept any more log entries for now")
+        # so we have basic logging before main loop starts
+        if not self.logging_loop_started:
+            message = data.get("message", "")
+            if message and isinstance(message, str):
+                print(message)
+        else:
+            try:
+                await self._logging_queue.put(LogItem(logMethod, data))
+            except:
+                print("The logging queue is full: unable to accept any more log entries for now")
 
 
     def log(self, logMethod: LogMethod, data: JSON) -> None:
@@ -116,13 +127,19 @@ class ModuleLogger():
         # if not data or not data.get("message", ""):
         #     return
 
-        # Being really paranoid. The documentation suggests the Queue is not
-        # thread safe but it appears to be ok without. Just to be safe ...
-        with self._sync_log_lock:
-            try:
-                self._logging_queue.put_nowait(LogItem(logMethod, data))
-            except:
-                print("The logging queue is full: unable to accept any more log entries for now")
+        # so we have basic logging before main loop starts
+        if not self.logging_loop_started:
+            message = data.get("message", "")
+            if message and isinstance(message, str):
+                print(message)
+        else:
+            # Being really paranoid. The documentation suggests the Queue is not
+            # thread safe but it appears to be ok without. Just to be safe ...    
+            with self._sync_log_lock:
+                try:
+                    self._logging_queue.put_nowait(LogItem(logMethod, data))
+                except:
+                    print("The logging queue is full: unable to accept any more log entries for now")
 
 
     def cancel_logging(self) -> None:
@@ -232,8 +249,7 @@ class ModuleLogger():
                 print(entry, file=sys.stdout, flush=True)
 
         if not unimportant:
-            if no_server_log and (logMethod & LogMethod.File or \
-               self.defaultLogging & LogMethod.File):
+            if no_server_log and (logMethod & LogMethod.File or self.defaultLogging & LogMethod.File):
                 loggingTasks.append( asyncio.create_task(self._file_log(process, method, 
                                                                         filename, message,
                                                                         exception)) )

@@ -20,7 +20,7 @@
 :: u2net_cloth_seg: https://drive.google.com/uc?id=15rKbQSXQzrKCQurUjZFg8HqzZad8bcyz
 
 :: Download the models and store in /models
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "rembg-models.zip" "models" "Downloading Background Remover models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "rembg-models.zip" "models" "Downloading Background Remover models..."
 
 REM TODO: Check models created and has files
 REM set moduleInstallErrors=...

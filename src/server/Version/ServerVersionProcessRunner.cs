@@ -33,7 +33,7 @@ namespace CodeProject.AI.Server
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             // Let's make sure the front end is up and running before we start the version process
-            // REVIEW: [Matthew] Is .ConfigureAwait(false) needed here.
+            // REVIEW: [Matthew] Is .ConfigureAwait(false) needed here?
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken).ConfigureAwait(false);
 
             await CheckCurrentVersionAsync().ConfigureAwait(false);

@@ -1,9 +1,11 @@
+using System;
 using System.Diagnostics;
 
-using CodeProject.AI.SDK;
-
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+using CodeProject.AI.SDK;
 
 namespace CodeProject.AI.Modules.SentimentAnalysis
 {
@@ -15,7 +17,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         public bool? is_positive { get; set; }
 
         /// <summary>
-        /// Gets or sets the probablity of being positive.
+        /// Gets or sets the probability of being positive.
         /// </summary>
         public float? positive_probability { get; set; }
     }
@@ -30,10 +32,12 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         /// <param name="logger">The Logger.</param>
         /// <param name="textClassifier">The TextClassifier.</param>
         /// <param name="configuration">The app configuration values.</param>
+        /// <param name="hostApplicationLifetime">The applicationLifetime object</param>
         public SentimentAnalysisWorker(ILogger<SentimentAnalysisWorker> logger,
                                        TextClassifier textClassifier,  
-                                       IConfiguration configuration)
-            : base(logger, configuration)
+                                       IConfiguration configuration,
+                                       IHostApplicationLifetime hostApplicationLifetime)
+            : base(logger, configuration, hostApplicationLifetime)
         {
             _textClassifier   = textClassifier;
         }
@@ -48,6 +52,27 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
             CanUseGPU         = _textClassifier.CanUseGPU;
         }
 
+        /// <summary>
+        /// Called when the module is asked to execute a self-test to ensure it install and runs
+        /// correctly
+        /// </summary>
+        /// <returns>An exit code for the test. 0 = no error.</returns>
+        protected override int SelfTest()
+        {
+            Environment.SetEnvironmentVariable("TF_CPP_MIN_LOG_LEVEL", "3"); 
+
+            RequestPayload payload = new RequestPayload("analyse");
+            payload.SetValue("text", "This is a shiny happy wonderful sentence");
+
+            var request = new BackendRequest(payload);
+            BackendResponseBase response = ProcessRequest(request);
+
+            if (response.success)
+                return 0;
+
+            return 1;
+        }
+        
         /// <summary>
         /// The work happens here.
         /// </summary>

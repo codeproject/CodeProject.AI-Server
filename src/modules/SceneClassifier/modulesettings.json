@@ -1,14 +1,13 @@
 {
-  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
-  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "SceneClassifier": {
       "Name": "Scene Classification",
-      "Version": "1.5.2",
+      "Version": "1.5.4",
 
       // Publishing info
       "Description": "Classifies an image according to one of 365 pre-trained scenes", 
+      "Category": "Computer Vision",
       "Platforms": [ "all", "!linux", "!raspberrypi", "!jetson" ],
       "License": "Apache 2.0",
       "LicenseUrl": "http://www.apache.org/licenses/",
@@ -43,14 +42,16 @@
         { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-05-17", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
         { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated module installer" },
         { "ModuleVersion": "1.5",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.5.2", "ServerVersionRange": [ "2.3.5", ""       ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Removing Raspberry Pi / Jetson support.", "Importance": "Minor" }
+        { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.5.2", "ServerVersionRange": [ "2.3.5", "2.4.0"  ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Removing Raspberry Pi / Jetson support.", "Importance": "Minor" },
+        { "ModuleVersion": "1.5.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.5.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
       ],
 
       "RouteMaps": [
         {
           "Name": "Scene Classifier",
-          "Path": "vision/scene",
+          "Route": "vision/scene",
           "Method": "POST",
           "Command": "detect",
           "Description": "Classifies the scene in an image. It can recognise 365 different scenes.",

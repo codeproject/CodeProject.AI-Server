@@ -2,9 +2,9 @@
 
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
-#                            .NET YOLO Object Detection
+#                            Sentiment Analysis
 #
-# This script is called from the ObjectDetectionNet directory using: 
+# This script is called from the SentimentAnalysis directory using: 
 #
 #    bash ../../setup.sh
 #

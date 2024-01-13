@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-#if Windows
+#if DEBUG
 using System.Reflection;
+using Microsoft.OpenApi.Models;
 #endif
 
 using Microsoft.AspNetCore.Builder;
@@ -13,11 +14,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CodeProject.AI.Server.Modules;
-#if Windows
-using Microsoft.OpenApi.Models;
-#endif
 
 using CodeProject.AI.Server.Backend;
+using CodeProject.AI.Server.Mesh;
 
 namespace CodeProject.AI.Server
 {
@@ -63,7 +62,7 @@ namespace CodeProject.AI.Server
 
             services.AddControllers();
 
-#if Windows
+#if DEBUG
             // http://localhost:32168/swagger/index.html
             services.AddSwaggerGen(c =>
             {
@@ -98,14 +97,13 @@ namespace CodeProject.AI.Server
             // ListConfigValues();
 
             // Configure application services and DI
-            services.Configure<QueueProcessingOptions>(Configuration.GetSection(nameof(QueueProcessingOptions)))
-                    .AddQueueProcessing();
-
-            services.Configure<InstallConfig>(Configuration.GetSection(InstallConfig.InstallCfgSection));
+            services.AddQueueProcessing(Configuration);
 
             services.AddModuleSupport(Configuration);
 
             services.AddVersionProcessRunner(Configuration);
+
+            services.AddMeshSupport(Configuration);
 
             services.Configure<TriggersConfig>(Configuration.GetSection(TriggersConfig.TriggersCfgSection));
 
@@ -138,7 +136,7 @@ namespace CodeProject.AI.Server
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-#if Windows                
+#if DEBUG                
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject.AI API v1"));
 #endif

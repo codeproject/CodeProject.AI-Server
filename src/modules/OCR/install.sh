@@ -66,23 +66,9 @@ if [ "${module_install_errors}" = "" ] && [ "$os" = "linux" ] && [ "$architectur
 
     if [ ! -f /usr/lib/x86_64-linux-gnu/libssl.so.1.1 ] || [ ! -e /usr/lib/libcrypto.so.1.1 ]; then
 
-        checkForAdminRights
-        if [ "$isAdmin" = false ]; then
-            writeLine "=========================================================" $color_info
-            writeLine "We need to install some system libraries. Please run "     $color_info
-            writeLine ""
-            writeLine "   cd ${moduleDirPath}"                                    $color_info
-            writeLine "   sudo bash ../../setup.sh"                               $color_info
-            writeLine ""
-            writeLine "To install this module"                                    $color_info
-            writeLine "=========================================================" $color_info
-            # module_install_errors="Admin permissions are needed to install libraries"
-
-            if [ "$attemptSudoWithoutAdminRights" = true ]; then
-                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
-                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
-            fi
-        fi
+        # output a warning message if no admin rights and instruct user on manual steps
+        install_instructions="cd ${moduleDirPath}${newline}sudo bash ../../setup.sh"
+        checkForAdminAndWarn "$install_instructions"
 
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
 
@@ -119,7 +105,7 @@ fi
 if [ "${module_install_errors}" = "" ]; then
 
     # Download the OCR models and store in /paddleocr
-    getFromServer "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
+    getFromServer "models/" "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
 
     # TODO: Check paddleocr created and has files, maybe run paddle check too
     # module_install_errors=...

@@ -56,7 +56,7 @@ namespace CodeProject.AI.SDK.Common
         public string? DriverVersion { get; set; }
 
         /// <summary>
-        /// Gets or sets GPU utlisation as a percentage between 0 and 100
+        /// Gets or sets GPU utilisation as a percentage between 0 and 100
         /// </summary>
         public int Utilization { get; set; }
 
@@ -112,19 +112,29 @@ namespace CodeProject.AI.SDK.Common
         /// </summary>
         public string? CudaVersionInstalled { get; set; }
 
-        public string? ComputeCapacity { get; internal set; }
+        /// <summary>
+        /// The version of the cuDNN libraries that are installed
+        /// </summary>
+        public string? CuDNNVersionInstalled { get; set; }
+
+        /// <summary>
+        /// The compute capability of this card
+        /// </summary>
+        public string? ComputeCapability { get; internal set; }
 
         /// <summary>
         /// The string representation of this object
         /// </summary>
-        /// <returns>A string object</returns>
         public override string Description
         {
             get
             {
                 var info = base.Description
-                         + $" CUDA: {CudaVersionInstalled} (max supported: {CudaVersionCapability})"
-                         + " Compute: " + ComputeCapacity;
+                         + $", CUDA: {CudaVersionInstalled} (up to: {CudaVersionCapability})"
+                         + ", Compute: " + ComputeCapability;
+
+                if (CudaVersionInstalled is not null)
+                    info += ", cuDNN: " + CuDNNVersionInstalled;
 
                 return info;
             }
@@ -193,20 +203,22 @@ namespace CodeProject.AI.SDK.Common
     {
         // The underlying object that does the investigation into the properties.
         // The other properties mostly rely on this creature for their worth.
-        private static HardwareInfo _hardwareInfo = new HardwareInfo();
-        private static bool?        _isDevelopment;
-        private static bool?        _hasNvidiaCard;
-        private static bool         _isWSL;
-        private static string?      _defaultPythonVersion;
+        private static HardwareInfo? _hardwareInfo;
+        private static bool?         _isDevelopment;
+        private static bool?         _hasNvidiaCard;
+        private static string?       _cuDnnVersion;
+        private static bool          _isWSL;
+        private static bool          _isSSH;
+        private static string?       _defaultPythonVersion;
 
-        private static TimeSpan     _nvidiaInfoRefreshTime = TimeSpan.FromSeconds(10);
-        private static TimeSpan     _systemInfoRefreshTime = TimeSpan.FromSeconds(1);
+        private static TimeSpan      _nvidiaInfoRefreshTime = TimeSpan.FromSeconds(10);
+        private static TimeSpan      _systemInfoRefreshTime = TimeSpan.FromSeconds(1);
 
-        private static Task?        _monitorSystemUsageTask;
-        private static Task?        _monitoryGpuUsageTask;
-        private static bool         _monitoringStartedWarningIssued;
-        private static int          _cpuUsage;
-        private static string?      _hardwareVendor;
+        private static Task?         _monitorSystemUsageTask;
+        private static Task?         _monitoryGpuUsageTask;
+        private static bool          _monitoringStartedWarningIssued;
+        private static int           _cpuUsage;
+        private static string?       _hardwareVendor;
 
         /// <summary>
         /// Gets the CPU properties for this system
@@ -271,11 +283,14 @@ namespace CodeProject.AI.SDK.Common
         {
             get
             {
-                if (IsDevelopmentCode ||
+                if (IsDevelopmentCode
                     // Really should use the IHostEnvironment.IsDevelopment method, but needs a
                     // reference to IHostEnvironment.
-                    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").EqualsIgnoreCase("Development") ||
-                    Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT").EqualsIgnoreCase("Development"))
+                    // We also can't use these because if VSCode is running, these are set. This
+                    // messes up production installs.
+                    // || Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").EqualsIgnoreCase("Development") ||
+                    // || Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT").EqualsIgnoreCase("Development")
+                )
                 {
                     return RuntimeEnvironment.Development;
                 }
@@ -322,6 +337,14 @@ namespace CodeProject.AI.SDK.Common
                 return "Release";
 #endif
             }
+        }
+
+        /// <summary>
+        /// Returns the current machine name
+        /// </summary>
+        public static string MachineName
+        {
+            get { return Environment.MachineName; }
         }
 
         /// <summary>
@@ -423,6 +446,14 @@ namespace CodeProject.AI.SDK.Common
         public static bool IsWSL
         {
             get { return _isWSL; }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether we are currently running in an SSH shell.
+        /// </summary>
+        public static bool IsSSH
+        {
+            get { return _isSSH; }
         }
 
         /// <summary>
@@ -576,6 +607,8 @@ namespace CodeProject.AI.SDK.Common
         {
             try
             {
+                // If there is a corrupt WMI on Windows then HardwareInfo() throws.
+                _hardwareInfo = new HardwareInfo();
                 _hardwareInfo.RefreshCPUList(false); // false = no CPU %. Saves 21s delay on first use
                 _hardwareInfo.RefreshMemoryStatus();
                 _hardwareInfo.RefreshVideoControllerList();
@@ -589,10 +622,12 @@ namespace CodeProject.AI.SDK.Common
             await GetMemoryInfoAsync().ConfigureAwait(false);
             
             await CheckForWslAsync().ConfigureAwait(false);
+            await CheckForSshAsync().ConfigureAwait(false);
+            await GetcuDNNVersionAsync().ConfigureAwait(false);
 
             var pattern = "python (?<version>\\d\\.\\d+)";
             var options = RegexOptions.IgnoreCase;
-            var results = await GetProcessInfoAsync("python", "--version", pattern, options).ConfigureAwait(false);
+            var results = await GetProcessInfoAsync("python3", "--version", pattern, options).ConfigureAwait(false);
             if ((results?.Count ?? 0) > 0)
                 _defaultPythonVersion = results!["version"];
 
@@ -648,15 +683,18 @@ namespace CodeProject.AI.SDK.Common
                 // Wrap the lines
                 gpuDesc = gpuDesc.Replace("Driver:",  "\n                  Driver:");
                 // gpuDesc = gpuDesc.Replace("Compute:", "\n                  Compute:");
-                info.AppendLine($"GPU:              {gpuDesc}");
+                info.AppendLine($"GPU (Primary):    {gpuDesc}");
             }
 
             if (Memory is not null)
                 info.AppendLine($"System RAM:       {FormatSizeBytes(Memory.Total, 0)}");
 
-            info.AppendLine($"Target:           {Platform}");
+            info.AppendLine($"Platform:         {Platform}");
             info.AppendLine($"BuildConfig:      {BuildConfig}");
-            info.AppendLine($"Execution Env:    {ExecutionEnvironment}");
+            if (SystemInfo.IsSSH)
+                info.AppendLine($"Execution Env:    {ExecutionEnvironment} (SSH)");
+            else
+                info.AppendLine($"Execution Env:    {ExecutionEnvironment}");
             info.AppendLine($"Runtime Env:      {RuntimeEnvironment}");
             info.AppendLine($".NET framework:   {RuntimeInformation.FrameworkDescription}");
             info.AppendLine($"Default Python:   {DefaultPythonVersion}");
@@ -895,7 +933,7 @@ namespace CodeProject.AI.SDK.Common
 
             // We may already have a GPU object set via the continuous NVIDIA monitoring.
             GpuInfo? gpu = GPU;
-            if (gpu is null)
+            if (gpu is null && _hardwareInfo is not null)
             {
                 foreach (var videoController in _hardwareInfo.VideoControllerList)
                 {
@@ -1118,10 +1156,11 @@ namespace CodeProject.AI.SDK.Common
                         DriverVersion         = "",
                         CudaVersionCapability = cudaVersion,
                         CudaVersionInstalled  = cudaVersion,
+                        CuDNNVersionInstalled = _cuDnnVersion,
                         Utilization           = gpuUsage,
                         MemoryUsed            = memoryUsedMiB * 1024UL * 1024UL,
                         TotalMemory           = totalMemoryMiB * 1024UL * 1024UL,
-                        ComputeCapacity       = JetsonComputeCapability(HardwareVendor),
+                        ComputeCapability     = JetsonComputeCapability(HardwareVendor),
                     };                    
                 }
             }
@@ -1167,7 +1206,7 @@ namespace CodeProject.AI.SDK.Common
             {
                 string gpuName              = string.Empty;
                 string driverVersion        = string.Empty;
-                string computeCapacity      = string.Empty;
+                string computeCapability    = string.Empty;
                 string cudaVersion          = string.Empty;
                 string cudaVersionInstalled = string.Empty;
                 ulong  memoryFreeMiB        = 0;
@@ -1208,7 +1247,7 @@ namespace CodeProject.AI.SDK.Common
                 pattern = @"(?<computecap>[\d\.]*)";
                 results = await GetProcessInfoAsync("nvidia-smi", args, pattern).ConfigureAwait(false);
                 if ((results?.Count ?? 0) > 0)
-                    computeCapacity = results!["computecap"];
+                    computeCapability = results!["computecap"];
 
                 // Get CUDA info. Output is in the form:
                 //  Thu Dec  8 08:45:30 2022
@@ -1220,7 +1259,6 @@ namespace CodeProject.AI.SDK.Common
                 if ((results?.Count ?? 0) > 0)
                     cudaVersion = cudaVersionInstalled = results!["cuda"];
 
-
                 // Get actual installed CUDA info. Form is:
                 //  nvcc: NVIDIA (R) Cuda compiler driver
                 //  Copyright (c) 2005-2022 NVIDIA Corporation
@@ -1230,7 +1268,7 @@ namespace CodeProject.AI.SDK.Common
                 pattern = @"Cuda compilation tools, release [\d.]+, V(?<cuda>[\d.]+)";
                 results = await GetProcessInfoAsync("nvcc", "--version", pattern).ConfigureAwait(false);
                 if ((results?.Count ?? 0) > 0)
-                    cudaVersionInstalled = results!["cuda"];
+                    cudaVersionInstalled = results!["cuda"];              
 
                 // If we've reached this point we definitely have an NVIDIA card.
                 _hasNvidiaCard = true;
@@ -1240,11 +1278,12 @@ namespace CodeProject.AI.SDK.Common
                     Name                  = gpuName,
                     DriverVersion         = driverVersion,
                     CudaVersionCapability = cudaVersion,
-                    CudaVersionInstalled  = cudaVersionInstalled,
+                    CudaVersionInstalled  = cudaVersion,
+                    CuDNNVersionInstalled = _cuDnnVersion,
                     Utilization           = gpuUtilPercent,
                     MemoryUsed            = memoryUsedMiB * 1024 * 1024,
                     TotalMemory           = totalMemoryMiB * 1024 * 1024,
-                    ComputeCapacity       = computeCapacity,
+                    ComputeCapability     = computeCapability,
                 };
             }
             catch (Exception/* ex */)
@@ -1344,29 +1383,34 @@ namespace CodeProject.AI.SDK.Common
 
             if (IsWindows)
             {
-                /*
-                // An alternative to using _hardwareInfo
-                var gcMemoryInfo = GC.GetGCMemoryInfo();
-                lock (Memory)
+                if (_hardwareInfo is null)
                 {
-                    memoryTotal = (ulong)gcMemoryInfo.TotalAvailableMemoryBytes;
-                    memoryUsed  = (ulong)gcMemoryInfo.MemoryLoadBytes;
-                    memoryFree  = memoryTotal - memoryUsed;
+                    var gcMemoryInfo = GC.GetGCMemoryInfo();
+                    lock (Memory)
+                    {
+                        memoryTotal = (ulong)gcMemoryInfo.TotalAvailableMemoryBytes;
+                        memoryUsed  = (ulong)gcMemoryInfo.MemoryLoadBytes;
+                        memoryFree  = memoryTotal - memoryUsed;
+                    }
                 }
-                */
-                _hardwareInfo.RefreshMemoryStatus();
+                else
+                {
+                    _hardwareInfo.RefreshMemoryStatus();
     
-                memoryFree  = _hardwareInfo?.MemoryStatus?.AvailablePhysical ?? 0;
-                memoryTotal = _hardwareInfo?.MemoryStatus?.TotalPhysical ?? 0;
-                memoryUsed  = memoryTotal - memoryFree;
+                    memoryFree  = _hardwareInfo?.MemoryStatus?.AvailablePhysical ?? 0;
+                    memoryTotal = _hardwareInfo?.MemoryStatus?.TotalPhysical ?? 0;
+                    memoryUsed  = memoryTotal - memoryFree;
+                }
             }
             else if (IsLinux)
             {
-                // Not tested (maybe?)
-                // _hardwareInfo.RefreshMemoryStatus();
-                // memoryFree  = _hardwareInfo?.MemoryStatus?.AvailablePhysical ?? 0;
-                // memoryTotal = _hardwareInfo?.MemoryStatus?.TotalPhysical ?? 0;
-                // memoryUsed  = memoryTotal - memoryFree;
+                // if (_hardwareInfo is not null)
+                // {
+                //     _hardwareInfo.RefreshMemoryStatus();
+                //     memoryFree  = _hardwareInfo?.MemoryStatus?.AvailablePhysical ?? 0;
+                //     memoryTotal = _hardwareInfo?.MemoryStatus?.TotalPhysical ?? 0;
+                //     memoryUsed  = memoryTotal - memoryFree;
+                // }
 
                 // Output is in the form:
                 //       total used free
@@ -1388,17 +1432,29 @@ namespace CodeProject.AI.SDK.Common
             }
             else if (IsMacOS)
             {
-                // _hardwareInfo returns bogus data on macOS
-                // You can try sysctl hw.memsize hw.physmem hw.usermem
-                // But it returns (without commas - added for readability):
-                //  hw.memsize: 17,179,869,184
-                //  hw.physmem:  2,147,483,648
-                //  hw.usermem:  1,392,398,336
-                // On a 16Gb machine. memsize and usermem are fine, but everything else bad
+                // macOS needs to be treated with some care, and _hardwareInfo returns (or returned)
+                // bogus data on macOS. We'll mix and match tools to get results that make sense.
 
-                // This seems to return proper total memory
-                _hardwareInfo.RefreshMemoryStatus();
-                memoryTotal = _hardwareInfo?.MemoryStatus?.TotalPhysical ?? 0;
+                if (_hardwareInfo is null)
+                {
+                    // You can try sysctl hw.memsize hw.physmem hw.usermem
+                    // But it returns (commas added for readability):
+                    //  hw.memsize: 17,179,869,184
+                    //  hw.physmem:  2,147,483,648 (or 3,750,215,680, or ...)
+                    //  hw.usermem:  1,392,398,336
+                    // On a 16Gb machine. memsize and usermem are fine, but everything else bad
+
+                    var mem = await GetProcessInfoAsync("/bin/bash", "-c \"sysctl -n hw.memsize\"",
+                                                        "(?<memused>[\\d]+)").ConfigureAwait(false);
+                    if ((mem?.Count ?? 0) > 0)
+                        ulong.TryParse(mem!["memused"], out memoryUsed);
+                }
+                else
+                {
+                    // This seems to return proper total memory
+                    _hardwareInfo.RefreshMemoryStatus();
+                    memoryTotal = _hardwareInfo?.MemoryStatus?.TotalPhysical ?? 0;
+                }
 
                 // and this returns used
                 string args = "-c \"ps -caxm -orss= | awk '{ sum += $1 } END { print sum * 1024 }'\"";
@@ -1467,9 +1523,61 @@ namespace CodeProject.AI.SDK.Common
             {
                 // Output is in the form:
                 // Linux MachineName 5.15.90.1-microsoft-standard-WSL2 #1 SMP Fri Jan 27 02:56:13...
-                var results = await GetProcessInfoAsync("/bin/bash", "-c \"uname -a\"", null).ConfigureAwait(false);
+                var results = await GetProcessInfoAsync("/bin/bash", "-c \"uname -a\"", null)
+                                                                                .ConfigureAwait(false);
                 if (results is not null)
                     _isWSL = results["output"]?.ContainsIgnoreCase("-microsoft-standard-WSL") == true;
+            }
+        }
+
+        private async static Task CheckForSshAsync()
+        {
+            _isSSH = false;
+
+            if (!_isSSH && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SSH_CLIENT")))
+                _isSSH = true;
+
+            if (!_isSSH && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SSH_TTY")))
+                _isSSH = true;
+
+            if (!_isSSH && !IsWindows)
+            {
+                var results = await GetProcessInfoAsync("/bin/bash", "-c \"ps -o comm= -p $PPID\"", null)
+                                                                                .ConfigureAwait(false);
+                if (results is not null)
+                    _isSSH = results["output"]?.ContainsIgnoreCase("sshd") == true;
+            }
+
+            if (!_isSSH && IsLinux)
+            {
+                var results = await GetProcessInfoAsync("/bin/bash", "-c \"pstree -s $$ | grep sshd\"", null)
+                                                                                .ConfigureAwait(false);
+                if (results is not null)
+                    _isSSH = !string.IsNullOrWhiteSpace(results["output"]);
+            }
+        }
+
+        private async static Task GetcuDNNVersionAsync()
+        {
+            if (IsWindows)
+            {
+                string paths = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+
+                // Windows: C:\Program Files\NVIDIA\CUDNN\v8.5\bin
+                // WSL: /mnt/c/Program Files/NVIDIA/CUDNN/v8.5/bin
+                
+                // Match values in the output against the pattern
+                Match match = Regex.Match(paths, "NVIDIA\\\\CUDNN\\\\v(?<version>\\d+.\\d+)\\\\bin",
+                                        RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+                if (match.Success)
+                    _cuDnnVersion = match.Groups["version"].ToString();
+            }
+            else if (IsLinux)
+            {
+                string args = "-c \"dpkg -l 2>/dev/null | grep cudnn | head -n 1 | grep -oP '\\d+\\.\\d+\\.\\d+'\"";
+                var results = await GetProcessInfoAsync("/bin/bash", args, null).ConfigureAwait(false);
+                if (results is not null)
+                    _cuDnnVersion = results["output"]?.Trim();
             }
         }
 
@@ -1497,18 +1605,18 @@ namespace CodeProject.AI.SDK.Common
                       ? Array.Empty<object>()
                       : new Object[] {
                         GPU is NvidiaInfo? new {
-                                                Name            = GPU.Name,
-                                                Vendor          = GPU.HardwareVendor,
-                                                Memory          = GPU.TotalMemory,
-                                                DriverVersion   = GPU.DriverVersion,
-                                                CUDAVersion     = (GPU as NvidiaInfo)?.CudaVersionCapability,
-                                                ComputeCapacity = (GPU as NvidiaInfo)?.ComputeCapacity
+                                                Name              = GPU.Name,
+                                                Vendor            = GPU.HardwareVendor,
+                                                Memory            = GPU.TotalMemory,
+                                                DriverVersion     = GPU.DriverVersion,
+                                                CUDAVersion       = (GPU as NvidiaInfo)?.CudaVersionCapability,
+                                                ComputeCapability = (GPU as NvidiaInfo)?.ComputeCapability
                                             }
                                          : new {
-                                                Name            = GPU.Name,
-                                                Vendor          = GPU.HardwareVendor,
-                                                Memory          = GPU.TotalMemory,
-                                                DriverVersion   = GPU.DriverVersion
+                                                Name              = GPU.Name,
+                                                Vendor            = GPU.HardwareVendor,
+                                                Memory            = GPU.TotalMemory,
+                                                DriverVersion     = GPU.DriverVersion
                                             }
                         }
             };

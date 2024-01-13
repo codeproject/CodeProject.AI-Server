@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
@@ -76,9 +77,10 @@ namespace CodeProject.AI.Server.Modules
         public string Name { get; set; }
 
         /// <summary>
-        /// Gets the Path for the endpoint.
+        /// Gets the Route for the endpoint, which does not include the base path. Currently our
+        /// base path is 'v1/', so the full path is: "v1/" + Route.
         /// </summary>
-        public string Path { get; set; }
+        public string Route { get; set; }
 
         /// <summary>
         /// Gets or sets the HTTP method to use when calling this endpoint
@@ -86,9 +88,15 @@ namespace CodeProject.AI.Server.Modules
         public string Method { get; set; }
 
         /// <summary>
-        /// Gets the name of the command.
+        /// Gets or sets the name of the command.
         /// </summary>
         public string Command { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether or not this path is available to be used in mesh
+        /// processing.
+        /// </summary>
+        public bool? MeshEnabled { get; set; } = true;
 
         /// <summary>
         /// Get the description of the endpoint.
@@ -109,22 +117,25 @@ namespace CodeProject.AI.Server.Modules
         /// Initializes a new instance of the BackendRouteInfo struct.
         /// </summary>
         /// <param name="name">The name of this endpoint.</param>
-        /// <param name="path">The relative path of the endpoint.</param>
+        /// <param name="route">The route for the endpoint. This is "image/alpr" not "v1/image/alpr".</param>
         /// <param name="method">The HTTP Method used to call the path/command</param>
         /// <param name="command">The command string that will be passed as part of the data
         /// sent to the server.</param>
+        /// <param name="meshEnabled">Whether or not this path is allowed to be used for mesh 
+        /// processing</param>
         /// <param name="description">A Description of the endpoint.</param>
         /// <param name="inputs">The input parameters information.</param>
         /// <param name="outputs">The output parameters information.</param>
-        public ModuleRouteInfo(string name, string path, string method, string command, 
-                               string? description = null,
+        public ModuleRouteInfo(string name, string route, string method, string command, 
+                               bool meshEnabled, string? description = null,
                                RouteParameterInfo[]? inputs = null,
                                RouteParameterInfo[]? outputs = null)
         {
             Name        = name;
-            Path        = path.ToLower();
+            Route       = route.ToLower();
             Method      = method.ToUpper();
             Command     = command;
+            MeshEnabled = meshEnabled;
             Description = description;
             Inputs      = inputs;
             Outputs     = outputs;
@@ -151,15 +162,15 @@ namespace CodeProject.AI.Server.Modules
     */
 
     /// <summary>
-    /// Defines the destination route information that is required to send a command to
-    /// the front end server for processing by the backend analysis Modules.
+    /// Defines the destination route information that is required to send a command to the front
+    /// end server for processing by the backend analysis Modules.
     /// </summary>
     public class RouteQueueInfo
     {
         /// <summary>
-        /// Gets the path for this route
+        /// Gets the route for this object
         /// </summary>
-        public string Path { get; private set; }
+        public string Route { get; private set; }
 
         /// <summary>
         /// Gets the HTTP Method for the route,
@@ -180,13 +191,14 @@ namespace CodeProject.AI.Server.Modules
         /// <summary>
         /// Initializes a new instance of the RouteQueueInfo class.
         /// </summary>
-        /// <param name="path">The URL path for this route.</param>
+        /// <param name="route">The route this endpoint. This doesn't include the "v1", so is just
+        /// "image/alpr" not "v1/image/alpr".</param>
         /// <param name="method">The HTTP Method for the route.</param>
         /// <param name="queueName">The name of the Queue.</param>
         /// <param name="command">The backend operation identifier.</param>
-        public RouteQueueInfo(string path, string method, string queueName, string command)
+        public RouteQueueInfo(string route, string method, string queueName, string command)
         {
-            Path      = path.ToLower();
+            Route     = route.ToLower();
             Method    = method.ToUpper();
             QueueName = queueName.ToLower();
             Command   = command;
@@ -194,11 +206,12 @@ namespace CodeProject.AI.Server.Modules
     }
 
     /// <summary>
-    /// Map for front end endpoints to backend queues.
+    /// Map for front end endpoints to backend queues. 
     /// </summary>
-    // TODO: this does not require the whole RouteQueueInfo, just the Queue and Command and
-    //       possibly the Method.
-    // TODO: Rename to CommandRouteMap
+    /// <remarks>
+    /// We include the whole RouteQueueInfo object because we might want to validate the parameters
+    /// before sending the request to the backend.
+    /// </remarks>
     public class BackendRouteMap
     {
         /// <summary>
@@ -207,17 +220,24 @@ namespace CodeProject.AI.Server.Modules
         private ConcurrentDictionary<string, RouteQueueInfo> _routeQueueMap = new();
 
         /// <summary>
-        /// Tries to get the route information for a path.
-        /// TODO: Update this so it iterates to find the best (longest?) match of a given request
-        ///       path
+        /// Geth the routes in the Route Map.
         /// </summary>
-        /// <param name="path">The path to get the information for.</param>
+        public IEnumerable<string> Routes => _routeQueueMap.Values
+                                                           .Select(x => x.Route)
+                                                           .Distinct()
+                                                           .OrderBy(x => x)    
+                                                           .ToList();
+
+        /// <summary>
+        /// Tries to get the route information for a path.
+        /// </summary>
+        /// <param name="route">The route to get the information for.</param>
         /// <param name="method">The HTTP Method used by the server's API endpoint.</param>
         /// <param name="queueInfo">The CommandRouteInfo instance to store the save the info to.</param>
         /// <returns>True if the path is in the Route Map, false otherwise.</returns>
-        public bool TryGetValue(string path, string method, out RouteQueueInfo? queueInfo)
+        public bool TryGetValue(string route, string method, out RouteQueueInfo? queueInfo)
         {
-            string key = MakeKey(path, method);
+            string key = MakeKey(route, method);
             
             // check for an exact match
             if (_routeQueueMap.TryGetValue(key, out queueInfo!))
@@ -225,29 +245,30 @@ namespace CodeProject.AI.Server.Modules
 
             // Find the best match. The longest route the has the correct Method and starts the path.
             queueInfo = _routeQueueMap!.Values
-                    .Where(x => method.EqualsIgnoreCase(x.Method) && path.StartsWithIgnoreCase(x.Path))
-                    .OrderByDescending(x => x.Path.Length)
+                    .Where(x => method.EqualsIgnoreCase(x.Method) && route.StartsWithIgnoreCase(x.Route))
+                    .OrderByDescending(x => x.Route.Length)
                     .FirstOrDefault();
 
             return queueInfo is not null;        
         }
 
-        private static string MakeKey(string path, string method)
+        private static string MakeKey(string route, string method)
         {
-            return $"{method.ToLower()}_{path.ToLower()}";
+            return $"{method.ToLower()}_{route.ToLower()}";
         }
 
         /// <summary>
         /// Associates a url and command with a queue.
         /// </summary>
-        /// <param name="path">The relative path to use for the request.</param>
+        /// <param name="route">The route this endpoint. This doesn't include the "v1", so is just
+        /// "image/alpr" not "v1/image/alpr".</param>
         /// <param name="method">The HTTP Method used to call the path/command</param>
         /// <param name="queueName">The name of the queue that the request will be associated with.</param>
         /// <param name="command">The command that will be passed with the payload.</param>
-        public void Register(string path, string method, string queueName, string command)
+        public void Register(string route, string method, string queueName, string command)
         {
-            string key          = MakeKey(path, method);
-            var routeInfo       = new RouteQueueInfo(path, method, queueName, command);
+            string key          = MakeKey(route, method);
+            var routeInfo       = new RouteQueueInfo(route, method, queueName, command);
             _routeQueueMap[key] = routeInfo;
         }
 
@@ -258,7 +279,7 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="queueName">The name of the queue that the request will be associated with.</param>
         public void Register(ModuleRouteInfo info, string queueName)
         {
-            Register(info.Path, info.Method, queueName, info.Command);
+            Register(info.Route, info.Method, queueName, info.Command);
         }
     }
 }

@@ -154,9 +154,9 @@ for d in ${modulesDirPath}/*/ ; do
         # TODO: Sniff the modulesettings.json file to get the runtime, and if it's
         # .NET do the test.
         if [ "$includeDotNet" = false ]; then
-            if [ "$packageModuleId" = "ObjectDetectionNet" ]; then doPackage=false; fi
-            if [ "$packageModuleId" = "PortraitFilter" ];     then doPackage=false; fi
-            if [ "$packageModuleId" = "SentimentAnalysis" ];  then doPackage=false; fi
+            if [ "$packageModuleId" = "ObjectDetectionYOLOv5Net" ]; then doPackage=false; fi
+            if [ "$packageModuleId" = "PortraitFilter" ];           then doPackage=false; fi
+            if [ "$packageModuleId" = "SentimentAnalysis" ];        then doPackage=false; fi
         fi
 
         if [ "$doPackage" = false ]; then

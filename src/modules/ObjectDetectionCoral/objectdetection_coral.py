@@ -57,7 +57,7 @@ from pycoral.adapters import detect
 from pycoral.utils.dataset import read_label_file
 from pycoral.utils.edgetpu import make_interpreter
 
-interpreter_lifespan_secs = 3600  # Refresh the interpreter once an hour
+interpreter_lifespan_secs = 600  # Refresh the interpreter every 10 mins
 
 interpreter         = None  # The model interpreter
 interpreter_created = None  # When was the interpreter created?
@@ -120,6 +120,13 @@ def init_detect(options: Options) -> str:
 
     return device
 
+def reset_detector():
+    global interpreter
+
+    print("Info: Refreshing the Tensorflow Interpreter")
+    interpreter = None
+
+
 def do_detect(options: Options, img: Image, score_threshold: float = 0.5):
 
     global interpreter
@@ -133,8 +140,7 @@ def do_detect(options: Options, img: Image, score_threshold: float = 0.5):
     if interpreter != None:
         seconds_since_created = (datetime.now() - interpreter_created).total_seconds()
         if seconds_since_created > interpreter_lifespan_secs:
-            print("Info: Refreshing the Tensorflow Interpreter")
-            interpreter = None
+            reset_detector()
 
     if interpreter == None:
         init_detect(options)
@@ -188,7 +194,16 @@ def do_detect(options: Options, img: Image, score_threshold: float = 0.5):
 
     # Run inference
     start_inference_time = time.perf_counter()
-    interpreter.invoke()
+    try:
+        interpreter.invoke()
+    except Exception as ex:
+        return {
+            "success"     : False,
+            "count"       : 0,
+            "predictions" : [],
+            "inferenceMs" : 0
+        }
+
     inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
     # Get output

@@ -6,17 +6,22 @@
 	<!-- Meta data -->
 	<PropertyGroup>
 		<Name>ParseJSON</Name>
-		<!-- THIS MUST NOT CHANGE. It's the name of the Windows service -->
-		<Product>CodeProject.AI Server</Product>
+		<Product>CodeProject ParseJSON</Product>
 		<Description>A simple JSON parsing app for use in scripts.</Description>
 		<Company>CodeProject</Company>
 		<Authors>CodeProject</Authors>
 		<Version>1.0.0</Version>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<DefineConstants Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">Windows</DefineConstants>
+		<DefineConstants Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">Linux</DefineConstants>
+		<DefineConstants Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">OSX</DefineConstants>
+	</PropertyGroup>
+
 	<!-- Build properties -->
 	<PropertyGroup>
-    <OutputType>Exe</OutputType>
+    	<OutputType>Exe</OutputType>
 		<RootNamespace>CodeProject.AI.Utilities</RootNamespace>
 		<AssemblyName>ParseJSON</AssemblyName>
 		<ImplicitUsings>disable</ImplicitUsings>

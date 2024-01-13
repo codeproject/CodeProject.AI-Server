@@ -9,7 +9,8 @@ services:
     restart: unless-stopped
     privileged: true
     ports:
-      - "32168:32168"
+      - "32168:32168/tcp"
+      - "32168:32168/udp"
     environment:
       - TZ=America/Toronto
     volumes:

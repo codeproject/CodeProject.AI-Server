@@ -39,7 +39,7 @@ if [ "$systemName" = "Jetson" ]; then
 fi
 
 # Download the models and store in /models
-getFromServer "models.zip" "assets" "Downloading YOLO models..."
+getFromServer "models/" "models-face-pt.zip" "assets" "Downloading Face models..."
 
 # ... also needs SQLite
 if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || \

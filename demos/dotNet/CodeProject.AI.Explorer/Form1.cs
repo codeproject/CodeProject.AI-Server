@@ -23,7 +23,7 @@ namespace CodeProject.AI.Demo.Explorer
         const int _pingFrequency = 2;    // seconds
         const int _apiServerPort = 32168; // be default
 
-        private readonly ApiClient    _AIService              = new(_apiServerPort);
+        private readonly ServerClient _serverClient           = new(_apiServerPort);
         private bool                  _serverLive             = false;    
         private string                _imageFileName          = string.Empty;
         private string                _faceImageFileName1     = string.Empty;
@@ -32,6 +32,10 @@ namespace CodeProject.AI.Demo.Explorer
         private string                _benchmarkFileName      = string.Empty;
         private readonly List<string> _registerFileNames      = new();
 
+        private readonly Font         _textFont               = new("Arial", 7);
+        private readonly SolidBrush   _textBrush              = new(Color.White);
+        private readonly Pen          _boundingBoxPen         = new(Color.Yellow, 2);
+
         public Form1()
         {
             InitializeComponent();
@@ -39,15 +43,16 @@ namespace CodeProject.AI.Demo.Explorer
 
             timer1.Interval = _pingFrequency * 1000;
             timer1.Enabled  = true;
-            timer1.Tick += new EventHandler(Ping!);
+            timer1.Tick    += new EventHandler(Ping!);
         }
+
         private async void Ping(object sender, EventArgs e)
         {
-            var response = await _AIService.Ping();
-            if (_serverLive != response.success)
+            var response = await _serverClient.Ping();
+            if (_serverLive != response.Success)
             {
-                _serverLive = response.success;
-                if (response.success)
+                _serverLive = response.Success;
+                if (response.Success)
                     SetStatus("Connection to AI Server established", Color.Green);
                 else
                     ShowError("Unable to connect to AI server");
@@ -157,7 +162,7 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            var result = await _AIService.DetectFaces(_imageFileName);
+            var result = await _serverClient.DetectFaces(_imageFileName);
             if (result is DetectFacesResponse detectedFaces)
             {
                 Image? image = GetImage(_imageFileName);
@@ -167,10 +172,7 @@ namespace CodeProject.AI.Demo.Explorer
                     return;
                 }
 
-                Graphics canvas  = Graphics.FromImage(image);
-                Pen pen          = new(Color.Yellow, 2);
-                SolidBrush brush = new(Color.White);
-                Font drawFont    = new("Arial", 10);
+                Graphics canvas = Graphics.FromImage(image);
 
                 List<string> lines = new();
 
@@ -182,8 +184,8 @@ namespace CodeProject.AI.Demo.Explorer
                         lines.Add($"{index}: Confidence: {Math.Round(face.confidence, 3)}");
 
                         var rect = Rectangle.FromLTRB(face.x_min, face.y_min, face.x_max, face.y_max);
-                        canvas.DrawRectangle(pen, rect);
-                        canvas.DrawString(index.ToString(), drawFont, brush, face.x_min, face.y_min);
+                        canvas.DrawRectangle(_boundingBoxPen, rect);
+                        canvas.DrawString(index.ToString(), _textFont, _textBrush, face.x_min, face.y_min);
                     }
 
                     detectionResult.Lines = lines.ToArray();
@@ -214,7 +216,7 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            var result = await _AIService.MatchFaces(_faceImageFileName1, _faceImageFileName2);
+            var result = await _serverClient.MatchFaces(_faceImageFileName1, _faceImageFileName2);
             if (result is MatchFacesResponse matchedFaces)
             {
                 detectionResult.Text = $"Similarity: {Math.Round(matchedFaces.similarity, 4)}";
@@ -237,7 +239,7 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            var result = await _AIService.DetectScene(_imageFileName);
+            var result = await _serverClient.DetectScene(_imageFileName);
             if (result is DetectSceneResponse detectedScene)
             {
                 var image = GetImage(_imageFileName);
@@ -264,7 +266,7 @@ namespace CodeProject.AI.Demo.Explorer
             }
 
             Stopwatch stopwatch = Stopwatch.StartNew();
-            ResponseBase result = await _AIService.DetectObjects(_imageFileName);
+            ServerResponse result = await _serverClient.DetectObjects(_imageFileName);
             stopwatch.Stop();
 
             if (result is DetectObjectsResponse detectedObjects)
@@ -293,9 +295,6 @@ namespace CodeProject.AI.Demo.Explorer
                     }
 
                     Graphics canvas  = Graphics.FromImage(image);
-                    Pen pen          = new(Color.Yellow, 2);
-                    SolidBrush brush = new(Color.White);
-                    Font drawFont    = new("Arial", 10);
 
                     if (detectedObjects.predictions is not null)
                     {
@@ -304,8 +303,8 @@ namespace CodeProject.AI.Demo.Explorer
                         {
                             var rect = Rectangle.FromLTRB(detectedObj.x_min, detectedObj.y_min,
                                                           detectedObj.x_max, detectedObj.y_max);
-                            canvas.DrawRectangle(pen, rect);
-                            canvas.DrawString($"{index}:{detectedObj.label}", drawFont, brush, 
+                            canvas.DrawRectangle(_boundingBoxPen, rect);
+                            canvas.DrawString($"{index}:{detectedObj.label}", _textFont, _textBrush, 
                                               detectedObj.x_min, detectedObj.y_min);
                         }
                     }
@@ -340,7 +339,7 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            var result = await _AIService.RegisterFace(UserIdTextbox.Text, _registerFileNames);
+            var result = await _serverClient.RegisterFace(UserIdTextbox.Text, _registerFileNames);
             if (result is RegisterFaceResponse registeredFace)
                 SetStatus("Registration complete");
             else
@@ -359,11 +358,10 @@ namespace CodeProject.AI.Demo.Explorer
                 return;
             }
 
-            float? minConfidence = null;
-            if(float.TryParse(MinConfidence.Text, out float parsedConfidence))
-                minConfidence = parsedConfidence;
+            if (!float.TryParse(MinConfidence.Text, out float minConfidence))
+                minConfidence = 0.4f;
 
-            var result = await _AIService.RecognizeFace(filename, minConfidence);
+            var result = await _serverClient.RecognizeFace(filename, minConfidence);
             if (result is RecognizeFacesResponse recognizeFace)
             {
                 try
@@ -375,10 +373,7 @@ namespace CodeProject.AI.Demo.Explorer
                         return;
                     }
 
-                    Graphics canvas  = Graphics.FromImage(image);
-                    Pen pen          = new(Color.Yellow, 2);
-                    SolidBrush brush = new(Color.White);
-                    Font drawFont    = new("Arial", 10);
+                    Graphics canvas = Graphics.FromImage(image);
 
                     List<string> lines = new();
                     if (recognizeFace.predictions is not null)
@@ -390,8 +385,8 @@ namespace CodeProject.AI.Demo.Explorer
                             lines.Add($"{index}: Conf: {Math.Round(prediction.confidence, 3)} {prediction.userid}");
                             var rect = Rectangle.FromLTRB(prediction.x_min, prediction.y_min, 
                                                           prediction.x_max, prediction.y_max);
-                            canvas.DrawRectangle(pen, rect);
-                            canvas.DrawString($"{index}:{prediction.userid}", drawFont, brush, 
+                            canvas.DrawRectangle(_boundingBoxPen, rect);
+                            canvas.DrawString($"{index}:{prediction.userid}", _textFont, _textBrush, 
                                               prediction.x_min, prediction.y_min);
                         }
 
@@ -415,10 +410,10 @@ namespace CodeProject.AI.Demo.Explorer
             ClearResults();
             SetStatus("Listing known faces");
 
-            var result = await _AIService.ListRegisteredFaces();
+            var result = await _serverClient.ListRegisteredFaces() as ModuleResponseBase;
             if (result is ListRegisteredFacesResponse registeredFaces)
             {
-                if (result?.success ?? false)
+                if (result?.Success ?? false)
                 {
                     List<string> lines = new();
                     if (registeredFaces.faces != null)
@@ -460,15 +455,15 @@ namespace CodeProject.AI.Demo.Explorer
             ClearResults();
             SetStatus("Deleting registered face");
 
-            var result = await _AIService.DeleteRegisteredFace(UserIdTextbox.Text);
-            if (result?.success ?? false)
+            var result = await _serverClient.DeleteRegisteredFace(UserIdTextbox.Text) as ModuleResponseBase;
+            if (result?.Success ?? false)
                 SetStatus("Completed Face deletion");
             else
                 ProcessError(result);
         }
 
         /* --- Benchmarking --- */
-        private void benchnarkImageSelectButton_Click(object sender, EventArgs e)
+        private void benchmarkImageSelectButton_Click(object sender, EventArgs e)
         {
             var fileDialogResult = openFileDialog.ShowDialog();
             if (fileDialogResult == DialogResult.OK)
@@ -508,13 +503,13 @@ namespace CodeProject.AI.Demo.Explorer
                 ShowError("Image must be selected.");
                 return;
             }
-            var nIterations = 512;
-            var taskList = new List<Task<ResponseBase>>();
+            var nIterations = 50;
+            var taskList = new List<Task<ServerResponse>>();
             Stopwatch sw = Stopwatch.StartNew();
             for (int i = 0; i < nIterations; i++){
                 var task = useCustom 
-                         ?_AIService.CustomDetectObjects("ipcam-general", _benchmarkFileName)
-                         : _AIService.DetectObjects(_benchmarkFileName);
+                         ?_serverClient.CustomDetectObjects(_benchmarkFileName, "ipcam-general")
+                         : _serverClient.DetectObjects(_benchmarkFileName);
                 taskList.Add(task);
             }
             await Task.WhenAll(taskList);
@@ -545,13 +540,13 @@ namespace CodeProject.AI.Demo.Explorer
             SetStatus(text, Color.Red);
         }
 
-        private void ProcessError(ResponseBase? result)
+        private void ProcessError(ServerResponse? result)
         {
             pictureBox1.Image    = null;
             detectionResult.Text = string.Empty;
 
             if (result is ErrorResponse response)
-                ShowError($"Error: {response.code} - {response.error ?? "No Error Message"}");
+                ShowError($"Error: {response.Code} - {response.Error ?? "No Error Message"}");
             else if (result is null)
                 ShowError("Null result");
             else
@@ -576,7 +571,7 @@ namespace CodeProject.AI.Demo.Explorer
         private void OnApiPortChanged(object sender, EventArgs e)
         {
             if (int.TryParse(textApiPort.Text, out int port))
-               _AIService.Port = port;
+               _serverClient.Port = port;
         }
     }
 }

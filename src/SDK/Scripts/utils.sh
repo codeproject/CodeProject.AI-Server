@@ -10,6 +10,8 @@
 # 
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+newline=$'\n'
+
 # Quits the script and returns an optional error code (default is 0)
 function quit () {
 
@@ -288,28 +290,30 @@ function CreateWriteableDir () {
         if [ $? -eq 0 ]; then 
             writeLine "Done" $color_success
         else
-            writeLine "Needs admin permission" $color_error
+            writeLine "Needs admin permission to create folder" $color_error
             displayMacOSDirCreatePermissionError
         fi
     fi
 
     if [ -d "${path}" ]; then
-        write "Setting permissions on ${desc} folder..." $color_primary
-        #sudo 
-        chmod a+w "${path}" >/dev/null 2>/dev/null
-        if [ $? -eq 0 ]; then 
-            writeLine "Done" $color_success
-        else
-            writeLine "Needs admin permission" $color_error
+        checkForAdminRights
+        if [ "$isAdmin" = true ]; then
+            write "Setting permissions on ${desc} folder..." $color_primary 
+            sudo chmod a+w "${path}" >/dev/null 2>/dev/null
+            if [ $? -eq 0 ]; then 
+                writeLine "Done" $color_success
+            else
+                writeLine "Needs admin permission to set folder permissions" $color_error
+            fi
         fi
     fi
 }
 
 function checkForAdminRights () {
 
-    # Setting this to true requests a password to elevate a script command, but it's a null-op and
-    # the permission elevation doesn't stick. We need to relaunch the current script, elevated, and
-    # then quit. Leaving this here as a sore thumb.
+    # Setting this to true will make this script show a popup prompt (at least in macOS) that will
+    # ask for admin rights. The problem is the implementation is broken. Leaving this here as a sore
+    # thumb.
     requestPassword=false
 
     # Be defensive
@@ -338,6 +342,8 @@ function checkForAdminRights () {
 
     if [ "$isAdmin" = false ] && [ "$requestPassword" = true ]; then
         if [ "$os" == "macos" ]; then
+            # This shows the password prompt, but the admin rights starts and ends with the "whoami"
+            # call. Once that call finishes, admin rights no longer apply.
             /usr/bin/osascript -e 'do shell script "whoami 2>&1" with administrator privileges'
 
             sudo_response=$(SUDO_ASKPASS=/bin/false sudo -A whoami 2>&1 | grep root)
@@ -346,6 +352,37 @@ function checkForAdminRights () {
     fi
 
     # echo "CHECK: $EUID, isAdmin ${isAdmin}"
+}
+
+function checkForAdminAndWarn () {
+
+    local install_instructions=$1
+
+    local indent="    "
+
+    # Indent any text after a newline
+    install_instructions="${install_instructions//${newline}/${newline}${indent}}"
+    # indent the first line
+    install_instructions="${indent}${install_instructions}"
+
+    checkForAdminRights
+    if [ "$isAdmin" = false ]; then
+        writeLine " "
+        writeLine "=======================================================================" $color_info
+        writeLine "** We need to install some libraries with admin rights. Please run:  **" $color_info
+        writeLine ""
+        writeLine "${install_instructions}"                                                 $color_info
+        writeLine ""
+        writeLine "To allow this module to install successfully"                            $color_info
+        writeLine "=======================================================================" $color_info
+
+        if [ "$attemptSudoWithoutAdminRights" = true ]; then
+            writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
+            writeLine "for an admin password. If not then please run the script shown above.  " "White" "Red"
+        fi
+
+        writeLine " "
+   fi
 }
 
 function checkForTool () {
@@ -368,18 +405,30 @@ function checkForTool () {
             if [ $"$architecture" = 'arm64' ]; then
                 if [ ! -f /usr/local/bin/brew ]; then
                     writeLine "Installing brew (x64 for arm64)..." $color_info
-                    arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+
+                    curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh --output install_brew.sh
+                    bash install_brew.sh
+                    # arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+
                     if [ $? -ne 0 ]; then 
                         quit 10 # failed to install required tool
                     fi
+
+                    rm install_brew.sh
                 fi
             else
                 if ! command -v brew > /dev/null; then
                     writeLine "Installing brew..." $color_info
-                    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+                    curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh --output install_brew.sh
+                    bash install_brew.sh
+                    # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
                     if [ $? -ne 0 ]; then 
                         quit 10 # failed to install required tool
                     fi
+
+                    rm install_brew.sh
                 fi
             fi
 
@@ -391,19 +440,7 @@ function checkForTool () {
             fi
         else
 
-            checkForAdminRights
-            if [ "$isAdmin" = false ]; then
-                writeLine "We need to install a tool with admin rights. Please run " $color_info
-                writeLine ""
-                writeLine "   sudo apt install ${name}"                              $color_info
-                writeLine ""
-                writeLine "To ensure the installation completes"                     $color_info
-
-                if [ "$attemptSudoWithoutAdminRights" = true ]; then
-                    writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
-                    writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
-                fi
-            fi
+            checkForAdminAndWarn "sudo apt update -y && sudo apt install ${name} -y"
 
             if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
                 writeLine "Installing ${name}..." $color_info
@@ -506,7 +543,7 @@ function setupDotNet () {
     
     if [ "$requestedType" = "" ]; then requestedType="aspnetcore"; fi
 
-    write "Checking for .NET >= ${requestedNetVersion}..."
+    write "Checking for .NET ${requestedNetVersion}..."
 
     currentDotNetVersion="(None)"
     comparison=-1
@@ -547,11 +584,11 @@ function setupDotNet () {
     fi
 
     if (( $comparison == 0 )); then
-        writeLine "All good. .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_success
+        writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
     elif (( $comparison == -1 )); then 
-        writeLine "Upgrading: .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_warn
+        writeLine "Upgrading: .NET is ${currentDotNetVersion}" $color_warn
     else # (( $comparison == 1 ))
-        writeLine "All good. .NET is ${currentDotNetVersion}, requested was ${requestedNetVersion}" $color_success
+        writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
     fi 
 
     if (( $comparison < 0 )); then
@@ -561,27 +598,13 @@ function setupDotNet () {
             return 6 # unable to download required asset
         fi
 
-        checkForAdminRights
-        if [ "$isAdmin" = false ]; then
-            writeLine "=========================================================" $color_info
-            writeLine "We need to install some system libraries. Please run "     $color_info
-            writeLine ""
-
-            if [ "$architecture" = 'arm64' ]; then
-                 writeLine "   sudo bash '${sdkScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType" $color_info
-            else
-                 writeLine "   sudo bash '${sdkScriptsDirPath}/dotnet-install.sh' --channel $requestedNetMajorMinorVersion --runtime $requestedType" $color_info
-            fi
-            writeLine ""
-            writeLine "To ensure the installation is successful"                  $color_info
-            writeLine "=========================================================" $color_info
-            module_install_errors="Admin permissions are needed to install libraries"
-
-            if [ "$attemptSudoWithoutAdminRights" = true ]; then
-                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
-                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
-            fi
+        # output a warning message if no admin rights and instruct user on manual steps
+        if [ "$architecture" = 'arm64' ]; then
+            install_instructions="sudo bash '${sdkScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
+        else
+            install_instructions="sudo bash '${sdkScriptsDirPath}/dotnet-install.sh' --channel $requestedNetMajorMinorVersion --runtime $requestedType"
         fi
+        checkForAdminAndWarn "$install_instructions"
 
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
             if [ "$os" = "linux" ]; then
@@ -623,24 +646,101 @@ function setupDotNet () {
                 echo 'export DOTNET_ROOT=/usr/bin/' >> ~/.bashrc
             fi
         fi
+
+        if [ "$os" == "macos" ]; then
+            # The install script is for CI/CD and doesn't actually register .NET. So add 
+            # link and env variable
+            export DOTNET_ROOT=~/.dotnet
+            export PATH=${DOTNET_ROOT}${PATH:+:${PATH}}
+
+            if [ ! -e /usr/local/bin/dotnet ]; then
+                ln -fs ~/.dotnet/dotnet /usr/local/bin/dotnet
+            fi
+
+            if grep -q 'export DOTNET_ROOT=' ~/.bashrc; then
+                echo 'export DOTNET_ROOT=~/.dotnet'                >> ~/.bashrc
+                echo "export PATH=${DOTNET_ROOT}${PATH:+:${PATH}}" >> ~/.bashrc
+            fi
+        fi
     fi
 
     found_dotnet=$(getDotNetVersion "$requestedType")
-    if [ "$found_dotnet" = "" ] && [ "$os" = "linux" ]; then
-        writeLine ".NET was not installed correctly. You may need to run the following:" $color_error
-        echo "# Remove all .NET packages"
-        echo "sudo apt remove 'dotnet*'"
-        echo "sudo apt remove 'aspnetcore*'"
-        echo "# Delete PMC repository from APT, by deleting the repo .list file"
-        echo "sudo rm /etc/apt/sources.list.d/microsoft-prod.list"
-        echo "sudo apt update"
-        echo "# Install .NET SDK"
-        echo "sudo apt install dotnet-sdk-${requestedNetVersion}"
+    if [ "$found_dotnet" = "" ]; then
+        if [ "$os" = "linux" ]; then
+            writeLine ".NET was not installed correctly. You may need to run the following:" $color_error
+            echo "# Remove all .NET packages"
+            echo "sudo apt remove 'dotnet*'"
+            echo "sudo apt remove 'aspnetcore*'"
+            echo "# Delete PMC repository from APT, by deleting the repo .list file"
+            echo "sudo rm /etc/apt/sources.list.d/microsoft-prod.list"
+            echo "sudo apt update"
+            echo "# Install .NET SDK"
+            echo "sudo apt install dotnet-sdk-${requestedNetVersion}"
+        else
+            writeLine ".NET was not installed correctly. You may need to install .NET manually"       $color_error
+            writeLine "See https://learn.microsoft.com/en-us/dotnet/core/install/macos for downloads" $color_error
+        fi
     else
         writeLine "Confirming .NET ${requestedType} install present. Version is ${found_dotnet}" $color_mute
     fi
 
     return 0
+}
+
+function setupGo () {
+
+    # only major/minor versions accepted (eg 11.2)
+    local requestedGoVersion=$1
+
+    write "Checking for Go >= ${requestedGoVersion}..."
+
+    currentGoVersion="(None)"
+    comparison=-1
+
+    goVersionOutput=$(go version 2>&1)
+    if [[ $goVersionOutput =~ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+        currentGoVersion="${BASH_REMATCH[1]}"
+        comparison=$(versionCompare $currentGoVersion $requestedGoVersion)
+
+        if (( $comparison == 0 )); then
+            writeLine "All good. Go is ${currentGoVersion}, requested was ${requestedGoVersion}" $color_success
+        elif (( $comparison == -1 )); then 
+            writeLine "Upgrading: Go is ${currentGoVersion}, requested was ${requestedGoVersion}" $color_warn
+        else # (( $comparison == 1 ))
+            writeLine "All good. Go is ${currentGoVersion}, requested was ${requestedGoVersion}" $color_success
+        fi 
+    fi
+
+    if (( $comparison < 0 )); then
+
+        if [ "${os}" = "linux" ]; then
+
+            # Must remove old version before installing new
+            rm -rf /usr/local/go
+
+            if [ "${architecture}" = "arm64" ]; then
+                wget -nv -O - https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-arm64.tar.gz | tar -C /usr/local -xz
+            else
+                wget -nv -O - https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-amd64.tar.gz | tar -C /usr/local -xz
+            fi
+
+            if grep -q 'export GOPATH=' ~/.bashrc;  then
+                echo 'Already added GOPATH to .bashrc'
+            else
+                echo "export PATH=/usr/local/go/bin:${PATH:+:${PATH}}" >> ~/.bashrc
+            fi
+
+        else
+
+            if [ "$currentGoVersion" = "(None)" ]; then
+                brew install golang
+            else
+                brew update
+                brew upgrade golang
+            fi
+            
+        fi
+    fi
 }
 
 function setupPython () {
@@ -653,34 +753,6 @@ function setupPython () {
     if [ "$offlineInstall" = true ]; then 
         writeLine "Offline Installation: Unable to download and install Python." $color_error
         return 6 # unable to download required asset
-    fi
-
-    checkForAdminRights
-    if [ "$isAdmin" = false ]; then
-
-        writeLine "=========================================================" $color_info
-        writeLine "We need to install some system libraries. Please run "     $color_info
-        writeLine ""
-
-        if [ "$setupMode" = 'SetupDevEnvironment' ]; then 
-            writeLine "   cd ${setupScriptDirPath}"                           $color_info
-            writeLine "   sudo bash setup.sh"                                 $color_info
-            writeLine ""
-            writeLine "To install the dev environment"                        $color_info
-        else
-            writeLine "   cd ${moduleDirPath}"                                $color_info
-            writeLine "   sudo bash ../../setup.sh"                           $color_info
-            writeLine ""
-            writeLine "To install this module"                                $color_info
-        fi
-
-        writeLine "=========================================================" $color_info
-        # module_install_errors="Admin permissions are needed to install libraries"
-
-        if [ "$attemptSudoWithoutAdminRights" = true ]; then
-            writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
-            writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
-        fi
     fi
 
     # M1 macs are trouble for python
@@ -735,6 +807,14 @@ function setupPython () {
 
     else
 
+        # output a warning message if no admin rights and instruct user on manual steps
+        if [ "$setupMode" = 'SetupDevEnvironment' ]; then 
+            install_instructions="cd ${setupScriptDirPath}${newline}sudo bash setup.sh"
+        else
+            install_instructions="cd ${moduleDirPath}${newline}sudo bash ../../setup.sh"
+        fi
+        checkForAdminAndWarn "$install_instructions"
+
         # For macOS we'll use brew to install python
         if [ "$os" = "macos" ]; then
 
@@ -776,8 +856,8 @@ function setupPython () {
                 # We have a x64 version of python for macOS (Intel) in our S3 bucket
                 # but it's easier to simply install python natively
 
-                # Download $storageUrl $downloadDirPath "python3.7.12-osx64.tar.gz" \
-                #                   "${platform}/${pythonName}" "Downloading Python interpreter..."
+                # Download "${storageUrl}runtimes/" "python3.7.12-osx64.tar.gz" \
+                #          "${platform}/${pythonName}" "Downloading Python interpreter..."
                 # cp -R "${downloadDirPath}/${platform}/${pythonName}" "${runtimesDirPath}/bin/${platform}"
 
                 if [ "${verbosity}" = "quiet" ]; then
@@ -902,11 +982,11 @@ function setupPython () {
             
             #. ~/.bashrc
 
-            popd
+            popd > /dev/null
 
             # lsb_release is too short-sighted to handle multiple python packages
             # Modified from https://stackoverflow.com/a/61605955
-            sudo ln -s /usr/share/pyshared/lsb_release.py /usr/lib/python{pythonPatchVersion}/site-packages/lsb_release.py
+            sudo ln -s /usr/share/pyshared/lsb_release.py /usr/lib/python${pythonPatchVersion}/site-packages/lsb_release.py
 
             # This was done above, but let's force it here in case it's been changed since
             basePythonCmdPath="python${pythonVersion}"
@@ -916,6 +996,7 @@ function setupPython () {
             # If using wget
             # wget https://bootstrap.pypa.io/get-pip.py
             sudo "${basePythonCmdPath}" get-pip.py pip==20.3.4
+            rm get-pip.py
 
         # For Linux we'll use apt-get the deadsnakes PPA to get the old version
         # of python. Deadsnakes? Old python? Get it? Get it?! And who said 
@@ -1020,8 +1101,18 @@ function setupPython () {
         fi
     fi
 
+    # Check permissions again. This check was done if python wasn't found, but 
+    # was NOT done if python was found. Do it again just to be safe
+    if [ "$setupMode" = 'SetupDevEnvironment' ]; then 
+        install_instructions="cd ${setupScriptDirPath}${newline}sudo bash setup.sh"
+    else
+        install_instructions="cd ${moduleDirPath}${newline}sudo bash ../../setup.sh"
+    fi
+
     # In WSL, getting: ModuleNotFoundError: No module named 'distutils.cmd'
     if [ "$os" = "linux" ]; then
+        checkForAdminAndWarn "$install_instructions"
+
         write "Ensuring PIP in base python install..." $color_primary
         if [ "${verbosity}" = "quiet" ]; then
             sudo apt-get install --reinstall python${pythonVersion}-distutils -y >/dev/null 2>/dev/null  &
@@ -1085,7 +1176,7 @@ function setupPython () {
         # Create the virtual environments. All sorts of things can go wrong here
         # but if you have issues, make sure you delete the venv directory before
         # retrying.
-        write "Creating Virtual Environment (${pythonLocation})..." $color_primary
+        write "Creating Virtual Environment (${runtimeLocation})..." $color_primary
         
         if [ $verbosity = "loud" ]; then
             writeLine "Install path is ${pythonDirPath}"
@@ -1125,7 +1216,7 @@ function setupPython () {
 
     #hack
     if [ "$os" = "linux" ]; then
-        write 'Installing updated setuptools in venv (this could take a few mins)...' $color_primary
+        write 'Installing updated setuptools in venv...' $color_primary
         "$venvPythonCmdPath" -m pip install -U setuptools >/dev/null 2>/dev/null &
         spin $!
         writeLine "Done" $color_success
@@ -1238,7 +1329,7 @@ function installPythonPackagesByName () {
             fi
         
             # echo "[DEBUG] '${venvPythonCmdPath}' -m pip install ${pipFlags} '${package_name}' --target '${packagesDirPath}' ${pip_options}" 
-            if [ "${os}" = "Linux" ]; then
+            if [ "${os}" = "linux" ]; then
                 if [ "${verbosity}" = "loud" ]; then
                     eval "$venvPythonCmdPath" -m pip install "${package_name}" --target "${packagesDirPath}" ${pip_options} ${pipFlags} 
                 else
@@ -1395,10 +1486,10 @@ function installRequiredPythonPackages () {
 
     if [ "$requirementsFilename" = "" ]; then
         if [ "$installGPU" = "true" ]; then
+
             if [ "$cuda_version" != "" ]; then
 
                 cuda_major_version=${cuda_version%%.*}
-
                 cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
                 
                 if [ "${verbosity}" != "quiet" ]; then
@@ -1433,6 +1524,12 @@ function installRequiredPythonPackages () {
                     requirementsFilename="requirements.${os}.rocm.txt"
                 elif [ -f "${requirementsDir}/requirements.rocm.txt" ]; then
                     requirementsFilename="requirements.rocm.txt"
+                fi
+            fi
+
+            if [ "$hasMPS" = true ]; then
+                if [ -f "${requirementsDir}/requirements.mps.txt" ]; then
+                    requirementsFilename="requirements.mps.txt"
                 fi
             fi
 
@@ -1540,22 +1637,19 @@ function installRequiredPythonPackages () {
                     # Check if the module name is already installed
                     module_installed=false
                     if [ "${module_name}" != "" ]; then
-                        if [ "${verbosity}" != "quiet" ]; then
-                            write "Processing ${module_name}..." $color_info
-                        fi
+                        if [ "${verbosity}" != "quiet" ]; then write "Checking ..." $color_info; fi
                         # echo "[DEBUG] ${venvPythonCmdPath} -m pip show ${module_name}"
-                        "${venvPythonCmdPath}" -m pip show ${module_name} >/dev/null  2>/dev/null
+                        "${venvPythonCmdPath}" -m pip show ${module_name} >/dev/null 2>/dev/null
                         if [ $? -eq 0 ]; then module_installed=true; fi
+                        if [ "${verbosity}" != "quiet" ]; then write "Check done..." $color_info; fi
                     fi
 
                     if [ "$module_installed" = false ]; then
                        
-                        if [ "${verbosity}" != "quiet" ]; then
-                            write "Installing ${package_name}..." $color_info
-                        fi
+                        if [ "${verbosity}" != "quiet" ]; then write "Installing ${package_name}..." $color_info; fi
 
                         # echo "[DEBUG] '${venvPythonCmdPath}' -m pip install '${package_name}' --target '${packagesDirPath}' ${currentOption} ${pipFlags}"
-                        if [ "${os}" = "Linux" ]; then
+                        if [ "${os}" = "linux" ]; then
                             # No, I don't know why eval is needed in Linux but not elsewhere
                             if [ "${verbosity}" = "loud" ]; then
                                 eval "${venvPythonCmdPath}" -m pip install "${package_name}" --target "${packagesDirPath}" ${currentOption} ${pipFlags}
@@ -1691,66 +1785,60 @@ function installAptPackages () {
 
 function getFromServer () {
 
-    # eg packages_for_gpu.zip
-    local fileToGet=$1
+    # This method downloads a zip file from our S3 storage, stores in the downloads
+    # folder within a subfolder specific to the current module, then expands the
+    # zip and copies the contents over to module itself. The zip that was downloaded
+    # will be saved in order to cache downloads
 
-    # eg assets
-    local moduleAssetsDir=$2
+    # Name of the folder in which to look for this file on S3 eg "models/"
+    local folder=$1
+
+    # Name of the file to get eg packages_for_gpu.zip
+    local fileToGet=$2
+
+    # Folder within the current Module dir where this zip should be expanded. eg assets
+    local moduleAssetsDirName=$3
 
     # output message
-    local message=$3
+    local message=$4
 
     # Clean up directories to force a re-copy if necessary
     if [ "${forceOverwrite}" = true ]; then
         # if [ $verbosity -ne "quiet" ]; then echo "Forcing overwrite"; fi
 
-        rm -rf "${downloadDirPath}/${moduleDirName}"
-        rm -rf "${moduleDirPath}/${moduleAssetsDir}"
+        rm -rf "${downloadDirPath}/${moduleDirName}/${fileToGet}"
+        rm -rf "${moduleDirPath}/${moduleAssetsDirName}"
     fi
 
-    # Download !$storageUrl$fileToGet to $downloadDirPath and extract into $downloadDirPath/$moduleDirName
-    # Params are: S3 storage bucket | fileToGet     | downloadToDir     | dirToSaveTo | message
-    # eg           "$S3_bucket"   "rembg-models.zip" /downloads/module/"    "assets"    "Downloading Background Remover models..."
-    downloadAndExtract $storageUrl $fileToGet "${downloadDirPath}" "${moduleDirName}" "${message}"
+    # Download !$storageUrl$folder$fileToGet to $downloadDirPath and extract into $downloadDirPath/$moduleDirName/$moduleAssetsDirName
+    # Params are: S3 storage bucket | fileToGet     | zip lives in...      | zip expanded to moduleDir/... | message
+    # eg               "S3_bucket/folder"    "rembg-models.zip"    /downloads/myModuleDir/"        "assets"             "Downloading models..."
+    downloadAndExtract "${storageUrl}${folder}" "$fileToGet" "${downloadDirPath}/${moduleDirName}" "${moduleAssetsDirName}" "${message}"
 
-    # Copy contents of downloadDirPath\moduleDirName to modules\moduleDirName\moduleAssetsDir
-    if [ -d "${downloadDirPath}/${moduleDirName}" ]; then
+    # Copy downloadDirPath\moduleDirName\moduleAssetsDirName folder to modules\moduleDirName\moduleAssetsDirName
+    if [ -d "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}" ]; then
 
-        if [ ! -d "${moduleDirPath}/${moduleAssetsDir}" ]; then
-            mkdir -p "${moduleDirPath}/${moduleAssetsDir}"
+        if [ ! -d "${moduleDirPath}/${moduleAssetsDirName}" ]; then
+            mkdir -p "${moduleDirPath}/${moduleAssetsDirName}"
         fi;
 
         # pushd then cp to stop "cannot stat" error
-        pushd "${downloadDirPath}/${moduleDirName}/" >/dev/null 2>/dev/null
+        pushd "${downloadDirPath}/${moduleDirName}" >/dev/null
 
-        # This code (below) will have issues if you download more than 1 zip to a download folder.
-        # 0. Download and extract
-        # 1. Copy *everything* over (including the downloaded zip)        
-        # 2. Remove the original download archive which was copied over along with everything else.
-        # 3. Delete all but the downloaded archive from the downloads dir
-        # cp * "${moduleDirPath}/${moduleAssetsDir}/"
-        # rm "${moduleDirPath}/${moduleAssetsDir}/${fileToGet}"  #>/dev/null 2>/dev/null
-        # ls | grep -xv *.zip | xargs rm
+        write "Moving contents of ${fileToGet} to ${moduleAssetsDirName}..."
+        # mv -f "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}/*" "${moduleDirPath}/${moduleAssetsDirName}/"
+        # rsync --remove-source-files "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}/"
+        move_recursive "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}"
+        rm -rf "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}"
 
-        # The safer way to do it:
-        # 0. Download and extract
-        # 1. Copy all non-zip files to the module's installation dir
-        # 2. Delete all non-zip files in the download dir
-        if [ $verbosity = "quiet" ]; then 
-            rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${moduleDirPath}/${moduleAssetsDir}/"  >/dev/null  2>/dev/null
-            if [ "$?" != "0" ]; then
-                writeLine "Unable to copy extracted files from ${fileToGet} to the downloads folder." $color_error
-                return 11 # Unable to copy file or directory
-            fi
-            find . -type f -not -name '*.zip' | xargs rm >/dev/null 2>/dev/null
-            find . -type d -not -name . -not -name ..| xargs rm -rf >/dev/null 2>/dev/null
-        else
-            rsync -rav --exclude='*.zip' --exclude='.DS_Store' * "${moduleDirPath}/${moduleAssetsDir}/" 
-            find . -type f -not -name '*.zip' | xargs rm 2>/dev/null
-            find . -type d -not -name . -not -name ..| xargs rm -rf  2>/dev/null
+        if [ "$?" != "0" ]; then
+            writeLine "Failed." $color_error
+            return 11 # Unable to copy file or directory
         fi
 
-        popd >/dev/null 2>/dev/null
+        writeLine "done." $color_success
+
+        popd >/dev/null 
     else
         return 6 # unable to download required asset
     fi
@@ -1758,30 +1846,42 @@ function getFromServer () {
     return 0
 }
 
+move_recursive() {
+    if [ ! -d "$1" ] || [ ! -e "$2" ]; then
+        mv "$1" "$2" || exit
+        return
+    fi
+    for entry in "$1/"* "$1/."[!.]* "$1/.."?*; do
+        if [ -e "$entry" ]; then
+            move_recursive "$entry" "$2/${entry##"$1/"}"
+        fi
+    done
+}
+
 function downloadAndExtract () {
 
     local storageUrl=$1
     local fileToGet=$2
     local downloadToDir=$3
-    local dirToSave=$4
+    local dirToExtract=$4
     local message=$5
 
-    # storageUrl = 'https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/dev/'
-    # downloadToDir = 'downloads/' - relative to the current directory
-    # fileToGet = packages_for_gpu.zip
-    # dirToSave = packages
+    # eg.
+    # storageUrl    = 'https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/models'
+    # fileToGet     = packages_for_gpu.zip
+    # downloadToDir = 'downloads/moduleId'
+    # dirToExtract  = assets (relative to downloadToDir)
    
     if [ "${fileToGet}" = "" ]; then
         writeLine 'No download file was specified' $color_error
-        quit 9 # required parameter not supplied
+        return 9 # required parameter not supplied
     fi
 
-    if [ "${message}" = "" ]; then
-        message="Downloading ${fileToGet}..."
-    fi
+    if [ "${message}" = "" ]; then message="Downloading ${fileToGet}..."; fi
 
     if [ $verbosity != "quiet" ]; then 
-        writeLine "Downloading ${fileToGet} to ${downloadToDir}/${dirToSave}" $color_info
+        writeLine "Downloading ${fileToGet} to ${downloadToDir}" $color_info
+        writeLine "Extracting to ${dirToExtract} in this folder" $color_info
     fi
     
     write "$message" $color_primary
@@ -1791,11 +1891,11 @@ function downloadAndExtract () {
         extension="${fileToGet:(-4)}"
         if [ ! "${extension}" = ".zip" ]; then
             writeLine "Unknown and unsupported file type for file ${fileToGet}" $color_error
-            quit    # no point in carrying on
+            return 12 - parameter value invalid
         fi
     fi
 
-    if [ -f  "${downloadToDir}/${dirToSave}/${fileToGet}" ]; then     # To check for the download itself
+    if [ -f "${downloadToDir}/${fileToGet}" ]; then     # To check for the download itself
         write " already exists..." $color_info
     else
 
@@ -1805,46 +1905,46 @@ function downloadAndExtract () {
         fi
 
         # create folder if needed and ensure permissions set
-        if [ ! -d "${downloadToDir}/${dirToSave}" ]; then
-            mkdir -p "${downloadToDir}/${dirToSave}"
-            chmod -R a+w "${downloadToDir}/${dirToSave}"
+        if [ ! -d "${downloadToDir}/${dirToExtract}" ]; then
+            mkdir -p "${downloadToDir}/${dirToExtract}"
+            chmod -R a+w "${downloadToDir}/${dirToExtract}"
         fi
 
-        wget $wgetFlags -P "${downloadToDir}/${dirToSave}" "${storageUrl}${fileToGet}"
+        wget $wgetFlags -P "${downloadToDir}" "${storageUrl}${fileToGet}"
         status=$?    
         if [ $status -ne 0 ]; then
             writeLine "The wget command failed for file ${fileToGet}." $color_error
-            quit 6 # unable to download required asset
+            return 6 # unable to download required asset
         fi
     fi
 
-    if [ ! -f  "${downloadToDir}/${dirToSave}/${fileToGet}" ]; then
+    if [ ! -f "${downloadToDir}/${fileToGet}" ]; then
         writeLine "The downloaded file '${fileToGet}' doesn't appear to exist." $color_error
-        quit 6 # unable to download required asset
+        return 6 # unable to download required asset
     fi
 
     write 'Expanding...' $color_info
 
-    pushd "${downloadToDir}/${dirToSave}" >/dev/null
+    pushd "${downloadToDir}" >/dev/null
   
     if [ $verbosity = "quiet" ]; then 
         if [ "${extension}" = ".gz" ]; then
-            tar $tarFlags "${fileToGet}" >/dev/null &  # execute and continue
+            tar $tarFlags "${fileToGet}" --directory ${dirToExtract} >/dev/null &  # execute and continue
             spin $! # process ID of the unzip/tar call
         else
-            unzip $unzipFlags "${fileToGet}" >/dev/null &  # execute and continue
+            unzip $unzipFlags "${fileToGet}" -d ${dirToExtract} >/dev/null &  # execute and continue
             spin $! # process ID of the unzip/tar call
         fi
     else
         if [ "${extension}" = ".gz" ]; then
-            tar $tarFlags "${fileToGet}"
+            tar $tarFlags "${fileToGet}" --directory ${dirToExtract} 
         else
-            unzip $unzipFlags "${fileToGet}"
+            unzip $unzipFlags "${fileToGet}" -d ${dirToExtract} 
         fi
     fi
     
     if [ ! "$(ls -A .)" ]; then # Is the download dir empty?
-        writeLine "Unable to extract download. Can you please check you have write permission to "${dirToSave}"." $color_error
+        writeLine "Unable to extract download. Can you please check you have write permission to "${dirToExtract}"." $color_error
         popd >/dev/null
         quit 7  # unable to expand compressed archivep
     fi
@@ -1918,6 +2018,12 @@ function getCudaVersion () {
     echo $cuda_version
 }
 
+function getcuDNNVersion () { 
+
+    cuDNN_version=$(dpkg -l 2>/dev/null | grep cudnn | head -n 1 | grep -oP '\d+\.\d+\.\d+')
+    echo $cuDNN_version
+}
+
 # Gets a value from the correct modulesettings.json file based on the current OS
 # and architecture, based purely on the name of the propery. THIS METHOD DOES NOT
 # TAKE INTO ACCOUNT THE DEPTH OF A PROPERTY. If the property is at the root level
@@ -1929,9 +2035,9 @@ function getValueFromModuleSettingsFile () {
     local moduleId=$2
     local property=$3
 
-    if [ "$verbosity" = "loud" ]; then
-        echo "Searching for '${property}' in a suitable modulesettings.json file in ${moduleDirPath}" >&3
-    fi
+    # if [ "$verbosity" = "loud" ]; then
+    #    echo "Searching for '${property}' in a suitable modulesettings.json file in ${moduleDirPath}" >&3
+    # fi
 
     # escape '-'s
     if [[ $property == *-* ]]; then property="\"${property}\""; fi
@@ -1943,17 +2049,18 @@ function getValueFromModuleSettingsFile () {
         key=$".Modules.${moduleId}.${property}"
     fi
 
+    # NOTE: We are only searching non-development files here
     # The order in which modulesettings files are added is
-    # WE DO NOT SUPPORT DOCKER IN Windows, plus we are ONLY searching non-development files here
     #   modulesettings.json
     #   (not searched) modulesettings.development.json 
     #   modulesettings.os.json
     #   (not searched) modulesettings.os.development.json
     #   modulesettings.os.architecture.json
     #   (not searched) modulesettings.os.architecture.development.json
-    #   (not supported) modulesettings.docker.json
+    #   modulesettings.docker.json
     #   (not supported) modulesettings.docker.development.json
     #   modulesettings.device.json (device = raspberrypi, orangepi, jetson)
+    #   modulesettings.device.development.json
     # So we need to check each modulesettings file in reverse order until we find a value for 'key'
     
     device_specifier=""
@@ -1965,24 +2072,49 @@ function getValueFromModuleSettingsFile () {
         device_specifier="jetson"
     fi
 
+    dev_specifier=""
+    if [ "$executionEnvironment" = "Development" ]; then dev_specifier="development"; fi
+
+    settings_file_used=""
+
+    if [ "$device_specifier" != "" ] && [ "$dev_specifier" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${device_specifier}.${dev_specifier}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${device_specifier}.${dev_specifier}.json"; fi
+    fi
     if [ "$device_specifier" != "" ]; then
         moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${device_specifier}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${device_specifier}.json"; fi
+    fi
+    if [ "${moduleSettingValue}" = "" ] && [ "$dev_specifier" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.${dev_specifier}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${os}.${architecture}.${dev_specifier}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ]; then
         moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${os}.${architecture}.json"; fi
+    fi
+    if [ "${moduleSettingValue}" = "" ] && [ "$dev_specifier" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${dev_specifier}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${os}.${dev_specifier}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ]; then
         moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${os}.json"; fi
+    fi
+    if [ "${moduleSettingValue}" = "" ] && [ "$dev_specifier" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${dev_specifier}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${dev_specifier}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ]; then
         moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.json"; fi
     fi
 
     if [ false ] && [ "$verbosity" = "loud" ]; then
        if [ "${moduleSettingValue}" = "" ]; then
            echo "Cannot find ${key} in modulesettings in ${moduleDirPath}" >&3
        else
-           echo "${key} is ${moduleSettingValue} in modulesettings in ${moduleDirPath}" >&3
+           echo "${key} is ${moduleSettingValue//[$'\r\n']/ } in ${settings_file_used}" >&3
        fi
     fi
 
@@ -2002,6 +2134,8 @@ function getValueFromModuleSettings () {
     local json_file=$1
     local key=$2
 
+    json_file=${json_file//\\//}
+    
     # RANT: Douglas Crockford decided that people were abusing the comment 
     # syntax in JSON and so he removed it. Devs immediately added hack work-
     # arounds which nullified his 'fix' and instead has left us with a crippled
@@ -2028,11 +2162,24 @@ function getValueFromModuleSettings () {
             # jq can't deal with comments so let's strip comments first.
             
             # remove single line comments from the file text
-            file_contents=$(cat "$json_file" | sed -e 's|//[^"]*||')
-            # echo "file_contents = $file_contents" >&3
+            # file_contents=$(cat "$json_file" | sed -e 's|//[^"]*||')
 
+            # We run perl in "slurp" mode (-0777), treating the entire file as a single string. This 
+            # allows multiline processing. The regex looks for two patterns:
+            # "(?:\\. | [^"\\])*" matches a double-quoted string, allowing for escaped characters 
+            # within the string.
+            # //[^\n]* matches // and any following characters until the end of the line.
+            # The replacement part {$1} ensures that only the first pattern (double-quoted strings) 
+            # is kept, while occurrences of // outside quotes are removed.
+            # The g modifier allows the regex to match multiple times, the e modifier enables the 
+            # replacement to be an expression, and the x modifier improves readability by allowing
+            # whitespace and comments in the pattern.
+
+            file_contents=$(perl -0777 -pe 's{ ( " (?: \\. | [^"\\] )* " ) | // [^\n]* }{$1}gex' "$json_file")
+            # echo "file_contents = $file_contents" >&3
+          
             # now remove /* ...*/ multiline comments. (split to make debug easier)
-            file_contents=$(echo "$file_contents" | perl -0777 -pe 's#/\*.*?\*/|//.*?$##gs')
+            file_contents=$(echo "$file_contents" | perl -0777 -pe 's#/\*.*?\*/|##gs')
             # echo "file_contents = $file_contents" >&3
 
             jsonValue=$(echo "$file_contents" | jq -r "$key")

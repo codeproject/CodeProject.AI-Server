@@ -378,9 +378,9 @@ namespace CodeProject.AI.Server
         public ServerLoggerProvider(IOptionsMonitor<ServerLoggerConfiguration> config,
                                     IOptions<ServerOptions> serverOptions)
         {
-            _currentConfig   = config.CurrentValue;
+            _currentConfig = config.CurrentValue;
             _serverOptions = serverOptions;
-            _onChangeToken   = config.OnChange(updatedConfig => _currentConfig = updatedConfig);
+            _onChangeToken = config.OnChange(updatedConfig => _currentConfig = updatedConfig);
         }
 
         /// <summary>

@@ -53,11 +53,14 @@
 			<!-- Runtime identifier supplied via command line or env var. Reset the OS variables based on this value -->
 			<PropertyGroup>
 				<IsWindows>false</IsWindows>
-				<IsLinux>false</IsLinux>
-				<IsOSX>false</IsOSX>
 				<IsWindows Condition="'$(RuntimeIdentifier.StartsWith(`win`))'=='true'">true</IsWindows>
+				
+				<IsLinux>false</IsLinux>
 				<IsLinux   Condition="'$(RuntimeIdentifier.StartsWith(`linux`))'=='true'">true</IsLinux>
+				
+				<IsOSX>false</IsOSX>
 				<IsOSX     Condition="'$(RuntimeIdentifier.StartsWith(`osx`))'=='true'">true</IsOSX>
+
 				<IsArm64>false</IsArm64>
 				<IsArm64   Condition="'$(RuntimeIdentifier.EndsWith(`arm64`))'=='true'">true</IsArm64>
 			</PropertyGroup>
@@ -71,23 +74,13 @@
 		<DefineConstants Condition="'$(IsOSX)'=='true'">macOS</DefineConstants>
 		<DefineConstants Condition="'$(IsArm64)'=='true'">Arm64</DefineConstants>
 		<DefineConstants Condition="'$(IsArm64)'!='true'">x64</DefineConstants>
-		<OSPlatform Condition="'$(IsWindows)'=='true'">Windows</OSPlatform>
-		<OSPlatform Condition="'$(IsLinux)'=='true'">Linux</OSPlatform>
-		<OSPlatform Condition="'$(IsOSX)'=='true'">OSX</OSPlatform>
-		<OSArchitecture Condition="'$(IsArm64)'=='true'">Arm64</OSArchitecture>
-		<OSArchitecture Condition="'$(IsArm64)'!='true'">x64</OSArchitecture>
-	</PropertyGroup>
 
-	<!-- Windows vs not Windows properties -->
-	<PropertyGroup>
-		<!--
-		Be careful about specifying net7.0-windows. Specifiying this means builds are in
-		/Debug/net7.0-windows whereas all other platforms will have output in Debug/net7.0
-		Add &lt;AppendRuntimeIdentifierToOutputPath&gt;false&lt;/AppendRuntimeIdentifierToOutputPath&gt;
-		to fix this.
-
-		<TargetFramework Condition="'$(IsWindows)'!='true'">net7.0-windows</TargetFramework>
-		-->
+		<OSPlatform      Condition="'$(IsWindows)'=='true'">Windows</OSPlatform>
+		<OSPlatform      Condition="'$(IsLinux)'=='true'">Linux</OSPlatform>
+		<OSPlatform      Condition="'$(IsOSX)'=='true'">OSX</OSPlatform>
+		
+		<OSArchitecture  Condition="'$(IsArm64)'=='true'">Arm64</OSArchitecture>
+		<OSArchitecture  Condition="'$(IsArm64)'!='true'">x64</OSArchitecture>
 	</PropertyGroup>
 
 	<!-- Output the settings based on what we've determined above -->

@@ -1,14 +1,13 @@
 {
-  // NOTE: Javascript-style comments are allowed, but '//' style comments may not contain a 
-  //       double-quote. Use /*..*/ comments if you need to include a double quote in comments
   "Modules": {
 
     "ObjectDetectionCoral": {
       "Name": "ObjectDetection (Coral)",
-      "Version": "1.7",
+      "Version": "1.7.5",
       
       // Publishing info
       "Description": "The object detection module uses the Coral TPU to locate and classify the objects the models have been trained on.",
+      "Category": "Computer Vision",
       "Platforms": [ "all" ],
       "License": "Apache-2.0",
       "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
@@ -43,16 +42,21 @@
         { "ModuleVersion": "1.5",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" },
         { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-17", "ReleaseNotes": "Better checks for admin rights when installing" },
         { "ModuleVersion": "1.6",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-28", "ReleaseNotes": "Improvements for situations where installer does not have admin rights." },
-        { "ModuleVersion": "1.6.3", "ServerVersionRange": [ "2.3.1", ""       ], "ReleaseDate": "2023-10-28", "ReleaseNotes": "Corrections to requirements.txt for Raspberry Pi / Orange Pi." },
-        { "ModuleVersion": "1.7",   "ServerVersionRange": [ "2.3.5", ""       ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Improvements on the Raspberry Pi installer." }
+        { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-28", "ReleaseNotes": "Improvements for situations where installer does not have admin rights." },
+        { "ModuleVersion": "1.6.3", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-28", "ReleaseNotes": "Corrections to requirements.txt for Raspberry Pi / Orange Pi." },
+        { "ModuleVersion": "1.7",   "ServerVersionRange": [ "2.3.5", "2.3.5"  ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Improvements on the Raspberry Pi installer." },
+        { "ModuleVersion": "1.7.1", "ServerVersionRange": [ "2.4.0", "2.4.0"  ], "ReleaseDate": "2023-12-03", "ReleaseNotes": "Installer updates, Mesh support.", "Importance": "Minor" },
+        { "ModuleVersion": "1.7.2", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.7.3", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "1.7.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-21", "ReleaseNotes": "Installer updates" },
+        { "ModuleVersion": "1.7.5", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-23", "ReleaseNotes": "Installer updates for Docker" }
       ],
 
       "RouteMaps": [
         {
           "Name": "Object Detector",
-          "Path": "vision/detection",
+          "Route": "vision/detection",
           "Method": "POST",
           "Command": "detect",
           "Description": "Detects multiple objects in an image.",

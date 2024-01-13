@@ -64,7 +64,7 @@ namespace CodeProject.AI.Server
                 }
             }
            
-            sample.AppendLine($"\nvar url = 'http://localhost:32168/v1/{routeInfo.Path}';\n");
+            sample.AppendLine($"\nvar url = 'http://localhost:32168/v1/{routeInfo.Route}';\n");
 
             sample.AppendLine("fetch(url, { method: \"POST\", body: formData})");
             sample.AppendLine("      .then(response => {");

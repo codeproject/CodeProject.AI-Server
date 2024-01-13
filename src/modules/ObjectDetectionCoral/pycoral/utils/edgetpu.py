@@ -51,7 +51,9 @@ import platform
 # In either case we're looking to load TFLite models
 try:
   from tflite_runtime.interpreter import Interpreter, load_delegate
-except ImportError:
+except ImportError as ex:
+  # "/lib/aarch64-linux-gnu/libm.so.6: version `GLIBC_2.29' not found (required by 
+  # site-packages/tflite_runtime/_pywrap_tensorflow_interpreter_wrapper.cpython-38-aarch64-linux-gnu.so)"
   import tensorflow as tf
   Interpreter, load_delegate = tf.lite.Interpreter, tf.lite.experimental.load_delegate
 

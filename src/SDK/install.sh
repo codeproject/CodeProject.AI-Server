@@ -31,16 +31,9 @@ if [ "$os" = "linux" ]; then
     apt policy 2>/dev/null | grep ubuntu-toolchain >/dev/null 2>/dev/null
     if [ "$?" != 0 ]; then
 
-        checkForAdminRights
-        if [ "$isAdmin" = false ]; then
-            writeLine "We need to install some system libraries. Please rerun "   $color_info
-            writeLine "this script with admin rights"                             $color_info
-
-            if [ "$attemptSudoWithoutAdminRights" = true ]; then
-                writeLine "We will attempt to run admin-only install commands. You may be prompted" "White" "Red"
-                writeLine "for an admin password. If not then please run the script shown above."   "White" "Red"
-            fi
-        fi
+        # output a warning message if no admin rights and instruct user on manual steps
+        install_instructions="cd ${sdkScriptsDirPath}${newline}sudo bash ../setup.sh"
+        checkForAdminAndWarn "$install_instructions"
 
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
             if [ "${verbosity}" = "quiet" ]; then

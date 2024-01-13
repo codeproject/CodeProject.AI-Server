@@ -1,15 +1,25 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using CodeProject.AI.Modules.PortraitFilter;
-
-IHost host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
+namespace CodeProject.AI.Modules.PortraitFilter
+{
+    internal static class Program
     {
-        services.AddHostedService<PortraitFilterWorker>();
-    })
-    .Build();
+        static async Task Main(string[]? args)
+        {
+            PortraitFilterWorker.ProcessArguments(args);
+
+            IHost host = Host.CreateDefaultBuilder(args)
+                .ConfigureServices(services =>
+                {
+                    services.AddHostedService<PortraitFilterWorker>();
+                })
+                .Build();
 
 #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
-await host.RunAsync();
+            await host.RunAsync();
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+        }
+    }
+}

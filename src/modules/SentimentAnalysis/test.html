@@ -3,8 +3,45 @@
 <head>
     <meta charset="utf-8" />
     <title>Sentiment Analysis Module Test</title>
-    <script type="text/javascript">
 
+    <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
+    <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
+
+    <style>
+/* START EXPLORER STYLE */
+/* END EXPLORER STYLE */
+    </style>
+
+    <script type="text/javascript">
+// START EXPLORER SCRIPT
+        function onAnalyzeSentiment(articleText) {
+
+			clearCanvas();
+
+			if (!articleText) {
+				alert("No text was provided for sentiment analysis");
+				return;
+			}
+
+			let params = [['text', articleText]]
+
+			setResultsHtml("Performing sentiment analysis...");
+			submitRequest('text', 'sentiment', null, params, function (data) {
+				if (!data.success) {
+					setResultsHtml("Sentiment analysis failed<br/>" + data.error +
+                        getProcessingMetadataHtml(data));
+				}
+				else {
+					setResultsHtml("Probability that text is positive is " +
+								   (data.positive_probability * 100).toFixed(1) + "%. " +
+								   "Text sentiment is " + (data.is_positive ? "positive" : "negative") +
+								   getProcessingMetadataHtml(data));
+				}
+			});
+		}
+// END EXPLORER SCRIPT
+
+        /*
         function doAnalysis(textToSend) {
             var formData = new FormData();
             formData.append('text', textToSend);
@@ -19,17 +56,31 @@
                     }
                     return response.json().then(data => {
                         var resultHTML = data.is_positive
-                                ? `<p>The text sentiment was positive with a probablity of ${data.positive_probability}</p>`
-                                : `<p>The text sentiment was negative with a probablity of ${1.0 - data.positive_probability}</p>`;
+                                ? `<p>The text sentiment was positive with a probability of ${data.positive_probability}</p>`
+                                : `<p>The text sentiment was negative with a probability of ${1.0 - data.positive_probability}</p>`;
                         result.innerHTML = resultHTML;
                     });
                 });
         }
+        */
     </script>
 </head>
 <body>
-    <h1>Sentiment Analysis Module Test</h1>
+    <h2>Sentiment Analysis Module Test</h2>
     <form method="post" action="" enctype="multipart/form-data" id="myform">
+<!-- START EXPLORER MARKUP -->
+        <div class="form-group mt-1">
+            <textarea id="sentimentText" class="w-100" style="height:200px"></textarea>
+        </div>
+
+        <div class="form-group row mt-1">
+            <div class="col-2">
+                <input class="btn-success col-form-label" type="button" value="Sentiment"
+                        id="sentiment" onclick="onAnalyzeSentiment(sentimentText.value)" />
+            </div>
+        </div>
+<!-- END EXPLORER MARKUP -->
+<!--
         <div>
             <label for="textToAnalyze">Text to analyze:</label>
             <div>
@@ -39,10 +90,11 @@
         <div>
             <button type="button" onclick="doAnalysis(textToAnalyze.value)">Submit</button>
         </div>
+-->
         <br />
         <div>
             <label for="result">Result</label>
-            <div id="result" name="result" style="border:solid thin black"></div>
+            <div id="results" name="results" style="border:solid thin black"></div>
         </div>
     </form>
 </body>

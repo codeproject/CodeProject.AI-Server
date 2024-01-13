@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.Server.Utilities;
 
 using Microsoft.Extensions.Configuration;
@@ -30,7 +29,8 @@ namespace CodeProject.AI.Server.Modules
 
             // Setup the config objects
             services.Configure<ServerOptions>(configuration.GetSection("ServerOptions"));
-            services.Configure<ModuleOptions>(configuration.GetSection("ModuleOptions"));          
+            services.Configure<ModuleOptions>(configuration.GetSection("ModuleOptions"));
+            services.Configure<InstallConfig>(configuration.GetSection(InstallConfig.InstallCfgSection));
 
             // HACK: The binding of the Dictionary has issues in NET 7.0.0 but was 'fixed'
             // in NET 7.0.2. We can't, however, assume all platforms will have this fix available

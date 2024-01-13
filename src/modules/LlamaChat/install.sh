@@ -2,9 +2,9 @@
 
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
-#                            ChatMLC
+#                            LlamaChat
 #
-# This script is called from the ChatMLC directory using: 
+# This script is called from the LlamaChat directory using: 
 #
 #    bash ../../setup.sh
 #

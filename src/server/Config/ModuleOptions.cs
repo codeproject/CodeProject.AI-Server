@@ -78,7 +78,7 @@ namespace CodeProject.AI.Server
         /// Gets or sets the templated path to the Python interpreter. This path is relative to
         /// the path containing the module or runtimes, depending on whether Python is installed
         /// locally to the mode or shared and is in the runtimes folder. This string may include
-        /// a %PYTHON_DIRECTORY% marker which will need to be replaced based on the specific version
+        /// a %PYTHON_NAME% marker which will need to be replaced based on the specific version
         /// of Python (eg for Python3.9 it will be "python39").
         /// </summary>
         public string? PythonRelativeInterpreterPath { get; set; }

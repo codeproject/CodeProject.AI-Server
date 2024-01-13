@@ -5,12 +5,14 @@ using System.IO;
 using System.Linq;
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 
-using SkiaSharp.Views.Desktop;
 using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.Utils;
+
+using SkiaSharp.Views.Desktop;
 
 namespace CodeProject.AI.Modules.PortraitFilter
 {
@@ -34,9 +36,11 @@ namespace CodeProject.AI.Modules.PortraitFilter
         /// <param name="logger">The Logger.</param>
         /// <param name="deepPersonLab">The deep Person Lab.</param>
         /// <param name="configuration">The app configuration values.</param>
+        /// <param name="hostApplicationLifetime">The applicationLifetime object</param>
         public PortraitFilterWorker(ILogger<PortraitFilterWorker> logger,
-                                    IConfiguration configuration)
-            : base(logger, configuration)
+                                    IConfiguration configuration,
+                                    IHostApplicationLifetime hostApplicationLifetime)
+            : base(logger, configuration, hostApplicationLifetime)
         {
             string modelPath = _modelPath.Replace('\\', Path.DirectorySeparatorChar);
 
@@ -117,6 +121,26 @@ namespace CodeProject.AI.Modules.PortraitFilter
             };
         }
 
+        /// <summary>
+        /// Called when the module is asked to execute a self-test to ensure it install and runs
+        /// correctly
+        /// </summary>
+        /// <returns>An exit code for the test. 0 = no error.</returns>
+        protected override int SelfTest()
+        {
+            RequestPayload payload = new RequestPayload("filter");
+            payload.SetValue("strength", "0.5");
+            payload.AddFile(Path.Combine(moduleDirPath!, "test/woman-selfie.jpg"));
+
+            var request = new BackendRequest(payload);
+            BackendResponseBase response = ProcessRequest(request);
+
+            if (response.success)
+                return 0;
+
+            return 1;
+        }
+        
         private SessionOptions GetSessionOptions()
         {
             var sessionOpts = new SessionOptions();

@@ -53,7 +53,7 @@ class Scene_adapter(ModuleRunner):
         self.models_lock = Lock()
 
         self.classes     = list()
-        self.place_names = None
+        self.scene_names = None
         self.classifier  = None # Lazy load later on
 
 
@@ -64,7 +64,7 @@ class Scene_adapter(ModuleRunner):
             for line in class_file:
                 self.classes.append(line.strip().split(" ")[0][3:])
 
-        self.place_names = tuple(self.classes)
+        self.scene_names = tuple(self.classes)
 
         self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS
 

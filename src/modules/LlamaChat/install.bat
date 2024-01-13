@@ -1,6 +1,6 @@
 :: Installation script :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::
-::                           ChatMLC
+::                           LlamaChat
 ::
 :: This script is only called using ..\..\src\setup.bat
 ::

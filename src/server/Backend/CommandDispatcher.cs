@@ -31,8 +31,8 @@ namespace CodeProject.AI.Server.Backend
         public async Task<object> QueueRequest(string queueName, RequestPayload payload,
                                                CancellationToken token = default)
         {
-            var response = await _queueServices.SendRequestAsync(queueName.ToLower(), 
-                                                                 new BackendRequest(payload), token)
+            var request  = new BackendRequest(payload);
+            var response = await _queueServices.SendRequestAsync(queueName.ToLower(), request, token)
                                                .ConfigureAwait(false);
             return response;
         }

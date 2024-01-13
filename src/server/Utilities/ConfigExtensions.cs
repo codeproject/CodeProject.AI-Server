@@ -14,7 +14,8 @@ namespace CodeProject.AI.SDK.Utils
     {
         /// <summary>
         /// Adds a JSON config file to the config object. The file is tested for existence and
-        /// correctness before being loaded.
+        /// correctness before being loaded. It is added to config if it exists and is valid, and if
+        /// it does not exist.
         /// </summary>
         /// <param name="config">The configuration builder</param>
         /// <param name="settingsFile">The path to the settings file</param>
@@ -22,33 +23,43 @@ namespace CodeProject.AI.SDK.Utils
         /// <param name="reloadOnChange">Reload if the file changes?</param>
         /// <returns>true on success; false otherwise</returns>
         public static bool AddJsonFileSafe(this IConfigurationBuilder config, string settingsFile,
-                                            bool optional, bool reloadOnChange)
+                                           bool optional, bool reloadOnChange)
         {
-            // Test the file exists
-            if (!File.Exists(settingsFile))
+            bool fileExists = File.Exists(settingsFile);
+
+            // If reloadOnChange = true then what we're actually doing is registering a file for
+            // monitoring, even if that file doesn't yet exist. So we still need to add ("register")
+            // the file if reloadOnChange is true, even if it doesn't exist. Otherwise bail.
+            if (!reloadOnChange && !fileExists)
                 return false;
 
-            // Test the file contents
-            try
+            // If the file exists then test that it's actually well-formed and loadable.
+            if (fileExists)
             {
-                string contents  = File.ReadAllText(settingsFile);
-
-                var options = new JsonSerializerOptions
+                // Test the file contents
+                try
                 {
-                    PropertyNameCaseInsensitive = true,
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    AllowTrailingCommas = true
-                };
-                var settings = JsonSerializer.Deserialize<JsonObject>(contents, options);
-            }
-            catch (Exception ex)
-            {
-                string error = $"Error loading {settingsFile}: {ex.Message}";
-                Console.WriteLine("Error: " + error);
+                    string contents = File.ReadAllText(settingsFile);
 
-                return false;
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        ReadCommentHandling         = JsonCommentHandling.Skip,
+                        AllowTrailingCommas         = true
+                    };
+                    var settings = JsonSerializer.Deserialize<JsonObject>(contents, options);
+                }
+                catch (Exception ex)
+                {
+                    string error = $"Error loading {settingsFile}: {ex.Message}";
+                    Console.WriteLine("Error: " + error);
+
+                    return false;
+                }
             }
 
+            // Either the file exists, or it doesn't exist but reloadOnChange=true so we need to
+            // register it.
             config.AddJsonFile(settingsFile, optional: optional, reloadOnChange: reloadOnChange);
 
             return true;

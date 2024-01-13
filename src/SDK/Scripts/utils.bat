@@ -277,17 +277,26 @@ shift & goto :%~1
 :GetFromServer
     SetLocal EnableDelayedExpansion
 
-    REM Param 1: Name of the file to get eg packages_for_gpu.zip
-    set fileToGet=%1
+    REM This method downloads a zip file from our S3 storage, stores in the downloads
+    REM folder within a subfolder specific to the current module, then expands the
+    REM zip and copies the contents over to module itself. The zip that was downloaded
+    REM will be saved in order to cache downloads
+
+    REM Param 1: Name of the folder in which to look for this file on S3 eg "models/"
+    set folder=%1
+    set folder=!folder:"=!
+
+    REM Param 2: Name of the file to get eg packages_for_gpu.zip
+    set fileToGet=%2
     set fileToGet=!fileToGet:"=!
 
     REM Param 3: Name of the folder within the current module where this download
     REM          will be stored. eg assets
-    set moduleAssetsDir=%2
-    set moduleAssetsDir=!moduleAssetsDir:"=!
+    set moduleAssetsDirName=%3
+    set moduleAssetsDirName=!moduleAssetsDirName:"=!
 
-    REM Param 3: output message
-    set message=%3
+    REM Param 4: output message
+    set message=%4
     set message=!message:"=!
 
     REM Clean up directories to force a download and re-copy if necessary. Note that:
@@ -296,52 +305,55 @@ shift & goto :%~1
     REM  - downloadDirPath is the path where downloads are always stored (typically src/downloads)
     if /i "%forceOverwrite%" == "true" (
         REM Force Re-download, then force re-copy of downloads to install dir
-        if exist "!downloadDirPath!\!moduleDirName!" rmdir /s %rmdirFlags% "!downloadDirPath!\!moduleDirName!"
-        if exist "!moduleDirPath!\!moduleAssetsDir!" rmdir /s %rmdirFlags% "!moduleDirPath!\!moduleAssetsDir!"
+        if exist "!downloadDirPath!\!moduleDirName!\!fileToGet!" (
+            del /s %rmdirFlags% "!downloadDirPath!\!moduleDirName!\!fileToGet!"
+        )
+        if exist "!moduleDirPath!\!moduleAssetsDirName!" rmdir /s %rmdirFlags% "!moduleDirPath!\!moduleAssetsDirName!"
     )
     
-    REM Download !storageUrl!fileToGet to downloadDirPath and extract into downloadDirPath\moduleDirName
-    REM Params are:     S3 storage bucket |  fileToGet   | downloadToDir  | dirToSaveTo  | message
-    call :DownloadAndExtract "!storageUrl!" "!fileToGet!" "!downloadDirPath!\" "!moduleDirName!" "!message!"
+    REM Download !storageUrl!fileToGet to downloadDirPath and extract into downloadDirPath\moduleDirName\ModuleAssetDir
 
-    REM Copy contents of downloadDirPath\moduleDirName to modulesDirPath\moduleDirName\moduleAssetsDir
-    if exist "!downloadDirPath!\!moduleDirName!" (
+    REM Params are: S3 storage bucket | fileToGet     | zip lives in...      | zip expanded to moduleDir/... | message
+    REM eg                   "S3_bucket/folder"  "rembg-models.zip" \downloads\myModuleDir"          "assets"            "Downloading models..."
+    call :DownloadAndExtract "!storageUrl!!folder!" "!fileToGet!" "!downloadDirPath!\!moduleDirName!" "!moduleAssetsDirName!" "!message!"
+
+    REM Copy downloadDirPath\moduleDirName\moduleAssetsDirName folder to modulesDirPath\moduleDirName\
+    if exist "!downloadDirPath!\!moduleDirName!\!moduleAssetsDirName!" (
 
         REM if /i "%verbosity%" neq "quiet" ( ... )
 
-        call :Write "Copying contents of !fileToGet! to !moduleAssetsDir!..."
-        robocopy /e "!downloadDirPath!\!moduleDirName! " "!moduleDirPath!\!moduleAssetsDir! " /XF "*.zip" !roboCopyFlags! >NUL
-        if errorlevel 8 (
-            call :WriteLine "Some files not copied" !color_warn!
-        ) else if errorlevel 16 (
+        call :Write "Copying contents of !fileToGet! to !moduleAssetsDirName!..."
+
+        REM move "!downloadDirPath!\!moduleDirName!\!moduleAssetsDirName!" !moduleDirPath!
+        REM if errorlevel 1 (
+        REM     call :WriteLine "Failed" !color_error!
+        REM ) else (
+        REM     call :WriteLine "done" !color_success!
+        REM )
+
+        robocopy /E "!downloadDirPath!\!moduleDirName!\!moduleAssetsDirName! " ^
+                    "!moduleDirPath!\!moduleAssetsDirName! " !roboCopyFlags! /MOVE >NUL
+        if errorlevel 16 (
             call :WriteLine "Failed" !color_error!
+        else if errorlevel 8 (
+            call :WriteLine "Some files not copied" !color_warn!
         ) else (
             call :WriteLine "done" !color_success!
         )
 
-        REM Delete all but the zip file from the downloads dir
-        call :Write "Cleaning up..."
-        if /i "%verbosity%" neq "quiet" call :WriteLine "Cleaning up extracted files"
-        FOR %%I IN ("!downloadDirPath!\!moduleDirName!\*") DO (
-            IF /i "%%~xI" neq ".zip" (
-                REM echo deleting %%I
-                DEL "%%I" >NUL 2>&1
-                REM echo cleaning "%%~nxI"
-            )
-        )
-        call :WriteLine "done" !color_success!
+        call :Write ""
+        REM NOTE: Before each "exit" call we have a benign call to :WriteLine, or 
+        REM       any other CMD which stops this method returning an errorlevel > 0. 
+        REM       We do this because robocopy will return status as errorlevel, 
+        REM       with error level up to 7 meaning "it may have worked". See
+        REM       https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy
+
     ) else (
         REM if /i "%verbosity%" neq "quiet" (
             call :WriteLine "Failed to download and extract !fileToGet!" "!color_error!"
         REM )
         exit /b 1
     )
-
-    REM NOTE: Before each "exit" call we have a benign call to :WriteLine, which
-    REM       means this method should never return with an errorlevel > 0. We do
-    REM       this because robocopy will return status as errorlevel, with error
-    REM       level up to 7 meaning "it may have worked". See the docs at
-    REM       https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy
 
     exit /b
 
@@ -350,23 +362,22 @@ shift & goto :%~1
     SetLocal EnableDelayedExpansion
 
     REM Param 1: The URL where the download can be found.
-    REM eg "https://codeproject-ai.s3.ca-central-1.amazonaws.com/sense/installer/"
-    set sourceUrl=%1
-    set sourceUrl=!sourceUrl:"=!
+    REM eg "https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/models/"
+    set storageUrl=%1
+    set storageUrl=!storageUrl:"=!
 
     REM Param 2: The file to download. eg packages_for_gpu.zip
     set fileToGet=%2
     set fileToGet=!fileToGet:"=!
 
-    REM Param 3: Where to store the downloade zip. eg "downloads\" - relative
-    REM          to the current directory
+    REM Param 3: Where to store the download zip. eg "downloads\moduleId" 
     set downloadToDir=%3
     set downloadToDir=!downloadToDir:"=!
 
     REM Param 4: The name of the folder within the downloads directory where 
     REM          the contents should be extracted. eg. assets 
-    set dirToSaveTo=%4
-    set dirToSaveTo=!dirToSaveTo:"=!
+    set dirToExtract=%4
+    set dirToExtract=!dirToExtract:"=!
 
     REM Param 5: The output message
     set message=%5
@@ -375,16 +386,25 @@ shift & goto :%~1
     if "!message!" == "" set message=Downloading !fileToGet!...
 
     if /i "%verbosity%" neq "quiet" (
-        call :WriteLine "Downloading !fileToGet! to !downloadToDir!!dirToSaveTo!" "!color_info!"
+        call :WriteLine "Downloading !fileToGet! to !downloadToDir!\!dirToExtract!" "!color_info!"
     )
 
     call :Write "!message!" "!color_primary!"
 
+    set extension=!fileToGet:~-3!
+    if /i "!extension!" NEQ ".gz" (
+        set extension=!fileToGet:~-4!
+        if /i "!extension!" NEQ ".zip" (
+            call :WriteLine "Unknown and unsupported file type for file !fileToGet!" "!color_error!"
+            exit /b    REM no point in carrying on
+        )
+    )
+
     if /i "%verbosity%" neq "quiet" (
-        call :WriteLine "Checking '!downloadToDir!!dirToSaveTo!\!fileToGet!'" "!color_info!"
+        call :WriteLine "Checking '!downloadToDir!\!fileToGet!'" "!color_info!"
     )
     
-    if exist "!downloadToDir!!dirToSaveTo!\!fileToGet!" (
+    if exist "!downloadToDir!\!fileToGet!" (
         call :Write "already exists..." "!color_info!"
     ) else (
 
@@ -393,29 +413,28 @@ shift & goto :%~1
             exit /b 1
         )
 
-        if not exist "!downloadToDir!"              mkdir "!downloadToDir!"
-        if not exist "!downloadToDir!!dirToSaveTo!" mkdir "!downloadToDir!!dirToSaveTo!"
+        if not exist "!downloadToDir!" mkdir "!downloadToDir!"
 
         REM Be careful with the quotes so we can handle paths with spaces
-        powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!!dirToSaveTo!\!fileToGet!'"
+        powershell -command "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!\!fileToGet!'"
 
         REM If these fail, it could be becuase of hanging transfers
         if errorlevel 1 (
             powershell -Command "Get-BitsTransfer | Remove-BitsTransfer"
-            powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!!dirToSaveTo!\!fileToGet!'"
+            powershell -command "Start-BitsTransfer -Source '!storageUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!\!fileToGet!'"
         )
 
         REM if that doesn't work, fallback to a slower safer method
         if errorlevel 1 (
             call :WriteLine "BITS transfer failed. Trying Powershell...." "!color_warn!"
-            powershell -Command "Invoke-WebRequest '!sourceUrl!!fileToGet!' -OutFile '!downloadToDir!!dirToSaveTo!\!fileToGet!'"
+            powershell -Command "Invoke-WebRequest '!storageUrl!!fileToGet!' -OutFile '!downloadToDir!\!fileToGet!'"
             if errorlevel 1 (
                 call :WriteLine "Download failed. Sorry." "!color_error!"
                 exit /b 1
             )
         )
 
-        if not exist "!downloadToDir!!dirToSaveTo!\!fileToGet!" (
+        if not exist "!downloadToDir!\!fileToGet!" (
             call :WriteLine "An error occurred that could not be resolved." "!color_error!"
             exit /b 1
         )
@@ -424,13 +443,14 @@ shift & goto :%~1
     call :Write "Expanding..." "!color_info!"
 
     if /i "%verbosity%" neq "quiet" (
-        call :WriteLine "Heading to !downloadToDir!!dirToSaveTo!" "!color_info!"
+        call :WriteLine "Heading to !downloadToDir!" "!color_info!"
     )
 
-    pushd "!downloadToDir!!dirToSaveTo!"
+    pushd "!downloadToDir!"
+    if not exist "!downloadToDir!\!dirToExtract!" mkdir "!downloadToDir!\!dirToExtract!"
 
-    call :ExtractToDirectory "!fileToGet!"
-    
+    call :ExtractToDirectory "!fileToGet!" "!dirToExtract!"
+
     if errorlevel 1 (
         popd
         exit /b 1
@@ -442,6 +462,7 @@ shift & goto :%~1
 
     exit /b
 
+
 :ExtractToDirectory
     SetLocal EnableDelayedExpansion
 
@@ -449,37 +470,35 @@ shift & goto :%~1
     set archiveName=%1
     set archiveName=!archiveName:"=!
 
-    REM Param 2: Delete the archive after expansion? only 'true' means true.
-    set deleteAfter=%2
+    REM Param 2: The name of the folder within the downloads directory where 
+    REM          the contents should be extracted. eg. assets 
+    set dirToExtract=%2
+    set dirToExtract=!dirToExtract:"=!
+
+    REM Param 3: Delete the archive after expansion? only 'true' means true.
+    set deleteAfter=%3
     set deleteAfter=!deleteAfter:"=!
 
-    set filenameWithoutExtension=%~n1
-
-    if /i "%verbosity%" neq "quiet" (
-        REM cd
-        call :WriteLine "Extracting !archiveName!" "!color_info!"
-    )
+    if /i "%verbosity%" neq "quiet" call :WriteLine "Extracting !archiveName!" "!color_info!"
 
     REM Try tar first. If that doesn't work, fall back to powershell (slow)
     set tarSuccessful=true
-    tar -xf "!archiveName!" >NUL 2>&1
+    tar -xf "!archiveName!" --directory "!dirToExtract!" 
    
     REM error 9009 means "command not found"
     if errorlevel 9009 set tarSuccessful=false
     if errorlevel 1 set tarSuccessful=false
 
-    REM If we don't have tar, use powershell
     if "!tarSuccessful!" == "false" ( 
+
+        REM If we don't have tar, use powershell
         call :Write "Tar failed - moving to PowerShell..." "!color_info!"
 
         REM This fails if the tar left debris. We need to force overwrite
         REM powershell -command "Add-Type -assembly System.IO.Compression.Filesystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('!archiveName!', '.')" 
 
-        REM Cannot seem to get the call to the ZipFileExtension method correct
-        REM powershell -command "[System.IO.Compression.ZipFile]::ExtractToDirectory('!archiveName!', '.', $true)"
-
-        REM Expand-Archive is really, really slow, but it's our only hope here
-        powershell -command "Expand-Archive -Path '!archiveName!' -DestinationPath '.' -Force"
+        REM Expand-Archive is really, really slow, but it's a solid backup
+        powershell -command "Expand-Archive -Path '!archiveName!' -DestinationPath '!dirToExtract!' -Force"
 
         if errorlevel 1 exit /b 1
     )
@@ -503,7 +522,7 @@ shift & goto :%~1
     for /f "tokens=1 delims=." %%a in ("!requestedNetVersion!") do ( set requestedNetMajorVersion=%%a )
     set requestedNetMajorVersion=!requestedNetMajorVersion: =!
 
-    call :Write "Checking for .NET !requestedNetMajorVersion!.0 or greater..."
+    call :Write "Checking for .NET !requestedNetMajorVersion!.0..."
 
     set currentDotNetVersion=None
     set comparison=-1
@@ -543,11 +562,11 @@ shift & goto :%~1
     )
 
     if !comparison! EQU 0 (
-        call :WriteLine  "All good. .NET is !currentDotNetVersion!, requested was !requestedNetVersion!" !color_success!
+        call :WriteLine  "All good. .NET is !currentDotNetVersion!" !color_success!
     ) else if !comparison! LSS 0 (
-        call :WriteLine  "Upgrading: .NET is !currentDotNetVersion!, requested was !requestedNetVersion!" !color_warn!
+        call :WriteLine  "Upgrading: .NET is !currentDotNetVersion!" !color_warn!
     ) else (
-        call :WriteLine  "All good. .NET is !currentDotNetVersion!, requested was !requestedNetVersion!" !color_success!
+        call :WriteLine  "All good. .NET is !currentDotNetVersion!" !color_success!
     )
 
     if !comparison! LSS 0 (
@@ -627,8 +646,8 @@ shift & goto :%~1
             if not exist "!runtimesDirPath!\bin\!os!"              mkdir "!runtimesDirPath!\bin\!os!"
             if not exist "!runtimesDirPath!\bin\!os!\!pythonName!" mkdir "!runtimesDirPath!\bin\!os!\!pythonName!"
 
-            REM Params are:      S3 storage bucket |    fileToGet    | downloadToDir | dirToSaveTo | message
-            call :DownloadAndExtract "%storageUrl%" "!pythonName!.zip" "!pythonDownloadDir!"  "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
+            REM Params are:      S3 storage bucket |    fileToGet    | downloadToDir | dirToExtract | message
+            call :DownloadAndExtract "!storageUrl!runtimes/" "!pythonName!.zip" "!pythonDownloadDir!"  "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
 
             if exist "!downloadDirPath!\!platform!\!pythonName!" (
                 robocopy /e "!downloadDirPath!\!platform!\!pythonName! " "!pythonRuntimeInstallPath! " /XF "!pythonName!.zip" !roboCopyFlags! >NUL
@@ -644,7 +663,7 @@ shift & goto :%~1
     REM Create the virtual environments. All sorts of things can go wrong here
     REM but if you have issues, make sure you delete the venv directory before
     REM retrying.
-    call :Write "Creating Virtual Environment (!pythonLocation!)..."
+    call :Write "Creating Virtual Environment (!runtimeLocation!)..."
     if exist "!venvPythonCmdPath!" (
         call :WriteLine "Virtual Environment already present" %color_success%
     ) else (
@@ -893,7 +912,7 @@ shift & goto :%~1
                     )
 
                     "!venvPythonCmdPath!" -m pip show !module_name! >NUL 2>&1
-                    if errorlevel 0 (
+                    if !errorlevel! == 0 (
                         call :Write "(✔️ checked) " !color_info!
                     ) else (
                         call :Write "(failed check) " !color_error!
@@ -1116,28 +1135,35 @@ shift & goto :%~1
 
 :GetCudaVersion
 
-    REM setlocal enabledelayedexpansion
+    rem setlocal enabledelayedexpansion
 
-    :: Run nvcc with the --version option and capture the output
-    for /f "tokens=*" %%a in ('nvcc --version 2^>^&1') do (
-        set "line=%%a"
+    :: Use nvcc to find the CUDA version
+    where nvcc >nul 2>&1
+    if !errorlevel! == 0 (
+        REM Get the line containing "release x.y"
+        for /f "tokens=*" %%i in ('nvcc --version ^| findstr /C:"release"') do set cudaLine=%%i
+        REM Get the 5th token in the line when split by , and spaces
+        for /f "tokens=5 delims=, " %%a in ("!cudaLine!") do set cuda_version=%%a
+    ) else (
+        REM Backup attempt: Use nvidia-smi to find the CUDA version
+        where nvidia-smi >nul 2>&1
+        if !errorlevel! == 0 (
+            REM Get the line containing "CUDA Version x.y"
+            for /f "tokens=*" %%i in ('nvidia-smi ^| findstr /C:"CUDA Version"') do set cudaLine=%%i
+            REM Get the 9th token in the line when split by spaces
+            for /f "tokens=9 delims= " %%a in ("!cudaLine!") do set cuda_version=%%a
+        ) else (
+            REM echo Unable to find nvcc or nvidia-smi
+        )
+    )
 
-        REM echo GetCudaVersion line: !line!
+    REM echo cudaLine = !cudaLine!
+    REM echo GetCudaVersion version: !cuda_version!
 
-        :: Check if the line contains "release" to extract the CUDA version
-        echo !line! | find /i "release" > nul
-        if not errorlevel 1 (
-            :: Split the line by spaces to get the version part
-            for /f "tokens=5 delims=, " %%b in ("!line!") do (
-                set "cuda_version=%%b"
-
-                REM echo GetCudaVersion version: !cuda_version!
-
-                for /f "tokens=1,2 delims=." %%a in ("!cuda_version!") do (
-                    set "cuda_major_version=%%a"
-                    exit /b
-                )
-            )
+    if "!cuda_version!" neq "" (
+        for /f "tokens=1,2 delims=." %%a in ("!cuda_version!") do (
+            set "cuda_major_version=%%a"
+            exit /b
         )
     )
 
@@ -1147,28 +1173,58 @@ shift & goto :%~1
 
     exit /b
 
+:GetcuDNNVersion
 
-:GetValueFromModuleSettingsFile moduleDirName moduleId property returnValue
+    REM Typically C:\Program Files\NVIDIA\CUDNN\v8.5\bin
+    for %%G in ("%PATH:;=", "%") do (
+        set "pathPart=%%~G"
+        REM echo !pathPart!
+        echo !pathPart! | findstr /i /r /c:"NVIDIA\\cuDNN\\v[0-9]*.[0.9]" > nul
+        if !errorlevel! == 0 (
+            REM @echo !pathPart!
+            set "prevPart="
+            for %%a in ("!pathPart:\=", "!") do (
+                set "part=%%~a"
+                REM echo !part!
+                if /i "!prevPart!" == "cuDNN" (
+                    if "!part:~0,1!" == "v" (
+                        set "cuDNN_version=!part:~1!"
+                        REM @echo cuDNN version = !cuDNN_version!
+                        exit /b
+                    ) else (
+                        set prevPart=!part!
+                    )
+                ) else (
+                    set prevPart=!part!
+                )
+           )
+        )
+    )
+
+    exit /b
+
+:GetValueFromModuleSettingsFile moduleDirPath moduleId property returnValue
 
     SetLocal EnableDelayedExpansion
 
-    set moduleDirName=%~1
+    set moduleDirPath=%~1
     set moduleId=%~2
     set property=%~3
 
-    REM escape '-'s
-    if "!property:-=!" neq "!property!" set property="[""!property!""]"
-    if "!moduleId:-=!" neq "!moduleId!" set moduleId="[""!moduleId!""]"
-
     if /i "!useJq!" == "true" (
-        set key=.Modules.!moduleId!.!property!
+        REM escape '-'s
+        if "!property:-=!" neq "!property!" set property="[""!property!""]"
+        if "!moduleId:-=!" neq "!moduleId!" set moduleId="[""!moduleId!""]"
+        set "key=.Modules.!moduleId:.=\.!.!property!"
     ) else (
-        set key=$.Modules.!moduleId!.!property!
+        set "key=$.Modules.!moduleId:.=\.!.!property!"
     )
 
-    REM if /i "%verbosity%" neq "quiet" (
-    REM     call :WriteLine "Searching for '!key!' in a suitable modulesettings.json file in !moduleDirName!" "!color_info!"
-    REM )
+    if "!debug_json_parse!" == "true" (
+        if /i "%verbosity%" neq "quiet" (
+            call :WriteLine "Searching for '!key!' in a suitable modulesettings.json file in !moduleDirPath!" "!color_info!"
+        )
+    )
 
     REM The order in which modulesettings files are added is
     REM WE DO NOT SUPPORT DOCKER IN Windows, plus we are ONLY searching non-development files here
@@ -1183,22 +1239,24 @@ shift & goto :%~1
     REM   (not needed yet) modulesettings.device.json (device = raspberrypi, orangepi, jetson)
     REM So we need to check each modulesettings file in reverse order until we find a value for 'key'
     
-    call :GetValueFromModuleSettings "!moduleDirName!\modulesettings.windows.!architecture!.json", "!key!"
+    call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.!architecture!.json", "!key!"
     REM echo Check 1: moduleSettingValue = !moduleSettingValue!
     if "!moduleSettingValue!" == "" (
-        call :GetValueFromModuleSettings "!moduleDirName!\modulesettings.windows.json", "!key!"
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.json", "!key!"
         REM echo Check 2: moduleSettingValue = !moduleSettingValue!
     )
     if "!moduleSettingValue!" == "" (
-        call :GetValueFromModuleSettings "!moduleDirName!\modulesettings.json", "!key!"
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.json", "!key!"
         REM echo Check 3: moduleSettingValue = !moduleSettingValue!
     )
 
-    REM if "!moduleSettingValue!" == "" (
-    REM     call :WriteLine "Cannot find !key! in modulesettings in !moduleDirName!" "!color_info!"
-    REM ) else (
-    REM     call :WriteLine "!key! is !moduleSettingValue! in modulesettings in !moduleDirName!" "!color_info!"
-    REM )
+    if "!debug_json_parse!" == "true" (
+        if "!moduleSettingValue!" == "" (
+            call :WriteLine "Cannot find !key! in modulesettings in !moduleDirPath!" "!color_info!"
+        ) else (
+            call :WriteLine "!key! is !moduleSettingValue! in modulesettings in !moduleDirPath!" "!color_info!"
+        )
+    )
 
     REM return value in 4th parameter
     REM EndLocal & set "%~4=!moduleSettingValue!"
@@ -1217,12 +1275,17 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
     set jsonFile=%~1
     set key=%~2
 
-    REM if /i "!verbosity!" neq "quiet" (
-    REM     call :WriteLine "Searching for '%key%' in '%jsonFile%'" "!color_info!"
-    REM )
+    if "!debug_json_parse!" == "true" (
+        if /i "!verbosity!" neq "quiet" (
+            call :WriteLine "Searching for '%key%' in '%jsonFile%'" "!color_info!"
+        )
+    )
 
     if not exist "!jsonFile!" (
-        EndLocal & set moduleSettingValue=
+        if "!debug_json_parse!" == "true" if /i "!verbosity!" neq "quiet" (
+            call :WriteLine "Can't find '%jsonFile%'" "!color_info!"
+        )
+        EndLocal & set "moduleSettingValue="
         exit /b
     )
 
@@ -1243,101 +1306,60 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
     ) else (
         set parse_mode=parsejson
     )
-
-    REM echo jq location is !sdkPath!\Utilities\jq-windows-amd64
-    REM echo json location is "%jsonFile%"
-    REM echo key is %key%
-
+   
     if /i "!parse_mode!" == "jq" (
 
-        REM We have a problem with '!'. Because we're using delayed expansion, the ! really get in
-        REM the way. The most straightforward way to get around the escaping and working around it
-        REM is to replace the ! with something odd, do the extracting of values, then move the !
-        REM back where it should be. It's not pretty. Oh no it's not. But it works. Mostly.
+        REM We have a problem with '!'. Because we're using delayed expansion, the ! gets stripped
+        REM by echo and so we lose them from the file. Replacing "!" in a string inside a method
+        REM using delayed expansion is a little too painful so we get around it by using powershell
+        REM to do the heavy lifting. It's tediously slow, but works.
         
-        REM Remove comments (// and /* */) and replace '!' with '#@@#'
-
-        REM Loading -Raw (ie load all at once, include newlines) and processing /* and // at once
-        REM will removes line breaks, and cause issues. Instead we'll do it in two parts.
-        REM for /f "usebackq delims=" %%i in (` powershell -Command " (Get-Content '!jsonFile!' -Raw) -replace '//[^^""]*$^|/\*[\s\S]*?\*/','' -replace '^!','#@@#' " `) do (
-        
-        REM PROBLEM: We need to use temp files due to the size of the data
-        REM Load line by line (no -Raw) and remove // comments, process '!'
-        REM set filtered=
-        REM for /f "usebackq delims=" %%i in (` powershell -Command " (Get-Content '!jsonFile!') -replace '//[^^""]*$^','' -replace '^!','#@@#' " `) do (
-        REM     set "filtered=!filtered!%%i"
+        REM Handy if you want to see the interim output of just big files
+        REM if exist temp_settings1.json (
+        REM     for %%I in ("temp_settings1.json") do set filesize=%%~zF
+        REM     if !filesize! GTR 1000 goto:eof
         REM )
 
-        powershell -Command "(Get-Content '!jsonFile!') -replace '//[^^""]*$^','' -replace '^!','#@@#' | Out-File -FilePath 'temp_settings1.json' -Force -Encoding utf8"
+        REM Step 1. Encode "!"
+        powershell -Command "(Get-Content '!jsonFile!') -replace '^!','^^^!' | Out-File -FilePath 'temp_settings1.json' -Force -Encoding utf8"
 
-        REM PROBLEM: We need to use temp files due to the size of the data
-        REM Load in one fell swoop (use -Raw), including newlines, so we can do the /*...*/ thing
-        REM for /f "usebackq delims=" %%i in (` powershell -Command " (Get-Content 'temp_settings1.json' -Raw) -replace '/\*[\s\S]*?\*/','' " `) do (
-        REM    set "filtered=%%i"
-        REM )
-        REM Extract the property
-        REM for /f "usebackq delims=" %%j in (` echo !filtered! ^| "!sdkPath!\Utilities\jq-windows-amd64.exe" -r %key% `) do (
-        REM    set "jsonValue=!jsonValue!%%j"
-        REM )        
-        
-        powershell -Command " (Get-Content 'temp_settings1.json' -Raw) -replace '/\*[\s\S]*?\*/','' | Out-File -FilePath 'temp_settings2.json' -Force -Encoding utf8"
+        REM Step 2. Strip comments
+        call :StripJSONComments temp_settings1.json temp_settings2.json
+        del temp_settings1.json
 
-        REM extract the property
+        REM And extract the property
         set jsonValue=
         for /f "usebackq delims=" %%j in (` type temp_settings2.json ^| "!sdkPath!\Utilities\jq-windows-amd64.exe" -r %key% `) do (
             set "jsonValue=!jsonValue!%%j"
         )
-
-        REM clean up
-        del temp_settings1.json
         del temp_settings2.json
 
-        REM and thanks for this...
-        if /i "!jsonValue!" == "null" (
-            set "jsonValue="
-        ) else (
-
-            REM We have our property. It may include '#@@#', which everyone knows means '!'. Translate.
-
-            set "correctedValue="
-            for /L %%i in (0, 1, 2000) do (
-                if defined jsonValue (
-                    set "char=!jsonValue:~0,1!"
-                    set "phrase=!jsonValue:~0,4!"
-                    if "!phrase!" == "#@@#" (
-                        set "correctedValue=!correctedValue!^!"
-                        set "jsonValue=!jsonValue:~4!"
-                    ) else (
-                        set "correctedValue=!correctedValue!!char!"
-                        set "jsonValue=!jsonValue:~1!"
-                    )
-                )
-            )
-            REM echo correctedValue = !correctedValue!
-            set "jsonValue=!correctedValue!"
-        )
-
-        REM echo jsonFile  = !jsonFile!
-        REM echo key       = !key!
-        REM echo jsonValue = !jsonValue!
+        REM and thanks for this, jq...
+        if /i "!jsonValue!" == "null" set "jsonValue="
 
     ) else if /i "!parse_mode!" == "parsejson" (     
 
-        REM Strip comments
-        set filtered=
-        for /f "usebackq delims=" %%i in (` powershell -Command " (Get-Content '!jsonFile!') -replace '//[^^""]*$^|/\*.*?\*/','' " `) do (
-            set "filtered=!filtered!%%i"
+        REM Handling quotes and spaces inside a FOR loop is a PITA. Use this trick to get to the
+        REM directory containing the JSON file so we can skip quotes on !jsonFile!
+        pushd "!jsonFile!\.."
+
+		REM Extract the filename.extn from the json file since it's now in the current dir. This
+        REM allows us to place the json file without quotes. ASSUMING jsonFile DOESN'T HAVE SPACES
+		for %%A in ("!jsonFile!") do set "jsonFileCurrentDir=%%~nxA"
+        
+        REM Run the ParseJSON command on jsonFile, and collect ALL lines of output (eg arrays) into
+        REM the jsonValue var. Note the quotes around ParseJSON, but not around key or jsonFileCurrentDir
+        set "jsonValue="
+        for /f "usebackq tokens=*" %%i in (` "%sdkPath%\Utilities\ParseJSON\ParseJSON.exe" !key! !jsonFileCurrentDir! `) do (
+            set jsonValue=!jsonValue!%%i
         )
 
-        REM extract the property
-        set jsonValue=
-        for /f "usebackq delims=" %%j in (` echo !filtered! ^| "!sdkPath!\Utilities\ParseJSON\ParseJSON" %key% `) do (
-            set "jsonValue=!jsonValue!%%j"
-        )
+        REM Go back from whence we came
+        popd
 
     ) else (
 
-        REM or use inbuilt DOS commands.
+        REM or use inbuilt DOS commands. This will not allow JSON path searching so is very limited
         set jsonValue=
         for /f "usebackq tokens=2 delims=:," %%a in (`findstr /I /R /C:"\"!key!\"[^^{]*$" "!jsonFile!"`) do (
             set "jsonValue=%%a"
@@ -1346,16 +1368,127 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
         )
     )
 
-    REM if "!jsonValue!" == "" (
-    REM     call :WriteLine "Cannot find !key! in !jsonFile!" "!color_info!"
-    REM ) else (
-    REM     call :WriteLine "** !key! is !jsonValue! in !jsonFile!" "!color_info!"
-    REM )
+    if "!debug_json_parse!" == "true" (
+        if "!jsonValue!" == "" (
+            call :WriteLine "Cannot find !key! in !jsonFile!" "!color_info!"
+        ) else (
+            call :WriteLine "** !key! is !jsonValue! in !jsonFile!" "!color_info!"
+        )
+    )
 
     REM return value in 3rd parameter
     REM EndLocal & set %~3=!jsonValue!
     REM Or not...
     EndLocal & set "moduleSettingValue=%jsonValue%"
+
+    exit /b
+
+REM Strips single line comments from a file and stores the cleaned contents in a new file
+:StripJSONComments
+    setlocal enabledelayedexpansion
+
+    set inputFilePath=%~1
+    set cleanFilePath=%~2
+
+    set debug=false
+
+    :: Temporary file
+    if exist "%cleanFilePath%" del "%cleanFilePath%"
+
+    :: Process each line in the file
+    set "insideMultilineComment=false"
+    set "justExitedMultilineComment=false"
+    for /f "delims=" %%a in ('type "%inputFilePath%"') do (
+
+        set "line=%%a"
+        set "newLine="
+
+        REM Optimisation: We only need to process a line if it contains a //, /*, or */. To be
+        REM even smarter, we only care about */ if we're in an open /* comment, but that split test
+        REM will probably be a net negative. Pity this fails miserably
+        REM echo !line! | findstr /R /C:"/\*" /C:"\*/" /C:"//" > nul
+        if !errorlevel! == 0 (
+
+            :: Process each character in the line
+            set insideQuotes=false
+            set cancelLoop=false
+
+            REM MUCH better way of doing this is to go:
+            REM 
+            REM set "charPair= "
+            REM :not_at_eol
+            REM if "!charPair!" NEQ "" (
+            REM     set "charPair=!line:~%%i,2!"
+            REM     if "!charPair!"=="" goto :not_at_eol
+            REM     ...
+            REM     goto :not_at_eol
+            REM )
+
+            for /l %%i in (0,1,500) do (
+            
+                if "!cancelLoop!"=="false" (
+                    set "charPair=!line:~%%i,2!"
+
+                    REM Hit end of line?
+                    if "!charPair!"=="" set cancelLoop=true
+                )
+
+                if "!cancelLoop!"=="false" (
+
+                    REM if "!debug!" == "true" echo CHAR = !charPair!
+
+                    REM checking if a string contains a " is really, really tricky
+                    set firstChar=!charPair:~0,1!
+                    set "checkVar=!firstChar:"=!"
+                    if "!checkVar!" NEQ "!firstChar!" ( REM This means firstChar was a "
+                        if "!insideQuotes!"=="false" (
+                            REM if "!debug!" == "true" echo ENTER quotes
+                            set "insideQuotes=true"
+                        ) else (
+                            REM  if "!debug!" == "true" echo EXIT quotes
+                            set "insideQuotes=false"
+                        )
+                    )
+
+                    REM If we find "//" and we're not inside quotes, stop processing the line
+                    if "!charPair!"=="//" if "!insideQuotes!"=="false" set cancelLoop=true
+
+                )
+                
+                REM Still going?
+                if "!cancelLoop!"=="false" (
+                
+                    REM If we find "/*" and we're not inside quotes, we'll stop outputting
+                    if "!charPair!"=="/*" if "!insideQuotes!"=="false" (
+                        REM if "!debug!"=="true" echo ENTER multiline comment
+                        set insideMultilineComment=true
+                    )
+
+                    REM Don't output stuff inside a comment, and don't output the trailing "/"
+                    if "!insideMultilineComment!"=="false" if "!justExitedMultilineComment!"=="false" (
+                        set "newLine=!newLine!!charPair:~0,1!"
+                    )
+                    set justExitedMultilineComment=false
+
+                    if "!charPair!"=="*/" if "!insideMultilineComment!"=="true" (
+                        set insideMultilineComment=false
+                        set justExitedMultilineComment=true
+                        REM if "!debug!" == "true" echo EXIT multiline comment
+                    )
+
+                )
+            )
+        )
+
+        REM Only output changed lines during debug
+        if "!debug!" == "true" if "!line!" NEQ "!newLine!" (
+            echo Input:  "!line!"
+            echo Output: "!newLine!"
+        )
+
+        REM Note the ":" to prevent ECHO is off messages on blank lines
+        echo:!newLine! >> "%cleanFilePath%"
+    )
 
     exit /b
 

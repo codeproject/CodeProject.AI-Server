@@ -193,7 +193,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PortraitFilter", "src\modul
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SentimentAnalysis", "src\modules\SentimentAnalysis\SentimentAnalysis.csproj", "{033E966B-CBFD-4C79-AC06-78203C795EA8}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "YOLOv5-3.1", "src\modules\YOLOv5-3.1\YOLOv5-3.1.pyproj", "{0690D5F7-864F-4347-8E20-FA9903CE56EA}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetectionYOLOv5-3.1", "src\modules\ObjectDetectionYOLOv5-3.1\ObjectDetectionYOLOv5-3.1.pyproj", "{0690D5F7-864F-4347-8E20-FA9903CE56EA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{95BF276E-3D5E-4CB2-9FEB-A77AF0C2728C}"
 	ProjectSection(SolutionItems) = preProject
@@ -213,9 +213,11 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "FaceProcessing", "src\modul
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetectionCoral", "src\modules\ObjectDetectionCoral\ObjectDetectionCoral.pyproj", "{470D3417-36A4-49A4-B719-496477FA92FB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetectionNet", "src\modules\ObjectDetectionNet\ObjectDetectionNet.csproj", "{F682C5F9-854F-4B4E-A7DE-33329F51A26B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetectionYOLOv5Net", "src\modules\ObjectDetectionYOLOv5Net\ObjectDetectionYOLOv5Net.csproj", "{F682C5F9-854F-4B4E-A7DE-33329F51A26B}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetectionYolo", "src\modules\ObjectDetectionYolo\ObjectDetectionYolo.pyproj", "{B6A1D372-264E-4F66-B7FB-7FF19587476F}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetectionYOLOv5-6.2", "src\modules\ObjectDetectionYOLOv5-6.2\ObjectDetectionYOLOv5-6.2.pyproj", "{B6A1D372-264E-4F66-B7FB-7FF19587476F}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetectionYOLOv8", "src\modules\ObjectDetectionYOLOv8\ObjectDetectionYOLOv8.pyproj", "{B6A1D372-264E-4F66-B7FB-7FF19587476A}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SceneClassifier", "src\modules\SceneClassifier\SceneClassifier.pyproj", "{08A2DD62-D65A-47A8-AB9D-55D18DBC74D6}"
 EndProject
@@ -223,7 +225,7 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SuperResolution", "src\modu
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TextSummary", "src\modules\TextSummary\TextSummary.pyproj", "{470D3417-36A4-49A4-B719-496466FA92FB}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TrainingYoloV5", "src\modules\TrainingYoloV5\TrainingYoloV5.pyproj", "{2DFDA382-189B-45D1-94D5-3004D1AEB73C}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TrainingObjectDetectionYOLOv5", "src\modules\TrainingObjectDetectionYOLOv5\TrainingObjectDetectionYOLOv5.pyproj", "{2DFDA382-189B-45D1-94D5-3004D1AEB73C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Inno Setup", "Inno Setup", "{1D776E6C-8123-4EF7-9AB1-81BE0B1FB4C1}"
 	ProjectSection(SolutionItems) = preProject
@@ -309,7 +311,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 		src\SDK\Utilities\stop_all.sh = src\SDK\Utilities\stop_all.sh
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParseJSON", "src\SDK\Utilities\ParseJSON\ParseJSON.csproj", "{AF84AA51-8718-40EC-B5D7-281799A7B07C}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Articles", "Articles", "{AB05F086-BBA9-4E10-9D96-A92814584539}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mesh", "Mesh", "{328FF294-5E4F-4A0E-AEA2-CCE114D662AC}"
+	ProjectSection(SolutionItems) = preProject
+		Using a Mesh of CodeProject.AI Servers to Optimize Performance.md = Using a Mesh of CodeProject.AI Servers to Optimize Performance.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParseJSON", "src\SDK\Utilities\ParseJSON\ParseJSON.csproj", "{AF84AA51-8718-40EC-B5D7-281799A7B07C}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Llama", "src\modules\LlamaChat\Llama.pyproj", "{D56CA115-830A-4007-BB9B-BF0FC72DA9B0}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SoundClassifierTF", "src\modules\SoundClassifierTF\SoundClassifierTF.pyproj", "{470D3417-36A4-49A4-B719-486477FA92FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -381,8 +394,8 @@ Global
 		{0690D5F7-864F-4347-8E20-FA9903CE56EB}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{0690D5F7-864F-4347-8E20-FA9903CE56EB}.Release|x86.ActiveCfg = Release|Any CPU
 		{B6A1D372-264E-4F66-B7FB-7FF19587476E}.Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{B6A1D372-264E-4F66-B7FB-7FF19587476E}.Debug|ARM64.ActiveCfg = Debug|Any CPU
-		{B6A1D372-264E-4F66-B7FB-7FF19587476E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B6A1D372-264E-4F66-B7FB-7FF19587476E}.Debug|ARM64.ActiveCfg = Release|Any CPU
+		{B6A1D372-264E-4F66-B7FB-7FF19587476E}.Debug|x86.ActiveCfg = Release|Any CPU
 		{B6A1D372-264E-4F66-B7FB-7FF19587476E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6A1D372-264E-4F66-B7FB-7FF19587476E}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{B6A1D372-264E-4F66-B7FB-7FF19587476E}.Release|x86.ActiveCfg = Release|Any CPU
@@ -458,6 +471,12 @@ Global
 		{B6A1D372-264E-4F66-B7FB-7FF19587476F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6A1D372-264E-4F66-B7FB-7FF19587476F}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{B6A1D372-264E-4F66-B7FB-7FF19587476F}.Release|x86.ActiveCfg = Release|Any CPU
+		{B6A1D372-264E-4F66-B7FB-7FF19587476A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6A1D372-264E-4F66-B7FB-7FF19587476A}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{B6A1D372-264E-4F66-B7FB-7FF19587476A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B6A1D372-264E-4F66-B7FB-7FF19587476A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6A1D372-264E-4F66-B7FB-7FF19587476A}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{B6A1D372-264E-4F66-B7FB-7FF19587476A}.Release|x86.ActiveCfg = Release|Any CPU
 		{08A2DD62-D65A-47A8-AB9D-55D18DBC74D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{08A2DD62-D65A-47A8-AB9D-55D18DBC74D6}.Debug|ARM64.ActiveCfg = Debug|Any CPU
 		{08A2DD62-D65A-47A8-AB9D-55D18DBC74D6}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -512,6 +531,18 @@ Global
 		{AF84AA51-8718-40EC-B5D7-281799A7B07C}.Release|ARM64.Build.0 = Release|Any CPU
 		{AF84AA51-8718-40EC-B5D7-281799A7B07C}.Release|x86.ActiveCfg = Release|Any CPU
 		{AF84AA51-8718-40EC-B5D7-281799A7B07C}.Release|x86.Build.0 = Release|Any CPU
+		{D56CA115-830A-4007-BB9B-BF0FC72DA9B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D56CA115-830A-4007-BB9B-BF0FC72DA9B0}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{D56CA115-830A-4007-BB9B-BF0FC72DA9B0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D56CA115-830A-4007-BB9B-BF0FC72DA9B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D56CA115-830A-4007-BB9B-BF0FC72DA9B0}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{D56CA115-830A-4007-BB9B-BF0FC72DA9B0}.Release|x86.ActiveCfg = Release|Any CPU
+		{470D3417-36A4-49A4-B719-486477FA92FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{470D3417-36A4-49A4-B719-486477FA92FB}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{470D3417-36A4-49A4-B719-486477FA92FB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{470D3417-36A4-49A4-B719-486477FA92FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{470D3417-36A4-49A4-B719-486477FA92FB}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{470D3417-36A4-49A4-B719-486477FA92FB}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -551,6 +582,7 @@ Global
 		{470D3417-36A4-49A4-B719-496477FA92FB} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{F682C5F9-854F-4B4E-A7DE-33329F51A26B} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{B6A1D372-264E-4F66-B7FB-7FF19587476F} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
+		{B6A1D372-264E-4F66-B7FB-7FF19587476A} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{08A2DD62-D65A-47A8-AB9D-55D18DBC74D6} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{A472B309-3C77-4DE5-8F03-AA81938EEFB4} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{470D3417-36A4-49A4-B719-496466FA92FB} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
@@ -565,7 +597,10 @@ Global
 		{35A70F3E-EE70-48D9-A86D-3434AEF4CAE2} = {88812453-FC59-48D4-8B8A-890DA33EA039}
 		{6AE28B59-221B-4E3D-A66C-E255B26DAF82} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{A04CA21C-39DF-4466-B48B-A08AA0A262BD} = {FF0C329F-41E8-4540-BCDB-97690911077D}
+		{328FF294-5E4F-4A0E-AEA2-CCE114D662AC} = {AB05F086-BBA9-4E10-9D96-A92814584539}
 		{AF84AA51-8718-40EC-B5D7-281799A7B07C} = {A04CA21C-39DF-4466-B48B-A08AA0A262BD}
+		{D56CA115-830A-4007-BB9B-BF0FC72DA9B0} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
+		{470D3417-36A4-49A4-B719-486477FA92FB} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

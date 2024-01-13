@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 namespace CodeProject.AI.SDK
 {
     /// <summary>
-    /// Describes the state of a proces that is running a module
+    /// Describes the state of a process that is running a module
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum ProcessStatusType

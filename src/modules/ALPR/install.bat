@@ -18,7 +18,7 @@
 )
 
 :: Download the ALPR models and store in /paddleocr
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "paddleocr-models.zip" "paddleocr" "Downloading ALPR models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "paddleocr-models.zip" "paddleocr" "Downloading ALPR models..."
 
 REM TODO: Check paddleocr created and has files
 REM set moduleInstallErrors=...

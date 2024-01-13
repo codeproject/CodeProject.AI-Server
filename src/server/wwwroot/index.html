@@ -21,9 +21,9 @@
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="assets/dashboard.css?v=2.3.2">
+    <link rel="stylesheet" type="text/css" href="assets/dashboard.css?v=2.4.8.0">
 
-    <script type="text/javascript" src="assets/dashboard.js?v=2.3.2"></script>
+    <script type="text/javascript" src="assets/dashboard.js?v=2.4.8.0"></script>
     <script type="text/javascript">
     /*
     const registerServiceWorker = async () => {
@@ -131,11 +131,11 @@
                     <a href="https://www.codeproject.com/Articles/5322557/CodeProject-AI-Server-AI-the-easy-way">The Code</a>
                 </div>
                 <div class="ms-3 bg-info rounded-3" title="Explore the capabilities of your installed CodeProject.AI server">
-                    <a id="explorer-launcher" class="p-1" href="vision.html"
+                    <a id="explorer-launcher" class="p-1" href="explorer.html"
                        target="_blank">CodeProject.AI Explorer</a>
                 </div>
                 <div class="ms-auto me-3 server-status">
-                    Server is <span id="serverStatus" class="font-weight-bold ms-1"></span>
+                    Server is <span id="serverStatus" class="fw-bold ms-1"></span>
                 </div>
                 <div id="version" style="cursor:pointer" onclick="checkForUpdates(true)" title="Check for updates"></div>
                 <div id="colourModeToggle" onclick="toggleColourMode()" class="ms-1" style="cursor:pointer">☀️</div>
@@ -160,6 +160,7 @@
 
                     <b>FAQs</b>: <a href="https://www.codeproject.com/ai/docs/faq/blue-iris.html" target="_blank">Blue Iris</a>, 
                     <a href="https://www.codeproject.com/ai/docs/faq/home-assistant.html" target="_blank">Home Assistant</a>, 
+                    <a href="https://www.codeproject.com/Articles/5349191/How-to-Setup-Agent-DVR-and-CodeProject-AI-Server-o" target="_blank">Agent DVR</a>,
                     <a href="https://www.codeproject.com/Articles/5345399/Setting-Up-a-Wyze-Cam-with-Blue-Iris-and-CodeProje" target="_blank">Wyze cams</a>.
                 </div>
             </div>
@@ -175,6 +176,9 @@
                 </li>
                 <li class="nav-item" id="system-tab-listitem">
                     <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system-panel" type="button" role="tab" aria-controls="system" aria-selected="true">System Info</button>
+                </li>
+                <li class="nav-item" id="mesh-tab-listitem">
+                    <button class="nav-link" id="mesh-tab" data-bs-toggle="tab" data-bs-target="#mesh-panel" type="button" role="tab" aria-controls="mesh" aria-selected="true">Mesh</button>
                 </li>
                 <li class="nav-item" id="modules-tab-listitem">
                     <button class="nav-link" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules-panel" type="button" role="tab" aria-controls="face" aria-selected="false">Install Modules</button>
@@ -200,7 +204,7 @@
                             </div>
                             <div class="d-flex small">
                                 <div class="text-muted">Logging level</div>
-                                <input type="range" id="logSeverity" class="w-25 mx-2" min="1" max="6" steps="1"
+                                <input type="range" id="logSeverity" class="tight w-25 mx-2" min="1" max="6" steps="1"
                                        value="4" list="steplist" onchange="updateLogVerbosity(this)">
                                 <datalist id="steplist">
                                     <option>1</option>
@@ -252,7 +256,7 @@
                         </div>
                         <div class="d-flex small">
                             <div class="text-muted">Logging level</div>
-                            <input type="range" id="logSeverity-main" class="w-25 mx-2" min="1" max="6" steps="1"
+                            <input type="range" id="logSeverity-main" class="tight w-25 mx-2" min="1" max="6" steps="1"
                                    value="4" list="steplist" onchange="updateLogVerbosity(this)">
                             <datalist id="steplist">
                                 <option>1</option>
@@ -263,6 +267,24 @@
                                 <option>6</option>
                             </datalist>
                             <div id="verbosity-main">Info</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade show" id="mesh-panel" role="tabpanel" aria-labelledby="mesh-tab">
+                    <div class="card">
+                        <div class="card-body sub-panel">
+                            <div class="float-end">
+                                <button class="btn btn-primary" onclick="updateMeshSetting(event, 'Enable', false)">Stop</button>
+                                <button class="btn btn-primary" onclick="updateMeshSetting(event, 'Enable', true)">Start</button>
+                                <div class="form-check form-switch mt-1">
+                                    <input class="form-check-input" type="checkbox" id="showMeshRoutes" 
+                                           checked onchange="toggleMeshRoutes(this)">
+                                    <label class="form-check-label text-muted" for="showMeshRoutes">Show Routes</label>
+                                </div>
+                            </div>
+
+                            <div id="meshStatus" class='mesh-summary'>Mesh status loading...</div>
                         </div>
                     </div>
                 </div>
@@ -283,16 +305,16 @@
                             <input class="form-control btn-warning ms-2" style="width: 5rem;" id="install" type="button" value="Install" onclick="uploadModule()">
                         </div>
 -->
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between mt-3">
                             <div class="form-check form-switch ms-4 me-auto">
                                 <input class="form-check-input" type="checkbox" id="noCache">
                                 <label class="form-check-label text-muted" for="noCache">Do not use download cache</label>
                             </div>
-                            <div class="text-nowrap">
+                            <div class="text-nowrap text-muted">
                                 Install verbosity 
                             </div>
                             <div class="mx-2">
-                                <select class="d-inline-block form-select-sm ms-2" aria-label="Default select example" id="install-verbosity">
+                                <select class="d-inline-block form-select-sm ms-2 bg-light" aria-label="Default select example" id="install-verbosity">
                                 <option selected value="quiet">Quiet</option>
                                 <option value="info">Info</option>
                                 <option value="loud">Loud</option>

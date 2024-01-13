@@ -8,7 +8,8 @@ services:
     # working_dir: /app
     restart: unless-stopped
     ports:
-      - "32168:32168"
+      - "32168:32168/tcp"
+      - "32168:32168/udp"
     environment:
       - TZ=America/Toronto
     volumes:

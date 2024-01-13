@@ -46,7 +46,7 @@ async function callStatus(method, callback) {
         return;
 
     let urlElm = document.getElementById('serviceUrl');
-    let url = urlElm.value.trim() + '/v1/status/' + method;
+    let url = urlElm.value.trim() + '/v1/server/status/' + method;
 
     try {
         await fetch(url, {
@@ -145,7 +145,7 @@ async function checkForUpdates(showResult) {
         else {
 
             updateError.innerHTML = "Unable to check for updates";
-            let element = document.getElementById("updateToast");
+            let element    = document.getElementById("updateToast");
             let toastPopup = new bootstrap.Toast(element);
             toastPopup.show();
         }
@@ -161,7 +161,7 @@ async function callSettings(moduleId, key, value) {
         return;
 
     let urlElm = document.getElementById('serviceUrl');
-    let url = urlElm.value.trim() + '/v1/settings/' + moduleId;
+    let url = urlElm.value.trim() + '/v1/server/settings/' + moduleId;
 
     let formData = new FormData();
     formData.append("name",  key);
@@ -201,6 +201,51 @@ function updateSetting(event, moduleId, setting, value) {
     callSettings(moduleId, setting, value.toString());
 }
 
+async function callMeshSettings(key, value) {
+
+    if (isFetchDelayInEffect())
+        return;
+
+    let urlElm = document.getElementById('serviceUrl');
+    let url = urlElm.value.trim() + '/v1/server/mesh/setting';
+
+    let formData = new FormData();
+    formData.append("name",  key);
+    formData.append("value", value);
+
+    try {
+        await fetch(url, {
+            method: "POST",
+            body: formData
+        })
+            .then(response => {
+                // if (response.ok)
+                //    ... all good
+                // else
+                //    ... an issue
+            })
+            .catch(error => {
+                setFetchError();
+            });
+    }
+    catch
+    {
+        setFetchError();
+    }
+}
+
+/**
+ * Calls the settings API to update a setting with the given value for the 
+ * given module
+ * @param event - the click event
+ * @param moduleId - The ID of the module to update
+ * @param setting - the setting to change
+ * @param value - the value to assign to the setting
+ */
+function updateMeshSetting(event, setting, value) {
+    event.preventDefault();
+    callMeshSettings(setting, value.toString());
+}
 
 // Server status: server and analysis modules status and stats ================
 
@@ -209,11 +254,13 @@ function updateSetting(event, moduleId, setting, value) {
  */
 async function getSystemStatus() {
 
+    // TODO: use callStatus here
+
     if (isFetchDelayInEffect())
         return;
 
     let urlElm = document.getElementById('serviceUrl');
-    let url = urlElm.value.trim() + '/v1/status/system-status';
+    let url = urlElm.value.trim() + '/v1/server/status/system-status';
 
     try {
         fetch(url, {
@@ -256,13 +303,15 @@ async function getSystemStatus() {
  */
 async function getModulesStatuses() {
 
+    // TODO: use callStatus here
+
     if (isFetchDelayInEffect())
         return;
 
     // In the future we will ask for "logs since log ID 'x'" so we have
     // a full history. For now, a simple "last 10".
     let urlElm = document.getElementById('serviceUrl');
-    let url = urlElm.value.trim() + '/v1/status/analysis/list?random=' + new Date().getTime();
+    let url = urlElm.value.trim() + '/v1/server/status/analysis/list?random=' + new Date().getTime();
 
     let statusTable = document.getElementById('serviceStatus');
 
@@ -458,7 +507,9 @@ async function getModulesStatuses() {
                                     }
 
                                     // Half-precision  (PyTorch only)
-                                    if (moduleId == "ObjectDetectionYolo" || moduleId == "YOLOv5-3.1" || moduleId == "FaceProcessing") {
+                                    if (moduleId == "ObjectDetectionYOLOv5-3.1" || moduleId == "ObjectDetectionYOLOv5-6.2" || 
+                                        moduleId == "ObjectDetectionYOLOv8"     || moduleId == "FaceProcessing") {
+
                                         dropDown +=
                                                 "<li><a class='dropdown-item small' href='#'>Half Precision &raquo;</a>"
                                             + " <ul class='submenu dropdown-menu dropdown-menu-right'>"
@@ -548,6 +599,148 @@ async function getModulesStatuses() {
     }    
 }
 
+// Mesh ========================================================================
+
+async function getMeshStatus() {
+
+ if (isFetchDelayInEffect())
+        return;
+
+    let urlElm = document.getElementById('serviceUrl');
+    let url = urlElm.value.trim() + '/v1/server/mesh/summary';
+
+    try {
+        fetch(url, {
+            method: "GET",
+            cache: "no-cache"
+        })
+            .then(response => {
+                if (response.ok) {
+                    response.json().then(result => {
+                        let status = meshStatusSummary(result);
+                        
+                        let meshStatus = document.getElementById('meshStatus');
+                        meshStatus.innerHTML = status;
+                    });
+                }
+            })
+            .catch(error => {
+                setFetchError();
+            });
+    }
+    catch
+    {
+        setFetchError();
+    }
+}
+
+function activeStr(value) {
+    return value? `<span class='text-success'>${value}</span>` 
+                : `<span class='text-warning'>${value}</span>`
+}
+
+function meshStatusSummary(data) {
+    const indent = "    ";
+
+    let summary = "<b>Current Server mesh status</b>\n\n";
+
+    if (data.localServer)
+    {
+        summary += meshServerSummary(data.localServer);
+    }
+    else
+    {
+        summary += `${indent}Name:         localhost\n`;
+        summary += `${indent}Active:       ${activeStr(false)}\n`;
+        summary += `${indent}Broadcasting: ${activeStr(false)}\n`;
+        summary += `${indent}Monitoring:   ${activeStr(false)}\n`;
+    }
+
+    summary += "\n";
+    
+    let remoteServerCount = data.serverInfos.length;
+    if (data.localServer)
+        remoteServerCount--;
+
+    summary += `Remote Servers in mesh: ${remoteServerCount}\n\n`;
+
+    let count = 0;
+    for (let serverInfo of data.serverInfos) {
+        if (!serverInfo.isLocalServer) {
+            if (count > 0) summary += "\n";
+
+            summary += meshServerSummary(serverInfo);
+            count++;
+        }
+    }
+   
+    return summary;
+}
+
+function meshServerSummary(server) {
+    const indent = "    ";
+
+    let maxPathLength = 0;
+    let totalRequests = 0;
+    for (let routeInfo of server.routeInfos) {
+        totalRequests += routeInfo.numberOfRequests;
+        if (routeInfo.route.length > maxPathLength) 
+            maxPathLength = routeInfo.route.length;
+    }
+
+    let summary = "";
+
+    // General info
+    summary += `${indent}<span class='fs-5 fs-bold text-info'>${server.status.hostname}</span>\n`;
+    summary += `${indent}Hostname:            ${server.callableHostname}\n`;
+    summary += `${indent}System:              ${server.status.systemDescription}\n`;
+    summary += `${indent}Platform:            ${server.status.platform}\n`;
+    if (server.allIPAddresses && server.allIPAddresses.length)
+        summary += `${indent}All Addresses:       ${server.allIPAddresses.join(", ")}\n`;
+    summary += `${indent}Active:              ${activeStr(server.isActive)}\n`;
+    summary += `${indent}Forwarding Requests: ${activeStr(server.status.allowRequestForwarding)}\n`;
+    summary += `${indent}Accepting Requests:  ${activeStr(server.status.allowRequestForwarding)}\n`;
+
+    // Routes (may be an empty list)
+    let hideRoutes = document.getElementById("showMeshRoutes") &&
+                     !document.getElementById("showMeshRoutes").checked;
+    let routePanelClasses = "route-panel " + (hideRoutes? "d-none" : "d-block");
+
+    if (server.status.knownHostnames) {
+        summary += `${indent}Visible Servers:\n<div class='${routePanelClasses}'>`;
+        for (let knownServer of server.status.knownHostnames)
+            summary += `${indent}${indent}${knownServer}\n`;
+        summary += "</div>";
+    }
+
+    summary += `${indent}Routes Available: (${totalRequests} processed)\n<div class='${routePanelClasses}'>`;
+    for (let routeInfo of server.routeInfos) {
+        let padding = maxPathLength + 4;
+        // let hit  = route.numberOfRequests == 1 ? "request" : "requests";
+        let hit     = "processed";
+
+        summary += `${indent}${indent}${routeInfo.route.padEnd(padding)}`;
+        summary += `${routeInfo.effectiveResponseTime}ms, `;
+        summary += `${routeInfo.numberOfRequests} ${hit}`;
+        summary += "\n";
+    }
+    if (server.routeInfos)
+        summary = summary.slice(0, -1); // remove trailing newline
+    summary += "</div>";
+
+    return summary;
+}
+
+function toggleMeshRoutes(checkBox) {
+
+    let routePanels = document.getElementsByClassName('route-panel');
+    for (const panel of routePanels) {
+        if (checkBox.checked)
+            panel.classList.replace('d-none', 'd-block');
+        else
+            panel.classList.replace('d-block', 'd-none');
+    }
+}
 
 // Logs =======================================================================
 
@@ -783,6 +976,8 @@ async function getLogs() {
 
 // Modules ====================================================================
 
+var isModuleActionInProgress = false;
+
 /**
  * Query the server for a list of modules that can be installed. The results of
  * this will be used to populate the availableModules table
@@ -811,14 +1006,18 @@ async function getDownloadableModules() {
 
                         _installNotice = null;
 
-                        data.modules.sort((a, b) => a.name.localeCompare(b.name||''));
+                        // Sorting by category and then by name (localcompare = 0 = false if equal)
+                        data.modules.sort((a, b) => (a.category||'').localeCompare(b.category||'') || 
+                                                    a.name.localeCompare(b.name));
 
+                        var currentCategory = null;
                         for (let i = 0; i < data.modules.length; i++) {
 
                             let moduleInfo = data.modules[i];
 
                             let moduleId        = moduleInfo.moduleId;
                             let moduleName      = moduleInfo.name;
+                            let category        = moduleInfo.category;
                             let currentVersion  = moduleInfo.version || '';
                             let latestVersion   = moduleInfo.latestRelease?.moduleVersion || '';
                             let latestReleased  = moduleInfo.latestRelease?.releaseDate   || '';
@@ -926,6 +1125,20 @@ async function getDownloadableModules() {
                             let buttonClass = `btn action ${btnClassName} py-0 mx-2`;
 
                             let moduleIdKey = moduleId.replace(/[^a-zA-Z0-9\-]+/g, "");
+                            let categoryId  = (category||'').replace(/[^a-zA-Z0-9\-]+/g, "");
+
+                            if (currentCategory != category)
+                            {
+                                let catHeader = document.getElementById('module-download-header-' + categoryId);
+                                if (!catHeader) {
+                                    let modulesTable = document.getElementById('availableModules');
+                                    catHeader = document.createElement("h3");
+                                    modulesTable.appendChild(catHeader);
+                                    
+                                    catHeader.outerHTML = `<h3 class='p-2' id="module-download-header-${categoryId}">${category}</h3>`;
+                                }
+                                currentCategory = category;
+                            }
 
                             let row = document.getElementById('module-download-' + moduleIdKey);
                             if (!row) {
@@ -945,7 +1158,7 @@ async function getDownloadableModules() {
                                     +     `  id='installModule${i}' onclick='doModuleAction(this)' data-module-id='${moduleId}'`
                                     +     `  data-action='${action}' data-available-version='${latestVersion}'`
                                     +     `  data-downloadable='${moduleInfo.isDownloadable}'>${action}</button></div>`
-                                    +   `</div>`;
+                                    + `</div>`;
 
                                 if (updateDesc)
                                     rowHtml +=
@@ -977,6 +1190,20 @@ async function getDownloadableModules() {
                             }
                         }
 
+                        isModuleActionInProgress = _installNotice;
+
+                        for (let i = 0; i < data.modules.length; i++) {
+                            let moduleIdKey = data.modules[i].moduleId.replace(/[^a-zA-Z0-9\-]+/g, "");
+                            let row = document.getElementById('module-download-' + moduleIdKey);
+                            let actionElm = row?.querySelector("button.action");
+                            if (actionElm) {
+                                if (isModuleActionInProgress)
+                                    actionElm.style.cursor = "not-allowed";
+                                else
+                                    actionElm.style.cursor = "pointer";
+                            }
+                        }
+
                         let installNotice  = document.getElementById('installNotice');
                         if (_installNotice) {
                             installNotice.innerHTML = `<div class='status-row alert-info rounded'>${_installNotice}`
@@ -1001,7 +1228,12 @@ async function getDownloadableModules() {
 }
 
 function doModuleAction(elm) {
-    modifyModule(elm.dataset.moduleId, elm.dataset.latestVersion, elm.dataset.action, elm.dataset.downloadable);
+    if (isModuleActionInProgress)
+        alert("Please wait until the current operation has completed");
+    else {
+        isModuleActionInProgress = true;
+        modifyModule(elm.dataset.moduleId, elm.dataset.latestVersion, elm.dataset.action, elm.dataset.downloadable);
+    }
 }
 
 /**
@@ -1017,8 +1249,8 @@ async function modifyModule(moduleId, version, action, downloadable) {
 
     switch (action.toLowerCase()) {
         case 'uninstall': url += `uninstall/${moduleId}`; break;
-        case 'install':   url += `install/${moduleId}/${version}/${noCache}/${verbosity}`; break;
-        case 'update':    url += `install/${moduleId}/${version}/${noCache}/${verbosity}`; break;
+        case 'install':   url += `install/${moduleId}/${version}`; break;
+        case 'update':    url += `install/${moduleId}/${version}`; break;
         default: alert(`Unknown module action ${action}`); return;
     }
 
@@ -1031,6 +1263,7 @@ async function modifyModule(moduleId, version, action, downloadable) {
             return;
     }
 
+    url += `?noCache=${noCache}&verbosity=${verbosity}`;
     try {
         setModuleUpdateStatus(`Starting ${action} for ${moduleId}`, "info");
 
@@ -1216,7 +1449,7 @@ function setModuleUpdateStatus(text, variant) {
 // Fetch error throttling =====================================================
 
 /**
- * Returns true if the system is still considered in a non-eonnected state, 
+ * Returns true if the system is still considered in a non-connected state, 
  * meaning fetch calls should not be made.
  */
 function isFetchDelayInEffect() {
@@ -1228,7 +1461,7 @@ function isFetchDelayInEffect() {
 }
 
 /**
- * Sets the system to be in a non-eonnected state, meaning fetch calls should not be made.
+ * Sets the system to be in a non-connected state, meaning fetch calls should not be made.
  */
 function setFetchError() {
 
@@ -1345,8 +1578,9 @@ window.addEventListener('DOMContentLoaded', function (event) {
     setInterval(getLogs, logFrequency);
     setInterval(getModulesStatuses, statusFrequency);
     setInterval(getSystemStatus, statusFrequency);
-    setInterval(checkForUpdates, checkUpdateFrequency);
     setInterval(getDownloadableModules, statusFrequency);
+    setInterval(getMeshStatus, statusFrequency);
+    setInterval(checkForUpdates, checkUpdateFrequency);
 
     setInterval(purgeMarkerIndices, 5000);
 

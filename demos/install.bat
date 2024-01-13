@@ -14,11 +14,11 @@
 )
 
 :: set verbosity=info
-set pythonLocation=Shared
+set runtimeLocation=Shared
 set pythonVersion=3.9
 
 REM Can't do this
-REM call :SetupPythonPaths "%pythonLocation%" %pythonVersion%
+REM call :SetupPythonPaths "%runtimeLocation%" %pythonVersion%
 
 REM This is a copy and paste ===================================================
 
@@ -27,7 +27,7 @@ set pythonName=python!pythonVersion:.=!
 
 REM The path to the python installation, either local or shared. The
 REM virtual environment will live in here
-if /i "!pythonLocation!" == "Local" (
+if /i "!runtimeLocation!" == "Local" (
     set pythonDirPath=!moduleDirPath!\bin\!os!\!pythonName!
 ) else (
     set pythonDirPath=!runtimesDirPath!\bin\!os!\!pythonName!

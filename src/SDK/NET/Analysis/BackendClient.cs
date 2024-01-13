@@ -94,9 +94,14 @@ namespace CodeProject.AI.SDK
             {
                 // This is probably due to timing out and therefore no JSON to parse.
             }
+#if DEBUG
             catch (Exception ex)
             {
                 Debug.WriteLine(ex);
+#else
+            catch (Exception /*ex*/)
+            {
+#endif
                 Console.WriteLine($"Unable to get request from {queueName} for {moduleId}");
                 _errorPauseSecs = Math.Min(_errorPauseSecs > 0 ? _errorPauseSecs * 2 : 5, 60);
 

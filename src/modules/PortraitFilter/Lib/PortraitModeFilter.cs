@@ -12,7 +12,7 @@ namespace CodeProject.AI.Modules.PortraitFilter
     {
         #region Private data
         BoxBlur _boxBlur;
-        AlphaChannelFilter _alphaChannelFilter;
+        AlphaChannel _alphaChannelFilter;
         Merge _merge;
         float _strength;
         #endregion
@@ -24,10 +24,10 @@ namespace CodeProject.AI.Modules.PortraitFilter
         /// <param name="strength">Strength</param>
         public PortraitModeFilter(float strength)
         {
-            _boxBlur = new BoxBlur();
-            _alphaChannelFilter = new AlphaChannelFilter();
-            _merge = new Merge(0, 0, 255);
-            _strength = strength;
+            _boxBlur            = new BoxBlur();
+            _alphaChannelFilter = new AlphaChannel();
+            _merge              = new Merge(0, 0, 255);
+            _strength           = strength;
         }
         /// <summary>
         /// Gets or sets strength.
@@ -61,8 +61,8 @@ namespace CodeProject.AI.Modules.PortraitFilter
             Console.WriteLine("Applying portrait mode filter...");
 
             // deep person lab
-            Bitmap alphaMask = (Bitmap)image.Clone();
-            Bitmap portrait = (Bitmap)image.Clone();
+            Bitmap alphaMask         = (Bitmap)image.Clone();
+            Bitmap portrait          = (Bitmap)image.Clone();
             Bitmap segmentantionMask = (Bitmap)mask.Clone();
 
             // radius calculation

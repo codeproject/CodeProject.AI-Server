@@ -21,9 +21,11 @@ set useColor=true
 set doDebug=false
 set lineWidth=70
 
-set dotNetModules=ObjectDetectionNet PortraitFilter SentimentAnalysis
-set pythonModules=ALPR BackgroundRemover Cartooniser FaceProcessing ObjectDetectionCoral ObjectDetectionYolo ObjectDetectionYoloRKNN OCR SceneClassifier SuperResolution TextSummary TrainingYoloV5 YOLOv5-3.1
-
+set dotNetModules=ObjectDetectionYOLOv5Net PortraitFilter SentimentAnalysis
+set pythonModules=ALPR BackgroundRemover Cartooniser FaceProcessing                           ^
+                  ObjectDetectionCoral ObjectDetectionYOLOv5-3.1 ObjectDetectionYOLOv5-6.2    ^
+                  ObjectDetectionYOLOv8 ObjectDetectionYoloRKNN TrainingObjectDetectionYOLOv5 ^
+                  OCR SceneClassifier SuperResolution TextSummary
 
 if "%1" == "" (
     call "!sdkDir!\utils.bat" WriteLine "Solution Cleaner" "White"
@@ -173,21 +175,23 @@ if /i "%cleanAssets%" == "true" (
     call :RemoveDir "!rootDir!\src\modules\FaceProcessing\assets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionCoral\assets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionCoral\edgetpu_runtime"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionNet\assets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionNet\custom-models"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionNet\LocalNugets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYolo\assets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYolo\custom-models"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-3.1\assets"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-3.1\custom-models"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-6.2\assets"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-6.2\custom-models"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv8\assets"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv8\custom-models"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\assets"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\custom-models"
+    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\LocalNugets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYoloRKNN\assets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYoloRKNN\custom-models"
     call :RemoveDir "!rootDir!\src\modules\OCR\paddleocr"
     call :RemoveDir "!rootDir!\src\modules\SceneClassifier\assets"
-    call :RemoveDir "!rootDir!\src\modules\TrainingYoloV5\datasets"
-    call :RemoveDir "!rootDir!\src\modules\TrainingYoloV5\fiftyone"
-    call :RemoveDir "!rootDir!\src\modules\TrainingYoloV5\training"
-    call :RemoveDir "!rootDir!\src\modules\TrainingYoloV5\zoo"
-    call :RemoveDir "!rootDir!\src\modules\YOLOv5-3.1\assets"
-    call :RemoveDir "!rootDir!\src\modules\YOLOv5-3.1\custom-models"
+    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\datasets"
+    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\fiftyone"
+    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\training"
+    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\zoo"
 )
 
 if /i "%cleanDownloadCache%" == "true" (

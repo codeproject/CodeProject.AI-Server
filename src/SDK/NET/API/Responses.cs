@@ -1,33 +1,44 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Net;
 
 namespace CodeProject.AI.SDK.API
 {
-#pragma warning disable IDE1006 // Naming Styles
-
     /// <summary>
-    /// The common data for responses.
+    /// A base class for server responses
     /// </summary>
-    public class ResponseBase
+    public class ServerResponse
     {
         /// <summary>
-        /// Gets or sets a value indicating that the request was successfully executed.
+        /// Gets or sets the HTTP status code of this response.
         /// </summary>
-        [JsonPropertyOrder(-5)]
-        public bool success { get; set; } = false;
+        public HttpStatusCode Code { get; set; } = HttpStatusCode.OK;
+    }
+    
+    /// <summary>
+    /// The common data for responses from analysis modules.
+    /// </summary>
+    public class ModuleResponseBase : ServerResponse
+    {
+        /// <summary>
+        /// Gets or sets a value indicating that the request was successfully executed. This does
+        /// not mean the HTTP call was completed - that's reflected in 'Code'. This value reflects
+        /// whether the operation that ran on the server completed correctly. The operation may have
+        /// failed, but the HTTP call to report that failure was successful.
+        /// </summary>
+        public bool Success { get; set; } = false;
     }
 
-    public class SuccessResponse : ResponseBase
+    public class SuccessResponse : ModuleResponseBase
     {
         public SuccessResponse()
         {
-            success = true;
+            Success = true;
         }
     }
 
     public class VersionResponse : SuccessResponse
     {
-        public string? message { get; set; }
-        public VersionInfo? version { get; set; }
+        public string? Message { get; set; }
+        public VersionInfo? Version { get; set; }
     }
 
     public class VersionUpdateResponse : VersionResponse
@@ -35,55 +46,51 @@ namespace CodeProject.AI.SDK.API
         /// <summary>
         /// Whether or not a new version is available
         /// </summary>
-        public bool? updateAvailable { get; set; }
+        public bool? UpdateAvailable { get; set; }
 
         /// <summary>
         /// The latest version available for download
         /// </summary>
-        public VersionInfo? latest { get; set; }
+        public VersionInfo? Latest { get; set; }
 
         /// <summary>
         /// The current version of this server
         /// </summary>
-        public VersionInfo? current { get; set; }
+        public VersionInfo? Current { get; set; }
     }
 
-    public class ErrorResponse : ResponseBase
+    public class ErrorResponse : ModuleResponseBase
     {
         /// <summary>
-        /// Gets or sets the error message, if any.  May be null if no error.
+        /// Gets or sets the error message, if any. May be null if no error.
         /// </summary>
-        public string? error { get; set; }
-
-        /// <summary>
-        /// Gets or sets an error code.  Zero if no code.
-        /// </summary>
-        public int code { get; set; }
+        public string? Error { get; set; }
 
         public ErrorResponse()
         {
-            success = false;
+            Success = false;
+            Code    = HttpStatusCode.InternalServerError;
         }
 
-        public ErrorResponse(string? error, int code = 0)
+        public ErrorResponse(string? error, HttpStatusCode code = HttpStatusCode.InternalServerError)
         {
-            success = false;
-            this.error = error;
-            this.code = code;
+            Success = false;
+            Error   = error;
+            Code    = code;
         }
     }
 
-    public class SettingsResponse : ResponseBase
+    public class SettingsResponse : ModuleResponseBase
     {
         /// <summary>
         /// Gets or sets the module's environment variables
         /// </summary>
-        public IDictionary<string, string?>? environmentVariables { get; set; }
+        public IDictionary<string, string?>? EnvironmentVariables { get; set; }
 
         /// <summary>
         /// Gets or sets the module's settings
         /// </summary>
-        public dynamic? settings { get; set; }
+        public dynamic? Settings { get; set; }
     }
 
     /// <summary>
@@ -91,7 +98,15 @@ namespace CodeProject.AI.SDK.API
     /// </summary>
     public class ModuleStatusesResponse : SuccessResponse
     {
-        public List<ProcessStatus>? statuses { get; set; }
+        public List<ProcessStatus>? Statuses { get; set; }
+    }
+
+    /// <summary>
+    /// The Response when requesting the status of the backend modules
+    /// </summary>
+    public class ModuleExplorerUIResponse: SuccessResponse
+    {
+        public List<ExplorerUI> UiInsertions { get; set; } = new List<ExplorerUI>();
     }
 
     /// <summary>
@@ -99,7 +114,7 @@ namespace CodeProject.AI.SDK.API
     /// </summary>
     public class ModuleListResponse : SuccessResponse
     {
-        public List<ModuleDescription>? modules { get; set; }
+        public List<ModuleDescription>? Modules { get; set; }
     }
 
     /// <summary>
@@ -107,7 +122,7 @@ namespace CodeProject.AI.SDK.API
     /// </summary>
     public class ModuleResponse : SuccessResponse
     {
-        public object? data { get; set; }
+        public object? Data { get; set; }
     }
 
     /// <summary>
@@ -115,8 +130,6 @@ namespace CodeProject.AI.SDK.API
     /// </summary>
     public class ModuleResponse<T> : SuccessResponse
     {
-        public T? data { get; set; }
+        public T? Data { get; set; }
     }
-
-#pragma warning restore IDE1006 // Naming Styles
 }

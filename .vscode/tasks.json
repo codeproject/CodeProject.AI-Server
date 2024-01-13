@@ -8,13 +8,13 @@
             "dependsOrder": "sequence",
             "dependsOn": [
                 "build-server",
-                "build-analysisservices",
+                "build-modules",
                 "build-tests"
             ],
             "windows": {
                 "dependsOn": [
                     "build-server",
-                    "build-analysisservices",
+                    "build-modules",
                     "build-explorer",
                     "build-tests"
                 ]
@@ -27,13 +27,13 @@
             "dependsOrder": "sequence",
             "dependsOn": [
                 "build-server",
-                "build-analysisservices-arm64",
+                "build-modules-arm64",
                 "build-tests"
             ],
             "windows": {
                 "dependsOn": [
                     "build-server",
-                    "build-analysisservices-arm64",
+                    "build-modules-arm64",
                     "build-explorer",
                     "build-tests"
                 ]
@@ -41,7 +41,7 @@
         },
 
         {
-            "label": "build-analysisservices", 
+            "label": "build-modules", 
             "group": "build",
             "dependsOrder": "sequence",
             "dependsOn": [
@@ -52,7 +52,7 @@
         },
 
         {
-            "label": "build-analysisservices-arm64", 
+            "label": "build-modules-arm64", 
             "group": "build",
             "dependsOrder": "sequence",
             "dependsOn": [
@@ -115,7 +115,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/modules/ObjectDetectionNet",
+                "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5Net",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -249,6 +249,10 @@
           "command": "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
           "args": [
             "${file}"
+          ],
+          "dependsOrder": "sequence",
+          "dependsOn": [
+            "build-server-release"
           ],
           "presentation": {
             "reveal": "always",

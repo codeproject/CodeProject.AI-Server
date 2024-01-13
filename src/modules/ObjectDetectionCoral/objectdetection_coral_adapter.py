@@ -15,15 +15,17 @@ from options import Options
 from PIL import UnidentifiedImageError, Image
 
 # Import the method of the module we're wrapping
-from objectdetection_coral import init_detect, do_detect
+from objectdetection_coral import init_detect, do_detect, reset_detector
 
 opts = Options()
 sem = threading.Semaphore()
+sem_misses = 0
 
 class CoralObjectDetector_adapter(ModuleRunner):
 
     # async 
     def initialise(self) -> None:
+        
         # if the module was launched outside of the server then the queue name 
         # wasn't set. This is normally fine, but here we want the queue to be
         # the same as the other object detection queues
@@ -93,6 +95,11 @@ class CoralObjectDetector_adapter(ModuleRunner):
             # slice. Be sure to only hold the function returned from tensor() if
             # you are using raw data access.
             if not sem.acquire(timeout=1):
+                sem_misses = sem_misses + 1
+                if sem_misses == 5:
+                    sem_misses = 0
+                    reset_detector()
+
                 return {
                     "success"     : False,
                     "predictions" : [],

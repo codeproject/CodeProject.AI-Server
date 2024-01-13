@@ -151,9 +151,9 @@
             "name": "Object Detect .NET",
             "type": "coreclr",
             "request": "launch",
-            "program": "/app/preinstalled-modules/ObjectDetectionNet/ObjectDetectionNet.dll",
+            "program": "/app/preinstalled-modules/ObjectDetectionYOLOv5Net/ObjectDetectionYOLOv5Net.dll",
             "args": [],
-            "cwd": "/app/modules/ObjectDetectionNet",
+            "cwd": "/app/preinstalled-modules/ObjectDetectionYOLOv5Net",
             "stopAtEntry": false,
             "console": "internalConsole",
             "requireExactSource": false,
@@ -171,13 +171,36 @@
                 "group": "5 Launch Individual",
                 "hidden": false
             },
+            "name": "Object Detect Coral",
+            "type": "python",
+            "python": "/app/modules/ObjectDetectionCoral/bin/linux/python39/venv/bin/python",
+            "request": "launch",
+            "program": "objectdetection_coral_adapter.py",
+            // "args": [ "--selftest" ],
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/ObjectDetectionCoral",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
+            }
+        },
+
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
             "name": "Object Detect YOLO 6.2",
             "type": "python",
             "python": "python3.8",
             "request": "launch",
             "program": "detect_adapter.py",
             "console": "integratedTerminal",
-            "cwd": "/app/preinstalled-modules/ObjectDetectionYolo",
+            "cwd": "/app/preinstalled-modules/ObjectDetectionYOLOv5-6.2",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -194,11 +217,11 @@
             },
             "name": "Object Detect YOLO 3.1",
             "type": "python",
-            "python": "/app/modules/YOLOv5-3.1/bin/linux/python38/venv/bin/python",
+            "python": "/app/modules/ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
             "request": "launch",
-            "program": "yolo_adapter.py",
+            "program": "detect_adapter.py",
             "console": "integratedTerminal",
-            "cwd": "/app/modules/YOLOv5-3.1",
+            "cwd": "/app/modules/ObjectDetectionYOLOv5-3.1",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",

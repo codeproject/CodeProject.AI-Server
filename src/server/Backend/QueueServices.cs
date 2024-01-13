@@ -52,7 +52,7 @@ namespace CodeProject.AI.Server.Backend
         }
 
         /// <summary>
-        /// Pushes a request onto a named queue.  The request will be handled by a backened process.
+        /// Pushes a request onto a named queue. The request will be handled by a backend process.
         /// </summary>
         /// <param name="queueName">The name of the queue.</param>
         /// <param name="request">The Request to be processed.</param>
@@ -92,7 +92,7 @@ namespace CodeProject.AI.Server.Backend
                 // setup the timeout callback.
                 using var linkedCTS        = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken);
                 CancellationToken theToken = linkedCTS.Token;
-                theToken.Register(()       => { completion.TrySetCanceled(); });
+                theToken.Register(() => { completion.TrySetCanceled(); });
 
                 try
                 {

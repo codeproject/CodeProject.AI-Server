@@ -4,6 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -18,6 +21,8 @@ using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Modules;
+using CodeProject.AI.Server.Utilities;
+using CodeProject.AI.Server.Mesh;
 
 namespace CodeProject.AI.Server.Controllers
 {
@@ -46,11 +51,19 @@ namespace CodeProject.AI.Server.Controllers
     [ApiController]
     public class ProxyController : ControllerBase
     {
+        private static HttpClient _httpClient = new ()
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+
+        private const string CPAI_Forwarded_Header = "X-CPAI-Forwarded";
+
         private readonly CommandDispatcher _dispatcher;
-        private readonly BackendRouteMap   _routeMap;
-        private readonly ModuleCollection  _installedModules;
-        private readonly TriggersConfig    _triggersConfig;
+        private readonly BackendRouteMap _routeMap;
+        private readonly ModuleCollection _installedModules;
+        private readonly TriggersConfig _triggersConfig;
         private readonly TriggerTaskRunner _commandRunner;
+        private readonly MeshManager _meshManager;
 
         /// <summary>
         /// Initializes a new instance of the VisionController class.
@@ -60,66 +73,55 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="ModuleCollectionOptions">Contains the Collection of modules</param>
         /// <param name="triggersConfig">Contains the triggers</param>
         /// <param name="commandRunner">The command runner</param>
-        public ProxyController(CommandDispatcher dispatcher, 
+        /// <param name="meshManager">The mesh manager</param>
+        public ProxyController(CommandDispatcher dispatcher,
                                BackendRouteMap routeMap,
                                IOptions<ModuleCollection> ModuleCollectionOptions,
                                IOptions<TriggersConfig> triggersConfig,
-                               TriggerTaskRunner commandRunner)
+                               TriggerTaskRunner commandRunner,
+                               MeshManager meshManager)
         {
             _dispatcher       = dispatcher;
             _routeMap         = routeMap;
             _installedModules = ModuleCollectionOptions.Value;
             _triggersConfig   = triggersConfig.Value;
             _commandRunner    = commandRunner;
+            _meshManager      = meshManager;
         }
 
         /// <summary>
         /// Passes the payload to the queue for processing.
         /// </summary>
+        /// <param name="pathSuffix">The path for this request without the "v1". This will be in the
+        /// form "category/module[/command]". eg "image/alpr" or "vision/custom/modelName".</param>
         /// <returns>The result of the command, or error.</returns>
-        [HttpPost("{**path}")]
-        public async Task<IActionResult> Post(string path)
+        [HttpPost("{**pathSuffix}")]
+        public async Task<IActionResult> Post(string pathSuffix)
         {
-            if (_routeMap.TryGetValue(path, "POST", out RouteQueueInfo? routeInfo))
+            // check if this is a forwarded request and if so run locally.
+            Microsoft.Extensions.Primitives.StringValues forwardedHeader;
+            bool isForwardedRequest = Request.Headers.TryGetValue(CPAI_Forwarded_Header, 
+                                                                  out forwardedHeader)
+                                    && forwardedHeader == "true";
+
+            if (isForwardedRequest && !_meshManager.AcceptForwardedRequests)
+                return BadRequest("This server does not accept forwarded requests.");
+
+            if (!isForwardedRequest && _meshManager.AllowRequestForwarding)
             {
-                RequestPayload payload = CreatePayload(path, routeInfo!);
+                // Find the 'best' server to use for this request.
+                MeshServerRoutingEntry? server = _meshManager.SelectServer(pathSuffix);
 
-                Stopwatch sw = Stopwatch.StartNew();
-
-                var response = await _dispatcher.QueueRequest(routeInfo!.QueueName, payload)
-                                                .ConfigureAwait(false);
-
-                long analysisRoundTripMs = sw.ElapsedMilliseconds;
-
-                // if the response is a string, it was returned from the backend analysis module.
-                if (response is string responseString)
-                {
-                    // Unwrap the response and add the analysisRoundTripMs property
-                    JsonObject? jsonResponse = null;
-                    if (!string.IsNullOrEmpty(responseString))
-                        jsonResponse = JsonSerializer.Deserialize<JsonObject>(responseString);
-                    jsonResponse ??= new JsonObject();                   
-                    jsonResponse["analysisRoundTripMs"] = analysisRoundTripMs;
-
-                    // Check for, and execute if needed, triggers
-                    ProcessTriggers(routeInfo!.QueueName, jsonResponse);
-
-                    // Wrap it back up
-                    // Don't use JsonResult as it will chunk the response and 
-                    // Blue Iris will roll over and die.
-                    responseString = JsonSerializer.Serialize(jsonResponse) as string;
-                    return new ContentResult
-                    {
-                        Content = responseString,
-                        ContentType = "application/json",
-                        StatusCode = 200
-                    };
-                }
-                else
-                    return new ObjectResult(response);
+                // If a remote server was selected, forward the request to that server.
+                if (server is not null && !server.IsLocalServer)
+                    return await DispatchRemoteRequest(pathSuffix, server).ConfigureAwait(false);
             }
-            else
-                return NotFound();
+
+            // we are not forwarding, so this is a local request, do it the normal way.
+            if (_routeMap.TryGetValue(pathSuffix, "POST", out RouteQueueInfo? routeInfo))
+                return await DispatchLocalRequest(pathSuffix, routeInfo!).ConfigureAwait(false);
+
+            return NotFound();
         }
 
         /// <summary>
@@ -128,18 +130,18 @@ namespace CodeProject.AI.Server.Controllers
         [HttpGet("api")]
         public IActionResult ApiSummary()
         {
-            var sampleGenerator = new CodeExampleGenerator();
+            CodeExampleGenerator sampleGenerator = new CodeExampleGenerator();
 
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            var summary = new StringBuilder();
+            TextInfo textInfo     = new CultureInfo("en-US", false).TextInfo;
+            StringBuilder summary = new StringBuilder();
 
-            var moduleList = _installedModules.Values
+            IOrderedEnumerable<ModuleConfig> moduleList = _installedModules.Values
                                               .Where(module => module.RouteMaps?.Length > 0)
-                                              .OrderBy(module => module.RouteMaps[0].Path);
+                                              .OrderBy(module => module.RouteMaps[0].Route);
 
             string currentCategory = string.Empty;
 
-            foreach (var module in moduleList)
+            foreach (ModuleConfig module in moduleList)
             {
                 foreach (ModuleRouteInfo routeInfo in module.RouteMaps)
                 {
@@ -149,13 +151,13 @@ namespace CodeProject.AI.Server.Controllers
                     // string category = routeInfo.Category;
                     // string route    = routeInfo.Route;
 
-                    int index = routeInfo.Path.IndexOf('/');
+                    int index = routeInfo.Route.IndexOf('/');
                     string version  = "v1";
-                    string category = index > 0 ? routeInfo.Path.Substring(0, index) : routeInfo.Path;
-                    string route    = index > 0 ? routeInfo.Path.Substring(index + 1) : string.Empty;
+                    string category = index > 0 ? routeInfo.Route.Substring(0, index) : routeInfo.Route;
+                    string route    = index > 0 ? routeInfo.Route.Substring(index + 1) : string.Empty;
 
                     // string path  = $"/{version}/{category}/{route}";
-                    string path     = $"{version}/{routeInfo.Path}";
+                    string path     = $"{version}/{routeInfo.Route}";
 
                     if (category != currentCategory)
                     {
@@ -233,10 +235,201 @@ namespace CodeProject.AI.Server.Controllers
             return new ObjectResult(summary.ToString());
         }
 
-        private RequestPayload CreatePayload(string path, RouteQueueInfo routeInfo)
+        /// <summary>
+        /// Passes a request to a remote server
+        /// </summary>
+        /// <param name="pathSuffix">The path for this request without the "v1". This will be in the
+        /// form "category/module[/command]". eg "image/alpr" or "vision/custom/modelName".</param>
+        /// <param name="server">The server that will be handling this request</param>
+        /// <returns>An IActionResult</returns>
+        private async Task<IActionResult> DispatchRemoteRequest(string pathSuffix, 
+                                                                MeshServerRoutingEntry server)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            HttpResponseMessage? response = null;
+            JsonObject? responseObject = null;
+            
+            string? error  = string.Empty;
+            long elapsedMs;
+
+            try
+            {
+                response = await ForwardAsync(server).ConfigureAwait(false);
+                elapsedMs = sw.ElapsedMilliseconds;
+
+                if (response?.IsSuccessStatusCode ?? false)
+                {
+                    responseObject = response!.Content.ReadFromJsonAsync<JsonObject>().Result;
+
+                    // Sniff for success
+                    if (!responseObject!.ContainsKey("success") || !(bool)responseObject["success"]!)
+                    {
+                        elapsedMs = 30_000;
+                    }
+                }
+                else
+                {
+                    if (!responseObject!.ContainsKey("error"))
+
+                    error     = $"{responseObject!["error"]} ({server.Status.Hostname})";
+                    elapsedMs = 30_000;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+
+                // Bump the response to 30s to push this server out of contention. Maybe also add
+                // exception info to the message
+                error      = $"Exception when forwarding request to {server.Status.Hostname}";                
+                elapsedMs  = 30_000;
+            }
+            finally
+            {
+                response?.Dispose();
+            }
+
+            if (responseObject is null)
+            {
+                // TODO: Surely there's a better path to this
+                var resp = new BackendErrorResponse(error, StatusCodes.Status500InternalServerError);
+                string jsonString = JsonSerializer.Serialize(resp);
+                responseObject = JsonSerializer.Deserialize<JsonObject>(jsonString);
+            }
+                
+            _meshManager.AddResponseTime(server, pathSuffix, (int)elapsedMs);
+               
+            // Add more info to the response object
+            if (responseObject!.ContainsKey("analysisRoundTripMs"))
+                responseObject["analysisRoundTripMs"] = elapsedMs;
+
+            responseObject["processedBy"] = server.Status.Hostname;
+
+            // Don't use JsonResult as it will chunk the response and Blue Iris will roll over and
+            // die.
+            string responseString = JsonSerializer.Serialize(responseObject);
+            return new ContentResult
+            {
+                Content     = responseString,
+                ContentType = "application/json",
+                
+                // NOTE: Always return a 200 even if the remote server failed. WE are returning just
+                // fine, and if the remote server failed our Content will contain an object that has
+                // success = false and an error message. But the HTTP call was still successful.
+                StatusCode  = StatusCodes.Status200OK
+            };
+        }
+
+        /// <summary>
+        /// Passes a request to the local (current) server
+        /// </summary>
+        /// <param name="pathSuffix">The path for this request without the "v1". This will be in the
+        /// form "category/module[/command]". eg "image/alpr" or "vision/custom/modelName".</param>
+        /// <param name="routeInfo">The route and queue to which this request should be placed</param>
+        /// <returns>An IActionResult</returns>
+        private async Task<IActionResult> DispatchLocalRequest(string pathSuffix, RouteQueueInfo routeInfo)
+        {
+            // TODO: We have enough info in the routeInfo object to be able to validate that the
+            //       request by checking that all the required values are present. Let's to that.
+            RequestPayload payload = CreatePayload(pathSuffix, routeInfo!);
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            object response = await _dispatcher.QueueRequest(routeInfo!.QueueName, payload)
+                                               .ConfigureAwait(false);
+
+            long analysisRoundTripMs = sw.ElapsedMilliseconds;
+
+            // if the response is a string, it was returned from the backend analysis module.
+            if (response is string responseString)
+            {
+                // Unwrap the response and add the analysisRoundTripMs property
+                JsonObject? jsonResponse = null;
+                if (!string.IsNullOrEmpty(responseString))
+                    jsonResponse = JsonSerializer.Deserialize<JsonObject>(responseString);
+
+                jsonResponse ??= new JsonObject();
+                jsonResponse["analysisRoundTripMs"] = analysisRoundTripMs;
+                jsonResponse["processedBy"]         = "localhost";
+
+                _meshManager.AddResponseTime(null, pathSuffix, (int)analysisRoundTripMs);
+
+                // Check for, and execute if needed, triggers
+                ProcessTriggers(routeInfo!.QueueName, jsonResponse);
+
+                // Wrap it back up. Don't use JsonResult as it will chunk the response and Blue Iris
+                // will roll over and die.
+                responseString = JsonSerializer.Serialize(jsonResponse) as string;
+                return new ContentResult
+                {
+                    Content     = responseString,
+                    ContentType = "application/json",
+                    StatusCode  = StatusCodes.Status200OK
+                };
+            }
+            else
+                return new ObjectResult(response);
+        }
+
+        /// <summary>
+        /// Forwards the request to the target server.
+        /// </summary>
+        /// <param name="server">The MeshServerStatus of the target server.</param>
+        /// <returns>A HttpResponseMessage</returns>
+        private async Task<HttpResponseMessage> ForwardAsync(MeshServerRoutingEntry server)
+        {
+            HttpRequest originalRequest = Request;
+            int? port         = originalRequest.Host.Port;
+            string portString = port.HasValue ? $":{port}" : string.Empty;
+            var queryString   = originalRequest.QueryString;
+
+            string hostname = server.CallableHostname;
+            if (!_meshManager.RouteViaHostName && server.EndPointIPAddress is not null)
+                hostname = server.EndPointIPAddress;
+
+            string url = $"http://{hostname}{portString}{originalRequest.Path}{queryString}";
+            Uri targetUri = new Uri(url);
+
+            // Create a MultipartFormDataContent object from the original request's form data,
+            // including both form data and files
+            MultipartFormDataContent multipartContent = new MultipartFormDataContent();
+
+            // Add form data to the multipart content
+            foreach (string key in Request.Form.Keys)
+            {
+                multipartContent.Add(new StringContent(originalRequest.Form[key].ToString()), key);
+            }
+
+            // Add files from the request to the multipart content
+            foreach (IFormFile? file in Request.Form.Files)
+            {
+                Stream stream             = file.OpenReadStream();
+                StreamContent fileContent = new StreamContent(stream);
+                multipartContent.Add(fileContent, "image", file.FileName);
+            }
+
+            // Create a new request with the same method, headers and content as the original request
+            HttpRequestMessage newRequest = new HttpRequestMessage(new HttpMethod(originalRequest.Method), targetUri)
+            {
+                Content = multipartContent
+            };
+
+            foreach (KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues> header in originalRequest.Headers)
+                newRequest.Headers.TryAddWithoutValidation(header.Key, header.Value.AsEnumerable());
+
+            newRequest.Headers.Add(CPAI_Forwarded_Header, "true");
+
+            // Send the new request to the target server and get the response
+            HttpResponseMessage response = await _httpClient.SendAsync(newRequest);
+
+            return response;
+        }
+
+        private RequestPayload CreatePayload(string pathSuffix, RouteQueueInfo routeInfo)
         {
             // TODO: Add Segment list (string[]) and params (map of name/value)
-            var endOfUrl = path.Remove(0, routeInfo.Path.Length);
+            string endOfUrl = pathSuffix.Remove(0, routeInfo.Route.Length);
 
             var segments    = new List<string>();
             var queryParams = new List<KeyValuePair<string, string?[]>>();
@@ -250,35 +443,42 @@ namespace CodeProject.AI.Server.Controllers
                 segments.AddRange(endOfUrl.Split('/', StringSplitOptions.TrimEntries));
 
             // and the QueryString parameters
-            var queryParts = Request.Query;
+            IQueryCollection queryParts = Request.Query;
             if (queryParts?.Any() ?? false)
             {
-                foreach (var param in queryParts)
+                foreach (KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues> param in queryParts)
                     queryParams.Add(new KeyValuePair<string, string?[]>(param.Key, param.Value.ToArray()));
             }
 
-            try // if there are no Form values, then Request.Form throws.
+            // The HasFormContentType check should be sufficient and checks for multipart/form-data,
+            // and application/x-www-form-urlencoded. There should be no need to use a try/catch
+            // here either, but the GetFileData() method might throw if the moon is in the wrong phase.
+            if (Request.HasFormContentType && Request.Form is not null)
             {
-                IFormCollection form = Request.Form;
-                
-                // Add any Form values.
-                queryParams.AddRange(form.Select(x => new KeyValuePair<string, string?[]>(x.Key, x.Value.ToArray())));
-
-                // Add any form files
-                formFiles.AddRange(form.Files.Select(x => new RequestFormFile
+                try // if there are no Form values, then Request.Form throws.
                 {
-                    name        = x.Name,
-                    filename    = x.FileName,
-                    contentType = x.ContentType,
-                    data        = GetFileData(x)
-                }));
-            }
-            catch
-            {
-                // nothing to do here, just no Form available
+                    IFormCollection form = Request.Form;
+
+                    // Add any Form values.
+                    queryParams.AddRange(form.Select(x => 
+                        new KeyValuePair<string, string?[]>(x.Key, x.Value.ToArray())));
+
+                    // Add any form files
+                    formFiles.AddRange(form.Files.Select(x => new RequestFormFile
+                    {
+                        name        = x.Name,
+                        filename    = x.FileName,
+                        contentType = x.ContentType,
+                        data        = GetFileData(x)
+                    }));
+                }
+                catch
+                {
+                    // nothing to do here, just no Form available
+                }
             }
 
-            var payload = new RequestPayload
+            RequestPayload payload = new RequestPayload
             {
                 urlSegments = segments.ToArray(),
                 command     = routeInfo.Command,
@@ -291,9 +491,9 @@ namespace CodeProject.AI.Server.Controllers
 
         private byte[] GetFileData(IFormFile x)
         {
-            using var stream = x.OpenReadStream();
-            using var reader = new BinaryReader(stream, Encoding.UTF8, false);
-            var data         = new byte[x.Length];
+            using Stream stream       = x.OpenReadStream();
+            using BinaryReader reader = new BinaryReader(stream, Encoding.UTF8, false);
+            byte[] data               = new byte[x.Length];
             reader.Read(data, 0, data.Length);
 
             return data;
@@ -331,10 +531,10 @@ namespace CodeProject.AI.Server.Controllers
                     }
                     else
                     {
-                        var predictions = response[trigger.PredictionsCollectionName];
+                        JsonNode? predictions = response[trigger.PredictionsCollectionName];
                         if (predictions is not null)
                         {
-                            foreach (var prediction in predictions.AsArray())
+                            foreach (JsonNode? prediction in predictions.AsArray())
                             {
                                 if (prediction is null)
                                     continue;

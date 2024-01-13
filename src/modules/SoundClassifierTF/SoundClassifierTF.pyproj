@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Name>SoundClassifierTF</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{470d3417-36a4-49a4-b719-486477fa92fb}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>objectdetection_coral_adapter.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
+    <IsWindowsApplication>False</IsWindowsApplication>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="sound_classification.py" />
+    <Compile Include="sound_classification_adapter.py" />   
+    <Compile Include="__init__.py" />
+    <Compile Include="options.py" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="install.bat" />
+    <Content Include="install.sh" />
+    <Content Include="package.bat" />
+    <Content Include="package.sh" />
+    <Content Include="test\home-office.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.macos.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="requirements.txt" />
+    <Content Include="requirements.jetson.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="..\..\runtimes\bin\windows\python37\venv\">
+      <Id>env</Id>
+      <Version>3.7</Version>
+      <Description>env (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="assets\" />
+    <Folder Include="test\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

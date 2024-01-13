@@ -15,9 +15,16 @@ namespace CodeProject.AI.Server.Controllers
     /// <summary>
     /// For status updates on the server itself.
     /// </summary>
-    [Route("v1/status")]
+    /// <remarks>
+    /// In the HttpGet attribute for the methods we've commented out the Name parameter for the 
+    /// moment in order to allow us to have two routes to the same methods. /status was our old 
+    /// route, and /server is the new route. This will only cause issues if we need to use the 
+    /// RouteName (eg in route generation).
+    /// </remarks>
+    [Route("v1/status")]         // legacy route
+    [Route("v1/server/status")]  // new route as of 2.4.0
     [ApiController]
-    public class StatusController : ControllerBase
+    public class ServerController : ControllerBase
     {
         /// <summary>
         /// Gets the version service instance.
@@ -27,12 +34,12 @@ namespace CodeProject.AI.Server.Controllers
         private readonly ModuleProcessServices _moduleProcessService;
 
         /// <summary>
-        /// Initializes a new instance of the StatusController class.
+        /// Initializes a new instance of the ServerController class.
         /// </summary>
         /// <param name="versionService">The Version instance.</param>
         /// <param name="moduleSettings">The module settings instance</param>
         /// <param name="moduleProcessService">The Module Process Services.</param>
-        public StatusController(ServerVersionService versionService,
+        public ServerController(ServerVersionService versionService,
                                 ModuleSettings moduleSettings,
                                 ModuleProcessServices moduleProcessService)
         {
@@ -45,11 +52,11 @@ namespace CodeProject.AI.Server.Controllers
         /// Allows for a client to ping the service to test for aliveness.
         /// </summary>
         /// <returns>A ResponseBase object.</returns>
-        [HttpGet("ping", Name = "Ping")]
+        [HttpGet("ping"/*, Name = "Ping"*/)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ResponseBase GetPing()
+        public ModuleResponseBase GetPing()
         {
             /* This is a simple and sensible response. But let's do better
             var response = new ResponseBase
@@ -66,17 +73,17 @@ namespace CodeProject.AI.Server.Controllers
         /// Allows for a client to retrieve the current API server version.
         /// </summary>
         /// <returns>A ResponseBase object.</returns>
-        [HttpGet("version", Name = "Version")]
+        [HttpGet("version"/*, Name = "Version"*/)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ResponseBase GetVersion()
+        public ModuleResponseBase GetVersion()
         {
             var response = new VersionResponse
             {
-                message = _versionService.VersionConfig.VersionInfo?.Version ?? string.Empty,
-                version = _versionService.VersionConfig.VersionInfo,
-                success = true
+                Message = _versionService.VersionConfig.VersionInfo?.Version ?? string.Empty,
+                Version = _versionService.VersionConfig.VersionInfo,
+                Success = true
             };
 
             return response;
@@ -86,7 +93,7 @@ namespace CodeProject.AI.Server.Controllers
         /// Allows for a client to retrieve the current system status (GPU info mainly)
         /// </summary>
         /// <returns>A ResponseBase object.</returns>
-        [HttpGet("system-status", Name = "System Status")]
+        [HttpGet("system-status"/*, Name = "System Status"*/)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -137,7 +144,7 @@ namespace CodeProject.AI.Server.Controllers
 
             return new ModuleResponse() 
             {
-                data = new
+                Data = new
                 {
                     CpuUsage       = cpuUsage,
                     SystemMemUsage = systemMemUsage,
@@ -152,7 +159,7 @@ namespace CodeProject.AI.Server.Controllers
         /// Allows for a client to retrieve the current Paths.
         /// </summary>
         /// <returns>An ObjectResult object.</returns>
-        [HttpGet("Paths", Name = "Paths")]
+        [HttpGet("Paths" /*, Name = "Paths" */)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -172,19 +179,19 @@ namespace CodeProject.AI.Server.Controllers
         /// Allows for a client to retrieve whether an update for this API server is available.
         /// </summary>
         /// <returns>A ResponseBase object.</returns>
-        [HttpGet("updateavailable", Name = "UpdateAvailable")]
+        [HttpGet("updateavailable" /*, Name = "UpdateAvailable"*/)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ResponseBase> GetUpdateAvailable()
+        public async Task<ModuleResponseBase> GetUpdateAvailable()
         {
             VersionInfo? latest = await _versionService.GetLatestVersion().ConfigureAwait(false);
             if (latest is null)
             {
                 return new VersionUpdateResponse
                 {
-                    message = "Unable to retrieve latest version",
-                    success = false
+                    Message = "Unable to retrieve latest version",
+                    Success = false
                 };
             }
             else
@@ -194,8 +201,8 @@ namespace CodeProject.AI.Server.Controllers
                 {
                     return new VersionUpdateResponse
                     {
-                        message = "Unable to retrieve current version",
-                        success = false
+                        Message = "Unable to retrieve current version",
+                        Success = false
                     };
                 }
 
@@ -206,32 +213,33 @@ namespace CodeProject.AI.Server.Controllers
 
                 return new VersionUpdateResponse
                 {
-                    success         = true,
-                    message         = message,
-                    latest          = latest,
-                    current         = current,
-                    version         = latest, // To be removed
-                    updateAvailable = updateAvailable
+                    Success         = true,
+                    Message         = message,
+                    Latest          = latest,
+                    Current         = current,
+                    Version         = latest, // To be removed
+                    UpdateAvailable = updateAvailable
                 };
             }
         }
 
         /// <summary>
         /// Allows for a client to list the status of the backend analysis modules.
-        /// TODO: move this to modules controller, path is modules/status/list
+        /// DEPRECATED: This call should now be made via ModuleController.
+        /// via the route module/list/status
         /// </summary>
         /// <returns>A ResponseBase object.</returns>
-        [HttpGet("analysis/list", Name = "List Module Statuses")]
+        [HttpGet("analysis/list"/*, Name = "List Module Statuses"*/)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ResponseBase ListAnalysisStatus()
+        public ModuleResponseBase ListAnalysisStatus()
         {
             // Get the statuses
             var statuses = _moduleProcessService.ListProcessStatuses();
             var response = new ModuleStatusesResponse
             {
-                statuses = statuses
+                Statuses = statuses
                             // .Where(module => module.Status != ProcessStatusType.NotEnabled)
                            .ToList()
             };

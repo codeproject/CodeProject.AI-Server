@@ -2,9 +2,9 @@
 
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
-#                            .NET YOLO Object Detection
+#                            Portrait Filter
 #
-# This script is called from the ObjectDetectionNet directory using: 
+# This script is called from the PortraitFilter directory using: 
 #
 #    bash ../../setup.sh
 #

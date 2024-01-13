@@ -39,7 +39,7 @@ namespace CodeProject.AI.Server.Controllers
     /// </remarks>
     /// <example>
     /// {
-    ///     "ObjectdetectionYolo": {
+    ///     "ObjectDetectionYOLOv5-6.2": {
     ///         "CUSTOM_MODELS_DIR" : "C:\\BlueIris\\AI",
     ///         "MODEL_SIZE" : "Large"
     ///     },
@@ -54,7 +54,8 @@ namespace CodeProject.AI.Server.Controllers
     /// <summary>
     /// For updating the settings on the server and modules.
     /// </summary>
-    [Route("v1/settings")]
+    [Route("v1/settings")]          // legacy route
+    [Route("v1/server/settings")]   // new route as of 2.4.0
     [ApiController]
     public class SettingsController : ControllerBase
     {
@@ -92,12 +93,13 @@ namespace CodeProject.AI.Server.Controllers
         /// Manages requests to add / update a single setting for a specific module.
         /// </summary>
         /// <returns>A Response Object.</returns>
-        [HttpPost("{moduleId}", Name = "UpsertSetting")]
+        [HttpPost("{moduleId}" /*, Name = "UpsertSetting"*/)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ResponseBase> UpsertSettingAsync(string moduleId, [FromForm] string name, 
-                                                           [FromForm] string value)
+        public async Task<ModuleResponseBase> UpsertSettingAsync(string moduleId,
+                                                                 [FromForm] string name, 
+                                                                 [FromForm] string value)
         {
             if (string.IsNullOrWhiteSpace(moduleId))
                 return new ErrorResponse("No module ID provided");
@@ -140,19 +142,19 @@ namespace CodeProject.AI.Server.Controllers
                 }
             }
 
-            return new ResponseBase { success = success };
+            return new ModuleResponseBase { Success = success };
         }
 
         /// <summary>
         /// Manages requests to add / update settings for one or more modules.
         /// </summary>
         /// <returns>A Response Object.</returns>
-        [HttpPost("", Name = "UpsertSettings")]
+        [HttpPost("" /*, Name = "UpsertSettings"*/)]
         [Produces("application/json")]
         //[Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ResponseBase> UpsertSettingsAsync([FromBody] SettingsDict settings)
+        public async Task<ModuleResponseBase> UpsertSettingsAsync([FromBody] SettingsDict settings)
         {
             if (!settings.Any())
                 return new ErrorResponse("No settings provided");
@@ -218,7 +220,7 @@ namespace CodeProject.AI.Server.Controllers
             bool success = restartSuccess && await settingStore.SaveSettingsAsync(overrideSettings)
                                                                .ConfigureAwait(false);
 
-            return new ResponseBase { success = success };
+            return new ModuleResponseBase { Success = success };
         }
 
         /// <summary>
@@ -228,12 +230,12 @@ namespace CodeProject.AI.Server.Controllers
         /// <returns>A list of settings.</returns>
         /// <response code="200">Returns the list of detected object information, if any.</response>
         /// <response code="400"></response>            
-        [HttpGet("{moduleId}", Name = "List Settings")]
+        [HttpGet("{moduleId}" /*, , Name = "List Settings"*/)]
         [Consumes("multipart/form-data")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ResponseBase ListSettings(string? moduleId)
+        public ModuleResponseBase ListSettings(string? moduleId)
         {
             if (string.IsNullOrWhiteSpace(moduleId))
                 return new ErrorResponse("No module ID provided");
@@ -252,19 +254,19 @@ namespace CodeProject.AI.Server.Controllers
 
             var response = new SettingsResponse
             {
-                success  = true,
-                settings = new
+                Success  = true,
+                Settings = new
                 {
-                    autostart             = module.AutoStart ?? false,
-                    installGPU            = module.InstallGPU,
-                    enableGPU             = module.EnableGPU,
-                    acceleratorDeviceName = module.AcceleratorDeviceName,
-                    logVerbosity          = module.LogVerbosity,
-                    halfPrecision         = module.HalfPrecision,
-                    parallelism           = module.Parallelism,
-                    postStartPauseSecs    = module.PostStartPauseSecs
+                    Autostart             = module.AutoStart ?? false,
+                    InstallGPU            = module.InstallGPU,
+                    EnableGPU             = module.EnableGPU,
+                    AcceleratorDeviceName = module.AcceleratorDeviceName,
+                    LogVerbosity          = module.LogVerbosity,
+                    HalfPrecision         = module.HalfPrecision,
+                    Parallelism           = module.Parallelism,
+                    PostStartPauseSecs    = module.PostStartPauseSecs
                 },
-                environmentVariables = processEnvironmentVars
+                EnvironmentVariables = processEnvironmentVars
             };
 
             return response;

@@ -451,12 +451,13 @@
                                 for (let i = 0; i < data.statuses.length; i++) {
 
                                     let moduleId = data.statuses[i].moduleId.replace(" ", "-");
-                                    let running = data.statuses[i].status == 'Started';
+                                    let queue    = data.statuses[i].queue;
+                                    let running  = data.statuses[i].status == 'Started';
 
                                     // enable those that need enabling. Note that some cards will be
                                     // shared among modules, so we need to ensure we're not disabling
                                     // a card that was just enabled by a different module
-                                    var cards = document.getElementsByClassName('card ' + moduleId);
+                                    var cards = document.getElementsByClassName('card ' + queue);
                                     for (const card of cards) {
                                         if (running) {
                                             card.classList.replace('d-none', 'd-flex');
@@ -1188,7 +1189,7 @@
 
                             <div class="tab-pane fade show active" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
 
-                                <div class="card mt-3 d-none FaceProcessing ObjectDetectionNet SceneClassification VisionObjectDetection ObjectDetectionYolo">
+                                <div class="card mt-3 d-none objectdetection_queue">
                                     <div class="card-header h3">Object Detection</div>
                                     <div class="card-body">
 
@@ -1205,7 +1206,7 @@
                                     </div>
                                 </div>
 
-                                <div class="card mt-3 d-none ObjectDetectionYolo">
+                                <div class="card mt-3 d-none objectdetection_queue">
                                     <div class="card-header h3">Custom Object Detection</div>
                                     <div class="card-body">
 
@@ -1231,7 +1232,7 @@
 
                             <div class="tab-pane fade show" id="image-panel" role="tabpanel" aria-labelledby="image-tab">
 
-                                <div class="card mt-3 d-none BackgroundRemover">
+                                <div class="card mt-3 d-none backgroundremover_queue">
                                     <div class="card-header h3">Background Removal</div>
                                     <div class="card-body">
 
@@ -1253,7 +1254,7 @@
                                     </div>
                                 </div>
 
-                                <div class="card mt-3 d-none PortraitFilter">
+                                <div class="card mt-3 d-none portraitfilter_queue">
                                     <div class="card-header h3">Background blurring</div>
                                     <div class="card-body">
 
@@ -1275,7 +1276,7 @@
                                     </div>
                                 </div>
 
-                                <div class="card mt-3 d-none SuperResolution">
+                                <div class="card mt-3 d-none superresolution_queue">
                                     <div class="card-header h3">Increase Resolution</div>
                                     <div class="card-body">
 
@@ -1294,7 +1295,7 @@
 
                             <div class="tab-pane fade show" id="face-panel" role="tabpanel" aria-labelledby="face-tab">
 
-                                <div class="card mt-3 d-none FaceProcessing">
+                                <div class="card mt-3 d-none faceprocessing_queue">
                                     <div class="card-header h3">Face Comparison</div>
                                     <div class="card-body">
                                         <div class="d-flex align-items-center">
@@ -1315,7 +1316,7 @@
                                     </div>
                                 </div>
 
-                                <div class="card mt-3 d-none FaceProcessing">
+                                <div class="card mt-3 d-none faceprocessing_queue">
                                     <div class="card-header h3">Face Registration</div>
                                     <div class="card-body">
 
@@ -1346,7 +1347,7 @@
                                     </div>
                                 </div>
 
-                                <div class="card mt-3 d-none FaceProcessing">
+                                <div class="card mt-3 d-none faceprocessing_queue">
                                     <div class="card-header h3">Face Recognition</div>
                                     <div class="card-body">
 
@@ -1370,7 +1371,7 @@
 
                             <div class="tab-pane fade show" id="text-panel" role="tabpanel" aria-labelledby="text-tab">
 
-                                <div class="card mt-3 d-none TextSummary">
+                                <div class="card mt-3 d-none textsummary_queue">
                                     <div class="card-header h3">Text Summary</div>
                                     <div class="card-body">
 
@@ -1392,7 +1393,7 @@
 
                                 </div>
 
-                                <div class="card mt-3 d-none SentimentAnalysis">
+                                <div class="card mt-3 d-none sentimentanalysis_queue">
                                     <div class="card-header h3">Sentiment Analysis</div>
                                     <div class="card-body">
 
@@ -1414,7 +1415,7 @@
 
                             <div class="tab-pane fade show" id="video-panel" role="tabpanel" aria-labelledby="video-tab">
 
-                                <div class="card mt-3 d-none FaceProcessing">
+                                <div class="card mt-3 d-none faceprocessing_queue">
 
                                     <div class="d-flex justify-content-start">
                                         <input class="btn btn-success" type="button" value="Start"
@@ -1429,7 +1430,7 @@
 
                             <div class="tab-pane fade show" id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-tab">
 
-                                <div class="card mt-3 ObjectDetectionNet VisionObjectDetection ObjectDetectionYolo">
+                                <div class="card mt-3 objectdetection_queue">
                                     <div class="card-header h3">Benchmark</div>
                                     <div class="card-body">
 

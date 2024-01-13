@@ -47,13 +47,13 @@ packages can and should be installed.
 To provide full coverage for all the possibilities there are two tactics. First,
 you can install python modules directly via the `install` script. The `installPythonPackagesByName` provides an easy way to achieve this.
 
-Second, you can provide system specific requirements files, with the installer
+Second, you can provide system specific `requirements.txt` files, with the installer
 choosing the correct one at install time. The files are named based on device,
 OS, architecture, GPU type, and optionally CUDA library type.
 
 The order of preference for choosing a requirements file is as follows.
 
- - requirements.device.txt 
+ - requirements.device.txt                            (device = raspberrypi, orangepi, jetson)
  - requirements.os.architecture.cudaMajor_Minor.txt   (eg cuda12_0)
  - requirements.os.architecture.cudaMajor.txt         (eg cuda12)
  - requirements.os.architecture.(cuda|rocm).txt
@@ -70,12 +70,11 @@ The order of preference for choosing a requirements file is as follows.
  - requirements.os.txt
  - requirements.txt
 
-Where device is one of "raspberrypi", "orangepi" or "jetson", and cudaMajor_Minor
-is the major/minor version of CUDA currently installed (eg 12.2), and cudaMajor
-is just the major version (eg 12). "rocm" refers to AMD ROCm GPU support, and
-"gpu" is a generic identifier meaning "use if GPU support is enabled, but no
+"device" is one of "raspberrypi", "orangepi" or "jetson". "cudaMajor_Minor" is the major/minor version of CUDA currently installed (eg 12.2). "cudaMajor" is just the major version (eg 12). "rocm" refers to AMD ROCm GPU support, and "gpu" is a generic identifier meaning "use if GPU support is enabled, but no
 CUDA or ROCm GPUs have been detected". This is great for packages that support
 multiple GPUs such as OpenVINO and DirectML.
+
+As an example, `requirements.linux.arm64.cuda11_7.txt` would be a requirements file specifically for Linux on arm64 systems, targeting CUDA 11.7. `requirements.windows.gpu.txt` would be for targeting Windows where a GPU was found. If, in this case, no GPU was found but there was a `requirements.windows.txt` file, then that would be used as a fallback. It's wise to always provide a generic, safe `requirements.txt` fallback.
 
 ## Variables available
 
@@ -97,7 +96,7 @@ multiple GPUs such as OpenVINO and DirectML.
 | `moduleDirName`     | the name of the directory containing this module |
 | `moduleDirPath`     | the path to this module ($modulesDirPath/$moduleDirName) |
 | `runtime`           | The runtime this module uses. Either dotnet, pythonX.Y |
-| `pythonLocation`    | The location of the virtual environment for this module. It can either be 'Local' meaning it's sandboxed within the module itself, or 'Shared' meaning the venv in use will be used by other modules |
+| `runtimeLocation`   | The location of the virtual environment for this module. It can either be 'Local' meaning it's sandboxed within the module itself, or 'Shared' meaning the venv in use will be used by other modules |
 | `pythonVersion`     | The version of python used for this module on the current system |
 | `virtualEnvDirPath` | The path to the virtual environment for this module |
 | `venvPythonCmdPath` | The path to the python executable for the venv for this module |
@@ -119,10 +118,9 @@ multiple GPUs such as OpenVINO and DirectML.
 |  `downloadAndExtract` | *storageUrl filename downloadDirPath dirNameToSave message*<br>`storageUrl` - Url that holds the compressed archive to Download<br>`filename` - Name of the compressed archive to be downloaded<br> `downloadDirPath` - path to where the downloaded compressed archive should be downloaded<br>`dirNameToSave` - name of directory, relative to downloadDirPath, where contents of archive will be extracted and saved<br>`message` - Message to display during download |
 |  `Download`  | *storageUrl downloadDirPath filename moduleDirName message*<br> - `storageUrl` Url that holds the compressed archive to Download<<br> - `downloadDirPath` Path to where the downloaded compressed archive should be downloade<br> - `filename`      name of the compressed archive to be downloaded<br> - `dirNameToSave` name of directory, relative to downloadDirPath, where contents of archive will be extracted and saved<br> - `message` Message to display during download |
 |||
-|  `getFromServer` | *filename moduleAssetDir message*<br>`filename` - Name of the compressed archive to be downloaded<br>`moduleAssetDir`- Name of folder in module's directory where archive will be extracted<br>`message` - Message to display during download <br><br>Tnis method will pull an archive from the current CodeProject cloud storage. This storage is read-only and subject to change.|
+|  `getFromServer` | *folder filename moduleAssetDir message*<br>`folder` - name of the folder in the S3 bucket where the file lives<br>`filename` - Name of the compressed archive to be downloaded<br>`moduleAssetDir`- Name of folder in module's directory where archive will be extracted<br>`message` - Message to display during download <br><br>Tnis method will pull an archive from the current CodeProject cloud storage. This storage is read-only and subject to change.|
 |||
-| `setupPython` | (Never called directly) Installs the version of python given in `pythonVersion` and sets up a virtual environment in the location set by `pythonLocation` |
+| `setupPython` | (Never called directly) Installs the version of python given in `pythonVersion` and sets up a virtual environment in the location set by `runtimeLocation` |
 | `installRequiredPythonPackages` | (Never called directly) Installs the python packages included in the appropriate requirements.txt file in the current module into the current virtual environment for this module<br>`requirements-file-directory` - an optional parameter specifying the directory containing the requirements.txt file |
 
-To call a method in a Linux/macOS install script, use `method parameters`. 
-To call a method in a Windows install script, use call '"%sdkScriptsDirPath%\utils.bat" method params`.
+To call a method in a Linux/macOS install script, use `method parameters` (eg writeLine "Hello, World!"). To call a method in a Windows install script, use call `"%sdkScriptsDirPath%\utils.bat" method params` (eg %sdkScriptsDirPath%\utils.bat WriteLine "Hello, World!").

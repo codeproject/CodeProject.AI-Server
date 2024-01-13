@@ -87,11 +87,11 @@
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.13.1-dev-20221026-1209-861125ccb" Condition="'$(GpuType)'=='OpenVINO'" />
 		-->
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.13.1" Condition="'$(GpuType)'=='DirectML'" />
-		<PackageReference Include="Microsoft.AI.DirectML" Version="1.10.1" Condition="'$(GpuType)'=='DirectML'" />
+		<PackageReference Include="Microsoft.AI.DirectML" Version="1.13.0" Condition="'$(GpuType)'=='DirectML'" />
 
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
-		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.3" />
-		<PackageReference Include="UMapx" Version="5.2.4.5" />
+		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.6" />
+		<PackageReference Include="UMapx" Version="5.2.9.6" />
 	</ItemGroup>
 
 	<ItemGroup>

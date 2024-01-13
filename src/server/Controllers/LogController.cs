@@ -33,10 +33,10 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ResponseBase AddLog([FromForm] string? entry,
-                                   [FromForm] string? category,
-                                   [FromForm] string? label,
-                                   [FromForm] LogLevel? log_level)
+        public ModuleResponseBase AddLog([FromForm] string? entry,
+                                         [FromForm] string? category,
+                                         [FromForm] string? label,
+                                         [FromForm] LogLevel? log_level)
         {
             if (entry == null)
                 return new ErrorResponse("No log entry provided");
@@ -68,9 +68,9 @@ namespace CodeProject.AI.Server.Controllers
                 default:                   _logger.LogInformation(msg); break;
             }
 
-            return new ResponseBase
+            return new ModuleResponseBase
             {
-                success = true,
+                Success = true,
             };
         }
 
@@ -87,7 +87,7 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ResponseBase ListLogs(int? last_id, int? count)
+        public ModuleResponseBase ListLogs(int? last_id, int? count)
         {
             if (last_id is null)
                 last_id = 0;

@@ -14,7 +14,7 @@
 )
 
 :: Download the models and store in /models
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "cartooniser-models.zip" "weights" "Downloading Cartooniser models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "cartooniser-models.zip" "weights" "Downloading Cartooniser models..."
 
 REM TODO: Check weights created and has files
 REM set moduleInstallErrors=...

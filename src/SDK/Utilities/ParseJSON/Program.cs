@@ -1,7 +1,6 @@
 ﻿// #define TEST_INPUT
 
 using System;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -14,43 +13,48 @@ namespace CodeProject.AI.Utilities
     /// </summary>
     public class ParseJSON
     {
+        // On command line:
+        //   ParseJSON $.Modules.ALPR-4\.1.Platforms[0] test.json (Windows)
+        //   dotnet ParseJSON.dll $.Modules.ALPR-4\.1.Platforms[0] test.json (Linux)
+
         static void Main(string[] args)
         {
-#if TEST_INPUT
-            // string jsonString = "{ \"root\" : \"value\" }";
-            // string jsonPath   = "$.root";
-            
-            string jsonString = System.IO.File.ReadAllText("/home/chris/Dev/CodeProject/CodeProject.AI-Server-Private/src/modules/ALPR/modulesettings.raspberrypi.json");
-            Console.WriteLine(jsonString);
-
-            // string jsonPath = "$.Modules.ALPR.Name";         // A string
-            string jsonPath    = "$.Modules.ALPR.Platforms";    // An array
-            // string jsonPath = "$.Modules.ALPR.Platforms[1]"; // A string from an array
+#if TEST_INPUT    
+            string jsonPath = "$.Modules.ALPR-4\\.1.Platforms";     // A string from an array
+            string filePath = "test.json";
 #else
-            if (args.Length != 1)
+            if (args.Length < 1 || args.Length > 2)
             {
-                Console.WriteLine("Usage: echo 'file or text' | ParseJSON 'key'");
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    Console.WriteLine("eg ParseJSON.exe $.root.branch[1] < text.json");
-                    Console.WriteLine("eg echo { \"root\": \"value\" } | ParseJSON.exe $.root");
-                }
-                else
-                {
-                    Console.WriteLine("eg echo 'text.json' | dotnet ParseJSON $.root.branch[1]");
-                    Console.WriteLine("eg echo { \\\"root\\\": \\\"value\\\" } | dotnet ParseJSON $.root");
-                }
+                Usage();
                 return;
             }
 
-            // Get the JSON path from the command line arguments
-            string jsonPath = args[0];
-
-            // Read input from stdin
-            string? input, jsonString = string.Empty;
-            while ((input = Console.ReadLine()) != null)
-                jsonString += input;
+            string jsonPath   = args[0];
+            string filePath   = args.Length > 1 ? args[1] : string.Empty;
 #endif
+
+            // Get the JSON path from the command line arguments
+            string jsonString = string.Empty;
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                // JSON from file
+                try
+                {
+                    jsonString = System.IO.File.ReadAllText(filePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Unable to read from {args[1]}. {ex.Message}");
+                }
+            }
+            else
+            {
+                // Read JSON from stdin
+                string? input;
+                while ((input = Console.ReadLine()) != null)
+                    jsonString += input;
+            }
+
             // Console.WriteLine("jsonString = " + jsonString ?? "");
 
             // Parse and extract
@@ -63,6 +67,19 @@ namespace CodeProject.AI.Utilities
             }
         }
 
+        static void Usage()
+        {
+#if Windows
+            Console.WriteLine("Usage: echo '{ json content... }' | ParseJSON 'key'");
+            Console.WriteLine("       ParseJSON 'key' file.json");
+            Console.WriteLine("eg echo { \"name\": \"value\" } | ParseJSON $.name");
+#else
+            Console.WriteLine("Usage: echo '{ json content... }' | dotnet ParseJSON.dll 'key'");
+            Console.WriteLine("       dotnet ParseJSON.dll 'key' file.json");
+            Console.WriteLine("eg echo { \\\"name\\\": \\\"value\\\" } | dotnet ParseJSON.dll $.name");
+#endif
+        }
+
         /// <summary>
         /// Deserialize JSON string to an object 
         /// </summary>
@@ -73,34 +90,26 @@ namespace CodeProject.AI.Utilities
             if (string.IsNullOrWhiteSpace(jsonString))
                 return null;
 
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                ReadCommentHandling         = JsonCommentHandling.Skip,
+                AllowTrailingCommas         = true,
+                // NumberHandling           = JsonNumberHandling.AllowReadingFromString,
+                Converters                  = { new JsonStringEnumConverter() }
+            };
+
+            JsonNode? json = null;
             try
             {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    ReadCommentHandling         = JsonCommentHandling.Skip,
-                    AllowTrailingCommas         = true,
-                    // NumberHandling           = JsonNumberHandling.AllowReadingFromString,
-                    Converters                  = { new JsonStringEnumConverter() }
-                };
-
-                // "//" comments are not processed properly. /* .. */ are. So strip these out first.
-                // We need to ensure "url" : "http://www.bringbackjsoncomments.com", works, but we'd
-                // also like "name" : "options", // can be "a" or "b" to work too.
-                // Can we please just state that Douglas Crockford was wrong and short-sighted in
-                // removing comments from JSON. It didn't achieve his "stop people messing with
-                // directives" complaint and simply made matters worse. This is a waste of every
-                // developer's time.
-                string pattern = @"(//[^""]*$)"; // This isn't good enough.
-                jsonString = Regex.Replace(jsonString, pattern, string.Empty, RegexOptions.Multiline);
-
-                return JsonSerializer.Deserialize<JsonNode>(jsonString, options);
+                json = JsonSerializer.Deserialize<JsonNode>(jsonString, options);
             }
-            catch (Exception ex)
+            catch (Exception jex)
             {
-                Console.Error.WriteLine($"Unable to deserialize the input: {ex.Message}");
-                return null;
+                Console.Error.WriteLine("Unable to parse JSON: " + jex.Message);
             }
+
+            return json;
         }
 
         /// <summary>
@@ -122,14 +131,24 @@ namespace CodeProject.AI.Utilities
             jsonPath = jsonPath.TrimStart('$');
 
             // Extract value using JSON path
-            var pathSegments = jsonPath.Split(new char[] { '.','[',']' }, StringSplitOptions.RemoveEmptyEntries);
+            // var pathSegments = jsonPath.Split(new char[] { '.','[',']' }, StringSplitOptions.RemoveEmptyEntries);
+            var pathSegments = Regex.Split(jsonPath, "(?<!\\\\)[.]");
+                                              // or @"(?<!\\)\."
 
-            foreach (var segment in pathSegments)
+            foreach (var rawSegment in pathSegments)
             {
+                if (string.IsNullOrWhiteSpace(rawSegment))
+                    continue;
+
+                string segment = rawSegment.Replace("\\.", ".");
+
                 if (int.TryParse(segment, out int index))
                 {
                     // If the segment is an array index
-                    jsonNode = jsonNode[index];
+                    if (jsonNode is JsonArray && (jsonNode as JsonArray)!.Count > index)
+                        jsonNode = jsonNode[index];
+                    else
+                        jsonNode = null;
                 }
                 else if (jsonNode[segment] is not null)
                 {

@@ -15,7 +15,9 @@
 
 :: Install supporting Libraries
 if not exist edgetpu_runtime (
-    call "%sdkScriptsDirPath%\utils.bat" GetFromServer "edgetpu_runtime_20221024.zip" "." "Downloading edge TPU runtime..."
+    REM edgetpu_runtime_20221024 is badly zipped. edgetpu_runtime-20221024 is better
+    REM call "%sdkScriptsDirPath%\utils.bat" GetFromServer "libraries/" "edgetpu_runtime_20221024.zip" "." "Downloading edge TPU runtime..."
+    call "%sdkScriptsDirPath%\utils.bat" GetFromServer "libraries/" "edgetpu_runtime-20221024.zip" "edgetpu_runtime" "Downloading edge TPU runtime..."
 )
 if exist edgetpu_runtime (
 
@@ -36,7 +38,7 @@ if exist edgetpu_runtime (
 )
 
 :: Download the MobileNet TFLite models and store in /assets
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
 
 REM TODO: Check assets created and has files
 REM set moduleInstallErrors=...
