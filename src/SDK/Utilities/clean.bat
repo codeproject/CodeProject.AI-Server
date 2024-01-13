@@ -22,10 +22,10 @@ set doDebug=false
 set lineWidth=70
 
 set dotNetModules=ObjectDetectionYOLOv5Net PortraitFilter SentimentAnalysis
-set pythonModules=ALPR BackgroundRemover Cartooniser FaceProcessing                           ^
+set pythonModules=ALPR ALPR-RKNN BackgroundRemover Cartooniser FaceProcessing LlamaChat       ^
                   ObjectDetectionCoral ObjectDetectionYOLOv5-3.1 ObjectDetectionYOLOv5-6.2    ^
                   ObjectDetectionYOLOv8 ObjectDetectionYoloRKNN TrainingObjectDetectionYOLOv5 ^
-                  OCR SceneClassifier SuperResolution TextSummary
+                  OCR SceneClassifier SoundClassifierTF SuperResolution TextSummary
 
 if "%1" == "" (
     call "!sdkDir!\utils.bat" WriteLine "Solution Cleaner" "White"
@@ -101,21 +101,28 @@ if /i "%cleanBuild%" == "true" (
         call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
         call :RemoveDir "!rootDir!\src\modules\%%x\obj\"
     )
+    del "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\ObjectDetectionYOLOv5Net-*"
 
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\bin\Debug\"
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\bin\Release\"
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\obj\Debug\"
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\obj\Release\"
 
+    call :RemoveDir "!rootDir!\src\SDK\Utilities\ParseJSON\bin"
+    call :RemoveDir "!rootDir!\src\SDK\Utilities\ParseJSON\obj"
+    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.deps.json"
+    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.dll"
+    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.exe"
+    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.runtimeconfig.json"
+    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.xml"
+
     call :CleanSubDirs "!rootDir!\demos\"              "\bin\Debug\"
     call :CleanSubDirs "!rootDir!\demos\"              "\bin\Release\"
     call :CleanSubDirs "!rootDir!\demos\"              "\obj\Debug\"
     call :CleanSubDirs "!rootDir!\demos\"              "\obj\Release\"
 
-    call :CleanSubDirs "!rootDir!\tests\"              "\bin\Debug\"
-    call :CleanSubDirs "!rootDir!\tests\"              "\bin\Release\"
-    call :CleanSubDirs "!rootDir!\tests\"              "\obj\Debug\"
-    call :CleanSubDirs "!rootDir!\tests\"              "\obj\Release\"
+    call :RemoveDir "!rootDir!\tests\QueueServiceTests\bin\"
+    call :RemoveDir "!rootDir!\tests\QueueServiceTests\obj\"
 )
 
 if /i "%cleanInstallCurrentOS%" == "true" (
@@ -170,9 +177,11 @@ if /i "%cleanAssets%" == "true" (
     call "!sdkDir!\utils.bat" WriteLine 
 
     call :RemoveDir "!rootDir!\src\modules\ALPR\paddleocr"
+    call :RemoveDir "!rootDir!\src\modules\ALPR-RKNN\paddleocr"
     call :RemoveDir "!rootDir!\src\modules\BackgroundRemover\models"
     call :RemoveDir "!rootDir!\src\modules\Cartooniser\weights"
     call :RemoveDir "!rootDir!\src\modules\FaceProcessing\assets"
+    call :RemoveDir "!rootDir!\src\modules\LlamaChat\models"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionCoral\assets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionCoral\edgetpu_runtime"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-3.1\assets"
@@ -188,6 +197,7 @@ if /i "%cleanAssets%" == "true" (
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYoloRKNN\custom-models"
     call :RemoveDir "!rootDir!\src\modules\OCR\paddleocr"
     call :RemoveDir "!rootDir!\src\modules\SceneClassifier\assets"
+    call :RemoveDir "!rootDir!\src\modules\SoundClassifierTF\data"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\datasets"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\fiftyone"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\training"

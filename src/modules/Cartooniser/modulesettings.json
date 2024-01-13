@@ -3,7 +3,7 @@
 
     "Cartooniser": {
       "Name": "Cartooniser",
-      "Version": "1.3.4",
+      "Version": "1.4.0",
 
       // Publishing info
       "Description": "Convert a photo into an anime style cartoon", 
@@ -11,7 +11,11 @@
       "Platforms": [ "all", "!raspberrypi", "!orangepi", "!jetson" ], 
       "License": "MIT",
       "LicenseUrl": "https://github.com/bryandlee/animegan2-pytorch/blob/main/LICENSE",
-      
+      "Author": "Chris Maunder",
+      "Homepage": "https://codeproject.com/ai",
+      "BasedOn": "animegan2-pytorch",
+      "BasedOnUrl": "https://github.com/bryandlee/animegan2-pytorch",
+
       // Launch instructions
       "AutoStart": true,
       "FilePath": "cartooniser_adapter.py",
@@ -40,7 +44,8 @@
         { "ModuleVersion": "1.3.1", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
         { "ModuleVersion": "1.3.2", "ServerVersionRange": [ "2.3.5", "2.4.0"  ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
         { "ModuleVersion": "1.3.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
-        { "ModuleVersion": "1.3.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
+        { "ModuleVersion": "1.3.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "1.4.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
       ],
 
       "RouteMaps": [
@@ -55,15 +60,13 @@
               "Name": "image",
               "Type": "File",
               "Description": "The image to be converted."
-            }
-            /*,
+            },
             {
               "Name": "model",
               "Type": "String",
               "Description": "Name of the model to use",
               "DefaultValue": ""
             }
-            */
           ],
           "Outputs": [
             {
@@ -77,26 +80,6 @@
               "Description": "The base64 encoded image."
             },
             {
-              "Name": "command",
-              "Type": "String",
-              "Description": "The command that was sent as part of this request. Can be detect, list, status."
-            },
-            {
-              "Name": "moduleId",
-              "Type": "String",
-              "Description": "The Id of the module that processed this request."
-            },
-            {
-              "Name": "executionProvider",
-              "Type": "String",
-              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
-            },
-            {
-              "Name": "canUseGPU",
-              "Type": "Boolean",
-              "Description": "True if this module can use the current GPU if one is present."
-            },
-            {
               "Name": "inferenceMs",
               "Type": "Integer",
               "Description": "The time (ms) to perform the AI inference."
@@ -105,11 +88,6 @@
               "Name": "processMs",
               "Type": "Integer",
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
-            },
-            {
-              "Name": "analysisRoundTripMs",
-              "Type": "Integer",
-              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         }

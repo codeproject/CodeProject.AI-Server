@@ -15,7 +15,7 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Description>CodeProject.AI API Server provides a plug-in API for hosting AI inference and training modules, accessible via any language, any platform.</Description>
 		<Company>CodeProject</Company>
 		<Authors>CodeProject</Authors>
-		<Version>2.4.8</Version>
+		<Version>2.5.0</Version>
 	</PropertyGroup>
 
 	<!-- Build properties -->
@@ -125,6 +125,9 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Content Update="wwwroot\assets\dashboard.js">
 		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
+		<Content Update="wwwroot\assets\explorer.js">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
 		<Content Update="wwwroot\assets\favicon-16x16.png">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
@@ -138,6 +141,12 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Update="wwwroot\assets\senseAI.svg">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\server.css">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\assets\server.js">
 		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Update="wwwroot\assets\styles.css">

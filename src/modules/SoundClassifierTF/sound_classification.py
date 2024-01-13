@@ -12,7 +12,7 @@ import sys
 #import tensorflow as tf
 # https://stackoverflow.com/a/58473210
 import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+tf.compat.v1.disable_v2_behavior()
 
 import numpy as np
 from os.path import join as pjoin

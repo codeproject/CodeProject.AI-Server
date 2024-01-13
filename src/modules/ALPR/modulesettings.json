@@ -3,7 +3,7 @@
 
     "ALPR": {
       "Name": "License Plate Reader",
-      "Version": "2.7.5",
+      "Version": "2.8.0",
 
       // Publishing info
       "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
@@ -11,6 +11,10 @@
       "Platforms": [ "all" ],
       "License": "SSPL",
       "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+      "Author": "Mike Lud",
+      "Homepage": null,
+      "BasedOn": null,
+      "BasedOnUrl": null,
 
       // Launch instructions
       "AutoStart": true,
@@ -55,11 +59,12 @@
         { "ModuleVersion": "2.7.2", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "LibSSL install correction." },
         { "ModuleVersion": "2.7.3", "ServerVersionRange": [ "2.3.5", "2.4.0"  ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
         { "ModuleVersion": "2.7.4", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema, new route", "Importance": "Minor" },
-        { "ModuleVersion": "2.7.5", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
+        { "ModuleVersion": "2.7.5", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "2.8.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
       ],
 
       "RouteMaps": [
- {
+      {
           "Name": "License Plate Reader",
           "Route": "vision/alpr",
           "Method": "POST",
@@ -100,26 +105,6 @@
               "Description": "The number of objects found."
             },
             {
-              "Name": "command",
-              "Type": "String",
-              "Description": "The command that was sent as part of this request. Can be detect, list, status."
-            },
-            {
-              "Name": "moduleId",
-              "Type": "String",
-              "Description": "The Id of the module that processed this request."
-            },
-            {
-              "Name": "executionProvider",
-              "Type": "String",
-              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
-            },
-            {
-              "Name": "canUseGPU",
-              "Type": "Boolean",
-              "Description": "True if this module can use the current GPU if one is present."
-            },
-            {
               "Name": "inferenceMs",
               "Type": "Integer",
               "Description": "The time (ms) to perform the AI inference."
@@ -128,11 +113,6 @@
               "Name": "processMs",
               "Type": "Integer",
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
-            },
-            {
-              "Name": "analysisRoundTripMs",
-              "Type": "Integer",
-              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         },      
@@ -177,26 +157,6 @@
               "Description": "The number of objects found."
             },
             {
-              "Name": "command",
-              "Type": "String",
-              "Description": "The command that was sent as part of this request. Can be detect, list, status."
-            },
-            {
-              "Name": "moduleId",
-              "Type": "String",
-              "Description": "The Id of the module that processed this request."
-            },
-            {
-              "Name": "executionProvider",
-              "Type": "String",
-              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
-            },
-            {
-              "Name": "canUseGPU",
-              "Type": "Boolean",
-              "Description": "True if this module can use the current GPU if one is present."
-            },
-            {
               "Name": "inferenceMs",
               "Type": "Integer",
               "Description": "The time (ms) to perform the AI inference."
@@ -205,11 +165,6 @@
               "Name": "processMs",
               "Type": "Integer",
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
-            },
-            {
-              "Name": "analysisRoundTripMs",
-              "Type": "Integer",
-              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         }

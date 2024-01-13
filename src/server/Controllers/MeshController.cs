@@ -148,9 +148,9 @@ namespace CodeProject.AI.Server.Controllers
         [HttpGet("status", Name = "MeshStatus")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult GetMeshServerBroadcast()
+        public IActionResult GetMeshServerBroadcastData()
         {
-            MeshServerBroadcast status = _meshManager.GetMeshServerBroadcast();
+            MeshServerBroadcastData status = _meshManager.GetMeshServerBroadcastData();
             return new JsonResult(status);
         }
 

@@ -23,13 +23,14 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="audio_params.py" />
     <Compile Include="sound_classification.py" />
-    <Compile Include="sound_classification_adapter.py" />   
+    <Compile Include="sound_classification_adapter.py" />
     <Compile Include="__init__.py" />
     <Compile Include="options.py" />
   </ItemGroup>
-
   <ItemGroup>
+    <Content Include="explore.html" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />

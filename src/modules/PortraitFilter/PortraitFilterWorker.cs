@@ -11,14 +11,15 @@ using Microsoft.ML.OnnxRuntime;
 
 using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.Utils;
+using CodeProject.AI.SDK.API;
 
 using SkiaSharp.Views.Desktop;
 
 namespace CodeProject.AI.Modules.PortraitFilter
 {
-    class PortraitResponse : BackendSuccessResponse
+    class PortraitResponse : ModuleResponse
     {
-        public byte[]? filtered_image { get; set; }
+        public byte[]? Filtered_image { get; set; }
     }
 
     /// <summary>
@@ -65,10 +66,10 @@ namespace CodeProject.AI.Modules.PortraitFilter
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns>The response.</returns>
-        protected override BackendResponseBase ProcessRequest(BackendRequest request)
+        protected override ModuleResponse ProcessRequest(BackendRequest request)
         {
             if (_deepPersonLab == null)
-                return new BackendErrorResponse($"{ModuleName} missing _deepPersonLab object.");
+                return new ModuleErrorResponse($"{ModuleName} missing _deepPersonLab object.");
 
             // ignoring the file name
             var file        = request.payload?.files?.FirstOrDefault();
@@ -78,14 +79,15 @@ namespace CodeProject.AI.Modules.PortraitFilter
                 strength = 0.5f;
 
             if (file?.data is null)
-                return new BackendErrorResponse("Portrait Filter File or file data is null.");
+                return new ModuleErrorResponse("Portrait Filter File or file data is null.");
 
             Logger.LogInformation($"Processing {file.filename}");
 
             Stopwatch sw = Stopwatch.StartNew();
 
             // dummy result
-            byte[]? result = null;
+            byte[]? result  = null;
+            long inferenceMs = 0;
 
             try
             {
@@ -95,11 +97,11 @@ namespace CodeProject.AI.Modules.PortraitFilter
                 Bitmap? image     = ImageUtils.GetImage(imageData)?.ToBitmap();
 
                 if (image is null)
-                    return new BackendErrorResponse("Portrait Filter unable to get image from file data.");
+                    return new ModuleErrorResponse("Portrait Filter unable to get image from file data.");
 
                 Stopwatch stopWatch = Stopwatch.StartNew();
                 Bitmap mask = _deepPersonLab.Fit(image);
-                stopWatch.Stop();
+                inferenceMs = stopWatch.ElapsedMilliseconds;
 
                 if (mask is not null)
                 {
@@ -109,15 +111,16 @@ namespace CodeProject.AI.Modules.PortraitFilter
             }
             catch (Exception ex)
             {
-                return new BackendErrorResponse($"Portrait Filter Error for {file.filename}: {ex.Message}.");
+                return new ModuleErrorResponse($"Portrait Filter Error for {file.filename}: {ex.Message}.");
             }
 
             if (result is null)
-                return new BackendErrorResponse("Portrait Filter returned null.");
+                return new ModuleErrorResponse("Portrait Filter returned null.");
             
             return new PortraitResponse { 
-                filtered_image = result,
-                inferenceMs    = sw.ElapsedMilliseconds
+                Filtered_image = result,
+                ProcessMs      = sw.ElapsedMilliseconds,
+                InferenceMs    = inferenceMs
             };
         }
 
@@ -133,9 +136,9 @@ namespace CodeProject.AI.Modules.PortraitFilter
             payload.AddFile(Path.Combine(moduleDirPath!, "test/woman-selfie.jpg"));
 
             var request = new BackendRequest(payload);
-            BackendResponseBase response = ProcessRequest(request);
+            ModuleResponse response = ProcessRequest(request);
 
-            if (response.success)
+            if (response.Success)
                 return 0;
 
             return 1;

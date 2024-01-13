@@ -3,6 +3,7 @@
 
     "FaceProcessing": {
       "Runtime": "python3.8",
+      "AutoStart": false,
       "EnvironmentVariables": {
         "PROFILE": "jetson",
         "USE_CUDA": "True",

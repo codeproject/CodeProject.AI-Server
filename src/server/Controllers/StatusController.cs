@@ -56,7 +56,7 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ModuleResponseBase GetPing()
+        public ServerResponse GetPing()
         {
             /* This is a simple and sensible response. But let's do better
             var response = new ResponseBase
@@ -77,7 +77,7 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ModuleResponseBase GetVersion()
+        public ServerResponse GetVersion()
         {
             var response = new VersionResponse
             {
@@ -142,7 +142,7 @@ namespace CodeProject.AI.Server.Controllers
                 }
             }
 
-            return new ModuleResponse() 
+            return new ServerDataResponse() 
             {
                 Data = new
                 {
@@ -183,7 +183,7 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> GetUpdateAvailable()
+        public async Task<ServerResponse> GetUpdateAvailable()
         {
             VersionInfo? latest = await _versionService.GetLatestVersion().ConfigureAwait(false);
             if (latest is null)
@@ -233,7 +233,7 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ModuleResponseBase ListAnalysisStatus()
+        public ServerResponse ListAnalysisStatus()
         {
             // Get the statuses
             var statuses = _moduleProcessService.ListProcessStatuses();

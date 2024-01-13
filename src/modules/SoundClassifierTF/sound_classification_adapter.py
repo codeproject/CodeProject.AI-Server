@@ -47,18 +47,12 @@ class SoundClassification_adapter(ModuleRunner):
 
         self.sound_names = tuple(self.classes)
 
-        self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS
+        self.can_use_GPU = self.system_info.hasTensorflowGPU or self.system_info.hasTorchMPS
 
-        # if self.opts.use_CUDA:
-        #    self.opts.use_CUDA = self.hasTorchCuda
-        #
-        # if not self.opts.use_CUDA:
-        #    self.opts.use_MPS = self.hasTorchMPS
-        #
-        # if self.opts.use_CUDA:
-        #    self.execution_provider = "CUDA"
-        # elif self.opts.use_MPS:
-        #    self.execution_provider = "MPS"
+        if self.system_info.hasTensorflowGPU:
+            self.execution_provider = "GPU"
+        elif self.system_info.hasTorchMPS:
+            self.execution_provider = "MPS"
 
         
     def process(self, data: RequestData) -> JSON:
@@ -106,7 +100,24 @@ class SoundClassification_adapter(ModuleRunner):
                 assert wav_data.dtype == np.int16, 'Bad sample type: %r' % wav_data.dtype
                 samples = wav_data / 32768.0  # Convert to [-1.0, +1.0]
             
-            predictions, label_pred, prob, inference_time = inference_waveform(samples, sample_rate)
+            if not wav_data.any() or not sample_rate:
+                return {
+                    "success"     : False, 
+                    "label"       : '', 
+                    "message"     : '',
+                    "error"       : "Unable to load sound",
+                    "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
+                    "inferenceMs" : inference_time,
+                }
+
+            start_sample    = 0
+            seconds_of_data = samples / sample_rate
+
+            while start_sample < len(samples):
+                sample_data = samples[start_sample:sample_rate] # Get 1 second worth of samples
+                predictions, label_pred, prob, inference_time = inference_waveform(samples, sample_rate)
+                start_sample += sample_rate
+                break   # We'll stop after 1 second. We'll extend this later to return a list of predictions
 
             label = ''
             if prob > score_threshold and label_pred >= 0 and label_pred < len(self.classes):

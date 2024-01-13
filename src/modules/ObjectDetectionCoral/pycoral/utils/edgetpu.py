@@ -25,23 +25,11 @@ import numpy as np
 # just are not consistent. We do what we can where we can.
 try:
   from pycoral.pybind._pywrap_coral import GetRuntimeVersion as get_runtime_version
-except: pass
-try:
   from pycoral.pybind._pywrap_coral import InvokeWithBytes as invoke_with_bytes
-except: pass
-try:
   from pycoral.pybind._pywrap_coral import InvokeWithDmaBuffer as invoke_with_dmabuffer
-except: pass
-try:
   from pycoral.pybind._pywrap_coral import InvokeWithMemBuffer as invoke_with_membuffer
-except: pass
-try:
   from pycoral.pybind._pywrap_coral import ListEdgeTpus as list_edge_tpus
-except: pass
-try:
   from pycoral.pybind._pywrap_coral import SetVerbosity as set_verbosity
-except: pass
-try:
   from pycoral.pybind._pywrap_coral import SupportsDmabuf as supports_dmabuf
 except: pass
 

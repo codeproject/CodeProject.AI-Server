@@ -25,7 +25,7 @@ class CoralClassifier_adapter(ModuleRunner):
     def initialise(self) -> None:
 
         if self.enable_GPU:
-            self.enable_GPU = self.hasCoralTPU
+            self.enable_GPU = self.system_info.hasCoralTPU
 
         if self.enable_GPU:
             print("Edge TPU detected")

@@ -54,6 +54,7 @@
     <Content Include="custom-models\ipcam-dark.pt" />
     <Content Include="custom-models\ipcam-general.pt" />
     <Content Include="custom-models\license-plate.pt" />
+    <Content Include="explore.html" />
     <Content Include="models\hub\yolov3-spp.yaml" />
     <Content Include="models\hub\yolov5-fpn.yaml" />
     <Content Include="models\hub\yolov5-panet.yaml" />

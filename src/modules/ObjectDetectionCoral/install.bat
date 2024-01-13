@@ -13,6 +13,16 @@
     @goto:eof
 )
 
+REM Do this in requirements file. Otherwise we need the TFLite wheel too
+REM if "%pythonVersion%" == "3.7" (
+REM     set "wheel=https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp37-cp37m-win_amd64.whl"
+REM ) else if "%pythonVersion%" == "3.8" (
+REM     set "wheel=https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp38-cp38-win_amd64.whl"
+REM ) else if "%pythonVersion%" == "3.9" (
+REM     set "wheel=https://github.com/google-coral/pycoral/releases/download/v2.0.0/pycoral-2.0.0-cp39-cp39-win_amd64.whl"
+REM )
+REM call "!sdkScriptsDirPath!\utils.bat" InstallPythonPackagesByName %wheel% "PyCoral API" 
+
 :: Install supporting Libraries
 if not exist edgetpu_runtime (
     REM edgetpu_runtime_20221024 is badly zipped. edgetpu_runtime-20221024 is better
@@ -38,7 +48,8 @@ if exist edgetpu_runtime (
 )
 
 :: Download the MobileNet TFLite models and store in /assets
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
+REM call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetect-coral-multitpu-models.zip" "assets" "Downloading MobileNet models..."
 
 REM TODO: Check assets created and has files
 REM set moduleInstallErrors=...

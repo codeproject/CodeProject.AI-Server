@@ -25,14 +25,14 @@
   <ItemGroup>
     <Content Include="assets\categories_places365.txt" />
     <Content Include="assets\scene.pt" />
+    <Content Include="explore.html" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="test\beach.jpg" />
     <Content Include="package.bat" />
     <Content Include="package.sh" />
   </ItemGroup>
-
-  <ItemGroup>    
+  <ItemGroup>
     <Content Include="modulesettings.json" />
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>
@@ -44,7 +44,6 @@
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="requirements.txt" />
     <Content Include="requirements.jetson.txt">

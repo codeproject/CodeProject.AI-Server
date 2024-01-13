@@ -171,10 +171,10 @@ doDebug=false
 lineWidth=70
 
 dotNetModules=( "ObjectDetectionYOLOv5Net" "PortraitFilter" "SentimentAnalysis" )
-pythonModules=( "ALPR" "BackgroundRemover" "Cartooniser" "FaceProcessing"                         \
+pythonModules=( "ALPR" "ALPR"-RKNN "BackgroundRemover" "Cartooniser" "FaceProcessing" "LlamaChat" \
                 "ObjectDetectionCoral" "ObjectDetectionYOLOv5-3.1" "ObjectDetectionYOLOv5-6.2"    \
                 "ObjectDetectionYOLOv8" "ObjectDetectionYoloRKNN" "TrainingObjectDetectionYOLOv5" \
-                "OCR" "SceneClassifier" "SuperResolution" "TextSummary")
+                "OCR" "SceneClassifier" "SoundClassifierTF" "SuperResolution" "TextSummary")
 
 
 if [ "$1" = "" ]; then
@@ -254,15 +254,20 @@ if [ "$cleanBuild" = true ]; then
         removeDir "${rootDir}/src/modules/${name}/bin/"
         removeDir "${rootDir}/src/modules/${name}/obj/"
     done
-
-    cleanSubDirs "${rootDir}/src/modules/ObjectDetectionYOLOv5Net"   "bin"
-    cleanSubDirs "${rootDir}/src/modules/PortraitFilter"       "bin"
-    cleanSubDirs "${rootDir}/src/modules/SentimentAnalysis"    "bin"
+    rm "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/ObjectDetectionYOLOv5Net-*"
 
     cleanSubDirs "${rootDir}/Installers/Windows" "bin/Debug/"
     cleanSubDirs "${rootDir}/Installers/Windows" "bin/Release/"
     cleanSubDirs "${rootDir}/Installers/Windows" "obj/Debug/"
     cleanSubDirs "${rootDir}/Installers/Windows" "obj/Release/"
+
+    removeDir "${rootDir}/src/SDK/Utilities/ParseJSON/bin"
+    removeDir "${rootDir}/src/SDK/Utilities/ParseJSON/obj"
+    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.deps.json"
+    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.dll"
+    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.exe"
+    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json"
+    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.xml"
 
     cleanSubDirs "${rootDir}/demos"              "bin/Debug/"
     cleanSubDirs "${rootDir}/demos"              "bin/Release/"
@@ -330,9 +335,11 @@ if [ "$cleanAssets" = true ]; then
     writeLine 
 
     removeDir "${rootDir}/src/modules/ALPR/paddleocr"
+    removeDir "${rootDir}/src/modules/ALPR-RKNN/paddleocr"
     removeDir "${rootDir}/src/modules/BackgroundRemover/models"
     removeDir "${rootDir}/src/modules/Cartooniser/weights"
     removeDir "${rootDir}/src/modules/FaceProcessing/assets"
+    removeDir "${rootDir}/src/modules/LlamaChat/models"
     removeDir "${rootDir}/src/modules/ObjectDetectionCoral/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionCoral/edgetpu_runtime"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/assets"
@@ -344,6 +351,7 @@ if [ "$cleanAssets" = true ]; then
     removeDir "${rootDir}/src/modules/ObjectDetectionYoloRKNN/custom-models"
     removeDir "${rootDir}/src/modules/OCR/paddleocr"
     removeDir "${rootDir}/src/modules/SceneClassifier/assets"
+    removeDir "${rootDir}/src/modules/SoundClassifierTF/data"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/datasets"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/fiftyone"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/training"

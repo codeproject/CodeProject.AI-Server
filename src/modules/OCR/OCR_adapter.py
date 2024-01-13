@@ -23,11 +23,11 @@ class OCR_adapter(ModuleRunner):
         self.opts = Options()
 
     def initialise(self) -> None:
-        self.can_use_GPU = self.hasPaddleGPU
+        self.can_use_GPU = self.system_info.hasPaddleGPU
 
         # HACK: We're seeing problems with GPU support on older cards. Allow
         # some checks to be done
-        if self.hasPaddleGPU:
+        if self.system_info.hasPaddleGPU:
             import paddle
 
             if not paddle.device.cuda.device_count() or \

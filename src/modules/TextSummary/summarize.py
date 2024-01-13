@@ -123,7 +123,8 @@ class Summarize:
         #print("Indexes of top ranked_sentence order are ", ranked_sentence)
 
         for i in range(top_n):
-            summarize_text.append(" ".join(ranked_sentence[i][1]))
+            if len(ranked_sentence[i]) > 0:
+                summarize_text.append(" ".join(ranked_sentence[i][1]))
 
         # Step 5 - Output the summarize text
         summary = ". ".join(summarize_text)

@@ -75,6 +75,7 @@ namespace CodeProject.AI.Demo.Explorer
             bool enable = !string.IsNullOrWhiteSpace(_imageFileName);
             DetectFaceBtn.Enabled = DetectSceneBtn.Enabled = DetectObjectsBtn.Enabled = enable;
         }
+
         private void ImageFileName_TextChanged(object sender, EventArgs e)
         {
             _imageFileName = ImageFileName.Text;
@@ -82,6 +83,7 @@ namespace CodeProject.AI.Demo.Explorer
             bool enable = !string.IsNullOrWhiteSpace(_imageFileName);
             DetectFaceBtn.Enabled = DetectSceneBtn.Enabled = DetectObjectsBtn.Enabled = enable;
         }
+
         private void FaceImage1Select_Click(object sender, EventArgs e)
         {
             CompareFacesBtn.Enabled = false;
@@ -176,16 +178,16 @@ namespace CodeProject.AI.Demo.Explorer
 
                 List<string> lines = new();
 
-                if (detectedFaces.predictions is not null)
+                if (detectedFaces.Predictions is not null)
                 {
-                    foreach (var (face, index) in detectedFaces.predictions
+                    foreach (var (face, index) in detectedFaces.Predictions
                         .Select((face, index) => (face, index)))
                     {
-                        lines.Add($"{index}: Confidence: {Math.Round(face.confidence, 3)}");
+                        lines.Add($"{index}: Confidence: {Math.Round(face.Confidence*100.0, 2)}");
 
-                        var rect = Rectangle.FromLTRB(face.x_min, face.y_min, face.x_max, face.y_max);
+                        var rect = Rectangle.FromLTRB(face.X_min, face.Y_min, face.X_max, face.Y_max);
                         canvas.DrawRectangle(_boundingBoxPen, rect);
-                        canvas.DrawString(index.ToString(), _textFont, _textBrush, face.x_min, face.y_min);
+                        canvas.DrawString(index.ToString(), _textFont, _textBrush, face.X_min, face.Y_min);
                     }
 
                     detectionResult.Lines = lines.ToArray();
@@ -219,7 +221,7 @@ namespace CodeProject.AI.Demo.Explorer
             var result = await _serverClient.MatchFaces(_faceImageFileName1, _faceImageFileName2);
             if (result is MatchFacesResponse matchedFaces)
             {
-                detectionResult.Text = $"Similarity: {Math.Round(matchedFaces.similarity, 4)}";
+                detectionResult.Text = $"Similarity: {Math.Round(matchedFaces.Similarity, 4)}";
                 SetStatus("Face Comparison complete");
             }
             else
@@ -245,7 +247,7 @@ namespace CodeProject.AI.Demo.Explorer
                 var image = GetImage(_imageFileName);
                 pictureBox1.Image = image;
 
-                detectionResult.Text = $"Confidence: {Math.Round(detectedScene.confidence, 3)} Label: {detectedScene.label}";
+                detectionResult.Text = $"Confidence: {Math.Round(detectedScene.Confidence*100.0, 2)} Label: {detectedScene.Label}";
                 SetStatus("Scene Detection complete");
             }
             else
@@ -275,14 +277,14 @@ namespace CodeProject.AI.Demo.Explorer
                 try
                 {
                     lines.Add(stopwatch.Elapsed.ToString());
-                    if (detectedObjects.predictions is not null)
-                        foreach (var (detectedObj, index) in detectedObjects.predictions
+                    if (detectedObjects.Predictions is not null)
+                        foreach (var (detectedObj, index) in detectedObjects.Predictions
                             .Select((detected, index) => (detected, index)))
                         {
-                            lines.Add($"{index}: Conf: {Math.Round(detectedObj.confidence, 3)} {detectedObj.label}");
+                            lines.Add($"{index}: Conf: {Math.Round(detectedObj.Confidence*100.0, 2)} {detectedObj.Label}");
 
-                            var rect = Rectangle.FromLTRB(detectedObj.x_min, detectedObj.y_min, 
-                                                          detectedObj.x_max, detectedObj.y_max);
+                            var rect = Rectangle.FromLTRB(detectedObj.X_min, detectedObj.Y_min, 
+                                                          detectedObj.X_max, detectedObj.Y_max);
                         }
 
                     detectionResult.Lines = lines.ToArray();
@@ -296,16 +298,16 @@ namespace CodeProject.AI.Demo.Explorer
 
                     Graphics canvas  = Graphics.FromImage(image);
 
-                    if (detectedObjects.predictions is not null)
+                    if (detectedObjects.Predictions is not null)
                     {
-                        foreach (var (detectedObj, index) in detectedObjects.predictions
+                        foreach (var (detectedObj, index) in detectedObjects.Predictions
                             .Select((detected, index) => (detected, index)))
                         {
-                            var rect = Rectangle.FromLTRB(detectedObj.x_min, detectedObj.y_min,
-                                                          detectedObj.x_max, detectedObj.y_max);
+                            var rect = Rectangle.FromLTRB(detectedObj.X_min, detectedObj.Y_min,
+                                                          detectedObj.X_max, detectedObj.Y_max);
                             canvas.DrawRectangle(_boundingBoxPen, rect);
-                            canvas.DrawString($"{index}:{detectedObj.label}", _textFont, _textBrush, 
-                                              detectedObj.x_min, detectedObj.y_min);
+                            canvas.DrawString($"{index}:{detectedObj.Label}", _textFont, _textBrush, 
+                                              detectedObj.X_min, detectedObj.Y_min);
                         }
                     }
 
@@ -314,7 +316,7 @@ namespace CodeProject.AI.Demo.Explorer
                 }
                 catch (Exception ex)
                 {
-                    ProcessError(new ErrorResponse (ex.Message));
+                    ProcessError(new ServerErrorResponse (ex.Message));
                     detectionResult.Lines = lines.ToArray();
                 }
             }
@@ -328,6 +330,7 @@ namespace CodeProject.AI.Demo.Explorer
         {
             DeleteFaceBtn.Enabled = !string.IsNullOrWhiteSpace(UserIdTextbox.Text);
         }
+
         private async void RegisterFaceBtn_Click(object sender, EventArgs e)
         {
             ClearResults();
@@ -376,18 +379,18 @@ namespace CodeProject.AI.Demo.Explorer
                     Graphics canvas = Graphics.FromImage(image);
 
                     List<string> lines = new();
-                    if (recognizeFace.predictions is not null)
+                    if (recognizeFace.Predictions is not null)
                     {
-                        var predictionMap = recognizeFace.predictions
+                        var predictionMap = recognizeFace.Predictions
                                                          .Select((prediction, Index) => (prediction, Index));
                         foreach (var (prediction, index) in predictionMap)
                         {
-                            lines.Add($"{index}: Conf: {Math.Round(prediction.confidence, 3)} {prediction.userid}");
-                            var rect = Rectangle.FromLTRB(prediction.x_min, prediction.y_min, 
-                                                          prediction.x_max, prediction.y_max);
+                            lines.Add($"{index}: Conf: {Math.Round(prediction.Confidence*100.0, 2)} {prediction.Userid}");
+                            var rect = Rectangle.FromLTRB(prediction.X_min, prediction.Y_min, 
+                                                          prediction.X_max, prediction.Y_max);
                             canvas.DrawRectangle(_boundingBoxPen, rect);
-                            canvas.DrawString($"{index}:{prediction.userid}", _textFont, _textBrush, 
-                                              prediction.x_min, prediction.y_min);
+                            canvas.DrawString($"{index}:{prediction.Userid}", _textFont, _textBrush, 
+                                              prediction.X_min, prediction.Y_min);
                         }
 
                         detectionResult.Lines = lines.ToArray();
@@ -398,7 +401,7 @@ namespace CodeProject.AI.Demo.Explorer
                 }
                 catch (Exception ex)
                 {
-                    ProcessError(new ErrorResponse($"{filename} caused: {ex.Message}"));
+                    ProcessError(new ServerErrorResponse($"{filename} caused: {ex.Message}"));
                 }
             }
             else
@@ -410,15 +413,15 @@ namespace CodeProject.AI.Demo.Explorer
             ClearResults();
             SetStatus("Listing known faces");
 
-            var result = await _serverClient.ListRegisteredFaces() as ModuleResponseBase;
+            var result = await _serverClient.ListRegisteredFaces();
             if (result is ListRegisteredFacesResponse registeredFaces)
             {
                 if (result?.Success ?? false)
                 {
                     List<string> lines = new();
-                    if (registeredFaces.faces != null)
+                    if (registeredFaces.Faces != null)
                     {
-                        var faceMap = registeredFaces.faces.Select((face, Index) => (face, Index));
+                        var faceMap = registeredFaces.Faces.Select((face, Index) => (face, Index));
                         foreach (var (face, index) in faceMap)
                         {
                             lines.Add($"{index}: {face}");
@@ -455,7 +458,7 @@ namespace CodeProject.AI.Demo.Explorer
             ClearResults();
             SetStatus("Deleting registered face");
 
-            var result = await _serverClient.DeleteRegisteredFace(UserIdTextbox.Text) as ModuleResponseBase;
+            var result = await _serverClient.DeleteRegisteredFace(UserIdTextbox.Text);
             if (result?.Success ?? false)
                 SetStatus("Completed Face deletion");
             else
@@ -545,7 +548,7 @@ namespace CodeProject.AI.Demo.Explorer
             pictureBox1.Image    = null;
             detectionResult.Text = string.Empty;
 
-            if (result is ErrorResponse response)
+            if (result is ServerErrorResponse response)
                 ShowError($"Error: {response.Code} - {response.Error ?? "No Error Message"}");
             else if (result is null)
                 ShowError("Null result");

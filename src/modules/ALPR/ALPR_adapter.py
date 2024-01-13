@@ -22,12 +22,15 @@ class ALPR_adapter(ModuleRunner):
         super().__init__()
         self.opts = Options()
 
+        self.inferenceCount = 0
+        self.itemsDetected  = 0
+
     def initialise(self) -> None:
-        self.can_use_GPU = self.hasPaddleGPU
+        self.can_use_GPU = self.system_info.hasPaddleGPU
 
         # HACK: We're seeing problems with GPU support on older cards. Allow
         # some checks to be done
-        if self.hasPaddleGPU:
+        if self.system_info.hasPaddleGPU:
             import paddle
 
             if not paddle.device.cuda.device_count() or \
@@ -58,6 +61,8 @@ class ALPR_adapter(ModuleRunner):
             if "error" in result and result["error"]:
                 return { "success": False, "error": result["error"] }
 
+            self.inferenceCount += 1 
+
             predictions = result["predictions"]
             if len(predictions) > 3:
                 message = 'Found ' + (', '.join(det["label"] for det in predictions)) + "..."
@@ -65,6 +70,8 @@ class ALPR_adapter(ModuleRunner):
                 message = 'Found ' + (', '.join(det["label"] for det in predictions))
             else:
                 message = "No plates found"
+
+            self.itemsDetected += len(predictions) 
 
             return {
                 "success": True, 

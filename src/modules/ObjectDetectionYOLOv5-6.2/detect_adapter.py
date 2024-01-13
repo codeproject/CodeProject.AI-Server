@@ -33,7 +33,8 @@ class YOLO62_adapter(ModuleRunner):
         self.use_MPS        = self.opts.use_MPS
         self.use_DirectML   = self.opts.use_DirectML
 
-        if self.use_CUDA and self.half_precision == 'enable' and not self.hasTorchHalfPrecision:
+        if self.use_CUDA and self.half_precision == 'enable' and \
+           not self.system_info.hasTorchHalfPrecision:
             self.half_precision = 'disable'
 
 
@@ -47,7 +48,7 @@ class YOLO62_adapter(ModuleRunner):
 
         # CUDA takes precedence
         if self.use_CUDA:
-            self.use_CUDA = self.hasTorchCuda
+            self.use_CUDA = self.system_info.hasTorchCuda
             # Potentially solve an issue around CUDNN_STATUS_ALLOC_FAILED errors
             try:
                 import cudnn as cudnn
@@ -61,19 +62,19 @@ class YOLO62_adapter(ModuleRunner):
             self.use_MPS      = False
             self.use_DirectML = False
         else:
-            self.use_MPS = self.hasTorchMPS
+            self.use_MPS = self.system_info.hasTorchMPS
 
         # If we're not on Apple Silicon and we're not already using CUDA, and we're in WSL or 
         # Windows, then DirectML is a good option if allowed and available.
         # if self.use_DirectML and                         \
-        #    (self.in_WSL or self.system == "Windows") and \
+        #    (self.system_info.in_WSL or self.system_info.os == "Windows") and \
         #    not self.use_CUDA and not self.use_MPS:
-        #     self.use_DirectML = self.hasTorchDirectML
+        #     self.use_DirectML = self.system_info.hasTorchDirectML
         # else:
         #     self.use_DirectML = False
         self.use_DirectML = False   # Unfortunately we can't get PyTorch-DirectML working
 
-        self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS # or self.use_DirectML
+        self.can_use_GPU = self.system_info.hasTorchCuda or self.system_info.hasTorchMPS # or self.use_DirectML
 
         if self.use_CUDA:
             self.execution_provider = "CUDA"

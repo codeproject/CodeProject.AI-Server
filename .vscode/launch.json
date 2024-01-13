@@ -442,10 +442,10 @@
             },
             "name": "Object Detect Coral",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/linux/python39/venv/bin/python",
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
             "request": "launch",
             "program": "objectdetection_coral_adapter.py",
-            // "args": [ "--selftest" ],
+            "args": [ "--selftest" ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/src/modules/ObjectDetectionCoral",
             "justMyCode": false,
@@ -456,7 +456,7 @@
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/windows/python37/venv/Scripts/python.exe",
+                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
             },
             "linux": {
                 "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/linux/python39/venv/bin/python",
@@ -565,7 +565,7 @@
             },
             "name": "Object Detect YOLOv5 3.1 Jetson",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1/bin/linux/python36/venv/bin/python",
+            "python": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "detect_adapter.py",
             // "args": [ "--selftest" ],
@@ -736,7 +736,7 @@
             },
             "name": "Sound Classifier",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/linux/python39/venv/bin/python3.8",
+            "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/linux/python39/venv/bin/python3",
             "request": "launch",
             "program": "sound_classification_adapter.py",
             // "args": [ "--selftest" ],
@@ -746,16 +746,17 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
-                "CPAI_PORT": "32168"
+                "CPAI_PORT": "32168",
+                "MODELS_DIR": "${workspaceFolder}/src/modules/SoundClassifierTF/assets"
             },
             "windows": {
                 "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/windows/python39/venv/Scripts/python",
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/linux/python39/venv/bin/python3.8",
+                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/linux/python38/venv/bin/python3",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/macos/python39/venv/bin/python",
+                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -833,7 +834,7 @@
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168",
                 
-                "NLTK_DATA": "/app/modules/TextSummary/nltk_data"
+                "NLTK_DATA": "${workspaceFolder}/src/modules/TextSummary/nltk_data"
             },
             "windows": {
                 "python": "${workspaceFolder}/src/modules/TextSummary/bin/windows/python37/venv/Scripts/python.exe"
@@ -868,16 +869,17 @@
                 "YOLOv5_AUTOINSTALL": "false",
                 "YOLOv5_VERBOSE":     "false",
 
-                "CPAI_MODULE_REQUIRED_MB":  "7000",
+                "CPAI_MODULE_REQUIRED_MB":  "1000",
                 
                 "YOLO_DATASETS_DIRNAME":    "datasets",
-                "YOLO_TRAINING_DIRNAME":    "training",
+                "YOLO_TRAINING_DIRNAME":    "train",    // compatible with tutorials and default
                 "YOLO_WEIGHTS_DIRNAME":     "weights",
                 "YOLO_MODELS_DIRNAME":      "assets",
-                "YOLO_DATASET_ZOO_DIRNAME": "zoo"
+                "YOLO_DATASET_ZOO_DIRNAME": "zoo",
+                "FIFTYONE_DATABASE_DIRNAME": "fiftyone"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5/bin/windows/python39/venv/Scripts/python.exe"
+                "python": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5/bin/windows/python37/venv/Scripts/python.exe"
             },
             "linux": {
                 "python": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5/bin/linux/python38/venv/bin/python",

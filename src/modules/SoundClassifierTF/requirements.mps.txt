@@ -1,7 +1,8 @@
 #! Python3.7
 
 SciPy==1.7.3                    # Installing SciPy, a library for mathematics, science, and engineering
-numpy>=1.16.5,<1.23.0           # Installing NumPy, a package for scientific computing
+# numpy>=1.16.5,<1.23.0         # Installing NumPy, a package for scientific computing
+numpy>=1.16.5                   # Installing NumPy, a package for scientific computing
 Pillow>=4.0.0,<10.0             # Installing Pillow, a Python Image Library
 # PyYAML                        # Installing PyYAML, a library for reading configuration files
 

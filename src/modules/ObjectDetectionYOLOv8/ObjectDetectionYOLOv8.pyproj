@@ -35,6 +35,7 @@
     <Content Include="assets\yolov8m.pt" />
     <Content Include="assets\yolov8n.pt" />
     <Content Include="assets\yolov8s.pt" />
+    <Content Include="explore.html" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />

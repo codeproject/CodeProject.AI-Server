@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
@@ -18,11 +17,12 @@ using Microsoft.Extensions.Options;
 
 using CodeProject.AI.Server.Backend;
 using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Modules;
-using CodeProject.AI.Server.Utilities;
 using CodeProject.AI.Server.Mesh;
+using System.Net;
 
 namespace CodeProject.AI.Server.Controllers
 {
@@ -205,7 +205,7 @@ namespace CodeProject.AI.Server.Controllers
                     }
 
                     summary.Append($"**Response**\n\n");
-                    if (routeInfo.Outputs is null)
+                    if (routeInfo.ReturnedOutputs is null)
                     {
                         summary.Append("(None)\n\n");
                     }
@@ -213,7 +213,7 @@ namespace CodeProject.AI.Server.Controllers
                     {
                         summary.Append("``` json\n");
                         summary.Append("{\n");
-                        foreach (RouteParameterInfo output in routeInfo.Outputs)
+                        foreach (RouteParameterInfo output in routeInfo.ReturnedOutputs)
                             summary.Append($"  \"{output.Name}\": ({output.Type}) // {output.Description}\n");
 
                         summary.Append("}\n");
@@ -292,8 +292,8 @@ namespace CodeProject.AI.Server.Controllers
 
             if (responseObject is null)
             {
-                // TODO: Surely there's a better path to this
-                var resp = new BackendErrorResponse(error, StatusCodes.Status500InternalServerError);
+                // TODO: Surely there's a better way to do this
+                var resp = new ServerErrorResponse(error, HttpStatusCode.InternalServerError);
                 string jsonString = JsonSerializer.Serialize(resp);
                 responseObject = JsonSerializer.Deserialize<JsonObject>(jsonString);
             }

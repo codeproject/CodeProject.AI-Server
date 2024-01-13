@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 
 using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Utils;
 
 using Yolov5Net.Scorer;
@@ -93,15 +94,15 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns>The response.</returns>
-        protected override BackendResponseBase ProcessRequest(BackendRequest request)
+        protected override ModuleResponse ProcessRequest(BackendRequest request)
         {
-            BackendResponseBase response;
+            ModuleResponse response;
 
             RequestPayload payload = request.payload;
             if (payload == null)
-                return new BackendErrorResponse("No payload supplied for object detection.");
+                return new ModuleErrorResponse("No payload supplied for object detection.");
             if (string.IsNullOrEmpty(payload.command))
-                return new BackendErrorResponse("No command supplied for object detection.");
+                return new ModuleErrorResponse("No command supplied for object detection.");
 
             if (payload.command.EqualsIgnoreCase("list-custom") == true)               // list all models available
             {
@@ -121,13 +122,13 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
                         catch (Exception e)
                         {
                             // Console.Write(e);
-                            response = new BackendErrorResponse($"Unable to list custom models: " + e.Message);
+                            response = new ModuleErrorResponse($"Unable to list custom models: " + e.Message);
                         }
                     }
 
-                    response = new BackendCustomModuleListResponse
+                    response = new CustomModuleListResponse
                     {
-                        models = _customFileList // list all available models
+                        Models = _customFileList // list all available models
                     };
                 }
             }
@@ -135,7 +136,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             {
                 var file = payload.files?.FirstOrDefault();
                 if (file is null)
-                    return new BackendErrorResponse("No File supplied for object detection.");
+                    return new ModuleErrorResponse("No File supplied for object detection.");
 
                 var minConfidenceValue = payload.GetValue("minConfidence", "0.4");
                 if (!float.TryParse(minConfidenceValue, out float minConfidence))
@@ -149,7 +150,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             {
                 var file = payload.files?.FirstOrDefault();
                 if (file is null)
-                    return new BackendErrorResponse("No File supplied for custom object detection.");
+                    return new ModuleErrorResponse("No File supplied for custom object detection.");
 
                 var minConfidenceValues = payload.values?
                                                  .FirstOrDefault(x => x.Key == "minConfidence")
@@ -173,7 +174,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             }
             else
             {
-                response = new BackendErrorResponse($"Command '{request.reqtype ?? "<None>"}' not found");
+                response = new ModuleErrorResponse($"Command '{request.reqtype ?? "<None>"}' not found");
             }
 
             return response;
@@ -191,9 +192,9 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             payload.AddFile(Path.Combine(moduleDirPath!, "test/home-office.jpg"));
 
             var request = new BackendRequest(payload);
-            BackendResponseBase response = ProcessRequest(request);
+            ModuleResponse response = ProcessRequest(request);
 
-            if (response.success)
+            if (response.Success)
                 return 0;
 
             return 1;
@@ -218,8 +219,8 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         /// <param name="file">The file object containing the image</param>
         /// <param name="minConfidenceValue">A string rep of the minimum detection confidence</param>
         /// <returns></returns>
-        protected BackendResponseBase DoDetection(string modelPath, RequestFormFile file,
-                                                  float minConfidence)
+        protected ModuleResponse DoDetection(string modelPath, RequestFormFile file,
+                                             float minConfidence)
         {
             Logger.LogInformation($"Processing {file.filename}");
 
@@ -233,7 +234,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
                 Console.WriteLine($"Trace: Creating Detector: {traceSW.ElapsedMilliseconds}ms");
 
             if (detector is null)
-                return new BackendErrorResponse($"Unable to create detector for model {modelPath}");
+                return new ModuleErrorResponse($"Unable to create detector for model {modelPath}");
 
             if (ShowTrace)
                 Console.WriteLine($"Trace: Setting hardware type: {traceSW.ElapsedMilliseconds}ms");
@@ -251,7 +252,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
                 Console.WriteLine($"Trace: End Predict: {traceSW.ElapsedMilliseconds}ms");
 
             if (yoloResult == null)
-                return new BackendErrorResponse("Yolo returned null.");
+                return new ModuleErrorResponse("Yolo returned null.");
 
             if (ShowTrace)
                 Console.WriteLine($"Trace: Start Processing results: {traceSW.ElapsedMilliseconds}ms");
@@ -269,21 +270,21 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             if (ShowTrace)
                 Console.WriteLine($"Trace: Sending results: {traceSW.ElapsedMilliseconds}ms");
 
-            return new BackendObjectDetectionResponse
+            return new ObjectDetectionResponse
             {
-                count       = count,
-                message     = message,
-                predictions = results.Select(x =>
-                                new DetectionPrediction
+                Count       = count,
+                Message     = message,
+                Predictions = results.Select(x =>
+                                new DetectedObject
                                 {
-                                    confidence = x.Score,
-                                    label = x?.Label?.Name,
-                                    x_min = (int)x!.Rectangle.Left,
-                                    y_min = (int)x!.Rectangle.Top,
-                                    x_max = (int)(x!.Rectangle.Right),
-                                    y_max = (int)(x!.Rectangle.Bottom)
+                                    Confidence = x.Score,
+                                    Label      = x?.Label?.Name,
+                                    X_min      = (int)x!.Rectangle.Left,
+                                    Y_min      = (int)x!.Rectangle.Top,
+                                    X_max      = (int)(x!.Rectangle.Right),
+                                    Y_max      = (int)(x!.Rectangle.Bottom)
                                 }).ToArray(),
-                inferenceMs = inferenceMs
+                InferenceMs = inferenceMs
             };
         }
 

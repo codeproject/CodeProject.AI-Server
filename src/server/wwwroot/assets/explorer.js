@@ -1,26 +1,18 @@
-const useSVG             = true;
-const allowVideoDemo     = false
-const pingFrequency      = 5000; // milliseconds
-const serviceTimeoutSec  = 30;   // seconds
+const allowVideoDemo     = true
+const uiFromServer       = true;
+const updateModuleUiFreq = 5000; // milliseconds
 
-let apiServiceProtocol = window.location.protocol;
-if (!apiServiceProtocol || apiServiceProtocol === "file:")
-    apiServiceProtocol = "http:"; // Needed if you launch this file from Finder
-
-const apiServiceHostname = window.location.hostname || "localhost";
-const apiServicePort     = window.location.port === "" ? ":32168" : ":" + (window.location.port || 32168);
-const apiServiceUrl      = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
+// A callback that will update the Benchmark's custom model dropdown. One of the Object Detection
+// modules will, hopefully, set this for us
+let BenchmarkCustomListUpdater = null;
 
 // Elements
-const resultDivId       = "results"         // Displays human readable result of the operation
-const imagePreviewId    = "img"             // Displays an image
-const imgResultCanvasId = "annotations";    // If using a canvas to draw image annotations
-const imgResultMaskId   = "imageMask";      // If using SVG to draw image annotations
+const resultDivId       = "results"       // Displays human readable result of the operation
+const imagePreviewId    = "imgPreview"    // Previews an image
+const soundPreviewId    = "sndPreview"    // Previews a sound
+const imgResultMaskId   = "imgMask";      // If using SVG to draw image annotations
+const imageResultId     = "imgResult"     // Displays an image result
 
-// Private vars
-let _serverIsOnline      = false; // Anyone home?
-let _delayFetchCallUntil = null;  // No fetch calls until this time. Allows us to delay after fetch errors
-let _fetchErrorDelaySec  = 0;     // The number of seconds to delay until the next fetch if there's a fetch error
 
 
 // Setup =======================================================================
@@ -53,16 +45,6 @@ function initVideoDemo() {
 // Display server and module statuses ==========================================
 
 /**
- * Updates the main status message regarding server state
- */
-function setServerStatus(status, variant) {
-    if (variant)
-        document.getElementById("serverStatus").innerHTML = "<span class='text-white p-1 bg-" + variant + "'>" + status + "</span>";
-    else
-        document.getElementById("serverStatus").innerHTML = "<span class='text-white p-1'>" + status + "</span>";
-}
-
-/**
 Sets the status text (small area top left) to be the message in the given colour.
 Since this is a small area, the text needs to be short.
 */
@@ -82,57 +64,16 @@ function showLogOutput(text, variant) {
     else
         statusElm.innerHTML = "<span>" + text + "</span>";
 
-    if (variant === "warn")
-        console.warn(text);
-    else if (variant === "error")
-        console.error(text);
+    if (variant === "warn") {
+        // console.warn(text);
+        console.log("WARN: " + text);
+    }
+    else if (variant === "error") {
+        // console.error(text);
+        console.log("ERROR: " + text);
+    } 
     else
         console.log(text);
-}
-
-/**
-Sets the status text (small area top left) to be the status message in red.
-Since this is a small area, the text needs to be short.
-@param status - a short status message
-@param error - a longer error message which, if supplied, will be sent to console
-*/
-function showError(status, error) {
-
-    if (status)
-        setServerStatus(status, "error")
-
-    if (error)
-        showLogOutput(error, "error");
-}
-
-/**
-Sets the status text (small area top left) to be the status message in orange.
-Since this is a small area, the text needs to be short.
-@param status - a short status message
-@param warning - a longer warning message which, if supplied, will be sent to console
-*/
-function showWarning(status, warning) {
-
-    if (status)
-        setServerStatus(status, "warn")
-
-    if (warning)
-        showLogOutput(warning, "warn");
-}
-
-/**
-Sets the status text (small area top left) to be the status text. Since this is
-a small area, the text needs to be short.
-@param status - a short status message
-@param info - a longer message which, if supplied, will be sent to console
-*/
-function showInfo(status, info) {
-
-    if (status)
-        setServerStatus(status, "info")
-
-    if (info)
-        showLogOutput(info, "info");
 }
 
 // Module operation results ====================================================
@@ -228,19 +169,57 @@ this image in the image results pane
 function previewImage(fileChooser) {
 
     if (fileChooser.files)
-        setImage(fileChooser.files[0]);
+        showPreviewImage(fileChooser.files[0]);
 }
 
 /**
 If the supplied file is an image, displays this image in the image results pane
 */
-function setImage(imageToSet) {
+function showPreviewImage(imageToSet) {
 
     const imgElm = document.getElementById(imagePreviewId);
     if (!imgElm)
         return;
 
-    clearCanvas();
+    clearImagePreview();
+
+    if (imageToSet?.type.indexOf('image/') === 0) {
+        imgElm.src = URL.createObjectURL(imageToSet);
+        imgElm.style.height     = "auto";
+        imgElm.style.visibility = "visible";
+    }
+    else {
+        alert('Please select a valid image file.');
+    }
+}
+
+function clearImagePreview() {
+
+    const imgPreviewElm = document.getElementById(imagePreviewId);
+    if (imgPreviewElm) imgPreviewElm.style.visibility = "hidden";
+
+    // If there is no results image, meaning we're using the preview as the 
+    // results image, then we'll need to also clear the mask
+    let imgResultElm = document.getElementById(imageResultId);
+    if (!imgResultElm) {
+        const imgMaskElm = document.getElementById(imgResultMaskId);
+        if (imgMaskElm) imgMaskElm.innerHTML = '';
+    }
+}
+
+/**
+If the supplied file is an image, displays this image in the image results pane
+*/
+function showResultsImage(imageToSet) {
+
+    clearImageResult();
+
+    let imgElm = document.getElementById(imageResultId);
+    // If there's no image result element, fallback to the preview element
+    if (!imgElm)
+        imgElm = document.getElementById(imagePreviewId);
+    if (!imgElm)
+        return;
 
     if (imageToSet?.type.indexOf('image/') === 0) {
         imgElm.onload = adjustOverlayToFitResultImage;
@@ -250,6 +229,445 @@ function setImage(imageToSet) {
     }
     else {
         alert('Please select a valid image file.');
+    }
+}
+
+function showResultsImageData(data) {
+
+    clearImageResult();
+
+    let imgElm = document.getElementById(imageResultId);
+    // If there's no image result element, fallback to the preview element
+    if (!imgElm)
+        imgElm = document.getElementById(imagePreviewId);
+    if (!imgElm)
+        return;
+
+    imgElm.src = "data:image/png;base64," + data.imageBase64;
+	imgElm.style.visibility = "visible";
+
+    if (data.predictions)
+        showResultsBoundingBoxes(data.predictions);
+}
+
+function clearImageResult() {
+
+    const imgMaskElm = document.getElementById(imgResultMaskId);
+    if (imgMaskElm) imgMaskElm.innerHTML = '';
+
+    let imgElm = document.getElementById(imageResultId);
+    // If there's no image result element, fallback to the preview element
+    if (!imgElm)
+        imgElm = document.getElementById(imagePreviewId);
+    if (!imgElm)
+        return;
+
+    imgElm.style.visibility = "hidden";
+    imgElm.src = "";
+}
+
+/**
+When image analysis is carried out there are often annotations (eg bounding
+boxes) shown on the resulting image. These are displayed using an overlay. This
+method adjusts the size of the overlay to match this image.
+@param this - the current image displaying an analysis result
+ */
+function adjustOverlayToFitResultImage() {
+
+    let mask = document.getElementById(imgResultMaskId);
+    mask.style.height = this.height + 'px';
+    mask.style.width  = this.width + 'px';
+
+    return true;
+}
+
+function showResultsBoundingBoxes(predictions, sortByConfidence = true) {
+
+    let imgElm = document.getElementById(imageResultId);
+    // If there's no image result element, fallback to the preview element
+    if (!imgElm)
+        imgElm = document.getElementById(imagePreviewId);
+    if (!imgElm)
+        return;
+
+    if (!imgElm.width || !imgElm.height)
+        return;
+
+    if (!(predictions && predictions.length > 0))
+        return;
+
+    // Sort descending
+    if (sortByConfidence) {
+        predictions.sort(function (a, b) {
+            return b.confidence - a.confidence;
+        });
+    }
+
+    let xRatio = imgElm.width * 1.0 / imgElm.naturalWidth;
+    let yRatio = imgElm.height * 1.0 / imgElm.naturalHeight;
+
+    let svg = `
+        <svg viewBox="0 0 ${imgElm.width} ${imgElm.height}">
+        <defs>
+            <mask id="mask">
+                <rect fill="#999" x="0" y="0" width="${imgElm.width}" height="${imgElm.height}"></rect>`;
+
+    for (let i = 0; i < predictions.length; i++) {
+        let prediction = predictions[i];
+        let left   = Math.min(prediction.x_min,  prediction.x_max) * xRatio;
+        let top    = Math.min(prediction.y_min,  prediction.y_max) * yRatio;
+        let width  = Math.abs(prediction.x_min - prediction.x_max) * xRatio;
+        let height = Math.abs(prediction.y_min - prediction.y_max) * yRatio;
+
+        svg += `<rect fill="#ffffff" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
+    }
+
+    svg += `
+            </mask>
+        </defs>
+        <image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="${imgElm.src}" width="${imgElm.width}" height="${imgElm.height}"></image>`;
+
+    let colors = ["179,221,202", "204,223,120", "164,221,239"];
+    let colorIndex = 0;
+
+    let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 5 : 8) : 15;
+    for (let i = 0; i < predictions.length; i++) {
+
+        let prediction = predictions[i];
+        let left   = Math.min(prediction.x_min,  prediction.x_max) * xRatio;
+        let top    = Math.min(prediction.y_min,  prediction.y_max) * yRatio;
+        let width  = Math.abs(prediction.x_min - prediction.x_max) * xRatio;
+        let height = Math.abs(prediction.y_min - prediction.y_max) * yRatio;
+
+        let right  = left + width;
+        let bottom = top + height;
+
+        // CodeProject.AI style
+        let lineWidth   = Math.min(maxLineWidth, width / 10);
+        let blockWidth  = (width - lineWidth) / 5;
+        let blockHeight = (height - lineWidth) / 5;
+        let color       = colors[colorIndex++ % colors.length];
+        let styleSolid  = `style="stroke:rgba(${color}, 1);stroke-width:${lineWidth}"`;
+        let styleTrans  = `style="stroke:rgba(${color}, 0.5);stroke-width:${lineWidth}"`;
+
+        // label
+        let label = prediction.label || prediction.userid;
+        if (label)
+            svg += `<text x="${left}" y="${top - lineWidth}" style="stroke: none; fill:rgba(${color}, 1);font-size:12px">${label || ""}</text>`;
+
+        // Shortcut if there are just too many items
+        if (predictions.length > 15) {
+            // Solid rectangle
+            svg += `<rect stroke="rgb(${color})" stroke-width="1px" fill="transparent" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
+            continue;
+        }
+
+        // Top (left to right)
+        let x = left - lineWidth / 2;
+        svg += `<line ${styleSolid} x1="${x}" y1="${top}" x2="${x + blockWidth + lineWidth}" y2="${top}"/>`;
+        x += blockWidth + lineWidth;
+        svg += `<line ${styleTrans} x1="${x}" y1="${top}" x2="${x + blockWidth}" y2="${top}"/>`;
+        x += 2 * blockWidth; // skip a section
+        svg += `<line ${styleSolid} x1="${x}" y1="${top}" x2="${x + 2 * blockWidth + lineWidth}" y2="${top}"/>`;
+
+        // Right (top to bottom)
+        let y = top - lineWidth / 2;
+        svg += `<line ${styleSolid} x1="${right}" y1="${y}" x2="${right}" y2="${y + blockHeight + lineWidth}"/>`;
+        y += blockHeight + lineWidth;
+        svg += `<line ${styleTrans}  x1="${right}" y1="${y}" x2="${right}" y2="${y + blockHeight}"/>`;
+        y += 2 * blockHeight; // skip a section
+        svg += `<line ${styleSolid} x1="${right}" y1="${y}" x2="${right}" y2="${y + 2 * blockHeight + lineWidth}"/>`;
+
+        // Bottom (left to right)
+        x = left - lineWidth / 2;
+        svg += `<line ${styleSolid} x1="${x}" y1="${bottom}" x2="${x + 2 * blockWidth + lineWidth}" y2="${bottom}"/>`;
+        x += 3 * blockWidth + lineWidth; // Skip a section
+        svg += `<line ${styleTrans}  x1="${x}" y1="${bottom}" x2="${x + blockWidth}" y2="${bottom}"/>`;
+        x += blockWidth;
+        svg += `<line ${styleSolid} x1="${x}" y1="${bottom}" x2="${x + blockWidth + lineWidth}" y2="${bottom}"/>`;
+
+        // Left (top to bottom)
+        y = top - lineWidth / 2;
+        svg += `<line ${styleSolid} x1="${left}" y1="${y}" x2="${left}" y2="${y + 2 * blockHeight + lineWidth}"/>`;
+        y += 3 * blockHeight + lineWidth; // skip a section
+        svg += `<line ${styleTrans}  x1="${left}" y1="${y}" x2="${left}" y2="${y + blockHeight}"/>`;
+        y += blockHeight;
+        svg += `<line ${styleSolid} x1="${left}" y1="${y}" x2="${left}" y2="${y + blockHeight + lineWidth}"/>`;
+    }
+
+    svg += `
+        </svg>`;
+
+    const imgMaskElm = document.getElementById(imgResultMaskId);
+    imgMaskElm.style.height = imgElm.height + 'px';
+    imgMaskElm.style.width  = imgElm.width + 'px';
+    imgMaskElm.innerHTML    = svg;
+
+    imgMaskElm.style.visibility = "visible";
+    imgElm.style.visibility     = "hidden";
+}
+
+/**
+Draws a horizontal line portion of a bounding box. This line is divided into 3
+sections. The first 60% is solid, the second 20% translucent, the final 20%
+clear. We will use this in an animation effect and have the 60/20/20 sections
+rotate left to right, so the start of the solid section moves right, and as it
+moves the section on the far right wraps back around. This generates a rotation
+effect for the bounding box.
+
+@param minX The left most starting point in px
+@param maxX The ending point in px
+@param offsetX The offset (from left) of the start of the line in px
+@param y The horizontal position, increasing from top down
+@param lineWidth The length of the line in px
+@param color The colour of the line
+@param reverse Whether to reverse horizontal coords. ie min and max and offset 
+work right to left
+ */
+function drawHorzLine(minX, maxX, offsetX, y, lineWidth, color, reverse) {
+
+    let blockWidth = (maxX - minX) / 5;
+
+    let fadeColor = 'transparent';
+    if (color.indexOf('a') == -1)
+        fadeColor = color.replace(')', ', 0.5)').replace('rgb', 'rgba');
+
+    let styleSolid = `style="stroke:${color};stroke-width:${lineWidth}"`;
+    let styleTrans = `style="stroke:${fadeColor};stroke-width:${lineWidth}"`;
+
+    let x, x2, svg='';
+
+    let start = reverse ? maxX - offsetX : minX + offsetX;
+    let step  = reverse ? -blockWidth : blockWidth;
+
+    x  = Math.max(Math.min(start, maxX), minX);
+    x2 = Math.max(Math.min(start + step, maxX), minX);
+    if (x != x2)
+        svg += `<line ${styleSolid} x1="${x}" y1="${y}" x2="${x2}" y2="${y}"/>`;
+
+    start += step;
+
+    x  = Math.max(Math.min(start, maxX), minX);
+    x2 = Math.max(Math.min(start + step, maxX), minX);
+    if (x != x2)
+        svg += `<line ${styleTrans} x1="${x}" y1="${y}" x2="${x2}" y2="${y}"/>`;
+
+    start += 2 * step; // Skip section
+
+    x  = Math.max(Math.min(start, maxX), minX); // skip the black section
+    x2 = Math.max(Math.min(start + 2 * step, maxX), minX);
+    if (x != x2)
+        svg += `<line ${styleSolid} x1="${x}" y1="${y}" x2="${x2}" y2="${y}"/>`;
+
+    return svg;
+}
+
+/**
+Draws a vertical line portion of a bounding box. This line is divided into 3
+sections. The first 60% is solid, the second 20% translucent, the final 20%
+clear. We will use this in an animation effect and have the 60/20/20 sections
+rotate top to bottom, so the start of the solid section moves down, and as it
+moves the section on the bottom wraps back around. This generates a rotation
+effect for the bounding box.
+
+@param minY The top most starting point in px
+@param maxY The ending point in px
+@param offsetY The offset (from top) of the start of the line in px
+@param x The vertical position, increasing from left to right
+@param lineWidth The length of the line in px
+@param color The colour of the line
+@param reverse Whether to reverse horizontal coords. ie min and max and offset 
+work bottom to top
+ */
+function drawVertLine(minY, maxY, offsetY, x, lineWidth, color, reverse) {
+
+    let blockHeight = (maxY - minY) / 5;
+
+    let fadeColor = 'transparent';
+    if (color.indexOf('a') == -1)
+        fadeColor = color.replace(')', ', 0.5)').replace('rgb', 'rgba');
+
+    let styleSolid = `style="stroke:${color};stroke-width:${lineWidth}"`;
+    let styleTrans = `style="stroke:${fadeColor};stroke-width:${lineWidth}"`;
+
+    let y, y2, svg='';
+
+    let start = reverse ? maxY - offsetY : minY + offsetY;
+    let step  = reverse ? -blockHeight : blockHeight;
+
+    y  = Math.max(Math.min(start, maxY), minY);
+    y2 = Math.max(Math.min(start + step, maxY), minY);
+    if (y != y2)
+        svg += `<line ${styleSolid} x1="${x}" y1="${y}" x2="${x}" y2="${y2}"/>`;
+
+    start += step;
+
+    y  = Math.max(Math.min(start, maxY), minY);
+    y2 = Math.max(Math.min(start + step, maxY), minY);
+    if (y != y2)
+        svg += `<line ${styleTrans} x1="${x}" y1="${y}" x2="${x}" y2="${y2}"/>`;
+
+    start += 2 * step; // Skip section
+
+    y  = Math.max(Math.min(start, maxY), minY); // skip the black section
+    y2 = Math.max(Math.min(start + 2 * step, maxY), minY);
+    if (y != y2)
+        svg += `<line ${styleSolid} x1="${x}" y1="${y}" x2="${x}" y2="${y2}"/>`;
+
+    return svg;
+}
+
+/**
+ Gets the SVG for a frame that represents an animated bounding box
+ @param left left pos of frame
+ @param top top pos of frame
+ @param right right pos of frame
+ @param bottom bottom pos of frame
+ @param lineWidth linewidth
+ @param color color
+ @param fractionRotate amount (0 - 1) of rotation of the frame animation
+ */
+function getFrameInnerSVG(left, top, right, bottom, lineWidth, color, fractionRotate) {
+
+    let width = right - left;
+    let height = bottom - top;
+
+    let ext = lineWidth / 2;
+
+    let svg = '';
+
+    // Top (left to right)
+    let offset = width * fractionRotate;
+    svg += drawHorzLine(left - ext, right + ext, offset, top, lineWidth, color, false);
+    offset = -width * (1.0 - fractionRotate);
+    svg += drawHorzLine(left - ext, right + ext, offset, top, lineWidth, color, false);
+
+    // Bottom (right to left)
+    offset = width * fractionRotate;
+    svg += drawHorzLine(left - ext, right + ext, offset, bottom, lineWidth, color, true);
+    offset = -width * (1.0 - fractionRotate);
+    svg += drawHorzLine(left - ext, right + ext, offset, bottom, lineWidth, color, true);
+
+    // Right (top to bottom)
+    offset = height * fractionRotate;
+    svg += drawVertLine(top - ext, bottom + ext, offset, right, lineWidth, color, false);
+    offset = -height * (1.0 - fractionRotate);
+    svg += drawVertLine(top - ext, bottom + ext, offset, right, lineWidth, color, false);
+
+    // Left (top to bottom)
+    offset = height * fractionRotate;
+    svg += drawVertLine(top - ext, bottom + ext, offset, left, lineWidth, color, true);
+    offset = -height * (1.0 - fractionRotate);
+    svg += drawVertLine(top - ext, bottom + ext, offset, left, lineWidth, color, true);
+
+    return svg;
+}
+
+/**
+ Gets the SVG for a frame that represents an animated bounding box
+ @param viewWidth width of viewport
+ @param viewHeight height of viewport
+ @param left left pos of frame
+ @param top top pos of frame
+ @param right right pos of frame
+ @param bottom bottom pos of frame
+ @param lineWidth linewidth
+ @param color color
+ @param fractionRotate amount (0 - 1) of rotation of the frame animation
+ */
+ function getFrameInnerSVG(viewWidth, viewHeight, left, top, right, bottom, lineWidth, color, fractionRotate) {
+    return `<svg viewBox="0 0 ${viewWidth} ${viewHeight}">`
+         + getFrameInnerSVG(left, top, right, bottom, lineWidth, color, fractionRotate)
+         + `</svg>`;
+ }
+
+
+let previousTimeStamp, fractionRotate = 0; // 0.0 - 1.0
+
+/**
+ Draws a single frame in a rotating bounding box animation
+ @param width The width of the frame
+ @param height The height of the frame
+ @param svgFrame The element that will hold the SVG image. This element will be
+ the same size and position as the bounding box relative to the image
+ */
+function drawBoundingBoxFrame(width, height, svgFrame) {
+
+    const msPerLoop = 5000;   // time to complete a full cycle in milliseconds
+    let timestamp = performance.now();
+
+    if (previousTimeStamp == undefined)
+        previousTimeStamp = timestamp;
+
+    if (previousTimeStamp !== timestamp) {
+
+        let svg = getFrameSVG(width, height, 0, 0, width, height, 20, "rgb(179, 221, 202)", fractionRotate);
+        svgFrame.innerHTML = svg;
+
+        let rotationIncr = (timestamp - previousTimeStamp) / msPerLoop;
+        fractionRotate += rotationIncr;
+        if (fractionRotate > 1.0)
+            fractionRotate -= 1.0;
+
+        previousTimeStamp = timestamp;
+    }
+}
+
+/**
+ Draws an image and a rotating bounding box on the image
+ @param imgId The id of the IMG element 
+ @param imageSrc The source of the image
+ @param bbox The bounding box in [left, top. right, bottom] order in px
+ */
+function drawImageWithRotatingBoundingBox(imgId, imageSrc, bbox) {
+
+    const useAnimationFrame = true;
+
+    let left = bbox[0], top = bbox[1], right = bbox[2], bottom = bbox[3]
+    let width  = right - left;
+    let height = bottom - top;
+
+    // Wrap image
+    let wrapper = document.createElement("div")
+    wrapper.id = imgId + "-wrap";
+
+    let img       = document.getElementById(imgId);
+    img.src       = imageSrc;
+    let imgHeight = img.offsetHeight;
+    let imgWidth  = img.offsetWidth;
+
+    let parentAnchor = img.parentNode;                // anchor tag
+    parentAnchor.insertBefore(wrapper, img);
+    wrapper.appendChild(img);
+
+    img.style.position = 'absolute';
+    img.style.right = '0';
+
+    svgFrame = document.createElement("div")
+    wrapper.insertBefore(svgFrame, img)
+
+    wrapper.style.position = 'relative';
+    wrapper.style.height = imgHeight + "px";
+
+    svgFrame.classList.add('svg-frame');
+    svgFrame.style.position = 'absolute';
+    // svgFrame.style.left   = left + 'px';
+    svgFrame.style.top    = top + 'px';
+    // svgFrame.style.bottom = bottom + 'px';
+    svgFrame.style.right  = (imgWidth - right - 20) + 'px'; // 20 = width of lines
+    svgFrame.style.height = (bottom - top) + "px";
+    svgFrame.style.width  = (right - left) + "px";
+
+    if (useAnimationFrame) {
+        while (true) {
+            window.requestAnimationFrame(() => 
+                drawBoundingBoxFrame(width, height, svgFrame));
+        }
+    }
+    else {
+        // 50ms time step. Reasonably smooth
+        setInterval(() => drawBoundingBoxFrame(width, height, svgFrame), 50);
     }
 }
 
@@ -269,15 +687,20 @@ control
 */
 function setSound(soundToSet) {
 
+    const audioElm = document.getElementById(soundPreviewId);
+    if (!audioElm) return;
+    let source = audioElm.querySelector('source');
+    if (!source) return;
+
     if (soundToSet?.type.indexOf('audio/') === 0) {
-        snd.src = URL.createObjectURL(soundToSet);
-        snd.style.height       = "auto";
-        snd.style.visibility   = "visible";
-        snd.attributes["type"] = soundToSet?.type;
-        snd.parentElement.load();
+        source.src = URL.createObjectURL(soundToSet);
+        source.style.height       = "auto";
+        source.style.visibility   = "visible";
+        source.attributes["type"] = soundToSet?.type;
+        source.parentElement.load();
     }
     else {
-        snd.src = "";
+        source.src = "";
         alert('Please select a valid WAV file.');
     }
 }
@@ -302,198 +725,6 @@ function setVideo(videoToSet) {
     }
 }
 
-function clearCanvas() {
-    if (useSVG) {
-        const imgMaskElm = document.getElementById(imgResultMaskId);
-        if (imgMaskElm) imgMaskElm.innerHTML = '';
-
-        const imgElm = document.getElementById(imgResultMaskId);
-        if (imgElm) imgElm.style.visibility = "hidden";
-
-        const imgElm2 = document.getElementById("img2");
-        if (imgElm2) imgElm2.style.visibility = "hidden";
-    }
-    else {
-        const annotate = document.getElementById(imgResultCanvasId);
-        let context = annotate.getContext("2d");
-        context.clearRect(0, 0, annotate.width, annotate.height);
-    }
-}
-
-/**
-When image analysis is carried out there are often annotations (eg bounding
-boxes) shown on the resulting image. These are displayed using an overlay. This
-method adjusts the size of the overlay to match this image.
-@param this - the current image displaying an analysis result
- */
-function adjustOverlayToFitResultImage() {
-
-    if (useSVG) {
-        // clearCanvas();
-        let mask = document.getElementById(imgResultMaskId);
-        mask.style.height = this.height + 'px';
-        mask.style.width  = this.width + 'px';
-    }
-    else {
-        let annotate = document.getElementById(imgResultCanvasId);
-        annotate.height = this.height;
-        annotate.width  = this.width;
-    }
-
-    return true;
-}
-
-function showResultsImage(data) {
-
-    const imgElm = document.getElementById(imagePreviewId);
-    if (!imgElm)
-        return;
-
-    imgElm.src = "data:image/png;base64," + data.imageBase64;
-	imgElm.style.visibility = "visible";
-}
-
-function showResultsBoundingBoxes(predictions, sortByConfidence = true) {
-
-    const imgElm = document.getElementById(imagePreviewId);
-    if (!imgElm)
-        return;
-
-    if (!imgElm.width || !imgElm.height)
-        return;
-
-    if (!(predictions && predictions.length > 0))
-        return;
-
-    // Sort descending
-    if (sortByConfidence) {
-        predictions.sort(function (a, b) {
-            return b.confidence - a.confidence;
-        });
-    }
-
-    let svg     = null;
-    let context = null;
-
-    let xRatio = imgElm.width * 1.0 / imgElm.naturalWidth;
-    let yRatio = imgElm.height * 1.0 / imgElm.naturalHeight;
-
-    if (useSVG) {
-        svg = `
-            <svg viewBox="0 0 ${imgElm.width} ${imgElm.height}">
-            <defs>
-                <mask id="mask">
-                    <rect fill="#999" x="0" y="0" width="${imgElm.width}" height="${imgElm.height}"></rect>`;
-    }
-    else {
-        const annotate = document.getElementById(imgResultCanvasId);
-        context = annotate.getContext("2d");
-        context.clearRect(0, 0, annotate.width, annotate.height);
-        context.lineWidth = "1";
-    }
-
-    for (let i = 0; i < predictions.length; i++) {
-        let prediction = predictions[i];
-        let left   = Math.min(prediction.x_min,  prediction.x_max) * xRatio;
-        let top    = Math.min(prediction.y_min,  prediction.y_max) * yRatio;
-        let width  = Math.abs(prediction.x_min - prediction.x_max) * xRatio;
-        let height = Math.abs(prediction.y_min - prediction.y_max) * yRatio;
-
-        if (useSVG) {
-            svg += `<rect fill="#ffffff" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
-        }
-        else {
-            context.strokeStyle = "red";
-            context.strokeRect(left, top, width, height);
-            context.strokeStyle = "yellow";
-            context.strokeText(i + " " + (prediction.label || ""), left, top);
-        }
-    }
-
-    if (useSVG) {
-        svg += `
-                                                        </mask>
-                                                    </defs>
-                                                    <image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
-                                                            xlink:href="${imgElm.src}" width="${imgElm.width}" height="${imgElm.height}"></image>`;
-
-        let colors = ["179,221,202", "204,223,120", "164,221,239"];
-        let colorIndex = 0;
-
-        let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 2 : 5) : 15;
-        for (let i = 0; i < predictions.length; i++) {
-
-            let prediction = predictions[i];
-            let left   = Math.min(prediction.x_min,  prediction.x_max) * xRatio;
-            let top    = Math.min(prediction.y_min,  prediction.y_max) * yRatio;
-            let width  = Math.abs(prediction.x_min - prediction.x_max) * xRatio;
-            let height = Math.abs(prediction.y_min - prediction.y_max) * yRatio;
-
-            let right  = left + width;
-            let bottom = top + height;
-
-            // CodeProject.AI style
-            let lineWidth   = Math.min(maxLineWidth, width / 10);
-            let blockWidth  = (width - lineWidth) / 5;
-            let blockHeight = (height - lineWidth) / 5;
-            let color       = colors[colorIndex++ % colors.length];
-            let styleSolid  = `style="stroke:rgba(${color}, 1);stroke-width:${lineWidth}"`;
-            let styleTrans  = `style="stroke:rgba(${color}, 0.5);stroke-width:${lineWidth}"`;
-
-            // label
-            let label = prediction.label || prediction.userid;
-            if (label)
-                svg += `<text x="${left}" y="${top - lineWidth}" style="stroke: none; fill:rgba(${color}, 1);font-size:12px">${label || ""}</text>`;
-
-            // Shortcut if there are just too many items
-            if (predictions.length > 15) {
-                // Solid rectangle
-                svg += `<rect stroke="rgb(${color})" stroke-width="1px" fill="transparent" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
-                continue;
-            }
-
-            // Top (left to right)
-            let x = left - lineWidth / 2;
-            svg += `<line ${styleSolid} x1="${x}" y1="${top}" x2="${x + blockWidth + lineWidth}" y2="${top}"/>`;
-            x += blockWidth + lineWidth;
-            svg += `<line ${styleTrans} x1="${x}" y1="${top}" x2="${x + blockWidth}" y2="${top}"/>`;
-            x += 2 * blockWidth; // skip a section
-            svg += `<line ${styleSolid} x1="${x}" y1="${top}" x2="${x + 2 * blockWidth + lineWidth}" y2="${top}"/>`;
-
-            // Right (top to bottom)
-            let y = top - lineWidth / 2;
-            svg += `<line ${styleSolid} x1="${right}" y1="${y}" x2="${right}" y2="${y + blockHeight + lineWidth}"/>`;
-            y += blockHeight + lineWidth;
-            svg += `<line ${styleTrans}  x1="${right}" y1="${y}" x2="${right}" y2="${y + blockHeight}"/>`;
-            y += 2 * blockHeight; // skip a section
-            svg += `<line ${styleSolid} x1="${right}" y1="${y}" x2="${right}" y2="${y + 2 * blockHeight + lineWidth}"/>`;
-
-            // Bottom (left to right)
-            x = left - lineWidth / 2;
-            svg += `<line ${styleSolid} x1="${x}" y1="${bottom}" x2="${x + 2 * blockWidth + lineWidth}" y2="${bottom}"/>`;
-            x += 3 * blockWidth + lineWidth; // Skip a section
-            svg += `<line ${styleTrans}  x1="${x}" y1="${bottom}" x2="${x + blockWidth}" y2="${bottom}"/>`;
-            x += blockWidth;
-            svg += `<line ${styleSolid} x1="${x}" y1="${bottom}" x2="${x + blockWidth + lineWidth}" y2="${bottom}"/>`;
-
-            // Left (top to bottom)
-            y = top - lineWidth / 2;
-            svg += `<line ${styleSolid} x1="${left}" y1="${y}" x2="${left}" y2="${y + 2 * blockHeight + lineWidth}"/>`;
-            y += 3 * blockHeight + lineWidth; // skip a section
-            svg += `<line ${styleTrans}  x1="${left}" y1="${y}" x2="${left}" y2="${y + blockHeight}"/>`;
-            y += blockHeight;
-            svg += `<line ${styleSolid} x1="${left}" y1="${y}" x2="${left}" y2="${y + blockHeight + lineWidth}"/>`;
-        }
-
-        svg += `
-                                                </svg>`;
-
-        document.getElementById(imgResultMaskId).innerHTML = svg;
-        imgElm.style.visibility = "hidden";
-    }
-}
-
-
 // Utilities ===================================================================
 
 function confidence(value) {
@@ -502,144 +733,133 @@ function confidence(value) {
     return Math.round(value * 100.0) + "%";
 }
 
-
-// Fetch error throttling ======================================================
-// TODO: pull out and share with dashboard
-
-/**
- * Returns true if the system is still considered in a non-eonnected state, 
- * meaning fetch calls should not be made.
- */
-function isFetchDelayInEffect() {
-
-    if (!_fetchErrorDelaySec || !_delayFetchCallUntil)
-        return false;
-    
-    return _delayFetchCallUntil.getTime() > Date.now();
+function setBenchmarkCustomList() {
+    if (BenchmarkCustomListUpdater)
+        BenchmarkCustomListUpdater(benchmarkModel);
 }
 
-/**
- * Sets the system to be in a non-connected state, meaning fetch calls should not be made.
- */
-function setFetchError() {
+async function getModuleUis() {
 
-    _fetchErrorDelaySec = Math.max(15, _fetchErrorDelaySec + 1);
+    if (!uiFromServer) return;
 
-    if (_fetchErrorDelaySec > 5) {
-
-        setServerStatus("Offline", "warning");
-
-        // This is only for the dashboard
-        // let statusTable = document.getElementById('serviceStatus');
-        // if (statusTable)
-        //     statusTable.classList.add("shrouded");
-    }
-
-    var t = new Date();
-    t.setSeconds(t.getSeconds() + _fetchErrorDelaySec);
-    _delayFetchCallUntil = t;
-
-    showLogOutput(`Delaying next fetch call for ${_fetchErrorDelaySec} sec`, "warn");
-}
-
-/**
- * Sets the system to no longer be in a non-connected state, meaning fetch calls can now be made.
- */
-function clearFetchError() {
-
-    _fetchErrorDelaySec = 0;
-    _delayFetchCallUntil = null;
-
-    let statusTable = document.getElementById('serviceStatus');
-    if (statusTable)
-        statusTable.classList.remove("shrouded");
-}
-
-
-// API operations ==============================================================
-// TODO: pull out and share with dashboard
-
-/**
- * Makes a call to the status API of the server
- * @param method - the name of the method to call: ping, version, updates etc
- */
-async function callStatus(method, successCallback, errorCallback) {
-
-    if (isFetchDelayInEffect())
-        return;
-
-    if (!errorCallback) errorCallback = (error) => showError(null, error);
-
-    let urlElm = document.getElementById('serviceUrl');
-    let url = urlElm? urlElm.value.trim() : apiServiceUrl;
-    url += '/v1/server/status/' + method;
-
-    const timeoutSecs = serviceTimeoutSec;
-    if (document.getElementById("serviceTimeoutSecTxt"))
-        timeoutSecs = parseInt(document.getElementById("serviceTimeoutSecTxt").value);
-
-    const controller  = new AbortController()
-    const timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
-
-    try {
-        await fetch(url, {
-            method: "GET",
-            cache: "no-cache",
-            signal: controller.signal 
-        })
-            .then(response => {
-
-                clearTimeout(timeoutId);
-                clearFetchError();
-
-                if (response.ok) {
-                    response.json()
-                        .then(data   => successCallback(data))
-                        .catch(error => errorCallback(`Unable to process server response (${error})`));
-                } 
-                else {
-                    errorCallback('Error contacting API server');
-                }
-            })
-            .catch(error => {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                    errorCallback("Response timeout. Try increasing the timeout value");
-                }
-                else {
-                    errorCallback(`API server is offline (${error?.message || "(no error provided)"})`);
-                    setFetchError();
-                }
-            });
-    }
-    catch
-    {
-        clearTimeout(timeoutId);
-        setFetchError();
-        errorCallback('Error contacting API server');
-    }
-}
-
-async function ping() {
-
-    await callStatus('ping', 
+    await makeGET('module/list/running',
         function (data) {
-            if (_serverIsOnline == data.success)
-                return;
+            if (data && data.modules) {
 
-            _serverIsOnline = data.success;
-            if (_serverIsOnline)
-                setServerStatus('Online', "success");
-        },
-        function (error) {
-            showError("Offline", error);
-            _serverOnline = false;
+                // Get nav tabs and hide them all. For Benchmarking we'll only hide it if we don't
+                // have any process that is updating the custom model list. Otherwise we assume we
+                // have at least one object detection module in play
+                let navTabs = document.querySelectorAll('#DemoTabs > .nav-item');
+                for (const tab of navTabs) {
+                    tab.classList.add('d-none');
+                    if (tab.dataset.category == "Benchmarking" && BenchmarkCustomListUpdater)
+                        tab.classList.remove('d-none');
+                }
+
+                // Go through modules' UIs and add (if needed) the UI cards to the appropriate tab,
+                // and re-enable each tab that has a card
+                for (let module of data.modules) {
+
+                    if (!module.explorerUI.html || !module.explorerUI.script)
+                        continue;
+
+                    let moduleIdKey = module.moduleId.replace(/[^a-zA-Z0-9]+/g, "");
+
+                    let category = module.category;
+                    let tab = document.querySelector(`.nav-item[data-category='${category}']`);
+                    if (!tab) {
+                        tab = document.querySelector(`[data-category='Other']`);
+                        category = "Other";
+                    }
+                    tab.classList.remove('d-none');
+
+                    const panel = document.querySelector(`.tab-pane[data-category='${category}']`);
+
+                    // In CSS, Script and HTML we replace "_MID_" by "[moduleIdKey]_" in order to
+                    // ensure disambiguation. eg <div id="_MID_TextBox"> becomes <div id="MyModuleId_TextBox">
+
+                    module.explorerUI.html   = module.explorerUI.html.replace(/_MID_/g,   `${moduleIdKey}_`);
+                    module.explorerUI.script = module.explorerUI.script.replace(/_MID_/g, `${moduleIdKey}_`);
+                    module.explorerUI.css    = module.explorerUI.css.replace(/_MID_/g,    `${moduleIdKey}_`);
+
+                    // Insert HTML first
+                    let card = panel.querySelector(`.moduleui[data-moduleid='${module.moduleId}']`);
+                    if (!card) {
+                        const html = `<div class="card mt-3 moduleui ${module.queue}" data-moduleid="${module.moduleId}">`
+						           + `    <div class="card-header h3">${module.name}</div>`
+						           + `    <div class="card-body">`
+                                   +      module.explorerUI.html
+                                   + `    </div>`
+                                   + `</div>`;
+                        panel.insertAdjacentHTML('beforeend', html);
+                    }
+
+                    // Next add script
+                    let scriptBlock = document.getElementById("script_" + moduleIdKey);
+                    if (!scriptBlock) {
+                        scriptBlock = document.createElement('script');
+                        scriptBlock.id          = "script_" + moduleIdKey;
+                        scriptBlock.textContent = module.explorerUI.script;
+                        document.body.appendChild(scriptBlock);
+                    }
+
+                    // And finally, CSS
+                    let styleBlock = document.getElementById("style_" + moduleIdKey);
+                    if (!styleBlock) {
+                        styleBlock = document.createElement('style');
+                        styleBlock.id = "style_" + moduleIdKey;
+                        styleBlock.textContent = module.explorerUI.css;
+                        document.body.appendChild(styleBlock);
+                    }
+                }
+
+                // Ensure we have at least one tab active
+                let tabTrigger = null;
+                for (const tab of navTabs) {
+                    if (!tab.classList.contains('d-none')) {
+                        if (tab.firstElementChild.classList.contains('active')) {
+                            tabTrigger = null; // We found an active tab
+                            break;
+                        }
+                        else 
+                            tabTrigger = tab.firstElementChild;
+                    }
+                }
+                if (tabTrigger)
+                    bootstrap.Tab.getInstance(tabTrigger).show()
+
+                // remove card from modules that aren't running
+                let cards = document.getElementsByClassName('moduleui');
+                for (const card of cards) {
+                    
+                    let moduleId = card.dataset?.moduleid || "";
+                    let found    = false;
+
+                    for (let module of data.modules) {
+                        if (module.moduleId == moduleId) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        let moduleIdKey = moduleId.replace(/[^a-zA-Z0-9]+/g, "");
+                        card.remove();
+
+                        // Remove the Script and CSS associated with this card
+                        document.getElementById("script_" + moduleIdKey)?.remove();
+                        document.getElementById("style_" + moduleIdKey)?.remove();
+                    }
+                }
+            }
         });
 }
 
 async function getModulesStatuses() {
 
-    await callStatus('analysis/list',
+    if (uiFromServer) return;
+
+    await makeGET('module/list/status',
         function (data) {
             if (data && data.statuses) {
 
@@ -706,8 +926,7 @@ async function submitRequest(route, apiName, images, parameters, doneFunc, failF
     let url = urlElm? urlElm.value.trim() : apiServiceUrl;
     url += '/v1/' + route + '/' + apiName;
 
-
-    const timeoutSecs = serviceTimeoutSec;
+    let timeoutSecs = serviceTimeoutSec;
     if (document.getElementById("serviceTimeoutSecTxt"))
         timeoutSecs = parseInt(document.getElementById("serviceTimeoutSecTxt").value);
 
@@ -720,8 +939,7 @@ async function submitRequest(route, apiName, images, parameters, doneFunc, failF
         signal: controller.signal
     })
         .then(response => {
-            showLogOutput();
-
+            showLogOutput("");
             clearTimeout(timeoutId);
 
             if (response.ok) {
@@ -748,6 +966,7 @@ async function submitRequest(route, apiName, images, parameters, doneFunc, failF
             }
         })
         .catch(error => {
+            showLogOutput("");
             if (failFunc) failFunc();
 
             if (error.name === 'AbortError') {

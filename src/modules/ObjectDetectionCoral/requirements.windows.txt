@@ -6,6 +6,8 @@ Pillow>=4.0.0               # Installing Pillow, a Python Image Library
 # own wheels.
 --extra-index-url https://google-coral.github.io/py-repo/ 
 tflite-runtime==2.5.0.post1 # Installing Tensorflow Lite
+--extra-index-url https://google-coral.github.io/py-repo/ 
+pycoral~=2.0                # Installing PyCoral
 
 # For just tensorflow lite, versions 2.11 - 2.13 can be found at
 # https://github.com/NexelOfficial/tflite-runtime-win. Note these are only for

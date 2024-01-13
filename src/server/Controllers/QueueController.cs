@@ -12,7 +12,6 @@ using CodeProject.AI.SDK;
 using CodeProject.AI.Server.Backend;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Modules;
-using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.Server.Controllers
 {

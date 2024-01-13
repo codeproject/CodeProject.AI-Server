@@ -14,9 +14,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="assets/dashboard.css?v=2.4.8.0">
+    <link rel="stylesheet" type="text/css" href="assets/server.css?v=2.5.0.0">
 
-    <script type="text/javascript" src="assets/explorer.js?v=2.4.8.0"></script>
+    <script type="text/javascript" src="assets/server.js?v=2.5.0.0"></script>
+    <script type="text/javascript" src="assets/explorer.js?v=2.5.0.0"></script>
 
 	<!-- Will only be effective if you're connected to the internet -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,17 +35,25 @@
 	</style>
 
 	<script type="text/javascript">
-
 	window.addEventListener('DOMContentLoaded', function (event) {
-		serviceUrl.value = apiServiceUrl;
+		serviceUrl.value           = apiServiceUrl;
 		serviceTimeoutSecTxt.value = serviceTimeoutSec;
+
 		showInfo("Searching", "Searching for API Server...");
 		setInterval(ping, pingFrequency);
-		setInterval(getModulesStatuses, pingFrequency);
-		setTimeout(setCustomModelLists, 5000);
+		getVersion();
 
-		setInterval(onTrainingStatus, 5000);
-
+		if (uiFromServer) {
+			getModuleUis();
+			setInterval(getModuleUis, updateModuleUiFreq);
+			setInterval(setBenchmarkCustomList, 5000);
+		}
+		else {
+			setTimeout(setCustomModelLists, 5000);
+			setInterval(onTrainingStatus, 5000);
+			setInterval(getModulesStatuses, pingFrequency);
+		}
+		
 		initVideoDemo();
 	});
 
@@ -52,14 +61,14 @@
 
 		function onDetectFaces(fileChooser) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for face detection");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
 			setResultsHtml("Detecting faces...");
@@ -72,14 +81,14 @@
 
 		function onCompareFaces(face1Ctrl, face2Ctrl) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (face1Ctrl.files.length == 0 || face2Ctrl.files.length == 0) {
 				alert("Please supply two faces for face comparison");
 				return;
 			}
 
-			setImage(face1Ctrl.files[0]);
+			showPreviewImage(face1Ctrl.files[0]);
 			let images = [face1Ctrl.files[0], face2Ctrl.files[0]];
 
 			setResultsHtml("Comparing faces...");
@@ -90,7 +99,7 @@
 
 		function onRegisterFaces(userId, faceCtrl) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (faceCtrl.files.length == 0) {
 				alert("No files were selected for face registration");
@@ -102,7 +111,7 @@
 				return;
 			}
 
-			setImage(faceCtrl.files[0]);
+			showPreviewImage(faceCtrl.files[0]);
 
 			let images = [];
 			for (let i = 0; i < faceCtrl.files.length; i++)
@@ -119,7 +128,7 @@
 
 		function onListRegisteredFaces() {
 
-			clearCanvas();
+			clearImagePreview();
 
 			setResultsHtml("Listing faces...");
 			submitRequest('vision', 'face/list', null, null, function (data) {
@@ -129,7 +138,7 @@
 
 		function onDeleteFace(userId) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			setResultsHtml("Deleting face info...");
 			submitRequest('vision', 'face/delete', null, [["userid", userId]], function (data) {
@@ -139,14 +148,14 @@
 
 		function onRecogniseFace(fileChooser, minimumConfidence) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for face recognition");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
 			let params = []
@@ -216,16 +225,16 @@
 
 // SCENE =======================================================================
 
-		function onDetectScene(fileChooser) {
+		function onClassifyScene(fileChooser) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for scene detection");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
 			setResultsHtml("Classifying scene...");
@@ -243,7 +252,7 @@
 
 		function onClassifySound(fileChooser) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for sound classification");
@@ -268,14 +277,14 @@
 
 		function onDetectThings(fileChooser) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for vision detection");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
 			setResultsHtml("Detecting objects...");
@@ -321,14 +330,14 @@
 
 		function onCustomDetect(model_name, fileChooser) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for custom object detection");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
 			setResultsHtml("Detecting objects using custom model...");
@@ -342,21 +351,21 @@
 
 		function onRemoveBackground(fileChooser, use_alphamatting) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for background removal");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 			let params = [["use_alphamatting", use_alphamatting]]
 
 			setResultsHtml("Removing background...");
 			submitRequest('image', 'removebackground', images, params, function (data) {
 				setResultsHtml("Background Removal complete" + getProcessingMetadataHtml(data));
-				showResultsImage(data);
+				showResultsImageData(data);
 			});
 		}
 
@@ -364,14 +373,14 @@
 
 		function onBlurBackground(fileChooser, strength) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for background bluring");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 			let params = [["strength", strength]]
 
@@ -380,7 +389,7 @@
 				setResultsHtml("Portrait mode complete" + getProcessingMetadataHtml(data));
 
 				data["imageBase64"] = data.filtered_image;
-				showResultsImage(data);
+				showResultsImageData(data);
 			});
 		}
 
@@ -388,14 +397,14 @@
 
 		function onCartoonise(model_name, fileChooser) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for cartoonisation");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
 			params = [["model_name", model_name]]
@@ -403,7 +412,7 @@
 			setResultsHtml("Cartoonising face...");
 			submitRequest('image', 'cartoonise', images, params, function (data) {
 				setResultsHtml("onCartoonisation complete" + getProcessingMetadataHtml(data));
-				showResultsImage(data);
+				showResultsImageData(data);
 			});
 		}		
 
@@ -411,19 +420,20 @@
 
         function onReadLicensePlate(fileChooser, confidence) {
 
-            clearCanvas();
+            clearImagePreview();
 
             if (fileChooser.files.length == 0) {
                 alert("No file was selected for license plate detection");
                 return;
             }
 
-            setImage(fileChooser.files[0]);
+            showPreviewImage(fileChooser.files[0]);
             let images = [fileChooser.files[0]];
             let params = [["confidence", confidence]]
 
 			setResultsHtml("Detecting license plates...");
             submitRequest('vision', 'alpr', images, params, function (data) {
+                showResultsImage(images[0]);
                 showResultsBoundingBoxes(data.predictions, false);
                 showPredictionSummary(data, false)
             });
@@ -433,14 +443,14 @@
 
         function onReadText(fileChooser) {
 
-            clearCanvas();
+            clearImagePreview();
 
             if (fileChooser.files.length == 0) {
                 alert("No file was selected for optical character recognition");
                 return;
             }
 
-            setImage(fileChooser.files[0]);
+            showPreviewImage(fileChooser.files[0]);
             let images = [fileChooser.files[0]];
 			let params = null; 
 
@@ -455,21 +465,21 @@
 
 		function onSuperResolution(fileChooser) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (fileChooser.files.length == 0) {
 				alert("No file was selected for image enhancement");
 				return;
 			}
 
-			setImage(fileChooser.files[0]);
+			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 			let params = null;
 
 			setResultsHtml("Increasing image resolution...");
 			submitRequest('image', 'superresolution', images, params, function (data) {
 				setResultsHtml("Resolution Improvement complete" + getProcessingMetadataHtml(data));
-				showResultsImage(data);
+				showResultsImageData(data);
 			});
 		}
 
@@ -477,7 +487,7 @@
 
 		function onSummarizeText(articleText, numberOfSentences) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (!articleText) {
 				alert("No text was provided for text summary");
@@ -498,7 +508,7 @@
 
 		function onAnalyzeSentiment(articleText) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (!articleText) {
 				alert("No text was provided for sentiment analysis");
@@ -526,7 +536,7 @@
 
 		function onLlamaChat(prompt, maxTokens, temperature) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			if (!prompt) {
 				alert("No text was provided for Llama chat");
@@ -721,7 +731,7 @@
 
 		function onBenchmark(fileChooser, model_name, resultElm) {
 
-			clearCanvas();
+			clearImagePreview();
 
 			let images = null;
 			let route = model_name ? ('custom/' + model_name) : 'detection';
@@ -735,7 +745,7 @@
 					return;
 				}
 
-				setImage(fileChooser.files[0]);
+				showPreviewImage(fileChooser.files[0]);
 				images = [fileChooser.files[0]];
 			}
 
@@ -788,9 +798,10 @@
 
 		function onTrainingStatus() {
 
-			// only get status if panel is active
+			// This is for the main Explorer page: If the user isn't currently viewing the training
+			// tab then don't do a status update. It won't be missed.
 			const panel = document.getElementById('train-panel');
-            if (!panel.classList.contains("active"))
+            if (panel && !panel.classList.contains("active"))
                 return;
 
             submitRequest('train', 'status', null, null, 
@@ -981,7 +992,7 @@
 
 		function onTrainingCancel() {
 
-            clearCanvas();
+            clearImagePreview();
 
 			submitRequest('train', 'cancel', null, null, 
 				function (data) {
@@ -1023,7 +1034,7 @@
 
 						if (data.results_graph_image) {
 							data["imageBase64"] = data.results_graph_image;
-							showResultsImage(data);
+							showResultsImageData(data);
 						}
 						else {
 							img.src = "";
@@ -1031,13 +1042,13 @@
 						}
 
 						if (data.pr_curve_image) {
-							img2.src = "data:image/png;base64," + data.pr_curve_image;
+							imgTrainingResult.src = "data:image/png;base64," + data.pr_curve_image;
 							// results_img.src = "file://" + data.pr_curve_path;
-							img2.style.visibility = "visible";
+							imgTrainingResult.style.visibility = "visible";
 						}
 						else {
-							img2.src = "";
-							img2.style.visibility = "hidden";
+							imgTrainingResult.src = "";
+							imgTrainingResult.style.visibility = "hidden";
 						}
 					}
 					else
@@ -1089,7 +1100,7 @@
 
 </head>
 
-<body class="dark-mode">
+<body class="dark-mode explorer">
 	<div>
 		<div class=" mx-auto p-3" style="max-width:1100px;">
 
@@ -1154,19 +1165,21 @@
 
 			</div>
 
-			<div class="card mt-3">
-				<div class="card-body">
-
-					<div class="form-group d-flex text-nowrap">
-						<label class="col-form-label text-end me-1">Service API URL</label>
-						<input class="col-form-control form-control" type="text" id="serviceUrl" style="width:12.5rem"/>
-						<label class="col-form-label text-end ms-3 me-1">Timeout</label>
-						<input class="col-form-control form-control" type="number" id="serviceTimeoutSecTxt" style="width:4.5rem"/>
-						<label class="col-form-label mx-1">sec</label>
-						<label id="serverStatus" class="col-form-label rounded bg-white fw-bold ms-auto px-2"></label>
-					</div>
+			<div class="card">
+				<div class="d-flex text-nowrap">
+					<label class="col-form-label text-end me-1">Service API URL</label>
+					<input class="col-form-control form-control" type="text" id="serviceUrl" style="width:12.5rem"/>
+					<label class="col-form-label text-end ms-3 me-1">Timeout</label>
+					<input class="col-form-control form-control" type="number" id="serviceTimeoutSecTxt" style="width:4.5rem"/>
+					<label class="col-form-label mx-1">sec</label>
+					<div id="hostname" class="fw-bold ms-auto mt-2"></div>
+					<div id="serverStatus" class="fw-bold ms-1 pe-2 mt-2"></div>
+	                <div id="server-version" class="mt-2"></div>
+    	            <div id="colourModeToggle" onclick="toggleColourMode()" class="ms-1 mt-2" style="cursor:pointer">☀️</div>
 				</div>
 			</div>
+
+			<div id="status" style="height: 1rem;"></div>
 
 			<form method="post" action="" enctype="multipart/form-data" id="myform">
 				<div class="d-flex align-content-between mt-4">
@@ -1174,38 +1187,44 @@
 					<div style="width:600px">
 
 						<ul class="nav nav-tabs d-flex" id="DemoTabs" role="tablist">
-							<li class="nav-item d-none" id="vision-tab-listitem">
+							<li class="nav-item d-none" id="vision-tab-listitem" data-category="Computer Vision">
 								<button class="nav-link active" id="vision-tab" data-bs-toggle="tab" data-bs-target="#vision-panel" type="button" role="tab" aria-controls="vision" aria-selected="true">Vision</button>
 							</li>
-							<li class="nav-item d-none" id="image-tab-listitem">
+							<li class="nav-item d-none" id="image-tab-listitem" data-category="Image Processing">
 								<button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-panel" type="button" role="tab" aria-controls="image" aria-selected="true">Image</button>
 							</li>
-							<li class="nav-item d-none" id="face-tab-listitem">
+							<li class="nav-item d-none" id="face-tab-listitem" data-category="Face Recognition">
 								<button class="nav-link" id="face-tab" data-bs-toggle="tab" data-bs-target="#face-panel" type="button" role="tab" aria-controls="face" aria-selected="false">Face</button>
 							</li>
-							<li class="nav-item d-none" id="sound-tab-listitem">
+							<li class="nav-item d-none" id="sound-tab-listitem" data-category="Computer Audition">
 								<button class="nav-link" id="sound-tab" data-bs-toggle="tab" data-bs-target="#sound-panel" type="button" role="tab" aria-controls="sound" aria-selected="true">Sound</button>
 							</li>
-							<li class="nav-item d-none" id="text-tab-listitem">
+							<li class="nav-item d-none" id="text-tab-listitem" data-category="Natural Language">
 								<button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-panel" type="button" role="tab" aria-controls="text" aria-selected="false">Text</button>
 							</li>
+							<li class="nav-item d-none" id="generative-tab-listitem" data-category="Generative AI">
+								<button class="nav-link" id="generative-tab" data-bs-toggle="tab" data-bs-target="#generative-panel" type="button" role="tab" aria-controls="generative" aria-selected="true">Generative AI</button>
+							</li>
+							<li class="nav-item d-none" id="other-tab-listitem" data-category="Other">
+								<button class="nav-link" id="other-tab" data-bs-toggle="tab" data-bs-target="#other-panel" type="button" role="tab" aria-controls="other" aria-selected="true">Other</button>
+							</li>
 
-							<li class="nav-item d-none" id="video-tab-listitem">
+							<li class="nav-item d-none" id="video-tab-listitem" data-category="Video Processing">
 								<button class="nav-link" id="video-tab" data-bs-toggle="tab" data-bs-target="#video-panel" type="button" role="tab" aria-controls="video" aria-selected="false">Video</button>
 							</li>
 
-							<li class="nav-item d-none" id="train-tab-listitem">
+							<li class="nav-item d-none" id="train-tab-listitem" data-category="Training">
 								<button class="nav-link" id="train-tab" data-bs-toggle="tab" data-bs-target="#train-panel" type="button" role="tab" aria-controls="train" aria-selected="false">Train</button>
 							</li>
 
-							<li class="nav-item ms-auto" id="benchmark-tab-listitem">
+							<li class="nav-item ms-auto" id="benchmark-tab-listitem" data-category="Benchmarking">
 								<button class="nav-link" id="benchmark-tab" data-bs-toggle="tab" data-bs-target="#benchmark-panel" type="button" role="tab" aria-controls="benchmark" aria-selected="false">Benchmark</button>
 							</li>
 						</ul>
 
 						<div class="tab-content" id="DemoTabsContent">
 
-							<div class="tab-pane fade show active" id="vision-panel" role="tabpanel" aria-labelledby="vision-tab">
+							<div class="tab-pane fade show active" id="vision-panel" data-category="Computer Vision" role="tabpanel" aria-labelledby="vision-tab">
 
 								<div class="card mt-3 d-none objectdetection_queue">
 									<div class="card-header h3">Object Detection</div>
@@ -1258,7 +1277,7 @@
 
 									</div>
 								</div>
-								
+
 								<div class="card mt-3 d-none ocr_queue">
 									<div class="card-header h3">Optical Character Recognition</div>
 									<div class="card-body">
@@ -1277,7 +1296,6 @@
 
 								<div class="card mt-3 d-none sceneclassifier_queue">
 									<div class="card-header h3">Scene Classification</div>
-
 									<div class="card-body">
 										<div class="form-group row">
 											<label class="col-form-label col-2">Image</label>
@@ -1285,14 +1303,14 @@
 												   onchange="return previewImage(this)" />
 											<input class="form-control btn-success" type="button" value="Classify Scene"
 												   style="width:11rem" id="scene"
-												   onclick="onDetectScene(scene_image)" />
+												   onclick="onClassifyScene(scene_image)" />
 										</div>
 									</div>
 								</div>
 
 							</div>
 
-							<div class="tab-pane fade show" id="image-panel" role="tabpanel" aria-labelledby="image-tab">
+							<div class="tab-pane fade show" id="image-panel" data-category="Image Processing" role="tabpanel" aria-labelledby="image-tab">
 
 								<div class="card mt-3 d-none backgroundremover_queue">
 									<div class="card-header h3">Background Removal</div>
@@ -1375,7 +1393,6 @@
 								<div class="card mt-3 d-none superresolution_queue">
 									<div class="card-header h3">Increase Resolution</div>
 									<div class="card-body">
-
 										<div class="form-group row">
 											<label class="col-form-label col-2">Image</label>
 											<input class="col form-control btn-light" id="superResInput" type="file" style="width:17rem"
@@ -1389,7 +1406,7 @@
 
 							</div>
 
-							<div class="tab-pane fade show" id="face-panel" role="tabpanel" aria-labelledby="face-tab">
+							<div class="tab-pane fade show" id="face-panel" data-category="Face Recognition" role="tabpanel" aria-labelledby="face-tab">
 
 								<div class="card mt-3 d-none faceprocessing_queue">
 									<div class="card-header h3">Face Detection</div>
@@ -1449,7 +1466,7 @@
 										</div>
 
 										<div class="mt-4 text-center">
-											<input style="width:12rem" id="listfaces" type="button" class="btn  btn-primary ml-3``"
+											<input style="width:12rem" id="listfaces" type="button" class="btn btn-primary ml-3"
 												   value="List Registered Faces" onclick="onListRegisteredFaces()" />
 											<input style="width:12rem;" class="btn btn-danger" id="deleteFaces" type="button"
 												   value="Delete Person's Images" onclick="onDeleteFace(userId.value)" />
@@ -1480,7 +1497,7 @@
 
 							</div>
 
-							<div class="tab-pane fade show" id="sound-panel" role="tabpanel" aria-labelledby="sound-tab">
+							<div class="tab-pane fade show" id="sound-panel" data-category="Computer Audition" role="tabpanel" aria-labelledby="sound-tab">
 
 								<div class="card mt-3 d-none soundclassifier_queue">
 									<div class="card-header h3">Sound Classification</div>
@@ -1494,44 +1511,20 @@
 												   style="width:11rem" id="sound"
 												   onclick="onClassifySound(sound_wav)" />
 										</div>
+										<!--
 										<div class="w-100 position-relative border-1 border-light mt-3">
-											<audio controls class="w-100">
-												<source src="" id="snd" type="audio/wav">
+											<audio id="sndPreview" controls class="w-100">
+												<source src="" type="audio/wav">
 												Your browser does not support the audio element.
 											</audio>
-										</div>										
+										</div>
+										-->
 									</div>
 								</div>
 
 							</div>
 
-							<div class="tab-pane fade show" id="text-panel" role="tabpanel" aria-labelledby="text-tab">
-
-								<div class="card mt-3 d-none llamachat_queue">
-									<div class="card-header h3">Llama Chat</div>
-									<div class="card-body">
-
-										<div class="form-group mt-1">
-											Ask a question:
-											<textarea id="promptText" class="w-100" style="height:200px"></textarea>
-										</div>
-
-										<div class="form-group row mt-1">
-											<div class="col-2">
-												<input class="btn-success col-form-label" type="button" value="Post"
-													   id="prompt" onclick="onLlamaChat(promptText.value, maxTokens.value, temperature.value)" />
-											</div>
-
-											<label class="col-3 col-form-label text-end">Max tokens</label>
-											<input class="form-control" value="256" id="maxTokens" type="number"
-												   style="width:5rem" />									
-
-											<label class="col-3 col-form-label text-end">Temperature</label>
-											<input class="form-control" value="0.5" id="temperature" type="text"
-												   style="width:5rem" />
-										</div>
-									</div>
-								</div>
+							<div class="tab-pane fade show" id="text-panel" data-category="Natural Language" role="tabpanel" aria-labelledby="text-tab">
 
 								<div class="card mt-3 d-none textsummary_queue">
 									<div class="card-header h3">Text Summary</div>
@@ -1574,7 +1567,40 @@
 
 							</div>
 
-							<div class="tab-pane fade show" id="video-panel" role="tabpanel" aria-labelledby="video-tab">
+							<div class="tab-pane fade show" id="generative-panel" data-category="Generative AI" role="tabpanel" aria-labelledby="generative-tab">
+
+								<div class="card mt-3 d-none llamachat_queue">
+									<div class="card-header h3">Llama Chat</div>
+									<div class="card-body">
+
+										<div class="form-group mt-1">
+											Ask a question:
+											<textarea id="promptText" class="w-100" style="height:200px"></textarea>
+										</div>
+
+										<div class="form-group row mt-1">
+											<div class="col-2">
+												<input class="btn-success col-form-label" type="button" value="Post"
+													   id="prompt" onclick="onLlamaChat(promptText.value, maxTokens.value, temperature.value)" />
+											</div>
+
+											<label class="col-3 col-form-label text-end">Max tokens</label>
+											<input class="form-control" value="256" id="maxTokens" type="number"
+												   style="width:5rem" />									
+
+											<label class="col-3 col-form-label text-end">Temperature</label>
+											<input class="form-control" value="0.5" id="temperature" type="text"
+												   style="width:5rem" />
+										</div>
+									</div>
+								</div>
+
+							</div>
+
+							<div class="tab-pane fade show" id="other-panel" data-category="Other" role="tabpanel" aria-labelledby="other-tab">
+							</div>
+
+							<div class="tab-pane fade show" id="video-panel"  data-category="Video Processing" role="tabpanel" aria-labelledby="video-tab">
 
 								<div class="card mt-3 d-none faceprocessing_queue objectdetection_queue">
 
@@ -1594,7 +1620,7 @@
 								</div>
 							</div>
 
-							<div class="tab-pane fade show" id="train-panel" role="tabpanel" aria-labelledby="train-tab">
+							<div class="tab-pane fade show" id="train-panel" data-category="Training" role="tabpanel" aria-labelledby="train-tab">
 
 								<div class="card mt-3 d-none TrainingObjectDetectionYOLOv5_queue">
 									<div class="card-header h3">YoloV5 Object Detection Training</div>
@@ -1940,12 +1966,17 @@
 													   onclick="onTrainingCancel()">
 											</div>
 										</div>
+
+										<div class="w-100 position-relative border-1 border-light">
+											<img src="" id="imgTrainingResult" class="w-100" style="height:250px;visibility:hidden">
+										</div>
+
 									</div>
 								</div>
 							</div>
 
 
-							<div class="tab-pane fade show" id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-tab">
+							<div class="tab-pane fade show" id="benchmark-panel"  data-category="Benchmarking" role="tabpanel" aria-labelledby="benchmark-tab">
 
 								<div class="card mt-3 objectdetection_queue">
 									<div class="card-header h3">Benchmark</div>
@@ -1986,27 +2017,24 @@
 					</div>
 
 					<div class="ms-4 mt-3 position-sticky" style="width:475px;">
-						<div id="result" class="w-100 mb-4 bg-white border-1 border-light p-1 text-black rounded"
+						<div id="results" class="w-100 mb-3 bg-white border-1 border-light p-1 text-black rounded"
 							 style="height: 195px; overflow-y: auto;"></div>
 
-						<div class="w-100 position-relative border-1 border-light mb-4 ">
-
-							<canvas id="annotations" class="position-absolute"
-									style="left:0;top:0;pointer-events:none;z-index:10"></canvas>
-
-							<div id="imageMask" class="position-absolute"
-								 style="left:0;top:0;pointer-events:none;z-index:10"></div>
-
-							<img src="" id="img" class="w-100" style="height:250px;visibility:hidden">
+						<div class="w-100 position-relative border-1 border-light my-2">
+							<audio id="sndPreview" controls class="w-100">
+								<source src="" type="audio/wav">
+								Your browser does not support the audio element.
+							</audio>
 						</div>
-						<div class="w-100 position-relative border-1 border-light">
-							<img src="" id="img2" class="w-100" style="height:250px;visibility:hidden">
+
+						<div class="w-100 position-relative border-1 border-light mb-4 ">
+							<div id="imgMask" class="position-absolute"
+								 style="left:0;top:0;pointer-events:none;z-index:10"></div>
+							<img src="" id="imgPreview" class="w-100" style="height:250px;visibility:hidden">
 						</div>
 					</div>
 				</div>
 			</form>
-
-			<div id="status"></div>
 		</div>
 	</div>
 

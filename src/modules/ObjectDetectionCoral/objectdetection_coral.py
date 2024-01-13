@@ -36,9 +36,6 @@ python.exe coral\pycoral\examples\classify_image.py --model coral\pycoral\test_d
 
 
 """
-import os
-import platform
-import sys
 
 import argparse
 from datetime import datetime
@@ -48,20 +45,23 @@ import numpy as np
 from PIL import Image
 
 # For Linux we have installed the pycoral libs via apt-get, not PIP in the venv,
-# So make sure the interpreter can find the coral libraries
-#if platform.system() == "Linux":
-#    sys.path.insert(0, "/usr/lib/python3.9/site-packages/")
+# so make sure the interpreter can find the coral libraries
+# COMMENTED: No longer the case
+# import platform
+# if platform.system() == "Linux":
+#     import sys
+#     version = sys.version_info
+#     path = f"/usr/lib/python{version.major}.{version.minor}/site-packages/"
+#     sys.path.insert(0, path)
 
 from pycoral.adapters import common
 from pycoral.adapters import detect
 from pycoral.utils.dataset import read_label_file
 from pycoral.utils.edgetpu import make_interpreter
 
-interpreter_lifespan_secs = 600  # Refresh the interpreter every 10 mins
-
-interpreter         = None  # The model interpreter
-interpreter_created = None  # When was the interpreter created?
-labels              = None  # set of labels for this model
+interpreter               = None  # The model interpreter
+interpreter_created       = None  # When was the interpreter created?
+labels                    = None  # set of labels for this model
 
 
 from options import Options
@@ -71,7 +71,6 @@ def init_detect(options: Options) -> str:
     global interpreter
     global interpreter_created
     global labels
-
 
     # edge_tpu   = options.enable_GPU # Assuming this correctly tests for Coral TPU
     # model_file = options.model_tpu_file if edge_tpu else options.model_cpu_file
@@ -92,9 +91,13 @@ def init_detect(options: Options) -> str:
     except Exception as ex:
         try:
             print("Unable to find or initialise the Coral TPU. Falling back to CPU-only.")
-            
             device = "cpu"
-            interpreter = make_interpreter(options.model_cpu_file, device="cpu", delegate=None)
+
+            # We can't use the EdgeTPU libraries for making an interpreter because we don't have an
+            # edge TPU device. So, fallback to plain TFLite
+            # interpreter = make_interpreter(options.model_cpu_file, device=None, delegate=None)
+            import tflite_runtime.interpreter as tflite
+            interpreter = tflite.Interpreter(options.model_cpu_file, None)
         except Exception as ex:
             print("Error creating interpreter: " + str(ex))
             interpreter = None
@@ -126,7 +129,6 @@ def reset_detector():
     print("Info: Refreshing the Tensorflow Interpreter")
     interpreter = None
 
-
 def do_detect(options: Options, img: Image, score_threshold: float = 0.5):
 
     global interpreter
@@ -136,10 +138,10 @@ def do_detect(options: Options, img: Image, score_threshold: float = 0.5):
     std   = 128 # args.input_std
     top_k = 1
 
-    # Once an hour, refresh the interpreter
+    # Once in a while refresh the interpreter
     if interpreter != None:
         seconds_since_created = (datetime.now() - interpreter_created).total_seconds()
-        if seconds_since_created > interpreter_lifespan_secs:
+        if seconds_since_created > options.interpreter_lifespan_secs:
             reset_detector()
 
     if interpreter == None:

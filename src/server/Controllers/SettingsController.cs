@@ -9,6 +9,7 @@ using CodeProject.AI.Server.Modules;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CodeProject.AI.Server.Controllers
@@ -65,6 +66,7 @@ namespace CodeProject.AI.Server.Controllers
         private readonly ModuleCollection      _installedModules;
         private readonly ModuleProcessServices _moduleProcessServices;
         private readonly string                _storagePath;
+        private readonly ILogger               _logger;
 
         /// <summary>
         /// Constructor
@@ -74,11 +76,13 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="moduleSettings">The moduleSettings.</param>
         /// <param name="moduleCollectionOptions">The collection of modules.</param>
         /// <param name="moduleProcessServices">The Module Process Services.</param>
+        /// <param name="logger">The logger</param>
         public SettingsController(IConfiguration config,
                                   IOptions<ServerOptions> serverOptions,
                                   ModuleSettings moduleSettings,
                                   IOptions<ModuleCollection> moduleCollectionOptions,
-                                  ModuleProcessServices moduleProcessServices)
+                                  ModuleProcessServices moduleProcessServices,
+                                 ILogger<LogController> logger)
         {
             _config                = config;
             _serverOptions         = serverOptions.Value;
@@ -87,33 +91,36 @@ namespace CodeProject.AI.Server.Controllers
             _moduleProcessServices = moduleProcessServices;
             _storagePath           = _config["ApplicationDataDir"] 
                                    ?? throw new ApplicationException("ApplicationDataDir is not defined in configuration");
+            _logger                = logger;
         }
 
         /// <summary>
         /// Manages requests to add / update a single setting for a specific module.
         /// </summary>
-        /// <returns>A Response Object.</returns>
+        /// <returns>A <see cref="ServerResponse"/> Object.</returns>
         [HttpPost("{moduleId}" /*, Name = "UpsertSetting"*/)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> UpsertSettingAsync(string moduleId,
-                                                                 [FromForm] string name, 
-                                                                 [FromForm] string value)
+        public async Task<ServerResponse> UpsertSettingAsync(string moduleId,
+                                                             [FromForm] string name, 
+                                                             [FromForm] string value)
         {
             if (string.IsNullOrWhiteSpace(moduleId))
-                return new ErrorResponse("No module ID provided");
+                return new ServerErrorResponse("No module ID provided");
+
+            _logger.LogInformation($"Update {moduleId}. Setting {name}={value}");
 
             // We've been toggling between passing a name/value structure, and passing individual
             // params. This just normalises it and helps us switch between the two modes until we
             // settle on one.
             var settings = new SettingsPair() { Name = name, Value = value };
             if (settings == null || string.IsNullOrWhiteSpace(settings.Name))
-               return new ErrorResponse("No setting or setting name provided");
+               return new ServerErrorResponse("No setting or setting name provided");
 
             ModuleConfig? module = _installedModules.GetModule(moduleId);
             if (module is null)
-                return new ErrorResponse($"No module with ID {moduleId} found");
+                return new ServerErrorResponse($"No module with ID {moduleId} found");
 
             bool success = false;
 
@@ -142,22 +149,22 @@ namespace CodeProject.AI.Server.Controllers
                 }
             }
 
-            return new ModuleResponseBase { Success = success };
+            return new ServerResponse { Success = success };
         }
 
         /// <summary>
         /// Manages requests to add / update settings for one or more modules.
         /// </summary>
-        /// <returns>A Response Object.</returns>
+        /// <returns>A <see cref="ServerResponse"/> Object.</returns>
         [HttpPost("" /*, Name = "UpsertSettings"*/)]
         [Produces("application/json")]
         //[Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> UpsertSettingsAsync([FromBody] SettingsDict settings)
+        public async Task<ServerResponse> UpsertSettingsAsync([FromBody] SettingsDict settings)
         {
             if (!settings.Any())
-                return new ErrorResponse("No settings provided");
+                return new ServerErrorResponse("No settings provided");
 
             bool restartSuccess = true;
 
@@ -220,7 +227,7 @@ namespace CodeProject.AI.Server.Controllers
             bool success = restartSuccess && await settingStore.SaveSettingsAsync(overrideSettings)
                                                                .ConfigureAwait(false);
 
-            return new ModuleResponseBase { Success = success };
+            return new ServerResponse { Success = success };
         }
 
         /// <summary>
@@ -235,14 +242,14 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ModuleResponseBase ListSettings(string? moduleId)
+        public ServerResponse ListSettings(string? moduleId)
         {
             if (string.IsNullOrWhiteSpace(moduleId))
-                return new ErrorResponse("No module ID provided");
+                return new ServerErrorResponse("No module ID provided");
 
             ModuleConfig? module = _installedModules.GetModule(moduleId);
             if (module is null)
-                return new ErrorResponse($"No module found with ID {moduleId}");
+                return new ServerErrorResponse($"No module found with ID {moduleId}");
 
             Dictionary<string, string?> processEnvironmentVars = new();
             _serverOptions.AddEnvironmentVariables(processEnvironmentVars);

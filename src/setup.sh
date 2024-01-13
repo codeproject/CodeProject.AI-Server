@@ -303,6 +303,8 @@ function doModuleInstall () {
     # Get the module name, version, runtime location and python version from the
     # modulesettings.
 
+    moduleSetupStarttime=$SECONDS
+
     writeLine
     write "Reading module settings" $color_mute
     moduleName=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "Name")
@@ -541,6 +543,8 @@ function doModuleInstall () {
         writeLine "No install.sh present in ${moduleDirPath}" $color_warn
     fi
 
+    writeLine "Module setup time $(date -u -d "0 $SECONDS seconds - $moduleSetupStarttime seconds" +"%H:%M:%S")" "!color_info!"
+
     # return result
     # echo "${module_install_errors}"
 }
@@ -652,10 +656,16 @@ writeLine
 writeLine '======================================================================' 'DarkGreen'
 writeLine 
 
+mainSetupStarttime=$SECONDS
+
+# Report disk space available
 # -P = one line, -k = kb. NR=2 means get second row. $4=4th item. Add 000 = kb -> bytes
 diskSpace="$(df -Pk / | awk 'NR==2 {print $4}')000"
-formatted_space=$(bytesToHumanReadableKilo $diskSpace)
-writeLine "${formatted_space} available on ${systemName}" $color_mute
+formattedFreeSpace=$(bytesToHumanReadableKilo $diskSpace)
+diskSpace="$(df -Pk / | awk 'NR==2 {print $2}')000"
+formattedTotalSpace=$(bytesToHumanReadableKilo $diskSpace)
+writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${systemName}" $color_mute
+
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
@@ -929,6 +939,8 @@ fi
 writeLine ""
 writeLine "                Setup complete" "White" "DarkGreen" $lineWidth
 writeLine ""
+
+writeLine "Total setup time $(date -u -d "0 $SECONDS seconds - $mainSetupStarttime seconds" +"%H:%M:%S")" "!color_info!"
 
 if [ "${success}" != true ]; then
     quit 1

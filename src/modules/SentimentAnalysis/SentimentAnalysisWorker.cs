@@ -6,20 +6,21 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.API;
 
 namespace CodeProject.AI.Modules.SentimentAnalysis
 {
-    class SentimentAnalysisResponse : BackendSuccessResponse
+    class SentimentAnalysisResponse : ModuleResponse
     {
         /// <summary>
         /// Gets or set a value indicating whether the text is positive.
         /// </summary>
-        public bool? is_positive { get; set; }
+        public bool? Is_positive { get; set; }
 
         /// <summary>
         /// Gets or sets the probability of being positive.
         /// </summary>
-        public float? positive_probability { get; set; }
+        public float? Positive_probability { get; set; }
     }
 
     public class SentimentAnalysisWorker : ModuleWorkerBase
@@ -65,9 +66,9 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
             payload.SetValue("text", "This is a shiny happy wonderful sentence");
 
             var request = new BackendRequest(payload);
-            BackendResponseBase response = ProcessRequest(request);
+            ModuleResponse response = ProcessRequest(request);
 
-            if (response.success)
+            if (response.Success)
                 return 0;
 
             return 1;
@@ -78,25 +79,25 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns>The response.</returns>
-        protected override BackendResponseBase ProcessRequest(BackendRequest request)
+        protected override ModuleResponse ProcessRequest(BackendRequest request)
         {
             string? text = request?.payload?.GetValue("text");
             if (text is null)
-                return new BackendErrorResponse($"{ModuleName} missing 'text' parameter.");
+                return new ModuleErrorResponse($"{ModuleName} missing 'text' parameter.");
 
             Stopwatch sw = Stopwatch.StartNew();
             var result = _textClassifier.PredictSentiment(text);
             long inferenceMs = sw.ElapsedMilliseconds;
 
             if (result is null)
-                return new BackendErrorResponse($"{ModuleName} PredictSentiment returned null. Try reducing the length of the input text.");
+                return new ModuleErrorResponse($"{ModuleName} PredictSentiment returned null. Try reducing the length of the input text.");
 
             var response = new SentimentAnalysisResponse
             {
-                is_positive          = result?.Prediction?[1] > 0.5f,
-                positive_probability = result?.Prediction?[1],
-                processMs            = inferenceMs,
-                inferenceMs          = inferenceMs
+                Is_positive          = result?.Prediction?[1] > 0.5f,
+                Positive_probability = result?.Prediction?[1],
+                ProcessMs            = inferenceMs,
+                InferenceMs          = inferenceMs
             };
 
             return response;

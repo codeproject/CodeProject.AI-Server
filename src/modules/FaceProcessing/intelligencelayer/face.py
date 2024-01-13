@@ -91,12 +91,12 @@ class Face_adapter(ModuleRunner):
         # based on whether CUDA is used. This can (and should) be refactored,
         # but not today.
         
-        self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS
+        self.can_use_GPU = self.system_info.hasTorchCuda or self.system_info.hasTorchMPS
 
         if SharedOptions.USE_CUDA:
-            SharedOptions.USE_CUDA = self.hasTorchCuda
+            SharedOptions.USE_CUDA = self.system_info.hasTorchCuda
         if SharedOptions.USE_MPS:
-            SharedOptions.USE_MPS = self.hasTorchMPS
+            SharedOptions.USE_MPS = self.system_info.hasTorchMPS
 
         # We'll assume that USE_CUDA / USE_MPS are correct to avoid slow code
         if SharedOptions.USE_CUDA:
@@ -106,7 +106,8 @@ class Face_adapter(ModuleRunner):
             self.processor_type     = "GPU"
             self.execution_provider = "MPS"
 
-        if SharedOptions.USE_CUDA and self.half_precision == 'enable' and not self.hasTorchHalfPrecision:
+        if SharedOptions.USE_CUDA and self.half_precision == 'enable' and \
+           not self.system_info.hasTorchHalfPrecision:
             self.half_precision = 'disable'
 
         self.init_db()

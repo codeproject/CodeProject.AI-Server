@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -63,14 +64,32 @@ namespace CodeProject.AI.Server.Modules
         /// Gets the default value for this parameter if not provided to or returned from a process.
         /// </summary>
         public string? DefaultValue { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether or not this parameter is supplied by the system
+        /// </summary>
+        public bool System { get; set; }
     }
 
     /// <summary>
     /// Holds the route and command associated with a url.
     /// </summary>
-    // TODO: Rename to CommandRouteInfo
     public struct ModuleRouteInfo
     {
+        /// <summary>
+        /// This is an array of outputs added by the system: some are added by the base module code
+        /// such as ModuleWorkerBase.s or module_runner.py (eg canUseGPU) and some is added by the
+        /// proxy controller (eg analysisRoundTripMs). It would be best to have each party that is
+        /// responsible for adding outputs do so by registering their outputs here, but for now
+        /// we'll hardcode
+        /// </summary>
+        private static RouteParameterInfo[] _systemOutputs;
+
+        /// <summary>
+        /// The module's explicit outputs plus the system outputs automatically added
+        /// </summary>
+        private RouteParameterInfo[]? _fullOutputs;
+
         /// <summary>
         /// Gets the name for this endpoint.
         /// </summary>
@@ -112,6 +131,84 @@ namespace CodeProject.AI.Server.Modules
         /// Gets the output parameter information.
         /// </summary>
         public RouteParameterInfo[]? Outputs { get; set; }
+
+        /// <summary>
+        /// Gets the list output parameter information returned to the client, including parameters
+        /// added by the server itself such as timing or module info.
+        /// </summary>
+        public RouteParameterInfo[]? ReturnedOutputs
+        {
+            get
+            {
+                // Init _fullOutputs if need be, and if Outputs is null then easy peasy
+                if (_fullOutputs is null && Outputs is null)
+                    _fullOutputs = _systemOutputs;
+
+                if (_fullOutputs is null)
+                {
+                    // Copy over what we currently have
+                    List<RouteParameterInfo> fullSet = Outputs!.ToList();
+
+                    // ...and tack on the system outputs *only* if we're not already returning them
+                    foreach (var param in _systemOutputs)
+                        if (!fullSet.Any(p => p.Name.EqualsIgnoreCase(param.Name)))
+                            fullSet.Add(param);
+
+                    _fullOutputs = fullSet.ToArray();
+                }
+
+                return _fullOutputs;
+            }
+        }
+
+        static ModuleRouteInfo()
+        {
+            _systemOutputs = new RouteParameterInfo[]
+            {
+                new RouteParameterInfo()
+                {
+                    Name        = "moduleId",
+                    Type        = "String",
+                    Description = "The Id of the module that processed this request.",
+                    System      = true
+                },
+                new RouteParameterInfo()
+                {
+                    Name        = "moduleName",
+                    Type        = "String",
+                    Description = "The name of the module that processed this request.",
+                    System      = true
+                },
+                new RouteParameterInfo()
+                {
+                    Name        = "command",
+                    Type        = "String",
+                    Description = "The command that was sent as part of this request. Can be detect, list, status.",
+                    System      = true
+                },
+                new RouteParameterInfo()
+                {
+                    Name        = "executionProvider",
+                    Type        = "String",
+                    Description = "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML.",
+                    System      = true
+                },
+                new RouteParameterInfo()
+                {
+                    Name        = "canUseGPU",
+                    Type        = "Boolean",
+                    Description = "True if this module can use the current GPU if one is present.",
+                    System      = true
+                },
+                new RouteParameterInfo()
+                {
+                    Name        = "analysisRoundTripMs",
+                    Type        = "Integer",
+                    Description = "The time (ms) for the round trip to the analysis module and back.",
+                    System      = true
+                }
+            };
+        }
 
         /// <summary>
         /// Initializes a new instance of the BackendRouteInfo struct.

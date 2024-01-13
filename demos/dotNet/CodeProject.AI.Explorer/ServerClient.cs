@@ -27,7 +27,7 @@ namespace CodeProject.AI.API
         {
             var request = new ServerRequestContent();
             if (!request.AddFile(imagePath))
-                return new ErrorResponse("Image does not exist");
+                return new ServerErrorResponse("Image does not exist");
 
             return await PostAsync<DetectFacesResponse>("vision/face", request).ConfigureAwait(false);
         }
@@ -42,9 +42,9 @@ namespace CodeProject.AI.API
         {
             var request = new ServerRequestContent();
             if (!request.AddFile(image1FileName, "image1"))
-                return new ErrorResponse("Image does not exist");
+                return new ServerErrorResponse("Image does not exist");
             if (!request.AddFile(image2FileName, "image2"))
-                return new ErrorResponse("Image does not exist");
+                return new ServerErrorResponse("Image does not exist");
 
             return await PostAsync<MatchFacesResponse>("vision/face/match", request).ConfigureAwait(false);
         }
@@ -58,7 +58,7 @@ namespace CodeProject.AI.API
         {
             var request = new ServerRequestContent();
             if (!request.AddFile(imagePath))
-                return new ErrorResponse("Image does not exist");
+                return new ServerErrorResponse("Image does not exist");
 
             return await PostAsync<DetectSceneResponse>("vision/scene", request).ConfigureAwait(false);
         }
@@ -73,7 +73,7 @@ namespace CodeProject.AI.API
         {
             var request = new ServerRequestContent();
             if (!request.AddFile(imagePath))
-                return new ErrorResponse("Image does not exist");
+                return new ServerErrorResponse("Image does not exist");
 
             return await PostAsync<DetectObjectsResponse>("vision/detection", request).ConfigureAwait(false);
         }
@@ -89,7 +89,7 @@ namespace CodeProject.AI.API
         {
             var request = new ServerRequestContent();
             if (!request.AddFile(imagePath))
-                return new ErrorResponse("Image does not exist");
+                return new ServerErrorResponse("Image does not exist");
 
             return await PostAsync<DetectObjectsResponse>($"vision/custom/{modelName}", request).ConfigureAwait(false);
         }
@@ -103,7 +103,7 @@ namespace CodeProject.AI.API
                                                      IEnumerable<string> registerFileNames)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                return new ErrorResponse("No user id provided");
+                return new ServerErrorResponse("No user id provided");
 
             var request = new ServerRequestContent();
             request.AddParam("userid", userId);
@@ -130,7 +130,7 @@ namespace CodeProject.AI.API
         public async Task<ServerResponse> DeleteRegisteredFace(string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                return new ErrorResponse("No user id provided");
+                return new ServerErrorResponse("No user id provided");
 
             var request = new ServerRequestContent();
             request.AddParam("userId", userId);

@@ -20,13 +20,13 @@
 
 REM .NET -----------------------------------------------------------------------
 
-REM Setup .NET for the server, for the .NET Utilities, and any .NET modules.
-REM Not all machines will necessarily have the version of .NET we need, so for
-REM Development we ensure .NET is up to scratch, and for production, .NET is 
-REM installed as part of the installer. The SetupDotNet function will check for
-REM .NET and do nothing if it finds a suitable version already installed.
+REM Setup .NET for the server, for the .NET Utilities, and any .NET modules. Not
+REM all machines will necessarily have the version of .NET we need, so for Dev
+REM we ensure .NET is up to scratch, and for production, .NET is installed as 
+REM part of the Windows installer. The SetupDotNet function will check for .NET 
+REM and do nothing if it finds a suitable version already installed.
 if /i "!executionEnvironment!" == "Development" (
-    call "%sdkScriptsDirPath%\utils.bat" SetupDotNet 7.0 "SDK"
+    call "%sdkScriptsDirPath%\utils.bat" SetupDotNet 7.0.405 SDK
 )
 
 

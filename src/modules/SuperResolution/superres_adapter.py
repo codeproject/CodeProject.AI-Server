@@ -26,7 +26,7 @@ class SuperRes_adapter(ModuleRunner):
         load_pretrained_weights(assets_path)
 
         # TODO: This module also supports ONNX
-        self.can_use_GPU = self.hasTorchCuda
+        self.can_use_GPU = self.system_info.hasTorchCuda
 
         if self.enable_GPU and self.can_use_GPU:
             self.execution_provider = "CUDA"

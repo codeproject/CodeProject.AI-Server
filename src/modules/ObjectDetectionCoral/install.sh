@@ -229,7 +229,8 @@ fi
 
 if [ "$module_install_errors" == "" ]; then
     # Download the MobileNet TFLite models and store in /assets
-    getFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
+    # getFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
+    getFromServer "models/" "objectdetect-coral-multitpu-models.zip" "assets" "Downloading MobileNet models..."
 
     # TODO: Check assets created and has files
     # module_install_errors=...

@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Net.Http.Json;
 
+using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -123,7 +125,7 @@ namespace CodeProject.AI.SDK
         /// </summary>
         /// <param name="request">The Request data.</param>
         /// <returns>An object to serialize back to the server.</returns>
-        protected abstract BackendResponseBase ProcessRequest(BackendRequest request);
+        protected abstract ModuleResponse ProcessRequest(BackendRequest request);
 
         /// <summary>
         /// Called when the module is asked to execute a self-test to ensure it install and runs
@@ -158,8 +160,8 @@ namespace CodeProject.AI.SDK
         private async Task ProcessQueue(CancellationToken token, int taskNumber)
         {
             Task<BackendRequest?> requestTask = _apiClient.GetRequest(_queueName!, _moduleId!,
-                                                                     token, ExecutionProvider, 
-                                                                     CanUseGPU);
+                                                                      token, ExecutionProvider, 
+                                                                      CanUseGPU);
             Task? responseTask = null;
             BackendRequest? request;
 
@@ -183,15 +185,16 @@ namespace CodeProject.AI.SDK
                     }
 
                     Stopwatch stopWatch = Stopwatch.StartNew();
-                    BackendResponseBase response = ProcessRequest(request);
+                    ModuleResponse response = ProcessRequest(request);
                     stopWatch.Stop();
 
                     long processMs = stopWatch.ElapsedMilliseconds;
-                    response.processMs         = processMs;
-                    response.moduleId          = _moduleId;
-                    response.executionProvider = ExecutionProvider ?? string.Empty;
-                    response.command           = request.payload?.command ?? string.Empty;
-                    response.canUseGPU         = CanUseGPU;
+                    response.ModuleName        = ModuleName;
+                    response.ModuleId          = _moduleId;
+                    response.ProcessMs         = processMs;
+                    response.ExecutionProvider = ExecutionProvider ?? string.Empty;
+                    response.Command           = request.payload?.command ?? string.Empty;
+                    response.CanUseGPU         = CanUseGPU;
 
                     HttpContent content = JsonContent.Create(response, response.GetType());
 
@@ -202,7 +205,7 @@ namespace CodeProject.AI.SDK
 
                     responseTask = _apiClient.SendResponse(request.reqid, _moduleId!, content, token);
 
-                    _apiClient.LogToServer($"Command completed in {response.processMs} ms.",
+                    _apiClient.LogToServer($"Command completed in {response.ProcessMs} ms.",
                                            $"{ModuleName}",  LogLevel.Information, 
                                            "command timing");
                 }
@@ -255,7 +258,14 @@ namespace CodeProject.AI.SDK
             // delayed until this method returns. The await Delay of any size is enough to allow the
             // host to start up and run the other services. A delay of 1 second allows the Server to
             // start up and be ready to receive requests.
-            await Task.Delay(1_000, token).ConfigureAwait(false);
+            try
+            {
+                await Task.Delay(1_000, token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                // the loop will terminate if the cancellation token is cancelled.
+            }
 
             _apiClient.LogToServer($"{ModuleName} module started.", $"{ModuleName}",
                                    LogLevel.Information, string.Empty);

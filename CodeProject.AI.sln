@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A8B76501-496A-4011-9C37-8308A1EBDFA7}"
 	ProjectSection(SolutionItems) = preProject
 		src\create_packages.bat = src\create_packages.bat
+		src\create_packages.sh = src\create_packages.sh
 		src\setup.bat = src\setup.bat
 		src\setup.sh = src\setup.sh
 	EndProjectSection

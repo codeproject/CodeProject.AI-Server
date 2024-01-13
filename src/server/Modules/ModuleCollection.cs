@@ -1,4 +1,7 @@
-﻿using System;
+﻿#define PROCESS_MODULE_RENAMES
+// This ensures we generate the correct modules.json for server version < 2.4
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +19,17 @@ using CodeProject.AI.SDK.Utils;
 namespace CodeProject.AI.Server.Modules
 {
     /// <summary>
+    /// The Response when requesting information on config settings of modules
+    /// </summary>
+    public class ModuleListConfigResponse : ServerResponse
+    {
+        /// <summary>
+        /// Gets or sets the list of module configs
+        /// </summary>
+        public List<ModuleConfig>? Modules { get; set; }
+    }
+
+    /// <summary>
     /// The set of modules for backend processing.
     /// </summary>
     public class ModuleCollection : ConcurrentDictionary<string, ModuleConfig>
@@ -31,6 +45,8 @@ namespace CodeProject.AI.Server.Modules
     /// </summary>
     public class ModuleConfig : ModuleBase
     {
+        private ExplorerUI? _explorerUI;
+
         /// <summary>
         /// Gets or sets the previous incarnation of 'AutoStart' (see below). This value will still
         /// live in some persistent config files on older systems, so we need to enable it to be
@@ -152,7 +168,17 @@ namespace CodeProject.AI.Server.Modules
         /// Gets or sets the UI components to be included in the Explorer web app that provides the
         /// means to explore and test this module.
         /// </summary>
-        public ExplorerUI? ExplorerUI { get; set; }
+        public ExplorerUI? ExplorerUI
+        { 
+            get
+            {
+                if (_explorerUI is null)
+                    _explorerUI = this.GetExplorerUI();
+                return _explorerUI;
+            }
+
+            set { _explorerUI = value; }
+        }
 
         /// <summary>
         /// Gets or sets a list of RouteMaps.
@@ -556,27 +582,27 @@ namespace CodeProject.AI.Server.Modules
         /// <returns>A UiInsertion object</returns>
         public static ExplorerUI? GetExplorerUI(this ModuleConfig module)
         {
-            const string testHtmlFilename = "test.html";
-
-            if (module.ExplorerUI is null)
-            {
-                module.ExplorerUI = new ExplorerUI();
+            if (string.IsNullOrWhiteSpace(module.ModuleDirPath))
+                return null;
                 
-                string testHtmlFilepath = Path.Combine(module.ModuleDirPath, testHtmlFilename);
-                if (File.Exists(testHtmlFilepath))
-                {
-                    string contents = File.ReadAllText/*Async*/(testHtmlFilepath);
+            const string testHtmlFilename = "explore.html";
 
-                    module.ExplorerUI.Css    = ExtractComponent(contents, "/\\* START EXPLORER STYLE \\*/",
-                                                                          "/\\* END EXPLORER STYLE \\*/");
-                    module.ExplorerUI.Script = ExtractComponent(contents, "// START EXPLORER SCRIPT",
-                                                                          "// END EXPLORER SCRIPT");
-                    module.ExplorerUI.Html   = ExtractComponent(contents, "\\<!-- START EXPLORER MARKUP --\\>",
-                                                                          "\\<!-- END EXPLORER MARKUP --\\>");
-                }
+            ExplorerUI explorerUI = new ExplorerUI();
+                
+            string testHtmlFilepath = Path.Combine(module.ModuleDirPath, testHtmlFilename);
+            if (File.Exists(testHtmlFilepath))
+            {
+                string contents = File.ReadAllText/*Async*/(testHtmlFilepath);
+
+                explorerUI.Css    = ExtractComponent(contents, "/\\* START EXPLORER STYLE \\*/",
+                                                               "/\\* END EXPLORER STYLE \\*/");
+                explorerUI.Script = ExtractComponent(contents, "// START EXPLORER SCRIPT",
+                                                               "// END EXPLORER SCRIPT");
+                explorerUI.Html   = ExtractComponent(contents, "\\<!-- START EXPLORER MARKUP --\\>",
+                                                               "\\<!-- END EXPLORER MARKUP --\\>");
             }
 
-            return module.ExplorerUI;
+            return explorerUI;
         }
 
         private static string ExtractComponent(string input, string startMarker, string endMarker)
@@ -664,16 +690,19 @@ namespace CodeProject.AI.Server.Modules
                 if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
 
-                // HACK: Add the modules we renamed
                 var corrections = new dynamic [] {
+#if PROCESS_MODULE_RENAMES
                     new { OldModuleId = "ObjectDetectionNet",  NewModuleId = "ObjectDetectionYOLOv5Net"      },
                     new { OldModuleId = "ObjectDetectionYolo", NewModuleId = "ObjectDetectionYOLOv5-6.2"     },
                     new { OldModuleId = "Yolov5-3.1",          NewModuleId = "ObjectDetectionYOLOv5-3.1"     },
                     new { OldModuleId = "TrainingYoloV5",      NewModuleId = "TrainingObjectDetectionYOLOv5" }
+#endif
                 };
 
                 var moduleList = modules.Values
+#if PROCESS_MODULE_RENAMES
                                         .Where(m => !corrections.Any(c => c.NewModuleId == m.ModuleId)) // Don't do modules with new names yet
+#endif
                                         .OrderBy(m => m.ModuleId)
                                         .Select(m => new {
                                             ModuleId       = m.ModuleId,
@@ -686,9 +715,14 @@ namespace CodeProject.AI.Server.Modules
                                             ModuleReleases = m.ModuleReleases,
                                             License        = m.License,
                                             LicenseUrl     = m.LicenseUrl,
+                                            Author         = m.Author,
+                                            Homepage       = m.Homepage,
+                                            BasedOn        = m.BasedOn,
+                                            BasedOnUrl     = m.BasedOnUrl,
                                             Downloads      = 0
                                         }).ToList();
 
+#if PROCESS_MODULE_RENAMES
                 // Add renamed modules, but with their names, but only server revisions v2.4+
                 foreach (var pair in corrections)
                 {
@@ -707,6 +741,10 @@ namespace CodeProject.AI.Server.Modules
                                                                               VersionInfo.Compare(r.ServerVersionRange[0], "2.4") >= 0).ToArray(),
                             License        = module.License,
                             LicenseUrl     = module.LicenseUrl,
+                            Author         = module.Author,
+                            Homepage       = module.Homepage,
+                            BasedOn        = module.BasedOn,
+                            BasedOnUrl     = module.BasedOnUrl,
                             Downloads      = 0
                         });
                     }
@@ -730,11 +768,15 @@ namespace CodeProject.AI.Server.Modules
                                                                               VersionInfo.Compare(r.ServerVersionRange[0], "2.4") < 0).ToArray(),
                             License        = module.License,
                             LicenseUrl     = module.LicenseUrl,
+                            Author         = module.Author,
+                            Homepage       = module.Homepage,
+                            BasedOn        = module.BasedOn,
+                            BasedOnUrl     = module.BasedOnUrl,
                             Downloads      = 0
                         });
                     }
                 }
-
+#endif
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string configJson = JsonSerializer.Serialize(moduleList, options);
 
@@ -783,13 +825,31 @@ namespace CodeProject.AI.Server.Modules
                 }
 
                 list.AppendLine($"<li><b>{module.Name}</b>");
+
                 list.AppendLine("<div class='small-text'>");
                 list.AppendLine($"v{module.Version}");
                 list.AppendLine($"<span class='tags mx-3'>{PlatformList(module.Platforms)}</span>");
                 list.AppendLine($"{RuntimeString(module.Runtime)}");
                 list.AppendLine("</div>");
 
+                list.AppendLine("<div>");
                 list.AppendLine($"{module.Description}");
+                list.AppendLine("</div>");
+
+                string author  = string.IsNullOrWhiteSpace(module.Author)? "Anonymous Legend" : module.Author;
+                string basedOn = string.IsNullOrWhiteSpace(module.BasedOn)? "this project" : module.BasedOn;
+
+                list.AppendLine("<div class='text-muted'>");
+                if (!string.IsNullOrWhiteSpace(module.Homepage))
+                    list.Append($"<a href='${module.Homepage}'>Project</a> by {author}"); 
+                else
+                    list.Append($"By {author}");                 
+                if (!string.IsNullOrWhiteSpace(module.BasedOnUrl))
+                    list.Append($", based on <a href='${module.BasedOnUrl}'>{basedOn}</a>."); 
+                else if (!string.IsNullOrWhiteSpace(module.BasedOn))
+                    list.Append($", based on {module.BasedOn}."); 
+                list.AppendLine("</div>");
+
                 list.AppendLine("<br><br></li>");
             }
 

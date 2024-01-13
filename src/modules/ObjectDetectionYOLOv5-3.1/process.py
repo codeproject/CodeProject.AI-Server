@@ -21,9 +21,6 @@ from utils.general import (
     scale_coords,
 )
 
-from module_runner import ModuleRunner
-
-
 def init_detect(opts: Options):
 
     if opts.use_CUDA:

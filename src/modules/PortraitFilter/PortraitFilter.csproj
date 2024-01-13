@@ -99,6 +99,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="explore.html">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 		<None Update="Lib\deeplabv3_mnv2_pascal_train_aug.onnx">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>

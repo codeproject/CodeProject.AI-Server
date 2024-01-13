@@ -25,7 +25,7 @@ class cartooniser_adapter(ModuleRunner):
 
     def initialise(self) -> None:
         # GPU support not fully working in Linux
-        # if self.opts.use_gpu and not self.hasTorchCuda:
+        # if self.opts.use_gpu and not self.system_info.hasTorchCuda:
         #     self.opts.use_gpu = False
         self.opts.use_gpu = False
 

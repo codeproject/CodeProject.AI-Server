@@ -3,7 +3,7 @@
 
     "ObjectDetectionYOLOv8": {
       "Name": "Object Detection (YOLOv8)",
-      "Version": "1.1.1",
+      "Version": "1.2.0",
 
       // Publishing info
       "Description": "Provides Object Detection in Python>=3.8 using YOLOv8. Great for newer NVIDIA GPUs",
@@ -11,6 +11,10 @@
       "Platforms": [ "all" ],
       "License": "AGPL-3.0",
       "LicenseUrl": "https://www.gnu.org/licenses/agpl-3.0.en.html",
+      "Author": "Chris Maunder",
+      "Homepage": "https://codeproject.com/ai",
+      "BasedOn": "ultralytics",
+      "BasedOnUrl": "https://github.com/ultralytics/ultralytics",
 
       // Launch instructions
       "AutoStart": true,
@@ -44,7 +48,8 @@
         { "ModuleVersion": "1.0.1", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
         { "ModuleVersion": "1.0.2", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-10", "ReleaseNotes": "Bug fixes" },
         { "ModuleVersion": "1.1.0", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-13", "ReleaseNotes": "Added custom model" },
-        { "ModuleVersion": "1.1.1", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-15", "ReleaseNotes": "Fixed YOLO threading issue" }
+        { "ModuleVersion": "1.1.1", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-15", "ReleaseNotes": "Fixed YOLO threading issue" },
+        { "ModuleVersion": "1.2.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
      ],
 
       "RouteMaps": [
@@ -96,26 +101,6 @@
               "Description": "The number of objects found."
             },
             {
-              "Name": "command",
-              "Type": "String",
-              "Description": "The command that was sent as part of this request. Can be detect, list, status."
-            },
-            {
-              "Name": "moduleId",
-              "Type": "String",
-              "Description": "The Id of the module that processed this request."
-            },
-            {
-              "Name": "executionProvider",
-              "Type": "String",
-              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
-            },
-            {
-              "Name": "canUseGPU",
-              "Type": "Boolean",
-              "Description": "True if this module can use the current GPU if one is present."
-            },
-            {
               "Name": "inferenceMs",
               "Type": "Integer",
               "Description": "The time (ms) to perform the AI inference."
@@ -124,11 +109,6 @@
               "Name": "processMs",
               "Type": "Integer",
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
-            },
-            {
-              "Name": "analysisRoundTripMs",
-              "Type": "Integer",
-              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         },
@@ -159,6 +139,16 @@
               "Description": "True if successful."
             },
             {
+              "Name": "message",
+              "Type": "String",
+              "Description": "A summary of the inference operation."
+            },
+            {
+              "Name": "error",
+              "Type": "String",
+              "Description": "(Optional) An description of the error if success was false."
+            },
+            {
               "Name": "predictions",
               "Type": "Object[]",
               "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
@@ -172,11 +162,6 @@
               "Name": "processMs",
               "Type": "Integer",
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
-            },
-            {
-              "Name": "analysisRoundTripMs",
-              "Type": "Integer",
-              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         },

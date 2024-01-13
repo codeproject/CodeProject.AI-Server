@@ -52,6 +52,9 @@ set allowSharedPythonInstallsForModules=true
 set doPostInstallSelfTest=true
 
 :: Perform *only* the post install self tests
+set setupServerOnly=false
+
+:: Perform *only* the post install self tests
 set selfTestOnly=false
 
 :: If files are already present, then don't overwrite if this is false
@@ -140,6 +143,11 @@ set launchedBy=user
         shift
         goto :param_loop
     )
+    if "%~1"=="--server-only" (
+        set setupServerOnly=true
+        shift
+        goto :param_loop
+    )
     if "%~1"=="--no-color" (
         set useColor=false
         shift
@@ -220,6 +228,23 @@ call "!sdkScriptsDirPath!\utils.bat" WriteLine "                   CodeProject.A
 call "!sdkScriptsDirPath!\utils.bat" WriteLine 
 call "!sdkScriptsDirPath!\utils.bat" WriteLine "======================================================================" "DarkGreen" 
 call "!sdkScriptsDirPath!\utils.bat" WriteLine 
+
+set mainSetupStarttime=%time%
+
+REM Report disk space available
+for /f "tokens=1,2 delims== " %%a in ('wmic logicaldisk where "DeviceID='%cd:~0,2%'" get FreeSpace^,Size^,VolumeName /format:list') do (
+    if "%%a"=="FreeSpace"  set freespacebytes=%%b
+    if "%%a"=="Size"       set totalspacebytes=%%b
+    if "%%a"=="VolumeName" set volumename=%%b
+)
+REM Anything ove 2Gb kills this
+REM set /a freeSpaceGb=!freespacebytes! / 1073741824
+REM set /a freeSpaceGbfraction=!freespacebytes! %% 1073741824 * 10 / 1073741824
+set /a freeSpaceGb=!freespacebytes:~0,-4! / 1048576
+set /a freeSpaceGbfraction=!freespacebytes:~0,-4! %% 1048576 * 10 / 1048576
+set /a totalSpaceGb=!totalspacebytes:~0,-4! / 1048576
+
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "!freeSpaceGb!.!freeSpaceGbfraction!Gb of !totalSpaceGb!Gb available on !VolumeName!" !color_mute!
 
 
 if /i "%verbosity%" neq "quiet" (
@@ -337,62 +362,69 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
     REM Walk through the modules directory and call the setup script in each
     REM dir, as well as setting up the demos
 
-    REM  TODO: This should be just a simple for /d %%D in ("!modulesDirPath!") do (
-    for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
-        set moduleDirName=%%~nxD
-        call :DoModuleInstall !moduleDirName! errors
-        if "!moduleInstallErrors!" NEQ "" set success=false
+    if /i "!setupServerOnly!" == "false" (
+        REM  TODO: This should be just a simple for /d %%D in ("!modulesDirPath!") do (
+        for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
+            set moduleDirName=%%~nxD
+            call :DoModuleInstall !moduleDirName! errors
+            if "!moduleInstallErrors!" NEQ "" set success=false
+        )
+
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Module setup Complete" "Green"
+
+        REM Install Demos
+        if /i "!selfTestOnly!" == "false" (
+            call "!sdkScriptsDirPath!\utils.bat" WriteLine
+            call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing Demos" "White" "Blue" !lineWidth!
+            call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
+            set currentDir=%cd%
+            set moduleDirName=demos
+            set moduleDirPath=!rootDirPath!\!moduleDirName!
+            call "!moduleDirPath!\install.bat" install
+
+            REM Don't really care about demos enough to fail the entire setup script
+            REM if errorlevel 1 set success=false
+            cd "!currentDir!"
+        )
     )
 
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Module setup Complete" "Green"
-
-    REM Install Demos
-    if /i "!selfTestOnly!" == "false" (
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing Demos" "White" "Blue" !lineWidth!
-        call "!sdkScriptsDirPath!\utils.bat" WriteLine
-
-        set currentDir=%cd%
-        set moduleDirName=demos
-        set moduleDirPath=!rootDirPath!\!moduleDirName!
-        call "!moduleDirPath!\install.bat" install
-
-        REM Don't really care about demos enough to fail the entire setup script
-        REM if errorlevel 1 set success=false
-        cd "!currentDir!"
-    )
 ) else (
 
-    REM Install an individual module
+    if /i "!setupServerOnly!" == "false" (
+        REM Install an individual module
+        for %%I in (.) do set moduleDirName=%%~nxI
 
-    for %%I in (.) do set moduleDirName=%%~nxI
+        if /i "!moduleDirName!" == "server" (
+            if /i "!selfTestOnly!" == "false" (
+                set moduleDirPath=!appRootDirPath!\!moduleDirName!
 
-    if /i "!moduleDirName!" == "server" (
-        if /i "!selfTestOnly!" == "false" (
-            set moduleDirPath=!appRootDirPath!\!moduleDirName!
+                set currentDir=%cd%
+                call "!moduleDirPath!\install.bat" install
+                cd "!currentDir!"
+            )
+        ) else if /i "!moduleDirName!" == "demos" (
+            if /i "!selfTestOnly!" == "false" (
+                set moduleDirPath=!rootDirPath!\!moduleDirName!
 
-            set currentDir=%cd%
-            call "!moduleDirPath!\install.bat" install
-            cd "!currentDir!"
+                set currentDir=%cd%
+                call "!moduleDirPath!\install.bat" install
+                cd "!currentDir!"
+            )
+        ) else (
+            call :DoModuleInstall !moduleDirName! errors
+            if "!moduleInstallErrors!" NEQ "" set success=false
         )
-    ) else if /i "!moduleDirName!" == "demos" (
-        if /i "!selfTestOnly!" == "false" (
-            set moduleDirPath=!rootDirPath!\!moduleDirName!
-
-            set currentDir=%cd%
-            call "!moduleDirPath!\install.bat" install
-            cd "!currentDir!"
-        )
-    ) else (
-        call :DoModuleInstall !moduleDirName! errors
-        if "!moduleInstallErrors!" NEQ "" set success=false
     )
 )
 
 call "!sdkScriptsDirPath!\utils.bat" WriteLine
 call "!sdkScriptsDirPath!\utils.bat" WriteLine "Setup complete" "White" "DarkGreen" !lineWidth!
 call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
+call "!sdkScriptsDirPath!\utils.bat" timeSince "!mainSetupStarttime!" duration
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "Total setup time !duration!" "!color_info!"
 
 if /i "!success!" == "false" exit /b 1
 
@@ -443,6 +475,8 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
 
     set moduleDirName=%~1
     set moduleDirPath=!modulesDirPath!\!moduleDirName!
+
+    set moduleSetupStarttime=%time%
 
     REM Get the module name, version, runtime location and python version from
     REM the modulesettings.
@@ -708,6 +742,9 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
     ) else (
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "No install.bat present for !moduleName!" "!color_warn!"
     )
+
+    call "!sdkScriptsDirPath!\utils.bat" timeSince "!moduleSetupStarttime!" duration
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Module setup time !duration!" "!color_info!"
 
     REM return result
     set %~2=!moduleInstallErrors!

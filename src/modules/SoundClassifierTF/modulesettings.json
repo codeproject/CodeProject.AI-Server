@@ -3,7 +3,7 @@
 
     "SoundClassifierTF": {
       "Name": "Sound Classifier (TensorFlow)",
-      "Version": "1.0.0",
+      "Version": "1.0.2",
       
       // Publishing info
       "Description": "The sound classifier uses Tensorflow with Python to classify sound files based on the UrbanSound8K dataset.",
@@ -11,6 +11,10 @@
       "Platforms": [ "all" ],
       "License": "Apache-2.0",
       "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
+      "Author": "Chris Maunder",
+      "Homepage": "https://codeproject.com/ai",
+      "BasedOn": "Tensorflow-Audio-Classification",
+      "BasedOnUrl": "https://github.com/luuil/Tensorflow-Audio-Classification",
 
       // Launch instructions
       "AutoStart": false,
@@ -33,7 +37,8 @@
 
       // Which server version is compatible with each version of this module.
       "ModuleReleases": [
-        { "ModuleVersion": "1.0.1",  "ServerVersionRange": [ "2.4.6", "" ], "ReleaseDate": "2023-07-11", "ReleaseNotes": "Initial version" }
+        { "ModuleVersion": "1.0.1", "ServerVersionRange": [ "2.4.6", ""       ], "ReleaseDate": "2023-12-28", "ReleaseNotes": "Initial version" },
+        { "ModuleVersion": "1.0.2", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
       ],
 
       "RouteMaps": [
@@ -75,26 +80,6 @@
               "Description": "The confidence in the classification in the range of 0.0 to 1.0."
             },
             {
-              "Name": "command",
-              "Type": "String",
-              "Description": "The command that was sent as part of this request. Can be classify, list, status."
-            },
-            {
-              "Name": "moduleId",
-              "Type": "String",
-              "Description": "The Id of the module that processed this request."
-            },
-            {
-              "Name": "executionProvider",
-              "Type": "String",
-              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
-            },
-            {
-              "Name": "canUseGPU",
-              "Type": "Boolean",
-              "Description": "True if this module can use the current GPU if one is present."
-            },
-            {
               "Name": "inferenceMs",
               "Type": "Integer",
               "Description": "The time (ms) to perform the AI inference."
@@ -103,11 +88,6 @@
               "Name": "processMs",
               "Type": "Integer",
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
-            },
-            {
-              "Name": "analysisRoundTripMs",
-              "Type": "Integer",
-              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         }

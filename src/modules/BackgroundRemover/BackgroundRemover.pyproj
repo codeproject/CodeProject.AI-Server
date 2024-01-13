@@ -36,7 +36,7 @@
     </Content>
     <Content Include="package.bat" />
     <Content Include="package.sh" />
-    <Content Include="test.html" />
+    <Content Include="explore.html" />
     <Content Include="test\chris-hemsworth-2.jpg" />
   </ItemGroup>
   <ItemGroup>

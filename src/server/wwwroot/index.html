@@ -21,10 +21,37 @@
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="assets/dashboard.css?v=2.4.8.0">
+    <link rel="stylesheet" type="text/css" href="assets/server.css?v=2.5.0.0">
 
-    <script type="text/javascript" src="assets/dashboard.js?v=2.4.8.0"></script>
+    <script type="text/javascript" src="assets/server.js?v=2.5.0.0"></script>
+    <script type="text/javascript" src="assets/dashboard.js?v=2.5.0.0"></script>
     <script type="text/javascript">
+    window.addEventListener('DOMContentLoaded', function (event) {
+
+        let urlElm = document.getElementById('serviceUrl');
+        urlElm.value = apiServiceUrl;
+
+        setServerStatus("Searching", "light");
+
+        getVersion();
+        checkForUpdates(false);
+        getDownloadableModules()
+
+        setInterval(ping, pingFrequency);
+        setInterval(getLogs, logFrequency);
+        setInterval(getModulesStatuses, statusFrequency);
+        setInterval(getSystemStatus, statusFrequency);
+        setInterval(getDownloadableModules, statusFrequency);
+        setInterval(getMeshStatus, statusFrequency);
+        setInterval(checkForUpdates, checkUpdateFrequency);
+
+        setInterval(purgeMarkerIndices, 5000);
+
+        // force fresh reload
+        let launchLink = document.getElementById('explorer-launcher');
+        launchLink.href += "?random=" + new Date().getTime();
+    });
+
     /*
     const registerServiceWorker = async () => {
         if ("serviceWorker" in navigator) {
@@ -40,7 +67,7 @@
     </script>
 </head>
 
-<body class="dark-mode">
+<body class="dark-mode dashboard">
 
     <div>
         <div class="main-panel mx-auto p-3">
@@ -134,10 +161,9 @@
                     <a id="explorer-launcher" class="p-1" href="explorer.html"
                        target="_blank">CodeProject.AI Explorer</a>
                 </div>
-                <div class="ms-auto me-3 server-status">
-                    Server is <span id="serverStatus" class="fw-bold ms-1"></span>
-                </div>
-                <div id="version" style="cursor:pointer" onclick="checkForUpdates(true)" title="Check for updates"></div>
+				<div id="hostname" class="fw-bold ms-auto"></div>
+				<div id="serverStatus" class="fw-bold ms-1 pe-2"></div>
+                <div id="server-version" style="cursor:pointer" onclick="checkForUpdates(true)" title="Check for updates"></div>
                 <div id="colourModeToggle" onclick="toggleColourMode()" class="ms-1" style="cursor:pointer">☀️</div>
             </div>
 
@@ -163,6 +189,10 @@
                     <a href="https://www.codeproject.com/Articles/5349191/How-to-Setup-Agent-DVR-and-CodeProject-AI-Server-o" target="_blank">Agent DVR</a>,
                     <a href="https://www.codeproject.com/Articles/5345399/Setting-Up-a-Wyze-Cam-with-Blue-Iris-and-CodeProje" target="_blank">Wyze cams</a>.
                 </div>
+            </div>
+
+            <div class="card-body sub-panel p-0">
+                <div id="installNotice" class="py-2"></div>
             </div>
 
             <div class="alert alert-success" id="update" style="display:none"></div>
@@ -209,7 +239,7 @@
                                 <datalist id="steplist">
                                     <option>1</option>
                                     <option>2</option>
-                                    <option>5</option>
+                                    <option>3</option>
                                     <option>4</option>
                                     <option>5</option>
                                     <option>6</option>
@@ -220,10 +250,6 @@
                             </div>
                             <div class="small mt-1" id="latestTiming"></div>
                         </div>
-                    </div>
-
-                    <div class="card-body sub-panel p-0">
-                        <div id="installNotice" class="py-2 px-3"></div>
                     </div>
 
                     <div class="card">
@@ -261,12 +287,16 @@
                             <datalist id="steplist">
                                 <option>1</option>
                                 <option>2</option>
-                                <option>5</option>
+                                <option>3</option>
                                 <option>4</option>
                                 <option>5</option>
                                 <option>6</option>
                             </datalist>
                             <div id="verbosity-main">Info</div>
+                            <div class="ms-auto d-flex">
+                                <div class="dot dot-cycle mt-2"></div>
+                                <span>Logs with same colour are for the same request</span> 
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -292,19 +322,6 @@
                 <div class="tab-pane fade show" id="modules-panel" role="tabpanel" aria-labelledby="modules-tab">
                     <div class="card">
 
-                        <div class="card-body sub-panel p-0">
-                            <div id="availableModules" class="w-100"></div>
-                        </div>
-
-<!--
-                        <div class="form-group row my-3 mx-2">
-                            <label class="col-form-label col text-end">Upload Module</label>
-							<input class="btn-light form-control" style="width: 15rem;" id="uploadInstaller" type="file">
-						    <label class="col-form-label col text-end">Install Password</label>
-                            <input class="form-control" style="width: 8rem;" id="installPwd" type="text">
-                            <input class="form-control btn-warning ms-2" style="width: 5rem;" id="install" type="button" value="Install" onclick="uploadModule()">
-                        </div>
--->
                         <div class="d-flex justify-content-between mt-3">
                             <div class="form-check form-switch ms-4 me-auto">
                                 <input class="form-check-input" type="checkbox" id="noCache">
@@ -321,6 +338,19 @@
                                 </select>                            
                             </div>
                         </div>
+
+                        <div class="card-body sub-panel p-0">
+                            <div id="availableModules" class="w-100"></div>
+                        </div>
+<!--
+                        <div class="form-group row my-3 mx-2">
+                            <label class="col-form-label col text-end">Upload Module</label>
+							<input class="btn-light form-control" style="width: 15rem;" id="uploadInstaller" type="file">
+						    <label class="col-form-label col text-end">Install Password</label>
+                            <input class="form-control" style="width: 8rem;" id="installPwd" type="text">
+                            <input class="form-control btn-warning ms-2" style="width: 5rem;" id="install" type="button" value="Install" onclick="uploadModule()">
+                        </div>
+-->
                         <div>
                             <span class="font-weight-bold ms-3" id="moduleUpdateStatus"></span>
                         </div>

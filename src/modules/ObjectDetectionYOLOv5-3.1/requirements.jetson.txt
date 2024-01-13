@@ -22,7 +22,7 @@ Seaborn                     # Installing Seaborn, a data visualization library b
 # We need to target CUDA 10.2 for this one, but in our case we'll install these via script
 # -f https://download.pytorch.org/whl/cu102/torch_stable.html
 # torch==1.10.1+cu102         # Installing PyTorch, for Tensor computation and Deep neural networks
--f https://download.pytorch.org/whl/cu102/torch_stable.html
+# -f https://download.pytorch.org/whl/cu102/torch_stable.html
 # torchvision==0.11.2+cu102   # Installing TorchVision, for Computer Vision based AI
 
 # last line empty.

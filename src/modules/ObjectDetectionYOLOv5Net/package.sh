@@ -65,4 +65,4 @@ done
 
 # ... and create the actual module package. It's just the install scripts. All assets are in S3.
 tar -caf ${moduleId}-${version}.zip  --exclude=*.development.* --exclude=*.docker.build.* --exclude=*.log \
-    modulesettings.* install.sh install.bat  test/*
+    modulesettings.* install.sh install.bat explore.html test/*

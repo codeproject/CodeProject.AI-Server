@@ -23,6 +23,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="ALPR.py" />
+    <Content Include="explore.html" />
     <Content Include="options.py" />
     <Content Include="ALPR_adapter.py" />
     <Content Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\inference.pdiparams" />
@@ -131,6 +132,7 @@
     <Folder Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\" />
     <Folder Include="paddleocr\en_PP-OCRv3_det_infer\" />
     <Folder Include="paddleocr\en_PP-OCRv3_rec_infer\" />
+    <Folder Include="test\" />
     <Folder Include="utils\" />
     <Folder Include="patch\" />
     <Folder Include="patch\paddlepaddle-2.4.2\" />

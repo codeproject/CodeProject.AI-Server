@@ -3,7 +3,7 @@
     /// <summary>
     /// This is used by the ServerMeshMonitor to build the status of the current node.
     /// </summary>
-    public interface IMeshServerBroadcastBuilder<TStatus> where TStatus: MeshServerBroadcast, new()
+    public interface IMeshServerBroadcastBuilder<TStatus> where TStatus: MeshServerBroadcastData, new()
     {
         /// <summary>
         /// Build the current node's status

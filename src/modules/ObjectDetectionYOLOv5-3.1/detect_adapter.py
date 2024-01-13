@@ -43,14 +43,16 @@ class YOLO31_adapter(ModuleRunner):
 
         init_detect(self.opts)
 
-        self.can_use_GPU = self.hasTorchCuda or self.hasTorchMPS
+        self.can_use_GPU = self.system_info.hasTorchCuda or \
+                           self.system_info.hasTorchMPS
 
         if self.opts.use_CUDA:
             self.execution_provider = "CUDA"
         elif self.opts.use_MPS:
             self.execution_provider = "MPS"
 
-        if self.opts.use_CUDA and self.half_precision == 'enable' and not self.hasTorchHalfPrecision:
+        if self.opts.use_CUDA and self.half_precision == 'enable' and \
+           not self.system_info.hasTorchHalfPrecision:
             self.half_precision = 'disable'
 
 

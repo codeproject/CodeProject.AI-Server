@@ -530,8 +530,10 @@ shift & goto :%~1
     if /i "!requestedType!" == "SDK" (
 
         REM dotnet --version gives the SDK version, not the runtime version.
-        FOR /F "tokens=* USEBACKQ" %%F IN (`dotnet --version`) DO ( set currentDotNetVersion=%%F )
-
+        dotnet --version >NUL 2>NUL
+        if "%errorlevel%" == "0" (
+            FOR /F "tokens=* USEBACKQ" %%F IN (`dotnet --version 2^>NUL`) DO ( set currentDotNetVersion=%%F )
+        )
     ) else (
         
         REM Let's test the runtimes only, since that's all we need
@@ -539,7 +541,7 @@ shift & goto :%~1
         REM Microsoft.AspNetCore.App 7.0.11 [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]
         REM Microsoft.NETCore.App 3.1.32 [C:\Program Files\dotnet\shared\Microsoft.NETCore.App]
 
-        for /f "tokens=*" %%x in ('dotnet --list-runtimes') do (
+        for /f "tokens=*" %%x in ('dotnet --list-runtimes 2^>NUL') do (
             set line=%%x
 
             if "!line:~0,21!" == "Microsoft.NETCore.App" (
@@ -574,10 +576,24 @@ shift & goto :%~1
             call :WriteLine "Offline Installation: Unable to download and install .NET." %color_error%
         ) else (
             call :WriteLine "Current version is !currentDotNetVersion!. Installing newer version." %color_warn%
-            if /i "!requestedType!" == "SDK" (
-                winget install Microsoft.DotNet.SDK.%requestedNetMajorVersion%
+            if /i "!architecture!" == "arm64" (
+                if /i "!requestedType!" == "SDK" (
+                    powershell -NoProfile -ExecutionPolicy unrestricted -File "!sdkScriptsDirPath!\dotnet-install.ps1" --Version !requestedNetVersion!
+                ) else (
+                    powershell -NoProfile -ExecutionPolicy unrestricted  -File "!sdkScriptsDirPath!\dotnet-install.ps1" --Runtime aspnetcore --Version !requestedNetVersion!
+                )
+                if "%DOTNET_ROOT%" == "" (
+                    SET DOTNET_ROOT=%LOCALAPPDATA%\Microsoft\dotnet
+                    SETX DOTNET_ROOT %LOCALAPPDATA%\Microsoft\dotnet
+                    SET PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
+                    SETX PATH %LOCALAPPDATA%\Microsoft\dotnet;%PATH%
+                )
             ) else (
-                winget install Microsoft.DotNet.AspNetCore.%requestedNetMajorVersion%
+                if /i "!requestedType!" == "SDK" (
+                    winget install Microsoft.DotNet.SDK.!requestedNetMajorVersion!
+                ) else (
+                    winget install Microsoft.DotNet.AspNetCore.!requestedNetMajorVersion!
+                )
             )
         )
     )
@@ -913,15 +929,15 @@ shift & goto :%~1
 
                     "!venvPythonCmdPath!" -m pip show !module_name! >NUL 2>&1
                     if !errorlevel! == 0 (
-                        call :Write "(✔️ checked) " !color_info!
+                        call :Write "(checked) " !color_success!
                     ) else (
                         call :Write "(failed check) " !color_error!
                     )
                 ) else (
-                    call :Write "(not checked) " !color_mute!
+                    call :Write "(not checked) " !color_warn!
                 )
             ) else (
-                call :Write "(not checked) " !color_mute!
+                call :Write "(not checked) " !color_warn!
             )
         
             call :WriteLine "Done" %color_success%
@@ -1110,13 +1126,13 @@ shift & goto :%~1
                         if "!module_name!" neq "" (
 
                             "!venvPythonCmdPath!" -m pip show !module_name! >NUL 2>&1
-                            if errorlevel 0 (
-                                call :Write "(✔️ checked) " !color_info!
+                            if !errorlevel! == 0 (
+                                call :Write "(checked) " !color_success!
                             ) else (
                                 call :Write "(failed check) " !color_error!
                             )
                         ) else (
-                            call :Write "(not checked) " !color_mute!
+                            call :Write "(not checked) " !color_warn!
                         )
                         
                         call :WriteLine "Done" %color_success%
@@ -1569,6 +1585,58 @@ REM Thanks to https://stackoverflow.com/a/15809139/1128209
     for %%C in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do set "%~1=!%~1:%%C=.%%C!"
     exit /b
 
+:timeSince startTime duration
+
+    setlocal enableDelayedExpansion
+
+    set "startTime=%~1"
+
+    REM Clean up
+    set "startTime=!startTime: =0!"
+    set "endTime=%time: =0%"
+
+    set startTime=!startTime:,=.!
+	set endTime=!endTime:,=.!
+
+    if "!startTime!" == "" set startTime=0
+    if "!endTime!" == ""   set endTime=0
+
+    rem Convert times to integers for easier calculations
+
+    REM First we need to remove leading 0's else CMD thinks they are octal
+    REM eg "08" -> 1"08" % 100 -> 108 % 100 = 8
+    for /F "tokens=1-4 delims=:.," %%a in ("!startTime!") do (
+       set /A "start=((((1%%a %% 100)*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+    )
+    for /F "tokens=1-4 delims=:.," %%a in ("!endTime!") do ( 
+       REM If build went past midnight, add 24hrs to end time to correct time wrapping
+       IF !endTime! GTR !startTime! set /A "end=((((1%%a %% 100)*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100" 
+       IF !endTime! LSS !startTime! set /A "end=(((((1%%a %% 100)+24)*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100" 
+    )
+
+    REM echo !startTime!
+    REM echo !endTime!
+
+    rem Calculate the elapsed time 
+    set /A elapsed=end-start
+
+    rem Convert back to hr, min, sec
+    set /A hh=elapsed/(60*60*100), rest=elapsed%%(60*60*100), mm=rest/(60*100), rest%%=60*100, ss=rest/100, cc=rest%%100
+    if %hh% lss 10 set hh=0%hh%
+    if %mm% lss 10 set mm=0%mm%
+    if %ss% lss 10 set ss=0%ss%
+    if %cc% lss 10 set cc=0%cc%
+
+    REM echo !elapsed! !hh! !mm! !ss! !cc!
+
+    REM Set global value
+    EndLocal & set timeDuration=%hh%:%mm%:%ss%.%cc%
+    REM Set return param value
+    set "%~2=%timeDuration%"
+
+    rem echo !timeDuration!
+
+    exit /b
 
 :: Jump points
 

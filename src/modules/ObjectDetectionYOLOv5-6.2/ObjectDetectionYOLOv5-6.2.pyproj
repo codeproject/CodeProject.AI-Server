@@ -40,6 +40,7 @@
     <Content Include="custom-models\ipcam-dark.pt" />
     <Content Include="custom-models\ipcam-general.pt" />
     <Content Include="custom-models\license-plate.pt" />
+    <Content Include="explore.html" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />
@@ -52,7 +53,7 @@
     <Content Include="modulesettings.docker.build.arm64.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
-    <Content Include="modulesettings.orangepi.json" >
+    <Content Include="modulesettings.orangepi.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
     <Content Include="modulesettings.jetson.json">

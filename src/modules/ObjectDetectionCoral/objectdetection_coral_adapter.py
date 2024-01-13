@@ -2,7 +2,6 @@
 import os
 import sys
 import time
-import threading
 
 # Import the CodeProject.AI SDK. This will add to the PATH var for future imports
 sys.path.append("../../SDK/Python")
@@ -15,11 +14,7 @@ from options import Options
 from PIL import UnidentifiedImageError, Image
 
 # Import the method of the module we're wrapping
-from objectdetection_coral import init_detect, do_detect, reset_detector
-
 opts = Options()
-sem = threading.Semaphore()
-sem_misses = 0
 
 class CoralObjectDetector_adapter(ModuleRunner):
 
@@ -33,15 +28,29 @@ class CoralObjectDetector_adapter(ModuleRunner):
             self.queue_name = "objectdetection_queue"
 
         if self.enable_GPU:
-            self.enable_GPU = self.hasCoralTPU
+            self.enable_GPU = self.system_info.hasCoralTPU
 
         if self.enable_GPU:
             print("Edge TPU detected")
             self.execution_provider = "TPU"
 
-        device = init_detect(opts)
+        # Multi-TPU depends on pycoral.bind._pywrap which we only have if the
+        # Coral libs are installed and accessible. Test this first
+        if opts.use_multi_tpu and self.enable_GPU:
+            print("Using Multi-TPU")
+    
+            import objectdetection_coral_multitpu as odcm
+            device = odcm.init_detect(opts)
+        else:
+            if self.enable_GPU:
+                print("Using TPU")
+            else:
+                print("Using CPU")
+            import objectdetection_coral as odc
+            device = odc.init_detect(opts)
+
         if device.upper() == "TPU":
-            self.execution_provider = "TPU"
+            self.execution_provider = "Multi-TPU" if opts.use_multi_tpu else "TPU"
         else:
             self.execution_provider = "CPU"
         
@@ -83,34 +92,26 @@ class CoralObjectDetector_adapter(ModuleRunner):
 
         return { "success": result['success'], "message": "Object detection test successful" }
 
+    def cleanup(self):
+        if opts.use_multi_tpu:
+            from objectdetection_coral_multitpu import cleanup
+            cleanup()
+    
     # async 
     def do_detection(self, img: any, score_threshold: float):
         
         start_process_time = time.perf_counter()
     
+        # Multi-TPU depends on pycoral.bind._pywrap which we only have if the
+        # Coral libs are installed and accessible. Test this first
+        if opts.use_multi_tpu and self.enable_GPU:
+            from objectdetection_coral_multitpu import do_detect
+        else:
+            from objectdetection_coral import do_detect
+
         try:
-        
-            # An attempt to fix "RuntimeError: There is at least 1 reference to 
-            # internal data in the interpreter in the form of a numpy array or 
-            # slice. Be sure to only hold the function returned from tensor() if
-            # you are using raw data access.
-            if not sem.acquire(timeout=1):
-                sem_misses = sem_misses + 1
-                if sem_misses == 5:
-                    sem_misses = 0
-                    reset_detector()
 
-                return {
-                    "success"     : False,
-                    "predictions" : [],
-                    "message"     : "The interpreter is in use. Please try again later",
-                    "count"       : 0,
-                    "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
-                    "inferenceMs" : 0
-                }
-
-            result = do_detect(opts, img, score_threshold)
-            sem.release()
+            result = do_detect(opts, img, score_threshold)   
 
             if not result['success']:
                 return {

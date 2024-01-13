@@ -10,34 +10,27 @@ using SkiaSharp;
 using Yolov5Net.Scorer;
 using Yolov5Net.Scorer.Models;
 using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
 {
     /// <summary>
-    /// An Object Detection Prediction.
-    /// </summary>
-    public class DetectionPrediction : BoundingBoxPrediction
-    {
-        public string? label { get; set; }
-    }
-
-    /// <summary>
     /// An Custom Object 'List available models' Response.
     /// </summary>
-    public class BackendCustomModuleListResponse : BackendSuccessResponse
+    public class CustomModuleListResponse : ModuleResponse
     {
-        public string[]? models { get; set; }
+        public string[]? Models { get; set; }
     }
 
     /// <summary>
     /// An Object Detection Response.
     /// </summary>
-    public class BackendObjectDetectionResponse : BackendSuccessResponse
+    public class ObjectDetectionResponse : ModuleResponse
     {
-        public string? message { get; set; }
-        public int count { get; set; }
-        public DetectionPrediction[]? predictions { get; set; }
+        public string? Message { get; set; }
+        public int Count { get; set; }
+        public DetectedObject[]? Predictions { get; set; }
     }
 
     /// <summary>

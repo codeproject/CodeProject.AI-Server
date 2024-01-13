@@ -39,6 +39,7 @@
   <ItemGroup>
     <Content Include="assets\super-resolution-10.onnx" />
     <Content Include="assets\superres_epoch100-44c6958e.pth" />
+    <Content Include="explore.html" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.bat" />

@@ -6,4 +6,4 @@ moduleId=$1
 version=$2
 
 tar -caf ${moduleId}-${version}.zip --exclude=__pycache__  --exclude=*.development.* --exclude=*.log \
-    utils/* *.py modulesettings.* requirements.* install.sh
+    utils/* *.py modulesettings.* requirements.* install.sh explore.html

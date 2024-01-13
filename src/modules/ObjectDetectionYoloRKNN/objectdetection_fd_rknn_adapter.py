@@ -36,7 +36,7 @@ class FastDeploy_adapter(ModuleRunner):
             self.queue_name = "objectdetection_queue"
 
         if self.enable_GPU:
-            self.enable_GPU = self.hasFastDeployRockNPU
+            self.enable_GPU = self.system_info.hasFastDeployRockNPU
 
         if self.enable_GPU:
             print("Rockchip NPU detected")

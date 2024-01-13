@@ -1,83 +1,65 @@
 ﻿namespace CodeProject.AI.SDK.API
 {
-#pragma warning disable IDE1006 // Naming Styles
+    public class BoundingBox
+    {
+        /// <summary>
+        /// Gets or sets the lower y coordinate of the bounding box
+        /// </summary>
+        public int Y_min { get; set; }
+
+        /// <summary>
+        /// Gets or sets the lower x coordinate of the bounding box
+        /// </summary>
+        public int X_min { get; set; }
+
+        /// <summary>
+        /// Gets or sets the upper y coordinate of the bounding box
+        /// </summary>
+        public int Y_max { get; set; }
+
+        /// <summary>
+        /// Gets or sets the upper x coordinate of the bounding box
+        /// </summary>
+        public int X_max { get; set; }
+    }
 
     /// <summary>
     /// The structure for the detected face information.
     /// </summary>
-    public class DetectedFace
+    public class DetectedFace: BoundingBox
     {
         /// <summary>
         /// Gets or sets the confidence level of the face detection from 0 to 1.
         /// </summary>
-        public float confidence { get; set; }
-
-        /// <summary>
-        /// Gets or sets the top of the bounding rectangle.
-        /// </summary>
-        public int y_min { get; set; }
-
-        /// <summary>
-        /// Gets or sets the left of the bounding rectangle.
-        /// </summary>
-        public int x_min { get; set; }
-
-        /// <summary>
-        /// Gets or sets the bottom of the bounding rectangle.
-        /// </summary>
-        public int y_max { get; set; }
-
-        /// <summary>
-        /// Gets or sets the right of the bounding rectangle.
-        /// </summary>
-        public int x_max { get; set; }
+        public float Confidence { get; set; }
     }
 
     /// <summary>
     /// The structure for the detected object information.
     /// </summary>
-    public class DetectedObject
+    public class DetectedObject : BoundingBox
     {
         /// <summary>
-        /// Gets or sets the confidence level of the face detection from 0 to 1.
+        /// Gets or sets the label for the object detected
         /// </summary>
-        public float confidence { get; set; }
+        public string? Label { get; set; }
 
         /// <summary>
-        /// Gets or sets the label for the detected object.
+        /// Gets or sets the confidence in the detection response
         /// </summary>
-        public string? label { get; set; }
-
-        /// <summary>
-        /// Gets or sets the top of the bounding rectangle.
-        /// </summary>
-        public int y_min { get; set; }
-
-        /// <summary>
-        /// Gets or sets the left of the bounding rectangle.
-        /// </summary>
-        public int x_min { get; set; }
-
-        /// <summary>
-        /// Gets or sets the bottom of the bounding rectangle.
-        /// </summary>
-        public int y_max { get; set; }
-
-        /// <summary>
-        /// Gets or sets the right of the bounding rectangle.
-        /// </summary>
-        public int x_max { get; set; }
+        public float Confidence { get; set; }
     }
 
-    public class RecognizedFace
+    public class RecognizedFace : BoundingBox
     {
-        public string? userid { get; set; }
-        public float confidence { get; set; }
-        public int y_min { get; set; }
-        public int x_min { get; set; }
-        public int y_max { get; set; }
-        public int x_max { get; set; }
-    }
+        /// <summary>
+        /// Gets or sets the ID of the user whose face was detected
+        /// </summary>
+        public string? Userid { get; set; }
 
-#pragma warning restore IDE1006 // Naming Styles
+        /// <summary>
+        /// Gets or sets the confidence in the detection response
+        /// </summary>
+        public float Confidence { get; set; }
+    }
 }

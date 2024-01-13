@@ -45,7 +45,7 @@ namespace CodeProject.AI.Server.Mesh
     /// </remarks>
     /// <typeparam name="TStatus">The Type of the status data included in the HEARTBEAT message.</typeparam>
     public class BaseMeshMonitor<TStatus>
-        where TStatus: MeshServerBroadcast, new()
+        where TStatus: MeshServerBroadcastData, new()
     {
         private const string HeartBeatId           = "HEARTBEAT";
         private const string GoodByeId             = "GOODBYE";
@@ -57,14 +57,14 @@ namespace CodeProject.AI.Server.Mesh
         private UdpClient? _udpClient = null;
         
         private ApiClient? _pingClient = null;
-        private List<KnownMeshServerPingStatus> _knownServers = new();
+        private readonly List<KnownMeshServerPingStatus> _knownServers = new();
 
         // An address of this machine that is connected to the internet. It may not be the only
         // address, though
         private readonly IPAddress       _activeIPAddress = IPAddress.Any;
 
         // All addresses found on this machine.
-        private readonly List<IPAddress> _localIPAddresses = new List<IPAddress>();
+        private readonly List<IPAddress> _localIPAddresses = new();
 
         // dependencies
         private readonly IOptionsMonitor<MeshOptions> _monitoredMeshOptions;
@@ -133,7 +133,6 @@ namespace CodeProject.AI.Server.Mesh
         /// </summary>
         public TStatus MeshStatus => _statusBuilder.Build(this);
 
-
         /// <summary>
         /// Gets the IPAddress of the local machine that we know is active.
         /// </summary>
@@ -168,7 +167,7 @@ namespace CodeProject.AI.Server.Mesh
             // address because it will return the address of the network adapter that is connected
             // to the network.
             // See https://stackoverflow.com/a/42098280
-            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+            using (Socket socket = new(AddressFamily.InterNetwork, SocketType.Dgram, 0))
             {
                 socket.Connect("8.8.8.8", 65530); // IP doesn't actually need to be connected
                 IPEndPoint? endPoint = socket.LocalEndPoint as IPEndPoint;
@@ -189,7 +188,7 @@ namespace CodeProject.AI.Server.Mesh
             // If the settings change then handle this. The settings can change in two places: the
             // appsettings.*.json files in the application root, or in the serversettings.json file
             // in the persisted data folder (eg C:\ProgramData\CodeProject\AI in Windows).
-            meshConfig.OnChange((config, _) => { OnChange(config); });
+            meshConfig.OnChange(async (config, _) => { await OnChange(config); });
 
             // Start the service if it is enabled.
             if (IsEnabled)
@@ -320,9 +319,9 @@ namespace CodeProject.AI.Server.Mesh
         /// </summary>
         /// <param name="config">The mesh options</param>
         /// <param name="forceRestart">Whether or not to force the mesh monitor to restart.</param>
-        public void UpdateOptions(MeshOptions config, bool forceRestart = false)
+        public async Task UpdateOptions(MeshOptions config, bool forceRestart = false)
         {
-            OnChange(config, forceRestart);
+            await OnChange(config, forceRestart);
         }
 
         /// <summary>
@@ -376,7 +375,7 @@ namespace CodeProject.AI.Server.Mesh
             return false;
         }
 
-        private void OnChange(MeshOptions config, bool forceRestart = false)
+        private async Task OnChange(MeshOptions config, bool forceRestart = false)
         {
             // check for changes in the MeshConfig properties that require restarting the service
             bool restart = config.Enable                 != _oldMeshOptions.Enable                ||
@@ -391,10 +390,10 @@ namespace CodeProject.AI.Server.Mesh
             if (forceRestart || restart)
             {
                 _oldMeshOptions = config;
-                RestartMonitoringAsync().Wait();
+                await RestartMonitoringAsync().ConfigureAwait(false);
             }
 
-            SendHeartbeatAsync().Wait();
+            await SendHeartbeatAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -485,6 +484,8 @@ namespace CodeProject.AI.Server.Mesh
                             // to send messages to the server. For that you use the host computer's
                             // hostname. All we have is IP address (EXCEPT if we pass the host
                             // computer's name to the docker container manually)
+                            // TIP: Hostname is $HOSTNAME in linux, %COMPUTERNAME% in Windows (do not
+                            // use %LOGONSERVER% on windows because that's a different thing)
                             string callableHostname = status.Hostname;
                             if (status.Platform.EqualsIgnoreCase("Docker"))
                                 callableHostname = endPointIPAddress.ToString();
@@ -586,9 +587,9 @@ namespace CodeProject.AI.Server.Mesh
                     {
                         knownServer.LastStatusCode = response.Code;
                     }
-                    else if (response is TStatus)
+                    else if (response is TStatus theStatus)
                     {
-                        status = (TStatus)response;
+                        status = theStatus;
                         knownServer.LastStatusCode = HttpStatusCode.OK;
                     }
                     else
@@ -598,7 +599,7 @@ namespace CodeProject.AI.Server.Mesh
 
                     if (knownServer.LastStatusCode != HttpStatusCode.OK)
                     {
-                        status = (TStatus) new MeshServerBroadcast()
+                        status = (TStatus) new MeshServerBroadcastData()
                         {
                             Code              = response?.Code ?? HttpStatusCode.InternalServerError,
                             Hostname          = callableHostname,
@@ -641,7 +642,14 @@ namespace CodeProject.AI.Server.Mesh
                     }
                 }
 
-                await Task.Delay(CurrentMeshOptions.ServerPingInterval, cancellationToken);
+                try
+                {
+                    await Task.Delay(CurrentMeshOptions.ServerPingInterval, cancellationToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    // The loop will terminate if the cancellation token is cancelled.
+                }
             }
         }
 
@@ -731,7 +739,7 @@ namespace CodeProject.AI.Server.Mesh
                 // TODO: make sure the jsonString does not contain the separator character.
                 string jsonStatus = JsonSerializer.Serialize(MeshStatus, _jsonSerializerOptions);
                 string message    = $"{CurrentMeshOptions.ServiceName}{Separator}{HeartBeatId}{Separator}{jsonStatus}";
-                await BroadcastMessageAsync(message);
+                await BroadcastMessageAsync(message, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -743,20 +751,21 @@ namespace CodeProject.AI.Server.Mesh
         /// Broadcasts a GOODBYE message to other servers.
         /// </summary>
         /// <returns>A task</returns>
-        private Task BroadcastGoodbyeAsync()
+        private Task BroadcastGoodbyeAsync(CancellationToken token = default)
         {
             // TODO: make sure the jsonString does not contain the separator character.
             string jsonStatus = JsonSerializer.Serialize(MeshStatus, _jsonSerializerOptions);
             string message    = $"{CurrentMeshOptions.ServiceName}{Separator}{GoodByeId}{Separator}{jsonStatus}";
-            return BroadcastMessageAsync(message);
+            return BroadcastMessageAsync(message, token);
         }
 
         /// <summary>
         /// Broadcasts a message to other servers.
         /// </summary>
         /// <param name="message">The message to send.</param>
+        /// <param name="token">The CancellationToken</param>
         /// <returns></returns>
-        private async Task BroadcastMessageAsync(string message)
+        private async Task BroadcastMessageAsync(string message, CancellationToken token=default)
         {
             // Check if the UDP client is null here. If it is null then the service is not running
             // and we don't need, nor are able, to broadcast the message. Note that even if the
@@ -767,11 +776,14 @@ namespace CodeProject.AI.Server.Mesh
                 return;
 
             byte[] messageBytes = Encoding.ASCII.GetBytes(message);
+            var packet = new ReadOnlyMemory<byte>(messageBytes);
 
             try
             {
-                await _udpClient!.SendAsync(messageBytes, messageBytes.Length,
-                                            new IPEndPoint(IPAddress.Broadcast, CurrentMeshOptions.Port));
+                //await _udpClient!.SendAsync(messageBytes, messageBytes.Length,
+                //                            new IPEndPoint(IPAddress.Broadcast, CurrentMeshOptions.Port));
+                await _udpClient!.SendAsync(packet, new IPEndPoint(IPAddress.Broadcast, CurrentMeshOptions.Port),
+                                            token);
             }
             catch (Exception ex)
             {

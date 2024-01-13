@@ -49,12 +49,12 @@ namespace CodeProject.AI.Server
     /// <summary>
     /// The Response when requesting the list of log entries
     /// </summary>
-    public class LogListResponse : SuccessResponse
+    public class LogListResponse : ServerResponse
     {
         /// <summary>
         /// A list of log entries
         /// </summary>
-        public LogEntry[]? entries { get; set; }
+        public LogEntry[]? Entries { get; set; }
     }
     #pragma warning restore IDE1006 // Naming Styles
 }

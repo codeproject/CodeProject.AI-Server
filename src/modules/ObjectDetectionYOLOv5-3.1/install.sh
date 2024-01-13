@@ -34,63 +34,68 @@ if [ "$systemName" = "Jetson" ]; then
         ln -s /usr/lib/python${pythonVersion}/dist-packages/cv2/python-${pythonVersion}/cv2.cpython-${pyNumber}m-aarch64-linux-gnu.so "${packagesDirPath}cv2.so"
     fi
 
-    # https://qengineering.eu/install-pytorch-on-jetson-nano.html
-    installAptPackages "libfreetype6-dev python3-dev libjpeg-dev libomp-dev libopenblas-base libopenmpi-dev"
-    installPythonPackagesByName "future wheel mock pillow testresources Cython gdown"
+    # apt list opencv 2>/dev/null | grep installed >/dev/null 2>/dev/null
+    #if [ "$?" != "0" ]; then
+    #    opencv is installed
+    #fi
 
-    mkdir -p "${downloadDirPath}/${os}/packages/"
+    if [ -d "/usr/local/lib/python3.8/dist-packages/torch/" ]; then
+        writeLine "PyTorch is already installed." $color_info
+    else
+        # https://qengineering.eu/install-pytorch-on-jetson-nano.html
+        installAptPackages "libfreetype6-dev python3-dev libjpeg-dev libomp-dev libopenblas-base libopenmpi-dev"
+        installPythonPackagesByName "future wheel mock pillow testresources Cython gdown"
 
-    torch_version="1.11"
-     case "$torch_version" in
-        "1.10") 
-            torch_file="torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl"
-            torch_id="1TqC6_2cwqiYacjoLhLgrZoap6-sVL2sd"
-            vision_file="torchvision-0.11.0a0+fa347eb-cp36-cp36m-linux_aarch64.whl"
-            vision_id="1C7y6VSIBkmL2RQnVy8xF9cAnrrpJiJ-K"
-        ;;
-        "1.11") 
-            torch_file="torch-1.11.0a0+gitbc2c6ed-cp38-cp38-linux_aarch64.whl"
-            torch_id="1AQQuBS9skNk1mgZXMp0FmTIwjuxc81WY"
-            vision_file="torchvision-0.12.0a0+9b5a3fe-cp38-cp38-linux_aarch64.whl"
-            vision_id="1BaBhpAizP33SV_34-l3es9MOEFhhS1i2"
-        ;;
-        "1.12") 
-            torch_file="torch-1.12.0a0+git67ece03-cp38-cp38-linux_aarch64.whl"
-            torch_id="1MnVB7I4N8iVDAkogJO76CiQ2KRbyXH_e"
-            vision_file="torchvision-0.13.0a0+da3794e-cp38-cp38-linux_aarch64.whl"
-            vision_id="11DPKcWzLjZa5kRXRodRJ3t9md0EMydhj"
-        ;;
-        "1.13") 
-            torch_file="torch-1.13.0a0+git7c98e70-cp38-cp38-linux_aarch64.whl"
-            torch_id="1e9FDGt2zGS5C5Pms7wzHYRb0HuupngK1"
-            vision_file="torchvision-0.14.0a0+5ce4506-cp38-cp38-linux_aarch64.whl"
-            vision_id="19UbYsKHhKnyeJ12VPUwcSvoxJaX7jQZ2"
-        ;;
-    esac
+        mkdir -p "${downloadDirPath}/${os}/packages/"
 
-    # See https://github.com/Qengineering/PyTorch-Jetson-Nano for wheels
+        torch_version="1.11"
+        case "$torch_version" in
+            "1.10") 
+                torch_file="torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl"
+                torch_id="1TqC6_2cwqiYacjoLhLgrZoap6-sVL2sd"
+                vision_file="torchvision-0.11.0a0+fa347eb-cp36-cp36m-linux_aarch64.whl"
+                vision_id="1C7y6VSIBkmL2RQnVy8xF9cAnrrpJiJ-K"
+            ;;
+            "1.11") 
+                torch_file="torch-1.11.0a0+gitbc2c6ed-cp38-cp38-linux_aarch64.whl"
+                torch_id="1AQQuBS9skNk1mgZXMp0FmTIwjuxc81WY"
+                vision_file="torchvision-0.12.0a0+9b5a3fe-cp38-cp38-linux_aarch64.whl"
+                vision_id="1BaBhpAizP33SV_34-l3es9MOEFhhS1i2"
+            ;;
+            "1.12") 
+                torch_file="torch-1.12.0a0+git67ece03-cp38-cp38-linux_aarch64.whl"
+                torch_id="1MnVB7I4N8iVDAkogJO76CiQ2KRbyXH_e"
+                vision_file="torchvision-0.13.0a0+da3794e-cp38-cp38-linux_aarch64.whl"
+                vision_id="11DPKcWzLjZa5kRXRodRJ3t9md0EMydhj"
+            ;;
+            "1.13") 
+                torch_file="torch-1.13.0a0+git7c98e70-cp38-cp38-linux_aarch64.whl"
+                torch_id="1e9FDGt2zGS5C5Pms7wzHYRb0HuupngK1"
+                vision_file="torchvision-0.14.0a0+5ce4506-cp38-cp38-linux_aarch64.whl"
+                vision_id="19UbYsKHhKnyeJ12VPUwcSvoxJaX7jQZ2"
+            ;;
+        esac
 
-    "$venvPythonCmdPath" -m pip show torch >/dev/null 2>/dev/null
-    if [ $? -gt 0 ]; then
-        if [ ! -f "${downloadDirPath}/${os}/packages/${torch_file}" ]; then
-            sudo gdown https://drive.google.com/uc?id=${torch_id} -O "${downloadDirPath}/${os}/packages/"
+        # See https://github.com/Qengineering/PyTorch-Jetson-Nano for wheels
+
+        "$venvPythonCmdPath" -m pip show torch >/dev/null 2>/dev/null
+        if [ $? -gt 0 ]; then
+            if [ ! -f "${downloadDirPath}/${os}/packages/${torch_file}" ]; then
+                sudo gdown https://drive.google.com/uc?id=${torch_id} -O "${downloadDirPath}/${os}/packages/"
+            fi
+            installPythonPackagesByName "${downloadDirPath}/${os}/packages/${torch_file}" "torch"
         fi
-        installPythonPackagesByName "${downloadDirPath}/${os}/packages/${torch_file}" "torch"
-    fi
 
-    "$venvPythonCmdPath" -m pip show torchvision >/dev/null 2>/dev/null
-    if [ $? -gt 0 ]; then
-        if [ ! -f "${downloadDirPath}/${os}/packages/${vision_file}" ]; then
-            sudo gdown https://drive.google.com/uc?id=${vision_id} -O "${downloadDirPath}/${os}/packages/"
+        "$venvPythonCmdPath" -m pip show torchvision >/dev/null 2>/dev/null
+        if [ $? -gt 0 ]; then
+            if [ ! -f "${downloadDirPath}/${os}/packages/${vision_file}" ]; then
+                sudo gdown https://drive.google.com/uc?id=${vision_id} -O "${downloadDirPath}/${os}/packages/"
+            fi
+            installPythonPackagesByName "${downloadDirPath}/${os}/packages/${vision_file}" "torchvision"
         fi
-        installPythonPackagesByName "${downloadDirPath}/${os}/packages/${vision_file}" "torchvision"
+
+        installAptPackages "zlib1g-dev libpython3-dev libavcodec-dev libavformat-dev libswscale-dev"
     fi
-
-    # clean up
-    # rm "${downloadDirPath}/${os}/packages/${torch_file}"
-    # rm "${downloadDirPath}/${os}/packages/${vision_file}"
-
-    installAptPackages "zlib1g-dev libpython3-dev libavcodec-dev libavformat-dev libswscale-dev"
     
 fi
 

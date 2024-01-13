@@ -131,12 +131,12 @@ class YoloV5Trainer_adaptor(ModuleRunner):
         # determine the device to use during training
         self.default_device = "cpu"
         if ModuleOptions.enable_GPU:
-            if self.hasTorchCuda:
+            if self.system_info.hasTorchCuda:
                 self.default_device     = "0"
                 self.execution_provider = "CUDA"
-                if self.half_precision == 'enable' and not self.hasTorchHalfPrecision:
+                if self.half_precision == 'enable' and not self.system_info.hasTorchHalfPrecision:
                     self.half_precision = 'disable'
-            elif self.hasTorchMPS:
+            elif self.system_info.hasTorchMPS:
                 self.default_device     = "mps"
                 self.execution_provider = "MPS"
 
@@ -474,9 +474,9 @@ class YoloV5Trainer_adaptor(ModuleRunner):
 
         if not ModuleOptions.enable_GPU:
             device = "cpu"
-        elif self.hasTorchMPS:
+        elif self.system_info.hasTorchMPS:
             device = "mps"
-        elif self.hasTorchCuda:
+        elif self.system_info.hasTorchCuda:
             device = data.get_value("device", self.default_device)
         else:
             device = "cpu"
@@ -746,11 +746,13 @@ class YoloV5Trainer_adaptor(ModuleRunner):
         dataset_progress    = progress if is_creating_dataset else 0
 
         if self.current_action == Actions.Idle:
-            # TODO: Think of a message that relays the idea that either the module
-            # just started and is ready, or the module was restarted and is ready
-            # for you to do things like resume training.
-            # self.action_message = "This module has been restarted."
             self.action_message = "Ready"
+        elif is_creating_dataset:
+            self.action_message = "Creating dataset"
+        elif is_training:
+            self.action_message = "Training model"
+        elif self.current_action == Actions.InvalidCommand:
+            self.action_message = "Looking confused"
 
         elif not self.is_busy and self.worker_thread_aborted:
             # the background_worker was aborted with prejudice.

@@ -99,6 +99,26 @@ namespace CodeProject.AI.SDK
         public string? LicenseUrl { get; set; }
 
         /// <summary>
+        /// Gets or sets the author or authors of this module
+        /// </summary>
+        public string? Author { get; set; }
+
+        /// <summary>
+        /// Gets or sets the homepage for this module
+        /// </summary>
+        public string? Homepage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the project this module is based on
+        /// </summary>
+        public string? BasedOn { get; set; }
+
+        /// <summary>
+        /// Gets or sets the URL of the project this module is based on
+        /// </summary>
+        public string? BasedOnUrl { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether this module was pre-installed (eg Docker).
         /// If the module was preinstalled, this value is true, otherwise false.
         /// </summary>

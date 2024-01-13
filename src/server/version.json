@@ -2,13 +2,13 @@
   "versionSection": {
     "versionInfo": {
       "Major": 2,
-      "Minor": 4,
-      "Patch": 8,
+      "Minor": 5,
+      "Patch": 0,
       "Build": 0,
-      "PreRelease": "Beta",
+      "PreRelease": "RC4",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.4.8.zip",
-      "ReleaseNotes": "Added Sound Classification support"
+      "File": "CodeProject.AI-Server-win-x64-2.5.0-RC4.zip",
+      "ReleaseNotes": "Corrected issue preventing Install/Uninstall of module."
     }
   }
 }

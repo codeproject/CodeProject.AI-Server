@@ -1,9 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using CodeProject.AI.SDK.API;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+
+using CodeProject.AI.SDK.API;
+
 
 namespace CodeProject.AI.Server.Controllers
 {
@@ -33,13 +36,13 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ModuleResponseBase AddLog([FromForm] string? entry,
-                                         [FromForm] string? category,
-                                         [FromForm] string? label,
-                                         [FromForm] LogLevel? log_level)
+        public ServerResponse AddLog([FromForm] string? entry,
+                                     [FromForm] string? category,
+                                     [FromForm] string? label,
+                                     [FromForm] LogLevel? log_level)
         {
             if (entry == null)
-                return new ErrorResponse("No log entry provided");
+                return new ServerErrorResponse("No log entry provided");
 
             // We're using the .NET logger which means we don't have a huge amount of control
             // when it comes to adding extra info. We'll encode category and label info in the
@@ -68,7 +71,7 @@ namespace CodeProject.AI.Server.Controllers
                 default:                   _logger.LogInformation(msg); break;
             }
 
-            return new ModuleResponseBase
+            return new ServerResponse
             {
                 Success = true,
             };
@@ -87,7 +90,7 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ModuleResponseBase ListLogs(int? last_id, int? count)
+        public ServerResponse ListLogs(int? last_id, int? count)
         {
             if (last_id is null)
                 last_id = 0;
@@ -98,7 +101,7 @@ namespace CodeProject.AI.Server.Controllers
             List<LogEntry> entries = ServerLogger.List(last_id.Value, count.Value);
             var response = new LogListResponse()
             {
-                entries = entries.ToArray()!
+                Entries = entries.ToArray()!
             };
 
             return response;

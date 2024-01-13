@@ -1,4 +1,7 @@
 {
+    "csharp.debug.logging.moduleLoad": false,
+    // "dotnet.server.trace":"Trace",
+    
     "cSpell.words": [
         "alpr",
         "APPDIR",
@@ -24,6 +27,7 @@
         "deskew",
         "Dgram",
         "downloadables",
+        "downsampling",
         "dtype",
         "edgetpu",
         "endtimer",
@@ -46,6 +50,8 @@
         "intelligencelayer",
         "Jetson",
         "keypair",
+        "labelledby",
+        "Lanczos",
         "licence",
         "logvals",
         "memused",
@@ -62,6 +68,7 @@
         "orangepi",
         "otsu",
         "paddleocr",
+        "peasy",
         "platenumber",
         "pluralise",
         "postinst",
@@ -103,6 +110,7 @@
         "wavfile",
         "wslconfig",
         "wwwroot",
+        "xlink",
         "YOLO",
         "yolov5"
     ]

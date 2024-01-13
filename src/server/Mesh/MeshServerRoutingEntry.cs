@@ -43,7 +43,7 @@ namespace CodeProject.AI.Server.Mesh
         /// <summary>
         /// Gets or sets the status of the remote server as reported by that server
         /// </summary>
-        public MeshServerBroadcast Status { get; set; } = new();
+        public MeshServerBroadcastData Status { get; set; } = new();
 
         /// <summary>
         /// Creates a new instance of the ServiceStatus class.

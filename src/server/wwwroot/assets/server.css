@@ -15,10 +15,22 @@ a {
     color: #f90;
     text-decoration: none;
 }
+
 .nav-tabs { border:0; }
-    .nav-tabs .nav-link.active {
-        background-color: #303030;
-    }
+.explorer .nav-tabs .nav-link { padding: 0.5rem 0.5rem; }
+.nav-tabs .nav-link.active { background-color: #303030; }
+
+.hostname-label {
+    max-width: 8rem;
+    overflow: hidden;
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    /*margin-top: 0.5rem;*/
+    /*line-height: 0.8;*/
+    margin-right: 0.25rem;
+}
+
 .tab-content { border: 1px solid #444; }
 
 .logs {
@@ -88,6 +100,29 @@ a {
 .dot-14 { background-color: #53c1fc; }
 .dot-15 { background-color: #2ef8f8; }
 
+@keyframes rainbowCycle {
+    0%   {background-color: red;}
+    14%  {background-color: orange;}
+    28%  {background-color: yellow;}
+    42%  {background-color: green;}
+    57%  {background-color: rgb(0, 110, 255);}
+    71%  {background-color: rgb(137, 0, 236);}
+    85%  {background-color: violet;}
+    100% {background-color: red;}
+    /*
+    0%{
+        filter: hue-rotate(0deg);
+    }
+    100% {
+        filter: hue-rotate(360deg);
+    }
+    */
+}
+.dot-cycle {
+    background-color: rgb(25, 0, 255);
+    animation: rainbowCycle 15s infinite linear;
+}
+
 .shrouded:after {
     content: "";
     background: rgb(60 60 60 / 79%);
@@ -152,11 +187,13 @@ svg:hover .action-path { opacity: 1; }
 }
 
 .server-status {
-    max-width: 12rem;
+    max-width: 18rem;
+    /*
     overflow: hidden;
     display: inline-block;
     text-overflow: ellipsis;
     white-space: nowrap;
+    */
 }
 .server-summary, .mesh-summary {
     color: #b6b5b5;

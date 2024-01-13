@@ -187,8 +187,14 @@ namespace CodeProject.AI.Server.Modules
             {
                 // Let's make sure the front end is up and running before we start the backend 
                 // analysis services
-                await Task.Delay(TimeSpan.FromSeconds(preLaunchModuleDelaySecs), stoppingToken)
-                          .ConfigureAwait(false);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(preLaunchModuleDelaySecs), stoppingToken)
+                              .ConfigureAwait(false);
+                }
+                catch (TaskCanceledException)
+                {
+                }
 
                 foreach (var entry in _installedModules!)
                 {
@@ -214,7 +220,14 @@ namespace CodeProject.AI.Server.Modules
             if (!SystemInfo.IsDocker)
                 await _moduleInstaller.InstallInitialModules().ConfigureAwait(false);
 
-            await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
+            try
+            {
+                await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+            }
+
             await _meshMonitor.StopMonitoringAsync();
             _logger.LogInformation("ModuleRunner Stopped");
         }

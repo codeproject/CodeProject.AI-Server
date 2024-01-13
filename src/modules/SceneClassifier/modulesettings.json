@@ -3,7 +3,7 @@
 
     "SceneClassifier": {
       "Name": "Scene Classification",
-      "Version": "1.5.4",
+      "Version": "1.6.0",
 
       // Publishing info
       "Description": "Classifies an image according to one of 365 pre-trained scenes", 
@@ -11,6 +11,10 @@
       "Platforms": [ "all", "!linux", "!raspberrypi", "!jetson" ],
       "License": "Apache 2.0",
       "LicenseUrl": "http://www.apache.org/licenses/",
+      "Author": "Chris Maunder, Matthew Dennis",
+      "Homepage": "https://codeproject.com/ai",
+      "BasedOn": "Deepstack",
+      "BasedOnUrl": "https://github.com/johnolafenwa/DeepStack",
 
       // Launch instructions
       "AutoStart": true,
@@ -45,7 +49,8 @@
         { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
         { "ModuleVersion": "1.5.2", "ServerVersionRange": [ "2.3.5", "2.4.0"  ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Removing Raspberry Pi / Jetson support.", "Importance": "Minor" },
         { "ModuleVersion": "1.5.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
-        { "ModuleVersion": "1.5.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" }
+        { "ModuleVersion": "1.5.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "1.6.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
       ],
 
       "RouteMaps": [
@@ -79,26 +84,6 @@
               "Description": "The confidence in the classification in the range of 0.0 to 1.0."
             },
             {
-              "Name": "command",
-              "Type": "String",
-              "Description": "The command that was sent as part of this request. Can be detect, list, status."
-            },
-            {
-              "Name": "moduleId",
-              "Type": "String",
-              "Description": "The Id of the module that processed this request."
-            },
-            {
-              "Name": "executionProvider",
-              "Type": "String",
-              "Description": "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML."
-            },
-            {
-              "Name": "canUseGPU",
-              "Type": "Boolean",
-              "Description": "True if this module can use the current GPU if one is present."
-            },
-            {
               "Name": "inferenceMs",
               "Type": "Integer",
               "Description": "The time (ms) to perform the AI inference."
@@ -107,11 +92,6 @@
               "Name": "processMs",
               "Type": "Integer",
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
-            },
-            {
-              "Name": "analysisRoundTripMs",
-              "Type": "Integer",
-              "Description": "The time (ms) for the round trip to the analysis module and back."
             }
           ]
         }

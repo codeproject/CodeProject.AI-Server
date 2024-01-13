@@ -34,8 +34,14 @@ namespace CodeProject.AI.Server
         {
             // Let's make sure the front end is up and running before we start the version process
             // REVIEW: [Matthew] Is .ConfigureAwait(false) needed here?
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken).ConfigureAwait(false);
-
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+            }
+            
             await CheckCurrentVersionAsync().ConfigureAwait(false);
         }
 

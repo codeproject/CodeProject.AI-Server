@@ -42,7 +42,7 @@ class rembg_adapter(ModuleRunner):
         self.selftest_check_packages = False # Too messy, will fail
 
         if self.enable_GPU:
-            if self.hasONNXRuntimeGPU:
+            if self.system_info.hasONNXRuntimeGPU:
                 self.execution_provider = "ONNX"
 
     def process(self, data: RequestData) -> JSON:

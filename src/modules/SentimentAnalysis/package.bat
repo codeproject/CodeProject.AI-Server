@@ -23,7 +23,7 @@ if exist ".\bin\windows\%Configuration%\%Target%\" (        REM No idea why this
 ) else ( 
 
     tar -caf %moduleId%-%version%.zip --exclude=*.development.* ^
-        install.sh install.bat -C .\bin\%Configuration%\%Target%\ *.*
+        install.sh install.bat explore.html -C .\bin\%Configuration%\%Target%\ *.*
 
     rem Cleanup
     del /s /f /q .\bin\%Configuration%\%Target%\ >nul 2>nul

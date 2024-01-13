@@ -1,0 +1,331 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<!--
+CODEPROJECT.AI SERVER MODULE EXPLORER
+
+This page provides the means to test this module using the same infrastructure as
+the CodeProject.AI Server explorer. This page also provides the UI elements that
+the explorer will parse and use to build up the UI of the main explorer itself.
+
+RULES AND CONVENTIONS
+
+1. This page should provide sufficient functionality to test and explore this
+   module.
+
+2. This page should use the functionality in the explorer.js file so that when
+   the elements of this page are inserted into the main explorer, it all works
+   seamlessly. Specifically, you will probably use
+
+   - clearImagePreview:         Clears the image preview area.
+   - previewImage:              Displays an image in the shared image preview area and takes a
+                                input[type=file] as parameter.
+   - submitRequest:             Sends a request to the AI server.
+   - setResultsHtml:            Sets the HTML in the shared 'results' element. Parameter is the HTML
+                                to display.
+   - getProcessingMetadataHtml: Gets HTML representing the common data returned from a call to a
+                                module.
+   - displayBaseResults:        Displays the common data returned from a call to a module.
+   - showPredictionSummary:     Displays in the shared HTML results pane the list of predictions 
+                                returned from an inference operation.
+   - clearImageResult:          Clears the image result area 
+   - showResultsImageData:      Displays an image in the shared image results area using the data
+                                returned from a call to a module, and overlays bounding boxes if
+                                present in the data
+   - showResultsBoundingBoxes:  Displays bounding boxes on the shared image results area based on
+                                the boxes returned in the predictions parameter. The first param is
+                                an array of predictions returned from a computer vision operation.
+
+3. There are 3 parts of this page that will be pulled into the main explorer
+   during runtime: The HTML, the script, and the CSS. These sections are bounded by
+
+    - HTML:   START EXPLORER MARKUP / END EXPLORER MARKUP pair, each within HTML comment brackets
+    - Script: START EXPLORER SCRIPT / END EXPLORER SCRIPT pair, each as a // comment on its own line
+    - CSS:    START EXPLORER STYLE  / END EXPLORER STYLE pair, each inside /* ... */ comments
+
+   These delimiters should be on a line by themselves
+
+4. **Please provide output elements to display the results of operations** if
+   you wish to use the standard HTML / Image results elements in the main explorer
+   
+   - For HTML output, include a DIV with id 'results'
+   - For Image preview, include an IMG element with id imgPreview
+   - For image results, include an IMG with element imgPreview and a DIV with
+     id 'imageMask'.
+   - You can use a single image for both preview and results if you wish by only
+     including a imgPreview image. Make sure you have the imageMask DIV though.
+   - For Sound preview, include an AUDIO element with id 'snd' that contains a
+     SOURCE tag
+
+5. When this file is parsed and injected into the larger explorer, the HTML is
+   injected first, then the script, then the CSS.
+
+6. **To ensure uniqueness of elements** you can include the _MID_ macro in any
+   name. This will be expanded to be [ModuleId]_ where [ModuleId] is the literal
+   ID of this module. For instance <div id="_MID_TextBox"> becomes <div id="MyModuleId_TextBox">
+-->
+<head>
+    <meta charset="utf-8" />
+    <title>Face Processing Module Test</title>
+
+    <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
+    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
+
+    <style>
+/* START EXPLORER STYLE */
+/* END EXPLORER STYLE */
+    </style>
+
+</head>
+<body class="dark-mode">
+<div class="mx-auto" style="max-width: 800px;">
+    <h2 class="mb-3">Face Processing Module Test</h2>
+    <form method="post" action="" enctype="multipart/form-data" id="myform">
+
+<!-- START EXPLORER MARKUP -->
+    <h4>Face Detection</h4>
+    <div class="form-group row">
+        <label class="col-form-label col-2">Image</label>
+        <input class="col form-control btn-light" id="_MID_face_image" type="file" style="width:17rem"
+                onchange="return previewImage(this)" />
+        <input class="form-control btn-success" type="button" value="Detect Faces"
+                style="width:11rem" id="_MID_face"
+                onclick="_MID_onDetectFaces(_MID_face_image)" />
+    </div>
+								
+    <h4 class="mt-5">Face Comparison</h4>
+    <div class="d-flex align-items-center">
+        <div class="w-75">
+            <div class="form-group row">
+                <label class="col-form-label col-3">Image 1</label>
+                <input class="col form-control btn-light" id="_MID_face1" type="file" onchange="return previewImage(this)" />
+            </div>
+            <div class="form-group row">
+                <label class="col-form-label col-3">Image 2</label>
+                <input class="col form-control btn-light" id="_MID_face2" type="file" onchange="return previewImage(this)" />
+            </div>
+        </div>
+        <div style="width:10rem" class="text-end">
+            <input type="button" value="Compare" class="btn btn-success" onclick="_MID_onCompareFaces(_MID_face1, _MID_face2)" />
+        </div>
+    </div>
+
+    <h4 class="mt-5">Face Registration</h4>
+    <div class="form-group row">
+        <label class="col-form-label col-4">1. Person's name</label>
+        <input class="form-control" style="width:12rem" id="_MID_userId" type="text"
+                placeholder="Enter name" />
+    </div>
+    <div class="form-group row my-3">
+        <label class="col-form-label col-4">2. Select images</label>
+        <input class="btn-light col form-control" style="width:8rem" id="_MID_faces" multiple="multiple" type="file" />
+    </div>
+    <div class="form-group row">
+        <label class="col-form-label col-4">3. Final step</label>
+        <input class="form-control btn-success" style="width:12rem;" id="_MID_register" type="button"
+                value="Register Faces" onclick="_MID_onRegisterFaces(_MID_userId.value, _MID_faces)" />
+    </div>
+    <div class="mt-4 text-center">
+        <input style="width:12rem" id="_MID_listfaces" type="button" class="btn btn-primary ml-3"
+                value="List Registered Faces" onclick="_MID_onListRegisteredFaces()" />
+        <input style="width:12rem;" class="btn btn-danger" id="_MID_deleteFaces" type="button"
+                value="Delete Person's Images" onclick="_MID_onDeleteFace(_MID_userId.value)" />
+    </div>
+
+    <h4 class="mt-5">Face Recognition</h4>
+    <div class="form-group row">
+        <label class="col-form-label col-2">Image</label>
+        <input class="col form-control btn-light" id="_MID_faceInput" type="file" style="width:17rem"
+                onchange="return previewImage(this)" />
+        <input class="form-control btn-success" type="button" value="Recognise" style="width:7rem"
+                id="_MID_recognise" onclick="_MID_onRecogniseFace(_MID_faceInput, _MID_minRecogConfidence.value)" />
+    </div>
+    <div class="form-group row mt-1">
+        <label class="col-7 col-form-label text-end">Minimum Recognition Confidence</label>
+        <input class="form-control" value="0.6" id="_MID_minRecogConfidence" type="text"
+                style="width:5rem" />
+    </div>
+<!-- END EXPLORER MARKUP -->
+
+        <div class="w-100 position-relative form-control my-4 p-0">
+            <div id="imgMask" class="position-absolute"
+                    style="left:0;top:0;pointer-events:none;z-index:10"></div>
+            <img src="" id="imgPreview" class="w-100" style="height:250px;visibility:hidden">
+        </div>
+        <div>
+            <h2>Results</h2>
+            <div id="results" name="results" class="bg-light p-3" style="min-height: 100px;"></div>
+        </div>
+
+    </form>
+
+    <script type="text/javascript">
+// START EXPLORER SCRIPT
+		function _MID_onDetectFaces(fileChooser) {
+
+			clearImagePreview();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for face detection");
+				return;
+			}
+
+			showPreviewImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
+
+			setResultsHtml("Detecting faces...");
+			submitRequest('vision', 'face', images, null, function (data) {
+				showResultsBoundingBoxes(data.predictions);
+				showPredictionSummary(data)
+			});
+		}
+
+
+		function _MID_onCompareFaces(face1Ctrl, face2Ctrl) {
+
+			clearImagePreview();
+
+			if (face1Ctrl.files.length == 0 || face2Ctrl.files.length == 0) {
+				alert("Please supply two faces for face comparison");
+				return;
+			}
+
+			showPreviewImage(face1Ctrl.files[0]);
+			let images = [face1Ctrl.files[0], face2Ctrl.files[0]];
+
+			setResultsHtml("Comparing faces...");
+			submitRequest('vision', 'face/match', images, null, function (data) {
+				_MID_displayMatchResults(data);
+			});
+		}
+
+		function _MID_onRegisterFaces(userId, faceCtrl) {
+
+			clearImagePreview();
+
+			if (faceCtrl.files.length == 0) {
+				alert("No files were selected for face registration");
+				return;
+			}
+
+			if (!userId) {
+				alert("No name supplied");
+				return;
+			}
+
+			showPreviewImage(faceCtrl.files[0]);
+
+			let images = [];
+			for (let i = 0; i < faceCtrl.files.length; i++)
+				images.push(faceCtrl.files[i]);
+
+			setResultsHtml("Registering face...");
+			submitRequest('vision', 'face/register', images, [["userid", userId]], function (data) {
+				if (data)
+					displayBaseResults(data);
+				else
+					setResultsHtml("Unable to register faces");
+			});
+		}
+
+		function _MID_onListRegisteredFaces() {
+
+			clearImagePreview();
+
+			setResultsHtml("Listing faces...");
+			submitRequest('vision', 'face/list', null, null, function (data) {
+				_MID_displayRegisteredFaces(data)
+			});
+		}
+
+		function _MID_onDeleteFace(userId) {
+
+			clearImagePreview();
+
+			setResultsHtml("Deleting face info...");
+			submitRequest('vision', 'face/delete', null, [["userid", userId]], function (data) {
+				setResultsHtml("Face deleted");
+			});
+		}
+
+		function _MID_onRecogniseFace(fileChooser, minimumConfidence) {
+
+			clearImagePreview();
+
+			if (fileChooser.files.length == 0) {
+				alert("No file was selected for face recognition");
+				return;
+			}
+
+			showPreviewImage(fileChooser.files[0]);
+			let images = [fileChooser.files[0]];
+
+			let params = []
+			let minConfidence = parseFloat(minimumConfidence);
+			if (!isNaN(minConfidence))
+				params = [["min_confidence", minConfidence]]
+
+			setResultsHtml("Recognizing face...");
+			submitRequest('vision', 'face/recognize', images, params, function (data) {
+				showResultsBoundingBoxes(data.predictions);
+				_MID_displayRecognitionResults(data)
+			});
+		}
+
+		function _MID_displayRecognitionResults(data) {
+
+			if (!(data.predictions && data.predictions.length > 0)) {
+				setResultsHtml("No recognitions returned");
+				return;
+			}
+
+			// Sort descending
+			data.predictions.sort(function (a, b) {
+				return b.confidence - a.confidence;
+			});
+
+			let html = "<table style='width:100%'><tr><th>#</th><th>Name</th><th>Confidence</th></tr>";
+			for (let i = 0; i < data.predictions.length; i++) {
+				let recog = data.predictions[i];
+				html += "<tr><td>" + i + "</td><td>" + (recog.userid || "Face")
+					+ "</td><td>" + confidence(recog.confidence) + "</td></tr>";
+			}
+			html += "</table>";
+
+			html += getProcessingMetadataHtml(data);
+
+			setResultsHtml(html);
+		}
+
+		function _MID_displayMatchResults(match) {
+
+			if (!match) {
+				setResultsHtml("No matches returned");
+				return;
+			}
+
+			let html = "Match: " + confidence(match.similarity);
+
+			html += getProcessingMetadataHtml(match);
+
+			setResultsHtml(html);
+		}
+
+		function _MID_displayRegisteredFaces(data) {
+
+			if (!data || data.faces == null || data.faces.length <= 0) {
+				setResultsHtml("No faces registered");
+				return;
+			}
+
+			let html = "";
+			for (let name of data.faces)
+				html += name + "<br>";
+
+			setResultsHtml(html);
+		}
+// END EXPLORER SCRIPT
+    </script>
+</div>
+</body>
+</html>

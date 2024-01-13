@@ -31,7 +31,7 @@ namespace CodeProject.AI.Server
             var sample = new StringBuilder("```javascript\n");
 
             bool hasFileInput  = routeInfo.Inputs?.Any(input => input.Type.ToLower() == "file") == true;
-            bool hasFileOutput = routeInfo.Outputs?.Any(output => output.Type.ToLower() == "file") == true;
+            bool hasFileOutput = routeInfo.ReturnedOutputs?.Any(output => output.Type.ToLower() == "file") == true;
 
             if (routeInfo.Inputs?.Length > 0)
             {
@@ -71,10 +71,10 @@ namespace CodeProject.AI.Server
             sample.AppendLine("           if (response.ok) {");
             sample.AppendLine("               response.json().then(data => {");
 
-            if (routeInfo.Outputs is not null)
+            if (routeInfo.ReturnedOutputs is not null)
             {
                 int imgCount = 1;
-                foreach (RouteParameterInfo output in routeInfo.Outputs)
+                foreach (RouteParameterInfo output in routeInfo.ReturnedOutputs)
                 {
                     if (output.Type.ToLower() == "base64imagedata")
                     {

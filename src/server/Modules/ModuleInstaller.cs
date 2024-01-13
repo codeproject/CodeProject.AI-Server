@@ -197,11 +197,16 @@ namespace CodeProject.AI.Server.Modules
                 ModuleId       = module.ModuleId,
                 Name           = module.Name,
                 Version        = module.Version,
+                Platforms      = module.Platforms,
+                Category       = module.Category,
 
                 Description    = module.Description,                
-                Platforms      = module.Platforms,
                 License        = module.License,
                 LicenseUrl     = module.LicenseUrl,
+                Author         = module.Author,
+                Homepage       = module.Homepage,
+                BasedOn        = module.BasedOn,
+                BasedOnUrl     = module.BasedOnUrl,
 
                 PreInstalled   = module.PreInstalled,
                 ModuleReleases = module.ModuleReleases

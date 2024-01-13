@@ -3,7 +3,7 @@
 
     "TrainingObjectDetectionYOLOv5": {
       "Name": "Training for YoloV5 6.2",
-      "Version": "1.4.6",
+      "Version": "1.5.0",
 
       // Publishing info
       "Description": "Train custom models for YOLOv5 v6.2 with support for CPUs, CUDA enabled GPUs, and Apple Silicon.", 
@@ -11,6 +11,10 @@
       "Platforms": [ "all", "!raspberrypi", "!orangepi", "!jetson"],
       "License": "GPL-3.0",
       "LicenseUrl": "https://opensource.org/licenses/GPL-3.0",
+      "Author": "Matthew Dennis",
+      "Homepage": "https://codeproject.com/ai",
+      "BasedOn": "Ultralytics YOLOv5",
+      "BasedOnUrl": "https://github.com/ultralytics/yolov5",
 
       // Launch instructions
       "AutoStart": false,
@@ -40,7 +44,8 @@
         { "ModuleVersion": "1.4.3", "ServerVersionRange": [ "2.4.0",  "2.4.0"  ], "ReleaseDate": "2023-12-04", "ReleaseNotes": "Mesh support and a new module Id" },
         { "ModuleVersion": "1.4.4", "ServerVersionRange": [ "2.4.1",  "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
         { "ModuleVersion": "1.4.5", "ServerVersionRange": [ "2.4.2", ""        ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
-        { "ModuleVersion": "1.4.6", "ServerVersionRange": [ "2.4.2", ""        ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Bug fixes" }
+        { "ModuleVersion": "1.4.6", "ServerVersionRange": [ "2.4.2", ""        ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Bug fixes" },
+        { "ModuleVersion": "1.5.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
      ],
 
       "EnvironmentVariables": {
@@ -87,7 +92,7 @@
             {
               "Name": "success",
               "Type": "Boolean",
-              "Description": "True if training started."
+              "Description": "True if creating a dataset started."
             }
           ]
         },
@@ -184,6 +189,7 @@
               "Type": "String",
               "Description": "The name of the dataset used."
             },
+
             // Idle - initial startup state
             // CreatingDataset
             // TrainingModel
@@ -193,6 +199,7 @@
               "Type": "String",
               "Description": "The current action."
             },
+
             // Initializing
             // Running
             // Completed
@@ -209,6 +216,7 @@
               "Type": "String",
               "Description": "Any message, probably error, to display to the user."
             },
+            
             {
               "Name": "progress",
               "Type": "float",

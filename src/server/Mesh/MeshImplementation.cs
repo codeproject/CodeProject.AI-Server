@@ -19,7 +19,7 @@ namespace CodeProject.AI.Server.Mesh
     /// <summary>
     /// The Mesh for the Servers.
     /// </summary>
-    public class MeshMonitor : BaseMeshMonitor<MeshServerBroadcast>
+    public class MeshMonitor : BaseMeshMonitor<MeshServerBroadcastData>
     {
         /// <summary>
         /// Creates a new instance of the Mesh class.
@@ -41,7 +41,7 @@ namespace CodeProject.AI.Server.Mesh
     /// <remarks>
     /// The 'Build' method is abstracted using an interface to allow easier mocking and testing
     /// </remarks>
-    public class MeshServerBroadcastBuilder : IMeshServerBroadcastBuilder<MeshServerBroadcast>
+    public class MeshServerBroadcastBuilder : IMeshServerBroadcastBuilder<MeshServerBroadcastData>
     {
         private readonly ModuleCollection             _modules;
         private readonly ModuleProcessServices        _processServices;
@@ -65,18 +65,15 @@ namespace CodeProject.AI.Server.Mesh
         /// <summary>
         /// Build the current node's broadcast package for mesh availability announcements
         /// </summary>
-        /// <returns>A <see cref="MeshServerBroadcast"/> object</returns>
+        /// <returns>A <see cref="MeshServerBroadcastData"/> object</returns>
         /// <remarks>
         /// REVIEW: [Matthew] This still has a huge code smell to me. We have machinery in place
         ///                   that requires a generic IMeshNodeStatusBuilder to implement a Build()
         ///                   method for each ServerMeshStatus that could be used. I can understand
         ///                   having a mock method that populates a ServerMeshStatus, but I can't
         ///                   understand a scenario where we would want a *different* ServerMeshStatus.
-        ///                   Surely a virtual BaseMeshMonitor.Build method would allow a
-        ///                   ServerMeshStatus object to be populated with test data and would remove
-        ///                   a fair whack of code.
         ///</remarks>
-        public MeshServerBroadcast Build(BaseMeshMonitor<MeshServerBroadcast> meshMonitor)
+        public MeshServerBroadcastData Build(BaseMeshMonitor<MeshServerBroadcastData> meshMonitor)
         {
             // Get the running modules
             IOrderedEnumerable<string?> runningModulesIds = _processServices
@@ -122,7 +119,7 @@ namespace CodeProject.AI.Server.Mesh
             MeshOptions meshOptions = _monitoredMeshOptions.CurrentValue;
 
             // Now build.
-            return new MeshServerBroadcast
+            return new MeshServerBroadcastData
             {
                 Hostname                = SystemInfo.MachineName,
                 SystemDescription       = systemDescription,

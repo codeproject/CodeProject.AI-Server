@@ -4,21 +4,12 @@ using CodeProject.AI.SDK.API;
 namespace CodeProject.AI.Server.Mesh
 {
     /// <summary>
-    /// Information sent by a server as part of the mesh broadcast to announce its availability in
-    /// the mesh. This info is also returned as part of a ping to a server if broadcasting isn't
+    /// The data sent by a server as part of the mesh broadcast to announce its availability in
+    /// the mesh. This data is also returned as part of a ping to a server if broadcasting isn't
     /// possible due to network reasons.
     /// </summary>
-    public class MeshServerBroadcast: ServerResponse
+    public class MeshServerBroadcastData: ServerResponse
     {
-        /// <summary>
-        /// Gets or sets the hostname by which the machine that sent this status refers to itself.
-        /// This could be different to the hostname one uses to call this server. For example, a
-        /// server in a Docker container has a hostname (machine name) as one thing (often a GUID),
-        /// but that server would be addressed by the hostname of the host machine running the
-        /// container.
-        /// </summary>
-        public string Hostname { get; set; } = string.Empty;
-
         /// <summary>
         /// Gets or sets the name of the system under which this instance is running (eg docker,
         /// windows, WSL)

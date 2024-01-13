@@ -65,7 +65,7 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> UploadModule()
+        public async Task<ServerResponse> UploadModule()
         {
             try // if there are no Form values, then Request.Form throws.
             {
@@ -83,9 +83,9 @@ namespace CodeProject.AI.Server.Controllers
                 if (password is null || password != _moduleOptions.InstallPassword)
                     return CreateErrorResponse("The supplied module upload password was incorrect. Not proceeding.");
 
-                string tempName      = Guid.NewGuid().ToString();
-                string downloadDirPath  = _moduleSettings.DownloadedModulePackagesDirPath 
-                                     + Path.DirectorySeparatorChar + tempName + ".zip";
+                string tempName        = Guid.NewGuid().ToString();
+                string downloadDirPath = _moduleSettings.DownloadedModulePackagesDirPath 
+                                       + Path.DirectorySeparatorChar + tempName + ".zip";
 
                 using (Stream fileStream = new FileStream(downloadDirPath, FileMode.Create, FileAccess.Write))
                 {
@@ -96,7 +96,7 @@ namespace CodeProject.AI.Server.Controllers
                 (bool success, string error) = await _moduleInstaller.InstallModuleAsync(downloadDirPath, null)
                                                                      .ConfigureAwait(false);
     
-                return success? new SuccessResponse() : CreateErrorResponse("Unable install module: " + error);
+                return success? new ServerResponse() : CreateErrorResponse("Unable install module: " + error);
             }
             catch (Exception ex)
             {
@@ -109,15 +109,16 @@ namespace CodeProject.AI.Server.Controllers
         /// Allows for a client to list the installed backend analysis services. This may include
         /// modules that can't be downloaded. They will be marked appropriately.
         /// </summary>
-        /// <returns>A ResponseBase object.</returns>
+        /// <returns>A ResponseBase object containing a list of <see cref="ModuleDescription"/> 
+        /// objects.</returns>
         [HttpGet("list/installed", Name = "ListInstalledModules")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> ListInstalledModules()
+        public async Task<ServerResponse> ListInstalledModules()
         {
             if (_installedModules?.Count is null || _installedModules.Count == 0)
-                return CreateErrorResponse("No backend modules have been registered");
+                return CreateErrorResponse("No backend modules have been registered yet");
 
             string currentServerVersion = _versionConfig.VersionInfo!.Version;
 
@@ -131,34 +132,65 @@ namespace CodeProject.AI.Server.Controllers
             // Mark those modules that can't be downloaded
             List<ModuleDescription> downloadables = await _moduleInstaller.GetInstallableModules()
                                                                           .ConfigureAwait(false);
-            foreach (ModuleDescription module in modules)
+            foreach (ModuleBase module in modules)
             {
+                if (module is null || module is not ModuleDescription)
+                    continue;
+
                 if (!downloadables.Any(download => download.ModuleId == module.ModuleId))
-                    module.IsDownloadable = false;                
+                    (module as ModuleDescription)!.IsDownloadable = false;                
             }
 
-            return new ModuleListResponse
+            return new ModuleListInstallableResponse
             {
                 Modules = modules
             };
         }
 
         /// <summary>
+        /// Allows for a client to list the configurations of the installed backend analysis
+        /// services. This differs from listing modules that can be downloaded in that this list is
+        /// about the configuration of each module, not the download / release status. This list may
+        /// include modules that can't be downloaded.
+        /// </summary>
+        /// <returns>A ResponseBase object containing a list of <see cref="ModuleConfig"/> 
+        /// objects.</returns>
+        [HttpGet("list/running", Name = "ListInstalledModulesConfig")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public ServerResponse ListRunningModulesConfig()
+        {
+            if (_installedModules?.Count is null || _installedModules.Count == 0)
+                return CreateErrorResponse("No backend modules have been registered yet");
+
+            var statuses = _moduleProcessService.ListProcessStatuses();
+            var modules  = _installedModules?.Values
+                                             .Where(m => statuses.Any(s => s.ModuleId == m.ModuleId &&
+                                                                           s.Status == ProcessStatusType.Started));
+
+            return new ModuleListConfigResponse
+            {
+                Modules = modules?.ToList() ?? new List<ModuleConfig>()
+            };
+        }
+
+        /// <summary>
         /// Allows for a client to list of backend analysis modules available for download
         /// </summary>
-        /// <returns>A ResponseBase object.</returns>
+        /// <returns>A ResponseBase object containing a list of <see cref="ModuleDescription"/> 
+        /// objects.</returns>
         [HttpGet("list/available", Name = "ListAvailableModules")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> ListAvailableModules()
+        public async Task<ServerResponse> ListAvailableModules()
         {
             List<ModuleDescription> moduleList = await _moduleInstaller.GetInstallableModules()
                                                                        .ConfigureAwait(false);
-
-            return new ModuleListResponse()
+            return new ModuleListInstallableResponse()
             {
-                Modules = moduleList!
+                Modules = moduleList
             };
         }
 
@@ -166,12 +198,13 @@ namespace CodeProject.AI.Server.Controllers
         /// Allows for a client to list the installed backend analysis modules as well as the
         /// modules that can be downloaded and installed.
         /// </summary>
-        /// <returns>A ResponseBase object.</returns>
+        /// <returns>A ResponseBase object containing a list of <see cref="ModuleDescription"/> 
+        /// objects.</returns>
         [HttpGet("list", Name = "ListAllModules")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> ListAllModules()
+        public async Task<ServerResponse> ListAllModules()
         {
             List<ModuleDescription> installableModules = await _moduleInstaller.GetInstallableModules()
                                                                                .ConfigureAwait(false) 
@@ -202,9 +235,9 @@ namespace CodeProject.AI.Server.Controllers
                 }
             };
 
-            return new ModuleListResponse()
+            return new ModuleListInstallableResponse()
             {
-                Modules = installableModules!
+                Modules = installableModules
             };
         }
 
@@ -216,7 +249,7 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ModuleResponseBase ListModulesStatus()
+        public ServerResponse ListModulesStatus()
         {
             // Get the statuses
             var statuses = _moduleProcessService.ListProcessStatuses();
@@ -234,17 +267,18 @@ namespace CodeProject.AI.Server.Controllers
         /// Allows for a client to get a list of the HTML (and Javascript/CSS) that a module has
         /// provided for the AI Explorer. This javascript is injected into the explorer at runtime.
         /// </summary>
-        /// <returns>A ResponseBase object.</returns>
+        /// <returns>A ResponseBase object containing a list of <see cref="ModuleExplorerUIResponse"/> 
+        /// objects.</returns>
         [HttpGet("list/explorer-html", Name = "Get Module Html inclusions")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ModuleResponseBase GetModulesExplorerUI()
+        public ServerResponse GetModulesExplorerUI()
         {
             var insertions = new List<ExplorerUI>(_installedModules.Count);
             foreach (var module in _installedModules.Values)
             {
-                ExplorerUI? ui = module.GetExplorerUI();
+                ExplorerUI? ui = module.ExplorerUI;
                 if (ui is not null && !ui.IsEmpty)
                     insertions.Add(ui);
             }
@@ -270,15 +304,15 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> InstallModuleAsync(string moduleId, string version,
-                                                                 [FromQuery] bool noCache = false, 
-                                                                 [FromQuery] LogVerbosity verbosity = LogVerbosity.Quiet)
+        public async Task<ServerResponse> InstallModuleAsync(string moduleId, string version,
+                                                             [FromQuery] bool noCache = false, 
+                                                             [FromQuery] LogVerbosity verbosity = LogVerbosity.Quiet)
         {
             var downloadTask = _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version,
                                                                               noCache, verbosity);
             (bool success, string error) = await downloadTask.ConfigureAwait(false);
             
-            return success? new SuccessResponse() : CreateErrorResponse(error);
+            return success? new ServerResponse() : CreateErrorResponse(error);
         }
 
         /// <summary>
@@ -289,12 +323,12 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> UninstallModuleAsync(string moduleId)
+        public async Task<ServerResponse> UninstallModuleAsync(string moduleId)
         {
             (bool success, string error) = await _moduleInstaller.UninstallModuleAsync(moduleId)
                                                                  .ConfigureAwait(false);
             
-            return success? new SuccessResponse() : CreateErrorResponse(error);
+            return success? new ServerResponse() : CreateErrorResponse(error);
         }
 
         /// <summary>
@@ -306,17 +340,17 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ModuleResponseBase> GetInstallLogsAsync(string moduleId)
+        public async Task<ServerDataResponse<string>> GetInstallLogsAsync(string moduleId)
         {
             string? logs = await _moduleInstaller.GetInstallationSummary(moduleId)
                                                  .ConfigureAwait(false);
-            return new ModuleResponse<string>() { Data = logs };
+            return new ServerDataResponse<string>() { Data = logs };
             
             /*
             // We should return an explanation if we can't return the install logs
             if (string.IsNullOrEmpty(error))
             {
-                return new ModuleResponse<string>()
+                return new ServerDataResponse<string>()
                 {
                     data = logs
                 };
@@ -326,10 +360,10 @@ namespace CodeProject.AI.Server.Controllers
             */
         }
 
-        private ErrorResponse CreateErrorResponse(string message)
+        private ServerErrorResponse CreateErrorResponse(string message)
         {
             _logger.LogError(message);
-            return new ErrorResponse(message);
+            return new ServerErrorResponse(message);
         }
     }
 }

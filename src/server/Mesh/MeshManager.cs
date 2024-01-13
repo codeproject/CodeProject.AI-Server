@@ -188,8 +188,8 @@ namespace CodeProject.AI.Server.Mesh
         /// <summary>
         /// Gets the current mesh status
         /// </summary>
-        /// <returns>A <see cref="MeshServerBroadcast" /> object</returns>
-        public MeshServerBroadcast GetMeshServerBroadcast()
+        /// <returns>A <see cref="MeshServerBroadcastData" /> object</returns>
+        public MeshServerBroadcastData GetMeshServerBroadcastData()
         {
             return _meshMonitor.MeshStatus;
         }
@@ -370,16 +370,16 @@ namespace CodeProject.AI.Server.Mesh
         /// retrieved from _meshOptions.CurrentValue.</param>
         /// <param name="forceRestart">Whether or not to force the mesh monitor to restart.</param>
         /// <returns>A bool Task</returns>
-        private Task<bool> UpdateMeshConfigSettings(MeshOptions options, bool forceRestart = false)
+        private async Task<bool> UpdateMeshConfigSettings(MeshOptions options, bool forceRestart = false)
         {
             if (SystemInfo.IsLinux)
             {
                 // We need to manually kick the update for Linux since we're not watching for file
                 // changes.
-                _meshMonitor.UpdateOptions(options, forceRestart);
+                await _meshMonitor.UpdateOptions(options, forceRestart);
             }
 
-            return _optionsJsonWriter.SaveSettingsAsync(options);
+            return await _optionsJsonWriter.SaveSettingsAsync(options);
         }
     }
 }

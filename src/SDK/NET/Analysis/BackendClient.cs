@@ -108,7 +108,13 @@ namespace CodeProject.AI.SDK
                 if (!token.IsCancellationRequested && _errorPauseSecs > 0)
                 {
                     Console.WriteLine($"Pausing on error for {_errorPauseSecs} secs.");
-                    await Task.Delay(_errorPauseSecs * 1_000, token).ConfigureAwait(false);
+                    try
+                    {
+                        await Task.Delay(_errorPauseSecs * 1_000, token).ConfigureAwait(false);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                    }
                 }
             }
 

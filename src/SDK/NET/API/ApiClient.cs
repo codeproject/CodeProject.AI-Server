@@ -113,8 +113,8 @@ namespace CodeProject.AI.API
         /// <summary>
         /// Ping the server's health status
         /// </summary>
-        /// <returns>A SuccessResponse object</returns>
-        public async Task<ModuleResponseBase> Ping()
+        /// <returns>A <see cref="ServerResponse"/> object</returns>
+        public async Task<ServerResponse> Ping()
         {
             return await GetAsync("server/status/ping");
         }
@@ -123,29 +123,29 @@ namespace CodeProject.AI.API
         /// Make a call to the server via the given route
         /// </summary>
         /// <param name="route">The route</param>
-        /// <returns>A SuccessResponse object</returns>
-        public async Task<ModuleResponseBase> GetAsync(string route)
+        /// <returns>A <see cref="ServerResponse"/> object</returns>
+        public async Task<ServerResponse> GetAsync(string route)
         {
-            ModuleResponseBase? response = null;
+            ServerResponse? response = null;
             try
             {
                 using HttpResponseMessage? httpResponse = await Client.GetAsync(GetUri(route))
                                                                       .ConfigureAwait(false);
                 if (httpResponse?.IsSuccessStatusCode ?? false)
                 {
-                    response = await httpResponse.Content.ReadFromJsonAsync<SuccessResponse>()
+                    response = await httpResponse.Content.ReadFromJsonAsync<ServerResponse>()
                                                          .ConfigureAwait(false);
                     if (response is null)
-                        response = new ErrorResponse("No valid content returned from the server");
+                        response = new ServerErrorResponse("No valid content returned from the server");
                     else
                         response.Code = httpResponse.StatusCode;
                 }
                 else
-                    response = new ErrorResponse("Failed to get a valid response from the server");
+                    response = new ServerErrorResponse("Failed to get a valid response from the server");
             }
             catch (Exception ex)
             {
-                response = new ErrorResponse(ex.Message);
+                response = new ServerErrorResponse(ex.Message);
             }
 
             return response;
@@ -155,7 +155,7 @@ namespace CodeProject.AI.API
         /// Make a GET call to the server via the given route
         /// </summary>
         /// <param name="route">The route</param>
-        /// <returns>A SuccessResponse object</returns>
+        /// <returns>A <see cref="ServerResponse"/> object</returns>
         public async Task<ServerResponse> GetAsync<T>(string route)
             where T : ServerResponse
         {
@@ -169,16 +169,16 @@ namespace CodeProject.AI.API
                     response = await httpResponse.Content.ReadFromJsonAsync<T>()
                                                          .ConfigureAwait(false);
                     if (response is null)
-                        response = new ErrorResponse("No valid content returned from the server");
+                        response = new ServerErrorResponse("No valid content returned from the server");
                     else
                         response.Code = httpResponse.StatusCode;
                 }
                 else
-                    response = new ErrorResponse("Failed to get a valid response from the server");
+                    response = new ServerErrorResponse("Failed to get a valid response from the server");
             }
             catch (Exception ex)
             {
-                response = new ErrorResponse(ex.Message);
+                response = new ServerErrorResponse(ex.Message);
             }
 
             return response;
@@ -188,7 +188,7 @@ namespace CodeProject.AI.API
         /// Make a POST call to the server via the given route
         /// </summary>
         /// <param name="route">The route</param>
-        /// <returns>A SuccessResponse object</returns>
+        /// <returns>A <see cref="ServerResponse"/> object</returns>
         public async Task<ServerResponse> PostAsync<T>(string route, ServerRequestContent? content = null) 
             where T : ServerResponse
         {
@@ -203,16 +203,16 @@ namespace CodeProject.AI.API
                     response = await httpResponse.Content.ReadFromJsonAsync<T>()
                                                          .ConfigureAwait(false);
                     if (response is null)
-                        response = new ErrorResponse("No valid content returned from the server");
+                        response = new ServerErrorResponse("No valid content returned from the server");
                     else
                         response.Code = httpResponse.StatusCode;
                 }
                 else
-                    response = new ErrorResponse("Failed to get a valid response from the server");
+                    response = new ServerErrorResponse("Failed to get a valid response from the server");
             }
             catch (Exception ex)
             {
-                response = new ErrorResponse(ex.Message);
+                response = new ServerErrorResponse(ex.Message);
             }
 
             return response;
