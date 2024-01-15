@@ -62,14 +62,20 @@
         { "ModuleVersion": "2.0.1", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" }
       ],
 
-      "Menus": [
-      {
+      "Menus": [{
         "Label": "Model Size",
         "Options": [
             { "Label": "Tiny",   "Setting": "MODEL_SIZE", "Value": "tiny"   },
             { "Label": "Small",  "Setting": "MODEL_SIZE", "Value": "small"  },
             { "Label": "Medium", "Setting": "MODEL_SIZE", "Value": "medium" },
             { "Label": "Large",  "Setting": "MODEL_SIZE", "Value": "large"  }
+        ]
+      },
+      {
+        "Label": "Multi-TPU support",
+        "Options": [
+            { "Label": "Enable",  "Setting": "CPAI_CORAL_MULTI_TPU", "Value": "True"  },
+            { "Label": "Disable", "Setting": "CPAI_CORAL_MULTI_TPU", "Value": "False" }
         ]
       }],
 
