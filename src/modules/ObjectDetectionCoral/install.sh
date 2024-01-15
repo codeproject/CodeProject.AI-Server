@@ -189,12 +189,18 @@ elif [ "$os" = "macos" ]; then
         # move_recursive "${moduleDirPath}/edgetpu_runtime_temp/edgetpu_runtime" "${moduleDirPath}/edgetpu_runtime"
         # rm -rf "${moduleDirPath}/edgetpu_runtime_temp"
 
+        if [ "$full_speed" = true ]; then
+            checkForAdminAndWarn "sudo bash install.sh max"
+        else
+            checkForAdminAndWarn "sudo bash install.sh throttle"
+        fi
+
         sudo chmod -R a+rwX "${moduleDirPath}/edgetpu_runtime"
         pushd "${moduleDirPath}/edgetpu_runtime" >/dev/null
         if [ "$full_speed" = true ]; then
-            source "install.sh" "max"
+            source "install.sh" "max" "install"
         else
-            source "install.sh" "throttle"
+            source "install.sh" "throttle" "install"
         fi
         set +e    # Remove the -e set in install.sh because it kills our error handling ability
 

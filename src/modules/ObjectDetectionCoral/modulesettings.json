@@ -3,7 +3,7 @@
 
     "ObjectDetectionCoral": {
       "Name": "Object Detection (Coral)",
-      "Version": "2.0.0",
+      "Version": "2.0.1",
       
       // Publishing info
       "Description": "The object detection module uses the Coral TPU to locate and classify the objects the models have been trained on.",
@@ -25,7 +25,8 @@
       "Queue": "objectdetection_queue", // We make all Object detectors use the same queue.
 
       "EnvironmentVariables": {
-        "CPAI_CORAL_MULTI_TPU": "true",
+        "CPAI_CORAL_MULTI_TPU": "false",
+        "CPAI_CORAL_USE_YOLO": "true",               // Use the YOLO models rather than the efficientnet etc models
         "MODELS_DIR": "%CURRENT_MODULE_PATH%/assets",
         "MODEL_SIZE": "Small"
       },
@@ -57,8 +58,20 @@
         { "ModuleVersion": "1.7.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-21", "ReleaseNotes": "Installer updates" },
         { "ModuleVersion": "1.7.5", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-23", "ReleaseNotes": "Installer updates for Docker" },
         { "ModuleVersion": "1.8.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
-        { "ModuleVersion": "2.0.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-11", "ReleaseNotes": "Multi-TPU support" }
+        { "ModuleVersion": "2.0.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-11", "ReleaseNotes": "Multi-TPU support" },
+        { "ModuleVersion": "2.0.1", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" }
       ],
+
+      "Menus": [
+      {
+        "Label": "Model Size",
+        "Options": [
+            { "Label": "Tiny",   "Setting": "MODEL_SIZE", "Value": "tiny"   },
+            { "Label": "Small",  "Setting": "MODEL_SIZE", "Value": "small"  },
+            { "Label": "Medium", "Setting": "MODEL_SIZE", "Value": "medium" },
+            { "Label": "Large",  "Setting": "MODEL_SIZE", "Value": "large"  }
+        ]
+      }],
 
       "RouteMaps": [
         {

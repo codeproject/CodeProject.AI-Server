@@ -532,7 +532,6 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
         REM Excluded?
         if /i "!item!" == "^!!platform!" (
             set can_install=false
-            echo FOUND NEGATER
             goto :end_platform_loop
         )
 
@@ -703,7 +702,7 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
                 REM   !Runtime! "!moduleStartFilePath!" --selftest
 
                 set "exePath=.\"
-                if /i "!executionEnvironment!" == "Development" set "exePath=.\bin\Debug\net7.0\"
+                REM if /i "!executionEnvironment!" == "Development" set "exePath=.\bin\Debug\net7.0\"
 
                 if exist "!exePath!!moduleStartFilePath!" (
                     set testRun=true

@@ -20,7 +20,7 @@ class Options:
         # https://coral.ai/models/object-detection/
         # https://github.com/MikeLud/CodeProject.AI-Custom-IPcam-Models/
         self.MODEL_SETTINGS = {
-            "yolov5l":  Settings(448, 'yolov5l-int8.tflite',                    # 49Mb  # CPU model
+            "yolov5_large":  Settings(448, 'yolov5l-int8.tflite',                    # 49Mb  # CPU model
                                       'yolov5l-int8_edgetpu.tflite',                    # TPU model
                                       'coco80_labels.txt',                              # labels
                                       ['yolov5l-int8_segment_0_of_7_edgetpu.tflite',    # TPU model segments
@@ -31,7 +31,7 @@ class Options:
                                        'yolov5l-int8_segment_5_of_7_edgetpu.tflite',
                                        'yolov5l-int8_segment_6_of_7_edgetpu.tflite']),
 
-            "yolov5m":  Settings(448, 'yolov5m-int8.tflite',                    # 22.7Mb
+            "yolov5_medium":  Settings(448, 'yolov5m-int8.tflite',                    # 22.7Mb
                                       'yolov5m-int8_edgetpu.tflite',
                                       'coco80_labels.txt',
                                       ['yolov5m-int8_segment_0_of_4_edgetpu.tflite',
@@ -39,12 +39,12 @@ class Options:
                                        'yolov5m-int8_segment_2_of_4_edgetpu.tflite',
                                        'yolov5m-int8_segment_3_of_4_edgetpu.tflite']),
 
-            "yolov5s":  Settings(448, 'yolov5s-int8.tflite',                    # 7.9Mb
+            "yolov5_small":  Settings(448, 'yolov5s-int8.tflite',                    # 7.9Mb
                                       'yolov5s-int8_edgetpu.tflite',
                                       'coco80_labels.txt',
                                       []),
 
-            "yolov5n":  Settings(448, 'yolov5n-int8.tflite',                    # 2.3Mb
+            "yolov5_tiny":  Settings(448, 'yolov5n-int8.tflite',                    # 2.3Mb
                                       'yolov5n-int8_edgetpu.tflite',
                                       'coco80_labels.txt',
                                       []),
@@ -136,15 +136,30 @@ class Options:
 
         # Check input
         self.model_size = self.model_size.lower()
+
+        """
+        Let's simplify things here. The *_lo models are probably redundant, and 
+        so we can stick to tiny, small, medium, large if we split between YOLO
+        and non-YOLO
+
         if self.use_multi_tpu:
             model_valid = self.model_size in [ "yolov5l", "yolov5m", "yolov5s", "yolov5n", \
                                                "tiny", "small", "medium", "large",         \
                                                "small_lo", "tiny_lo" ]
         else:           
             model_valid = self.model_size in [ "tiny", "small", "medium", "large" ]
-            
+        """
+        model_valid = self.model_size in [ "tiny", "small", "medium", "large" ]
         if not model_valid:
             self.model_size = "small"
+
+        self.use_YOLO = ModuleOptions.getEnvVariable("CPAI_CORAL_USE_YOLO", "false").lower() == "true"
+        # if not self.use_multi_tpu: # Doesn't seem to work on non-multi-TPU code
+        #     self.use_YOLO = False
+        self.use_YOLO = False        # Doesn't seem to work at all for me :(
+
+        if self.use_YOLO:
+            self.model_size = "yolov5_" + self.model_size
 
         # Get settings
         settings = self.MODEL_SETTINGS[self.model_size]   

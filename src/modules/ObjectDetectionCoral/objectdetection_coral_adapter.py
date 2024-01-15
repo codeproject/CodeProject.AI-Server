@@ -43,7 +43,7 @@ class CoralObjectDetector_adapter(ModuleRunner):
             device = odcm.init_detect(opts)
         else:
             if self.enable_GPU:
-                print("Using TPU")
+                print("Using Edge TPU")
             else:
                 print("Using CPU")
             import objectdetection_coral as odc
