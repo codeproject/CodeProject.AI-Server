@@ -47,7 +47,7 @@ if [ "$module_install_errors" = "" ]; then
         fi
 
         if [ -f "${destination}" ] && [ ! -f "${moduleDirPath}/models/${fileToGet}" ]; then 
-            mv "${destination}" "${moduleDirPath}/models/"
+            mv -f "${destination}" "${moduleDirPath}/models/"
         fi
 
     else

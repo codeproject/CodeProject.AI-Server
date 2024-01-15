@@ -136,7 +136,7 @@ fi
 if [ "${useJq}" = false ]; then
     dotnet build "${sdkPath}/Utilities/ParseJSON" /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release > /dev/null 2>&1
     pushd "${sdkPath}/Utilities/ParseJSON/bin/Release/net7.0/" >/dev/null
-    mv ./* ../../../
+    mv -f ./* ../../../
     popd >/dev/null
 fi
 

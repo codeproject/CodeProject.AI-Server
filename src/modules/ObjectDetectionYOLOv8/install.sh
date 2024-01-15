@@ -115,7 +115,7 @@ if [ "$module_install_errors" = "" ] && [ "$systemName" = "Jetson" ]; then
                     wget $torch_location -O "${downloadDirPath}/${os}/packages/${torch_wheel}"
                 else
                     gdown $torch_location
-                    mv $torch_wheel "${downloadDirPath}/${os}/packages/"
+                    mv -f $torch_wheel "${downloadDirPath}/${os}/packages/"
                 fi
             fi
     
@@ -140,7 +140,7 @@ if [ "$module_install_errors" = "" ] && [ "$systemName" = "Jetson" ]; then
                         mkdir -p "${downloadDirPath}/${os}/packages"
                     fi
                     gdown $torchvision_location
-                    mv $torchvision_wheel "${downloadDirPath}/${os}/packages/"
+                    mv -f $torchvision_wheel "${downloadDirPath}/${os}/packages/"
                 fi
 
                 cp "${downloadDirPath}/${os}/packages/${torchvision_wheel}" .

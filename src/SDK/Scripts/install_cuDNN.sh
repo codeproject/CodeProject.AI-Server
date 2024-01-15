@@ -29,7 +29,7 @@
 # 
 # - Using signing key
 # wget https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/${arch}/cuda-${OS_name}.pin
-# sudo mv cuda-${OS_name}.pin /etc/apt/preferences.d/cuda-repository-pin-600
+# sudo mv -f cuda-${OS_name}.pin /etc/apt/preferences.d/cuda-repository-pin-600
 # sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/${arch}/${key}.pub
 # sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS_name}/${arch}/ /"
 #
@@ -208,12 +208,12 @@ spin $!
 writeLine "Done" $color_success
 
 # wget https://developer.download.nvidia.com/compute/cuda/repos/<distro>/<arch>/cuda-archive-keyring.gpg
-# sudo mv cuda-archive-keyring.gpg /usr/share/keyrings/cuda-archive-keyring.gpg
+# sudo mv -f cuda-archive-keyring.gpg /usr/share/keyrings/cuda-archive-keyring.gpg
 #
 # echo "deb [signed-by=/usr/share/keyrings/cuda-archive-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/<distro>/<arch>/ /" | sudo tee /etc/apt/sources.list.d/cuda-<distro>-<arch>.list
 #
 # wget https://developer.download.nvidia.com/compute/cuda/repos/<distro>/<arch>/cuda-<distro>.pin
-# sudo mv cuda-<distro>.pin /etc/apt/preferences.d/cuda-repository-pin-600
+# sudo mv -f cuda-<distro>.pin /etc/apt/preferences.d/cuda-repository-pin-600
 
 # install the cuDNN library
 write " - Installing cuDNN libraries..." $color_mute

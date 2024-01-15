@@ -42,7 +42,7 @@ if [ "$module_install_errors" = "" ] && [ "$systemName" = "Jetson" ]; then
     if [ ! -f "${downloadDirPath}/ObjectDetectionYOLOv5-6.2/torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl" ]; then
         installPythonPackagesByName "gdown"
         gdown https://drive.google.com/uc?id=1TqC6_2cwqiYacjoLhLgrZoap6-sVL2sd
-        mv torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl "${downloadDirPath}/ObjectDetectionYOLOv5-6.2/"
+        mv -f torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl "${downloadDirPath}/ObjectDetectionYOLOv5-6.2/"
     fi
 
     # install PyTorch 1.10.0

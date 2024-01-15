@@ -1848,7 +1848,7 @@ function getFromServer () {
 
 move_recursive() {
     if [ ! -d "$1" ] || [ ! -e "$2" ]; then
-        mv "$1" "$2" || exit
+        mv -f "$1" "$2" || exit
         return
     fi
     for entry in "$1/"* "$1/."[!.]* "$1/.."?*; do
