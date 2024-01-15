@@ -529,13 +529,23 @@ shift & goto :%~1
 
     if /i "!requestedType!" == "SDK" (
 
+        call :Write "Checking SDKs..."
+
         REM dotnet --version gives the SDK version, not the runtime version.
         dotnet --version >NUL 2>NUL
         if "%errorlevel%" == "0" (
             FOR /F "tokens=* USEBACKQ" %%F IN (`dotnet --version 2^>NUL`) DO ( set currentDotNetVersion=%%F )
+
+            call :compareVersions "!currentDotNetVersion!" "!requestedNetMajorVersion!.0.0"
+            set comparison=!compareResult!
+            
+            rem echo comparing current !currentDotNetVersion! to request !requestedNetMajorVersion!.0.0
+            rem echo current_comparison = !comparison!
         )
     ) else (
         
+        call :Write "Checking runtimes..."
+
         REM Let's test the runtimes only, since that's all we need
         REM example output from 'dotnet --list-runtimes'
         REM Microsoft.AspNetCore.App 7.0.11 [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]
@@ -583,10 +593,10 @@ shift & goto :%~1
                     powershell -NoProfile -ExecutionPolicy unrestricted  -File "!sdkScriptsDirPath!\dotnet-install.ps1" --Runtime aspnetcore --Version !requestedNetVersion!
                 )
                 if "%DOTNET_ROOT%" == "" (
-                    SET DOTNET_ROOT=%LOCALAPPDATA%\Microsoft\dotnet
-                    SETX DOTNET_ROOT %LOCALAPPDATA%\Microsoft\dotnet
-                    SET PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
-                    SETX PATH %LOCALAPPDATA%\Microsoft\dotnet;%PATH%
+                    SET "DOTNET_ROOT=%LOCALAPPDATA%\Microsoft\dotnet"
+                    SETX "DOTNET_ROOT" "%LOCALAPPDATA%\Microsoft\dotnet"
+                    SET "PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%"
+                    SETX "PATH" "%LOCALAPPDATA%\Microsoft\dotnet;%PATH%"
                 )
             ) else (
                 if /i "!requestedType!" == "SDK" (
@@ -1243,27 +1253,56 @@ shift & goto :%~1
     )
 
     REM The order in which modulesettings files are added is
-    REM WE DO NOT SUPPORT DOCKER IN Windows, plus we are ONLY searching non-development files here
+    REM WE DO NOT SUPPORT DOCKER IN Windows at the moment
     REM   modulesettings.json
-    REM   (not searched) modulesettings.development.json 
+    REM   modulesettings.development.json 
     REM   modulesettings.os.json
-    REM   (not searched) modulesettings.os.development.json
+    REM   modulesettings.os.development.json
     REM   modulesettings.os.architecture.json
-    REM   (not searched) modulesettings.os.architecture.development.json
+    REM   modulesettings.os.architecture.development.json
     REM   (not supported) modulesettings.docker.json
     REM   (not supported) modulesettings.docker.development.json
     REM   (not needed yet) modulesettings.device.json (device = raspberrypi, orangepi, jetson)
-    REM So we need to check each modulesettings file in reverse order until we find a value for 'key'
+    REM
+    REM So we need to check each modulesettings file in REVERSE order until we find a value for 'key'
     
-    call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.!architecture!.json", "!key!"
-    REM echo Check 1: moduleSettingValue = !moduleSettingValue!
+    set moduleSettingValue=
+    
+    if "!moduleSettingValue!" == "" (
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.!architecture!.development.json", "!key!"
+        if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
+            call :WriteLine "Used modulesettings.windows.!architecture!.development.json to get value !moduleSettingValue!" "!color_info!"
+        )
+    )
+    if "!moduleSettingValue!" == "" (
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.!architecture!.json", "!key!"
+        if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
+            call :WriteLine "Used modulesettings.windows.!architecture!.json to get value !moduleSettingValue!" "!color_info!"
+        )
+    )
+    if "!moduleSettingValue!" == "" (
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.development.json", "!key!"
+        if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
+            call :WriteLine "Used modulesettings.windows.development.json to get value !moduleSettingValue!" "!color_info!"
+        )
+    )
     if "!moduleSettingValue!" == "" (
         call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.json", "!key!"
-        REM echo Check 2: moduleSettingValue = !moduleSettingValue!
+        if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
+            call :WriteLine "Used modulesettings.windows.json to get value !moduleSettingValue!" "!color_info!"
+        )
+    )
+    if "!moduleSettingValue!" == "" (
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.development.json", "!key!"
+        if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
+            call :WriteLine "Used modulesettings.development.json to get value !moduleSettingValue!" "!color_info!"
+        )
     )
     if "!moduleSettingValue!" == "" (
         call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.json", "!key!"
-        REM echo Check 3: moduleSettingValue = !moduleSettingValue!
+        if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
+            call :WriteLine "Used modulesettings.json to get value !moduleSettingValue!" "!color_info!"
+        )
     )
 
     if "!debug_json_parse!" == "true" (
@@ -1286,6 +1325,7 @@ REM purely on the name of the propery. THIS METHOD DOES NOT TAKE INTO ACCOUNT TH
 REM DEPTH OF A PROPERTY. If the property is at the root level or 10 levels down,
 REM it's all the same. The extraction is done purely by grep/sed, so is very niaive. 
 :GetValueFromModuleSettings  jsonFile key returnValue
+    set "moduleSettingValue="
     SetLocal EnableDelayedExpansion
 
     set jsonFile=%~1
@@ -1359,8 +1399,8 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
         REM directory containing the JSON file so we can skip quotes on !jsonFile!
         pushd "!jsonFile!\.."
 
-		REM Extract the filename.extn from the json file since it's now in the current dir. This
-        REM allows us to place the json file without quotes. ASSUMING jsonFile DOESN'T HAVE SPACES
+		REM Extract the filename.ext from the json file since it's now in the current dir. This
+        REM allows us to parse the JSON file without quotes. ASSUMING jsonFile DOESN'T HAVE SPACES
 		for %%A in ("!jsonFile!") do set "jsonFileCurrentDir=%%~nxA"
         
         REM Run the ParseJSON command on jsonFile, and collect ALL lines of output (eg arrays) into
