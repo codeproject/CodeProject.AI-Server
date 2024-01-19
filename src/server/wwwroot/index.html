@@ -1,0 +1,368 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+
+    <title>CodeProject.AI Server</title>
+
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+	<meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="expires" content="Mon, 22 Jul 2002 11:12:01 GMT">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#eeeeee" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="dark light">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+
+    <link id="bootstrapCss" rel="stylesheet" type="text/css" href="assets/bootstrap-dark.min.css">
+    <link rel="stylesheet" type="text/css" href="assets/server.css?v=2.5.0.0">
+
+    <script type="text/javascript" src="assets/server.js?v=2.5.0.0"></script>
+    <script type="text/javascript" src="assets/dashboard.js?v=2.5.0.0"></script>
+    <script type="text/javascript">
+    window.addEventListener('DOMContentLoaded', function (event) {
+
+        let urlElm = document.getElementById('serviceUrl');
+        urlElm.value = apiServiceUrl;
+
+        setServerStatus("Searching", "light");
+
+        getVersion();
+        checkForUpdates(false);
+        getDownloadableModules()
+
+        setInterval(ping, pingFrequency);
+        setInterval(getLogs, logFrequency);
+        setInterval(getModulesStatuses, statusFrequency);
+        setInterval(getSystemStatus, statusFrequency);
+        setInterval(getDownloadableModules, statusFrequency);
+        setInterval(getMeshStatus, statusFrequency);
+        setInterval(checkForUpdates, checkUpdateFrequency);
+
+        setInterval(purgeMarkerIndices, 5000);
+
+        // force fresh reload
+        let launchLink = document.getElementById('explorer-launcher');
+        launchLink.href += "?random=" + new Date().getTime();
+    });
+
+    /*
+    const registerServiceWorker = async () => {
+        if ("serviceWorker" in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register("assets/sw.js", { scope: "/", });
+            } catch (error) {
+                console.error(`Service worker registration failed: ${error}`);
+            }
+        }
+    };
+    registerServiceWorker();
+    */
+    </script>
+</head>
+
+<body class="dark-mode dashboard">
+
+    <div>
+        <div class="main-panel mx-auto p-3">
+
+            <div class="position-fixed top-3 end-0 p-3" style="z-index: 11">
+                <div id="updateToast" class="toast hide text-white bg-warning" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <strong class="me-auto">Update Error</strong>
+                        <small>Just now</small>
+                        <button type="button" class="btn-close text-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        <div id="updateError"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-100 header d-flex justify-content-start">
+                <a href="https://www.codeproject.com" style="margin:2px 0 2px 5px">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+                         xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" role="img"
+                         style="height: 60px; margin-right: -12px;">
+                        <title>CodeProject Icon</title>
+                        <path id="svg_2" d="M9.052,21.798c-0.236,0-0.459-0.905-0.463-1.145c-0.007-0.356,0.038-0.755,0.473-0.755
+		c0.436,0,0.47,0.398,0.473,0.755C9.542,20.982,9.288,21.798,9.052,21.798z M10.903,23.985c0.729,0.004,3.677,0.151,3.715-0.847
+		c0.041-0.998-1.401-1.525-2.234-1.563c-0.837-0.037-2.143,0.467-2.431,0.209c-0.377-0.339,0.281-1.882,0.531-2.188
+		c0.172-0.205,0.453-0.524,0.606-0.664c0.594-0.553,0.967-1.32,0.964-2.178c-0.004-0.939-0.281-1.278,0.658-0.531
+		c0.325,0.257,0.768,0.59,1.336,0.854c1.139,0.524-1.319-1.68-1.789-2.102c-0.788-0.699-1.045-1.08-0.609-1.354
+		c0.346-0.216,0.672-0.459,0.977-0.723c1.196-1.035,2.046-2.605,1.878-4.896C14.354,5.911,10.416,0.024,9.364,0
+		c-0.85-0.017-2.578,2.108-3.527,3.257C4.809,4.505,3.201,6.665,2.879,7.934C2.783,8.311,2.746,8.708,2.746,9.113
+		c0,1.44,0.75,2.784,1.898,3.744c0.703,0.586,1.481,1.039,0.237,2.311c-0.74,0.758-2.434,2.361-1.453,1.909
+		c0.572-0.264,1-0.614,1.34-0.854c0.709-0.504,0.99-0.669,0.833-0.031c-0.034,0.134-0.028,0.274-0.028,0.411
+		c0,0.892,0.37,1.69,0.95,2.277c0.151,0.154,0.586,0.486,0.833,0.699c0.586,0.507,1.196,1.865,0.816,2.204
+		c-0.288,0.258-1.594-0.246-2.427-0.209c-0.836,0.038-2.275,0.565-2.238,1.563s3.17,0.851,3.9,0.857
+		c1.645,0.013,1.09-0.642,1.645-0.631C9.607,23.379,9.052,23.976,10.903,23.985z" />
+                        <path id="svg_3" fill="#C3DE6C" d="M9.802,1.187c-0.668-0.017-1.686,1.878-2.43,2.863C6.567,5.115,5.354,7.004,5.1,8.091
+		C5.025,8.414,4.997,8.753,4.997,9.099c0,2.51,2.481,4.608,4.792,4.608c1.155,0,2.132-0.604,2.938-1.368
+		c0.935-0.888,1.597-2.232,1.47-4.193C14.076,6.36,10.622,1.207,9.802,1.187z" />
+                        <path id="svg_4" d="M10.649,10.378c0.336,0.456,0.716,0.775,1.172,0.775c0.919,0,1.662-1.187,1.662-2.646
+		c0-1.464-0.743-2.65-1.662-2.65c-0.456,0-0.85,0.309-1.172,0.775C10.491,6.86,10.2,7.042,9.823,6.401
+		c-0.35-0.593-0.918-0.922-1.508-0.922c-1.179,0-2.135,1.412-2.135,3.154s0.956,3.154,2.135,3.154c0.737,0,1.371-0.556,1.769-1.389
+		C10.238,10.073,10.47,10.135,10.649,10.378z" />
+                        <path id="svg_5" fill="#FFFFFF" d="M9.812,8.633c0,1.221-0.671,2.211-1.497,2.211c-0.826,0-1.498-0.991-1.498-2.211
+		c0-1.224,0.672-2.215,1.498-2.215C9.141,6.418,9.812,7.409,9.812,8.633z" />
+                        <path id="svg_6" fill="#FFFFFF" d="M12.987,8.506c0,1.025-0.521,1.854-1.166,1.854c-0.641,0-1.162-0.83-1.162-1.854
+		c0-1.029,0.521-1.858,1.162-1.858C12.465,6.648,12.987,7.478,12.987,8.506z" />
+                        <path id="svg_7" fill="#C3DE6C" d="M11.564,16.813c0,1.217-0.99,2.201-2.218,2.201c-1.227,0-2.221-0.984-2.221-2.201
+		s0.994-2.205,2.221-2.205C10.574,14.608,11.564,15.597,11.564,16.813z" />
+                        <path id="svg_8" d="M9.877,17.434c0,0.229-0.188,0.415-0.418,0.415s-0.418-0.186-0.418-0.415S9.23,17.02,9.459,17.02
+		S9.877,17.204,9.877,17.434z" />
+                        <path id="svg_9" d="M2.311,17.358c-0.165,0-1.687,0.021-2.163,0.227c-0.473,0.209,0.285,0.507,0.929,0.545
+		c0.322,0.021,0.219,0.257,0.075,0.452c-1.155,1.581-0.264,1.262,0.514,0.565c0.192-0.171,0.264,0.056,0.284,0.265
+		c0.018,0.206,0.511,1.749,0.665-0.209c0.062-0.81,0.113-1.241,0.076-1.525C2.653,17.396,2.499,17.358,2.311,17.358z" />
+                        <path id="svg_10" fill="#C3DE6C" d="M8.037,22.837c-0.284-0.527-1.063-0.452-1.422-0.395c-0.36,0.056-1.724,0.374-1.498,0.771
+		c0.229,0.395,1.1,0.433,1.765,0.151C7.543,23.08,8.37,23.451,8.037,22.837z" />
+                        <path id="svg_11" d="M15.169,17.358c0.161,0,1.686,0.021,2.163,0.227c0.473,0.209-0.285,0.507-0.933,0.545
+		c-0.319,0.021-0.216,0.257-0.075,0.452c1.158,1.581,0.267,1.262-0.511,0.565c-0.192-0.171-0.264,0.056-0.284,0.265
+		c-0.021,0.206-0.515,1.749-0.665-0.209c-0.063-0.81-0.113-1.241-0.076-1.525C14.827,17.396,14.977,17.358,15.169,17.358z" />
+                        <path id="svg_12" fill="#C3DE6C" d="M10.086,22.837c0.284-0.527,1.063-0.452,1.423-0.395c0.359,0.056,1.728,0.374,1.497,0.771
+		c-0.226,0.395-1.1,0.433-1.765,0.151C10.581,23.08,9.754,23.451,10.086,22.837z" />
+                        <path id="svg_13" d="M8.915,8.547c0,0.607-0.236,1.101-0.524,1.101c-0.288,0-0.521-0.494-0.521-1.101S8.103,7.447,8.39,7.447
+		C8.678,7.447,8.915,7.94,8.915,8.547z" />
+                        <path id="svg_14" d="M12.291,8.455c0,0.483-0.188,0.877-0.418,0.877s-0.418-0.394-0.418-0.877c0-0.487,0.188-0.881,0.418-0.881
+		S12.291,7.968,12.291,8.455z" />
+                    </svg>
+                </a>
+                <a href="https://www.codeproject.com/ai" style="margin:0px 5px 0 0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 40 860 160" height="60px">
+                <defs><style>.cls-1{fill:#fff;}.cls-2{fill:#b3ddca;}</style></defs>
+                <g><title>CodeProject.AI</title>
+                <path id="svg_1" class="cls-1" d="M 747.22 160.94 L 775.79 73.19 L 789.94 73.19 L 818.51 160.94 L 807.51 160.94 L 798.7 134.67 L 766.99 134.67 L 758.17 160.94 L 747.22 160.94 Z M 770.17 124.94 L 795.57 124.94 L 782.87 86.94 L 770.17 124.94 Z" fill="#231f20"></path><path id="svg_2" class="cls-1" d="M 817.73 160.94 L 817.73 73.22 L 828.73 73.22 L 828.73 160.94 L 817.73 160.94 Z" fill="#231f20"></path><rect x="756.7" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="39"></rect><rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 812.650024, 436.350006)"></rect><rect x="803.6" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="185.3"></rect><rect x="344.3" width="22.1" height="11.6" style="stroke-opacity: 0.33; fill: rgb(179, 221, 202); fill-opacity: 0.33;" y="32.4" transform="matrix(0, -1, 1, 0, 693.309998, 510.269989)"></rect><polygon id="svg_4" class="cls-2" points="737.24 94.01 725.71 94.01 725.71 40 756.66 40 756.66 51.53 737.24 51.53 737.24 94.01" fill="#b3ddca"></polygon><polygon id="svg_5" class="cls-2" points="779.72 197.92 725.71 197.92 725.71 166.97 737.24 166.97 737.24 186.39 779.72 186.39 779.72 197.92" fill="#b3ddca"></polygon><polygon id="svg_6" class="cls-2" points="856.65 197.92 825.7 197.92 825.7 186.39 845.12 186.39 845.12 143.91 856.65 143.91 856.65 197.92" fill="#b3ddca"></polygon><polygon id="svg_7" class="cls-2" points="856.65 70.95 845.12 70.95 845.12 51.53 802.64 51.53 802.64 40 856.65 40 856.65 70.95" fill="#b3ddca"></polygon><path d="M 44.978 109.764 Q 39.008 112.918 30.109 112.918 Q 18.619 112.918 11.71 105.521 Q 4.801 98.124 4.801 86.108 Q 4.801 73.192 12.573 65.231 Q 20.346 57.271 32.286 57.271 Q 39.946 57.271 44.978 59.486 L 44.978 66.207 Q 39.195 62.978 32.211 62.978 Q 22.937 62.978 17.173 69.174 Q 11.409 75.369 11.409 85.733 Q 11.409 95.571 16.797 101.409 Q 22.186 107.248 30.935 107.248 Q 39.045 107.248 44.978 103.644 Z M 75.579 112.918 Q 64.127 112.918 57.237 105.371 Q 50.347 97.824 50.347 85.733 Q 50.347 72.741 57.368 65.006 Q 64.39 57.271 76.481 57.271 Q 87.633 57.271 94.448 64.781 Q 101.263 72.29 101.263 84.419 Q 101.263 97.598 94.279 105.258 Q 87.295 112.918 75.579 112.918 Z M 76.03 62.978 Q 67.544 62.978 62.25 69.099 Q 56.955 75.219 56.955 85.17 Q 56.955 95.12 62.118 101.184 Q 67.281 107.248 75.579 107.248 Q 84.441 107.248 89.548 101.466 Q 94.654 95.683 94.654 85.282 Q 94.654 74.618 89.698 68.798 Q 84.741 62.978 76.03 62.978 Z M 111.85 112.017 L 111.85 58.172 L 126.72 58.172 Q 155.182 58.172 155.182 84.419 Q 155.182 96.885 147.278 104.451 Q 139.374 112.017 126.119 112.017 Z M 118.159 63.879 L 118.159 106.31 L 126.194 106.31 Q 136.783 106.31 142.678 100.64 Q 148.573 94.97 148.573 84.569 Q 148.573 63.879 126.57 63.879 Z M 194.308 112.017 L 165.771 112.017 L 165.771 58.172 L 193.106 58.172 L 193.106 63.879 L 172.079 63.879 L 172.079 81.79 L 191.529 81.79 L 191.529 87.46 L 172.079 87.46 L 172.079 106.31 L 194.308 106.31 Z" transform="matrix(1.388561, 0, 0, 1.435642, 0.528885, 0.973957)" style="fill: rgb(255, 255, 255); white-space: pre;"></path><path d="M 215.902 93.468 L 215.902 112.017 L 203.774 112.017 L 203.774 58.172 L 222.774 58.172 Q 243.125 58.172 243.125 75.332 Q 243.125 83.442 237.286 88.455 Q 231.447 93.468 221.685 93.468 Z M 215.902 67.484 L 215.902 84.268 L 220.671 84.268 Q 230.358 84.268 230.358 75.782 Q 230.358 67.484 220.671 67.484 Z M 296.18 112.017 L 282.249 112.017 L 273.876 98.161 Q 272.937 96.584 272.073 95.345 Q 271.21 94.106 270.327 93.224 Q 269.445 92.341 268.488 91.872 Q 267.53 91.403 266.404 91.403 L 263.137 91.403 L 263.137 112.017 L 251.009 112.017 L 251.009 58.172 L 270.234 58.172 Q 289.834 58.172 289.834 72.816 Q 289.834 75.632 288.97 78.017 Q 288.107 80.401 286.53 82.316 Q 284.953 84.231 282.719 85.62 Q 280.484 87.009 277.743 87.798 L 277.743 87.948 Q 278.945 88.324 280.071 89.169 Q 281.198 90.013 282.249 91.14 Q 283.301 92.266 284.258 93.562 Q 285.216 94.857 286.004 96.096 Z M 263.137 67.259 L 263.137 82.241 L 268.394 82.241 Q 272.299 82.241 274.664 79.988 Q 277.067 77.697 277.067 74.318 Q 277.067 67.259 268.619 67.259 Z M 323.213 112.956 Q 311.648 112.956 304.364 105.427 Q 297.079 97.899 297.079 85.808 Q 297.079 73.041 304.476 65.156 Q 311.873 57.271 324.077 57.271 Q 335.604 57.271 342.72 64.818 Q 349.835 72.365 349.835 84.719 Q 349.835 97.411 342.457 105.183 Q 335.079 112.956 323.213 112.956 Z M 323.739 67.709 Q 317.355 67.709 313.601 72.497 Q 309.846 77.284 309.846 85.17 Q 309.846 93.167 313.601 97.824 Q 317.355 102.48 323.438 102.48 Q 329.709 102.48 333.389 97.955 Q 337.069 93.43 337.069 85.395 Q 337.069 77.021 333.501 72.365 Q 329.934 67.709 323.739 67.709 Z M 380.478 90.652 Q 380.478 101.466 375.465 107.211 Q 370.452 112.956 360.952 112.956 Q 356.709 112.956 353.104 111.491 L 353.104 100.114 Q 356.221 102.48 360.089 102.48 Q 368.387 102.48 368.387 90.164 L 368.387 58.172 L 380.478 58.172 Z M 424.559 112.017 L 392.267 112.017 L 392.267 58.172 L 423.32 58.172 L 423.32 68.047 L 404.395 68.047 L 404.395 80.025 L 422.006 80.025 L 422.006 89.863 L 404.395 89.863 L 404.395 102.179 L 424.559 102.179 Z M 471.796 110.102 Q 465.901 112.956 456.401 112.956 Q 444.01 112.956 436.913 105.671 Q 429.817 98.387 429.817 86.259 Q 429.817 73.342 437.796 65.306 Q 445.775 57.271 458.504 57.271 Q 466.389 57.271 471.796 59.261 L 471.796 70.939 Q 466.389 67.709 459.48 67.709 Q 451.895 67.709 447.239 72.478 Q 442.583 77.247 442.583 85.395 Q 442.583 93.205 446.977 97.842 Q 451.37 102.48 458.804 102.48 Q 465.901 102.48 471.796 99.025 Z M 518.992 68.047 L 503.634 68.047 L 503.634 112.017 L 491.469 112.017 L 491.469 68.047 L 476.186 68.047 L 476.186 58.172 L 518.992 58.172 Z" transform="matrix(1.388561, 0, 0, 1.435642, 0.528885, 0.973957)" style="fill: rgb(255, 255, 255); white-space: pre;"></path>
+                </g>
+                </svg>
+               </a>
+            </div>
+            <div class="d-flex justify-content-around small flex-nowrap overflow-hidden top-nav-bar" style="margin-top:-1rem">
+                <div class="me-3" title="Go to the CodeProject.AI homepage">
+                    <a href="https://www.codeproject.com/AI" target="_blank">CodeProject.AI</a>
+                </div>
+                <div title="Go to the CodeProject.AI documentation">
+                    <a href="https://www.codeproject.com/AI/docs/" target="_blank">Docs</a>
+                </div>
+                <div class="mx-3" title="Got a question or suggestion?">
+                    <a href="https://www.codeproject.com/Feature/CodeProjectAI-Discussions.aspx"
+                       target="_blank">Forums</a>
+                </div>
+                <div title="Grab the source code">
+                    <a href="https://www.codeproject.com/Articles/5322557/CodeProject-AI-Server-AI-the-easy-way">The Code</a>
+                </div>
+                <div class="ms-3 bg-info rounded-3" title="Explore the capabilities of your installed CodeProject.AI server">
+                    <a id="explorer-launcher" class="p-1" href="explorer.html"
+                       target="_blank">CodeProject.AI Explorer</a>
+                </div>
+				<div id="hostname" class="fw-bold ms-auto"></div>
+				<div id="serverStatus" class="fw-bold ms-1 pe-2"></div>
+                <div id="server-version" style="cursor:pointer" onclick="checkForUpdates(true)" title="Check for updates"></div>
+                <div id="colourModeToggle" onclick="toggleColourMode()" class="ms-1" style="cursor:pointer">☀️</div>
+            </div>
+
+            <div class="card my-3">
+                <div class="card-body sub-panel">
+                    Your self-contained AI server. 
+                    
+                    &nbsp;&nbsp; Need help?
+                    <a href="https://www.codeproject.com/AI/docs/devguide/common_errors.html" target="_blank">Common solutions</a> or
+                    <a href="https://www.codeproject.com/Feature/CodeProjectAI-Discussions.aspx" target="_blank">ask a Question</a>.
+                    
+                    &nbsp;&nbsp;
+
+                    Use in your apps:
+                    <a href="https://www.codeproject.com/AI/docs/api/api_reference.html" target="_blank">API guide</a> or
+                    <a href="https://www.codeproject.com/AI/docs/devguide/module_examples/adding_new_modules.html" target="_blank">add
+                    your own AI module</a>.
+
+                    &nbsp;
+
+                    <b>FAQs</b>: <a href="https://www.codeproject.com/ai/docs/faq/blue-iris.html" target="_blank">Blue Iris</a>, 
+                    <a href="https://www.codeproject.com/ai/docs/faq/home-assistant.html" target="_blank">Home Assistant</a>, 
+                    <a href="https://www.codeproject.com/Articles/5349191/How-to-Setup-Agent-DVR-and-CodeProject-AI-Server-o" target="_blank">Agent DVR</a>,
+                    <a href="https://www.codeproject.com/Articles/5345399/Setting-Up-a-Wyze-Cam-with-Blue-Iris-and-CodeProje" target="_blank">Wyze cams</a>.
+                </div>
+            </div>
+
+            <div class="card-body sub-panel p-0">
+                <div id="installNotice" class="py-2"></div>
+            </div>
+
+            <div class="alert alert-success" id="update" style="display:none"></div>
+
+            <ul class="nav nav-tabs d-flex" id="DashboardTabs" role="tablist">
+                <li class="nav-item" id="status-tab-listitem">
+                    <button class="nav-link active" id="status-tab" data-bs-toggle="tab" data-bs-target="#status-panel" type="button" role="tab" aria-controls="status" aria-selected="true">Status</button>
+                </li>
+                <li class="nav-item" id="logs-tab-listitem">
+                    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs-panel" type="button" role="tab" aria-controls="logs" aria-selected="true">Server logs</button>
+                </li>
+                <li class="nav-item" id="system-tab-listitem">
+                    <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system-panel" type="button" role="tab" aria-controls="system" aria-selected="true">System Info</button>
+                </li>
+                <li class="nav-item" id="mesh-tab-listitem">
+                    <button class="nav-link" id="mesh-tab" data-bs-toggle="tab" data-bs-target="#mesh-panel" type="button" role="tab" aria-controls="mesh" aria-selected="true">Mesh</button>
+                </li>
+                <li class="nav-item" id="modules-tab-listitem">
+                    <button class="nav-link" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules-panel" type="button" role="tab" aria-controls="face" aria-selected="false">Install Modules</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="DemoTabsContent">
+
+                <div class="tab-pane fade show active" id="status-panel" role="tabpanel" aria-labelledby="status-tab">
+
+                    <div class="card">
+                        <div class="card-body sub-panel">
+                            <div class="d-flex justify-content-between flex-nowrap">
+                                <div>Service Url</div>
+                                <div>
+                                    <input type="text" id="serviceUrl" class="ms-2" style="width:13rem;font-size:90%;" />
+                                </div>
+                                <div class="ms-auto" id="gpuMemUsed"></div>
+                            </div>
+
+                            <div class="mt-3 border border-1 border-light">
+                                <div id="logs" class="font-monospace text-break logs log-summary" style="height:100px;overflow-x:hidden !important;overflow-y: auto;resize:vertical;"></div>
+                            </div>
+                            <div class="d-flex small">
+                                <div class="text-muted">Logging level</div>
+                                <input type="range" id="logSeverity" class="tight w-25 mx-2" min="1" max="6" steps="1"
+                                       value="4" list="steplist" onchange="updateLogVerbosity(this)">
+                                <datalist id="steplist">
+                                    <option>1</option>
+                                    <option>2</option>
+                                    <option>3</option>
+                                    <option>4</option>
+                                    <option>5</option>
+                                    <option>6</option>
+                                </datalist>
+                                <div id="verbosity">Info</div>
+                                <div class="ms-auto"><a class="text-muted" href="javascript:0" onclick="clearLogs()">Clear logs</a></div>
+
+                            </div>
+                            <div class="small mt-1" id="latestTiming"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body sub-panel">
+                            <div id="serviceStatus" class="w-100"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="tab-pane fade show" id="system-panel" role="tabpanel" aria-labelledby="system-tab">
+                    <div class="card">
+                        <div class="card-body sub-panel" style="position: relative;">
+                            <div style="float:right;cursor: pointer;" onclick="copyToClipboard('serverStatusVerbose')" title="Copy to clipboard">
+                                <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round"
+                                     stroke-linejoin="round" class="h-4 w-4" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                                     <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                     <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                </svg>
+                            </div>
+                            <div id="serverStatusVerbose" class='server-summary'>Server summary loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade show" id="logs-panel" role="tabpanel" aria-labelledby="logs-tab">
+                    <div class="card">
+                        <div class="mt-3 border border-1 border-light">
+                            <div id="logsMain" class="font-monospace text-break logs" style="height:600px;overflow-x:scroll"></div>
+                        </div>
+                        <div class="d-flex small">
+                            <div class="text-muted">Logging level</div>
+                            <input type="range" id="logSeverity-main" class="tight w-25 mx-2" min="1" max="6" steps="1"
+                                   value="4" list="steplist" onchange="updateLogVerbosity(this)">
+                            <datalist id="steplist">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                                <option>6</option>
+                            </datalist>
+                            <div id="verbosity-main">Info</div>
+                            <div class="ms-auto d-flex">
+                                <div class="dot dot-cycle mt-2"></div>
+                                <span>Logs with same colour are for the same request</span> 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade show" id="mesh-panel" role="tabpanel" aria-labelledby="mesh-tab">
+                    <div class="card">
+                        <div class="card-body sub-panel">
+                            <div class="float-end">
+                                <button class="btn btn-primary" onclick="updateMeshSetting(event, 'Enable', false)">Stop</button>
+                                <button class="btn btn-primary" onclick="updateMeshSetting(event, 'Enable', true)">Start</button>
+                                <div class="form-check form-switch mt-1">
+                                    <input class="form-check-input" type="checkbox" id="showMeshRoutes" 
+                                           checked onchange="toggleMeshRoutes(this)">
+                                    <label class="form-check-label text-muted" for="showMeshRoutes">Show Routes</label>
+                                </div>
+                            </div>
+
+                            <div id="meshStatus" class='mesh-summary'>Mesh status loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade show" id="modules-panel" role="tabpanel" aria-labelledby="modules-tab">
+                    <div class="card">
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <div class="form-check form-switch ms-4 me-auto">
+                                <input class="form-check-input" type="checkbox" id="noCache">
+                                <label class="form-check-label text-muted" for="noCache">Do not use download cache</label>
+                            </div>
+                            <div class="text-nowrap text-muted">
+                                Install verbosity 
+                            </div>
+                            <div class="mx-2">
+                                <select class="d-inline-block form-select-sm ms-2 bg-light" aria-label="Default select example" id="install-verbosity">
+                                <option selected value="quiet">Quiet</option>
+                                <option value="info">Info</option>
+                                <option value="loud">Loud</option>
+                                </select>                            
+                            </div>
+                        </div>
+
+                        <div class="card-body sub-panel p-0">
+                            <div id="availableModules" class="w-100"></div>
+                        </div>
+<!--
+                        <div class="form-group row my-3 mx-2">
+                            <label class="col-form-label col text-end">Upload Module</label>
+							<input class="btn-light form-control" style="width: 15rem;" id="uploadInstaller" type="file">
+						    <label class="col-form-label col text-end">Install Password</label>
+                            <input class="form-control" style="width: 8rem;" id="installPwd" type="text">
+                            <input class="form-control btn-warning ms-2" style="width: 5rem;" id="install" type="button" value="Install" onclick="uploadModule()">
+                        </div>
+-->
+                        <div>
+                            <span class="font-weight-bold ms-3" id="moduleUpdateStatus"></span>
+                        </div>
+                    </div>                   
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script src="assets/bootstrap.bundle.min.js" type="text/javascript"></script>
+
+</body>
+</html>

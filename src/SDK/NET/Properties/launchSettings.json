@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "CodeProject.AI.SDK": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:55309;http://localhost:55310"
+    }
+  }
+}

@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
+	<Import Project="../../SDK/NET/Common.targets" />
+
+	<!-- Common properties -->
+	<PropertyGroup>
+		<Name>SentimentAnalysis</Name>
+		<RootNamespace>CodeProject.AI.Modules.SentimentAnalysis</RootNamespace>
+		<Version>2.1.5</Version>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<UserSecretsId>dotnet-SentimentAnalysis-EBFB5149-7C8C-4D4E-96D1-6C0227E67E29</UserSecretsId>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<TargetFramework>net7.0</TargetFramework>
+		<Platform>AnyCPU</Platform>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
+	
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>True</SelfContained>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
+	</PropertyGroup>
+
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="favicon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
+		<PackageReference Include="Microsoft.ML" Version="3.0.0" />
+		<PackageReference Include="Microsoft.ML.SampleUtils" Version="0.21.0" />
+		<PackageReference Include="Microsoft.ML.TensorFlow" Version="2.0.0" />
+		<PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.16.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\SDK\NET\NET.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="sentiment_model\imdb_word_index.csv">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="sentiment_model\saved_model.pb">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="sentiment_model\variables\variables.data-00000-of-00001">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="sentiment_model\variables\variables.index">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+</Project>

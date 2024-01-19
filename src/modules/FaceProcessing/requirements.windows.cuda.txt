@@ -1,0 +1,34 @@
+#! Python3.7
+
+urllib3<1.27,>=1.25.4   # Installing urllib3, the HTTP client for Python
+
+Pandas                  # Installing Pandas, a data analysis / data manipulation tool
+CoreMLTools             # Installing CoreMLTools, for working with .mlmodel format models
+OpenCV-Python           # Installing OpenCV, the Open source Computer Vision library
+Pillow<10.0.0           # Installing Pillow, a Python Image Library
+SciPy                   # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML                  # Installing PyYAML, a library for reading configuration files
+
+# https://pytorch.org/get-started/locally/ says to do this, but if you do, (a) Pandas used to get
+# upset, and (b) this installs Torch 2.0 or 1.3 depending on the python version, and 2.0 has issues
+# --index-url https://download.pytorch.org/whl/cu117
+# torch                 # Installing PyTorch, an open source machine learning framework
+# --index-url https://download.pytorch.org/whl/cu117
+# torchvision           # Installing TorchVision, for working with computer vision models
+
+## For CUDA 11.3:  (trying v1.10 since 1.11 has an issue with UpSample Module Layer)
+#--find-links https://download.pytorch.org/whl/torch_stable.html
+#torch==1.10.2+cu113    # Installing PyTorch, an open source machine learning framework
+#--find-links https://download.pytorch.org/whl/torch_stable.html
+#torchvision==0.11.3+cu113      # Installing TorchVision, for working with computer vision models
+
+## For CUDA 11.7
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==1.13.0+cu117     # Installing PyTorch, an open source machine learning framework
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.14.0+cu117 # Installing TorchVision, for working with computer vision models
+
+# We need this, but we don't need this.
+Seaborn         # Installing Seaborn, a data visualization library based on matplotlib
+
+## last line empty.

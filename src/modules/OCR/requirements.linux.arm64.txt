@@ -1,0 +1,16 @@
+#! Python3.8
+
+-i https://mirror.baidu.com/pypi/simple
+paddlepaddle>=2.5.1             # Installing PaddelPaddle, the Deep Learning platform
+
+## We also need to specify the exact version for paddleocr in Linux because 
+## v2.6.0.2 and 2.6.0.3 fail to build (lanms-neo fails to build, which is required)
+#paddleocr==2.6.0.1             # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+paddleocr==2.7.0.3              # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+
+imutils                         # Installing imutils, the image utilities library
+Pillow<10.0.0                   # Installing Pillow, a Python Image Library
+opencv-python                   # Installing OpenCV, the Computer Vision library for Python
+numpy==1.23.3                   # Installing NumPy, a package for scientific computing
+
+# end of file

@@ -1,0 +1,100 @@
+{
+  "Modules": {
+
+    "BackgroundRemover": {
+      "Name": "Background Remover",
+      "Version": "1.7.0",
+
+      // Publishing info
+      "Description": "Automatically removes the background from a picture", 
+      "Category": "Image Processing",
+      "Platforms": [ "all", "!linux", "!raspberrypi", "!orangepi", "!jetson" ], // issues with numpy on linux
+      "License": "SSPL",
+      "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+      "Author": "Chris Maunder",
+      "Homepage": "https://codeproject.com/ai",
+      "BasedOn": "rembg",
+      "BasedOnUrl": "https://github.com/danielgatis/rembg",
+
+      // Launch instructions
+      "AutoStart": false,
+      "FilePath": "rembg_adapter.py",
+      "Runtime": "python3.9",
+      "RuntimeLocation": "Local",       // Can be Local or Shared
+      /* Alternatively: "Command": "%RUNTIMES_PATH%\\bin\\windows\\python39\\venv\\Scripts\\python", */
+      "PostStartPauseSecs": 0,          // Generally 1 if using GPU, 0 for CPU
+     
+      "EnvironmentVariables": {
+        "U2NET_HOME": "%CURRENT_MODULE_PATH%/models" // where to store the models
+      },
+ 
+      // GPU options
+      "InstallGPU": false,              // GPU support not provided
+      "EnableGPU": true,                // Will be coerced to false if InstallGPU = false
+      "AcceleratorDeviceName": null,    // = default
+      "Parallelism": 1,                 // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",        // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+
+      // Which server version is compatible with each version of this module.
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "1.1",   "ServerVersionRange": [ "1.6.9", "2.0.8"  ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.1.0", "2.1.6"  ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
+        { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.1.0", "2.1.6"  ], "ReleaseDate": "2023-04-20", "ReleaseNotes": "Install improved for GPU enabled systems" },
+        { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor"  },
+        { "ModuleVersion": "1.5",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
+        { "ModuleVersion": "1.6",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.3.5", "2.4.0"  ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "1.6.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.6.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "1.7.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
+      ],
+
+      "RouteMaps": [
+        {
+          "Name": "Background Remover",
+          "Route": "image/removebackground",
+          "Method": "POST",
+          "Command": "removebackground",
+          "Description": "Removes the background from behind the main subjects in images.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The image to have its background removed."
+            },
+            {
+              "Name": "use_alphamatting",
+              "Type": "Boolean",
+              "Description": "Whether or not to use alpha matting.",
+              "DefaultValue": "false"
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "imageBase64",
+              "Type": "Base64ImageData",
+              "Description": "The base64 encoded image that has had its background removed."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "Modules": {
+
+    "OCR": {
+      "InstallGPU": false   // PaddlePaddle-GPU on CUDA is too fragile
+    }
+  }
+}

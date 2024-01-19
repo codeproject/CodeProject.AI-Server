@@ -2,6 +2,66 @@
     "version": "2.0.0",
     "tasks": [
 
+        {
+            "label": "build-all",         // Builds all projects 
+            "group": "build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-server",
+                "build-modules",
+                "build-tests"
+            ],
+            "windows": {
+                "dependsOn": [
+                    "build-server",
+                    "build-modules",
+                    "build-explorer",
+                    "build-tests"
+                ]
+            }
+        },
+
+        {
+            "label": "build-all-arm64",         // Builds all projects 
+            "group": "build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-server",
+                "build-modules-arm64",
+                "build-tests"
+            ],
+            "windows": {
+                "dependsOn": [
+                    "build-server",
+                    "build-modules-arm64",
+                    "build-explorer",
+                    "build-tests"
+                ]
+            }
+        },
+
+        {
+            "label": "build-modules", 
+            "group": "build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-yolo-net",
+                "build-portraitfilter",
+                "build-sentimentanalysis"
+            ]
+        },
+
+        {
+            "label": "build-modules-arm64", 
+            "group": "build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-yolo-net"
+                // "build-portraitfilter",
+                // "build-sentimentanalysis",
+            ]
+        },
+
         // Build individual projects ==================================================================================
 
         {
@@ -11,7 +71,37 @@
              "command": "dotnet",
              "args": [
                 "build",
-                "${workspaceFolder}/src/API/Server/FrontEnd",
+                "${workspaceFolder}/src/server",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        
+        {
+            "label": "build-server-release",    // Builds ONLY the API server, and not any backend analsysis or explorer apps
+             "type": "process",
+             "group": "build",
+             "command": "dotnet",
+             "args": [
+                "build",
+                "${workspaceFolder}/src/server",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary",
+                "-c",
+                "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        {
+            "label": "build-parsejson",                  // Builds the ParseJSON utility
+             "type": "process",
+             "group": "build",
+             "command": "dotnet",
+             "args": [
+                "build",
+                "${workspaceFolder}/src/SDK/Utilities/ParseJSON",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,27 +109,13 @@
         },
 
         {
-            "label": "build-common",      // Builds ONLY the Yolo .NET analysis module
+            "label": "build-yolo-net",      // Builds ONLY the Yolo .NET analysis module
             "type": "process",
             "group": "build",
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/API/Common",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },   
-
-        {
-            "label": "build-yolo",      // Builds ONLY the Yolo .NET analysis module
-            "type": "process",
-            "group": "build",
-            "command": "dotnet",
-            "args": [
-                "build",
-                "${workspaceFolder}/src/AnalysisLayer/ObjectDetectionNet",
+                "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5Net",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -53,7 +129,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/AnalysisLayer/PortraitFilter",
+                "${workspaceFolder}/src/modules/PortraitFilter",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -61,13 +137,13 @@
         },   
 
         {
-            "label": "build-sentimentanalysis",      // Builds ONLY the the .NET sentiment analysis module
+            "label": "build-sentimentanalysis",    // Builds ONLY the the .NET sentiment analysis module
             "type": "process",
             "group": "build",
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/AnalysisLayer/SentimentAnalysis",
+                "${workspaceFolder}/src/modules/SentimentAnalysis",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -75,7 +151,7 @@
         },   
 
         {
-            "label": "build-explorer",      // Builds ONLY the Yolo .NET demo explorer
+            "label": "build-explorer",      // Builds ONLY the Windows Forms .NET demo explorer (windows only)
             "type": "process",
             "group": "build",
             "command": "dotnet",
@@ -102,188 +178,15 @@
             "problemMatcher": "$msCompile"
         },   
 
-        {
-            "label": "build-all-linux",         // Builds all projects that can be built for Linux (ie not any Windows Forms apps)
-            "group": "build",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-server",
-                "build-analysisservices",
-				"build-tests"
-            ]
-        },
-
-        {
-            "label": "build-all-win",         // Builds all projects that can be built for Windows (ie everything)
-            "group": "build",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-server",
-                "build-analysisservices",
-                "build-explorer",
-				"build-tests"
-            ]
-        },
-
-        {
-            "label": "build-analysisservices", 
-            "group": "build",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-yolo",
-                "build-portraitfilter",
-                "build-sentimentanalysis",
-            ]
-        },
-
         // Launch apps ================================================================================================
-
-        {
-            "label": "start-api",       // Starts the API server, which in turn will start the backend analysis modules. No build is performed
-            "isBackground": true,
-            "type": "process",
-            "group": "none",
-            "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.AI.Server.exe",
-            "windows": {
-                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.AI.Server.exe"
-            },
-            "osx": {
-                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.AI.Server.dll"
-            },
-            "linux": {
-                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.AI.Server.dll"
-            },
-            "args": [],
-
-            // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
-            // to give VSCode enough to be satisfied and just let it run
-            "problemMatcher": [
-                {
-                    "pattern": [
-                        {
-                            "regexp": ".",
-                            "file": 1,
-                            "location": 2,
-                            "message": 3
-                        }
-                    ],
-                    "background": {
-                        "activeOnStart": true,
-                        "beginsPattern": ".",
-                        "endsPattern": ".",
-                    }
-                }
-            ]
-        },
-
-        {
-            "label": "start-api-noprocesses",   // Starts the API server, WITHOUT starting the backend analysis modules
-            "isBackground": true,
-            "type": "process",
-            "group": "none",
-            "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.AI.Server.exe",
-            "windows": {
-                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.AI.Server.exe"
-            },
-            "osx": {
-                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.AI.Server.dll"
-            },
-            "linux": {
-                "command": "${workspaceFolder}/src/API/Server/FrontEnd/bin/Debug/net5.0/CodeProject.AI.Server.dll"
-            },
-            "args": [ "--LaunchAnalysisServices=false" ],
-
-            // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
-            // to give VSCode enough to be satisfied and just let it run
-            "problemMatcher": [
-                {
-                    "pattern": [
-                        {
-                            "regexp": ".",
-                            "file": 1,
-                            "location": 2,
-                            "message": 3
-                        }
-                    ],
-                    "background": {
-                        "activeOnStart": true,
-                        "beginsPattern": ".",
-                        "endsPattern": ".",
-                    }
-                }
-            ]
-        },
-
-        {
-            "label": "launch-analysis",   // Launches ONLY the backend Python analysis services. Allows us to debug them
-            "type": "process",
-            "isBackground": true,
-            "group": "none",
-            "command": "${workspaceFolder}\\src\\AnalysisLayer\\start-analysis.bat",
-            "windows": {
-                "command": "${workspaceFolder}\\src\\AnalysisLayer\\start-analysis.bat"
-            },
-            "osx": {
-                "command": "/bin/bash '${workspaceFolder}/src/AnalysisLayer/start-analysis.sh'"
-            },
-            "linux": {
-                "command": "/bin/bash ${workspaceFolder}/src/AnalysisLayer/start-analysis.sh"
-            },
-            "args": [ "'${workspaceFolder}/src/AnalysisLayer/'" ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            // This task needs to run in the background. It never exits, so to ensure VSCode moves on with life, we need
-            // to give VSCode enough to be satisfied and just let it run
-            "problemMatcher": [
-                {
-                    "pattern": [
-                        {
-                            "regexp": ".",
-                            "file": 1,
-                            "location": 2,
-                            "message": 3
-                        }
-                    ],
-                    "background": {
-                        "activeOnStart": true,
-                        "beginsPattern": ".",
-                        "endsPattern": ".",
-                    }
-                }
-            ]
-        },        
-
-        {
-            "label": "launch-server-linux",     // Builds and Launches the AI server for Linux
-            "group": "none",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-server",
-                "build-analysisservices",
-                "start-api"
-            ]
-        },
-
-        {
-            "label": "pre-launch-server-debug", // Builds all, then Launches only background processes, allowing Python debug 
-            "group": "none",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-server",
-                "build-analysisservices",
-                "launch-analysis"
-            ]
-        },
 
         {
             "label": "launch-server-win",       // Builds all projects then launches the front end API server
             "group": "none",
+            "command": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.exe",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "build-all-win",
-                "start-api"
+                "build-all-win"
             ]
         },
 
@@ -291,12 +194,26 @@
             "label": "start-explorer",        // Starts the Explorer Windows form app. No building or launching of API server done.
             "group": "none",
             // Windows form apps only work in Windows
-            "command": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/bin/Debug/net6.0-windows/",
+            "command": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/win-x64/",
             "args": [],
-            "type": "process",
+            "type": "process"
         },
 
-        // Misc
+        {
+            "label": "stop-all",     // Builds and Launches the AI server for Linux
+            "group": "none",
+            "type": "process",
+            "command": "bash",
+            "args": [ "${workspaceFolder}/src/SDK/Utilities/stop_all.sh" ],
+            "problemMatcher": "$msCompile",
+            "windows": {
+                "command": "${workspaceFolder}/src/SDK/Utilities/stop_all.bat",
+                "args": []
+            }
+        },
+
+        // Misc ===================================================================================================
+
         {
             "label": "publish",
             "command": "dotnet",
@@ -304,7 +221,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "${workspaceFolder}/src/server/server.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -319,11 +236,32 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/src/API/Server/FrontEnd/Frontend.csproj",
+                "${workspaceFolder}/src/server/server.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
-        }    
+        },
+        
+        {
+          "label": "Inno Setup: Compile Script",
+          "type": "process",
+          "command": "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
+          "args": [
+            "${file}"
+          ],
+          "dependsOrder": "sequence",
+          "dependsOn": [
+            "build-server-release"
+          ],
+          "presentation": {
+            "reveal": "always",
+            "echo": false
+          },
+          "group": {
+            "kind": "build",
+            "isDefault": true
+          }
+        }
     ]
 }

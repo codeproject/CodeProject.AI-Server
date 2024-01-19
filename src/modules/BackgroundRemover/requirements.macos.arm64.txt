@@ -1,0 +1,17 @@
+#! Python3.9
+
+# We may need to rework this. See https://stackoverflow.com/a/66536896
+numpy==1.23.5               # Installing NumPy, a package for scientific computing
+
+filetype                    # Installing FileType, a package to infer file types and MIME types
+gdown                       # Installing gdown, a package for downloading from Google Drive folders
+
+pymatting                   # Installing pymatting, a Python Library for Alpha Matting
+Pillow<10.0.0               # Installing Pillow, a Python Image Library
+
+flatbuffers                 # Installing FlatBuffers serialization format support
+onnxruntime                 # Installing the ONNX runtime.
+
+## onnxruntime==1.8.2.dev169944 # Possible needed for Apple silicon
+
+# last line blank

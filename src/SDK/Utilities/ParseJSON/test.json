@@ -1,0 +1,23 @@
+{
+  "Modules": {
+
+    "ALPR-4.1": {
+      /* Multi-
+         line comment */
+      "Name": "License Plate Reader",
+      "Version": "2.7.3",
+      
+      /* This is a comment */
+
+      "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
+      "Platforms": [ "windows", "linux", "linux-arm64", "macos", "macos-arm64" ], // Issues installing PaddlePaddle on linux-arm64
+      "License": "SSPL",
+
+      "AutoStart": true,
+      "FilePath": "ALPR_adapter.py",
+      "Runtime": "python3.8",
+      "RuntimeLocation": "Local",      
+      "Queue": "alpr_queue"
+    }
+  }
+}

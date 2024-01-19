@@ -1,0 +1,764 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<!--
+CODEPROJECT.AI SERVER MODULE EXPLORER
+
+This page provides the means to test this module using the same infrastructure as
+the CodeProject.AI Server explorer. This page also provides the UI elements that
+the explorer will parse and use to build up the UI of the main explorer itself.
+
+RULES AND CONVENTIONS
+
+1. This page should provide sufficient functionality to test and explore this
+   module.
+
+2. This page should use the functionality in the explorer.js file so that when
+   the elements of this page are inserted into the main explorer, it all works
+   seamlessly. Specifically, you will probably use
+
+   - clearImagePreview:         Clears the image preview area.
+   - previewImage:              Displays an image in the shared image preview area and takes a
+                                input[type=file] as parameter.
+   - submitRequest:             Sends a request to the AI server.
+   - setResultsHtml:            Sets the HTML in the shared 'results' element. Parameter is the HTML
+                                to display.
+   - getProcessingMetadataHtml: Gets HTML representing the common data returned from a call to a
+                                module.
+   - displayBaseResults:        Displays the common data returned from a call to a module.
+   - showPredictionSummary:     Displays in the shared HTML results pane the list of predictions 
+                                returned from an inference operation.
+   - clearImageResult:          Clears the image result area 
+   - showResultsImageData:      Displays an image in the shared image results area using the data
+                                returned from a call to a module, and overlays bounding boxes if
+                                present in the data
+   - showResultsBoundingBoxes:  Displays bounding boxes on the shared image results area based on
+                                the boxes returned in the predictions parameter. The first param is
+                                an array of predictions returned from a computer vision operation.
+
+3. There are 3 parts of this page that will be pulled into the main explorer
+   during runtime: The HTML, the script, and the CSS. These sections are bounded by
+
+    - HTML:   START EXPLORER MARKUP / END EXPLORER MARKUP pair, each within HTML comment brackets
+    - Script: START EXPLORER SCRIPT / END EXPLORER SCRIPT pair, each as a // comment on its own line
+    - CSS:    START EXPLORER STYLE  / END EXPLORER STYLE pair, each inside /* ... */ comments
+
+   These delimiters should be on a line by themselves
+
+4. **Please provide output elements to display the results of operations** if
+   you wish to use the standard HTML / Image results elements in the main explorer
+   - For HTML output, include a DIV with id 'results'
+   - For Image preview/output, include an IMG element with id img and a DIV with
+     id 'imageMask'
+   - For Sound preview, include an AUDIO element with id 'snd' that contains a
+     SOURCE tag
+
+5. When this file is parsed and injected into the larger explorer, the HTML is
+   injected first, then the script, then the CSS.
+
+6. **To ensure uniqueness of elements** you can include the _MID_ macro in any
+   name. This will be expanded to be [ModuleId]_ where [ModuleId] is the literal
+   ID of this module. For instance <div id="_MID_TextBox"> becomes <div id="MyModuleId_TextBox">
+-->
+<head>
+    <meta charset="utf-8" />
+    <title>LlamaChat Module Test</title>
+
+    <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
+    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
+
+    <style>
+/* START EXPLORER STYLE */
+/* END EXPLORER STYLE */
+    </style>
+
+</head>
+<body class="dark-mode">
+<div class="mx-auto" style="max-width: 800px;">
+    <h2 class="mb-3">LlamaChat Module Test</h2>
+    <form method="post" action="" enctype="multipart/form-data" id="myform">
+
+<!-- START EXPLORER MARKUP -->
+    <div class="row g-3">
+        <div class="col-2">
+            <h6 class="card-title fw-bold">Dataset</h6>
+        </div>
+        <div class="col-10">
+            <div class="progress mt-0 bg-transparent" style="height: 20px;">
+                <div id="_MID_datasetProgress" class="progress-bar bg-success" role="progressbar"
+                        aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+            </div>
+        </div>											
+    </div>
+    
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label">Name</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingInputDatasetName" 
+                    data-bs-toggle="tooltip" type="text"
+                    title="Name of Dataset to create." onchange="_MID_onDatasetNameChange()" />
+        </div>
+        <div class="col-2">
+            <label class="col-form-label">#Images</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingNumImages" type="number" 
+                    data-bs-toggle="tooltip" title="Number of images to use for training (10 - 10,000)" 
+                    value="100" />
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label text-nowrap">
+                Classes
+                <div class='dropdown text-wrap d-inline-block'>
+                    <button class='btn btn-sm dropdown d-inline border-none' type='button' id='open-images-classes-label' 
+                            data-bs-toggle='dropdown'>
+                        <svg fill="#000000" height="20px" width="20px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+                            viewBox="0 0 330 330" xml:space="preserve">
+                            <g>
+                            <path d="M165,0C74.019,0,0,74.02,0,165.001C0,255.982,74.019,330,165,330s165-74.018,165-164.999C330,74.02,255.981,0,165,0z M165,300c-74.44,0-135-60.56-135-134.999C30,90.562,90.56,30,165,30s135,60.562,135,135.001C300,239.44,239.439,300,165,300z"/>
+                            <path d="M164.998,70c-11.026,0-19.996,8.976-19.996,20.009c0,11.023,8.97,19.991,19.996,19.991 c11.026,0,19.996-8.968,19.996-19.991C184.994,78.976,176.024,70,164.998,70z"/>
+                            <path d="M165,140c-8.284,0-15,6.716-15,15v90c0,8.284,6.716,15,15,15c8.284,0,15-6.716,15-15v-90C180,146.716,173.284,140,165,140z"/>
+                            </g>
+                        </svg>																
+                    </button>
+                    <ul class='dropdown-menu' aria-labelledby="open-images-classes-label">
+                        <li>
+                            <!-- TODO: Pull this from the training module -->
+                            <div id='open-images-classes' style="width:60rem">
+                                Accordion, Adhesive tape, Aircraft, Airplane, Alarm clock, Alpaca, Ambulance, Animal, Ant, Antelope,
+                                Apple, Armadillo, Artichoke, Auto part, Axe, Backpack, Bagel, Baked goods, Balance beam, Ball, Balloon,
+                                Banana, Band-aid, Banjo, Barge, Barrel, Baseball bat, Baseball glove, Bat (Animal), Bathroom accessory,
+                                Bathroom cabinet, Bathtub, Beaker, Bear, Bed, Bee, Beehive, Beer, Beetle, Bell pepper, Belt, Bench,
+                                Bicycle, Bicycle helmet, Bicycle wheel, Bidet, Billboard, Billiard table, Binoculars, Bird, Blender,
+                                Blue jay, Boat, Bomb, Book, Bookcase, Boot, Bottle, Bottle opener, Bow and arrow, Bowl, Bowling equipment,
+                                Box, Boy, Brassiere, Bread, Briefcase, Broccoli, Bronze sculpture, Brown bear, Building, Bull, Burrito,
+                                Bus, Bust, Butterfly, Cabbage, Cabinetry, Cake, Cake stand, Calculator, Camel, Camera, Can opener,
+                                Canary, Candle, Candy, Cannon, Canoe, Cantaloupe, Car, Carnivore, Carrot, Cart, Cassette deck, Castle,
+                                Cat, Cat furniture, Caterpillar, Candy, Cannon, Canoe, Cantaloupe, Car, Carnivore, Carrot, Cart,
+                                Cassette deck, Castle, Cat, Cat furniture, Caterpillar, Cattle, Ceiling fan, Cello, Centipede, Chainsaw,
+                                Chair, Cheese, Cheetah, Chest of drawers, Chicken, Chime, Chisel, Chopsticks, Christmas tree, Clock,
+                                Closet, Clothing, Coat, Cocktail, Cocktail shaker, Coconut, Coffee, Coffee cup, Coffee table, Coffeemaker,
+                                Coin, Common fig, Common sunflower, Computer keyboard, Computer monitor, Computer mouse, Container,
+                                Convenience store, Cookie, Cooking spray, Corded phone, Cosmetics, Couch, Countertop, Cowboy hat, Crab,
+                                Cream, Cricket ball, Crocodile, Croissant, Crown, Crutch, Cucumber, Cupboard, Curtain, Cutting board,
+                                Dairy Product, Deer, Desk, Dessert, Diaper, Dice, Digital clock, Dinosaur, Dishwasher, Dog, Dog bed,
+                                Doll, Dolphin, Door, Door handle, Doughnut, Dragonfly, Drawer, Dress, Drill (Tool), Drink, Drinking straw,
+                                Drum, Duck, Dumbbell, Eagle, Earrings, Egg (Food), Elephant, Envelope, Eraser, Face powder, Facial tissue holder,
+                                Falcon, Fashion accessory, Fast food, Fax, Fedora, Filing cabinet, Fire hydrant, Fireplace, Fish, Flag,
+                                Flashlight, Flower, Flowerpot, Flute, Flying disc, Food, Football, Football helmet, Footwear, Fork,
+                                Fountain, Fox, French fries, French horn, Frog, Fruit, Frying pan, Furniture, Garden Asparagus,
+                                Gas stove, Giraffe, Girl, Glasses, Glove, Goat, Goggles, Goldfish, Golf ball, Golf cart, Gondola,
+                                Goose, Grape, Grapefruit, Grinder, Guacamole, Guitar, Hair dryer, Hair spray, Hamburger, Hammer,
+                                Hamster, Hand dryer, Handbag, Handgun, Harbor seal, Harmonica, Harp, Harpsichord, Hat, Headphones,
+                                Heater, Hedgehog, Helicopter, Helmet, High heels, Hiking equipment, Hippopotamus, Home appliance,
+                                Honeycomb, Horizontal bar, Horse, Hot dog, House, Houseplant, Human arm, Human beard, Human body,
+                                Human ear, Human eye, Human face, Human foot, Human hair, Human hand, Human head, Human leg, Human mouth,
+                                Human nose, Humidifier, Ice cream, Indoor rower, Insect, Invertebrate, Ipod, Isopod, Jacket, Jacuzzi,
+                                Jaguar (Animal), Jeans, Jellyfish, Jet ski, Jug, Juice, Kangaroo, Kettle, Kitchen & dining room table,
+                                Kitchen appliance, Kitchen knife, Kitchen utensil, Kitchenware, Kite, Knife, Koala, Ladder, Ladle,
+                                Ladybug, Lamp, Land vehicle, Lantern, Laptop, Lavender (Plant), Lemon, Leopard, Light bulb, Light switch,
+                                Lighthouse, Lily, Limousine, Lion, Lipstick, Lizard, Lobster, Loveseat, Luggage and bags, Lynx, Magpie,
+                                Mammal, Man, Mango, Maple, Maracas, Marine invertebrates, Marine mammal, Measuring cup, Mechanical fan,
+                                Medical equipment, Microphone, Microwave oven, Milk, Miniskirt, Mirror, Missile, Mixer, Mixing bowl,
+                                Mobile phone, Monkey, Moths and butterflies, Motorcycle, Mouse, Muffin, Mug, Mule, Mushroom,
+                                Musical instrument, Musical keyboard, Necklace, Nightstand, Oboe, Office building, Office supplies,
+                                Orange, Organ (Musical Instrument), Ostrich, Otter, Oven, Owl, Oyster, Paddle, Palm tree, Pancake,
+                                Panda, Paper cutter, Paper towel, Parachute, Parking meter, Parrot, Pasta, Pastry, Peach, Pear, Pen,
+                                Pencil case, Pencil sharpener, Penguin, Perfume, Person, Personal care, Personal flotation device,
+                                Piano, Picnic basket, Picture frame, Pig, Pillow, Pineapple, Pitcher (Container), Pizza, Pizza cutter,
+                                Plant, Plastic bag, Plate, Platter, Plumbing fixture, Polar bear, Pomegranate, Popcorn, Porch, Porcupine,
+                                Poster, Potato, Power plugs and sockets, Pressure cooker, Pretzel, Printer, Pumpkin, Punching bag,
+                                Rabbit, Raccoon, Racket, Radish, Ratchet (Device), Raven, Rays and skates, Red panda, Refrigerator,
+                                Remote control, Reptile, Rhinoceros, Rifle, Ring binder, Roller skates, Rose, Rugby ball, Ruler, Salad,
+                                Salt and pepper shakers, Sandal, Sandwich, Saucer, Saxophone, Scale, Scarf, Scissors, Scoreboard,
+                                Scorpion, Screwdriver, Sculpture, Sea lion, Sea turtle, Seafood, Seahorse, Seat belt, Segway,
+                                Serving tray, Sewing machine, Shark, Sheep, Shelf, Shellfish, Shirt, Shorts, Shotgun, Shower, Shrimp,
+                                Sink, Skateboard, Ski, Skirt, Skull, Skunk, Skyscraper, Slow cooker, Snack, Snail, Snake, Snowboard,
+                                Snowman, Snowmobile, Snowplow, Soap dispenser, Sock, Sofa bed, Sombrero, Sparrow, Spatula, Spice rack,
+                                Spider, Spoon, Sports equipment, Sports uniform, Squash (Plant), Squid, Squirrel, Stairs, Stapler,
+                                Starfish, Stationary bicycle, Stethoscope, Stool, Stop sign, Strawberry, Street light, Stretcher,
+                                Studio couch, Submarine sandwich, Suit, Suitcase, Sun hat, Sunglasses, Surfboard, Sushi, Swan, Swim cap,
+                                Swimming pool, Swimwear, Sword, Syringe, Table, Table tennis racket, Tablet computer, Tableware, Taco,
+                                Tank, Tap, Tart, Taxi, Tea, Teapot, Teddy bear, Telephone, Television, Tennis ball, Tennis racket,
+                                Tent, Tiara, Tick, Tie, Tiger, Tin can, Tire, Toaster, Toilet, Toilet paper, Tomato, Tool, Toothbrush,
+                                Torch, Tortoise, Towel, Tower, Toy, Traffic light, Traffic sign, Train, Training bench, Treadmill,
+                                Tree, Tree house, Tripod, Trombone, Trousers, Truck, Trumpet, Turkey, Turtle, Umbrella, Unicycle, Van,
+                                Vase, Vegetable, Vehicle, Vehicle registration plate, Violin, Volleyball (Ball), Waffle, Waffle iron,
+                                Wall clock, Wardrobe, Waste container, Watch, Watercraft, Watermelon, Weapon, Whale, Wheel, Wheelchair,
+                                Whisk, Whiteboard, Willow, Window, Window blind, Wine, Wine glass, Wine rack, Winter melon, Wok, Woman,
+                                Wood-burning stove, Woodpecker, Worm, Wrench, Zebra, Zucchini
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </label>
+        </div>
+        <div class="col-10">
+            <input class="form-control" id="_MID_trainingDatasetClasses" type="text" 
+                    data-bs-toggle="tooltip" title="A comma separated list of classes. Click the info button for a list." />
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-2">
+        </div>
+        <div class="col-10 d-flex justify-content-around">
+            <div>
+                <input class="btn btn-success" type="button" value="Create Dataset"
+                        onclick="_MID_onDatasetCreate(
+                            _MID_trainingInputDatasetName.value,
+                            _MID_trainingDatasetClasses.value,
+                            _MID_trainingNumImages.value)">
+            </div>
+            <div>
+                <input class="btn btn-info" type="button" value="Dataset Info"
+                        onclick="_MID_onTrainingDatasetInfo(_MID_trainingInputDatasetName.value)">
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-3">
+        <div class="col-2">
+            <h6 class="card-title fw-bold">Model</h6>
+        </div>
+        <div class="col-10">
+            <div class="progress mt-0 bg-transparent" style="height: 20px;">
+                <div id="_MID_trainingProgress" class="progress-bar bg-success" role="progressbar"
+                        aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+            </div>
+        </div>											
+    </div>
+
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label">Name</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingInputModelName" type="text"
+                    data-bs-toggle="tooltip" title="Name of YoloV5 Model to train." />
+        </div>
+        <div class="col-2">
+            <label class="col-form-label">Dataset</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingInputModelDatasetName" type="text"
+                    data-bs-toggle="tooltip" 
+                    title="Name of Dataset used to train the Model. Enter the name of the dataset you created above or the full path of a dataset you have created by other means." />
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label">Model size</label>
+        </div>
+        <div class="col-4">
+            <select class="form-select" id="_MID_trainingModelSize" 
+                    data-bs-toggle="tooltip" title="The size of the YoloV5 Model to create.">
+                <option value="tiny">Tiny</option>
+                <option value="small" selected>Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+            </select>
+        </div>
+        <div class="col-2">
+            <label class="col-form-label">Tuning</label>
+        </div>
+        <div class="col-4">
+            <select class="form-select" id="_MID_trainingModelHyp" data-bs-toggle="tooltip"
+                    title="Select which Hyper Parameters file to use when training.">
+                <option value="fine" selected>Fine</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label">Batch</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingBatchSize" type="number" 
+                    value="4" min="-1" max="256"
+                    data-bs-toggle="tooltip" title="Number of images in each training batch. Higher = more memory use but better performance. Use -1 to auto select (experimental)." />
+        </div>
+        <div class="col-2">
+            <label class="col-form-label">Epochs</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingNumEpochs" type="number" value="100"
+                    data-bs-toggle="tooltip"
+                    title="Number of Epochs to train. Higher = better, but can lead to overtraining. (10 - 1,000)"  />
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label">Patience</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingPatience" type="number" value="100" 
+                    data-bs-toggle="tooltip" title="Number of epochs to wait for no observable improvement for early stopping of training." />
+        </div>
+
+        <div class="col-2">
+            <label class="col-form-label">Workers</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingWorkers" type="number" value="8"
+                    data-bs-toggle="tooltip"
+                    title="Number of number of worker threads. 8=default, range (1 - 128)."/>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label">Freeze</label>
+        </div>
+        <div class="col-4">
+            <select class="form-select" id="_MID_trainingFreeze" data-bs-toggle="tooltip"
+                    title="Which layers of the model weights to exclude from training. The more excluded, the faster the training, at the cost of accuracy">
+                <option value="0">None</option>
+                <option value="10" selected>Backbone</option>
+                <option value="24">All</option>
+            </select>
+        </div>
+        <div class="col-2">
+            <label class="col-form-label">Device</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingDevice" data-bs-toggle="tooltip"
+                    type="text" value="0" 
+                    title="'', 'cpu', '0' or '0,1,2,3' for multiple GPUs." />
+        </div>
+    </div>
+
+    <div class="row g-3 pt-2">
+        <div class="col-2">
+        </div>
+        <div class="col-10 d-flex justify-content-around">
+            <div>
+                <input class="btn btn-success" type="button" value="Train Model"
+                        onclick="_MID_onTrainingStart(
+                            _MID_trainingInputModelName.value,
+                            _MID_trainingInputModelDatasetName.value,
+                            _MID_trainingModelSize.value,
+                            _MID_trainingNumEpochs.value,
+                            _MID_trainingBatchSize.value,
+                            _MID_trainingDevice.value,
+                            _MID_trainingFreeze.value,
+                            _MID_trainingModelHyp.value,
+                            _MID_trainingPatience.value,
+                            _MID_trainingWorkers.value
+                        )">
+            </div>
+            <div>
+                <input class="btn btn-success" type="button" value="Resume Training"
+                        data-bs-toggle="tooltip"
+                        title="Resume training the YoloV5 Model from the last successful epoch with the parameters specified when it was started."
+                        onclick="_MID_onTrainingResumeTraining(_MID_trainingInputModelName.value)">
+            </div>
+            <div>
+                <input class="btn btn-info" type="button" value="Model Info"
+                        onclick="_MID_onTrainingModelInfo(_MID_trainingInputModelName.value)">
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-4">
+        <div class="col-2">
+            <label class="col-form-label">Status</label>
+        </div>
+        <div class="col-10">
+            <input class="form-control" id="_MID_statusMessage" type="text" readonly 
+                    title="The status of the last started long running action."/>
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label">Action</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingAction"
+                    type="text" readonly />
+        </div>
+        <div class="col-2">
+            <label class="col-form-label">State</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingState" 
+                    type="text" readonly />
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-2">
+            <label class="col-form-label">Model</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingModelName" 
+                    type="text" readonly />
+        </div>
+        <div class="col-2">
+            <label class="col-form-label">Dataset</label>
+        </div>
+        <div class="col-4">
+            <input class="form-control" id="_MID_trainingDatasetName"
+                    type="text" readonly />
+        </div>
+    </div>
+
+    <div class="row g-3 pt-2">
+        <div class="col-12 text-center">
+            <input class="btn btn-danger" type="button" value="Cancel"
+                    id="_MID_trainingCancelBtn"
+                    disabled hidden 
+                    onclick="_MID_onTrainingCancel()">
+        </div>
+    </div>
+
+    <div class="w-100 position-relative bg-light">
+        <img src="" id="_MID_imgTrainingResult" class="w-100" style="height:auto;visibility:hidden">
+    </div>
+<!-- END EXPLORER MARKUP -->
+
+        <div class="w-100 position-relative form-control my-4 p-0">
+            <div id="imgMask" class="position-absolute"
+                    style="left:0;top:0;pointer-events:none;z-index:10"></div>
+            <img src="" id="imgPreview" class="w-100" style="height:250px;visibility:hidden">
+        </div>
+        <div>
+            <h2>Results</h2>
+            <div id="results" name="results" class="bg-light p-3" style="min-height: 100px;"></div>
+        </div>
+
+    </form>
+
+    <script type="text/javascript">
+// START EXPLORER SCRIPT
+		let _MID_trainingResultsShown = true; // Have successful results been displayed?
+								              // initialize to true or onTrainingModelInfo 
+										      // will be called on the first onTrainingStatus call.
+
+		function _MID_onTrainingStatus() {
+
+			// This is for the main Explorer page: If the user isn't currently viewing the training
+			// tab then don't do a status update. It won't be missed.
+			const panel = document.getElementById('train-panel');
+            if (panel && !panel.classList.contains("active"))
+                return;
+
+            submitRequest('train', 'status', null, null, 
+				function (data) {
+					if (data.success) {
+					
+                        /*
+                        let summary = `State: ${data.state}<br>`
+                                    + `Action: ${data.action}<br>`
+                                    + `Message: ${data.message}<br>`
+                                    + `Progress: ${data.progress}<br>`
+                                    + `Busy: ${data.is_busy}<br><br>`
+                                    + getProcessingMetadataHtml(data);
+                        setResultsHtml(summary);
+                        */
+
+						// TODO: Would be nice (but not necessary) to have the training module 
+                        // calculate these values for us so we don't have to keep up with enums and
+                        // states
+						let actionActive           = data.state == "Running"; // || data.state == "Initializing" || data.state == "Cancelling";
+						let creatingDataset        = actionActive && data.action == "CreateDataset";
+						let doingTraining          = actionActive && (data.action == "TrainModel" ||
+						                                              data.action == "ResumeTrainModel");
+
+						_MID_trainingModelName.value    = data.model_name;
+                        _MID_trainingDatasetName.value  = data.dataset_name
+						_MID_trainingAction.value       = data.action;
+						_MID_trainingState.value        = data.state;
+						_MID_statusMessage.value        = data.message;
+
+						_MID_trainingState.classList.remove("text-success", "bg-success", "fw-bold", "text-warning", "bg-danger");
+						_MID_trainingCancelBtn.setAttribute('disabled', true);
+						_MID_trainingCancelBtn.setAttribute('hidden', true);
+
+						if (data.state == "Initializing" || data.state == "Running") {
+							_MID_trainingState.classList.add("text-success", "fw-bold");
+							_MID_trainingCancelBtn.removeAttribute('disabled')
+							_MID_trainingCancelBtn.removeAttribute('hidden')
+							_MID_trainingCancelBtn.value = doingTraining ? "Pause" : "Cancel";
+						}
+						else if (data.state == "Completed")
+							_MID_trainingState.classList.add("bg-success");
+						else if (data.state == "Cancelling" || data.state == "Cancelled")
+							_MID_trainingState.classList.add("text-warning", "fw-bold");
+						else if (data.state == "Failed")
+							_MID_trainingState.classList.add("bg-danger");
+
+						let progressStr = (data.progress||0).toFixed(0);
+
+						// Default state for progress bars is hidden
+						_MID_datasetProgress.parentElement.classList.add("bg-transparent");
+						_MID_datasetProgress.innerHTML = "";
+						_MID_trainingProgress.parentElement.classList.add("bg-transparent");
+						_MID_trainingProgress.innerHTML = "";
+
+						if (creatingDataset) {
+							_MID_datasetProgress.innerHTML = progressStr + "%";
+							_MID_datasetProgress.parentElement.classList.remove("bg-transparent");
+							//	onTrainingDatasetInfo(data.dataset_name);
+
+							if (data.progress < 1)
+								_MID_datasetProgress.classList.add("progress-bar-striped", "progress-bar-animated");
+							else
+								_MID_datasetProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+							_MID_datasetProgress.ariaValueNow = progressStr;
+						}
+						else {
+							_MID_datasetProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+							// Previously we wanted the dataset creation progress bar to sit at 100%
+							// while the training (that presumably used the created dataset) continued.
+							// This isn't actually realistic :(
+							// datasetProgress.ariaValueNow = data.dataset_created ? "100" : "0";
+							_MID_datasetProgress.ariaValueNow = "0";
+						}
+
+						if (doingTraining) {
+							_MID_trainingProgress.innerHTML  = progressStr + "%";
+							_MID_trainingProgress.parentElement.classList.remove("bg-transparent");
+							_MID_onTrainingModelInfo(data.model_name);
+
+							if (data.progress < 1)
+								_MID_trainingProgress.classList.add("progress-bar-striped", "progress-bar-animated");
+							else
+								_MID_trainingProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+							_MID_trainingProgress.ariaValueNow = progressStr;
+						}
+						else {
+							_MID_trainingProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+							_MID_trainingProgress.ariaValueNow = "0";
+						}
+
+						// We never know when each status call is done, and between calls the training
+						// may have ended. If this is the case, we need to ensure we've done one last
+						// info update to get the final results.
+						if (!trainingResultsShown && !doingTraining) {
+							trainingResultsShown = true;
+							_MID_onTrainingModelInfo(data.model_name);
+						}
+
+						_MID_datasetProgress.style.width  = _MID_datasetProgress.ariaValueNow + "%";
+						_MID_trainingProgress.style.width = _MID_trainingProgress.ariaValueNow + "%";
+					}
+					else {
+						_MID_trainingAction.value  = "Unknown"
+						_MID_trainingState.value   = "Unknown";
+					}
+				},
+				function (data) {
+				});
+		}
+
+		function _MID_onDatasetCreate(dataset_name, classes, num_images)
+		{
+            params = [
+                ["dataset_name", dataset_name],
+                ["classes", classes],
+                ["num_images", num_images],
+            ];
+            setResultsHtml("Starting dataset creation");
+
+            submitRequest('train', 'create_dataset', null, params,
+                function (data) {
+                    if (data.success)
+						setResultsHtml(`Create the Dataset '${dataset_name}'`);
+                    else
+                        setResultsHtml(`Create Dataset failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
+                },
+                function (data) {
+                    if (data)
+                        setResultsHtml(`Create Dataset failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
+                    else
+                        setResultsHtml("Create Dataset failed to start");
+				}
+			);
+		}
+
+		function _MID_onTrainingStart(model_name, dataset_name, model_size, num_epochs, batch, device, 
+								      freeze, hyp, patience, workers) {
+
+			params = [
+                [ "model_name",   model_name   ],
+                [ "dataset_name", dataset_name ],
+				[ "model_size",   model_size   ],
+				[ "num_epochs",   num_epochs   ],
+				[ "device",       device       ],
+				[ "batch",        batch        ],
+				[ "freeze",       freeze       ],
+				[ "hyp" ,         hyp          ],
+				[ "patience",     patience     ],
+				[ "workers",      workers      ]
+			];
+
+			setResultsHtml("Starting model training");
+
+            submitRequest('train', 'train_model', null, params, 
+				function (data) {
+					if (data.success) {
+						setResultsHtml("Training started for model " + model_name);
+						trainingResultsShown = false;
+					}
+					else
+						setResultsHtml(`Training failed to start. ${data.error? "(" + data.error + ")" : ''}`);
+				},
+				function (data) {
+					if (data)
+	                    setResultsHtml(`Training failed to start. ${data.error? "(" + data.error + ")" : ''}`);
+					else
+						setResultsHtml("Training failed to start");
+                });
+		}
+
+		function _MID_onTrainingResumeTraining(model_name) {
+
+            params = [
+                ["model_name", model_name]
+            ];
+            setResultsHtml("Resume Training model {model_name}");
+
+            submitRequest('train', 'resume_training', null, params,
+                function (data) {
+                    if (data.success) {
+                        // NOTE: if TrainingYOLO has train_in_separate_task = False then the data
+                        // object will contain all the info of the newly created model
+
+                        setResultsHtml("Resuming training for model " + model_name);
+                        trainingResultsShown = false;
+                    }
+                    else
+                        setResultsHtml(`Resume Training failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
+                },
+                function (data) {
+                    if (data)
+                        setResultsHtml(`Resume Training  failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
+                    else
+                        setResultsHtml("Resume Training  failed to start");
+                }
+            );
+		}
+
+		function _MID_onTrainingCancel() {
+
+            clearImagePreview();
+
+			submitRequest('train', 'cancel', null, null, 
+				function (data) {
+
+					if (data.success)
+						setResultsHtml("Training cancel requested");
+					else
+						setResultsHtml(`Training was already cancelled.`);
+				},
+				function (data) {
+					if (data)
+	                    setResultsHtml(`Training failed to cancel. ${data.error? "(" + data.error + ")" : ''}`);
+					else
+						setResultsHtml("Training failed to cancel");
+                });
+		}
+
+		function _MID_onTrainingModelInfo(model_name) {
+
+			if (!model_name) {
+                setResultsHtml("Get Model Info Failed: Model Name is required.")
+				return
+			}
+
+			params = [["model_name", model_name]]
+            submitRequest('train', 'model_info', null, params, 
+				function (data) {
+					if (data.success) {
+						let model_created = data.model_created
+						let resultHtml    = "Get Training Model Info:"
+									      + "<br/><b>Model Name:</b> " + model_name + " (" + data.model_size + "Mb)"
+									      + "<br/><b>Training State:</b> " + (model_created ? "Complete" : "Not Complete") // Need to detect "failed"
+									      + "<br/><br/><b>Model Path:</b><br/> " + (data.model_path || "Not yet available")
+									      + "<br/><br/><b>Results Graph Path:</b><br/>  " + (data.results_graph_path || "Not yet available")
+									      + "<br/><br/><b>Results CSV:</b><br/> " + (data.results_csv_path || "Not yet available")
+									      + "<br/><br/><b>PR Curve Graph Path:</b><br/> " + (data.pr_curve_path || "Not yet available")
+									      + getProcessingMetadataHtml(data);
+						setResultsHtml(resultHtml);
+
+						if (data.results_graph_image) {
+							data["imageBase64"] = data.results_graph_image;
+							showResultsImageData(data);
+						}
+						else {
+							img.src = "";
+							img.style.visibility = "hidden";
+						}
+
+						if (data.pr_curve_image) {
+							_MID_imgTrainingResult.src = "data:image/png;base64," + data.pr_curve_image;
+							// results_img.src = "file://" + data.pr_curve_path;
+							_MID_imgTrainingResult.style.visibility = "visible";
+						}
+						else {
+							_MID_imgTrainingResult.src = "";
+							_MID_imgTrainingResult.style.visibility = "hidden";
+						}
+					}
+					else
+                        setResultsHtml("Training: Unable to get Model info");
+				},
+                function (data) {
+                    if (data)
+                        setResultsHtml("Training: Unable to get Model info:" + data.error);
+                    else
+                        setResultsHtml("Training: Unable to get Model info");
+                });
+		}
+
+		// Auto-populate the dataset name if nothing there
+		function _MID_onDatasetNameChange() {
+			if (!_MID_trainingInputModelDatasetName.value && _MID_trainingInputDatasetName.value)
+				_MID_trainingInputModelDatasetName.value = _MID_trainingInputDatasetName.value;
+		}
+
+		function _MID_onTrainingDatasetInfo(dataset_name) {
+
+			if (!dataset_name) {
+                setResultsHtml("Get Dataset Info Failed: Dataset name is required.")
+				return
+			}
+
+			params = [["dataset_name", dataset_name]]
+            submitRequest('train', 'dataset_info', null, params, 
+				function (data) {
+					if (data.success) {
+						let resultHtml = "Dataset Info:"
+									   + "<br/><b>Dataset Name:</b> " + dataset_name + " (" + data.dataset_size + "Mb)"
+                                       + "<br/><b>Creation State:</b> " + (data.dataset_created ? "Complete" : "Not Complete") // Need to detect "failed"
+									   + "<br/><br/><b>Dataset Path:</b><br/> " + (data.dataset_path || "Not yet available")
+									   + getProcessingMetadataHtml(data);
+						setResultsHtml(resultHtml);
+					}
+					else
+                        setResultsHtml("Training: Unable to get dataset info");
+				},
+                function (data) {
+                    if (data)
+                        setResultsHtml("Training: Unable to get dataset info:" + data.error);
+                    else
+                        setResultsHtml("Training: Unable to get dataset info");
+                });
+		}
+
+        setInterval(_MID_onTrainingStatus, 5000);
+
+// END EXPLORER SCRIPT
+    </script>
+</div>
+</body>
+</html>

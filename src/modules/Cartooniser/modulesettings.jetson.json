@@ -1,0 +1,9 @@
+{
+  "Modules": {
+
+    "Cartooniser": {
+      "AutoStart": false,
+      "Runtime": "python3.8"
+    }
+  }
+}

@@ -15,6 +15,11 @@
         {
             if (disposing && (components != null))
             {
+                _serverClient?.Dispose();
+                _textFont.Dispose();
+                _textBrush.Dispose();
+                _boundingBoxPen.Dispose();
+
                 components.Dispose();
             }
             base.Dispose(disposing);
@@ -552,7 +557,7 @@
             this.BenchmarkImageSelectButton.TabIndex = 20;
             this.BenchmarkImageSelectButton.Text = "Select Image";
             this.BenchmarkImageSelectButton.UseVisualStyleBackColor = true;
-            this.BenchmarkImageSelectButton.Click += new System.EventHandler(this.benchnarkImageSelectButton_Click);
+            this.BenchmarkImageSelectButton.Click += new System.EventHandler(this.benchmarkImageSelectButton_Click);
             // 
             // BenchmarkRunCustomBtn
             // 

@@ -1,0 +1,5 @@
+#! Python3.9
+
+torch==1.13.1            # Installing PyTorch, for Tensor computation and Deep neural networks
+torchvision==0.14.1      # Installing TorchVision, for Computer Vision based AI
+Pillow<10.0.0            # Installing Pillow, a Python Image Library

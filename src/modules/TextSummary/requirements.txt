@@ -1,0 +1,9 @@
+#! Python3.7
+
+numpy           # Installing NumPy, the fundamental package for array computing with Python.
+
+nltk            # Installing NLTK, the Natural Language Toolkit
+networkx        # Installing NetworkX, a package for creating and manipulating graphs and networks
+SciPy           # Installing SciPy, a library for mathematics, science, and engineering
+
+# last line empty

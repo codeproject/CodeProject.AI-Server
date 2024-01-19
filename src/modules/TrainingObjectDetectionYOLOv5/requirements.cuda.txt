@@ -1,0 +1,62 @@
+# YOLOv5 requirements
+# Usage: pip install -r requirements.txt
+
+urllib3<1.27,>=1.25.4   # Installing urllib3, the HTTP client for Python
+
+# Base ----------------------------------------
+matplotlib>=3.2.2         # Installing matplotlib, the python plotting package
+numpy>=1.18.5             # Installing NumPy, a package for scientific computing
+opencv-python>=4.1.1      # Installing OpenCV, the Open source Computer Vision library
+Pillow<10.0.0             # Installing Pillow, a Python Image Library
+PyYAML>=5.3.1             # Installing PyYAML, a library for reading configuration files
+requests>=2.23.0          # Installing request, the HTTP library
+scipy>=1.4.1              # Installing SciPy, a library for mathematics, science, and engineering
+
+#--find-links https://download.pytorch.org/whl/cu117
+#torch>=1.7.0              # Installing Torch, for Tensor computation and Deep neural networks
+#torchvision>=0.8.1        # Installing TorchVision, for Computer Vision based AI
+
+## For CUDA 11.7
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==1.13.0+cu117       # Installing PyTorch, an open source machine learning framework
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.14.0+cu117 # Installing TorchVision, for working with computer vision models
+
+tqdm>=4.64.0              # Installing tdqm, the Fast, Extensible Progress Meter
+
+# This is to fix an issue at https://github.com/ultralytics/yolov5/issues/8012
+protobuf<=3.20.1          # Installing protobuf, extensible mechanisms for serializing structured data
+
+# Logging -------------------------------------
+tensorboard>=2.4.1        # Installing tensorboard, a tool to let you watch Tensors Flow
+
+# wandb
+# clearml
+
+# Plotting ------------------------------------
+pandas>=1.1.4             # Installing Pandas, a data analysis / data manipulation tool
+seaborn>=0.11.0           # Installing Seaborn, a data visualization library based on matplotlib
+
+# Export --------------------------------------
+# coremltools>=5.2        # CoreML export
+# onnx>=1.9.0             # ONNX export
+# onnx-simplifier>=0.4.1  # ONNX simplifier
+# nvidia-pyindex          # TensorRT export
+# nvidia-tensorrt         # TensorRT export
+# scikit-learn==0.19.2    # CoreML quantization
+# tensorflow>=2.4.1       # TFLite export (or tensorflow-cpu, tensorflow-aarch64)
+# tensorflowjs>=3.9.0     # TF.js export
+# openvino-dev            # OpenVINO export
+
+# Extras --------------------------------------
+ipython                   # Installing ipython, for interactive notebooks
+psutil                    # Installing psutil, a tool to check system utilization
+thop>=0.1.1               # Installing thop, a tool to count the FLOPs of PyTorch model.
+# albumentations>=1.0.3
+# pycocotools>=2.0        # COCO mAP
+# roboflow
+
+yolov5==6.2.3             # Installing Ultralytics YoloV5 package for object detection in images
+fiftyone                  # Installing fiftyone, for building datasets and computer vision models
+
+# last line left blank

@@ -1,0 +1,8 @@
+{
+  "Modules": {
+
+    "ALPR": {
+      "InstallGPU": false   // PaddlePaddle-GPU on CUDA is too fragile
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+
+        // Launch apps ================================================================================================
+
+        {
+            "label": "stop-all",     // Builds and Launches the AI server for Linux
+            "group": "none",
+            "type": "process",
+            "command": "bash",
+            "args": [ "/app/SDK/Utilities/stop_all.sh" ],
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}

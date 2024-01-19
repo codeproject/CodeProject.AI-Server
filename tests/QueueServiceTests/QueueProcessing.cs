@@ -1,15 +1,17 @@
-using Microsoft.Extensions.Options;
-
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.AI.API.Server.Backend;
-using CodeProject.AI.AnalysisLayer.SDK;
-using Xunit;
+using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.API;
+using CodeProject.AI.Server.Backend;
+
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+
+using Xunit;
 
 namespace QueueServiceTests
 {
@@ -20,9 +22,9 @@ namespace QueueServiceTests
             public string? image_name { get; set; }
         }
 
-        public class TestQueuedResponse : BackendResponseBase
+        public class TestQueuedResponse : ModuleResponse
         {
-            public string? label { get; set; }
+            public string? Label { get; set; }
         }
 
         private const string QueueName = "testQueue";
@@ -41,22 +43,25 @@ namespace QueueServiceTests
                 MaxQueueLength  = 10,
                 ResponseTimeout = TimeSpan.FromSeconds(10)
             };
+
+        // TODO: need to fix this, but I no longer know what needs to be fixed.
         private QueueServices _queueServices = new QueueServices(new TestOptions(queueOptions),
                                                                  new NullLogger<QueueServices>());
 
         [Fact]
-        public async void RequestTimesOutIfNotHandled()
+        public async Task RequestTimesOutIfNotHandled()
         {
             var request = new TestQueuedRequest { image_name = "Bob.jpg" };
-            var result  = await _queueServices.SendRequestAsync(QueueName, request);
+            var result  = await _queueServices.SendRequestAsync(QueueName, request)
+;
 
             Assert.NotNull(result);
-            Assert.IsType<BackendErrorResponse>(result);
+            Assert.IsType<ModuleErrorResponse>(result);
 
-            var errorResult = result as BackendErrorResponse;
+            var errorResult = result as ModuleErrorResponse;
             Assert.NotNull(errorResult);
-            Assert.False(errorResult!.success);
-            Assert.StartsWith("The request timed out.", errorResult.error);
+            Assert.False(errorResult!.Success);
+            Assert.StartsWith("The request timed out.", errorResult.Error);
         }
 
         [Fact]
@@ -64,7 +69,8 @@ namespace QueueServiceTests
         {
             var request                = new TestQueuedRequest { image_name = "Bob.jpg" };
             var requestTask            = _queueServices.SendRequestAsync(QueueName, request);
-            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName);
+            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName)
+;
 
             Assert.NotNull(result);
             Assert.IsType<TestQueuedRequest>(result);
@@ -72,11 +78,12 @@ namespace QueueServiceTests
         }
 
         [Fact]
-        public async void CanPullRequestFromQueuAsynce()
+        public async Task CanPullRequestFromQueueAsync()
         {
             var request                = new TestQueuedRequest { image_name = "Bob.jpg" };
             var requestTask            = _queueServices.SendRequestAsync(QueueName, request);
-            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName);
+            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName)
+;
 
             Assert.NotNull(result);
             Assert.IsType<TestQueuedRequest>(result);
@@ -85,7 +92,7 @@ namespace QueueServiceTests
 
 
         [Fact]
-        public void CantPullRequestFronWrongQueue()
+        public void CantPullRequestFromWrongQueue()
         {
             var request                = new TestQueuedRequest { image_name = "Bob.jpg" };
             var requestTask            = _queueServices.SendRequestAsync(QueueName, request);
@@ -95,7 +102,7 @@ namespace QueueServiceTests
         }
 
         [Fact]
-        public async void CantPullRequestFronWrongQueueAsync()
+        public async Task CantPullRequestFromWrongQueueAsync()
         {
             var request                = new TestQueuedRequest { image_name = "Bob.jpg" };
             var requestTask            = _queueServices.SendRequestAsync(QueueName, request);
@@ -106,12 +113,13 @@ namespace QueueServiceTests
 
 
         [Fact]
-        public async void CanCancelPullRequestQueueAsync()
+        public async Task CanCancelPullRequestQueueAsync()
         {
             // make sure the queue exists
             var request                = new TestQueuedRequest { image_name = "Bob.jpg" };
             var requestTask            = _queueServices.SendRequestAsync(QueueName, request);
-            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName);
+            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName)
+;
 
             using CancellationTokenSource cancellationSource = new();
 
@@ -126,10 +134,10 @@ namespace QueueServiceTests
         }
 
         [Fact]
-        public async void CanGetResponse()
+        public async Task CanGetResponse()
         {
             var request            = new TestQueuedRequest { image_name = "Bob.jpg" };
-            var testResponse       = new TestQueuedResponse() { success = true, label = "Bob" };
+            var testResponse       = new TestQueuedResponse() { Success = true, Label = "Bob" };
             var testResponseString = JsonSerializer.Serialize(testResponse);
             var requestTask        = _queueServices.SendRequestAsync(QueueName, request);
             var pulledRequest      = _queueServices.DequeueRequest(QueueName);
@@ -144,23 +152,23 @@ namespace QueueServiceTests
         }
 
         [Fact]
-        public async void CantAddSameRequestTwice()
+        public async Task CantAddSameRequestTwice()
         {
             var request           = new TestQueuedRequest { image_name = "Bob.jpg" };
-            var firstrequestTask  = _queueServices.SendRequestAsync(QueueName, request);
+            var firstRequestTask  = _queueServices.SendRequestAsync(QueueName, request);
             var secondRequestTask = _queueServices.SendRequestAsync(QueueName, request);
             var secondResult      = await secondRequestTask;
             Assert.NotNull(secondResult);
-            Assert.IsType<BackendErrorResponse>(secondResult);
+            Assert.IsType<ModuleErrorResponse>(secondResult);
 
-            var errorResult = secondResult as BackendErrorResponse;
+            var errorResult = secondResult as ModuleErrorResponse;
             Assert.NotNull(errorResult);
-            Assert.False(errorResult!.success);
-            Assert.StartsWith("Unable to add pending response id", errorResult.error);
+            Assert.False(errorResult!.Success);
+            Assert.StartsWith("Unable to add pending response id", errorResult.Error);
         }
 
         [Fact]
-        public async void NullResponseReturnsError()
+        public async Task NullResponseReturnsError()
         {
             var request                = new TestQueuedRequest { image_name = "Bob.jpg" };
             string? testResponseString = null;
@@ -173,15 +181,15 @@ namespace QueueServiceTests
 
             var result                 = await requestTask;
             Assert.NotNull(result);
-            Assert.IsType<BackendErrorResponse>(result);
-            var errorResult           = result as BackendErrorResponse;
+            Assert.IsType<ModuleErrorResponse>(result);
+            var errorResult           = result as ModuleErrorResponse;
             Assert.NotNull(errorResult);
-            Assert.False(errorResult!.success);
-            Assert.Equal("null json returned from backend.", errorResult.error);
+            Assert.False(errorResult!.Success);
+            Assert.Equal("null json returned from backend.", errorResult.Error);
         }
 
         [Fact]
-        public async void BadResponseReturnsError()
+        public async Task BadResponseReturnsError()
         {
             var request               = new TestQueuedRequest { image_name = "Bob.jpg" };
             string testResponseString = "This is not JSON";
@@ -194,16 +202,16 @@ namespace QueueServiceTests
 
             var result                = await requestTask;
             Assert.NotNull(result);
-            Assert.IsType<BackendErrorResponse>(result);
+            Assert.IsType<ModuleErrorResponse>(result);
 
-            var errorResult          = result as BackendErrorResponse;
+            var errorResult          = result as ModuleErrorResponse;
             Assert.NotNull(errorResult);
-            Assert.False(errorResult!.success);
-            Assert.Equal("Invalid JSON response from backend.", errorResult.error);
+            Assert.False(errorResult!.Success);
+            Assert.Equal("Invalid JSON response from backend.", errorResult.Error);
         }
 
         [Fact]
-        public async void EmptyResponseReturnsError()
+        public async Task EmptyResponseReturnsError()
         {
             var request               = new TestQueuedRequest { image_name = "Bob.jpg" };
             string testResponseString = "null";
@@ -216,12 +224,12 @@ namespace QueueServiceTests
 
             var result                = await requestTask;
             Assert.NotNull(result);
-            Assert.IsType<BackendErrorResponse>(result);
+            Assert.IsType<ModuleErrorResponse>(result);
 
-            var errorResult           = result as BackendErrorResponse;
+            var errorResult           = result as ModuleErrorResponse;
             Assert.NotNull(errorResult);
-            Assert.False(errorResult!.success);
-            Assert.Equal("null object from JSON string.", errorResult.error);
+            Assert.False(errorResult!.Success);
+            Assert.Equal("null object from JSON string.", errorResult.Error);
         }
 
         [Fact]
@@ -231,10 +239,12 @@ namespace QueueServiceTests
             var request2     = new TestQueuedRequest { image_name = "Alf.jpg" };
             var request1Task = _queueServices.SendRequestAsync(QueueName, request1);
 
-            await Task.Delay(queueOptions.ResponseTimeout + TimeSpan.FromSeconds(5));
+            await Task.Delay(queueOptions.ResponseTimeout + TimeSpan.FromSeconds(5))
+;
             var request2Task = _queueServices.SendRequestAsync(QueueName, request2);
 
-            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName);
+            BackendRequestBase? result = await _queueServices.DequeueRequestAsync(QueueName)
+;
             Assert.NotNull(result);
             Assert.IsType<TestQueuedRequest>(result);
             Assert.Equal(request2, result);
@@ -259,24 +269,24 @@ namespace QueueServiceTests
             var lastTask = tasks[queueOptions.MaxQueueLength];
             Assert.True(lastTask.IsCompletedSuccessfully);
 
-            var lastResult = lastTask.Result;
-            Assert.IsType<BackendErrorResponse>(lastResult);
+            var lastResult = await lastTask;
+            Assert.IsType<ModuleErrorResponse>(lastResult);
 
-            var errorResponse = lastResult as BackendErrorResponse;
+            var errorResponse = lastResult as ModuleErrorResponse;
             Assert.NotNull(errorResponse);
-            Assert.Equal("request queue is full.", errorResponse!.error);
+            Assert.Equal("request queue is full.", errorResponse!.Error);
 
             for (int i = 0; i < queueOptions.MaxQueueLength; i++)
             {
                 var task = tasks[i];
                 Assert.True(task.IsCompletedSuccessfully);
 
-                var result = task.Result;
-                Assert.IsType<BackendErrorResponse>(result);
+                var result = await task;
+                Assert.IsType<ModuleErrorResponse>(result);
 
-                var errorResponse2 = result as BackendErrorResponse;
+                var errorResponse2 = result as ModuleErrorResponse;
                 Assert.NotNull(errorResponse2);
-                Assert.Equal("The request timed out.", errorResponse2!.error);
+                Assert.Equal("The request timed out.", errorResponse2!.Error);
             }
         }
 
@@ -291,11 +301,11 @@ namespace QueueServiceTests
 
             var result = await requestTask;
             Assert.NotNull(result);
-            Assert.IsType<BackendErrorResponse>(result);
+            Assert.IsType<ModuleErrorResponse>(result);
 
-            var errorResponse = result as BackendErrorResponse;
+            var errorResponse = result as ModuleErrorResponse;
             Assert.NotNull(errorResponse);
-            Assert.Equal("the request was canceled by caller.", errorResponse!.error);
+            Assert.Equal("the request was canceled by caller.", errorResponse!.Error);
         }
     }
 }

@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{470d3417-36a4-49a4-b719-496466fa92fe}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>cartoon_adapter.py</StartupFile>
+    <SearchPath>..\SDK\Python</SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>MSBuild|venv|$(MSBuildProjectFullPath)</InterpreterId>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <Name>Cartooniser</Name>
+    <IsWindowsApplication>False</IsWindowsApplication>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="demo.ipynb" />
+    <Content Include="install.bat" />
+    <Content Include="install.sh" />
+    <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.jetson.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.orangepi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.raspberrypi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.windows.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="package.bat" />
+    <Content Include="test.ipynb" />
+    <Content Include="test\chris-hemsworth-2.jpg" />
+    <Content Include="weights\celeba_distill.pt" />
+    <Content Include="weights\face_paint_512_v1.pt" />
+    <Content Include="weights\face_paint_512_v2.pt" />
+    <Content Include="weights\paprika.pt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="package.sh" />
+    <Content Include="requirements.txt" />
+    <Content Include="requirements.gpu.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="cartooniser.py" />
+    <Compile Include="cartooniser_adapter.py" />
+    <Compile Include="convert_weights.py" />
+    <Compile Include="hubconf.py" />
+    <Compile Include="model.py" />
+    <Compile Include="options.py" />
+    <Compile Include="test.py" />
+    <Compile Include="__init__.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include=".\bin\windows\python39\venv\">
+      <Id>venv</Id>
+      <Version>3.9</Version>
+      <Description>venv (Python 3.9 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="test\" />
+    <Folder Include="weights\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

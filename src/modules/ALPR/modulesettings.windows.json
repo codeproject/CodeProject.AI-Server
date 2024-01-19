@@ -1,0 +1,10 @@
+{
+  "Modules": {
+
+    "ALPR": {
+      "Runtime": "python3.7",
+      "InstallGPU": true,
+      "EnableGPU": true 
+    }
+  }
+}

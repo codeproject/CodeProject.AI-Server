@@ -1,0 +1,13 @@
+{
+  "Modules": {
+
+    "ObjectDetectionCoral": {
+      "AutoStart": false,
+      "Runtime": "python3.9",
+
+      "EnvironmentVariables": {
+        "MODEL_SIZE": "Tiny"
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "Modules": {
+
+    "SceneClassifier": {
+      "AutoStart": false,
+      "InstallGPU": false,            // GPU support not provided
+      "EnableGPU": false,             // Will be coerced to false if InstallGPU = false
+
+      "EnvironmentVariables": {
+        "USE_CUDA": "False"
+      }
+    }
+  }
+}

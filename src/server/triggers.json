@@ -1,0 +1,23 @@
+{
+  "triggersSection": {
+    "triggers": [
+    /*
+        {
+            "Queue"                     : "objectdetection_queue",
+            "PredictionsCollectionName" : "predictions",
+            "PropertyName"              : "label",
+            "PropertyValue"             : "car",
+            "PropertyComparison"        : "equals",
+            "Confidence"                : 0.5,
+            "ConfidenceComparison"      : "greaterthan",
+            "PlatformTasks" : {
+                "Windows"    : { "Command": "cmd",  "Args": "/c echo Hi Windows. I see a car",  "Type": "Command" },
+                "Linux"      : { "Command": "bash", "Args": "echo Hi Linux. I see a car",       "Type": "Command" },
+                "LinuxArm64" : { "Command": "bash", "Args": "echo Hi Linux. I see a car",       "Type": "Command" },
+                "macOS"      : { "Command": "zsh",  "Args": "echo Hi Linux. I see a car",       "Type": "Command" },
+            }
+        }
+      */
+    ]
+  }
+}

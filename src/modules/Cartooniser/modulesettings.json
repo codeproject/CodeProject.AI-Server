@@ -1,0 +1,97 @@
+{
+  "Modules": {
+
+    "Cartooniser": {
+      "Name": "Cartooniser",
+      "Version": "1.4.0",
+
+      // Publishing info
+      "Description": "Convert a photo into an anime style cartoon", 
+      "Category": "Image Processing",
+      "Platforms": [ "all", "!raspberrypi", "!orangepi", "!jetson" ], 
+      "License": "MIT",
+      "LicenseUrl": "https://github.com/bryandlee/animegan2-pytorch/blob/main/LICENSE",
+      "Author": "Chris Maunder",
+      "Homepage": "https://codeproject.com/ai",
+      "BasedOn": "animegan2-pytorch",
+      "BasedOnUrl": "https://github.com/bryandlee/animegan2-pytorch",
+
+      // Launch instructions
+      "AutoStart": true,
+      "FilePath": "cartooniser_adapter.py",
+      "Runtime": "python3.8",
+      "RuntimeLocation": "Local",     // Can be Local or Shared
+      
+      "EnvironmentVariables": {
+        "WEIGHTS_FOLDER": "%CURRENT_MODULE_PATH%\\weights"
+        /* "LD_LIBRARY_PATH": "%CURRENT_MODULE_PATH%/bin/%OS%/python39/venv/lib/python3.9/site-packages/nvidia/cudnn/lib/" */
+      },
+      
+      // GPU options
+      "InstallGPU": false,            // GPU support not provided
+      "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
+      "AcceleratorDeviceName": null,  // = default
+      "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",      // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 0,        // Generally 1 if using GPU, 0 for CPU
+
+      // Which server version is compatible with each version of this module.
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.1",   "2.1.6"  ], "ReleaseDate": "2023-03-28" },
+        { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+        { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
+        { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.3.1", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "1.3.2", "ServerVersionRange": [ "2.3.5", "2.4.0"  ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "1.3.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+        { "ModuleVersion": "1.3.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "1.4.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
+      ],
+
+      "RouteMaps": [
+        {
+          "Name": "Cartooniser",
+          "Route": "image/cartoonise",
+          "Method": "POST",
+          "Command": "cartoonise",
+          "Description": "Convert a photo into an anime style cartoon.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The image to be converted."
+            },
+            {
+              "Name": "model",
+              "Type": "String",
+              "Description": "Name of the model to use",
+              "DefaultValue": ""
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "imageBase64",
+              "Type": "Base64ImageData",
+              "Description": "The base64 encoded image."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

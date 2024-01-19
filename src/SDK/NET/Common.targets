@@ -1,0 +1,92 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	
+	<!-- 
+	This file deinfes the following constants if they are applicable to the current system
+	
+		Windows
+		Linux
+		macOS
+		Arm64
+
+	This file will also generate a platform-specific RuntimeIdentifier (eg for self-contained 
+	.NET modules) if you add this to the project file just before you include this file
+		 
+	<PropertyGroup>
+		<GeneratePlatformSpecificRuntimeIdentifier>true</GeneratePlatformSpecificRuntimeIdentifier>
+	</PropertyGroup>
+
+	If a RuntimeIdentifier has been provided, the constants above will be adjusted to match the
+	provided RuntimeIdentifier, rather than reality.
+	-->
+
+	<!-- Common defines -->
+	<PropertyGroup>
+		<ShowRuntimeSettings>true</ShowRuntimeSettings>
+	</PropertyGroup>
+
+	<!-- Platform and architecture defines -->
+	<PropertyGroup>
+		<IsWindows>false</IsWindows>
+		<IsLinux>false</IsLinux>
+		<IsOSX>false</IsOSX>
+		<IsArm64>false</IsArm64>
+		<IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
+		<IsLinux   Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+		<IsOSX     Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+		<IsArm64   Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">true</IsArm64>
+	</PropertyGroup>
+
+	<!-- Set RuntimeIdentifier, Platform and OS properties -->
+	<Choose>
+		<When Condition="'$(RuntimeIdentifier)'==''">
+			<!-- No runtime identifier supplied. Set it based on platform and OS *if requested* -->
+			<PropertyGroup Condition="'$(GeneratePlatformSpecificRuntimeIdentifier)'=='true'">
+				<RuntimeIdentifier Condition="'$(IsArm64)'!='true' And '$(IsWindows)'=='true'">win-x64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'=='true' And '$(IsWindows)'=='true'">win-arm64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'!='true' And '$(IsLinux)'=='true'">linux-x64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'=='true' And '$(IsLinux)'=='true'">linux-arm64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'!='true' And '$(IsOSX)'=='true'">osx-x64</RuntimeIdentifier>
+				<RuntimeIdentifier Condition="'$(IsArm64)'=='true' And '$(IsOSX)'=='true'">osx.12-arm64</RuntimeIdentifier>
+			</PropertyGroup>
+		</When>
+		<Otherwise>
+			<!-- Runtime identifier supplied via command line or env var. Reset the OS variables based on this value -->
+			<PropertyGroup>
+				<IsWindows>false</IsWindows>
+				<IsWindows Condition="'$(RuntimeIdentifier.StartsWith(`win`))'=='true'">true</IsWindows>
+				
+				<IsLinux>false</IsLinux>
+				<IsLinux   Condition="'$(RuntimeIdentifier.StartsWith(`linux`))'=='true'">true</IsLinux>
+				
+				<IsOSX>false</IsOSX>
+				<IsOSX     Condition="'$(RuntimeIdentifier.StartsWith(`osx`))'=='true'">true</IsOSX>
+
+				<IsArm64>false</IsArm64>
+				<IsArm64   Condition="'$(RuntimeIdentifier.EndsWith(`arm64`))'=='true'">true</IsArm64>
+			</PropertyGroup>
+		</Otherwise>
+	</Choose>
+
+	<!-- Some constants for conditional code -->
+	<PropertyGroup>
+		<DefineConstants Condition="'$(IsWindows)'=='true'">Windows</DefineConstants>
+		<DefineConstants Condition="'$(IsLinux)'=='true'">Linux</DefineConstants>
+		<DefineConstants Condition="'$(IsOSX)'=='true'">macOS</DefineConstants>
+		<DefineConstants Condition="'$(IsArm64)'=='true'">Arm64</DefineConstants>
+		<DefineConstants Condition="'$(IsArm64)'!='true'">x64</DefineConstants>
+
+		<OSPlatform      Condition="'$(IsWindows)'=='true'">Windows</OSPlatform>
+		<OSPlatform      Condition="'$(IsLinux)'=='true'">Linux</OSPlatform>
+		<OSPlatform      Condition="'$(IsOSX)'=='true'">OSX</OSPlatform>
+		
+		<OSArchitecture  Condition="'$(IsArm64)'=='true'">Arm64</OSArchitecture>
+		<OSArchitecture  Condition="'$(IsArm64)'!='true'">x64</OSArchitecture>
+	</PropertyGroup>
+
+	<!-- Output the settings based on what we've determined above -->
+	<Target Name="SettingsCheck" AfterTargets="BeforeBuild" Condition="'$(ShowRuntimeSettings)'=='true'">
+		<Message Condition="'$(RuntimeIdentifier)'==''" Importance="High" Text="       $(Name): Building for $(OSPlatform) $(OSArchitecture) (no runtime Id) => TargetFramework = $(TargetFramework) " />
+		<Message Condition="'$(RuntimeIdentifier)'!=''" Importance="High" Text="       $(Name): Building for $(OSPlatform) $(OSArchitecture) ($(RuntimeIdentifier)) => TargetFramework = $(TargetFramework) " />
+	</Target>
+	
+</Project>

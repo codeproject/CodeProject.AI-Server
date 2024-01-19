@@ -1,0 +1,361 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        // Server -------------------------------------------------------------
+        
+        {
+            "presentation": {
+                "group": "4 Launch",
+                "order": 1
+            },
+            "name": "Launch Server",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "/app/server/CodeProject.AI.Server.dll",
+            "args": [],
+            "cwd": "/app/server/",
+            "stopAtEntry": false,
+            "requireExactSource": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "http://localhost:%s/swagger"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "4 Launch",
+                "order": 100
+            },
+            "name": "Stop all Processes",
+
+            "type": "python", 
+            "code": "#",  // dummy command
+            "console": "internalConsole",
+            "request": "launch",
+
+            // "type": "coreclr",
+            // "program": "dotnet", // dummy command
+            // "args": [ "--version" ], // dummy command
+
+            "preLaunchTask": "stop-all"
+        },
+
+        {
+            "presentation": {
+                "group": "4 Launch",
+                "order": 2
+            },
+            "name": "Launch Server without Modules",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "/app/server/CodeProject.AI.Server.dll",
+            "args": [
+                "--ModuleOptions:LaunchModules=false"
+            ],
+            "cwd": "/app/server/",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "http://localhost:%s/swagger"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true"
+            },
+            "logging": {
+                "engineLogging": false,
+                "moduleLoad": false,
+                "exceptions": true,
+                "browserStdOut": false
+            }
+        },
+
+        // Launch Individual --------------------------------------------------
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "ALPR",
+            "type": "python",
+            "python": "/app/modules/ALPR/bin/linux/python38/venv/bin/python",
+            "request": "launch",
+            "program": "ALPR_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/ALPR",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Cartooniser",
+            "type": "python",
+            "python": "/app/modules/Cartooniser/bin/linux/python38/venv/bin/python",
+            "request": "launch",
+            "program": "cartooniser_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/Cartooniser",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "WEIGHTS_FOLDER": "/app/modules/Cartooniser/weights"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Face Processing",
+            "type": "python",
+            "python": "python3.8",
+            "request": "launch",
+            "program": "intelligencelayer/face.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/preinstalled-modules/FaceProcessing/",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Object Detect .NET",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "/app/preinstalled-modules/ObjectDetectionYOLOv5Net/ObjectDetectionYOLOv5Net.dll",
+            "args": [],
+            "cwd": "/app/preinstalled-modules/ObjectDetectionYOLOv5Net",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Object Detect Coral",
+            "type": "python",
+            "python": "/app/modules/ObjectDetectionCoral/bin/linux/python39/venv/bin/python",
+            "request": "launch",
+            "program": "objectdetection_coral_adapter.py",
+            // "args": [ "--selftest" ],
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/ObjectDetectionCoral",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
+            }
+        },
+
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Object Detect YOLO 6.2",
+            "type": "python",
+            "python": "python3.8",
+            "request": "launch",
+            "program": "detect_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/preinstalled-modules/ObjectDetectionYOLOv5-6.2",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Object Detect YOLO 3.1",
+            "type": "python",
+            "python": "/app/modules/ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
+            "request": "launch",
+            "program": "detect_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/ObjectDetectionYOLOv5-3.1",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "OCR",
+            "type": "python",
+            "python": "/app/modules/OCR/bin/linux/python38/venv/bin/python",
+            "request": "launch",
+            "program": "OCR_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/OCR",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            }
+        },
+
+{
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Portrait Filter",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "/app/modules/PortraitFilter/PortraitFilter",
+            "args": [],
+            "cwd": "/app/modules/PortraitFilter",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Scene Classifier",
+            "type": "python",
+            "python": "python3.8",
+            "request": "launch",
+            "program": "scene_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/SceneClassifier",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "Super Resolution",
+            "type": "python",
+            "python": "/app/modules/SuperResolution/bin/linux/python38/venv/bin/python",
+            "request": "launch",
+            "program": "superres_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/SuperResolution",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "SentimentAnalysis",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "/app/modules/SentimentAnalysis/SentimentAnalysis",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            // "cwd": "/app/modules/SentimentAnalysis", - causes an exception. WTF. See HACK.
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true",
+                "MODELS_DIR": "/app/modules/SentimentAnalysis/sentiment_model"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
+            "name": "TextSummary",
+            "type": "python",
+            "python": "/app/modules/TextSummary/bin/linux/python38/venv/bin/python",
+            "request": "launch",
+            "program": "summary_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "/app/modules/TextSummary",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                
+                "NLTK_DATA": "/app/modules/TextSummary/nltk_data"
+            }
+        }
+    ]
+}

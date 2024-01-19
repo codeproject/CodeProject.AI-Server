@@ -11,7 +11,7 @@ assignees: ''
 - [ ] Server
 - [ ] Behaviour of one or more Modules [provide name(s), e.g. ObjectDetectionYolo]
 - [ ] Installer
-- [ ] Runtime [e.g. Pythohn3.7, .NET]
+- [ ] Runtime [e.g. Python3.7, .NET]
 - [ ] Module packages [e.g. PyTorch)
 - [ ] Something else
 
@@ -25,7 +25,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Your System (please complete the following information):**
- - CodeProject.AI Server version: 
+ - CodeProject.AI Server version: {e.g. 2.3.1]
  - OS: [e.g. Ubuntu 20.04]
  - System RAM [e.g. 16Gb]
  - GPU (if available) [e.g. GeForce RTX 3060]

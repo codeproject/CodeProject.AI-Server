@@ -1,0 +1,11 @@
+{
+  "Modules": {
+
+    "FaceProcessing": {
+      "EnvironmentVariables": {
+        // fallback to cpu if an operation missing
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1"
+      }
+    }
+  }
+}

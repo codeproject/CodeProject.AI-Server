@@ -1,7 +1,0 @@
-{
-  "Modules": {
-    "ObjectDetectionYolo": {
-      "Runtime": "python37"
-    }
-  }
-}

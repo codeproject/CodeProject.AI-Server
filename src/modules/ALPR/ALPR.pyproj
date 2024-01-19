@@ -1,0 +1,154 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>6ae28b59-221b-4e3d-a66c-e255b26dac82</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>ALPR_adapter.py</StartupFile>
+    <SearchPath>..\SDK\Python</SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>ALPR</Name>
+    <RootNamespace>ALPR</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
+    <InterpreterId>MSBuild|venv|$(MSBuildProjectFullPath)</InterpreterId>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="ALPR.py" />
+    <Content Include="explore.html" />
+    <Content Include="options.py" />
+    <Content Include="ALPR_adapter.py" />
+    <Content Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\inference.pdiparams" />
+    <Content Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\inference.pdiparams.info" />
+    <Content Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\inference.pdmodel" />
+    <Content Include="paddleocr\en_PP-OCRv3_det_infer\en_PP-OCRv3_det_infer.tar" />
+    <Content Include="paddleocr\en_PP-OCRv3_det_infer\inference.pdiparams" />
+    <Content Include="paddleocr\en_PP-OCRv3_det_infer\inference.pdiparams.info" />
+    <Content Include="paddleocr\en_PP-OCRv3_det_infer\inference.pdmodel" />
+    <Content Include="paddleocr\en_PP-OCRv3_rec_infer\inference.pdiparams" />
+    <Content Include="paddleocr\en_PP-OCRv3_rec_infer\inference.pdiparams.info" />
+    <Content Include="paddleocr\en_PP-OCRv3_rec_infer\inference.pdmodel" />
+    <Content Include="patch\paddlepaddle-2.4.2\image.py" />
+    <Content Include="patch\paddlepaddle-2.4.0rc0\image.py" />
+    <Content Include="patch\paddleocr-2.6.0.1\db_postprocess.py" />
+    <Content Include="utils\tools.py" />
+    <Content Include="__init__.py" />
+    <Content Include="install.sh" />
+    <Content Include="install.bat" />
+    <Content Include="package.bat" />
+    <Content Include="package.sh" />
+    <Content Include="post_install.sh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="modulesettings.json" />
+    <Content Include="modulesettings.linux.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.macos.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.raspberrypi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.orangepi.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.windows.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+    <Content Include="modulesettings.jetson.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="requirements.linux.cuda11.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.raspberrypi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.arm64.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.macos.arm64.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.macos.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda10.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda11_6.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda11_7.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda11_8.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda12.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda10.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda11.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda11_6.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda11_7.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda11_8.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.windows.cuda12.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="paddleocr\" />
+    <Folder Include="paddleocr\ch_ppocr_mobile_v2.0_cls_infer\" />
+    <Folder Include="paddleocr\en_PP-OCRv3_det_infer\" />
+    <Folder Include="paddleocr\en_PP-OCRv3_rec_infer\" />
+    <Folder Include="test\" />
+    <Folder Include="utils\" />
+    <Folder Include="patch\" />
+    <Folder Include="patch\paddlepaddle-2.4.2\" />
+    <Folder Include="patch\paddlepaddle-2.4.0rc0\" />
+    <Folder Include="patch\paddleocr-2.6.0.1\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="bin\windows\python37\venv\">
+      <Id>venv</Id>
+      <Version>3.7</Version>
+      <Description>venv (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

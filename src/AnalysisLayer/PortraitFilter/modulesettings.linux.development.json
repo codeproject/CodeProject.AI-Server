@@ -1,9 +1,0 @@
-{
-  "Modules": {
-    "PortraitFilter": {
-      "FilePath": "PortraitFilter/bin/Debug/net6.0/PortraitFilter.dll",
-      "WorkingDirectory": "PortraitFilter",
-      "Runtime": "dotnet"
-    }
-  }
-}

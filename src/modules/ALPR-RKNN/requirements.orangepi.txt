@@ -1,0 +1,9 @@
+#! Python3.9
+
+# Note that this wheel was built on, and for, an Orange Pi. It will not run on a Raspberry Pi
+https://github.com/MikeLud/CodeProject.AI-Custom-IPcam-Models/raw/main/RKNN_Models/fastdeploy_python-1.4.2b0-cp39-cp39-linux_aarch64.whl
+
+opencv-python               # Installing OpenCV, the Computer Vision library for Python
+numpy                       # Installing NumPy, a package for scientific computing
+
+# end of file

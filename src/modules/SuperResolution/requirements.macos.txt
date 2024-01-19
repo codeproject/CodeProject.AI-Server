@@ -1,0 +1,11 @@
+#! Python3.9
+
+ONNX                # Installing ONNX, the Open Neural Network Exchange library
+ONNXRuntime         # Installing ONNX runtime, the scoring engine for ONNX models
+torch               # Installing PyTorch, for Tensor computation and Deep neural networks
+python-resize-image # Installing resizeimage, which provides functions for easily resizing images
+Pillow<10.0.0       # Installing Pillow, a Python Image Library
+
+# We may need to rework this. See https://stackoverflow.com/a/66536896
+numpy==1.22.4       # Installing NumPy, a package for scientific computing
+

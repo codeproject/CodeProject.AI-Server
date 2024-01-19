@@ -1,2 +1,0 @@
-﻿Just a file to add for the CodeProject.AI.Server.Stopper 'installer'.
-MSI doesn't like installers without content.

@@ -1,0 +1,26 @@
+{
+  "Modules": {
+
+    "ObjectDetectionYOLOv5-3.1": {
+      "Runtime": "python3.8",  // Jetson comes with 3.6, but this is now out of support and just fails on stuff, so 3.8 instead
+      "AutoStart": true,
+
+      "EnvironmentVariables": {
+        "MODEL_SIZE": "Small", // small, medium, large
+        "USE_CUDA": "True",
+
+        // Numpy 1.19.5 issue: https://github.com/numpy/numpy/issues/18131
+        "OPENBLAS_CORETYPE": "ARMV8",
+
+        // OpenBLAS Warning : Detect OpenMP Loop and this application may hang. see https://github.com/OpenMathLib/OpenBLAS/blob/develop/USAGE.md
+        "OPENBLAS_NUM_THREADS": "1",
+
+        // Same issue, different solution: https://github.com/OpenMathLib/OpenBLAS/blob/develop/USAGE.md
+        "OMP_NUM_THREADS": "1",
+
+        // https://forums.developer.nvidia.com/t/error-importerror-usr-lib-aarch64-linux-gnu-libgomp-so-1-cannot-allocate-memory-in-static-tls-block-i-looked-through-available-threads-already/166494
+        "LD_PRELOAD": "/usr/lib/aarch64-linux-gnu/libgomp.so.1"
+      }
+    }
+  }
+}

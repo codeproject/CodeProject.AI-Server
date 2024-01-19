@@ -1,0 +1,67 @@
+{
+  "profiles": {
+    "CodeProject.AI Server (Debug)": {
+      "commandName": "Project",
+      "launchUrl": "http://localhost:32168",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "YOLOv5_VERBOSE": "false"
+      },
+      "applicationUrl": "http://localhost:32168",
+      "dotnetRunMessages": true
+    },
+    "CodeProject.AI Server (Release,SSL)": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:32168",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:32168",
+      "dotnetRunMessages": true,
+      "hotReloadEnabled": false
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://+:32168"
+      },
+      "httpPort": 32168,
+      "publishAllPorts": true,
+      "useSSL": false
+    },
+    "CodeProject.AI Server Install (Debug)": {
+      "commandName": "Project",
+      "commandLineArgs": "/install",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "",
+      "dotnetRunMessages": true
+    },
+    "CodeProject.AI Server unInstall (Debug)": {
+      "commandName": "Project",
+      "commandLineArgs": "/uninstall",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "",
+      "dotnetRunMessages": true
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:32168/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:32168"
+      },
+      "distributionName": ""
+    }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json"
+}

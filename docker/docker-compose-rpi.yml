@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  CodeProjectAI:
+    image: codeproject/ai-server:rpi64
+    container_name: codeproject-ai-server-rpi
+    hostname: codeproject-ai-server
+    # working_dir: /app
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "32168:32168/tcp"
+      - "32168:32168/udp"
+    environment:
+      - TZ=America/Toronto
+    volumes:
+      - '/dev/bus/usb:/dev/bus/usb'
+    #  - '/opt/codeproject/ai:/app/modules'
+
+    # command:
+    #  - --Modules:BackgroundRemover:Activate=False
+    #  - --Modules:BackgroundRemoval:Activate=False
+    #  - --Modules:CustomDetection:Activate=False
+    #  - --Modules:CustomObjectDetection:Activate=False
+    #  - --Modules:PortraitFilter:Activate=False
+    #  - --Modules:SceneClassification:Activate=False
+    #  - --Modules:VisionObjectDetection:Activate=False
+    #  - --Modules:FaceProcessing:EnvironmentVariables:USE_CUDA=True
+
+# If you wish to use volumes, then:
+#    volumes:
+#      - codeproject_ai_data_gpu:/etc/codeproject/ai
+#      - codeproject_ai_modules_gpu:/app/modules
+#
+#volumes:
+#  codeproject_ai_data_gpu:
+#  codeproject_ai_modules_gpu:

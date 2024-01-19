@@ -1,0 +1,13 @@
+#! Python3.9
+
+# We need this numpy version due to a "initialization of _internal failed without raising an exception" issue
+numpy==1.23.1               # Installing NumPy, a package for scientific computing
+
+filetype                    # Installing FileType, a package to infer file types and MIME types
+gdown                       # Installing gdown, a package for downloading from Google Drive folders
+pymatting                   # Installing pymatting, a Python Library for Alpha Matting
+Pillow<10.0.0               # Installing Pillow, a Python Image Library
+
+onnxruntime                 # Installing the ONNX runtime
+
+# last line blank

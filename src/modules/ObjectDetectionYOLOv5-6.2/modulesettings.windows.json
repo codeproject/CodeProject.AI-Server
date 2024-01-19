@@ -1,0 +1,8 @@
+{
+  "Modules": {
+
+    "ObjectDetectionYOLOv5-6.2": {
+      "Runtime": "python3.7"
+    }
+  }
+}

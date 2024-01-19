@@ -1,0 +1,174 @@
+{
+  "Modules": {
+
+    "ALPR": {
+      "Name": "License Plate Reader",
+      "Version": "2.8.0",
+
+      // Publishing info
+      "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
+      "Category": "Computer Vision",
+      "Platforms": [ "all" ],
+      "License": "SSPL",
+      "LicenseUrl": "https://www.mongodb.com/licensing/server-side-public-license",
+      "Author": "Mike Lud",
+      "Homepage": null,
+      "BasedOn": null,
+      "BasedOnUrl": null,
+
+      // Launch instructions
+      "AutoStart": true,
+      "FilePath": "ALPR_adapter.py",
+      "Runtime": "python3.8",
+      "RuntimeLocation": "Local",       // Can be Local or Shared
+      "Queue": "alpr_queue",            // default is lower(module_id) + '_queue'
+
+      "EnvironmentVariables": {
+        "MIN_COMPUTE_CAPABILITY": "7",
+        "MIN_CUDNN_VERSION": "7",
+        
+        "PLATE_CONFIDENCE": 0.7,        // Confidence required in detecting a plate in the first place
+        "PLATE_ROTATE_DEG": 0,          // If non-zero, rotate plate before OCR (+ve = counterclockwise)
+        "AUTO_PLATE_ROTATE": true,
+        "PLATE_RESCALE_FACTOR": 2,
+        "OCR_OPTIMIZATION": true,
+        "OCR_OPTIMAL_CHARACTER_HEIGHT": 60,
+        "OCR_OPTIMAL_CHARACTER_WIDTH": 36
+      },
+
+      // GPU options
+      "InstallGPU": false,              // PaddlePaddle-GPU only installs easily on Windows (though with issues on older cards)
+      "EnableGPU": true,                // Will be coerced to false if InstallGPU = false
+      "AcceleratorDeviceName": null,    // = default
+      "Parallelism": 0,                 // 0 = Default (number of CPUs - 1)
+      "HalfPrecision": "enable",        // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+      "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
+
+
+      // Which server version is compatible with each version of this module.
+      "ModuleReleases": [
+        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-11-01" },
+        { "ModuleVersion": "2.1",   "ServerVersionRange": [ "2.0.9", "2.0.9"  ], "ReleaseDate": "2022-12-01" },
+        { "ModuleVersion": "2.2",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-03-20" },
+        { "ModuleVersion": "2.3",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-04-20", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+        { "ModuleVersion": "2.4",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-05-10", "ReleaseNotes": "PaddlePaddle install more reliable", "Importance": "Minor" },
+        { "ModuleVersion": "2.5",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-06-04", "ReleaseNotes": "Updated PaddlePaddle" },
+        { "ModuleVersion": "2.6",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
+        { "ModuleVersion": "2.7",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK. Now works on Raspberry Pi." },
+        { "ModuleVersion": "2.7.1", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+        { "ModuleVersion": "2.7.2", "ServerVersionRange": [ "2.3.1", "2.4.0"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "LibSSL install correction." },
+        { "ModuleVersion": "2.7.3", "ServerVersionRange": [ "2.3.5", "2.4.0"  ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "2.7.4", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema, new route", "Importance": "Minor" },
+        { "ModuleVersion": "2.7.5", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+        { "ModuleVersion": "2.8.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
+      ],
+
+      "RouteMaps": [
+      {
+          "Name": "License Plate Reader",
+          "Route": "vision/alpr",
+          "Method": "POST",
+          "Command": "alpr",
+          "Description": "Detects and reads the characters in license plates detected within an image",
+          "Inputs": [
+            {
+              "Name": "upload",
+              "Type": "File",
+              "Description": "The image to ALPR."
+            }
+          ],
+
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "message",
+              "Type": "String",
+              "Description": "A summary of the inference operation."
+            },
+            {
+              "Name": "error",
+              "Type": "String",
+              "Description": "(Optional) An description of the error if success was false."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object[]",
+              "Description": "An array of objects with the x_max, x_min, max, y_min bounds of the plate, label, the plate chars and confidence."
+            },
+            {
+              "Name": "count",
+              "Type": "Integer",
+              "Description": "The number of objects found."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            }
+          ]
+        },      
+        {
+          "Name": "License Plate Reader, Legacy route",
+          "Route": "image/alpr",
+          "Method": "POST",
+          "Command": "alpr",
+          "Description": "Detects the characters in license plates detected within an image",
+          "Inputs": [
+            {
+              "Name": "upload",
+              "Type": "File",
+              "Description": "The image to ALPR."
+            }
+          ],
+
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "message",
+              "Type": "String",
+              "Description": "A summary of the inference operation."
+            },
+            {
+              "Name": "error",
+              "Type": "String",
+              "Description": "(Optional) An description of the error if success was false."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object[]",
+              "Description": "An array of objects with the x_max, x_min, max, y_min bounds of the plate, label, the plate chars and confidence."
+            },
+            {
+              "Name": "count",
+              "Type": "Integer",
+              "Description": "The number of objects found."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

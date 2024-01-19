@@ -1,0 +1,35 @@
+#! Python3.7
+
+urllib3<1.27,>=1.25.4   # Installing urllib3, the HTTP client for Python
+
+Pandas           # Installing Pandas, a data analysis / data manipulation tool
+CoreMLTools      # Installing CoreMLTools, for working with .mlmodel format models
+OpenCV-Python    # Installing OpenCV, the Open source Computer Vision library
+Pillow<10.0.0    # Installing Pillow, a Python Image Library
+SciPy            # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML           # Installing PyYAML, a library for reading configuration files
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==1.13.0+cpu       # Installing PyTorch, for Tensor computation and Deep neural networks
+--extra-index-url https://download.pytorch.org/whl/cpu
+torchvision==0.14.0+cpu # Installing TorchVision, for Computer Vision based AI
+
+# We need this, but we don't need this.
+Seaborn         # Installing Seaborn, a data visualization library based on matplotlib
+
+## YOLOv5 base ----------------------------------------
+## Not used because it will load torch 1.11 which has a bug
+##
+## matplotlib>=3.2.2
+## numpy>=1.18.5
+## opencv-python>=4.1.1
+## Pillow>=7.1.2
+## PyYAML>=5.3.1
+## requests>=2.23.0
+## scipy>=1.4.1
+## torch>=1.7.0
+## torchvision>=0.8.1
+## tqdm>=4.64.0
+## protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
+
+## last line empty.

@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{e5d27495-ee4f-4aaf-8749-a6ba848111e2}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>face.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
+    <Name>FaceProcessing</Name>
+    <IsWindowsApplication>False</IsWindowsApplication>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <Environment>
+    </Environment>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="..\modulesettings.json">
+      <Link>modulesettings.json</Link>
+    </Content>
+    <Content Include="..\modulesettings.linux.json">
+      <DependentUpon>..\modulesettings.json</DependentUpon>
+      <Link>modulesettings.linux.json</Link>
+    </Content>
+    <Content Include="..\modulesettings.macos.json">
+      <DependentUpon>..\modulesettings.json</DependentUpon>
+      <Link>modulesettings.macos.json</Link>
+    </Content>
+    <Content Include="..\modulesettings.windows.json">
+      <DependentUpon>..\modulesettings.json</DependentUpon>
+      <Link>modulesettings.windows.json</Link>
+    </Content>
+    <Content Include="..\modulesettings.docker.build.json">
+      <DependentUpon>..\modulesettings.json</DependentUpon>
+      <Link>modulesettings.docker.build.json</Link>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\requirements.txt" />
+    <Content Include="..\requirements.linux.txt">
+      <DependentUpon>..\requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.linux.cuda.txt">
+      <DependentUpon>..\requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="..\requirements.macos.txt">
+      <DependentUpon>..\requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="..\requirements.linux.arm64.txt">
+      <DependentUpon>..\requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="..\requirements.macos.arm64.txt">
+      <DependentUpon>..\requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="..\requirements.windows.cuda.txt">
+      <DependentUpon>..\requirements.txt</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="models\hub\anchors.yaml" />
+    <Content Include="models\hub\yolov3-spp.yaml" />
+    <Content Include="models\hub\yolov3-tiny.yaml" />
+    <Content Include="models\hub\yolov3.yaml" />
+    <Content Include="models\hub\yolov5-bifpn.yaml" />
+    <Content Include="models\hub\yolov5-fpn.yaml" />
+    <Content Include="models\hub\yolov5-p2.yaml" />
+    <Content Include="models\hub\yolov5-p34.yaml" />
+    <Content Include="models\hub\yolov5-p6.yaml" />
+    <Content Include="models\hub\yolov5-p7.yaml" />
+    <Content Include="models\hub\yolov5-panet.yaml" />
+    <Content Include="models\hub\yolov5l6.yaml" />
+    <Content Include="models\hub\yolov5m6.yaml" />
+    <Content Include="models\hub\yolov5n6.yaml" />
+    <Content Include="models\hub\yolov5s-ghost.yaml" />
+    <Content Include="models\hub\yolov5s-transformer.yaml" />
+    <Content Include="models\hub\yolov5s6.yaml" />
+    <Content Include="models\hub\yolov5x6.yaml" />
+    <Content Include="models\yolov5l.yaml" />
+    <Content Include="models\yolov5m.yaml" />
+    <Content Include="models\yolov5n.yaml" />
+    <Content Include="models\yolov5s.yaml" />
+    <Content Include="models\yolov5x.yaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\package.bat" />
+    <Content Include="..\install.bat" />
+    <Content Include="..\install.sh" />
+    <Content Include="test\person.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="__init__.py" />
+    <Compile Include="face.py" />
+    <Compile Include="init.py" />
+    <Compile Include="process.py" />
+    <Compile Include="shared.py" />
+    <Compile Include="models\common.py" />
+    <Compile Include="models\experimental.py" />
+    <Compile Include="models\yolo.py" />
+    <Compile Include="models\__init__.py" />
+    <Compile Include="recognition\networks.py" />
+    <Compile Include="recognition\process.py" />
+    <Compile Include="recognition\__init__.py" />
+    <Compile Include="utils\activations.py" />
+    <Compile Include="utils\augmentations.py" />
+    <Compile Include="utils\autoanchor.py" />
+    <Compile Include="utils\autobatch.py" />
+    <Compile Include="utils\benchmarks.py" />
+    <Compile Include="utils\callbacks.py" />
+    <Compile Include="utils\dataloaders.py" />
+    <Compile Include="utils\datasets.py" />
+    <Compile Include="utils\downloads.py" />
+    <Compile Include="utils\general.py" />
+    <Compile Include="utils\google_utils.py" />
+    <Compile Include="utils\loss.py" />
+    <Compile Include="utils\metrics.py" />
+    <Compile Include="utils\plots.py" />
+    <Compile Include="utils\torch_utils.py" />
+    <Compile Include="utils\__init__.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="models" />
+    <Folder Include="models\hub\" />
+    <Folder Include="recognition" />
+    <Folder Include="test\" />
+    <Folder Include="utils" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="..\..\..\runtimes\bin\windows\python37\venv\">
+      <Id>env</Id>
+      <Version>3.7</Version>
+      <Description>env (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

@@ -1,0 +1,18 @@
+#! Python3.7
+
+Pandas           # Installing Pandas, a data analysis / data manipulation tool
+CoreMLTools      # Installing CoreMLTools, for working with .mlmodel format models
+OpenCV-Python    # Installing OpenCV, the Open source Computer Vision library
+Pillow<10.0.0    # Installing Pillow, a Python Image Library
+SciPy            # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML           # Installing PyYAML, a library for reading configuration files
+
+## Specific versions that match the models we're using. 
+Torch==1.10.2        # Installing Torch, for Tensor computation and Deep neural networks
+TorchVision==0.11.3  # Installing TorchVision, for Computer Vision based AI
+
+## These to be removed (not needed for inference)
+# matlabplotlib
+Seaborn         # Installing Seaborn, a data visualization library based on matplotlib
+
+# last line left blank

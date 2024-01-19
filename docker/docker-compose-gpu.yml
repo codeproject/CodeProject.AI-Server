@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  CodeProjectAI:
+    image: codeproject/ai-server:gpu
+    container_name: codeproject-ai-server-gpu
+    hostname: codeproject-ai-server
+    # working_dir: /app
+    restart: unless-stopped
+    ports:
+      - "32168:32168/tcp"
+      - "32168:32168/udp"
+    environment:
+      - TZ=America/Toronto
+    volumes:
+      - '/opt/codeproject/ai:/app/modules'                            # Linux
+#     - '/Library/Application Support/CodeProject/AI/docker/modules:/app/modules' # macOS
+#     - 'C:\ProgramData\CodeProject\AI\docker\modules:/app/modules'   # Windows
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    # command:
+    #  - --Modules:BackgroundRemover:Activate=False
+    #  - --Modules:BackgroundRemoval:Activate=False
+    #  - --Modules:CustomDetection:Activate=False
+    #  - --Modules:CustomObjectDetection:Activate=False
+    #  - --Modules:PortraitFilter:Activate=False
+    #  - --Modules:SceneClassification:Activate=False
+    #  - --Modules:VisionObjectDetection:Activate=False
+    #  - --Modules:FaceProcessing:EnvironmentVariables:USE_CUDA=True
+
+# If you wish to use volumes, then:
+#    volumes:
+#      - codeproject_ai_data_gpu:/etc/codeproject/ai
+#      - codeproject_ai_modules_gpu:/app/modules
+#
+#volumes:
+#  codeproject_ai_data_gpu:
+#  codeproject_ai_modules_gpu:

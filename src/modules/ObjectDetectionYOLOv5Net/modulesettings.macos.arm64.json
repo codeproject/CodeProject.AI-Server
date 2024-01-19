@@ -1,0 +1,11 @@
+{
+  "Modules": {
+    "ObjectDetectionYOLOv5Net": {
+      "EnvironmentVariables": {
+      	// https://github.com/microsoft/onnxruntime/issues/9707#issuecomment-1414537388
+        "DYLD_LIBRARY_PATH" : "/opt/homebrew/lib"
+      }
+    }
+  }
+}
+

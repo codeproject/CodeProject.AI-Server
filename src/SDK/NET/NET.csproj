@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<Import Project="Common.targets" />
+
+	<!-- Common properties -->
+	<PropertyGroup>
+		<Name>CodeProject.AI SDK</Name>
+		<RootNamespace>CodeProject.AI.SDK</RootNamespace>
+		<AssemblyName>CodeProject.AI.SDK</AssemblyName>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Platform>AnyCPU</Platform>
+		<TargetFramework>net7.0</TargetFramework>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
+
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>false</SelfContained>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
+	</PropertyGroup>
+
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Hardware.Info" Version="100.0.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+		<PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
+		<PackageReference Include="SkiaSharp" Version="2.88.6" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.6" />
+		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.6" />
+		<PackageReference Include="System.Management" Version="7.0.0" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="7.0.0" />
+	</ItemGroup>
+
+</Project>
