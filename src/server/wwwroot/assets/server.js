@@ -1,15 +1,19 @@
 
-const pingFrequency         = 5000;    // milliseconds
-const statusFrequency       = 5000;    // milliseconds
-const serviceTimeoutSec     = 30;      // seconds
-const lostConnectionSec     = 15;      // consider connection down after 15s no contact
+const serverWarmupSec          = 5;       // Let server warm up, then re-make a status call  
+const pingFrequencySec         = 5;       // seconds
+const updateStatusFreqSec      = 5;       // seconds
+const customModelUpdateFreqSec = 60;      // seconds
+const updateModuleUiFreqSec    = 10;      // seconds
+
+const serviceTimeoutSec        = 30;      // seconds
+const lostConnectionSec        = 30;      // consider connection down after 15s no contact
 
 let apiServiceProtocol = window.location.protocol;
 if (!apiServiceProtocol || apiServiceProtocol === "file:")
     apiServiceProtocol = "http:"; // Needed if you launch this file from Finder
 
 const apiServiceHostname = window.location.hostname || "localhost";
-const apiServicePort     = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
+const apiServicePort     = ":" + (window.location.port || 32168);
 const apiServiceUrl      = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
 
 // Private vars
@@ -92,11 +96,12 @@ function toggleColourMode() {
 /**
  * Updates the main status message regarding server state
  */
-function setServerStatus(text, variant) {
+function setServerStatus(text, variant, tooltip) {
+    tooltip = tooltip||'';
     if (variant)
-        document.getElementById("serverStatus").innerHTML = "<span class='text-white p-1 bg-" + variant + "'>" + text + "</span>";
+        document.getElementById("serverStatus").innerHTML = `<span class='text-white p-1 bg-${variant}' title='${tooltip}'>${text}</span>`;
     else
-        document.getElementById("serverStatus").innerHTML = "<span class='text-white p-1'>" + text + "</span>";
+        document.getElementById("serverStatus").innerHTML = `<span class='text-white p-1' title='${tooltip}'>${text}</span>`;
 }
 
 function setServerHostname(text,) {
@@ -130,11 +135,11 @@ function isFetchDelayInEffect() {
  */
 function setFetchError() {
 
-    _fetchErrorDelaySec = Math.max(15, _fetchErrorDelaySec + 1);
+    _fetchErrorDelaySec = Math.min(15, _fetchErrorDelaySec + 1);
 
     if (_fetchErrorDelaySec > 5) {
 
-        setServerStatus("Offline", "warning");
+        setServerStatus("Waiting", "warning", "Server may be offline: Waiting for updates");
 
         // This is only for the dashboard
         let statusTable = document.getElementById('serviceStatus');
@@ -184,15 +189,12 @@ const copyToClipboard = (elmId) => {
 
 /**
  * Makes a GET call to the status API of the server
- * @param method - the name of the method to call: ping, version, updates etc
+ * @param path - the path to call
  */
-async function makeGET(path, successCallback, errorCallback) {
+async function makeGET(path) {
 
     if (isFetchDelayInEffect())
         return;
-
-    if (!errorCallback)   errorCallback   = (error) => showError(null, error);
-    if (!successCallback) successCallback = (data)  => {};
 
     let urlElm = document.getElementById('serviceUrl');
     let url = urlElm? urlElm.value.trim() : apiServiceUrl;
@@ -202,65 +204,70 @@ async function makeGET(path, successCallback, errorCallback) {
     if (document.getElementById("serviceTimeoutSecTxt"))
         timeoutSecs = parseInt(document.getElementById("serviceTimeoutSecTxt").value);
 
-    const controller  = new AbortController()
-    const timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
-
+    let timeoutId;
     try {
-        await fetch(url, {
+        const controller = new AbortController()
+        timeoutId = setTimeout(() => controller.abort(), timeoutSecs * 1000)
+
+        let response = await fetch(url, {
             method: "GET",
             cache: "no-cache",
             signal: controller.signal 
-        })
-            .then(response => {
+        });
 
-                clearTimeout(timeoutId);
-                clearFetchError();
+        if (response) {
+            clearTimeout(timeoutId);
+            clearFetchError();
+        }
 
-                if (response.ok) {
-                    response.json()
-                        .then(data   => successCallback(data))
-                        .catch(error => errorCallback(`Unable to process server response (${error})`));
-                } 
-                else {
-                    errorCallback('Error contacting API server');
-                }
-            })
-            .catch(error => {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                    errorCallback("Response timeout. Try increasing the timeout value");
-                }
-                else {
-                    errorCallback(`API server is offline (${error?.message || "(no error provided)"})`);
-                    setFetchError();
-                }
-            });
+        let data;
+        if (response && response.ok) {
+            try {
+                data = await response.json();
+            }
+            catch (error) {
+                data = { success: false, error: error };
+            }
+        }
+        else
+            data = { success: false, error: response.status };
+
+        return data;
     }
-    catch
+    catch(error)
     {
-        clearTimeout(timeoutId);
+        if (timeoutId)
+            clearTimeout(timeoutId);
         setFetchError();
-        errorCallback('Error contacting API server');
+
+        let data;
+        if (error.name === 'AbortError')
+            data = { success: false, error: "Response timeout. Try increasing the timeout value" };
+        else
+            data = { success: false, error: `API server is offline (${error?.message || "no error provided"})` };
+
+        return data;
     }
 }
 
 async function ping() {
 
-    await makeGET('server/status/ping', 
-        function (data) {
-            if (_serverIsOnline == data.success)
-                return;
+    let data = await makeGET('server/status/ping');
 
-            _serverIsOnline = data.success;
-            if (_serverIsOnline)
-                setServerStatus('Online', "success");
+    // if (_serverIsOnline == data.success)
+    //    return;
 
-            setServerHostname(data.hostname);
-        },
-        function (error) {
-            showError("Offline", error);
-            _serverOnline = false;
-        });
+    if (data && data.success) {
+        _serverIsOnline = true;
+        clearFetchError();
+        setServerStatus('Online', "success", "Server is currently online");
+        setServerHostname(data.hostname);
+    } 
+    else {
+        _serverIsOnline = false;
+        setFetchError();
+        showError("Offline", "Cannot connect to Server")
+    }
 }
 
 /**
@@ -268,78 +275,82 @@ async function ping() {
  */
 async function getVersion() {
 
-    await makeGET('server/status/version', function (data) {
+    let data = await makeGET('server/status/version');
+    if (data && data.success) {
         _version = data.version;
-
         let version = document.getElementById("server-version");
         if (version)
             version.innerHTML = data.message;
-    });
+    };
 }
 
 /**
  * Makes a POST call to the status API of the server
- * @param method - the name of the method to call: ping, version, updates etc
+ * @param path - the path to call
  */
-async function makePOST(path, key, value, successCallback, errorCallback) {
+async function makePOST(path, key, value) {
 
     if (isFetchDelayInEffect())
         return;
-
-    if (!errorCallback)   errorCallback   = (error) => showError(null, error);
-    if (!successCallback) successCallback = (data)  => {};
 
     let urlElm = document.getElementById('serviceUrl');
     let url = urlElm? urlElm.value.trim() : apiServiceUrl;
     url += `/v1/${path}`;
 
     let formData = new FormData();
-    formData.append("name",  key);
-    formData.append("value", value);
+    if (key) {
+        formData.append("name",  key);
+        formData.append("value", value);
+    }
 
     let timeoutSecs = serviceTimeoutSec;
     if (document.getElementById("serviceTimeoutSecTxt"))
         timeoutSecs = parseInt(document.getElementById("serviceTimeoutSecTxt").value);
 
-    const controller  = new AbortController()
-    const timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
-
+    let timeoutId;
     try {
-        await fetch(url, {
+        const controller  = new AbortController()
+        timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
+
+        let response = await fetch(url, {
             method: "POST",
             body: formData,
             cache: "no-cache",
-            signal: controller.signal 
-        })
-            .then(response => {
+            signal: controller.signal
+        });
 
-                clearTimeout(timeoutId);
-                clearFetchError();
+        if (response) {
+            clearTimeout(timeoutId);
+            clearFetchError();
+        }
 
-                if (response.ok) {
-                    response.json()
-                        .then(data   => successCallback(data))
-                        .catch(error => errorCallback(`Unable to process server response (${error})`));
-                } 
-                else {
-                    errorCallback('Error contacting API server');
-                }
-            })
-            .catch(error => {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                    errorCallback("Response timeout. Try increasing the timeout value");
-                }
-                else {
-                    errorCallback(`API server is offline (${error?.message || "(no error provided)"})`);
-                    setFetchError();
-                }
-            });
+        let data;
+        if (response && response.ok) {
+            try {
+                data = await response.json();
+            }
+            catch (error) {
+                data = { success: false, error: error };
+            }
+        }
+        else
+            data = { success: false, error: response.status };
+
+        return data;
     }
-    catch
+    catch(error)
     {
-        clearTimeout(timeoutId);
+        if (timeoutId)
+            clearTimeout(timeoutId);
+
         setFetchError();
-        errorCallback('Error contacting API server');
+
+        let data;
+        if (error.name === 'AbortError')
+            data = { success: false, error: "Response timeout. Try increasing the timeout value" };
+        else
+            data = { success: false, error: `API server is offline (${error?.message || "no error provided"})` };
+
+        return data;
     }
 }

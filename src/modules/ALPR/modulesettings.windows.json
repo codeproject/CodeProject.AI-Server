@@ -2,9 +2,13 @@
   "Modules": {
 
     "ALPR": {
-      "Runtime": "python3.7",
-      "InstallGPU": true,
-      "EnableGPU": true 
+      "LaunchSettings": {
+        "Runtime": "python3.7" // needs to be 3.6 - 3.8 to match the wheels from NVIDIA
+      },
+      "GpuOptions" : {
+        "InstallGPU": true,
+        "EnableGPU": true 
+      }
     }
   }
 }

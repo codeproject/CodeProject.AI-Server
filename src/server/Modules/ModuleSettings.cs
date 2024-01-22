@@ -1,13 +1,12 @@
 ﻿using System;
 using System.IO;
-using System.Security.Policy;
 
-using CodeProject.AI.SDK;
-using CodeProject.AI.SDK.Common;
-using CodeProject.AI.SDK.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Server.Modules
 {
@@ -122,47 +121,48 @@ namespace CodeProject.AI.Server.Modules
             // modulesettings.device_specifier.json     device_specifier = raspberrypi, orangepi, jetson
             // modulesettings.device_specifier.development.json
 
-            string settingsFile = Path.Combine(moduleDirPath, "modulesettings.json");
+            string basename     = Constants.ModulesSettingFilenameNoExt; // "modulesettings"
+            string settingsFile = Path.Combine(moduleDirPath, $"{basename}.json");
             config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
 
             if (!string.IsNullOrEmpty(runtimeEnv))
             {
-                settingsFile = Path.Combine(moduleDirPath, $"modulesettings.{runtimeEnv}.json");
+                settingsFile = Path.Combine(moduleDirPath, $"{basename}.{runtimeEnv}.json");
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
             }
 
-            settingsFile = Path.Combine(moduleDirPath, $"modulesettings.{os}.json");
+            settingsFile = Path.Combine(moduleDirPath, $"{basename}.{os}.json");
             config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
 
             if (!string.IsNullOrEmpty(runtimeEnv))
             {
-                settingsFile = Path.Combine(moduleDirPath, $"modulesettings.{os}.{runtimeEnv}.json");
+                settingsFile = Path.Combine(moduleDirPath, $"{basename}.{os}.{runtimeEnv}.json");
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
             }
 
-            settingsFile = Path.Combine(moduleDirPath, $"modulesettings.{os}.{architecture}.json");
+            settingsFile = Path.Combine(moduleDirPath, $"{basename}.{os}.{architecture}.json");
             config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
 
             if (!string.IsNullOrEmpty(runtimeEnv))
             {
-                settingsFile = Path.Combine(moduleDirPath, $"modulesettings.{os}.{architecture}.{runtimeEnv}.json");
+                settingsFile = Path.Combine(moduleDirPath, $"{basename}.{os}.{architecture}.{runtimeEnv}.json");
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
             }
 
             if (SystemInfo.IsDocker)
             {
-                settingsFile = Path.Combine(moduleDirPath, $"modulesettings.docker.json");
+                settingsFile = Path.Combine(moduleDirPath, $"{basename}.docker.json");
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
             }
 
             if (!string.IsNullOrEmpty(deviceSpecifier))
             {
-                settingsFile = Path.Combine(moduleDirPath, $"modulesettings.{deviceSpecifier}.json");
+                settingsFile = Path.Combine(moduleDirPath, $"{basename}.{deviceSpecifier}.json");
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
 
                 if (!string.IsNullOrEmpty(runtimeEnv))
                 {
-                    settingsFile = Path.Combine(moduleDirPath, $"modulesettings.{deviceSpecifier}.{runtimeEnv}.json");
+                    settingsFile = Path.Combine(moduleDirPath, $"{basename}.{deviceSpecifier}.{runtimeEnv}.json");
                     config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
                 }
             }
@@ -226,7 +226,7 @@ namespace CodeProject.AI.Server.Modules
         public string? GetCommandPath(ModuleConfig module)
         {
             // string? command = ExpandOption(module.Command, GetModuleDirPath(module)) ??
-            string? command = ExpandOption(module.Command, module.ModuleDirPath) ??
+            string? command = ExpandOption(module.LaunchSettings!.Command, module.ModuleDirPath) ??
                               GetCommandByRuntime(module) ??
                               GetCommandByFilepath(module);
             return command;
@@ -242,7 +242,7 @@ namespace CodeProject.AI.Server.Modules
         {
             // Correcting for cross platform (win = \, linux = /)
             // return Path.Combine(GetModuleDirPath(module), Text.FixSlashes(module.FilePath));
-            return Path.Combine(module.ModuleDirPath, Text.FixSlashes(module.FilePath));
+            return Path.Combine(module.ModuleDirPath, Text.FixSlashes(module.LaunchSettings!.FilePath));
         }
 
         /// <summary>
@@ -253,10 +253,10 @@ namespace CodeProject.AI.Server.Modules
         /// <returns>A command that can be run directly on the current OS</returns>
         private string? GetCommandByRuntime(ModuleConfig module)
         {
-            if (module is null || module.Runtime is null)
+            if (module is null || module.LaunchSettings!.Runtime is null)
                 return null;
 
-            string runtime = module.Runtime.ToLower();
+            string runtime = module.LaunchSettings!.Runtime.ToLower();
             // _logger.LogTrace($"GetCommandByRuntime: Runtime={runtime}, Location={module.RuntimeLocation}");
 
             // HACK: Ultimately we will have a set of "runtime" plugins which will install and
@@ -279,26 +279,26 @@ namespace CodeProject.AI.Server.Modules
                 // done at the system level, and not in a virtual environment. This means Python
                 // command is in the format of "python3.N" rather than
                 // "/runtimes/bin/linux/python3N/venv/bin/python3"
-                if (SystemInfo.IsDocker && module.PreInstalled)
+                if (SystemInfo.IsDocker && module.InstallOptions!.PreInstalled)
                     return runtime;
 
                 // In Docker we don't allow non-pre-installed modules to have shared venv's. Force
                 // to Local, because this is where the venv will have been setup by the setup script
-                if (SystemInfo.IsDocker && module.RuntimeLocation == "Shared")
-                    module.RuntimeLocation = "Local";
+                if (SystemInfo.IsDocker && module.LaunchSettings!.RuntimeLocation == "Shared")
+                    module.LaunchSettings!.RuntimeLocation = "Local";
 
                 string pythonName = runtime.Replace(".", string.Empty).ToLower();
                 string commandPath = _moduleOptions.PythonRelativeInterpreterPath!
                                                    .Replace(PythonNameMarker, pythonName);
                 commandPath = commandPath.TrimStart('\\','/');
-                if (module.RuntimeLocation == "Shared")
+                if (module.LaunchSettings!.RuntimeLocation == "Shared")
                 {
                     commandPath = Path.Combine(_moduleOptions.RuntimesDirPath!, commandPath);
                 }
                 else
                 {
                     // commandPath = Path.Combine(GetModuleDirPath(module), commandPath);
-                    commandPath = Path.Combine(module.ModuleDirPath, commandPath);
+                    commandPath = Path.Combine(module!.ModuleDirPath, commandPath);
                 }
 
                 // Correct the path to handle any path traversals (eg ../) in the path
@@ -322,7 +322,7 @@ namespace CodeProject.AI.Server.Modules
 
         private string? GetCommandByFilepath(ModuleConfig module)
         {
-            if (module is null || module.FilePath  is null)
+            if (module is null || module.LaunchSettings?.FilePath is null)
                 return null;
 
             // HACK: Ultimately we will have a set of "runtime" plugins which will install and
@@ -331,9 +331,9 @@ namespace CodeProject.AI.Server.Modules
             // The "python3.9" runtime, for example, may want to register .py, but so would python3.7.
             // "dotnet" is welcome to register .dll as long as no other runtime module wants .dll too.
 
-            string extension = Path.GetExtension(module.FilePath);
+            string extension = Path.GetExtension(module.LaunchSettings!.FilePath);
             if (extension == ".py")
-                module.Runtime = "python"; // "Generic" python, which will be set to specific version later
+                module.LaunchSettings!.Runtime = "python"; // "Generic" python, which will be set to specific version later
 
             return extension switch
             {
@@ -395,12 +395,12 @@ namespace CodeProject.AI.Server.Modules
         public string? ExpandOption(string? value, string? currentModuleDirPath = null)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return value;
+                return null;
 
             value = value.Replace(runtimesDirPathMarker, _moduleOptions.RuntimesDirPath);
             value = value.Replace(PreinstalledModulesDirPathMarker,  _moduleOptions.PreInstalledModulesDirPath);
             value = value.Replace(modulesDirPathMarker,  _moduleOptions.ModulesDirPath);
-            value = value.Replace(RootPathMarker,        CodeProject.AI.Server.Program.ApplicationRootPath);
+            value = value.Replace(RootPathMarker,        Server.Program.ApplicationRootPath);
             value = value.Replace(PlatformMarker,        SystemInfo.Platform.ToLower());
             value = value.Replace(OSMarker,              SystemInfo.OperatingSystem.ToLower());
             value = value.Replace(PythonPathMarker,      _moduleOptions.PythonRelativeInterpreterPath);

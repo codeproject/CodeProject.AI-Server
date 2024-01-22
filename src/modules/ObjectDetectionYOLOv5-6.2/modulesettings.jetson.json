@@ -2,9 +2,10 @@
   "Modules": {
 
     "ObjectDetectionYOLOv5-6.2": {
-      "Runtime": "python3.8",
-      "AutoStart": false,
-
+      "LaunchSettings": {
+        "Runtime": "python3.8",
+        "AutoStart": false
+      },
       "EnvironmentVariables": {
         "MODEL_SIZE": "Tiny", // tiny, small, medium, large
         "USE_CUDA": "True"

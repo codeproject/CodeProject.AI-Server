@@ -66,6 +66,16 @@ namespace CodeProject.AI.Server.Modules
         public string? DefaultValue { get; set; }
 
         /// <summary>
+        /// Gets the minimum value for this parameter if not provided to or returned from a process.
+        /// </summary>
+        public string? MinValue { get; set; }
+
+        /// <summary>
+        /// Gets the maximum value for this parameter if not provided to or returned from a process.
+        /// </summary>
+        public string? MaxValue { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether or not this parameter is supplied by the system
         /// </summary>
         public bool System { get; set; }
@@ -184,6 +194,13 @@ namespace CodeProject.AI.Server.Modules
                     Name        = "command",
                     Type        = "String",
                     Description = "The command that was sent as part of this request. Can be detect, list, status.",
+                    System      = true
+                },
+                new RouteParameterInfo()
+                {
+                    Name        = "statusData",
+                    Type        = "Object",
+                    Description = "An object containing (if available) the current module status data.",
                     System      = true
                 },
                 new RouteParameterInfo()

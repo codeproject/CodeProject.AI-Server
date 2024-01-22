@@ -36,7 +36,9 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         private readonly string _mode;
         private readonly string _modelDir;
         private readonly string _customDir;
-
+        
+        private long _numItemsFound;
+        private Dictionary<string, long> _histogram = new Dictionary<string, long>();
         private string[] _customFileList  = Array.Empty<string>();
         private DateTime _lastTimeCustomFileListGenerated = DateTime.MinValue;
 
@@ -180,6 +182,15 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             return response;
         }
 
+        protected override dynamic? Status()
+        {
+            var status = base.Status();
+            if (status is not null)
+                status.Histogram = _histogram;
+
+            return status;
+        }            
+
         /// <summary>
         /// Called when the module is asked to execute a self-test to ensure it install and runs
         /// correctly
@@ -199,7 +210,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
 
             return 1;
         }
-
+        
         private string GetStandardModelPath()
         {
             return (_mode ?? string.Empty.ToLower()) switch
@@ -266,6 +277,16 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
                 message = "Found " + string.Join(", ", results.Select(x => x?.Label?.Name ?? "item"));
             else
                 message = "No objects found";
+
+            _numItemsFound += count;
+            foreach (var result in results)
+            {
+                string label = result.Label?.Name ?? "unknown";
+                if (_histogram.ContainsKey(label))
+                    _histogram[label] = _histogram[label] + 1;
+                else
+                    _histogram[label] = 1;
+            }
 
             if (ShowTrace)
                 Console.WriteLine($"Trace: Sending results: {traceSW.ElapsedMilliseconds}ms");

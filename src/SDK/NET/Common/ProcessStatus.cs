@@ -2,6 +2,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
 
+using CodeProject.AI.SDK.API;
+
 namespace CodeProject.AI.SDK
 {
     /// <summary>
@@ -82,7 +84,7 @@ namespace CodeProject.AI.SDK
     /// </summary>
     public class ProcessStatus
     {
-        private int _processed;
+        private int _requestCount;
 
         /// <summary>
         /// Gets or sets the module Id
@@ -120,9 +122,14 @@ namespace CodeProject.AI.SDK
         public ProcessStatusType Status { get; set; } = ProcessStatusType.Unknown;
 
         /// <summary>
+        /// The status data as returned by the module
+        /// </summary>
+        public object? StatusData { get; set; }
+
+        /// <summary>
         /// Gets the number of requests processed
         /// </summary>
-        public int Processed { get => _processed; }
+        public int RequestCount { get => _requestCount; }
 
         /// <summary>
         /// Gets or sets the name of the hardware acceleration provider.
@@ -140,6 +147,12 @@ namespace CodeProject.AI.SDK
         public bool? CanUseGPU { get; set; } = false;
 
         /// <summary>
+        /// Gets or sets the menus to be displayed in the dashboard based on the current status of
+        /// this module
+        /// </summary>
+        public DashboardMenu[]? Menus { get; set; }
+
+        /// <summary>
         /// Gets or sets the human readable notes regarding how this process was installed.
         /// </summary>
         public string? InstallSummary { get; set; } = string.Empty;
@@ -153,7 +166,16 @@ namespace CodeProject.AI.SDK
         /// Increments the number of requests processed by 1.
         /// </summary>
         /// <returns>the incremented value</returns>
-        public int IncrementProcessedCount() => Interlocked.Increment(ref _processed);
+        public int IncrementRequestCount() => Interlocked.Increment(ref _requestCount);
+
+        /// <summary>
+        /// The string representation of this module
+        /// </summary>
+        /// <returns>A string object</returns>
+        public override string ToString()
+        {
+            return $"{Name} ({ModuleId}) {Status}";
+        }
 
         /// <summary>
         /// Gets a human readable summary of the process running the given module
@@ -172,10 +194,11 @@ namespace CodeProject.AI.SDK
                 string lastSeen = (LastSeen is null) ? "Not seen"
                                 : LastSeen.Value.ToLocalTime().ToString(format) + " " + timezone;
 
+                summary.AppendLine($"Status Data:  {StatusData}");
                 summary.AppendLine($"Started:      {started}");
                 summary.AppendLine($"LastSeen:     {lastSeen}");
                 summary.AppendLine($"Status:       {Status}");
-                summary.AppendLine($"Processed:    {Processed}");
+                summary.AppendLine($"Requests:     {RequestCount} (includes status calls)");
                 summary.AppendLine($"Provider:     {ExecutionProvider}");
                 summary.AppendLine($"CanUseGPU:    {CanUseGPU}");
                 summary.AppendLine($"HardwareType: {HardwareType}");

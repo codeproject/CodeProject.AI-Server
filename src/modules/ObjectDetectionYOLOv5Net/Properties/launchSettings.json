@@ -5,7 +5,6 @@
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
         "CPAI_MODULE_ENABLE_GPU": "true",
-        "CPAI_LOG_VERBOSITY": "info",
         "CPAI_MODULE_PARALLELISM": "0",
         "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
       },

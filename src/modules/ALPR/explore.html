@@ -65,6 +65,7 @@ RULES AND CONVENTIONS
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -103,7 +104,7 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-        function _MID_onReadLicensePlate(fileChooser, confidence) {
+        async function _MID_onReadLicensePlate(fileChooser, confidence) {
 
             clearImagePreview();
 
@@ -117,11 +118,12 @@ RULES AND CONVENTIONS
             let params = [["confidence", confidence]]
 
 			setResultsHtml("Detecting license plates...");
-            submitRequest('vision', 'alpr', images, params, function (data) {
+            let data = await submitRequest('vision', 'alpr', images, params);
+            if (data) {
                 // showResultsImage(images[0]);
                 showResultsBoundingBoxes(data.predictions, false);
                 showPredictionSummary(data, false)
-            });
+            };
 		}
 // END EXPLORER SCRIPT
     </script>

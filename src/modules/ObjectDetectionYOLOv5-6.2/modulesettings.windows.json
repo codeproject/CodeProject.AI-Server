@@ -2,7 +2,9 @@
   "Modules": {
 
     "ObjectDetectionYOLOv5-6.2": {
-      "Runtime": "python3.7"
+      "LaunchSettings": {
+        "Runtime": "python3.7"
+      }
     }
   }
 }

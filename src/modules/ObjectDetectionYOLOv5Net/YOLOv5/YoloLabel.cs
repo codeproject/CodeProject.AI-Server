@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace Yolov5Net.Scorer
+﻿namespace Yolov5Net.Scorer
 {
     /// <summary>
     /// Label of detected object.

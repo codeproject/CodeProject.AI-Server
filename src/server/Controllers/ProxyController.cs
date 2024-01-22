@@ -64,6 +64,10 @@ namespace CodeProject.AI.Server.Controllers
         private readonly TriggersConfig _triggersConfig;
         private readonly TriggerTaskRunner _commandRunner;
         private readonly MeshManager _meshManager;
+        private readonly ModuleProcessServices _moduleProcessService;
+
+        private bool   _verbose = false;
+
 
         /// <summary>
         /// Initializes a new instance of the VisionController class.
@@ -74,19 +78,22 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="triggersConfig">Contains the triggers</param>
         /// <param name="commandRunner">The command runner</param>
         /// <param name="meshManager">The mesh manager</param>
+        /// <param name="moduleProcessService">The module process service</param>
         public ProxyController(CommandDispatcher dispatcher,
                                BackendRouteMap routeMap,
                                IOptions<ModuleCollection> ModuleCollectionOptions,
                                IOptions<TriggersConfig> triggersConfig,
                                TriggerTaskRunner commandRunner,
-                               MeshManager meshManager)
+                               MeshManager meshManager,
+                               ModuleProcessServices moduleProcessService)
         {
-            _dispatcher       = dispatcher;
-            _routeMap         = routeMap;
-            _installedModules = ModuleCollectionOptions.Value;
-            _triggersConfig   = triggersConfig.Value;
-            _commandRunner    = commandRunner;
-            _meshManager      = meshManager;
+            _dispatcher           = dispatcher;
+            _routeMap             = routeMap;
+            _installedModules     = ModuleCollectionOptions.Value;
+            _triggersConfig       = triggersConfig.Value;
+            _commandRunner        = commandRunner;
+            _meshManager          = meshManager;
+            _moduleProcessService = moduleProcessService;
         }
 
         /// <summary>
@@ -98,6 +105,9 @@ namespace CodeProject.AI.Server.Controllers
         [HttpPost("{**pathSuffix}")]
         public async Task<IActionResult> Post(string pathSuffix)
         {
+            if (_verbose)
+                Debug.WriteLine("Received call to " + pathSuffix);
+
             // check if this is a forwarded request and if so run locally.
             Microsoft.Extensions.Primitives.StringValues forwardedHeader;
             bool isForwardedRequest = Request.Headers.TryGetValue(CPAI_Forwarded_Header, 
@@ -114,12 +124,25 @@ namespace CodeProject.AI.Server.Controllers
 
                 // If a remote server was selected, forward the request to that server.
                 if (server is not null && !server.IsLocalServer)
+                {
+                    if (_verbose)
+                        Debug.WriteLine("Forwarding to server " + server);
+
                     return await DispatchRemoteRequest(pathSuffix, server).ConfigureAwait(false);
+                }
             }
 
             // we are not forwarding, so this is a local request, do it the normal way.
             if (_routeMap.TryGetValue(pathSuffix, "POST", out RouteQueueInfo? routeInfo))
+            {
+                if (_verbose)
+                    Debug.WriteLine("Processing locally");
+
                 return await DispatchLocalRequest(pathSuffix, routeInfo!).ConfigureAwait(false);
+            }
+
+            if (_verbose)
+                Debug.WriteLine("Unable to process: no suitable mesh server or local route found");
 
             return NotFound();
         }
@@ -137,36 +160,32 @@ namespace CodeProject.AI.Server.Controllers
 
             IOrderedEnumerable<ModuleConfig> moduleList = _installedModules.Values
                                               .Where(module => module.RouteMaps?.Length > 0)
-                                              .OrderBy(module => module.RouteMaps[0].Route);
+                                              .OrderBy(module => module.PublishingInfo!.Category)
+                                              .ThenBy(module => module.Name)
+                                              .ThenBy(module => module.RouteMaps[0].Route);
 
             string currentCategory = string.Empty;
 
             foreach (ModuleConfig module in moduleList)
             {
+                string category = module.PublishingInfo!.Category ?? "Uncategorised";
+                if (category != currentCategory)
+                {
+                    if (currentCategory == string.Empty)
+                        summary.Append("\n\n\n");
+
+                    summary.Append($"## {textInfo.ToTitleCase(category)}\n\n");
+                    currentCategory = category;
+                }
+                
                 foreach (ModuleRouteInfo routeInfo in module.RouteMaps)
                 {
                     string url = "http://localhost:32168";
 
-                    // string version  = routeInfo.Version;
-                    // string category = routeInfo.Category;
-                    // string route    = routeInfo.Route;
-
                     int index = routeInfo.Route.IndexOf('/');
-                    string version  = "v1";
-                    string category = index > 0 ? routeInfo.Route.Substring(0, index) : routeInfo.Route;
-                    string route    = index > 0 ? routeInfo.Route.Substring(index + 1) : string.Empty;
-
-                    // string path  = $"/{version}/{category}/{route}";
-                    string path     = $"{version}/{routeInfo.Route}";
-
-                    if (category != currentCategory)
-                    {
-                        if (currentCategory == string.Empty)
-                            summary.Append("\n\n\n");
-
-                        summary.Append($"## {textInfo.ToTitleCase(category)}\n\n");
-                        currentCategory = category;
-                    }
+                    string version = "v1";
+                    string route   = index > 0 ? routeInfo.Route.Substring(index + 1) : string.Empty;
+                    string path    = $"{version}/{routeInfo.Route}";
 
                     summary.Append($"### {routeInfo.Name}\n\n");
                     summary.Append($"{routeInfo.Description}\n\n");
@@ -174,15 +193,15 @@ namespace CodeProject.AI.Server.Controllers
                     summary.Append($"{routeInfo.Method}: {url}/{path}\n");
                     summary.Append($"```\n\n");
 
-                    if (module.Platforms is not null)
+                    if (module.InstallOptions?.Platforms is not null)
                     {
                         summary.Append($"**Platforms**\n\n");
-                        for (int i = 0; i < module.Platforms.Length; i++)
+                        for (int i = 0; i < module.InstallOptions.Platforms.Length; i++)
                         {
-                            string platform = module.Platforms[i].ToLower() == "macos"
-                                            ? "macOS" : textInfo.ToTitleCase(module.Platforms[i]);
+                            string platform = module.InstallOptions.Platforms[i].ToLower() == "macos"
+                                            ? "macOS" : textInfo.ToTitleCase(module.InstallOptions.Platforms[i]);
                             summary.Append(platform);
-                            if (i < module.Platforms.Length - 1)
+                            if (i < module.InstallOptions.Platforms.Length - 1)
                                 summary.Append(", ");
                         }
                         summary.Append("\n\n");
@@ -278,7 +297,7 @@ namespace CodeProject.AI.Server.Controllers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
+                Debug.WriteLine("Error in DispatchRemoteRequest: " + ex);
 
                 // Bump the response to 30s to push this server out of contention. Maybe also add
                 // exception info to the message
@@ -305,6 +324,8 @@ namespace CodeProject.AI.Server.Controllers
                 responseObject["analysisRoundTripMs"] = elapsedMs;
 
             responseObject["processedBy"] = server.Status.Hostname;
+
+            UpdateProcessStatus(responseObject);
 
             // Don't use JsonResult as it will chunk the response and Blue Iris will roll over and
             // die.
@@ -345,22 +366,24 @@ namespace CodeProject.AI.Server.Controllers
             if (response is string responseString)
             {
                 // Unwrap the response and add the analysisRoundTripMs property
-                JsonObject? jsonResponse = null;
+                JsonObject? responseObject = null;
                 if (!string.IsNullOrEmpty(responseString))
-                    jsonResponse = JsonSerializer.Deserialize<JsonObject>(responseString);
+                    responseObject = JsonSerializer.Deserialize<JsonObject>(responseString);
 
-                jsonResponse ??= new JsonObject();
-                jsonResponse["analysisRoundTripMs"] = analysisRoundTripMs;
-                jsonResponse["processedBy"]         = "localhost";
+                responseObject ??= new JsonObject();
+                responseObject["analysisRoundTripMs"] = analysisRoundTripMs;
+                responseObject["processedBy"]         = "localhost";
 
                 _meshManager.AddResponseTime(null, pathSuffix, (int)analysisRoundTripMs);
 
                 // Check for, and execute if needed, triggers
-                ProcessTriggers(routeInfo!.QueueName, jsonResponse);
+                ProcessTriggers(routeInfo!.QueueName, responseObject);
+
+                UpdateProcessStatus(responseObject);
 
                 // Wrap it back up. Don't use JsonResult as it will chunk the response and Blue Iris
                 // will roll over and die.
-                responseString = JsonSerializer.Serialize(jsonResponse) as string;
+                responseString = JsonSerializer.Serialize(responseObject) as string;
                 return new ContentResult
                 {
                     Content     = responseString,
@@ -370,6 +393,21 @@ namespace CodeProject.AI.Server.Controllers
             }
             else
                 return new ObjectResult(response);
+        }
+
+        private void UpdateProcessStatus(JsonObject responseObject)
+        {
+            string? moduleId = responseObject?["moduleId"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(moduleId))
+                return;
+
+            var statusData = responseObject?["statusData"];
+            if (statusData is not null)
+            {
+                if (_moduleProcessService.TryGetProcessStatus(moduleId, out ProcessStatus? status))
+                    if (status is not null)
+                        status.StatusData = statusData;
+            }
         }
 
         /// <summary>
@@ -550,7 +588,7 @@ namespace CodeProject.AI.Server.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Console.WriteLine("Error processing triggers: " + ex.Message);
             }
         }
     }

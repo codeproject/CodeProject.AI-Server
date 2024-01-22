@@ -11,7 +11,7 @@ sys.path.append("../../SDK/Python")
 from common import JSON
 from request_data import RequestData
 from module_runner import ModuleRunner
-from module_logging import LogMethod
+from module_logging import LogMethod, LogVerbosity
 
 # Import the method of the module we're wrapping
 from PIL import Image
@@ -39,6 +39,9 @@ class YOLO62_adapter(ModuleRunner):
 
 
     def initialise(self):
+
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"{self.module_id} init called")
 
         # if the module was launched outside of the server then the queue name 
         # wasn't set. This is normally fine, but here we want the queue to be
@@ -83,16 +86,28 @@ class YOLO62_adapter(ModuleRunner):
         elif self.use_DirectML:
             self.execution_provider = "DirectML"
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+        self.histogram            = {}
+
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"{self.module_id} init complete")
+
 
     def process(self, data: RequestData) -> JSON:
         
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"{self.module_id} process called with command {data.command}")
+
         response = None
 
         if data.command == "list-custom":               # list all models available
 
             # The route to here is /v1/vision/custom/list
 
-            response = self.list_models(self.opts.custom_models_dir)
+            response = self._list_models(self.opts.custom_models_dir)
 
         elif data.command == "detect":                  # Perform 'standard' object detection
 
@@ -142,20 +157,26 @@ class YOLO62_adapter(ModuleRunner):
                                     self.opts.resolution_pixels, self.use_CUDA,
                                     self.accel_device_name, use_mX_GPU,
                                     self.use_DirectML, self.half_precision,
-                                    img, threshold)
-
-        # This method is called from within the module_runner's "main_loop" function. Calling quit
-        # here will result in the main loop stopping dead, rather than catching the quit command
-        # itself and shutting down all tasks carefully.
-        elif data.command == "Quit":
-            # quit()
-            pass
-            
+                                    img, threshold)           
         else:
+            response = { "success": False, "error": "unsupported command" }
             self.report_error(None, __file__, f"Unknown command {data.command}")
 
+        self._update_statistics(response)
         return response
 
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+            "histogram"            : self.histogram
+        }
+    
 
     def selftest(self) -> JSON:
         
@@ -174,7 +195,35 @@ class YOLO62_adapter(ModuleRunner):
         return { "success": result['success'], "message": "Object detection test successful" }
 
 
-    def list_models(self, models_path: str):
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "predictions" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+                predictions = response["predictions"]
+                self.num_items_found += len(predictions) 
+
+                for prediction in predictions:
+                    label = prediction["label"]
+                    if label not in self.histogram:
+                        self.histogram[label] = 1
+                    else:
+                        self.histogram[label] += 1
+        else:
+            self.failed_inferences += 1
+
+
+    def _status_summary(self):
+        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self.num_items_found) + "\n"
+        for label in self.histogram:
+            summary += "  " + label + ": " + str(self.histogram[label]) + "\n"
+
+        return summary
+
+    def _list_models(self, models_path: str):
 
         """
         Lists the custom models we have in the assets folder. This ignores the 

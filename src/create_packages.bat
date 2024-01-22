@@ -138,8 +138,8 @@ set success=true
 
 pushd SDK\Utilities\ParseJSON
 if not exist ParseJSON.exe (
-    dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release 
-    if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . > /dev/null
+    dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
+    if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
 )
 popd
 

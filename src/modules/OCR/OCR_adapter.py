@@ -46,6 +46,12 @@ class OCR_adapter(ModuleRunner):
 
         init_detect_ocr(self.opts)
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+
+
     def process(self, data: RequestData) -> JSON:
         try:
             image: Image = data.get_image(0)
@@ -55,12 +61,14 @@ class OCR_adapter(ModuleRunner):
             result = read_text(self, image)
 
             if "error" in result and result["error"]:
-                return { "success": False, "error": result["error"] }
+                response = { "success": False, "error": result["error"] }
+                self._update_statistics(response)
+                return response 
 
             predictions = result["predictions"]
             message = "1 text found" if len(predictions) == 1 else f"{len(predictions)} pieces of text found"
 
-            return {
+            response = {
                 "success":     True,
                 "predictions": result["predictions"],
                 "message":     message,
@@ -70,7 +78,21 @@ class OCR_adapter(ModuleRunner):
 
         except Exception as ex:
             self.report_error(ex, __file__)
-            return { "success": False, "error": "unable to process the image" }
+            response = { "success": False, "error": "unable to process the image" }
+
+        self._update_statistics(response)
+        return response 
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+        }
 
 
     def selftest(slf) -> JSON:
@@ -84,6 +106,18 @@ class OCR_adapter(ModuleRunner):
 
     def cleanup(self) -> None:
         pass
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            self.success_inferences += 1
+            if "inferenceMs" in response:
+                self.total_success_inf_ms += response["inferenceMs"]
+            if "predictions" in response and response["predictions"]:
+                self.num_items_found += len(response["predictions"]) 
+        else:
+            self.failed_inferences += 1
 
 if __name__ == "__main__":
     OCR_adapter().start_loop()

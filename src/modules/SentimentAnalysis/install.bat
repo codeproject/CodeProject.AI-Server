@@ -13,6 +13,14 @@
     @goto:eof
 )
 
-call "!sdkScriptsDirPath!\utils.bat" WriteLine "No custom setup steps for this module." "!color_info!"
+if /i "!executionEnvironment!" == "Production" (
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "No custom setup steps for this module." "!color_info!"
+) else (
+    :: If we're in dev-setup mode we'll build the module now so the self-test will work
+    pushd "!moduleDirPath!"
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Building project..." "!color_info!"
+    dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/net7.0" >NUL
+    popd
+)
 
 REM set moduleInstallErrors=

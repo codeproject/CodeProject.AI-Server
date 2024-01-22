@@ -20,7 +20,7 @@ class Options:
             "small":  Settings(STD_MODEL_NAME = "yolov8s", RESOLUTION = 640),
             "medium": Settings(STD_MODEL_NAME = "yolov8m", RESOLUTION = 640),
             "large":  Settings(STD_MODEL_NAME = "yolov8l", RESOLUTION = 640),
-            "huge":   Settings(STD_MODEL_NAME = "yolov8x", RESOLUTION = 640)  # Not yet included
+            "huge":   Settings(STD_MODEL_NAME = "yolov8x", RESOLUTION = 640)  
         }
 
         # -------------------------------------------------------------------------
@@ -43,7 +43,7 @@ class Options:
         self.model_size         = self.model_size.lower()
         self.use_CUDA           = ModuleOptions.enable_GPU and self.use_CUDA.lower() == "true"
 
-        if self.model_size not in [ "tiny", "small", "medium", "large" ]:
+        if self.model_size not in [ "tiny", "small", "medium", "large", "huge" ]:
             self.model_size = "medium"
 
         # Get settings

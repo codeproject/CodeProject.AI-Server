@@ -2,7 +2,7 @@
   "Modules": {
 
     "ObjectDetectionYOLOv8": {
-      /* In Docker, when building the image, we copy over the code and config files, which includes
+      /* When building the Docker image we copy over the code and config files, which includes
          this special modulesettings.docker.build.json file that enables us to point the Python
          interpreter to the shared, pre-installed python venv in the Docker image. This file will be
          renamed to modulesettings.docker.json during the Docker image build process.
@@ -14,11 +14,14 @@
          packages can be installed and persisted.
       */
       
-      // This NEEDS to be 'shared' for docker pre-installed
-      "RuntimeLocation": "Shared", // Can be Local or Shared
-
-      "AutoStart": true,
-      "PreInstalled": "true"
+      "InstallOptions" : {
+        "PreInstalled": "true"
+      },
+      "LaunchSettings": {
+        // This NEEDS to be 'shared' for docker pre-installed
+        "RuntimeLocation": "Shared", // Can be Local or Shared
+        "AutoStart": true
+      }
    }
  }
 }

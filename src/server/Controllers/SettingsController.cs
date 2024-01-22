@@ -82,7 +82,7 @@ namespace CodeProject.AI.Server.Controllers
                                   ModuleSettings moduleSettings,
                                   IOptions<ModuleCollection> moduleCollectionOptions,
                                   ModuleProcessServices moduleProcessServices,
-                                 ILogger<LogController> logger)
+                                  ILogger<LogController> logger)
         {
             _config                = config;
             _serverOptions         = serverOptions.Value;
@@ -133,6 +133,11 @@ namespace CodeProject.AI.Server.Controllers
             {
                 // Make the change to the module's settings
                 module.UpsertSetting(settings.Name, settings.Value);
+
+                if (settings.Name.EqualsIgnoreCase("AutoStart") && settings.Value.EqualsIgnoreCase("false"))
+                    _logger.LogInformation($"*** Stopping {module.Name}");
+                else
+                    _logger.LogInformation($"*** Restarting {module.Name} to apply settings change");
 
                 // Restart the module and persist the settings
                 if (await _moduleProcessServices.RestartProcess(module).ConfigureAwait(false))
@@ -264,14 +269,14 @@ namespace CodeProject.AI.Server.Controllers
                 Success  = true,
                 Settings = new
                 {
-                    Autostart             = module.AutoStart ?? false,
-                    InstallGPU            = module.InstallGPU,
-                    EnableGPU             = module.EnableGPU,
-                    AcceleratorDeviceName = module.AcceleratorDeviceName,
-                    LogVerbosity          = module.LogVerbosity,
-                    HalfPrecision         = module.HalfPrecision,
-                    Parallelism           = module.Parallelism,
-                    PostStartPauseSecs    = module.PostStartPauseSecs
+                    Autostart             = module.LaunchSettings!.AutoStart ?? false,
+                    LogVerbosity          = module.LaunchSettings!.LogVerbosity,
+                    PostStartPauseSecs    = module.LaunchSettings!.PostStartPauseSecs,
+                    InstallGPU            = module.GpuOptions?.InstallGPU,
+                    EnableGPU             = module.GpuOptions?.EnableGPU,
+                    AcceleratorDeviceName = module.GpuOptions?.AcceleratorDeviceName,
+                    HalfPrecision         = module.GpuOptions?.HalfPrecision,
+                    Parallelism           = module.GpuOptions?.Parallelism
                 },
                 EnvironmentVariables = processEnvironmentVars
             };

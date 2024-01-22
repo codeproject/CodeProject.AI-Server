@@ -9,7 +9,7 @@ class Options:
         # confidence threshold for plate detections       
         self.plate_confidence      = float(ModuleOptions.getEnvVariable("PLATE_CONFIDENCE", 0.5))
 
-        # positive interger for counterclockwise rotation and negative interger for clockwise rotation
+        # positive integer for counterclockwise rotation and negative integer for clockwise rotation
         self.plate_rotate_deg      = int(ModuleOptions.getEnvVariable("PLATE_ROTATE_DEG", 0))
 
         # positive integer for counterclockwise rotation and negative interger for clockwise rotation

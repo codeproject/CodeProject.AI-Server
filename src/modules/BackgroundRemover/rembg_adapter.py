@@ -45,6 +45,11 @@ class rembg_adapter(ModuleRunner):
             if self.system_info.hasONNXRuntimeGPU:
                 self.execution_provider = "ONNX"
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+
+
     def process(self, data: RequestData) -> JSON:
         """ Processes a request from the client and returns the results"""
         try:
@@ -56,16 +61,30 @@ class rembg_adapter(ModuleRunner):
             (processed_img, inferenceTime) = remove(img, use_alphamatting)
             processMs = int((time.perf_counter() - start_time) * 1000)
 
-            return { 
+            response = { 
                 "success":      True, 
                 "imageBase64":  RequestData.encode_image(processed_img),
                 "processMs" :   processMs,
                 "inferenceMs" : inferenceTime
             }
-
+        
         except Exception as ex:
             self.report_error(ex, __file__)
-            return {"success": False, "error": "unable to process the image"}
+            response = { "success": False, "error": "unable to process the image" }
+
+        self._update_statistics(response)
+        return response 
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+        }
+
 
     def selftest(self) -> JSON:
         
@@ -85,8 +104,22 @@ class rembg_adapter(ModuleRunner):
 
         return { "success": result['success'], "message": "Remove background test successful" }
 
+
     def cleanup(self) -> None:
         pass
+
+
+    def _update_statistics(self, response):
+        
+        if "success" in response and response["success"]:
+            if "inferenceMs" in response:
+                self.total_success_inf_ms += response["inferenceMs"]
+                self.success_inferences += 1
+        else:
+            self.failed_inferences += 1
+
+
+   
 
 if __name__ == "__main__":
     rembg_adapter().start_loop()

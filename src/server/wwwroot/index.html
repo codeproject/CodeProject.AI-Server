@@ -31,19 +31,19 @@
         let urlElm = document.getElementById('serviceUrl');
         urlElm.value = apiServiceUrl;
 
-        setServerStatus("Searching", "light");
+        setServerStatus("Searching", "light", "Searching for Server");
 
         getVersion();
         checkForUpdates(false);
         getDownloadableModules()
 
-        setInterval(ping, pingFrequency);
-        setInterval(getLogs, logFrequency);
-        setInterval(getModulesStatuses, statusFrequency);
-        setInterval(getSystemStatus, statusFrequency);
-        setInterval(getDownloadableModules, statusFrequency);
-        setInterval(getMeshStatus, statusFrequency);
-        setInterval(checkForUpdates, checkUpdateFrequency);
+        setInterval(ping, pingFrequencySec * 1000);
+        setInterval(getLogs, logFrequencyMs);
+        setInterval(getModulesStatuses, updateStatusFreqSec * 1000);
+        setInterval(getSystemStatus, updateStatusFreqSec * 1000);
+        setInterval(getDownloadableModules, updateStatusFreqSec * 1000);
+        setInterval(getMeshStatus, updateStatusFreqSec * 1000);
+        setInterval(checkForUpdates, checkUpdateFrequencySec * 1000);
 
         setInterval(purgeMarkerIndices, 5000);
 
@@ -339,6 +339,10 @@
                             </div>
                         </div>
 
+                        <div>
+                            <span class="font-weight-bold ms-3" id="moduleUpdateStatus"></span>
+                        </div>
+
                         <div class="card-body sub-panel p-0">
                             <div id="availableModules" class="w-100"></div>
                         </div>
@@ -351,9 +355,6 @@
                             <input class="form-control btn-warning ms-2" style="width: 5rem;" id="install" type="button" value="Install" onclick="uploadModule()">
                         </div>
 -->
-                        <div>
-                            <span class="font-weight-bold ms-3" id="moduleUpdateStatus"></span>
-                        </div>
                     </div>                   
                 </div>
 

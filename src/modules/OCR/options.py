@@ -3,7 +3,7 @@ from module_options import ModuleOptions
 class Options:
 
     def __init__(self):
-
+        
         self.log_verbosity          = ModuleOptions.log_verbosity
         
         # PaddleOCR settings

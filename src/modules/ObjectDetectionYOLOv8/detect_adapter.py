@@ -26,7 +26,7 @@ class YOLOv8_adapter(ModuleRunner):
         super().__init__()
         self.opts = Options()
         self.models_last_checked = None
-        self.custom_model_names         = []  # We'll use this to cache the available model names
+        self.custom_model_names  = []  # We'll use this to cache the available model names
 
         # These will be adjusted based on the hardware / packages found
         self.use_CUDA       = self.opts.use_CUDA
@@ -83,6 +83,12 @@ class YOLOv8_adapter(ModuleRunner):
         elif self.use_DirectML:
             self.execution_provider = "DirectML"
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+        self.histogram            = {}
+
 
     def process(self, data: RequestData) -> JSON:
         
@@ -92,7 +98,7 @@ class YOLOv8_adapter(ModuleRunner):
 
             # The route to here is /v1/vision/custom/list
 
-            response = self.list_custom_models()
+            response = self._list_custom_models()
 
         elif data.command == "detect":                  # Perform 'standard' object detection
 
@@ -146,19 +152,25 @@ class YOLOv8_adapter(ModuleRunner):
                                     self.accel_device_name, use_mX_GPU,
                                     self.use_DirectML, self.half_precision,
                                     img, threshold)
-
-        # This method is called from within the module_runner's "main_loop" function. Calling quit
-        # here will result in the main loop stopping dead, rather than catching the quit command
-        # itself and shutting down all tasks carefully.
-        elif data.command == "Quit":
-            # quit()
-            pass
-            
         else:
+            response = { "success" : False }
             self.report_error(None, __file__, f"Unknown command {data.command}")
 
+        self._update_statistics(response)
         return response
 
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+            "histogram"            : self.histogram
+        }
+    
 
     def selftest(self) -> JSON:
         
@@ -177,7 +189,7 @@ class YOLOv8_adapter(ModuleRunner):
         return { "success": result['success'], "message": "Object detection test successful" }
 
 
-    def list_custom_models(self):
+    def _list_custom_models(self):
 
         """
         Lists the custom models we have in the assets folder. This ignores the 
@@ -201,6 +213,35 @@ class YOLOv8_adapter(ModuleRunner):
             self.models_last_checked = time.time()
 
         return { "success": True, "models": self.custom_model_names }
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "predictions" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+                predictions = response["predictions"]
+                self.num_items_found += len(predictions) 
+
+                for prediction in predictions:
+                    label = prediction["label"]
+                    if label not in self.histogram:
+                        self.histogram[label] = 1
+                    else:
+                        self.histogram[label] += 1
+        else:
+            self.failed_inferences += 1
+
+
+    def _status_summary(self):
+        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self.num_items_found) + "\n"
+        for label in self.histogram:
+            summary += "  " + label + ": " + str(self.histogram[label]) + "\n"
+
+        return summary
 
 
 if __name__ == "__main__":

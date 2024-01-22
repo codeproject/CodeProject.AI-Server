@@ -2,7 +2,9 @@
   "Modules": {
 
     "PortraitFilter": {
-      "FilePath": "PortraitFilter.dll"
+      "LaunchSettings": {
+        "FilePath": "PortraitFilter.dll"
+      }
     }
   }
 }

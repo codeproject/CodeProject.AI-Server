@@ -288,8 +288,8 @@ namespace CodeProject.AI.SDK.Common
                     // reference to IHostEnvironment.
                     // We also can't use these because if VSCode is running, these are set. This
                     // messes up production installs.
-                    // || Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").EqualsIgnoreCase("Development") ||
-                    // || Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT").EqualsIgnoreCase("Development")
+                    // || Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").EqualsIgnoreCase(Constants.Development) ||
+                    // || Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT").EqualsIgnoreCase(Constants.Development)
                 )
                 {
                     return RuntimeEnvironment.Development;
@@ -1167,7 +1167,7 @@ namespace CodeProject.AI.SDK.Common
             catch (Exception ex)
             {
                 _hasNvidiaCard = false;
-                Debug.WriteLine(ex.ToString());
+                Debug.WriteLine("Error getting Jetson HW status: " + ex.ToString());
                 return null;
             }
 
@@ -1716,7 +1716,7 @@ namespace CodeProject.AI.SDK.Common
 #if DEBUG
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine("Error in GetProcessInfoAsync: " + e.Message);
                 return null;
             }
 #else

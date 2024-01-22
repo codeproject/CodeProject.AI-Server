@@ -1,10 +1,8 @@
 const allowVideoDemo     = true
-const uiFromServer       = true;
-const updateModuleUiFreq = 5000; // milliseconds
 
-// A callback that will update the Benchmark's custom model dropdown. One of the Object Detection
-// modules will, hopefully, set this for us
-let BenchmarkCustomListUpdater = null;
+// A callback that will return a list of custom models. One of the Object Detection modules will,
+// hopefully, set this for us
+let GetBenchmarkCustomModelList = null;
 
 // Elements
 const resultDivId       = "results"       // Displays human readable result of the operation
@@ -331,7 +329,7 @@ function showResultsBoundingBoxes(predictions, sortByConfidence = true) {
     let colors = ["179,221,202", "204,223,120", "164,221,239"];
     let colorIndex = 0;
 
-    let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 5 : 8) : 15;
+    let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 5 : 7) : 9;
     for (let i = 0; i < predictions.length; i++) {
 
         let prediction = predictions[i];
@@ -733,177 +731,220 @@ function confidence(value) {
     return Math.round(value * 100.0) + "%";
 }
 
-function setBenchmarkCustomList() {
-    if (BenchmarkCustomListUpdater)
-        BenchmarkCustomListUpdater(benchmarkModel);
+function setModelList(dropdownId, modelList) {
+
+    if (!modelList)
+        return;
+
+    let dropdown = document.getElementById(dropdownId);
+    if (!dropdown)
+        return;
+
+    // Remove all options that aren't in the new list
+    for (let i = dropdown.options.length - 1; i >= 0; i--) {
+        if (!modelList.some(item => item.value == dropdown.options[i].value))
+            dropdown.remove(i);
+    }
+        
+    // Add new options that aren't already present
+    for (let i = 0; i < modelList.length; i++) {
+        let found = false;
+        for (let option of dropdown.options) {
+            if (option.value == modelList[i].value) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            let model = new Option(modelList[i].name, modelList[i].value);
+            dropdown.options.add(model);
+        }
+    }
+}
+
+async function setBenchmarkCustomList() {
+
+    if (GetBenchmarkCustomModelList) {
+
+        let customModelList = await GetBenchmarkCustomModelList();
+        if (!customModelList) customModelList = [];
+        customModelList.splice(0, 0, { name: "Standard model", value: ""});
+        customModelList.splice(1, 0, { name: "No inference: round-trip speed test only", value: "round-trip"});
+
+        setModelList("benchmarkModel", customModelList);
+    }
 }
 
 async function getModuleUis() {
 
-    if (!uiFromServer) return;
+    let data = await makeGET('module/list/running');
+    if (data && data.modules) {
 
-    await makeGET('module/list/running',
-        function (data) {
-            if (data && data.modules) {
+        let hasDetectorForVideo = false;
+        for (let module of data.modules) {
+            if (videoDetectObjects && module.launchSettings.queue == "objectdetection_queue")
+                hasDetectorForVideo = true;
+            else if (!videoDetectObjects && module.launchSettings.queue == "faceprocessing_queue")
+                hasDetectorForVideo = true;
+        }
 
-                // Get nav tabs and hide them all. For Benchmarking we'll only hide it if we don't
-                // have any process that is updating the custom model list. Otherwise we assume we
-                // have at least one object detection module in play
-                let navTabs = document.querySelectorAll('#DemoTabs > .nav-item');
-                for (const tab of navTabs) {
-                    tab.classList.add('d-none');
-                    if (tab.dataset.category == "Benchmarking" && BenchmarkCustomListUpdater)
-                        tab.classList.remove('d-none');
+        // Get nav tabs and hide them all. 
+        // - For Benchmarking we'll only hide it if we don't have any process that is
+        //   updating the custom model list. Otherwise we assume we have at least one object
+        //   detection module in play
+        // - For Video we need object detection or Face detection
+        let navTabs = document.querySelectorAll('#DemoTabs > .nav-item');
+        for (const tab of navTabs) {
+            tab.classList.add('d-none');
+
+            if (tab.dataset.category == "Benchmarking" && GetBenchmarkCustomModelList)
+                tab.classList.remove('d-none');
+
+            if (tab.dataset.category == "Video Processing" && hasDetectorForVideo)
+                tab.classList.remove('d-none');
+        }
+
+        // Go through modules' UIs and add (if needed) the UI cards to the appropriate tab,
+        // and re-enable each tab that has a card
+        for (let module of data.modules) {
+
+            let explorerUI = module.uiElements?.explorerUI;
+            if (!explorerUI.html || !explorerUI.script)
+                continue;
+
+            let moduleIdKey = module.moduleId.replace(/[^a-zA-Z0-9]+/g, "");
+
+            let category = module.publishingInfo.category;
+            let tab = document.querySelector(`.nav-item[data-category='${category}']`);
+            if (!tab) {
+                tab = document.querySelector(`[data-category='Other']`);
+                category = "Other";
+            }
+            tab.classList.remove('d-none');
+
+            const panel = document.querySelector(`.tab-pane[data-category='${category}']`);
+
+            // In CSS, Script and HTML we replace "_MID_" by "[moduleIdKey]_" in order to
+            // ensure disambiguation. eg <div id="_MID_TextBox"> becomes <div id="MyModuleId_TextBox">
+
+            explorerUI.html   = explorerUI.html.replace(/_MID_/g,   `${moduleIdKey}_`);
+            explorerUI.script = explorerUI.script.replace(/_MID_/g, `${moduleIdKey}_`);
+            explorerUI.css    = explorerUI.css.replace(/_MID_/g,    `${moduleIdKey}_`);
+
+            // Insert HTML first
+            let card = panel.querySelector(`.moduleui[data-moduleid='${module.moduleId}']`);
+            if (!card) {
+                const html = `<div class="card mt-3 moduleui ${module.launchSettings.queue}" data-moduleid="${module.moduleId}">`
+                            + `  <div class="card-header h3">${module.name}</div>`
+                            + `  <div class="card-body">${explorerUI.html}</div>`
+                            + `</div>`;
+                panel.insertAdjacentHTML('beforeend', html);
+            }
+
+            // Next add script
+            let scriptBlock = document.getElementById("script_" + moduleIdKey);
+            if (!scriptBlock) {
+                scriptBlock = document.createElement('script');
+                scriptBlock.id          = "script_" + moduleIdKey;
+                scriptBlock.textContent = explorerUI.script;
+                document.body.appendChild(scriptBlock);
+            }
+
+            // And finally, CSS
+            let styleBlock = document.getElementById("style_" + moduleIdKey);
+            if (!styleBlock) {
+                styleBlock = document.createElement('style');
+                styleBlock.id = "style_" + moduleIdKey;
+                styleBlock.textContent = explorerUI.css;
+                document.body.appendChild(styleBlock);
+            }
+        }
+
+        // Ensure we have at least one tab active
+        let tabTrigger = null;
+        for (const tab of navTabs) {
+            if (!tab.classList.contains('d-none')) {
+                if (tab.firstElementChild.classList.contains('active')) {
+                    tabTrigger = null; // We found an active tab
+                    break;
                 }
+                else 
+                    tabTrigger = tab.firstElementChild;
+            }
+        }
+        if (tabTrigger)
+            bootstrap.Tab.getInstance(tabTrigger).show()
 
-                // Go through modules' UIs and add (if needed) the UI cards to the appropriate tab,
-                // and re-enable each tab that has a card
-                for (let module of data.modules) {
+        // remove card from modules that aren't running
+        let cards = document.getElementsByClassName('moduleui');
+        for (const card of cards) {
+            
+            let moduleId = card.dataset?.moduleid || ""; // careful with casing of moduleid
+            let found    = false;
 
-                    if (!module.explorerUI.html || !module.explorerUI.script)
-                        continue;
-
-                    let moduleIdKey = module.moduleId.replace(/[^a-zA-Z0-9]+/g, "");
-
-                    let category = module.category;
-                    let tab = document.querySelector(`.nav-item[data-category='${category}']`);
-                    if (!tab) {
-                        tab = document.querySelector(`[data-category='Other']`);
-                        category = "Other";
-                    }
-                    tab.classList.remove('d-none');
-
-                    const panel = document.querySelector(`.tab-pane[data-category='${category}']`);
-
-                    // In CSS, Script and HTML we replace "_MID_" by "[moduleIdKey]_" in order to
-                    // ensure disambiguation. eg <div id="_MID_TextBox"> becomes <div id="MyModuleId_TextBox">
-
-                    module.explorerUI.html   = module.explorerUI.html.replace(/_MID_/g,   `${moduleIdKey}_`);
-                    module.explorerUI.script = module.explorerUI.script.replace(/_MID_/g, `${moduleIdKey}_`);
-                    module.explorerUI.css    = module.explorerUI.css.replace(/_MID_/g,    `${moduleIdKey}_`);
-
-                    // Insert HTML first
-                    let card = panel.querySelector(`.moduleui[data-moduleid='${module.moduleId}']`);
-                    if (!card) {
-                        const html = `<div class="card mt-3 moduleui ${module.queue}" data-moduleid="${module.moduleId}">`
-						           + `    <div class="card-header h3">${module.name}</div>`
-						           + `    <div class="card-body">`
-                                   +      module.explorerUI.html
-                                   + `    </div>`
-                                   + `</div>`;
-                        panel.insertAdjacentHTML('beforeend', html);
-                    }
-
-                    // Next add script
-                    let scriptBlock = document.getElementById("script_" + moduleIdKey);
-                    if (!scriptBlock) {
-                        scriptBlock = document.createElement('script');
-                        scriptBlock.id          = "script_" + moduleIdKey;
-                        scriptBlock.textContent = module.explorerUI.script;
-                        document.body.appendChild(scriptBlock);
-                    }
-
-                    // And finally, CSS
-                    let styleBlock = document.getElementById("style_" + moduleIdKey);
-                    if (!styleBlock) {
-                        styleBlock = document.createElement('style');
-                        styleBlock.id = "style_" + moduleIdKey;
-                        styleBlock.textContent = module.explorerUI.css;
-                        document.body.appendChild(styleBlock);
-                    }
-                }
-
-                // Ensure we have at least one tab active
-                let tabTrigger = null;
-                for (const tab of navTabs) {
-                    if (!tab.classList.contains('d-none')) {
-                        if (tab.firstElementChild.classList.contains('active')) {
-                            tabTrigger = null; // We found an active tab
-                            break;
-                        }
-                        else 
-                            tabTrigger = tab.firstElementChild;
-                    }
-                }
-                if (tabTrigger)
-                    bootstrap.Tab.getInstance(tabTrigger).show()
-
-                // remove card from modules that aren't running
-                let cards = document.getElementsByClassName('moduleui');
-                for (const card of cards) {
-                    
-                    let moduleId = card.dataset?.moduleid || "";
-                    let found    = false;
-
-                    for (let module of data.modules) {
-                        if (module.moduleId == moduleId) {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        let moduleIdKey = moduleId.replace(/[^a-zA-Z0-9]+/g, "");
-                        card.remove();
-
-                        // Remove the Script and CSS associated with this card
-                        document.getElementById("script_" + moduleIdKey)?.remove();
-                        document.getElementById("style_" + moduleIdKey)?.remove();
-                    }
+            for (let module of data.modules) {
+                if (module.moduleId == moduleId) {
+                    found = true;
+                    break;
                 }
             }
-        });
+
+            if (!found) {
+                let moduleIdKey = moduleId.replace(/[^a-zA-Z0-9]+/g, "");
+                card.remove();
+
+                // Remove the Script and CSS associated with this card
+                document.getElementById("script_" + moduleIdKey)?.remove();
+                document.getElementById("style_" + moduleIdKey)?.remove();
+            }
+        }
+    }
 }
 
 async function getModulesStatuses() {
 
     if (uiFromServer) return;
 
-    await makeGET('module/list/status',
-        function (data) {
-            if (data && data.statuses) {
+    let data = await makeGET('module/list/status');
+    if (data && data.statuses) {
 
-                // disable all first
-                let cards = document.getElementsByClassName('card');
-                for (const card of cards)
-                    card.classList.replace('d-flex', 'd-none');
+        // disable all first
+        let cards = document.getElementsByClassName('card');
+        for (const card of cards)
+            card.classList.replace('d-flex', 'd-none');
 
-                let navTabs = document.getElementsByClassName('nav-item');
-                for (const tab of navTabs)
-                    tab.classList.add('d-none');
-                
-                for (let i = 0; i < data.statuses.length; i++) {
+        let navTabs = document.getElementsByClassName('nav-item');
+        for (const tab of navTabs)
+            tab.classList.add('d-none');
+        
+        for (let i = 0; i < data.statuses.length; i++) {
 
-                    let moduleId = data.statuses[i].moduleId.replace(" ", "-");
-                    let running  = data.statuses[i].status == 'Started';
+            let moduleId = data.statuses[i].moduleId.replace(" ", "-");
+            let running  = data.statuses[i].status == 'Started';
 
-                    let selector = data.statuses[i].queue;
+            let selector = data.statuses[i].queue;
 
-                    let cards = document.getElementsByClassName('card ' + selector);
-                    for (const card of cards) {
-                        if (running) {
-                            card.classList.replace('d-none', 'd-flex');
-                            let parent = card.parentNode;
-                            if (parent && parent.attributes["aria-labelledby"]) {
-                                let tabListItemId = parent.attributes["aria-labelledby"].value + "-listitem";
-                                let tabItem = document.getElementById(tabListItemId);
-                                if (tabItem.classList)
-                                    tabItem.classList.remove('d-none');
-                                card.parentNode.parentNode.classList.remove('d-none');
-                            }
-                        }
+            let cards = document.getElementsByClassName('card ' + selector);
+            for (const card of cards) {
+                if (running) {
+                    card.classList.replace('d-none', 'd-flex');
+                    let parent = card.parentNode;
+                    if (parent && parent.attributes["aria-labelledby"]) {
+                        let tabListItemId = parent.attributes["aria-labelledby"].value + "-listitem";
+                        let tabItem = document.getElementById(tabListItemId);
+                        if (tabItem.classList)
+                            tabItem.classList.remove('d-none');
+                        card.parentNode.parentNode.classList.remove('d-none');
                     }
                 }
             }
-        });
+        }
+    }
 }
 
-async function submitRequest(route, apiName, images, parameters, doneFunc, failFunc) {
+async function submitRequest(route, apiName, images, parameters) {
 
     showLogOutput("Sending request to AI server", "info");
-
-    if (!failFunc) 
-        failFunc = displayBaseResults
 
     let formData = new FormData();
 
@@ -933,48 +974,261 @@ async function submitRequest(route, apiName, images, parameters, doneFunc, failF
     const controller  = new AbortController()
     const timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
-    await fetch(url, {
-        method: "POST",
-        body: formData,
-        signal: controller.signal
-    })
-        .then(response => {
-            showLogOutput("");
-            clearTimeout(timeoutId);
+    let data = null;
 
-            if (response.ok) {
-                response.json().then(data => {
-                    if (data) {
-                        if (data.success) {
-                            if (doneFunc) doneFunc(data)
-                        } else {
-                            if (failFunc) failFunc(data);
-                        }
-                    }
-                    else {
-                        if (failFunc) failFunc();
-                        showError(null, 'No data was returned');
-                    }
-                })
-                .catch(error => {
-                    if (failFunc) failFunc();
-                    showError(null, `Unable to process server response (${error})`);
-                })					
-            } else {
-                showError(null, 'Error contacting API server');
-                if (failFunc) failFunc();						
-            }
-        })
-        .catch(error => {
-            showLogOutput("");
-            if (failFunc) failFunc();
-
-            if (error.name === 'AbortError') {
-                showError(null, "Response timeout. Try increasing the timeout value");
-                _serverOnline = false;
-            }
-            else {
-                showError(null, `Unable to complete API call (${error})`);
-            }
+    try {
+        let response = await fetch(url, {
+            method: "POST",
+            body: formData,
+            signal: controller.signal
         });
+
+        showLogOutput("");
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+            try {
+                data = await response.json();
+                if (!data)
+                    showError(null, 'No data was returned');
+            }
+            catch(error) {
+                showError(null, `Unable to process server response (${error})`);
+            }
+        } else {
+            showError(null, 'Error contacting API server');
+        }
+    }
+    catch(error) {
+        if (error.name === 'AbortError') {
+            showError(null, "Response timeout. Try increasing the timeout value");
+            _serverOnline = false;
+        }
+        else {
+            showError(null, `Unable to complete API call (${error})`);
+        }
+    }
+
+    return data;
+}
+
+// BENCHMARK ===================================================================
+
+async function onBenchmark(fileChooser, model_name, resultElm) {
+
+    const warmupCount = 3;
+    const runCount    = 50;
+
+    clearImagePreview();
+
+    let images = null;
+    let route = model_name ? ('custom/' + model_name) : 'detection';
+
+    if (benchmarkModel.value == "round-trip") {
+        route = "custom/list";
+    }
+    else {
+        if (fileChooser.files.length == 0) {
+            alert("No file was selected for benchmarking");
+            return;
+        }
+
+        previewImage(fileChooser.files[0]);
+        images = [fileChooser.files[0]];
+    }
+
+    // Warm up
+    for (let i = 0; i < warmupCount; i++) {
+		let data = await submitRequest('vision', route, images);
+        if (data)
+            setResultsHtml("Warm up " + i);
+    }
+
+    let startMilliseconds = performance.now();
+    let nResponses = 0;
+
+    // Benchmark
+    for (let i = 0; i < runCount; i++) {
+		let data = await submitRequest('vision', route, images);
+
+        let currentMilliseconds = performance.now();
+        nResponses++;
+        let opsPerSecond = (nResponses * 1000) / (currentMilliseconds - startMilliseconds);
+        setResultsHtml(opsPerSecond.toFixed(1) + " operations per second - " + nResponses + "/" + runCount);
+    }
+}
+
+// VIDEO DEMO ==================================================================
+
+const useRequestAnimationFrame = true;
+const videoDetectObjects       = true; // false = detect face
+const framePerSecond           = 5; // Only if useRequestAnimationFrame = false
+
+let videoProcessingActive = false;
+let videoTimerId;
+let lastFrameDrawTime, lastInferenceTime, framesPerSecond, processedPerSecond;
+let videoFramePredictions;
+let processQueueLength = 0;
+
+function onStartVideo(e) {
+
+    const video = document.getElementById('video');
+
+    if (navigator.mediaDevices.getUserMedia) {
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+
+                videoProcessingActive = true;
+                lastFrameDrawTime     = performance.now();
+
+                if (useRequestAnimationFrame)
+                    requestAnimationFrame(drawVideoDetection);
+                else
+                    videoTimerId = setInterval(drawVideoDetection, 1000 / framePerSecond);
+            })
+            .catch((e) => {
+                console.log("Unable to capture webcam stream");
+            });
+    }
+
+    return false;
+}
+
+function drawVideoDetection() {
+
+    const video   = document.getElementById('video');
+    const canvas  = document.getElementById('canvas');
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    let ctx = canvas.getContext('2d');
+
+    // Draw the current image, the previous detection rect, and the stats
+    ctx.drawImage(video, 0, 0); //, canvas.width, canvas.height);
+
+    if (videoFramePredictions) {
+        for (let i = 0; i < videoFramePredictions.length; i++) {
+
+            const rect = videoFramePredictions[i];
+            const rect_left   = Math.min(rect.x_min, rect.x_max);
+            const rect_top    = Math.min(rect.y_min, rect.y_max);
+            const rect_width  = Math.abs(rect.x_min - rect.x_max);
+            const rect_height = Math.abs(rect.y_min - rect.y_max);
+
+            ctx.strokeStyle = "red";
+            ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+
+            ctx.strokeStyle = "yellow";
+            ctx.strokeText(videoFramePredictions[i].label || "", rect_left, rect_top);
+        }
+    }
+
+    if (framesPerSecond) {
+        ctx.font         = '20px sans-serif';
+        ctx.strokeStyle  = "black";
+        ctx.fillStyle    = "white";
+        ctx.textAlign    = 'right';
+        ctx.textBaseline = 'top';
+        if (processedPerSecond)
+            ctx.fillText(`${framesPerSecond.toFixed(1)} FPS, ${processedPerSecond.toFixed(1)} detects/sec`, canvas.width - 10, 10);
+        else
+            ctx.fillText(`${framesPerSecond.toFixed(1)} FPS`, canvas.width - 10, 10);
+    }
+
+    let previousFrameDrawTime = lastFrameDrawTime;
+    lastFrameDrawTime = performance.now();
+
+    // Draw previous face detection and move on
+    if (processQueueLength > 0) {
+
+        if (useRequestAnimationFrame && videoProcessingActive)
+            requestAnimationFrame(drawVideoDetection);
+
+        return;
+    }
+
+    if (previousFrameDrawTime && previousFrameDrawTime < lastFrameDrawTime)
+        framesPerSecond = 1000.0 / (lastFrameDrawTime - previousFrameDrawTime);
+
+    canvas.toBlob((blob) => {
+
+        if (blob) {
+
+            let formData = new FormData();
+            formData.append('image', blob, 'filename.png');
+
+            let url;
+            if (videoDetectObjects)
+                url = serviceUrl.value.trim() + '/v1/vision/detection';	// object detection
+            else
+                url = serviceUrl.value.trim() + '/v1/vision/face';	    // Face detection
+
+            processQueueLength++;
+
+            fetch(url, {
+                method: "POST",
+                body: formData
+            })
+                .then(response => {
+                    processQueueLength--;
+                    if (response.ok) 
+                        response.json().then(data => {
+                            if (videoProcessingActive && data && data.success && data.predictions) {
+
+                                let previousInferenceTime = lastInferenceTime;
+                                lastInferenceTime = performance.now();
+
+                                if (previousInferenceTime && previousInferenceTime < lastInferenceTime)
+                                    processedPerSecond = 1000.0 / (lastInferenceTime - previousInferenceTime);
+
+                                videoFramePredictions = data.predictions
+                                for (let i = 0; i < videoFramePredictions.length; i++) {
+
+                                    const rect = videoFramePredictions[i];
+                                    const rect_left   = Math.min(rect.x_min, rect.x_max);
+                                    const rect_top    = Math.min(rect.y_min, rect.y_max);
+                                    const rect_width  = Math.abs(rect.x_min - rect.x_max);
+                                    const rect_height = Math.abs(rect.y_min - rect.y_max);
+
+                                    ctx.strokeStyle = "red";
+                                    ctx.strokeRect(rect_left, rect_top, rect_width, rect_height);
+                        
+                                    ctx.strokeStyle = "yellow";
+                                    ctx.strokeText(videoFramePredictions[i].label || "", rect_left, rect_top);
+                                }
+                            }
+                        })
+                })
+                .catch(e => {
+                    processQueueLength--;
+                });
+        }
+
+        if (useRequestAnimationFrame && videoProcessingActive)
+            requestAnimationFrame(drawVideoDetection);
+    });
+}
+
+function onStopVideo(e) {
+
+    videoProcessingActive = false;
+    if (!useRequestAnimationFrame && videoTimerId)
+        clearInterval(videoTimerId);
+
+    let stream = video.srcObject;
+    try {
+        let tracks = stream.getTracks();
+
+        for (let i = 0; i < tracks.length; i++) {
+            let track = tracks[i];
+            track.stop();
+        }
+    }
+    catch { }
+
+    video.srcObject = null;
+
+    return false;
 }

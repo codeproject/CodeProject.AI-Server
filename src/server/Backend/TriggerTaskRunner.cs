@@ -77,7 +77,7 @@ namespace CodeProject.AI.Server.Backend
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error trying to start {task.Command} in {workingDir}");
-                _logger.LogError(ex.Message);
+                _logger.LogError("Error is: " + ex.Message);
                 return false;
             }
         }

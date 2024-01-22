@@ -45,10 +45,18 @@ set "index=0"
 
     if /I "%Method%" == "build" (
         echo   - Building ObjectDetectionYOLOv5Net for %GpuType%
-        dotnet build -c %Configuration% --no-self-contained --no-incremental --force -o .\bin\%Configuration%\%FileSuffix%\ /p:DefineConstants=%GpuType%
+        if /i "%verbosity%" == "quiet" (
+            dotnet build -c %Configuration% --no-self-contained --no-incremental --force -o .\bin\%Configuration%\%FileSuffix%\ /p:DefineConstants=%GpuType% >NUL
+        ) else (
+            dotnet build -c %Configuration% --no-self-contained --no-incremental --force -o .\bin\%Configuration%\%FileSuffix%\ /p:DefineConstants=%GpuType% 
+        )
     ) else (
         echo   - Publishing ObjectDetectionYOLOv5Net for %GpuType%
-        dotnet publish -c %Configuration% --no-self-contained -p:UseAppHost=false /p:DefineConstants=%GpuType% >nul 
+        if /i "%verbosity%" == "quiet" (
+            dotnet publish -c %Configuration% --no-self-contained -p:UseAppHost=false /p:DefineConstants=%GpuType% >nul 
+        ) else (
+            dotnet publish -c %Configuration% --no-self-contained -p:UseAppHost=false /p:DefineConstants=%GpuType%
+        )
     )
 
     if errorlevel 1 (

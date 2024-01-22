@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using CodeProject.AI.Server.Utilities;
@@ -55,12 +56,16 @@ namespace CodeProject.AI.Server.Modules
                             if (moduleId is not null)
                             {
                                 ModuleConfig moduleConfig = new ModuleConfig();
-
                                 configuration.Bind($"Modules:{moduleId}", moduleConfig);
-                                installedModules.TryAdd(moduleId, moduleConfig);
-
-                                // Complete the ModuleConfig's setup
-                                moduleConfig.Initialise(moduleId, modulesDirPath, preInstalledModulesDirPath);
+                                if (moduleConfig.Initialise(moduleId, modulesDirPath,
+                                                            preInstalledModulesDirPath))
+                                {
+                                    installedModules.TryAdd(moduleId, moduleConfig);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Error: Unable to initialise module {moduleId}. Config was invalid.");
+                                }
                             }
                         }
                     });

@@ -12,9 +12,6 @@ namespace CodeProject.AI.Server
     /// </summary>
     public class PersistedOverrideSettings
     {
-        internal static string SettingsFilename    = "modulesettings.json";
-        internal static string DevSettingsFilename = "modulesettings.development.json";
-
         private string _storagePath;
 
         /// <summary>
@@ -36,12 +33,12 @@ namespace CodeProject.AI.Server
             string settingsFilePath;
             if (SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development)
             {
-                settingsFilePath = Path.Combine(_storagePath, DevSettingsFilename);
+                settingsFilePath = Path.Combine(_storagePath, Constants.DevModuleSettingsFilename);
                 if (!File.Exists(settingsFilePath))
-                    settingsFilePath = Path.Combine(_storagePath, SettingsFilename);
+                    settingsFilePath = Path.Combine(_storagePath, Constants.ModuleSettingsFilename);
             }
             else
-                settingsFilePath = Path.Combine(_storagePath, SettingsFilename);
+                settingsFilePath = Path.Combine(_storagePath, Constants.ModuleSettingsFilename);
 
             return await ModuleConfigExtensions.LoadSettings(settingsFilePath)
                                                .ConfigureAwait(false);
@@ -54,8 +51,8 @@ namespace CodeProject.AI.Server
         public async Task<bool> SaveSettingsAsync(JsonObject? settings)
         {
             string settingsFilePath = SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development
-                                    ? Path.Combine(_storagePath, DevSettingsFilename)
-                                    : Path.Combine(_storagePath, SettingsFilename);
+                                    ? Path.Combine(_storagePath, Constants.DevModuleSettingsFilename)
+                                    : Path.Combine(_storagePath, Constants.ModuleSettingsFilename);
 
             return await ModuleConfigExtensions.SaveSettingsAsync(settings, settingsFilePath)
                                                .ConfigureAwait(false);

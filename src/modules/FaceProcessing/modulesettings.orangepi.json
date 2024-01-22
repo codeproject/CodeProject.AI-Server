@@ -2,7 +2,9 @@
   "Modules": {
 
     "FaceProcessing": {
-      "Runtime": "python3.8",
+      "LaunchSettings": {
+        "Runtime": "python3.8"
+      },
       "EnvironmentVariables": {
         "PROFILE": "jetson",
         "USE_CUDA": "False",

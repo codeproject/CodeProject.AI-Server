@@ -2,8 +2,10 @@
   "Modules": {
 
     "TrainingObjectDetectionYOLOv5": {
-      "Runtime": "python3.7",  // YOLOv5 6.2 package needs python <= 3.8
-      "RequiredMb": 6000       // ~6Gb needed in Windows
+      "LaunchSettings": {
+        "Runtime": "python3.7",  // YOLOv5 6.2 package needs python <= 3.8
+        "RequiredMb": 6000       // ~6Gb needed in Windows
+      }
     }
   }
 }

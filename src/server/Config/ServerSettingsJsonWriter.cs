@@ -13,9 +13,6 @@ namespace CodeProject.AI.Server.Mesh
     /// </summary>
     public class ServerSettingsJsonWriter
     {
-        internal static string SettingsFilename    = "serversettings.json";
-        internal static string DevSettingsFilename = "serversettings.development.json";
-
         private string _storagePath;
         
         private JsonSerializerOptions _jsonSerializeOptions = new JsonSerializerOptions
@@ -51,8 +48,8 @@ namespace CodeProject.AI.Server.Mesh
         public async Task<bool> SaveSettingsAsync(MeshOptions options)
         {
             string settingsFilePath = SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development
-                                    ? Path.Combine(_storagePath, DevSettingsFilename)
-                                    : Path.Combine(_storagePath, SettingsFilename);
+                                    ? Path.Combine(_storagePath, Constants.DevServerSettingsFilename)
+                                    : Path.Combine(_storagePath, Constants.ServerSettingsFilename);
 
             // TODO: Add Queue, Server and Module settings as well
             string settings = JsonSerializer.Serialize(options, _jsonSerializeOptions);

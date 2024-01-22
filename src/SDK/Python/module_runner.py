@@ -3,7 +3,6 @@ import asyncio
 import json
 import os
 import platform
-from platform import uname
 import sys
 import time
 import traceback
@@ -14,7 +13,7 @@ import warnings
 warnings.simplefilter("ignore", DeprecationWarning)
 
 # Some commands are just annoying in the logs
-ignore_timing_commands = [ "list-custom" ]
+ignore_timing_commands = [ "list-custom", "status" ]
 
 # Ensure the Python import system looks in the right spot for packages.
 # ie .../pythonXX/venv/Lib/site-packages. This depends on the VENV we're 
@@ -36,7 +35,7 @@ import aiohttp
 # Import the CodeProject.AI SDK as the last step
 from common import JSON
 from system_info    import SystemInfo
-from module_logging import LogMethod, ModuleLogger
+from module_logging import LogMethod, ModuleLogger, LogVerbosity
 from request_data   import RequestData
 from module_options import ModuleOptions
 # from utils.environment_check import check_requirements
@@ -54,6 +53,13 @@ class ModuleRunner:
     async def initialise(self) -> None:
         """
         Called when this module first starts up. To be overridden by child classes 
+        """
+        pass
+
+    async def initialize(self) -> None:
+        """
+        Called when this module first starts up. To be overridden by child classes.
+        This method provided for those who like month-day-year.
         """
         pass
 
@@ -117,41 +123,39 @@ class ModuleRunner:
         # Public fields -------------------------------------------------------
 
         # A note about the use of ModuleOptions. ModuleOptions is simply a way 
-        # to hide all the calls to _get_env_var behind a simple class. While
+        # to hide all the calls to _get_env_var behind a single class. While
         # there is a lot of repetition in self.property = ModuleOptions.property,
         # it means we have the means of keeping the initial values the module
         # had at launch separate from the working values which may change during
-        # runtime. It's tempting to remove all values that ModuleOptions supplies,
-        # and instead just use ModuleRunner.ModuleOptions.property, but many 
-        # properties such as module_id are intrinsic to this module, and exposing
-        # a ModuleOptions property exposes too much information on the internals
-        # of this class.
+        # runtime. ie we prefer to keep a record of the initial settings in the
+        # ModuleOptions class, and have the transferred values in this class be
+        # mutable. 
 
         # Module Descriptors
-        self.module_id           = ModuleOptions.module_id
-        self.module_name         = ModuleOptions.module_name
+        self.module_id           = ModuleOptions.module_id              # ID of the module
+        self.module_name         = ModuleOptions.module_name            # Name of the module
 
         # Server API location and Queue
-        self.base_api_url        = ModuleOptions.base_api_url
-        self.port                = ModuleOptions.port
-        self.queue_name          = ModuleOptions.queue_name
+        self.base_api_url        = ModuleOptions.base_api_url           # Base URL for making calls to the server
+        self.port                = ModuleOptions.port                   # Port on which the server is listening
+        self.queue_name          = ModuleOptions.queue_name             # Name of request queue for this module
 
         # General Module and Server settings
-        self.server_root_path    = ModuleOptions.server_root_path
-        self.module_path         = ModuleOptions.module_path
-        self.python_dir          = current_python_dir
-        self.python_pkgs_dir     = package_path
-        self.log_verbosity       = ModuleOptions.log_verbosity
-        self.launched_by_server  = ModuleOptions.launched_by_server
+        self.server_root_path    = ModuleOptions.server_root_path       # Absolute folder path to root of this application
+        self.module_path         = ModuleOptions.module_path            # Absolute folder path to this module
+        self.python_dir          = current_python_dir                   # Absolute folder path to Python venv if applicable
+        self.python_pkgs_dir     = package_path                         # Absolute folder path to Python venv packages folder if app.
+        self.log_verbosity       = ModuleOptions.log_verbosity          # Logging level: Quiet, Info or Loud
+        self.launched_by_server  = ModuleOptions.launched_by_server     # Was this module launched by the server (or launched separately?)
 
         # Hardware / accelerator info
-        self.required_MB         = int(ModuleOptions.required_MB or 0)
-        self.enable_GPU          = ModuleOptions.enable_GPU
-        self.accel_device_name   = ModuleOptions.accel_device_name
-        self.half_precision      = ModuleOptions.half_precision
-        self.parallelism         = ModuleOptions.parallelism
-        self.processor_type      = "CPU" # may be overridden by the module
-        self.can_use_GPU         = False # Whether or not this module provides GPU support for the current hardware
+        self.required_MB         = int(ModuleOptions.required_MB or 0)  # Min RAM needed to launch this module
+        self.accel_device_name   = ModuleOptions.accel_device_name      # eg CUDA:0, usb:0. Module/library specific
+        self.half_precision      = ModuleOptions.half_precision         # Whether to use half precision in CUDA (module specific)
+        self.parallelism         = ModuleOptions.parallelism            # Number of parallel instances launched at runtime
+        self.enable_GPU          = ModuleOptions.enable_GPU             # Whether to use GPU support if available
+        self.processor_type      = "CPU"                                # The processor type reported as being used (CPU, GPU, TPU etc)
+        self.can_use_GPU         = False                                # Whether this module can support the current hardware
 
         # General purpose flags. These aren't currently supported as common flags
         # self.use_CUDA          = ModuleOptions.use_CUDA
@@ -165,11 +169,15 @@ class ModuleRunner:
         # self._logger = ModuleLogger(self.port, self.server_root_path)
         self._logger = None
 
+        # Private fields
+        self._base_queue_url = self.base_api_url + "queue/"
+
+        # General setup
+
+        # Do this now in case we forget to do it later
         if self.enable_GPU and self.system_info.hasTorchMPS:
             os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
-        # Private fields
-        self._base_queue_url = self.base_api_url + "queue/"
 
     @property
     def execution_provider(self) -> str:
@@ -211,20 +219,33 @@ class ModuleRunner:
         # just fragile.
 
         if len(sys.argv) > 1 and sys.argv[1] == "--selftest":
+            
+            if self.log_verbosity == LogVerbosity.Loud:
+                print(f"{self.module_id} self-test called")
+
             self._logger = ModuleLogger(self.port, self.server_root_path)
             self._performing_self_test = True
             
-            self.initialise()
+            # We allow 'initialize' and 'initialise'. Find which was overridden
+            if self.initialize.__qualname__ == "ModuleRunner.initialize":
+                self.initialise()
+            else:
+                self.initialize()
+
             if self.selftest_check_packages:
                 self.check_packages()
             result = self.selftest()
             self.cleanup()
 
             self._performing_self_test = False
-            if result and hasattr(result, "success") and not result["success"]:
-                quit(1)
-            else:
+            if result and "success" in result and result["success"]:
+                if self.log_verbosity == LogVerbosity.Loud:
+                    print(f"{self.module_id} self-test succeeded")
                 quit(0)
+            else:
+                if self.log_verbosity == LogVerbosity.Loud:
+                    print(f"{self.module_id} self-test failed")
+                quit(1)
 
         # No self test, so on to the main show
 
@@ -250,7 +271,7 @@ class ModuleRunner:
                 "filename":       __file__,
                 "method":         sys._getframe().f_code.co_name,
                 "loglevel":       "error",
-                "message":        message,
+                "message":        "Error running main_init: " + message,
                 "exception_type": ex.__class__.__name__
             })
 
@@ -285,8 +306,15 @@ class ModuleRunner:
 
         This method also sets up the shared logging task.
         """
+
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"{self.module_id} starting main_init")
+
         async with aiohttp.ClientSession() as session:
             self._request_session = session
+
+            if self.log_verbosity == LogVerbosity.Loud:
+                print(f"{self.module_id} starting logging_loop")
 
             # Start with just running one logging loop
             self._logger = ModuleLogger(self.port, self.server_root_path)
@@ -304,21 +332,37 @@ class ModuleRunner:
 
                 # Overriding issue here: We need to await self.initialise in the
                 # asyncio loop. This means we can't just 'await self.initialise'
+                # We also allow initialise or initialize, so let's see which one
+                # has been overridden
 
-                if asyncio.iscoroutinefunction(self.initialise):
+                # We allow 'initialize' and 'initialise'. Find which was overridden
+                init_method = self.initialize
+                if self.initialize.__qualname__ == "ModuleRunner.initialize":
+                    init_method = self.initialise
+
+                if self.log_verbosity == LogVerbosity.Loud:
+                    print(f"{self.module_id} call module's init method")
+
+                if asyncio.iscoroutinefunction(init_method):
                     # if initialise is async, then it's a coroutine. In this
                     # case we create an awaitable asyncio task to execute this
                     # method.
-                    init_task = asyncio.create_task(self.initialise())
+                    init_task = asyncio.create_task(init_method())
                 else:
                     # If the method is not async, then we wrap it in an awaitable
                     # method which we await.
                     loop = asyncio.get_running_loop()
-                    init_task = loop.run_in_executor(None, self.initialise)
+                    init_task = loop.run_in_executor(None, init_method)
 
                 await init_task
 
+                if self.log_verbosity == LogVerbosity.Loud:
+                    print(f"{self.module_id} module init complete")
+
             sys.stdout.flush()
+
+            if self.log_verbosity == LogVerbosity.Loud:
+                print(f"{self.module_id} setting up main loop")
 
             # Add main processing loop tasks
             tasks = [ asyncio.create_task(self.main_loop(task_id)) for task_id in range(self.parallelism) ]
@@ -334,6 +378,10 @@ class ModuleRunner:
                     })
 
             await asyncio.gather(*tasks)
+
+            if self.log_verbosity == LogVerbosity.Loud:
+                print(f"{self.module_id} all tasks complete. Ending.")
+
             self._request_session = None
 
 
@@ -350,6 +398,9 @@ class ModuleRunner:
         Special requests, such as quit, status and selftest are handled 
         carefully.
         """
+
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"{self.module_id} starting main_loop {task_id}")
 
         get_command_task = asyncio.create_task(self.get_command(task_id))
         send_response_task = None
@@ -378,8 +429,15 @@ class ModuleRunner:
                 if data.command:
                     command = data.command.lower()
 
+                    if self.log_verbosity == LogVerbosity.Loud:
+                        print(f"{self.module_id} command {command} pulled from queue for task {task_id}")
+
                     # Special requests
                     if command == "quit" and self.module_id.lower() == data.get_value("moduleId").lower():
+                        
+                        if self.log_verbosity == LogVerbosity.Loud:
+                            print(f"{self.module_id} 'quit' called. Signaling shutdown for task {task_id}")
+
                         await self.log_async(LogMethod.Info | LogMethod.File | LogMethod.Server, { 
                             "process":  self.module_name,
                             "filename": __file__,
@@ -390,9 +448,8 @@ class ModuleRunner:
                         self._cancelled = True
                         break
                     
-                    elif data.command.lower() == "status":
+                    elif command == "status":
                         method_to_call = self.status
-                        suppress_timing_log = True
 
                     elif command == "selftest":
                         # NOTE: selftest generally won't actually be called here - it'll be called 
@@ -415,6 +472,9 @@ class ModuleRunner:
                     # Overriding issue here: We need to await self.process in the
                     # asyncio loop. This means we can't just 'await self.process'
 
+                    if self.log_verbosity == LogVerbosity.Loud:
+                        print(f"{self.module_id} calling process with '{command}' for task {task_id}")
+
                     if asyncio.iscoroutinefunction(method_to_call):
                         # if process is async, then it's a coroutine. In this
                         # case we create an awaitable asyncio task to execute
@@ -428,6 +488,9 @@ class ModuleRunner:
 
                     # Await 
                     output = await callbacktask
+
+                    if self.log_verbosity == LogVerbosity.Loud:
+                        print(f"{self.module_id} process call complete for task {task_id}")
 
                     # print(f"Process Response is {output['message']}")
 
@@ -446,7 +509,7 @@ class ModuleRunner:
                         "filename":       __file__,
                         "method":         sys._getframe().f_code.co_name,
                         "loglevel":       "error",
-                        "message":        message,
+                        "message":        "Error during main_loop: " + message,
                         "exception_type": ex.__class__.__name__
                     })
 
@@ -456,7 +519,8 @@ class ModuleRunner:
 
                     try:
                         if send_response_task != None:
-                            # print("awaiting old send task")
+                            if self.log_verbosity == LogVerbosity.Loud:
+                                print(f"{self.module_id} awaiting previous send operation for task {task_id}")
                             await send_response_task
 
                         output["moduleId"]          = self.module_id
@@ -465,18 +529,27 @@ class ModuleRunner:
                         output["command"]           = data.command or ''
                         output["executionProvider"] = self.execution_provider or 'CPU'
                         output["canUseGPU"]         = self.can_use_GPU
+                        output["statusData"]        = self.status(data)
                         
-                        # print("creating new send task")
+                        if self.log_verbosity == LogVerbosity.Loud:
+                            print(f"{self.module_id} sending result of process to server for task {task_id}")
+
                         send_response_task = asyncio.create_task(self.send_response(data.request_id, output))
                         
-                    except Exception:
-                        print(f"An exception occurred sending the inference response (#reqid {data.request_id})")
+                    except Exception as ex:
+                        print(f"An exception occurred sending the inference response (#reqid {data.request_id}): {str(ex)}")
         
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"{self.module_id} completed. Cleaning up task {task_id}")
+
         # Cleanup
         self.cleanup()
 
         # method is ending. Let's clean up. self._cancelled == True at this point.
         self._logger.cancel_logging()
+
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"{self.module_id} task {task_id} complete.")
 
 
     # Performance timer =======================================================
@@ -551,6 +624,9 @@ class ModuleRunner:
         """
         commands = []
 
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"{self.module_id} in get_command for task {task_id}")
+
         try:
             url = self._base_queue_url + self.queue_name + "?moduleId=" + self.module_id
             if self.execution_provider:
@@ -603,15 +679,18 @@ class ModuleRunner:
                                                          if self._current_error_pause_secs \
                                                          else self._error_pause_secs
 
-        except TimeoutError:
+        except asyncio.TimeoutError as t_ex:
+            # We long-poll the server to get commands, so timeouts are how we roll.
+            pass
+            """
             if not self._cancelled:
                 await self.log_async(LogMethod.Error | LogMethod.Server, {
                     "message": f"Timeout retrieving command from queue {self.queue_name}",
                     "method": sys._getframe().f_code.co_name,
                     "loglevel": "error",
-                    "process": self.queue_name,
+                    "process": 'get_command',
                     "filename": __file__,
-                    "exception_type": ex.__class__.__name__
+                    "exception_type": t_ex.__class__.__name__
                 })
 
             # We'll only calculate the error pause time in task #0, but all 
@@ -620,8 +699,9 @@ class ModuleRunner:
                 self._current_error_pause_secs = self._current_error_pause_secs * 2 \
                                                  if self._current_error_pause_secs \
                                                  else self._error_pause_secs
+            """
 
-        except ConnectionRefusedError:
+        except ConnectionRefusedError as c_ex:
             if not self._cancelled:
                 await self.log_async(LogMethod.Error, {
                     "message": f"Connection refused trying to check the command queue {self.queue_name}.",
@@ -629,7 +709,7 @@ class ModuleRunner:
                     "loglevel": "error",
                     "process": self.queue_name,
                     "filename": __file__,
-                    "exception_type": ex.__class__.__name__
+                    "exception_type": c_ex.__class__.__name__
                 })
 
             # We'll only calculate the error pause time in task #0, but all 
@@ -671,7 +751,7 @@ class ModuleRunner:
                 pause_on_error = True
 
             else:
-                err_msg = str(ex)
+                err_msg = "Error in get_command: " + str(ex)
 
                 if not self._cancelled and err_msg and err_msg != 'Session is closed':
                     pause_on_error = True
@@ -741,6 +821,14 @@ class ModuleRunner:
                 ):
                 success = True
             # print("Response sent")
+
+        except asyncio.TimeoutError as t_ex:
+            await asyncio.sleep(self._error_pause_secs)
+
+            if self._verbose_exceptions:
+                print(f"Timeout sending response: {str(t_ex)}")
+            else:
+                print(f"Timeout sending response: Is the API Server running? [" + t_ex.__class__.__name__ + "]")
 
         except Exception as ex:
             await asyncio.sleep(self._error_pause_secs)

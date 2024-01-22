@@ -145,7 +145,7 @@ namespace CodeProject.AI.API
             }
             catch (Exception ex)
             {
-                response = new ServerErrorResponse(ex.Message);
+                response = new ServerErrorResponse("GetAsync error: " + ex.Message);
             }
 
             return response;
@@ -178,7 +178,7 @@ namespace CodeProject.AI.API
             }
             catch (Exception ex)
             {
-                response = new ServerErrorResponse(ex.Message);
+                response = new ServerErrorResponse("GetAsync<T> error: " + ex.Message);
             }
 
             return response;
@@ -212,7 +212,7 @@ namespace CodeProject.AI.API
             }
             catch (Exception ex)
             {
-                response = new ServerErrorResponse(ex.Message);
+                response = new ServerErrorResponse("PostAsync error: " + ex.Message);
             }
 
             return response;

@@ -1,8 +1,0 @@
-{
-  "Modules": {
-
-    "SentimentAnalysis": {
-      "FilePath": "bin\\debug\\net7.0\\SentimentAnalysis.exe"
-    }
-  }
-}

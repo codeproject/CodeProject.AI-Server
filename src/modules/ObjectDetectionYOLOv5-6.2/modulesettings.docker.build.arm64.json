@@ -14,12 +14,15 @@
          packages can be installed and persisted.
       */
 
-      // This NEEDS to be 'shared' for docker pre-installed
-      "RuntimeLocation": "Shared", // Can be Local or Shared
-
-      // ObjectDetectNet is faster, but set this up just in case
-      "AutoStart": true,
-      "PreInstalled": "true"
+      "LaunchSettings": {
+        // This NEEDS to be 'shared' for docker pre-installed
+        "RuntimeLocation": "Shared", // Can be Local or Shared
+        // ObjectDetectNet is faster, but set this up just in case
+        "AutoStart": true
+      },
+      "InstallOptions" :{
+        "PreInstalled": "true"
+      }
     }
   }
 }

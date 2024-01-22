@@ -492,23 +492,23 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
     set moduleVersion=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Runtime"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "LaunchSettings.Runtime"
     set runtime=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "RuntimeLocation"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "LaunchSettings.RuntimeLocation"
     set runtimeLocation=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallGPU"
-    set installGPU=!moduleSettingsFileValue!
-    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
-
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "FilePath"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "LaunchSettings.FilePath"
     set moduleStartFilePath=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Platforms"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "GpuOptions.InstallGPU"
+    set installGPU=!moduleSettingsFileValue!
+    call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.Platforms"
     set platforms=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 

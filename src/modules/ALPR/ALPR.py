@@ -95,7 +95,7 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
 
         except Exception as ex:
             await module_runner.report_error_async(ex, __file__)
-            return { "error": str(ex), "inferenceMs": inferenceMs }
+            return { "error": "Error in detect_platenumber: " + str(ex), "inferenceMs": inferenceMs }
 
     # We have a plate (or plates) detected, so let's prep the original image for some work
     numpy_image = np.array(pillow_image)

@@ -74,7 +74,7 @@ namespace CodeProject.AI.Server.Controllers
             }
 
             UpdateProcessStatus(moduleId, incrementProcessCount: false, executionProvider,
-                                canUseGPU, shuttingDown);
+                                canUseGPU, null, shuttingDown);
 
             return new OkObjectResult(request);
         }
@@ -103,13 +103,15 @@ namespace CodeProject.AI.Server.Controllers
             string? command           = response?["command"]?.ToString();
             string? moduleId          = response?["moduleId"]?.ToString();
             string? executionProvider = response?["executionProvider"]?.ToString();
-            bool   canUseGPU          = response?["canUseGPU"]?.ToString().EqualsIgnoreCase("true") ?? false;
+            bool    canUseGPU         = response?["canUseGPU"]?.ToString().EqualsIgnoreCase("true") ?? false;
+            object? statusData        = response?["statusData"];
 
             if (!string.IsNullOrWhiteSpace(moduleId))
             {
                 bool incrementProcessCount = command is not null && !command.EqualsIgnoreCase("status");
                 UpdateProcessStatus(moduleId, incrementProcessCount: incrementProcessCount,
-                                    executionProvider: executionProvider, canUseGPU: canUseGPU);
+                                    executionProvider: executionProvider, canUseGPU: canUseGPU,
+                                    statusData: statusData);
             }
 
             var success = _queueService.SetResult(reqid, responseString);
@@ -121,7 +123,7 @@ namespace CodeProject.AI.Server.Controllers
 
         private void UpdateProcessStatus(string moduleId, bool incrementProcessCount = false,
                                          string? executionProvider = null, bool? canUseGPU = false,
-                                         bool shuttingDown = false)
+                                         object? statusData = null, bool shuttingDown = false)
         {
             if (string.IsNullOrEmpty(moduleId))
                 return;
@@ -134,8 +136,11 @@ namespace CodeProject.AI.Server.Controllers
                 processStatus.Started ??= DateTime.UtcNow;
                 processStatus.LastSeen  = DateTime.UtcNow;
 
+                if (statusData is not null)
+                    processStatus.StatusData = statusData;
+
                 if (incrementProcessCount)
-                    processStatus.IncrementProcessedCount();
+                    processStatus.IncrementRequestCount();
 
                 if (string.IsNullOrWhiteSpace(executionProvider))
                 {

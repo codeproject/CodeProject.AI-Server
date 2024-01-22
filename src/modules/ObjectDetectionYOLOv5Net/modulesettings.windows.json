@@ -2,7 +2,9 @@
   "Modules": {
 
     "ObjectDetectionYOLOv5Net": {
-      "FilePath": "bin\\ObjectDetectionYOLOv5Net.exe"
+      "LaunchSettings": {
+        "FilePath": "bin\\ObjectDetectionYOLOv5Net.exe"
+      }
     }
   }
 }

@@ -39,15 +39,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.macos.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
-    <Content Include="requirements.jetson.txt">
-      <DependentUpon>requirements.txt</DependentUpon>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="..\..\runtimes\bin\windows\python37\venv\">

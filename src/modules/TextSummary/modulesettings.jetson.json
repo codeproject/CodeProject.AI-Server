@@ -2,7 +2,9 @@
   "Modules": {
   
     "TextSummary": {
-      "AutoStart": false
+      "LaunchSettings": {
+        "AutoStart": false
+      }
     }
   }
 }

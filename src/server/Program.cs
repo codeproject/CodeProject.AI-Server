@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-
+using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Backend;
@@ -29,14 +29,10 @@ namespace CodeProject.AI.Server
     /// </summary>
     public class Program
     {
-        const int defaultPort   = 32168;
-        const int legacyPort    = 5000;
-        const int legacyPortOsx = 5500;
-
         static private ILogger? _logger = null;
 
-        static private int _port = defaultPort;
-        // static private int _sPort = 5001; - eventually for SSL
+        static private int _port = Constants.DefaultPort;
+        // static private int _sPort = Constants.DefaultPortSsl; - eventually for SSL
 
         /// <summary>
         /// Gets or sets the Root Directory of the installation.
@@ -61,10 +57,10 @@ namespace CodeProject.AI.Server
             string assemblyName = (assembly.GetName().Name ?? string.Empty) 
                                 + (SystemInfo.IsWindows? ".exe" : ".dll");
             string companyName  = assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company
-                                ?? "CodeProject";
-            string productCat   = "AI";
+                                ?? Constants.Company;
+            string productCat   = Constants.ProductCategory;
             string productName  = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product
-                                ?? "CodeProject.AI Server";
+                                ?? Constants.ProductName;
 
             string servicePath  = Path.Combine(AppContext.BaseDirectory, assemblyName);
             string serviceDesc  = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description
@@ -84,7 +80,7 @@ namespace CodeProject.AI.Server
             string  architecture = SystemInfo.Architecture.ToLower();
             string  systemName   = SystemInfo.SystemName.ToLower().Replace(" ", string.Empty);
             string? runtimeEnv   = SystemInfo.RuntimeEnvironment == SDK.Common.RuntimeEnvironment.Development
-                                 ? "development" : string.Empty;
+                                 ? Constants.Development : string.Empty;
 
 
             // GetProcessStatus a directory for the given platform that allows modules to store persisted data
@@ -204,9 +200,9 @@ namespace CodeProject.AI.Server
 
                 Console.WriteLine("Shutting down");
             }
-            catch (IOException ioex)
+            catch (IOException io_ex)
             {
-                if (ioex.Message.Contains("the number of inotify instances has been reached"))
+                if (io_ex.Message.Contains("the number of inotify instances has been reached"))
                 {
                     Console.WriteLine("\n\nUnable to start the server due to too many file " +
                                       "watchers being in place. This is a system limit. Run\n\n" +
@@ -217,7 +213,7 @@ namespace CodeProject.AI.Server
                 }
                 else
                 {
-                    Console.WriteLine($"\n\nUnable to start the server due to IO error: {ioex.Message}.");
+                    Console.WriteLine($"\n\nUnable to start the server due to IO error: {io_ex.Message}.");
                 }
 
                 Console.Write("Press Enter to close.");
@@ -300,9 +296,10 @@ namespace CodeProject.AI.Server
                             if (Directory.Exists(path))
                                 Directory.Delete(path, true);
                         }
-                        catch
+                        catch (Exception e)
                         {
                             // Handle exception here
+                            Console.WriteLine("Error Deleting files:" + e.Message);
                         }
                     }
 
@@ -310,21 +307,23 @@ namespace CodeProject.AI.Server
                     try
                     {
                         if (Directory.Exists(logPath))
-                        Directory.Delete(logPath, true);
+                            Directory.Delete(logPath, true);
                     }
-                    catch
+                    catch (Exception e)
                     {
                         // Handle exception here
+                        Console.WriteLine("Error deleting log files: " + e.Message);
                     }
 
                     try
                     {
                         if (Directory.Exists(applicationDataDir))
-                        Directory.Delete(applicationDataDir, true);
+                            Directory.Delete(applicationDataDir, true);
                     }
-                    catch
+                    catch (Exception e)
                     {
                         // Handle exception here
+                        Console.WriteLine("Error deleting application data directory: " + e.Message);
                     }
                 }
                 catch (Exception ex)
@@ -460,15 +459,18 @@ namespace CodeProject.AI.Server
                 settingsFile = Path.Combine(baseDir, VersionConfig.VersionCfgFilename);
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
 
+                // Add the modulesettings.json files to get analysis module settings
+                // NOTE: This method will load up the config with the files added above. If you need
+                // to access a config value in AddModulesConfigFiles, ensure it's been added before
+                // this point
+                AddModulesConfigurationFiles(config);
+
+                // Add the last saved config values for modules as set by the user
+                AddUserOverrideConfigurationFiles(config, applicationDataDir, runtimeEnv, !SystemInfo.IsLinux);
+
                 // Load the triggers.json file to load the triggers
                 settingsFile = Path.Combine(baseDir, TriggersConfig.TriggersCfgFilename);
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadConfigOnChange);
-
-                // Add the modulesettings.json files to get analysis module settings
-                AddModulesConfigurationFiles(config);
-
-                // Add the last saved config values as set by the user
-                AddUserOverrideConfigurationFiles(config, applicationDataDir, runtimeEnv, !SystemInfo.IsLinux);
 
                 // Load Environment Variables into Configuration
                 config.AddEnvironmentVariables();
@@ -505,23 +507,35 @@ namespace CodeProject.AI.Server
         {
             bool reloadOnChange = !SystemInfo.IsDocker;
 
+            // Load up the files already added to the config (just server settings) so we can query
+            // the values and set things up
             IConfiguration configuration = config.Build();
+
             (var modulesDirPath, var preInstalledModulesDirPath) = EnsureDirectories(configuration);
 
             // Scan the Modules' directories and add each modulesettings files to the config
             if (!string.IsNullOrWhiteSpace(modulesDirPath) && Directory.Exists(modulesDirPath))
-            {
+            {                
                 var directories = Directory.GetDirectories(modulesDirPath);
                 foreach (string? directory in directories)
+                {
+                    // Check the modulesettings file and, if necessary, reformat it
+                    ModuleConfigExtensions.RewriteOldModuleSettingsFile(directory);
+
+                    // Load up (existing, or potentially updated) settings
                     ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
+                }
             }
 
             // Scan the pre-installed Modules' directories and add each modulesettings files
-            if (!string.IsNullOrWhiteSpace(preInstalledModulesDirPath) && Directory.Exists(preInstalledModulesDirPath))
+            if (!string.IsNullOrWhiteSpace(preInstalledModulesDirPath) && 
+                Directory.Exists(preInstalledModulesDirPath))
             {
                 var directories = Directory.GetDirectories(preInstalledModulesDirPath);
                 foreach (string? directory in directories)
+                {
                     ModuleSettings.LoadModuleSettings(config, directory, reloadOnChange);
+                }
             }
         }
 
@@ -665,8 +679,8 @@ namespace CodeProject.AI.Server
         /// <param name="runtimeEnv">The current runtime environment (production or development)</param>
         /// <param name="reloadOnChange">Whether to reload the config files if they change</param>
         private static void AddUserOverrideConfigurationFiles(IConfigurationBuilder config, 
-                                                          string applicationDataDir, 
-                                                          string? runtimeEnv, bool reloadOnChange)
+                                                              string applicationDataDir, 
+                                                              string? runtimeEnv, bool reloadOnChange)
         {
             if (string.IsNullOrWhiteSpace(applicationDataDir))
             {
@@ -690,25 +704,29 @@ namespace CodeProject.AI.Server
 
             runtimeEnv = runtimeEnv?.ToLower();
 
-            // The settings for each module are combined into a single modulesettings.json file
-            string settingsFile = Path.Combine(applicationDataDir, "modulesettings.json");
+            // The user-overridden settings for each module are combined into a single
+            // modulesettings.json file
+            ModuleConfigExtensions.RewriteOldUserModuleSettingsFile(applicationDataDir); // rewrite if needed
+            string settingsFile = Path.Combine(applicationDataDir, Constants.ModuleSettingsFilename);
             config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
 
-            if (!string.IsNullOrEmpty(runtimeEnv))
+            // ...but we have separate production and development files.
+            if (runtimeEnv.EqualsIgnoreCase(Constants.Development))
             {
-                settingsFile = Path.Combine(applicationDataDir, $"modulesettings.{runtimeEnv}.json");
+                ModuleConfigExtensions.RewriteOldUserModuleSettingsFile(applicationDataDir); // rewrite if needed
+                settingsFile = Path.Combine(applicationDataDir, Constants.DevModuleSettingsFilename);
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
             }
 
             // We store any updates to server (including mesh) settings in a separate file
-            settingsFile = Path.Combine(applicationDataDir, "serversettings.json");
+            settingsFile = Path.Combine(applicationDataDir, Constants.ServerSettingsFilename);
             // If the file doesn't exist, create it with an empty object
             WriteEmptyConfigFileIfMissing(settingsFile);
             config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: true);
 
-            if (!string.IsNullOrEmpty(runtimeEnv))
+            if (runtimeEnv.EqualsIgnoreCase(Constants.Development))
             {
-                settingsFile = Path.Combine(applicationDataDir, $"serversettings.{runtimeEnv}.json");
+                settingsFile = Path.Combine(applicationDataDir, Constants.DevServerSettingsFilename);
                 // If the file doesn't exist, create it with an empty object
                 WriteEmptyConfigFileIfMissing(settingsFile);
                 config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: true);
@@ -764,7 +782,7 @@ namespace CodeProject.AI.Server
                                 // Listen on the port that the appsettings defines (we force the
                                 // use of the default port. IsPortAvailable can sometimes be too
                                 // conservative)
-                                if (_port == defaultPort || IsPortAvailable(_port))
+                                if (_port == Constants.DefaultPort || IsPortAvailable(_port))
                                 {
                                     Console.WriteLine($"Server is listening on port {_port}");
                                     serverOptions.Listen(anyAddress, _port);
@@ -773,13 +791,13 @@ namespace CodeProject.AI.Server
 
                                 // If we aren't listening to the default port (32168), then listen
                                 // to it! (and don't bother asking if it's available. Just try it.)
-                                if (_port != defaultPort /* && IsPortAvailable(defaultPort)*/)
+                                if (_port != Constants.DefaultPort /* && IsPortAvailable(Constants.DefaultPort)*/)
                                 {
                                     if (!foundPort)
-                                        _port = defaultPort;
+                                        _port = Constants.DefaultPort;
 
                                     Console.WriteLine($"Server is listening on default port {_port}");
-                                    serverOptions.Listen(anyAddress, defaultPort);
+                                    serverOptions.Listen(anyAddress, Constants.DefaultPort);
                                     foundPort = true;
                                 }
 
@@ -788,26 +806,28 @@ namespace CodeProject.AI.Server
                                     // Add some legacy ports. First macOS (port 5500)
                                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                                     {
-                                        if (_port != legacyPortOsx && IsPortAvailable(legacyPortOsx))
+                                        if (_port != Constants.LegacyPortOsx &&
+                                            IsPortAvailable(Constants.LegacyPortOsx))
                                         {
                                             if (!foundPort)
-                                                _port = legacyPortOsx;
+                                                _port = Constants.LegacyPortOsx;
                                         
-                                            Console.WriteLine($"Server is also listening on legacy port {legacyPortOsx}");
-                                            serverOptions.Listen(anyAddress, legacyPortOsx);
+                                            Console.WriteLine($"Server is also listening on legacy port {Constants.LegacyPortOsx}");
+                                            serverOptions.Listen(anyAddress, Constants.LegacyPortOsx);
                                             foundPort = true;
                                         }
                                     }
                                     // Then everything else (port 5000)
                                     else
                                     {
-                                        if (_port != legacyPort && IsPortAvailable(legacyPort))
+                                        if (_port != Constants.LegacyPort &&
+                                            IsPortAvailable(Constants.LegacyPort))
                                         {
                                             if (!foundPort)
-                                                _port = legacyPort;
+                                                _port = Constants.LegacyPort;
                                         
-                                            Console.WriteLine($"Server is also listening on legacy port {legacyPort}");
-                                            serverOptions.Listen(anyAddress, legacyPort);
+                                            Console.WriteLine($"Server is also listening on legacy port {Constants.LegacyPort}");
+                                            serverOptions.Listen(anyAddress, Constants.LegacyPort);
                                             foundPort = true;
                                         }
                                     }
@@ -865,9 +885,9 @@ namespace CodeProject.AI.Server
             IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
             TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
 
-            foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
+            foreach (TcpConnectionInformation tcpInfo in tcpConnInfoArray)
             {
-                if (tcpi.LocalEndPoint.Port == port)
+                if (tcpInfo.LocalEndPoint.Port == port)
                 {
                     isAvailable = false;
                     break;
@@ -984,7 +1004,6 @@ namespace CodeProject.AI.Server
                 {
                     // Process.Start("open", url);
                     Process.Start("sensible-browser", url);
-
                 }
                 else
                 {

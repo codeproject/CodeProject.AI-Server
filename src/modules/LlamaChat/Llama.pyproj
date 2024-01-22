@@ -34,7 +34,6 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="summarize.py" />
     <Compile Include="Llama_adapter.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>

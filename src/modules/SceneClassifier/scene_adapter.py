@@ -79,6 +79,11 @@ class Scene_adapter(ModuleRunner):
         elif self.opts.use_MPS:
             self.execution_provider = "MPS"
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.histogram            = {}
+
 
     def process(self: ModuleRunner, data: RequestData) -> JSON:
 
@@ -96,7 +101,7 @@ class Scene_adapter(ModuleRunner):
         img = trans(img).unsqueeze(0)
                     
         try:
-            self.init_models()
+            self._init_models()
 
             start_inference_time = time.perf_counter()
             name, conf           = self.classifier.predict(img)
@@ -105,7 +110,7 @@ class Scene_adapter(ModuleRunner):
             name = self.scene_names[name]
             conf = float(conf)
 
-            return {
+            response = {
                 "success": True, 
                 "label": name, 
                 "confidence": conf,
@@ -116,12 +121,27 @@ class Scene_adapter(ModuleRunner):
 
         except UnidentifiedImageError as img_ex:
             self.report_error(img_ex, __file__, "The image provided was of an unknown type")
-            return { "success": False, "error": "Error occurred on the server" }
+            response = { "success": False, "error": "Error occurred on the server" }
     
         except Exception as ex:
             self.report_error(ex, __file__)
-            return { "success": False, "error": "Error occurred on the server" }
+            response = { "success": False, "error": "Error occurred on the server" }
     
+        self._update_statistics(response)
+        return response
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+            "histogram"            : self.histogram
+        }
+
+
     def selftest(self) -> None:
         
         file_name = os.path.join("test", "beach.jpg")
@@ -139,7 +159,7 @@ class Scene_adapter(ModuleRunner):
         return { "success": result['success'], "message": "Scene classification test successful" }
 
 
-    def init_models(self, re_entered: bool = False) -> None:
+    def _init_models(self, re_entered: bool = False) -> None:
 
         """
         For lazy loading the models
@@ -167,7 +187,29 @@ class Scene_adapter(ModuleRunner):
                     "loglevel": "information",
                 })
 
-                self.init_models(re_entered = True)
+                self._init_models(re_entered = True)
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "label" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+
+                label = response["label"]
+                if label not in self.histogram:
+                    self.histogram[label] = 1
+                else:
+                    self.histogram[label] += 1
+        else:
+            self.failed_inferences += 1
+
+    def _status_summary(self):
+        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
+        return summary
+
 
 if __name__ == "__main__":
     Scene_adapter().start_loop()

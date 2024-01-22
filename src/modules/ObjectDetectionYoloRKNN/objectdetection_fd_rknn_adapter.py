@@ -44,6 +44,12 @@ class FastDeploy_adapter(ModuleRunner):
 
         init_detect(self.opts)
         
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+        self.histogram            = {}
+
 
     def process(self, data: RequestData) -> JSON:
 
@@ -51,7 +57,7 @@ class FastDeploy_adapter(ModuleRunner):
         
         # The route to here is /v1/vision/custom/list  list all models available
         if data.command == "list-custom":
-            response = self.list_models(self.opts.custom_models_dir)
+            response = self._list_models(self.opts.custom_models_dir)
 
         elif data.command == "detect":                  # Perform 'standard' object detection
 
@@ -92,25 +98,20 @@ class FastDeploy_adapter(ModuleRunner):
             self.report_error(None, __file__, f"Unknown command {data.command}")
             response = { "success": False, "error": "unsupported command" }
 
+        self._update_statistics(response)
         return response
             
 
-    def list_models(self, models_path: str):
-
-        """
-        Lists the custom models we have in the assets folder. This ignores the 
-        yolo* files.
-        """
-
-        # We'll only refresh the list of models at most once a minute
-        if self.models_last_checked is None or (time() - self.models_last_checked) >= 60:
-            self.model_names = [entry.name[:-5] for entry in os.scandir(models_path)
-                                            if (entry.is_file()
-                                            and entry.name.endswith(".rknn")
-                                            and not entry.name.startswith("yolov5"))]
-            self.models_last_checked = time()
-        
-        return { "success": True, "models": self.model_names }
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+            "histogram"            : self.histogram
+        }
 
 
     def selftest(self) -> JSON:
@@ -128,6 +129,52 @@ class FastDeploy_adapter(ModuleRunner):
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
         return { "success": result['success'], "message": "Object detection test successful" }
+
+
+    def _list_models(self, models_path: str):
+
+        """
+        Lists the custom models we have in the assets folder. This ignores the 
+        yolo* files.
+        """
+
+        # We'll only refresh the list of models at most once a minute
+        if self.models_last_checked is None or (time() - self.models_last_checked) >= 60:
+            self.model_names = [entry.name[:-5] for entry in os.scandir(models_path)
+                                            if (entry.is_file()
+                                            and entry.name.endswith(".rknn")
+                                            and not entry.name.startswith("yolov5"))]
+            self.models_last_checked = time()
+        
+        return { "success": True, "models": self.model_names }
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "predictions" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+                predictions = response["predictions"]
+                self.num_items_found += len(predictions) 
+
+                for prediction in predictions:
+                    label = prediction["label"]
+                    if label not in self.histogram:
+                        self.histogram[label] = 1
+                    else:
+                        self.histogram[label] += 1
+        else:
+            self.failed_inferences += 1
+
+    def _status_summary(self):
+        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self.num_items_found) + "\n"
+        for label in self.histogram:
+            summary += "  " + label + ": " + str(self.histogram[label]) + "\n"
+
+        return summary
 
 
 if __name__ == "__main__":

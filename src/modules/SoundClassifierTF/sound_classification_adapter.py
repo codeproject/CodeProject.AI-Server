@@ -54,7 +54,13 @@ class SoundClassification_adapter(ModuleRunner):
         elif self.system_info.hasTorchMPS:
             self.execution_provider = "MPS"
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+        self.histogram            = {}
         
+
     def process(self, data: RequestData) -> JSON:
 
         # The route to here is /v1/sound/classify
@@ -64,13 +70,26 @@ class SoundClassification_adapter(ModuleRunner):
 
         if data.command == "classify": # or data.command == "custom":
             threshold: float  = float(data.get_value("min_confidence", self.opts.min_confidence))  
-            response = self.do_classification(data, threshold)
+            response = self._do_classification(data, threshold)
         else:
             # await self.report_error_async(None, __file__, f"Unknown command {data.command}")
             self.report_error(None, __file__, f"Unknown command {data.command}")
             response = { "success": False, "error": "unsupported command" }
 
+        self._update_statistics(response)
         return response
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+            "histogram"            : self.histogram
+        }
 
 
     def selftest(self) -> JSON:
@@ -90,7 +109,7 @@ class SoundClassification_adapter(ModuleRunner):
         return { "success": result['success'], "message": "Sound Classification test successful" }
 
 
-    def do_classification(self, data: RequestData, score_threshold: float):
+    def _do_classification(self, data: RequestData, score_threshold: float):
         
         start_process_time = time.perf_counter()
     
@@ -146,6 +165,23 @@ class SoundClassification_adapter(ModuleRunner):
             # await self.report_error_async(ex, __file__)
             self.report_error(ex, __file__)
             return { "success": False, "error": "Error occurred on the server"}
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "label" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+
+                label = response["label"]
+                if label not in self.histogram:
+                    self.histogram[label] = 1
+                else:
+                    self.histogram[label] += 1
+        else:
+            self.failed_inferences += 1      
 
 
 if __name__ == "__main__":

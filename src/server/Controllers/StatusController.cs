@@ -229,6 +229,7 @@ namespace CodeProject.AI.Server.Controllers
         /// via the route module/list/status
         /// </summary>
         /// <returns>A ResponseBase object.</returns>
+        [HttpGet("modules/list"/*, Name = "List Module Statuses"*/)]
         [HttpGet("analysis/list"/*, Name = "List Module Statuses"*/)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]

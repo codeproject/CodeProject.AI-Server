@@ -113,19 +113,17 @@ namespace CodeProject.AI.Server.Modules
             {
                 ModuleConfig? module = _installedModules[moduleId];
 
-                // Complete the ModuleConfig's setup
-                if (module is not null)
+                // Complete the ModuleConfig's setup, but remove the listing if that's not possible
+                if (module is null || !module.Initialise(moduleId, moduleSettings.ModulesDirPath,
+                                                         moduleSettings.PreInstalledModulesDirPath))
                 {
-                    module.Initialise(moduleId, moduleSettings.ModulesDirPath,
-                                      moduleSettings.PreInstalledModulesDirPath);
-                }
-                
-                if (module is null || !module.Valid)
                     _installedModules.Remove(moduleId, out _);
+                }
             }
 #if DEBUG
             // Create a modules.json file each time we run
-            string path = Path.Combine(ModuleSettings.DownloadedModulePackagesDirPath, "modules.json");
+            string path = Path.Combine(ModuleSettings.DownloadedModulePackagesDirPath,
+                                       Constants.ModulesListingFilename);
             Task.Run(() => _installedModules.CreateModulesListing(path, _versionConfig.VersionInfo));
 #endif
         }
@@ -259,7 +257,7 @@ namespace CodeProject.AI.Server.Modules
                 ProcessService.AddProcess(module, true, installSummary);
             }
 
-            return await ProcessService.StartProcess(module);
+            return await ProcessService.StartProcess(module, null);
         }
 
         /// <summary>

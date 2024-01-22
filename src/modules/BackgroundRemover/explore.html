@@ -65,6 +65,7 @@ RULES AND CONVENTIONS
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -111,7 +112,7 @@ RULES AND CONVENTIONS
     <script type="text/javascript">
 // START EXPLORER SCRIPT
 
-		function _MID_onRemoveBackground(fileChooser, use_alphamatting) {
+		async function _MID_onRemoveBackground(fileChooser, use_alphamatting) {
 
 			clearImagePreview();
 
@@ -125,10 +126,11 @@ RULES AND CONVENTIONS
 			let params = [["use_alphamatting", use_alphamatting]]
 
 			setResultsHtml("Removing background...");
-			submitRequest('image', 'removebackground', images, params, function (data) {
+			let data = await submitRequest('image', 'removebackground', images, params);
+            if (data) {
 				setResultsHtml("Background Removal complete" + getProcessingMetadataHtml(data));
 				showResultsImageData(data);
-			});
+			};
 		}
 // END EXPLORER SCRIPT
     </script>
