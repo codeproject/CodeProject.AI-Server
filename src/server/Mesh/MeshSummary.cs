@@ -59,7 +59,7 @@ namespace CodeProject.AI.Server.Mesh
                 {
                     int padding = maxPathLength + 4;
                     // string hit = route.NumberOfRequests == 1 ? "hit" : "hits";
-                    string hit  = "processed";
+                    string hit  = "requests";
 
                     summary.Append($"{indent}{indent}{route.Route.PadRight(padding)}");
                     summary.Append($"{route.EffectiveResponseTime}ms, ");

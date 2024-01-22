@@ -169,7 +169,7 @@ class RequestData:
             """
             err_msg = "Unable to get image from request"
             if self._verbose_exceptions:
-                err_msg = str(ex)
+                err_msg = "Error in get_image: " + str(ex)
 
             self.log(LogMethod.Error|LogMethod.Server, {
                 "message": err_msg,

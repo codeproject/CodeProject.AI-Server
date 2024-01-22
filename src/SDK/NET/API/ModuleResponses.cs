@@ -48,6 +48,11 @@
         /// response.
         /// </summary>
         public long AnalysisRoundTripMs { get; set; }
+
+        /// <summary>
+        /// Gets or set a dictionary representing the current module status
+        /// </summary>
+        public object? StatusData { get; set; }
     }
 
     /// <summary>

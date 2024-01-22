@@ -34,7 +34,7 @@ namespace CodeProject.AI.SDK
             _httpClient ??= new HttpClient
             {
                 BaseAddress = new Uri(url),
-                Timeout = (timeout == default) ? TimeSpan.FromMinutes(1) : timeout
+                Timeout     = (timeout == default) ? TimeSpan.FromMinutes(1) : timeout
             };
 
             loggingTask = ProcessLoggingQueue(token);
@@ -77,33 +77,27 @@ namespace CodeProject.AI.SDK
             BackendRequest? request = null;
             try
             {
-                //request = await _httpClient!.GetFromJsonAsync<BackendRequest>(requestUri, token)
-                //                            .ConfigureAwait(false);
-                var response = await _httpClient!.GetAsync(requestUri, token);
-                // only process responses that have content
+                HttpResponseMessage response = await _httpClient!.GetAsync(requestUri, token);
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                {
                     request = await response.Content.ReadFromJsonAsync<BackendRequest>();
-                }
-                else
-                {
-                    return null;
-                }
             }
             catch (JsonException)
             {
+#if DEBUG
+                Debug.WriteLine("JsonException GetRequest");
+#endif
                 // This is probably due to timing out and therefore no JSON to parse.
             }
 #if DEBUG
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
+                Debug.WriteLine("Error in GetRequest: " + ex.Message);
 #else
             catch (Exception /*ex*/)
             {
 #endif
                 Console.WriteLine($"Unable to get request from {queueName} for {moduleId}");
-                _errorPauseSecs = Math.Min(_errorPauseSecs > 0 ? _errorPauseSecs * 2 : 5, 60);
+                _errorPauseSecs = Math.Min(_errorPauseSecs > 0 ? _errorPauseSecs * 3/2 : 5, 30);
 
                 if (!token.IsCancellationRequested && _errorPauseSecs > 0)
                 {
@@ -199,7 +193,7 @@ namespace CodeProject.AI.SDK
                     }
                     catch(Exception e)
                     {
-                        Debug.Write(e);
+                        Debug.Write("Error processing logging queue: " + e.Message);
                     }
                 }
             }

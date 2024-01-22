@@ -30,7 +30,7 @@ namespace CodeProject.AI.SDK.API
         /// <summary>
         /// Gets or sets a value indicating whether this version contains a security update
         /// </summary>
-        public bool? SecurityUpdate { get; set; }
+        public bool SecurityUpdate { get; set; }
 
         /// <summary>
         /// Gets or sets the build number
@@ -155,11 +155,19 @@ namespace CodeProject.AI.SDK.API
             if (versionA.Build != versionB.Build)
                 return versionA.Build - versionB.Build;
 
-            // int result = (versionA.PreRelease ?? "").CompareTo(versionB.PreRelease ?? "");
-            // if (result != 0)
-            //     return result;
+            // A pre-release string will be greater than an empty string. We actually want the
+            // opposite. 2.5.0 > 2.5.0-RC1 and 2.5.0-RTM > 2.5.0-RC1
 
-            return (versionA.SecurityUpdate ?? false).CompareTo(versionB.SecurityUpdate ?? false);
+            if (string.IsNullOrWhiteSpace(versionA.PreRelease) && !string.IsNullOrWhiteSpace(versionB.PreRelease))
+                return 1;
+
+            if (!string.IsNullOrWhiteSpace(versionA.PreRelease) && string.IsNullOrWhiteSpace(versionB.PreRelease))
+                return -1;
+
+            if (!(versionA.PreRelease ?? string.Empty).Equals(versionB.PreRelease ?? string.Empty))
+                return (versionA.PreRelease ?? string.Empty).CompareTo(versionB.PreRelease ?? string.Empty);
+
+            return versionA.SecurityUpdate.CompareTo(versionB.SecurityUpdate);
         }
     }
 }

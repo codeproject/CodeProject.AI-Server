@@ -26,6 +26,12 @@ if /i "!executionEnvironment!" == "Production" (
     call "%sdkScriptsDirPath%\utils.bat" GetFromServer "binaries/" "!imageName!" "bin" "Downloading !imageName!..."
 ) else (
     call "%sdkScriptsDirPath%\utils.bat" GetFromServer "libraries/" "ObjectDetectionYOLOv5NetNugets.zip" "LocalNugets" "Downloading Nuget packages..."
+
+    :: If we're in dev-setup mode we'll build the module now so the self-test will work
+    pushd "!moduleDirPath!"
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Building project..." "!color_info!"
+    dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/net7.0" >NUL
+    popd
 )
 
 :: Download the YOLO models and store in /assets

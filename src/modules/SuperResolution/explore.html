@@ -65,6 +65,7 @@ RULES AND CONVENTIONS
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -104,7 +105,7 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-		function _MID_onSuperResolution(fileChooser) {
+		async function _MID_onSuperResolution(fileChooser) {
 
 			clearImagePreview();
 
@@ -118,10 +119,11 @@ RULES AND CONVENTIONS
 			let params = null;
 
 			setResultsHtml("Increasing image resolution...");
-			submitRequest('image', 'superresolution', images, params, function (data) {
+			let data = await submitRequest('image', 'superresolution', images, params);
+            if (data) {
 				setResultsHtml("Resolution Improvement complete" + getProcessingMetadataHtml(data));
 				showResultsImageData(data);
-			});
+			};
         }
 // END EXPLORER SCRIPT
     </script>

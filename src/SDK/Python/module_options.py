@@ -6,6 +6,7 @@ from module_logging import LogVerbosity
 
 def _get_env_var(name: str, default: any = "") -> any:
     value = os.getenv(name, "")
+    # print(f"_get_env_var: {name} = {value}. default = {default}")
     if value == "" and default != "":
         value = default
         # print(f"Debug: {name} not found. Setting to default {str(default)}")
@@ -100,7 +101,9 @@ class ModuleOptions:
     if isinstance(log_verbosity, str):
         log_verbosity = LogVerbosity(log_verbosity.lower())
     elif not isinstance(log_verbosity, LogVerbosity):
-        log_verbosity = LogVerbosity.Info
+        log_verbosity = LogVerbosity.Quiet
+    if not log_verbosity:
+        log_verbosity = LogVerbosity.Quiet
 
     parallelism = int(parallelism) if isinstance(parallelism, int) else 0
     if parallelism <= 0:

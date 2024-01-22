@@ -19,4 +19,11 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-writeLine "No custom setup steps for this module" "$color_info"
+if [ "${executionEnvironment}" = "Production" ]; then
+    writeLine "No custom setup steps for this module" "$color_info"
+else
+    pushd "$moduleDirPath" >/dev/null
+    writeLine "Building project..." "$color_info"
+    dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/net7.0" >/dev/null
+    popd >/dev/null
+fi

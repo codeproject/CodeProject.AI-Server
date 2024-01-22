@@ -161,8 +161,7 @@ namespace CodeProject.AI.SDK
         public static void Initialise(this ModuleDescription module, string currentServerVersion, 
                                       string modulesDirPath, string preInstalledModulesDirPath)
         {
-            // Currently these are unused. There are here only as an experiment
-            if (module.PreInstalled)
+            if (module.InstallOptions!.PreInstalled)
                 module.ModuleDirPath = Path.Combine(preInstalledModulesDirPath, module.ModuleId!);
             else
                 module.ModuleDirPath = Path.Combine(modulesDirPath, module.ModuleId!);
@@ -179,7 +178,7 @@ namespace CodeProject.AI.SDK
 
         private static void SetLatestCompatibleVersion(ModuleDescription module, string currentServerVersion)
         {
-            foreach (ModuleRelease release in module!.ModuleReleases!)
+            foreach (ModuleRelease release in module!.InstallOptions!.ModuleReleases!)
             {
                 if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)
                     continue;

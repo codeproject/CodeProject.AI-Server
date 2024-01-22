@@ -216,7 +216,7 @@ namespace CodeProject.AI.SDK
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                Debug.WriteLine("Error adding file: " + e.Message);
             }
         }
 

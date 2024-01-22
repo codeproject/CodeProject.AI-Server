@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Dynamic;
 using System.Net.Http.Json;
 
 using CodeProject.AI.SDK.API;
@@ -28,8 +29,11 @@ namespace CodeProject.AI.SDK
         private readonly ILogger       _logger;
         private readonly IHostApplicationLifetime _appLifetime;
 
-        private bool _cancelled       = false;
-        private bool _performSelfTest = false;
+        private bool _cancelled         = false;
+        private bool _performSelfTest   = false;
+        private int  _successInferences;
+        private long _totalSuccessInf_ms;
+        private int  _failedInferences;
 
         /// <summary>
         /// Gets or sets the name of this Module
@@ -93,7 +97,7 @@ namespace CodeProject.AI.SDK
             EnableGPU        = configuration.GetValue<bool>("CPAI_MODULE_ENABLE_GPU",   true);
             _accelDeviceName = configuration.GetValue<string?>("CPAI_ACCEL_DEVICE_NAME", null);
             _halfPrecision   = configuration.GetValue<string?>("CPAI_HALF_PRECISION", null) ?? "enable"; // Can be enable, disable or force
-            _logVerbosity    = configuration.GetValue<string?>("CPAI_LOG_VERBOSITY", null)  ?? "info";   // Can be Quiet, Info or Loud
+            _logVerbosity    = configuration.GetValue<string?>("CPAI_LOG_VERBOSITY", null)  ?? "quiet";   // Can be Quiet, Info or Loud
 
             _performSelfTest = configuration.GetValue<bool>("CPAI_MODULE_DO_SELFTEST", false);
 
@@ -126,6 +130,22 @@ namespace CodeProject.AI.SDK
         /// <param name="request">The Request data.</param>
         /// <returns>An object to serialize back to the server.</returns>
         protected abstract ModuleResponse ProcessRequest(BackendRequest request);
+
+        /// <summary>
+        /// Returns an object containing current stats for this module
+        /// </summary>
+        /// <returns>An object</returns>
+        protected virtual dynamic? Status()
+        {
+            dynamic status = new ExpandoObject();
+            status.SuccessfulInferences = _successInferences;
+            status.FailedInferences     = _failedInferences;
+            status.NumInferences        = _successInferences + _failedInferences;
+            status.AverageInferenceMs   = _successInferences > 0 
+                                        ? _totalSuccessInf_ms / _successInferences : 0;
+
+            return status;
+        }
 
         /// <summary>
         /// Called when the module is asked to execute a self-test to ensure it install and runs
@@ -188,6 +208,14 @@ namespace CodeProject.AI.SDK
                     ModuleResponse response = ProcessRequest(request);
                     stopWatch.Stop();
 
+                    if (response.Success)
+                    {
+                        _successInferences++;
+                        _totalSuccessInf_ms += response.InferenceMs;   
+                    }
+                    else
+                        _failedInferences++;
+
                     long processMs = stopWatch.ElapsedMilliseconds;
                     response.ModuleName        = ModuleName;
                     response.ModuleId          = _moduleId;
@@ -195,6 +223,7 @@ namespace CodeProject.AI.SDK
                     response.ExecutionProvider = ExecutionProvider ?? string.Empty;
                     response.Command           = request.payload?.command ?? string.Empty;
                     response.CanUseGPU         = CanUseGPU;
+                    response.StatusData        = Status();
 
                     HttpContent content = JsonContent.Create(response, response.GetType());
 

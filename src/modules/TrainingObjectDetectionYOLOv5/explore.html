@@ -65,6 +65,7 @@ RULES AND CONVENTIONS
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -114,10 +115,11 @@ RULES AND CONVENTIONS
             <label class="col-form-label text-nowrap">
                 Classes
                 <div class='dropdown text-wrap d-inline-block'>
-                    <button class='btn btn-sm dropdown d-inline border-none' type='button' id='open-images-classes-label' 
-                            data-bs-toggle='dropdown'>
-                        <svg fill="#000000" height="20px" width="20px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
-                            viewBox="0 0 330 330" xml:space="preserve">
+                    <button class='btn btn-sm dropdown d-inline border-none mb-1' type='button'
+                            id='open-images-classes-label' data-bs-toggle='dropdown'>
+                        <svg fill="#aaaaaa" height="16px" width="16px" version="1.1" xml:space="preserve"
+                             xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+                             viewBox="0 0 330 330">
                             <g>
                             <path d="M165,0C74.019,0,0,74.02,0,165.001C0,255.982,74.019,330,165,330s165-74.018,165-164.999C330,74.02,255.981,0,165,0z M165,300c-74.44,0-135-60.56-135-134.999C30,90.562,90.56,30,165,30s135,60.562,135,135.001C300,239.44,239.439,300,165,300z"/>
                             <path d="M164.998,70c-11.026,0-19.996,8.976-19.996,20.009c0,11.023,8.97,19.991,19.996,19.991 c11.026,0,19.996-8.968,19.996-19.991C184.994,78.976,176.024,70,164.998,70z"/>
@@ -128,7 +130,7 @@ RULES AND CONVENTIONS
                     <ul class='dropdown-menu' aria-labelledby="open-images-classes-label">
                         <li>
                             <!-- TODO: Pull this from the training module -->
-                            <div id='open-images-classes' style="width:60rem">
+                            <div id='open-images-classes' style="width:55rem">
                                 Accordion, Adhesive tape, Aircraft, Airplane, Alarm clock, Alpaca, Ambulance, Animal, Ant, Antelope,
                                 Apple, Armadillo, Artichoke, Auto part, Axe, Backpack, Bagel, Baked goods, Balance beam, Ball, Balloon,
                                 Banana, Band-aid, Banjo, Barge, Barrel, Baseball bat, Baseball glove, Bat (Animal), Bathroom accessory,
@@ -420,7 +422,7 @@ RULES AND CONVENTIONS
         </div>
     </div>
 
-    <div class="w-100 position-relative bg-light">
+    <div class="w-100 position-relative bg-light mt-4">
         <img src="" id="_MID_imgTrainingResult" class="w-100" style="height:auto;visibility:hidden">
     </div>
 <!-- END EXPLORER MARKUP -->
@@ -443,7 +445,7 @@ RULES AND CONVENTIONS
 								              // initialize to true or onTrainingModelInfo 
 										      // will be called on the first onTrainingStatus call.
 
-		function _MID_onTrainingStatus() {
+		async function _MID_onTrainingStatus() {
 
 			// This is for the main Explorer page: If the user isn't currently viewing the training
 			// tab then don't do a status update. It won't be missed.
@@ -451,116 +453,111 @@ RULES AND CONVENTIONS
             if (panel && !panel.classList.contains("active"))
                 return;
 
-            submitRequest('train', 'status', null, null, 
-				function (data) {
-					if (data.success) {
+            let data = await submitRequest('train', 'status', null, null);
+            if (!data || !data.success) {
+                _MID_trainingAction.value  = "Unknown"
+                _MID_trainingState.value   = "Unknown";
+                return 
+		    }
 					
-                        /*
-                        let summary = `State: ${data.state}<br>`
-                                    + `Action: ${data.action}<br>`
-                                    + `Message: ${data.message}<br>`
-                                    + `Progress: ${data.progress}<br>`
-                                    + `Busy: ${data.is_busy}<br><br>`
-                                    + getProcessingMetadataHtml(data);
-                        setResultsHtml(summary);
-                        */
+            /*
+            let summary = `State: ${data.state}<br>`
+                        + `Action: ${data.action}<br>`
+                        + `Message: ${data.message}<br>`
+                        + `Progress: ${data.progress}<br>`
+                        + `Busy: ${data.is_busy}<br><br>`
+                        + getProcessingMetadataHtml(data);
+            setResultsHtml(summary);
+            */
 
-						// TODO: Would be nice (but not necessary) to have the training module 
-                        // calculate these values for us so we don't have to keep up with enums and
-                        // states
-						let actionActive           = data.state == "Running"; // || data.state == "Initializing" || data.state == "Cancelling";
-						let creatingDataset        = actionActive && data.action == "CreateDataset";
-						let doingTraining          = actionActive && (data.action == "TrainModel" ||
-						                                              data.action == "ResumeTrainModel");
+            // TODO: Would be nice (but not necessary) to have the training module 
+            // calculate these values for us so we don't have to keep up with enums and
+            // states
+            let actionActive    = data.state == "Running"; // || data.state == "Initializing" || data.state == "Cancelling";
+            let creatingDataset = actionActive && data.action == "CreateDataset";
+            let doingTraining   = actionActive && (data.action == "TrainModel" ||
+                                                   data.action == "ResumeTrainModel");
 
-						_MID_trainingModelName.value    = data.model_name;
-                        _MID_trainingDatasetName.value  = data.dataset_name
-						_MID_trainingAction.value       = data.action;
-						_MID_trainingState.value        = data.state;
-						_MID_statusMessage.value        = data.message;
+            _MID_trainingModelName.value    = data.model_name;
+            _MID_trainingDatasetName.value  = data.dataset_name
+            _MID_trainingAction.value       = data.action;
+            _MID_trainingState.value        = data.state;
+            _MID_statusMessage.value        = data.message;
 
-						_MID_trainingState.classList.remove("text-success", "bg-success", "fw-bold", "text-warning", "bg-danger");
-						_MID_trainingCancelBtn.setAttribute('disabled', true);
-						_MID_trainingCancelBtn.setAttribute('hidden', true);
+            _MID_trainingState.classList.remove("text-success", "bg-success", "fw-bold", "text-warning", "bg-danger");
+            _MID_trainingCancelBtn.setAttribute('disabled', true);
+            _MID_trainingCancelBtn.setAttribute('hidden', true);
 
-						if (data.state == "Initializing" || data.state == "Running") {
-							_MID_trainingState.classList.add("text-success", "fw-bold");
-							_MID_trainingCancelBtn.removeAttribute('disabled')
-							_MID_trainingCancelBtn.removeAttribute('hidden')
-							_MID_trainingCancelBtn.value = doingTraining ? "Pause" : "Cancel";
-						}
-						else if (data.state == "Completed")
-							_MID_trainingState.classList.add("bg-success");
-						else if (data.state == "Cancelling" || data.state == "Cancelled")
-							_MID_trainingState.classList.add("text-warning", "fw-bold");
-						else if (data.state == "Failed")
-							_MID_trainingState.classList.add("bg-danger");
+            if (data.state == "Initializing" || data.state == "Running") {
+                _MID_trainingState.classList.add("text-success", "fw-bold");
+                _MID_trainingCancelBtn.removeAttribute('disabled')
+                _MID_trainingCancelBtn.removeAttribute('hidden')
+                _MID_trainingCancelBtn.value = doingTraining ? "Pause" : "Cancel";
+            }
+            else if (data.state == "Completed")
+                _MID_trainingState.classList.add("bg-success");
+            else if (data.state == "Cancelling" || data.state == "Cancelled")
+                _MID_trainingState.classList.add("text-warning", "fw-bold");
+            else if (data.state == "Failed")
+                _MID_trainingState.classList.add("bg-danger");
 
-						let progressStr = (data.progress||0).toFixed(0);
+            let progressStr = (data.progress||0).toFixed(0);
 
-						// Default state for progress bars is hidden
-						_MID_datasetProgress.parentElement.classList.add("bg-transparent");
-						_MID_datasetProgress.innerHTML = "";
-						_MID_trainingProgress.parentElement.classList.add("bg-transparent");
-						_MID_trainingProgress.innerHTML = "";
+            // Default state for progress bars is hidden
+            _MID_datasetProgress.parentElement.classList.add("bg-transparent");
+            _MID_datasetProgress.innerHTML = "";
+            _MID_trainingProgress.parentElement.classList.add("bg-transparent");
+            _MID_trainingProgress.innerHTML = "";
 
-						if (creatingDataset) {
-							_MID_datasetProgress.innerHTML = progressStr + "%";
-							_MID_datasetProgress.parentElement.classList.remove("bg-transparent");
-							//	onTrainingDatasetInfo(data.dataset_name);
+            if (creatingDataset) {
+                _MID_datasetProgress.innerHTML = progressStr + "%";
+                _MID_datasetProgress.parentElement.classList.remove("bg-transparent");
+                //	onTrainingDatasetInfo(data.dataset_name);
 
-							if (data.progress < 1)
-								_MID_datasetProgress.classList.add("progress-bar-striped", "progress-bar-animated");
-							else
-								_MID_datasetProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
-							_MID_datasetProgress.ariaValueNow = progressStr;
-						}
-						else {
-							_MID_datasetProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
-							// Previously we wanted the dataset creation progress bar to sit at 100%
-							// while the training (that presumably used the created dataset) continued.
-							// This isn't actually realistic :(
-							// datasetProgress.ariaValueNow = data.dataset_created ? "100" : "0";
-							_MID_datasetProgress.ariaValueNow = "0";
-						}
+                if (data.progress < 1)
+                    _MID_datasetProgress.classList.add("progress-bar-striped", "progress-bar-animated");
+                else
+                    _MID_datasetProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+                _MID_datasetProgress.ariaValueNow = progressStr;
+            }
+            else {
+                _MID_datasetProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+                // Previously we wanted the dataset creation progress bar to sit at 100%
+                // while the training (that presumably used the created dataset) continued.
+                // This isn't actually realistic :(
+                // datasetProgress.ariaValueNow = data.dataset_created ? "100" : "0";
+                _MID_datasetProgress.ariaValueNow = "0";
+            }
 
-						if (doingTraining) {
-							_MID_trainingProgress.innerHTML  = progressStr + "%";
-							_MID_trainingProgress.parentElement.classList.remove("bg-transparent");
-							_MID_onTrainingModelInfo(data.model_name);
+            if (doingTraining) {
+                _MID_trainingProgress.innerHTML  = progressStr + "%";
+                _MID_trainingProgress.parentElement.classList.remove("bg-transparent");
+                _MID_onTrainingModelInfo(data.model_name);
 
-							if (data.progress < 1)
-								_MID_trainingProgress.classList.add("progress-bar-striped", "progress-bar-animated");
-							else
-								_MID_trainingProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
-							_MID_trainingProgress.ariaValueNow = progressStr;
-						}
-						else {
-							_MID_trainingProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
-							_MID_trainingProgress.ariaValueNow = "0";
-						}
+                if (data.progress < 1)
+                    _MID_trainingProgress.classList.add("progress-bar-striped", "progress-bar-animated");
+                else
+                    _MID_trainingProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+                _MID_trainingProgress.ariaValueNow = progressStr;
+            }
+            else {
+                _MID_trainingProgress.classList.remove("progress-bar-striped", "progress-bar-animated");
+                _MID_trainingProgress.ariaValueNow = "0";
+            }
 
-						// We never know when each status call is done, and between calls the training
-						// may have ended. If this is the case, we need to ensure we've done one last
-						// info update to get the final results.
-						if (!trainingResultsShown && !doingTraining) {
-							trainingResultsShown = true;
-							_MID_onTrainingModelInfo(data.model_name);
-						}
+            // We never know when each status call is done, and between calls the training
+            // may have ended. If this is the case, we need to ensure we've done one last
+            // info update to get the final results.
+            if (!_MID_trainingResultsShown && !doingTraining) {
+                _MID_trainingResultsShown = true;
+                _MID_onTrainingModelInfo(data.model_name);
+            }
 
-						_MID_datasetProgress.style.width  = _MID_datasetProgress.ariaValueNow + "%";
-						_MID_trainingProgress.style.width = _MID_trainingProgress.ariaValueNow + "%";
-					}
-					else {
-						_MID_trainingAction.value  = "Unknown"
-						_MID_trainingState.value   = "Unknown";
-					}
-				},
-				function (data) {
-				});
-		}
+            _MID_datasetProgress.style.width  = _MID_datasetProgress.ariaValueNow + "%";
+            _MID_trainingProgress.style.width = _MID_trainingProgress.ariaValueNow + "%";
+        }
 
-		function _MID_onDatasetCreate(dataset_name, classes, num_images)
+		async function _MID_onDatasetCreate(dataset_name, classes, num_images)
 		{
             params = [
                 ["dataset_name", dataset_name],
@@ -569,24 +566,20 @@ RULES AND CONVENTIONS
             ];
             setResultsHtml("Starting dataset creation");
 
-            submitRequest('train', 'create_dataset', null, params,
-                function (data) {
-                    if (data.success)
-						setResultsHtml(`Create the Dataset '${dataset_name}'`);
-                    else
-                        setResultsHtml(`Create Dataset failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
-                },
-                function (data) {
-                    if (data)
-                        setResultsHtml(`Create Dataset failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
-                    else
-                        setResultsHtml("Create Dataset failed to start");
-				}
-			);
+            let data = await submitRequest('train', 'create_dataset', null, params);
+            if (data) {
+                if (data.success)
+                    setResultsHtml(`Creating the Dataset '${dataset_name}'`);
+                else
+                    setResultsHtml("Create Dataset failed to start: " + data.error);
+            }
+            else {
+                setResultsHtml("Create Dataset failed to start");
+    		}
 		}
 
-		function _MID_onTrainingStart(model_name, dataset_name, model_size, num_epochs, batch, device, 
-								      freeze, hyp, patience, workers) {
+		async function _MID_onTrainingStart(model_name, dataset_name, model_size, num_epochs, batch,
+                                            device, freeze, hyp, patience, workers) {
 
 			params = [
                 [ "model_name",   model_name   ],
@@ -603,72 +596,61 @@ RULES AND CONVENTIONS
 
 			setResultsHtml("Starting model training");
 
-            submitRequest('train', 'train_model', null, params, 
-				function (data) {
-					if (data.success) {
-						setResultsHtml("Training started for model " + model_name);
-						trainingResultsShown = false;
-					}
-					else
-						setResultsHtml(`Training failed to start. ${data.error? "(" + data.error + ")" : ''}`);
-				},
-				function (data) {
-					if (data)
-	                    setResultsHtml(`Training failed to start. ${data.error? "(" + data.error + ")" : ''}`);
-					else
-						setResultsHtml("Training failed to start");
-                });
+            let data = await submitRequest('train', 'train_model', null, params);
+            if (data) {
+                if (data.success) {
+                    setResultsHtml("Training started for model " + model_name);
+                    _MID_trainingResultsShown = false;
+                }
+                else
+                    setResultsHtml("Training failed to start: " + data.error);
+            }
+            else {
+			    setResultsHtml("Training failed to start");
+            };
 		}
 
-		function _MID_onTrainingResumeTraining(model_name) {
+		async function _MID_onTrainingResumeTraining(model_name) {
 
             params = [
                 ["model_name", model_name]
             ];
             setResultsHtml("Resume Training model {model_name}");
 
-            submitRequest('train', 'resume_training', null, params,
-                function (data) {
-                    if (data.success) {
-                        // NOTE: if TrainingYOLO has train_in_separate_task = False then the data
-                        // object will contain all the info of the newly created model
+            let data = await submitRequest('train', 'resume_training', null, params);
+            if (data) {
+                if (data.success) {
+                    // NOTE: if TrainingYOLO has train_in_separate_task = False then the data
+                    // object will contain all the info of the newly created model
 
-                        setResultsHtml("Resuming training for model " + model_name);
-                        trainingResultsShown = false;
-                    }
-                    else
-                        setResultsHtml(`Resume Training failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
-                },
-                function (data) {
-                    if (data)
-                        setResultsHtml(`Resume Training  failed to start. ${data.error ? "(" + data.error + ")" : ''}`);
-                    else
-                        setResultsHtml("Resume Training  failed to start");
+                    setResultsHtml("Resuming training for model " + model_name);
+                    _MID_trainingResultsShown = false;
                 }
-            );
+                else
+                    setResultsHtml("Resume Training failed to start: " + data.error);
+            }
+            else {
+                setResultsHtml("Resume Training  failed to start");
+            }
 		}
 
-		function _MID_onTrainingCancel() {
+		async function _MID_onTrainingCancel() {
 
             clearImagePreview();
 
-			submitRequest('train', 'cancel', null, null, 
-				function (data) {
-
-					if (data.success)
-						setResultsHtml("Training cancel requested");
-					else
-						setResultsHtml(`Training was already cancelled.`);
-				},
-				function (data) {
-					if (data)
-	                    setResultsHtml(`Training failed to cancel. ${data.error? "(" + data.error + ")" : ''}`);
-					else
-						setResultsHtml("Training failed to cancel");
-                });
+			let data = await submitRequest('train', 'cancel', null, null);
+            if (data) {
+                if (data.success)
+                    setResultsHtml("Training cancel requested");
+                else
+                    setResultsHtml(`Training was already cancelled.`);
+            }
+            else {
+				setResultsHtml("Training failed to cancel: " + data.error);
+            };
 		}
 
-		function _MID_onTrainingModelInfo(model_name) {
+		async function _MID_onTrainingModelInfo(model_name) {
 
 			if (!model_name) {
                 setResultsHtml("Get Model Info Failed: Model Name is required.")
@@ -676,48 +658,45 @@ RULES AND CONVENTIONS
 			}
 
 			params = [["model_name", model_name]]
-            submitRequest('train', 'model_info', null, params, 
-				function (data) {
-					if (data.success) {
-						let model_created = data.model_created
-						let resultHtml    = "Get Training Model Info:"
-									      + "<br/><b>Model Name:</b> " + model_name + " (" + data.model_size + "Mb)"
-									      + "<br/><b>Training State:</b> " + (model_created ? "Complete" : "Not Complete") // Need to detect "failed"
-									      + "<br/><br/><b>Model Path:</b><br/> " + (data.model_path || "Not yet available")
-									      + "<br/><br/><b>Results Graph Path:</b><br/>  " + (data.results_graph_path || "Not yet available")
-									      + "<br/><br/><b>Results CSV:</b><br/> " + (data.results_csv_path || "Not yet available")
-									      + "<br/><br/><b>PR Curve Graph Path:</b><br/> " + (data.pr_curve_path || "Not yet available")
-									      + getProcessingMetadataHtml(data);
-						setResultsHtml(resultHtml);
+            let data = await submitRequest('train', 'model_info', null, params);
+            if (data) {
+                if (data.success) {
+                    let model_created = data.model_created
+                    let resultHtml    = "Get Training Model Info:"
+                                        + "<br/><b>Model Name:</b> " + model_name + " (" + data.model_size + "Mb)"
+                                        + "<br/><b>Training State:</b> " + (model_created ? "Complete" : "Not Complete") // Need to detect "failed"
+                                        + "<br/><br/><b>Model Path:</b><br/> " + (data.model_path || "Not yet available")
+                                        + "<br/><br/><b>Results Graph Path:</b><br/>  " + (data.results_graph_path || "Not yet available")
+                                        + "<br/><br/><b>Results CSV:</b><br/> " + (data.results_csv_path || "Not yet available")
+                                        + "<br/><br/><b>PR Curve Graph Path:</b><br/> " + (data.pr_curve_path || "Not yet available")
+                                        + getProcessingMetadataHtml(data);
+                    setResultsHtml(resultHtml);
 
-						if (data.results_graph_image) {
-							data["imageBase64"] = data.results_graph_image;
-							showResultsImageData(data);
-						}
-						else {
-							img.src = "";
-							img.style.visibility = "hidden";
-						}
+                    if (data.results_graph_image) {
+                        data["imageBase64"] = data.results_graph_image;
+                        showResultsImageData(data);
+                    }
+                    else {
+                        img.src = "";
+                        img.style.visibility = "hidden";
+                    }
 
-						if (data.pr_curve_image) {
-							_MID_imgTrainingResult.src = "data:image/png;base64," + data.pr_curve_image;
-							// results_img.src = "file://" + data.pr_curve_path;
-							_MID_imgTrainingResult.style.visibility = "visible";
-						}
-						else {
-							_MID_imgTrainingResult.src = "";
-							_MID_imgTrainingResult.style.visibility = "hidden";
-						}
-					}
-					else
-                        setResultsHtml("Training: Unable to get Model info");
-				},
-                function (data) {
-                    if (data)
-                        setResultsHtml("Training: Unable to get Model info:" + data.error);
-                    else
-                        setResultsHtml("Training: Unable to get Model info");
-                });
+                    if (data.pr_curve_image) {
+                        _MID_imgTrainingResult.src = "data:image/png;base64," + data.pr_curve_image;
+                        // results_img.src = "file://" + data.pr_curve_path;
+                        _MID_imgTrainingResult.style.visibility = "visible";
+                    }
+                    else {
+                        _MID_imgTrainingResult.src = "";
+                        _MID_imgTrainingResult.style.visibility = "hidden";
+                    }
+                }
+                else
+                    setResultsHtml("Training: Unable to get Model info: " + data.error);
+            }
+            else {
+                setResultsHtml("Training: Unable to get Model info");
+            };
 		}
 
 		// Auto-populate the dataset name if nothing there
@@ -726,7 +705,7 @@ RULES AND CONVENTIONS
 				_MID_trainingInputModelDatasetName.value = _MID_trainingInputDatasetName.value;
 		}
 
-		function _MID_onTrainingDatasetInfo(dataset_name) {
+		async function _MID_onTrainingDatasetInfo(dataset_name) {
 
 			if (!dataset_name) {
                 setResultsHtml("Get Dataset Info Failed: Dataset name is required.")
@@ -734,28 +713,29 @@ RULES AND CONVENTIONS
 			}
 
 			params = [["dataset_name", dataset_name]]
-            submitRequest('train', 'dataset_info', null, params, 
-				function (data) {
-					if (data.success) {
-						let resultHtml = "Dataset Info:"
-									   + "<br/><b>Dataset Name:</b> " + dataset_name + " (" + data.dataset_size + "Mb)"
-                                       + "<br/><b>Creation State:</b> " + (data.dataset_created ? "Complete" : "Not Complete") // Need to detect "failed"
-									   + "<br/><br/><b>Dataset Path:</b><br/> " + (data.dataset_path || "Not yet available")
-									   + getProcessingMetadataHtml(data);
-						setResultsHtml(resultHtml);
-					}
-					else
-                        setResultsHtml("Training: Unable to get dataset info");
-				},
-                function (data) {
-                    if (data)
-                        setResultsHtml("Training: Unable to get dataset info:" + data.error);
-                    else
-                        setResultsHtml("Training: Unable to get dataset info");
-                });
+            let data = await submitRequest('train', 'dataset_info', null, params);
+            if (data) {
+                if (data.success) {
+                    let resultHtml = "Dataset Info:"
+                                    + "<br/><b>Dataset Name:</b> " + dataset_name + " (" + data.dataset_size + "Mb)"
+                                    + "<br/><b>Creation State:</b> " + (data.dataset_created ? "Complete" : "Not Complete") // Need to detect "failed"
+                                    + "<br/><br/><b>Dataset Path:</b><br/> " + (data.dataset_path || "Not yet available")
+                                    + getProcessingMetadataHtml(data);
+                    setResultsHtml(resultHtml);
+                }
+                else
+                    setResultsHtml("Training: Unable to get dataset info: " + data.error);
+			}
+            else {
+                setResultsHtml("Training: Unable to get dataset info");
+            };
 		}
 
-        setInterval(_MID_onTrainingStatus, 5000);
+
+        // =====================================================================
+        // Startup
+
+        setInterval(_MID_onTrainingStatus, updateStatusFreqSec * 1000);
 
 // END EXPLORER SCRIPT
     </script>

@@ -26,7 +26,7 @@ namespace CodeProject.AI.Server.Modules
         private const string                      _installLogFileName              = "install.log";
 
         private static List<ModuleDescription>?   _lastValidDownloadableModuleList = null;
-        private readonly static Semaphore         _moduleListSemaphore             = new Semaphore(initialCount: 1, maximumCount: 1);
+        private readonly static Semaphore         _moduleListSemaphore             = new (initialCount: 1, maximumCount: 1);
         private static DateTime                   _lastDownloadableModuleCheckTime = DateTime.MinValue;
         private static bool                       _needsInitialModuleInstalls      = false;
 
@@ -197,19 +197,8 @@ namespace CodeProject.AI.Server.Modules
                 ModuleId       = module.ModuleId,
                 Name           = module.Name,
                 Version        = module.Version,
-                Platforms      = module.Platforms,
-                Category       = module.Category,
-
-                Description    = module.Description,                
-                License        = module.License,
-                LicenseUrl     = module.LicenseUrl,
-                Author         = module.Author,
-                Homepage       = module.Homepage,
-                BasedOn        = module.BasedOn,
-                BasedOnUrl     = module.BasedOnUrl,
-
-                PreInstalled   = module.PreInstalled,
-                ModuleReleases = module.ModuleReleases
+                PublishingInfo = module.PublishingInfo,
+                InstallOptions = module.InstallOptions
             };
 
             // Set initial properties. Most importantly it sets the status. 
@@ -262,8 +251,8 @@ namespace CodeProject.AI.Server.Modules
                     var options = new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true,
-                        ReadCommentHandling = JsonCommentHandling.Skip,
-                        AllowTrailingCommas = true
+                        ReadCommentHandling         = JsonCommentHandling.Skip,
+                        AllowTrailingCommas         = true
                     };
                     moduleList = JsonSerializer.Deserialize<List<ModuleDescription>>(downloads, options);
 
@@ -273,7 +262,7 @@ namespace CodeProject.AI.Server.Modules
                         // HACK: for debug
                         if (_moduleOptions.ModuleListUrl.StartsWithIgnoreCase("file://"))
                         {
-                            int baseUrlLength = _moduleOptions.ModuleListUrl!.Length - "modules.json".Length;
+                            int baseUrlLength = _moduleOptions.ModuleListUrl!.Length - Constants.ModulesListingFilename.Length;
                             string baseDownloadUrl = _moduleOptions.ModuleListUrl![..baseUrlLength].TrimEnd('\\', '/');
                             if (baseDownloadUrl == "file://")
                                 baseDownloadUrl = _moduleSettings.DownloadedModulePackagesDirPath;
@@ -363,10 +352,16 @@ namespace CodeProject.AI.Server.Modules
                         _lastValidDownloadableModuleList = moduleList;
                 }
             }
-            catch (Exception /*e*/)
+#if DEBUG
+            catch (Exception e)
             {
-                // _logger.LogError($"Error checking for available modules: " + e.Message);
+                _logger.LogError($"Error checking for available modules: " + e.Message);
             }
+#else
+            catch (Exception)
+            {
+            }
+#endif
             finally
             {
                 _moduleListSemaphore.Release();
@@ -410,7 +405,7 @@ namespace CodeProject.AI.Server.Modules
             ModuleConfig? module = _installedModules.GetModule(moduleId);
 
             // Sanity check
-            if (module is not null && module.PreInstalled)
+            if (module is not null && module.InstallOptions?.PreInstalled == true)
                 return (false, $"Module description for '{moduleId}' is invalid. A 'pre-installed' module can't be downloaded");
 
             if (module is not null && module.Valid && moduleDownload.Status == ModuleStatusType.Installed)
@@ -543,7 +538,8 @@ namespace CodeProject.AI.Server.Modules
             string? moduleIdFromSettingsFile = null;
             try
             {
-                string content = await File.ReadAllTextAsync(Path.Combine(moduleDirName, "modulesettings.json"))
+                string content = await File.ReadAllTextAsync(Path.Combine(moduleDirName,
+                                                                          Constants.ModuleSettingsFilename))
                                            .ConfigureAwait(false);
 
                 var documentOptions = new JsonDocumentOptions
@@ -871,6 +867,7 @@ namespace CodeProject.AI.Server.Modules
 
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss: ");
                 log.WriteLine(timestamp + Text.StripXTermColors(message));
+                log.Flush();
 
                 string? moduleId = GetModuleIdFromEventSender(sender);
                 if (moduleId is not null)
@@ -890,6 +887,7 @@ namespace CodeProject.AI.Server.Modules
                 
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss: ");
                 log.WriteLine(timestamp + Text.StripXTermColors(message));
+                log.Flush();
 
                 string? moduleId = GetModuleIdFromEventSender(sender);
                 if (moduleId is not null)
@@ -955,10 +953,8 @@ namespace CodeProject.AI.Server.Modules
             configuration.Bind($"Modules:{moduleId}", moduleConfig);
 
             // Complete the ModuleConfig's setup
-            moduleConfig.Initialise(moduleId, _moduleSettings.ModulesDirPath,
-                                    _moduleSettings.PreInstalledModulesDirPath);
-
-            if (moduleConfig.Valid)
+            if (moduleConfig.Initialise(moduleId, _moduleSettings.ModulesDirPath,
+                                        _moduleSettings.PreInstalledModulesDirPath))
             {
                 // If we're updating a module then we'll have the old info on this module in our
                 // list of installed modules. Remove the old one so we can replace with the updated
@@ -971,9 +967,9 @@ namespace CodeProject.AI.Server.Modules
                 string? installSummary = await GetInstallationSummary(moduleId);
                 _moduleProcessService.AddProcess(moduleConfig, true, installSummary, true);
 
-                if (!(moduleConfig.AutoStart ?? false))
+                if (!(moduleConfig.LaunchSettings!.AutoStart ?? false))
                     _logger.LogInformation($"Module {moduleId} not configured to AutoStart.");
-                else if (await _moduleProcessService.StartProcess(moduleConfig).ConfigureAwait(false))
+                else if (await _moduleProcessService.StartProcess(moduleConfig, installSummary).ConfigureAwait(false))
                     _logger.LogInformation($"Module {moduleId} started successfully.");
                 else
                     _logger.LogError($"Unable to start newly installed Module {moduleId}.");

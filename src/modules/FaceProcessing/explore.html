@@ -69,6 +69,7 @@ RULES AND CONVENTIONS
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -161,7 +162,7 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-		function _MID_onDetectFaces(fileChooser) {
+		async function _MID_onDetectFaces(fileChooser) {
 
 			clearImagePreview();
 
@@ -174,14 +175,15 @@ RULES AND CONVENTIONS
 			let images = [fileChooser.files[0]];
 
 			setResultsHtml("Detecting faces...");
-			submitRequest('vision', 'face', images, null, function (data) {
+			let data = await submitRequest('vision', 'face', images, null);
+            if (data) {
 				showResultsBoundingBoxes(data.predictions);
 				showPredictionSummary(data)
-			});
+			};
 		}
 
 
-		function _MID_onCompareFaces(face1Ctrl, face2Ctrl) {
+		async function _MID_onCompareFaces(face1Ctrl, face2Ctrl) {
 
 			clearImagePreview();
 
@@ -194,12 +196,13 @@ RULES AND CONVENTIONS
 			let images = [face1Ctrl.files[0], face2Ctrl.files[0]];
 
 			setResultsHtml("Comparing faces...");
-			submitRequest('vision', 'face/match', images, null, function (data) {
+			let data = await submitRequest('vision', 'face/match', images, null);
+            if (data) {
 				_MID_displayMatchResults(data);
-			});
+			};
 		}
 
-		function _MID_onRegisterFaces(userId, faceCtrl) {
+		async function _MID_onRegisterFaces(userId, faceCtrl) {
 
 			clearImagePreview();
 
@@ -220,35 +223,36 @@ RULES AND CONVENTIONS
 				images.push(faceCtrl.files[i]);
 
 			setResultsHtml("Registering face...");
-			submitRequest('vision', 'face/register', images, [["userid", userId]], function (data) {
-				if (data)
-					displayBaseResults(data);
-				else
-					setResultsHtml("Unable to register faces");
-			});
+			let data = await submitRequest('vision', 'face/register', images, [["userid", userId]]);
+            if (data)
+				displayBaseResults(data);
+			else
+				setResultsHtml("Unable to register faces");
 		}
 
-		function _MID_onListRegisteredFaces() {
+		async function _MID_onListRegisteredFaces() {
 
 			clearImagePreview();
 
 			setResultsHtml("Listing faces...");
-			submitRequest('vision', 'face/list', null, null, function (data) {
+			let data = await submitRequest('vision', 'face/list', null, null);
+            if (data) {
 				_MID_displayRegisteredFaces(data)
-			});
+			};
 		}
 
-		function _MID_onDeleteFace(userId) {
+		async function _MID_onDeleteFace(userId) {
 
 			clearImagePreview();
 
 			setResultsHtml("Deleting face info...");
-			submitRequest('vision', 'face/delete', null, [["userid", userId]], function (data) {
+			let data = await submitRequest('vision', 'face/delete', null, [["userid", userId]]);
+            if (data) {
 				setResultsHtml("Face deleted");
-			});
+			};
 		}
 
-		function _MID_onRecogniseFace(fileChooser, minimumConfidence) {
+		async function _MID_onRecogniseFace(fileChooser, minimumConfidence) {
 
 			clearImagePreview();
 
@@ -266,10 +270,11 @@ RULES AND CONVENTIONS
 				params = [["min_confidence", minConfidence]]
 
 			setResultsHtml("Recognizing face...");
-			submitRequest('vision', 'face/recognize', images, params, function (data) {
+			let data = await submitRequest('vision', 'face/recognize', images, params);
+            if (data) {
 				showResultsBoundingBoxes(data.predictions);
 				_MID_displayRecognitionResults(data)
-			});
+			};
 		}
 
 		function _MID_displayRecognitionResults(data) {

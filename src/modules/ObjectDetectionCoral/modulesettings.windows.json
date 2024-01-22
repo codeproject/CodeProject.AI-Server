@@ -2,7 +2,9 @@
   "Modules": {
 
     "ObjectDetectionCoral": {
-      "Runtime": "python3.9"
+      "LaunchSettings": {
+        "Runtime": "python3.9"
+      }
     }
   }
 }

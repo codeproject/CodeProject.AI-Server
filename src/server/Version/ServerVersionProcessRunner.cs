@@ -58,7 +58,7 @@ namespace CodeProject.AI.Server
                     int compare = VersionInfo.Compare(_versionService.VersionConfig.VersionInfo, latest);
                     if (compare < 0)
                     {
-                        if (latest.SecurityUpdate ?? false)
+                        if (latest.SecurityUpdate)
                             _logger.LogInformation($"*** A SECURITY UPDATE {latest.Version} is available");
                         else
                             _logger.LogInformation($"*** A new version {latest.Version} is available");

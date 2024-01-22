@@ -2,10 +2,14 @@
   "Modules": {
 
     "SuperResolution": {
-      "AutoStart": false,
-      "Runtime": "python3.8",
+      "LaunchSettings": {
+        "AutoStart": false,
+        "Runtime": "python3.8"
+      },
 
-      "EnableGPU": true
+      "GpuOptions" : {
+        "EnableGPU": true
+      }
     }
   }
 }

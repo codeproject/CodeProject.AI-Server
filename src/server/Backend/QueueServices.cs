@@ -163,8 +163,15 @@ namespace CodeProject.AI.Server.Backend
             if (!_pendingResponses.TryGetValue(req_id, out TaskCompletionSource<string?>? completion))
                 return false;
 
-            completion.SetResult(responseString);
-            
+            try
+            {
+                completion.SetResult(responseString);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error setting completion result: " + e.Message);
+            }
+
             var response = JsonSerializer.Deserialize<JsonObject>(responseString ?? "");
             string command = response?["command"]?.ToString() ?? "(unknown)";
             if (!_doNotLogCommands.Contains(command))
@@ -233,8 +240,12 @@ namespace CodeProject.AI.Server.Backend
                     if (request != null && !_doNotLogCommands.Contains(request.reqtype))
                         _logger.LogTrace($"Request '{request.reqtype}' dequeued from '{queueName}' (#reqid {request.reqid})");
                 }
-                catch
+                catch (OperationCanceledException)
                 {
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine("Error DequeueRequestAsync: " + e.Message);
                     return null;
                 }
             }

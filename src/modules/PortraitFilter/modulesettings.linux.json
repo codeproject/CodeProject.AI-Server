@@ -2,8 +2,10 @@
   "Modules": {
 
     "PortraitFilter": {
-      "AutoStart": false,
-      "FilePath": "PortraitFilter.dll"
+      "LaunchSettings": {
+        "AutoStart": false,
+        "FilePath": "PortraitFilter.dll"
+      }
     }
   }
 }

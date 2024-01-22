@@ -51,9 +51,7 @@ namespace CodeProject.AI.SDK.Utils
                 }
                 catch (Exception ex)
                 {
-                    string error = $"Error loading {settingsFile}: {ex.Message}";
-                    Console.WriteLine("Error: " + error);
-
+                    Console.WriteLine($"Error loading {settingsFile}: {ex.Message}");
                     return false;
                 }
             }

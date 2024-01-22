@@ -34,6 +34,11 @@ class ALPR_adapter(ModuleRunner):
         
         init_detect_platenumber(self.opts)
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+
 
     def process(self, data: RequestData) -> JSON:
 
@@ -44,9 +49,10 @@ class ALPR_adapter(ModuleRunner):
         result = detect_platenumber(self, self.opts, image)
         # result = detect_platenumber(self, self.opts, image)
 
-
         if "error" in result and result["error"]:
-            return { "success": False, "error": result["error"] }
+            response = { "success": False, "error": result["error"] }
+            self._update_statistics(response)
+            return response 
 
         predictions = result["predictions"]
         if len(predictions) > 3:
@@ -56,7 +62,7 @@ class ALPR_adapter(ModuleRunner):
         else:
             message = "No plates found"
 
-        return {
+        response = {
             "success": True, 
             "predictions": predictions, 
             "message": message,
@@ -64,8 +70,38 @@ class ALPR_adapter(ModuleRunner):
             "inferenceMs" : result["inferenceMs"]
         }
 
+        self._update_statistics(response)
+        return response 
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+        }
+
+
     def cleanup(self) -> None:
         pass
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "predictions" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+                predictions = response["predictions"]
+                self.num_items_found += len(predictions) 
+        else:
+            self.failed_inferences += 1
+
+
 
 if __name__ == "__main__":
     ALPR_adapter().start_loop()

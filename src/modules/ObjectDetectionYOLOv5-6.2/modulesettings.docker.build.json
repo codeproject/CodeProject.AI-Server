@@ -14,11 +14,13 @@
          packages can be installed and persisted.
       */
       
-      // This NEEDS to be 'shared' for docker pre-installed
-      "RuntimeLocation": "Shared", // Can be Local or Shared
-
-      "AutoStart": true,
-      "PreInstalled": "true"
-   }
- }
+      "LaunchSettings": {
+        // This NEEDS to be 'shared' for docker pre-installed
+        "RuntimeLocation": "Shared", // Can be Local or Shared
+      },
+      "InstallOptions" :{
+        "PreInstalled": "true"
+      }
+    }
+  }
 }

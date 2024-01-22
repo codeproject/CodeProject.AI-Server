@@ -45,9 +45,8 @@ if [ "$module_install_errors" = "" ] && [ "$systemName" = "Jetson" ]; then
     else
         distribution=$(. /etc/os-release;echo $VERSION_ID)
         if [ "$pythonVersion" == "3.6" ] || [ "$pythonVersion" == "3.7" ] || [ "$distribution" == "18.04" ]; then
-                torch_version="1.10"
-                torchvision_version="0.11"
-            fi
+            torch_version="1.10"
+            torchvision_version="0.11"
         else
             torch_version="1.13"
             torchvision_version="0.14"

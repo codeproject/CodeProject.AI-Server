@@ -2,7 +2,9 @@
   "Modules": {
 
     "ALPR": {
-      "InstallGPU": false   // PaddlePaddle-GPU isn't supported on macOS
+      "GpuOptions" : {
+        "InstallGPU": false   // PaddlePaddle-GPU isn't supported on macOS
+      }
     }
   }
 }

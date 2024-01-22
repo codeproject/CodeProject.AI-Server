@@ -69,6 +69,7 @@ RULES AND CONVENTIONS
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -126,7 +127,7 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-		function _MID_onDetectThings(fileChooser) {
+		async function _MID_onDetectThings(fileChooser) {
 
 			clearImagePreview();
 
@@ -139,13 +140,14 @@ RULES AND CONVENTIONS
 			let images = [fileChooser.files[0]];
 
 			setResultsHtml("Detecting objects...");
-			submitRequest('vision', 'detection', images, null, function (data) {
+			let data = await submitRequest('vision', 'detection', images, null);
+            if (data) {
 				showResultsBoundingBoxes(data.predictions);
 				showPredictionSummary(data)
-			});
+			};
 		}
 
-		function _MID_onCustomDetect(model_name, fileChooser) {
+		async function _MID_onCustomDetect(model_name, fileChooser) {
 
 			clearImagePreview();
 
@@ -158,46 +160,44 @@ RULES AND CONVENTIONS
 			let images = [fileChooser.files[0]];
 
 			setResultsHtml("Detecting objects using custom model...");
-			submitRequest('vision', 'custom/' + model_name, images, null, function (data) {
+			let data = await submitRequest('vision', 'custom/' + model_name, images, null);
+            if (data) {
 				showResultsBoundingBoxes(data.predictions);
 				showPredictionSummary(data)
-			});
+			};
 		}
 
-		function _MID_setCustomModelList(selectList, add_extras) {
+		async function _MID_getCustomModelList() {
 
-			submitRequest('vision', 'custom/list', null, null, function (data) {
+			let data = await submitRequest('vision', 'custom/list', null, null);
+            if (data?.models) {
+                let options = [];
+                for (let i = 0; i < data.models.length; i++)
+                    options.push({ name: data.models[i], value: data.models[i]});
 
-				while (selectList.options.length)
-					selectList.remove(0);
-
-				if (add_extras) {
-					selectList.options.add(new Option("Standard model", ""));
-					selectList.options.add(new Option("No inference: round-trip speed test only", "round-trip"));
-				}
-
-				for (let i = 0; i < data.models.length; i++) {
-
-					let title;
-					switch (data.models[i].toLowerCase()) {
-						// case 'ipcam-general': title = 'General IP Cam'; break;
-						case 'license-plate': title = 'License Plates v2'; break;
-						case 'openlogo': title = 'Open Logo'; break;
-						case 'actionnetv2': title = '(Human) ActionNet v2'; break;
-						default: title = data.models[i];
-					}
-
-					let model = new Option(title, data.models[i]);
-					selectList.options.add(model);
-				}
-			});
+                return options;
+            }
+            return null;
 		}
+
+        async function _MID_setCustomModelList() {
+
+            let customModelList = await _MID_getCustomModelList();
+            if (!customModelList) customModelList = [];
+            setModelList("_MID_customModel", customModelList);
+        }        
+
+
+        // =====================================================================
+        // Startup
 
         // Regularly update the custom list dropdown
-        setTimeout(() => _MID_setCustomModelList(_MID_customModel), 5000);
-
-        // Offer the main explorer's benchmark pane a custom model dropdown update
-        BenchmarkCustomListUpdater = (dropdown) => setCustomModelList(dropdown, true);
+        _MID_setCustomModelList();                                             // Initial update
+        setTimeout(_MID_setCustomModelList, serverWarmupSec * 1000);           // ...In case warm up time needed
+        setInterval(_MID_setCustomModelList, customModelUpdateFreqSec * 1000); // ...and now regular updates
+        
+        // Use our custom model list method to populate the main explorer's benchmark custom list
+        GetBenchmarkCustomModelList = _MID_getCustomModelList;
 
 // END EXPLORER SCRIPT
     </script>

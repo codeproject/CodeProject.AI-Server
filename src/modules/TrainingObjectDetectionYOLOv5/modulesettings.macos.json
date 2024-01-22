@@ -2,8 +2,12 @@
   "Modules": {
 
     "TrainingObjectDetectionYOLOv5": {
-      "EnableGPU": false,  // https://github.com/ultralytics/yolov5/issues/11235
-      "RequiredMb": 4000    // ~4Gb needed in Linux
+      "LaunchSettings": {
+        "RequiredMb": 4000    // ~4Gb needed in Linux
+      },
+      "GpuOptions" : {
+        "EnableGPU": false    // https://github.com/ultralytics/yolov5/issues/11235
+      }
     }
   }
 }

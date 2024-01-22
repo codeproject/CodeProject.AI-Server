@@ -2,7 +2,9 @@
   "Modules": {
 
     "SentimentAnalysis": {
-      "FilePath": "SentimentAnalysis.dll"
+      "LaunchSettings": {
+        "FilePath": "SentimentAnalysis.dll"
+      }
     }
   }
 }

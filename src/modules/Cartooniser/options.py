@@ -3,8 +3,6 @@ from module_options import ModuleOptions
 class Options:
 
     def __init__(self):
-
-        self.log_verbosity = ModuleOptions.log_verbosity
         
         # Cartooniser settings
         self.use_gpu       = ModuleOptions.enable_GPU  # We'll disable this if we can't find GPU libraries

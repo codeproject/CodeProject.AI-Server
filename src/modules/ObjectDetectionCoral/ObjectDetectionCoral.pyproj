@@ -170,12 +170,6 @@
     <Content Include="requirements.jetson.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-    <Content Include="requirements.orangepi.txt">
-      <DependentUpon>requirements.txt</DependentUpon>
-    </Content>
-    <Content Include="requirements.raspberrypi.txt">
-      <DependentUpon>requirements.txt</DependentUpon>
-    </Content>
     <Content Include="requirements.windows.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>

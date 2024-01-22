@@ -3,11 +3,11 @@
     "versionInfo": {
       "Major": 2,
       "Minor": 5,
-      "Patch": 0,
+      "Patch": 1,
       "Build": 0,
-      "PreRelease": "RC4",
+      "PreRelease": "RC1",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.5.0-RC4.zip",
+      "File": "CodeProject.AI-Server-win-x64-2.5.1-RC1.zip",
       "ReleaseNotes": "Corrected issue preventing Install/Uninstall of module."
     }
   }

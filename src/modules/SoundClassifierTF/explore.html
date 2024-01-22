@@ -69,6 +69,7 @@ RULES AND CONVENTIONS
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -108,7 +109,7 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-		function _MID_onClassifySound(fileChooser) {
+		async function _MID_onClassifySound(fileChooser) {
 
 			clearImagePreview();
 
@@ -120,14 +121,15 @@ RULES AND CONVENTIONS
 			let sounds = [fileChooser.files[0]];
 
 			setResultsHtml("Classifying sound...");
-			submitRequest('sound', 'classify', sounds, null, function (data) {
+			let data = await submitRequest('sound', 'classify', sounds, null)
+            if (data) {
 				setResultsHtml("<table style='width:100%'>" +
 							   "<tr><th>Label</th><th>Confidence</th></tr><tr>" +
 							   "<tr><td> " + data.label + "</td>" +
 							   "<td> " + confidence(data.confidence) + "</td ></tr> " +
 							   "<table>" +
 							   getProcessingMetadataHtml(data));
-			});
+			};
 		}
 // END EXPLORER SCRIPT
     </script>

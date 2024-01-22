@@ -53,6 +53,13 @@ class CoralObjectDetector_adapter(ModuleRunner):
             self.execution_provider = "Multi-TPU" if opts.use_multi_tpu else "TPU"
         else:
             self.execution_provider = "CPU"
+
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+        self.histogram            = {}
+
         
     #async 
     def process(self, data: RequestData) -> JSON:
@@ -60,20 +67,36 @@ class CoralObjectDetector_adapter(ModuleRunner):
         # The route to here is /v1/vision/detection
 
         if data.command == "list-custom":               # list all models available
-            return { "success": True, "models": [ 'MobileNet SSD'] }
+            if opts.use_YOLO:
+                return { "success": True, "models": [ 'YOLOv5'] }
+            else:
+                return { "success": True, "models": [ 'EfficientDet'] }
 
         if data.command == "detect" or data.command == "custom":
             threshold: float  = float(data.get_value("min_confidence", opts.min_confidence))
             img: Image        = data.get_image(0)
 
-            # response = await self.do_detection(img, threshold)
-            response = self.do_detection(img, threshold)
+            # response = await self._do_detection(img, threshold)
+            response = self._do_detection(img, threshold)
         else:
             # await self.report_error_async(None, __file__, f"Unknown command {data.command}")
             self.report_error(None, __file__, f"Unknown command {data.command}")
             response = { "success": False, "error": "unsupported command" }
 
+        self._update_statistics(response)
         return response
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+            "histogram"            : self.histogram
+        }
 
 
     def selftest(self) -> JSON:
@@ -92,13 +115,15 @@ class CoralObjectDetector_adapter(ModuleRunner):
 
         return { "success": result['success'], "message": "Object detection test successful" }
 
+
     def cleanup(self):
         if opts.use_multi_tpu:
             from objectdetection_coral_multitpu import cleanup
             cleanup()
-    
+
+
     # async 
-    def do_detection(self, img: any, score_threshold: float):
+    def _do_detection(self, img: any, score_threshold: float):
         
         start_process_time = time.perf_counter()
     
@@ -154,6 +179,34 @@ class CoralObjectDetector_adapter(ModuleRunner):
             # await self.report_error_async(ex, __file__)
             self.report_error(ex, __file__)
             return { "success": False, "error": "Error occurred on the server"}
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "predictions" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+                predictions = response["predictions"]
+                self.num_items_found += len(predictions) 
+
+                for prediction in predictions:
+                    label = prediction["label"]
+                    if label not in self.histogram:
+                        self.histogram[label] = 1
+                    else:
+                        self.histogram[label] += 1
+        else:
+            self.failed_inferences += 1
+
+    def _status_summary(self):
+        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self.num_items_found) + "\n"
+        for label in self.histogram:
+            summary += "  " + label + ": " + str(self.histogram[label]) + "\n"
+
+        return summary
 
 
 if __name__ == "__main__":

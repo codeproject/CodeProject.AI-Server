@@ -16,10 +16,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demos", "demos", "{7F18EB64-C857-49C4-9380-70D3CCE6242B}"
 	ProjectSection(SolutionItems) = preProject
 		demos\install.bat = demos\install.bat
-		demos\install.dev.sh = demos\install.dev.sh
+		demos\install.sh = demos\install.sh
 	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{D885EE64-C1BD-44D6-84D8-1E46806298D9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Javascript", "Javascript", "{3A860CDD-94B9-4002-BA08-87E8822DDE50}"
 	ProjectSection(SolutionItems) = preProject
@@ -46,38 +44,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{460DB5C8-46F3-4407-A2DF-D9063D14493A}"
 	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
 		global.json = global.json
 		LICENCE.md = LICENCE.md
 		README.md = README.md
 		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_PRIVATE REPO", "_PRIVATE REPO", "{78509730-6FBA-44E5-98C0-083DB7F52027}"
-	ProjectSection(SolutionItems) = preProject
-		README.txt = README.txt
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{FF0C329F-41E8-4540-BCDB-97690911077D}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Windows", "Windows", "{83C828B9-2B1E-4982-B4B7-69D173DFBB27}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2}"
 	ProjectSection(SolutionItems) = preProject
-		.wslconfig = .wslconfig
-		Installers\Docker\build_docker.bat = Installers\Docker\build_docker.bat
-		Installers\Docker\build_docker.sh = Installers\Docker\build_docker.sh
-		Installers\Docker\build_push_docker.bat = Installers\Docker\build_push_docker.bat
-		Installers\Docker\build_push_docker.sh = Installers\Docker\build_push_docker.sh
-		Installers\Docker\Docker build notes.md = Installers\Docker\Docker build notes.md
-		Installers\Docker\Dockerfile = Installers\Docker\Dockerfile
-		Installers\Docker\Dockerfile-Arm64 = Installers\Docker\Dockerfile-Arm64
-		Installers\Docker\Dockerfile-GPU-CUDA = Installers\Docker\Dockerfile-GPU-CUDA
-		Installers\Docker\Dockerfile-GPU-CUDA-no-cuDNN = Installers\Docker\Dockerfile-GPU-CUDA-no-cuDNN
-		Installers\Docker\Dockerfile-RPi64 = Installers\Docker\Dockerfile-RPi64
-		Installers\Docker\push_docker.bat = Installers\Docker\push_docker.bat
-		Installers\Docker\push_docker.sh = Installers\Docker\push_docker.sh
-		Installers\Docker\README = Installers\Docker\README
+		src\SDK\install.bat = src\SDK\install.bat
+		src\SDK\install.sh = src\SDK\install.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "License plates", "License plates", "{D320EA6C-2388-41F7-A4D1-980192665A61}"
@@ -177,11 +153,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{1C7E
 		src\modules\readme.txt = src\modules\readme.txt
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "macOS", "macOS", "{31DA8C15-C038-4667-89AB-74FED47D7B51}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\macOS\create macOS installer.html = Installers\macOS\create macOS installer.html
-	EndProjectSection
-EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ALPR", "src\modules\ALPR\ALPR.pyproj", "{6AE28B59-221B-4E3D-A66C-E255B26DAC82}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NET", "src\SDK\NET\NET.csproj", "{F7056ECA-1C9C-4544-99CA-731C944651D6}"
@@ -228,63 +199,15 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TextSummary", "src\modules\
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TrainingObjectDetectionYOLOv5", "src\modules\TrainingObjectDetectionYOLOv5\TrainingObjectDetectionYOLOv5.pyproj", "{2DFDA382-189B-45D1-94D5-3004D1AEB73C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Inno Setup", "Inno Setup", "{1D776E6C-8123-4EF7-9AB1-81BE0B1FB4C1}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\Windows\Inno Setup\build_inno.bat = Installers\Windows\Inno Setup\build_inno.bat
-		Installers\Windows\Inno Setup\ReadMe.md = Installers\Windows\Inno Setup\ReadMe.md
-		Installers\Windows\Inno Setup\script.iss = Installers\Windows\Inno Setup\script.iss
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Output", "Output", "{5FC5036D-2546-4A5E-B0B3-C3275E695176}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "src\server\Server.csproj", "{BFB8AD18-8C6E-4B25-B4AA-1AAB90ADA843}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ",vscode", ",vscode", "{CA30C07F-53CC-43F7-B1C9-4E9506E53736}"
 	ProjectSection(SolutionItems) = preProject
 		.vscode\launch.docker.json = .vscode\launch.docker.json
 		.vscode\launch.json = .vscode\launch.json
-		.vscode\ReadMe.txt = .vscode\ReadMe.txt
 		.vscode\settings.json = .vscode\settings.json
 		.vscode\tasks.docker.json = .vscode\tasks.docker.json
 		.vscode\tasks.json = .vscode\tasks.json
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{703A2403-15BC-477D-89F5-F1325F85A03D}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\Windows\Inno Setup\assets\CodeProjectAI-install-BG.png = Installers\Windows\Inno Setup\assets\CodeProjectAI-install-BG.png
-		Installers\Windows\Inno Setup\assets\CodeProjectAI-install-LHS.bmp = Installers\Windows\Inno Setup\assets\CodeProjectAI-install-LHS.bmp
-		Installers\Windows\Inno Setup\assets\CodeProjectAI-install-LHS.png = Installers\Windows\Inno Setup\assets\CodeProjectAI-install-LHS.png
-		Installers\Windows\Inno Setup\assets\CodeProjectAI-install-sidebar.png = Installers\Windows\Inno Setup\assets\CodeProjectAI-install-sidebar.png
-		Installers\Windows\Inno Setup\assets\CodeProjectAI-install-topbanner.png = Installers\Windows\Inno Setup\assets\CodeProjectAI-install-topbanner.png
-		Installers\Windows\Inno Setup\assets\favicon.ico = Installers\Windows\Inno Setup\assets\favicon.ico
-		Installers\Windows\Inno Setup\assets\license.rtf = Installers\Windows\Inno Setup\assets\license.rtf
-		Installers\Windows\Inno Setup\assets\logo.bmp = Installers\Windows\Inno Setup\assets\logo.bmp
-		Installers\Windows\Inno Setup\assets\logo.png = Installers\Windows\Inno Setup\assets\logo.png
-		Installers\Windows\Inno Setup\assets\logoSide.png = Installers\Windows\Inno Setup\assets\logoSide.png
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ubuntu", "Ubuntu", "{48A09F35-2977-4D23-AF91-8D0C52E68AC8}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\Ubuntu\build_installer.sh = Installers\Ubuntu\build_installer.sh
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{88812453-FC59-48D4-8B8A-890DA33EA039}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\Ubuntu\templates\systemd.service = Installers\Ubuntu\templates\systemd.service
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DEBIAN", "DEBIAN", "{5D495EED-F89D-4EF8-9678-7F75F78617A9}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\Ubuntu\templates\Resources\banner.png = Installers\Ubuntu\templates\Resources\banner.png
-		Installers\Ubuntu\templates\Resources\LICENSE.txt = Installers\Ubuntu\templates\Resources\LICENSE.txt
-		Installers\Ubuntu\templates\Resources\uninstall.sh = Installers\Ubuntu\templates\Resources\uninstall.sh
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resources", "Resources", "{35A70F3E-EE70-48D9-A86D-3434AEF4CAE2}"
-	ProjectSection(SolutionItems) = preProject
-		Installers\Ubuntu\templates\DEBIAN\control = Installers\Ubuntu\templates\DEBIAN\control
-		Installers\Ubuntu\templates\DEBIAN\postinst = Installers\Ubuntu\templates\DEBIAN\postinst
-		Installers\Ubuntu\templates\DEBIAN\prerm = Installers\Ubuntu\templates\DEBIAN\prerm
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{2A2CB97D-0086-4891-AFA1-198F414E3562}"
@@ -310,13 +233,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 		src\SDK\Utilities\starttimer.bat = src\SDK\Utilities\starttimer.bat
 		src\SDK\Utilities\stop_all.bat = src\SDK\Utilities\stop_all.bat
 		src\SDK\Utilities\stop_all.sh = src\SDK\Utilities\stop_all.sh
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Articles", "Articles", "{AB05F086-BBA9-4E10-9D96-A92814584539}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mesh", "Mesh", "{328FF294-5E4F-4A0E-AEA2-CCE114D662AC}"
-	ProjectSection(SolutionItems) = preProject
-		Using a Mesh of CodeProject.AI Servers to Optimize Performance.md = Using a Mesh of CodeProject.AI Servers to Optimize Performance.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParseJSON", "src\SDK\Utilities\ParseJSON\ParseJSON.csproj", "{AF84AA51-8718-40EC-B5D7-281799A7B07C}"
@@ -555,8 +471,6 @@ Global
 		{C33D90E7-7570-46FB-9EB9-ED6B40A93A9B} = {1912618E-7942-4BB0-BC2B-7F48A38D1049}
 		{CB26AB5B-DB85-4A59-A3AE-FA55A35D05B0} = {3A860CDD-94B9-4002-BA08-87E8822DDE50}
 		{FF0C329F-41E8-4540-BCDB-97690911077D} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
-		{83C828B9-2B1E-4982-B4B7-69D173DFBB27} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
-		{FB0561D3-4AF8-415A-85B4-E4E9ADDC3DB2} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{D320EA6C-2388-41F7-A4D1-980192665A61} = {B10B59B5-9F63-41C2-BFBB-6C7311DC4E99}
 		{C5CC1B6F-14B1-41C1-A2F3-164B37BDCC0C} = {B10B59B5-9F63-41C2-BFBB-6C7311DC4E99}
 		{49530738-22E7-4D2C-88FD-B20B68BF3A75} = {B10B59B5-9F63-41C2-BFBB-6C7311DC4E99}
@@ -568,7 +482,6 @@ Global
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446} = {37533562-EC4C-4FB4-8C42-FE327D1D79BD}
 		{C2500118-FD99-49EF-B726-3E2A3B30A717} = {37533562-EC4C-4FB4-8C42-FE327D1D79BD}
 		{1C7E0F81-1F4A-478B-80CE-4C41606DC087} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
-		{31DA8C15-C038-4667-89AB-74FED47D7B51} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
 		{6AE28B59-221B-4E3D-A66C-E255B26DAC82} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{F7056ECA-1C9C-4544-99CA-731C944651D6} = {FF0C329F-41E8-4540-BCDB-97690911077D}
 		{0690D5F7-864F-4347-8E20-FA9903CE56EB} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
@@ -588,17 +501,9 @@ Global
 		{A472B309-3C77-4DE5-8F03-AA81938EEFB4} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{470D3417-36A4-49A4-B719-496466FA92FB} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{2DFDA382-189B-45D1-94D5-3004D1AEB73C} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
-		{1D776E6C-8123-4EF7-9AB1-81BE0B1FB4C1} = {83C828B9-2B1E-4982-B4B7-69D173DFBB27}
-		{5FC5036D-2546-4A5E-B0B3-C3275E695176} = {1D776E6C-8123-4EF7-9AB1-81BE0B1FB4C1}
 		{BFB8AD18-8C6E-4B25-B4AA-1AAB90ADA843} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
-		{703A2403-15BC-477D-89F5-F1325F85A03D} = {1D776E6C-8123-4EF7-9AB1-81BE0B1FB4C1}
-		{48A09F35-2977-4D23-AF91-8D0C52E68AC8} = {D885EE64-C1BD-44D6-84D8-1E46806298D9}
-		{88812453-FC59-48D4-8B8A-890DA33EA039} = {48A09F35-2977-4D23-AF91-8D0C52E68AC8}
-		{5D495EED-F89D-4EF8-9678-7F75F78617A9} = {88812453-FC59-48D4-8B8A-890DA33EA039}
-		{35A70F3E-EE70-48D9-A86D-3434AEF4CAE2} = {88812453-FC59-48D4-8B8A-890DA33EA039}
 		{6AE28B59-221B-4E3D-A66C-E255B26DAF82} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{A04CA21C-39DF-4466-B48B-A08AA0A262BD} = {FF0C329F-41E8-4540-BCDB-97690911077D}
-		{328FF294-5E4F-4A0E-AEA2-CCE114D662AC} = {AB05F086-BBA9-4E10-9D96-A92814584539}
 		{AF84AA51-8718-40EC-B5D7-281799A7B07C} = {A04CA21C-39DF-4466-B48B-A08AA0A262BD}
 		{D56CA115-830A-4007-BB9B-BF0FC72DA9B0} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{470D3417-36A4-49A4-B719-486477FA92FB} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}

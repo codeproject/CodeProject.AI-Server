@@ -22,9 +22,6 @@ class ALPR_adapter(ModuleRunner):
         super().__init__()
         self.opts = Options()
 
-        self.inferenceCount = 0
-        self.itemsDetected  = 0
-
     def initialise(self) -> None:
         self.can_use_GPU = self.system_info.hasPaddleGPU
 
@@ -32,7 +29,6 @@ class ALPR_adapter(ModuleRunner):
         # some checks to be done
         if self.system_info.hasPaddleGPU:
             import paddle
-
             if not paddle.device.cuda.device_count() or \
                 paddle.device.cuda.get_device_capability()[0] < self.opts.min_compute_capability:
                 self.can_use_GPU = False
@@ -49,6 +45,11 @@ class ALPR_adapter(ModuleRunner):
 
         init_detect_platenumber(self.opts)
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+
 
     async def process(self, data: RequestData) -> JSON:
         try:
@@ -59,9 +60,9 @@ class ALPR_adapter(ModuleRunner):
             result = await detect_platenumber(self, self.opts, image)
 
             if "error" in result and result["error"]:
-                return { "success": False, "error": result["error"] }
-
-            self.inferenceCount += 1 
+                response = { "success": False, "error": result["error"] }
+                self._update_statistics(response)
+                return response 
 
             predictions = result["predictions"]
             if len(predictions) > 3:
@@ -71,9 +72,7 @@ class ALPR_adapter(ModuleRunner):
             else:
                 message = "No plates found"
 
-            self.itemsDetected += len(predictions) 
-
-            return {
+            response = {
                 "success": True, 
                 "predictions": predictions, 
                 "message": message,
@@ -83,7 +82,21 @@ class ALPR_adapter(ModuleRunner):
 
         except Exception as ex:
             await self.report_error_async(ex, __file__)
-            return { "success": False, "error": "unable to process the image" }
+            response = { "success": False, "error": "unable to process the image" }
+
+        self._update_statistics(response)
+        return response 
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+        }
 
 
     def selftest(slf) -> JSON:
@@ -97,6 +110,20 @@ class ALPR_adapter(ModuleRunner):
 
     def cleanup(self) -> None:
         pass
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "predictions" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+                predictions = response["predictions"]
+                self.num_items_found += len(predictions) 
+        else:
+            self.failed_inferences += 1
+
 
 if __name__ == "__main__":
     ALPR_adapter().start_loop()

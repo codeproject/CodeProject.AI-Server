@@ -342,6 +342,7 @@ function checkForAdminRights () {
 
     if [ "$isAdmin" = false ] && [ "$requestPassword" = true ]; then
         if [ "$os" == "macos" ]; then
+            # THIS DOES NOT WORK
             # This shows the password prompt, but the admin rights starts and ends with the "whoami"
             # call. Once that call finishes, admin rights no longer apply.
             /usr/bin/osascript -e 'do shell script "whoami 2>&1" with administrator privileges'
@@ -1848,7 +1849,7 @@ function getFromServer () {
 
 move_recursive() {
     if [ ! -d "$1" ] || [ ! -e "$2" ]; then
-        mv -f "$1" "$2" || exit
+        mv "$1" "$2" || exit
         return
     fi
     for entry in "$1/"* "$1/."[!.]* "$1/.."?*; do

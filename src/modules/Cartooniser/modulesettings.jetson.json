@@ -2,8 +2,10 @@
   "Modules": {
 
     "Cartooniser": {
-      "AutoStart": false,
-      "Runtime": "python3.8"
+      "LaunchSettings": {
+        "AutoStart": false,
+        "Runtime": "python3.8"
+      }
     }
   }
 }

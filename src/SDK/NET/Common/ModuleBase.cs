@@ -40,37 +40,17 @@ namespace CodeProject.AI.SDK
     /// Basic module information shared between module listings for download, and module 
     /// settings on installed modules.
     /// </summary>
-    public class ModuleBase
+    public class PublishingInfo
     {
-        /// <summary>
-        /// Gets or sets the Id of the Module
-        /// </summary>
-        public string? ModuleId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Name to be displayed.
-        /// </summary>
-        public string? Name { get; set; }
-
-        /// <summary>
-        /// Gets or sets the platforms on which this module is supported. Options include: windows,
-        /// windows-arm64, linux, linux-arm64, macos, macos-arm64, raspberrypi, orangepi, jetson.
-        /// If any of these is preceded by a "!" then that platform is specifically not supported.
-        /// This allows options such as "linux-arm64, !jetson" to mean all Linux arm64 platforms
-        /// except NVIDIA Jetson.
-        /// </summary>
-        public string[] Platforms { get; set; } = Array.Empty<string>();
-
-        /// <summary>
-        /// Gets or sets the number of MB of memory needed for this module to perform operations.
-        /// If null, then no checks done.
-        /// </summary>
-        public int? RequiredMb { get; set; }
-
         /// <summary>
         /// Gets or sets the Description for the module.
         /// </summary>
         public string? Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets the URL of the icon for this module.
+        /// </summary>
+        public string? IconURL { get; set; }
 
         /// <summary>
         /// Gets or sets the Category of this module.
@@ -78,15 +58,9 @@ namespace CodeProject.AI.SDK
         public string? Category { get; set; }
 
         /// <summary>
-        /// Gets or sets the version of this module
+        /// Gets or sets the tech stack that this module is based on.
         /// </summary>
-        public string? Version { get; set; }
-
-        /// <summary>
-        /// Gets or sets the list of module versions and the server version that matches
-        /// each of these versions.
-        /// </summary>
-        public ModuleRelease[] ModuleReleases { get; set; } = Array.Empty<ModuleRelease>();
+        public string? Stack { get; set; }
 
         /// <summary>
         /// Gets or sets the current version.
@@ -117,12 +91,71 @@ namespace CodeProject.AI.SDK
         /// Gets or sets the URL of the project this module is based on
         /// </summary>
         public string? BasedOnUrl { get; set; }
+    }
+
+    /// <summary>
+    /// The installation options / settings for this module
+    /// </summary>
+    public class InstallOptions
+    {
+        /// <summary>
+        /// Gets or sets the platforms on which this module is supported. Options include: windows,
+        /// windows-arm64, linux, linux-arm64, macos, macos-arm64, raspberrypi, orangepi, jetson.
+        /// If any of these is preceded by a "!" then that platform is specifically not supported.
+        /// This allows options such as "linux-arm64, !jetson" to mean all Linux arm64 platforms
+        /// except NVIDIA Jetson.
+        /// </summary>
+        public string[] Platforms { get; set; } = Array.Empty<string>();
 
         /// <summary>
-        /// Gets or sets a value indicating whether this module was pre-installed (eg Docker).
-        /// If the module was preinstalled, this value is true, otherwise false.
+        /// Gets or sets a value indicating whether this module was pre-installed (eg Docker). If
+        /// the module was preinstalled, this value is true, otherwise false.
         /// </summary>
         public bool PreInstalled { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the list of module versions and the server version that matches each of
+        /// these versions. This determines whether the module can be installed on a given server.
+        /// </summary>
+        public ModuleRelease[] ModuleReleases { get; set; } = Array.Empty<ModuleRelease>();
+    }
+
+    /// <summary>
+    /// Basic module information shared between module listings for download, and module 
+    /// settings on installed modules.
+    /// </summary>
+    public class ModuleBase
+    {
+        /// <summary>
+        /// Gets or sets the Id of the Module
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public string? ModuleId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Name to be displayed.
+        /// </summary>
+        /// 
+        [JsonPropertyOrder(1)]
+        public string? Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version of this module
+        /// </summary>
+        [JsonPropertyOrder(2)]
+        public string? Version { get; set; }
+
+        /// <summary>
+        /// Gets or sets the publishing info for this module
+        /// </summary>
+        [JsonPropertyOrder(3)]
+        public PublishingInfo? PublishingInfo { get; set; }
+
+        /// <summary>
+        /// Gets or sets the installation options / settings for this module
+        /// </summary>
+        [JsonPropertyOrder(6)]
+        public InstallOptions? InstallOptions { get; set; }
 
         /// <summary>
         /// Gets or sets the absolute path to this module. 
@@ -141,14 +174,14 @@ namespace CodeProject.AI.SDK
         /// Gets a value indicating whether or not this is a valid module that can actually be
         /// started.
         /// </summary>
-        /// <returns>true if this module has valid settings; false otherwise.
+        [JsonIgnore]
         public virtual bool Valid
         {
             get
             {
                 return !string.IsNullOrWhiteSpace(ModuleId) &&
                        !string.IsNullOrWhiteSpace(Name)     &&
-                       Platforms?.Length > 0;
+                       InstallOptions?.Platforms?.Length > 0;
             }
         }
 
@@ -158,7 +191,7 @@ namespace CodeProject.AI.SDK
         /// <returns>A string object</returns>
         public override string ToString()
         {
-            return $"{Name} ({ModuleId}) {Version} {License ?? ""}";
+            return $"{Name} ({ModuleId ?? "not set"}) {Version} {PublishingInfo?.License ?? ""}";
         }
     }
 
@@ -186,9 +219,9 @@ namespace CodeProject.AI.SDK
             // compatible with the current server?
             if (versionOK)
             {
-                if (module.ModuleReleases?.Any() ?? false)
+                if (module.InstallOptions?.ModuleReleases?.Any() ?? false)
                 {
-                    foreach (ModuleRelease release in module.ModuleReleases)
+                    foreach (ModuleRelease release in module.InstallOptions.ModuleReleases)
                     {
                         if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)
                             continue;
@@ -212,8 +245,8 @@ namespace CodeProject.AI.SDK
 
             // Second check: Is this module included in available platforms?
             bool available  = versionOK &&
-                             ( module!.Platforms!.Any(p => p.EqualsIgnoreCase("all")) ||
-                               module!.Platforms!.Any(p => p.EqualsIgnoreCase(SystemInfo.Platform)) );
+                             ( module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase("all")) ||
+                               module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase(SystemInfo.Platform)) );
 
             // Third check. In the second check we've checked directly against the current platform.
             // For any non Pi, non-Jetson device, SystemInfo.Platform is windows, mac or linux,
@@ -223,11 +256,11 @@ namespace CodeProject.AI.SDK
             // architecture. If a module is not meant to work for a given OS/architecture then it
             // should include "!Platform" (eg !Jetson) in the Platforms list.
             if (!available && !SystemInfo.Platform.EqualsIgnoreCase(SystemInfo.OSAndArchitecture))
-                available = module!.Platforms!.Any(p => p.EqualsIgnoreCase(SystemInfo.OSAndArchitecture));
+                available = module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase(SystemInfo.OSAndArchitecture));
 
             // Final check: is the module specifically excluded from the current platform?
             return available && 
-                   !module!.Platforms!.Any(p => p.EqualsIgnoreCase($"!{SystemInfo.Platform}"));
+                   !module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase($"!{SystemInfo.Platform}"));
         }
     }
 }

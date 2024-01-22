@@ -56,7 +56,7 @@ class Face_adapter(ModuleRunner):
     def __init__(self):
         super().__init__()
         self.master_face_map = {"map": {}}
-        self.facemap         = {}
+        self.face_map_rep    = {}
 
         self.models_lock     = Lock()
         self.face_lock       = Lock()
@@ -110,42 +110,47 @@ class Face_adapter(ModuleRunner):
            not self.system_info.hasTorchHalfPrecision:
             self.half_precision = 'disable'
 
-        self.init_db()
-        self.load_faces()
+        self._init_db()
+        self._load_faces()
 
         # refresh the copy of face embeddings every 5 seconds.
         self._update_faces_active = True
-        faceupdate_thread = threading.Thread(None, self.update_faces, args = (5,))
-        faceupdate_thread.start()
+        faceUpdate_thread = threading.Thread(None, self._update_faces, args = (5,))
+        faceUpdate_thread.start()
+
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
 
 
     def process(self, data: RequestData) -> JSON:
 
         command = data.command
                     
-        output = { "success": False, "error": "Unknown command" }
+        response = { "success": False, "error": "Unknown command" }
 
         start_time = time.perf_counter()
 
         if command == "detect":
-            output = self.detect_face(data)
+            response = self._detect_face(data)
         elif command == "register":
-            output = self.register_face(data)
+            response = self._register_face(data)
         elif command == "list":
-            output = self.list_faces(data)
+            response = self._list_faces(data)
         elif command == "delete":
-            output = self.delete_user_faces(data)
+            response = self._delete_user_faces(data)
         elif command == "recognize":
-            output = self.recognise_face(data)
+            response = self._recognise_face(data)
         elif command == "match":
-            output = self.match_faces(data)
+            response = self._match_faces(data)
 
-        if "success" in output and output["success"]:
-            output["processMs"] = int((time.perf_counter() - start_time) * 1000)
+        if "success" in response and response["success"]:
+            response["processMs"] = int((time.perf_counter() - start_time) * 1000)
         else:
-            message = output["error"] if "error" in output else "Error occurred"
-            if output.get("err_trace", ""):
-                message += ': ' + output["err_trace"]
+            message = response["error"] if "error" in response else "Error occurred"
+            if response.get("err_trace", ""):
+                message += ': ' + response["err_trace"]
 
             self.log(LogMethod.Error | LogMethod.Server,
             { 
@@ -155,7 +160,18 @@ class Face_adapter(ModuleRunner):
                 "loglevel": "error",
             })
 
-        return output
+        self._update_statistics(response)
+        return response 
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+        }
 
 
     def selftest(self) -> JSON:
@@ -174,6 +190,7 @@ class Face_adapter(ModuleRunner):
 
         return { "success": result['success'], "message": "Face detection test successful" }
 
+
     def cleanup(self) -> None:
         """
         Called when this module has been asked to shutdown.
@@ -182,7 +199,7 @@ class Face_adapter(ModuleRunner):
         self._update_faces_active = False
     
 
-    def init_models(self, re_entered: bool = False) -> None:
+    def _init_models(self, re_entered: bool = False) -> None:
 
         if self.faceclassifier is not None and self.detector is not None:
             return True
@@ -222,14 +239,14 @@ class Face_adapter(ModuleRunner):
                     "loglevel": "information",
                 })
 
-                return self.init_models(re_entered = True)
+                return self._init_models(re_entered = True)
             else:
                 self.report_error(ex, __file__)
                 return False
 
 
     # make sure the sqlLite database exists
-    def init_db(self) -> None:
+    def _init_db(self) -> None:
 
         try:
             self.databaseFilePath = os.path.join(SharedOptions.DATA_DIR, "faceembedding.db")
@@ -252,15 +269,15 @@ class Face_adapter(ModuleRunner):
             # self.report_error(ex, __file__)
 
 
-    def load_faces(self) -> None:
+    def _load_faces(self) -> None:
 
         if not self.database_ok:
             return
 
         try:
-            face_map = {"map": {}}
-            facemap  = {}
-            conn     = sqlite3.connect(self.databaseFilePath)
+            face_map      = {"map": {}}
+            face_map_rep  = {}
+            conn          = sqlite3.connect(self.databaseFilePath)
 
             cursor        = conn.cursor()
             embeddings    = cursor.execute(SELECT_FACES)
@@ -277,11 +294,11 @@ class Face_adapter(ModuleRunner):
                 i += 1
 
             face_map["tensors"] = embedding_arr
-            facemap             = repr(face_map)
+            face_map_rep        = repr(face_map)
 
             with self.face_lock:
                 self.master_face_map = face_map
-                self.facemap         = facemap;
+                self.face_map_rep    = face_map_rep;
 
             conn.close()
             
@@ -296,19 +313,19 @@ class Face_adapter(ModuleRunner):
             # self.report_error(ex, __file__)
 
 
-    def update_faces(self, delay: int) -> None:
+    def _update_faces(self, delay: int) -> None:
 
         while True:
             if not self._update_faces_active:
                 return
 
-            self.load_faces()
+            self._load_faces()
             time.sleep(delay)
 
 
-    def detect_face(self, data: RequestData) -> JSON:
+    def _detect_face(self, data: RequestData) -> JSON:
 
-        if not self.init_models():
+        if not self._init_models():
             return {
                 "success": False,
                 "predictions": [],
@@ -372,9 +389,9 @@ class Face_adapter(ModuleRunner):
         return output
 
 
-    def register_face(self, data: RequestData) -> Tuple[JSON, int]:
+    def _register_face(self, data: RequestData) -> Tuple[JSON, int]:
 
-        if not self.init_models():
+        if not self._init_models():
             return {
                 "success": False,
                 "message": "Unable to load the face detector",
@@ -454,7 +471,7 @@ class Face_adapter(ModuleRunner):
                 conn.commit()
                 conn.close()
 
-                self.load_faces();
+                self._load_faces();
 
                 output = {
                     "success": True,
@@ -486,7 +503,7 @@ class Face_adapter(ModuleRunner):
         return output
 
 
-    def list_faces(self, data: RequestData) -> JSON:
+    def _list_faces(self, data: RequestData) -> JSON:
 
         try:                        
             conn = sqlite3.connect(self.databaseFilePath)
@@ -515,7 +532,7 @@ class Face_adapter(ModuleRunner):
         return output
 
 
-    def delete_user_faces(self, data: RequestData) -> JSON:
+    def _delete_user_faces(self, data: RequestData) -> JSON:
 
         try:
             user_id = data.get_value("userid")
@@ -528,7 +545,7 @@ class Face_adapter(ModuleRunner):
             conn.commit()
             conn.close()
 
-            self.load_faces();
+            self._load_faces();
 
             output = {"success": True}
 
@@ -543,9 +560,9 @@ class Face_adapter(ModuleRunner):
         return output
 
 
-    def recognise_face(self, data: RequestData) -> JSON:
+    def _recognise_face(self, data: RequestData) -> JSON:
 
-        if not self.init_models():
+        if not self._init_models():
             return {
                 "success": False,
                 "predictions": [],
@@ -560,8 +577,8 @@ class Face_adapter(ModuleRunner):
             pil_image  = data.get_image(0)
 
             with self.face_lock:
-                facemap    = self.master_face_map["map"].copy()
-                face_array = self.master_face_map["tensors"].copy()
+                face_map_rep = self.master_face_map["map"].copy()
+                face_array   = self.master_face_map["tensors"].copy()
 
             if len(face_array) > 0:
                 face_array_tensors = [ torch.tensor(emb).unsqueeze(0) for emb in face_array ]
@@ -607,7 +624,7 @@ class Face_adapter(ModuleRunner):
                     "inferenceMs": inferenceMs
                 }
 
-            elif len(facemap) == 0:
+            elif len(face_map_rep) == 0:
 
                 predictions = []
 
@@ -678,7 +695,7 @@ class Face_adapter(ModuleRunner):
                         user_id    = "unknown"
                     else:
                         confidence  = max_similarity
-                        user_id     = facemap[user_index]
+                        user_id     = face_map_rep[user_index]
                         found_known = True
 
                     x_min = int(face[0])
@@ -740,9 +757,9 @@ class Face_adapter(ModuleRunner):
         return output
 
 
-    def match_faces(self, data: RequestData) -> JSON:
+    def _match_faces(self, data: RequestData) -> JSON:
 
-        if not self.init_models():
+        if not self._init_models():
             return {
                 "success": False,
                 "message": "Unable to load the face detector",
@@ -826,6 +843,25 @@ class Face_adapter(ModuleRunner):
             }
 
         return output
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "predictions" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+                predictions = response["predictions"]
+                self.num_items_found += len(predictions) 
+        else:
+            self.failed_inferences += 1
+        
+
+
+    def _status_summary(self):
+        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self.num_items_found) + "\n"
+        return summary
 
 
 if __name__ == "__main__":

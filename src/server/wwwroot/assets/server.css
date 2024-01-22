@@ -140,12 +140,15 @@ a {
     border-bottom: 1px solid rgb(51, 51, 51);
     color: var(--bs-body-color);
     align-items: center;
+    /*border: transparent solid 1px;*/
 }
     .status-row:hover {
         /*background-color: var(--bs-gray-300);*/
-        filter: brightness(110%);
+        /*filter: brightness(110%);*/
         /*filter: saturate(200%);*/
         /*opacity: .9;*/
+        /*border-color: red;*/
+        box-shadow: inset 0px 1px 4px 0px #2f2e2e;
     }
     .status-row .startup-summary,
     .status-row .current-summary,

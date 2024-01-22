@@ -1,6 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+
+/*
+#if Windows
+using System.Security.Principal;
+using System.Security.AccessControl;
+#else
+using System.Diagnostics;
+#endif
+*/
+
 #if DEBUG
 using System.Reflection;
 using Microsoft.OpenApi.Models;
@@ -30,7 +40,7 @@ namespace CodeProject.AI.Server
         private ILogger<Startup>? _logger;
 
         /// <summary>
-        /// Initializs a new instance of the Startup class.
+        /// Initializes a new instance of the Startup class.
         /// </summary>
         /// <param name="configuration"></param>
         public Startup(IConfiguration configuration)
@@ -203,6 +213,9 @@ namespace CodeProject.AI.Server
                 string configJson = System.Text.Json.JsonSerializer.Serialize(configValues, options);
 
                 File.WriteAllText(configFilePath, configJson);
+
+                // Make sure everyone can get access to this
+                // SetWorldAccessToFile(configFilePath);
             }
             catch (Exception ex)
             {
@@ -220,5 +233,53 @@ namespace CodeProject.AI.Server
                 Console.WriteLine($"{pair.Key}: {pair.Value ?? "<null>"}");
             }
         }
+
+        /*
+        /// <summary>
+        /// Sets permissions on a file
+        /// </summary>
+        /// <param name="filePath">The path to the file you want to grant access to.</param>
+        private void SetWorldAccessToFile(string filePath)
+        {
+            try
+            {
+#if Windows
+                // var account = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+                var account = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                FileSystemAccessRule rule = new (account, 
+                                                FileSystemRights.ReadData | FileSystemRights.WriteData,
+                                                AccessControlType.Allow);
+                var file = new FileInfo(filePath);
+                FileSecurity fileSecurity = file.GetAccessControl();
+                fileSecurity.AddAccessRule(rule);
+                file.SetAccessControl(fileSecurity);
+#else
+                // VSCode simply ignores defines sometimes
+                if (!SystemInfo.IsWindows)
+                {
+                    Process process = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName               = "/bin/bash",
+                            Arguments              = $"-c \"chmod o+rw '{filePath}'\"",
+                            RedirectStandardOutput = true,
+                            RedirectStandardError  = true,
+                            UseShellExecute        = false,
+                            CreateNoWindow         = true
+                        }
+                    };
+                    process.Start();
+                    process.WaitForExit();
+                }
+#endif
+                Console.WriteLine("File access granted to all users.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
+        */
     }
 }

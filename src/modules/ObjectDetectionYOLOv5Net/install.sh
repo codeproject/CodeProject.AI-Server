@@ -31,6 +31,11 @@ if [ "${executionEnvironment}" = "Production" ]; then
     fi
     getFromServer "binaries/" "${imageName}" "bin" "Downloading ${imageName}..."
 else
+    pushd "$moduleDirPath" >/dev/null
+    writeLine "Building project..." "$color_info"
+    dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/net7.0" >/dev/null
+    popd >/dev/null
+
     getFromServer "libraries/" "ObjectDetectionYOLOv5NetNugets.zip" "LocalNugets" "Downloading Nuget packages..."
 fi
 

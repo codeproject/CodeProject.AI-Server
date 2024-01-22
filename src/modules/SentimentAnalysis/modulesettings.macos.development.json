@@ -2,7 +2,9 @@
   "Modules": {
 
     "SentimentAnalysis": {
-      "FilePath": "bin/Debug/net7.0/SentimentAnalysis.dll"
+      "LaunchSettings": {
+        "FilePath": "bin/Debug/net7.0/SentimentAnalysis.dll"
+      }
      }
   }
 }

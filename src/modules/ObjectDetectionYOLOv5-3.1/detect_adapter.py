@@ -55,6 +55,12 @@ class YOLO31_adapter(ModuleRunner):
            not self.system_info.hasTorchHalfPrecision:
             self.half_precision = 'disable'
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+        self.num_items_found      = 0
+        self.histogram            = {}
+
 
     def process(self, data: RequestData) -> JSON:
         
@@ -64,7 +70,7 @@ class YOLO31_adapter(ModuleRunner):
 
             # The route to here is /v1/vision/custom/list
 
-            response = self.list_models(self.opts.custom_models_dir)
+            response = self._list_models(self.opts.custom_models_dir)
 
         elif data.command == "detect":                  # Perform 'standard' object detection
 
@@ -73,10 +79,10 @@ class YOLO31_adapter(ModuleRunner):
             threshold: float = float(data.get_value("min_confidence", "0.4"))
             img: Image       = data.get_image(0)
 
-            response = self.do_detection(self.opts.models_dir, self.opts.std_model_name,
-                                         self.opts.resolution_pixels, self.opts.use_CUDA,
-                                         self.accel_device_name, self.opts.use_MPS,
-                                         self.half_precision, img, threshold)
+            response = self._do_detection(self.opts.models_dir, self.opts.std_model_name,
+                                          self.opts.resolution_pixels, self.opts.use_CUDA,
+                                          self.accel_device_name, self.opts.use_MPS,
+                                          self.half_precision, img, threshold)
 
         elif data.command == "custom":                  # Perform custom object detection
 
@@ -109,33 +115,29 @@ class YOLO31_adapter(ModuleRunner):
             })
 
             use_mX_GPU = False # self.opts.use_MPS   - Custom models don't currently work with pyTorch on MPS
-            response = self.do_detection(model_dir, model_name, self.opts.resolution_pixels,
-                                         self.opts.use_CUDA, self.accel_device_name, use_mX_GPU,
-                                         self.half_precision, img, threshold)
+            response = self._do_detection(model_dir, model_name, self.opts.resolution_pixels,
+                                          self.opts.use_CUDA, self.accel_device_name, use_mX_GPU,
+                                          self.half_precision, img, threshold)
 
         else:
+            response = { "success" : False }
             self.report_error(None, __file__, f"Unknown command {data.command}")
 
+        self._update_statistics(response)
         return response
 
 
-    def list_models(self, models_path):
-
-        """
-        Lists the custom models we have in the assets folder. This ignores the 
-        yolo* files.
-        """
-
-        # We'll only refresh the list of models at most once a minute
-        if self.models_updated is None or (time.time() - self.models_updated) >= 60:
-            self.model_names = [entry.name[:-3] for entry in os.scandir(models_path)
-                                            if (entry.is_file()
-                                            and entry.name.endswith(".pt")
-                                            and not entry.name.startswith("yolov5"))]
-            self.models_updated = time.time()
-
-        return { "success": True, "models": self.model_names }
-
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "numItemsFound"        : self.num_items_found,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+            "histogram"            : self.histogram
+        }
+    
 
     def selftest(self) -> JSON:
         
@@ -154,9 +156,26 @@ class YOLO31_adapter(ModuleRunner):
         return { "success": result['success'], "message": "Object detection test successful" }
 
 
-    def get_detector(self, models_dir: str, model_name: str, resolution: int,
-                    use_Cuda: bool, accel_device_name: str, use_MPS: bool,
-                    half_precision: str) -> any:
+    def _list_models(self, models_path):
+
+        """
+        Lists the custom models we have in the assets folder. This ignores the 
+        yolo* files.
+        """
+
+        # We'll only refresh the list of models at most once a minute
+        if self.models_updated is None or (time.time() - self.models_updated) >= 60:
+            self.model_names = [entry.name[:-3] for entry in os.scandir(models_path)
+                                            if (entry.is_file()
+                                            and entry.name.endswith(".pt")
+                                            and not entry.name.startswith("yolov5"))]
+            self.models_updated = time.time()
+
+        return { "success": True, "models": self.model_names }
+
+    def _get_detector(self, models_dir: str, model_name: str, resolution: int,
+                      use_Cuda: bool, accel_device_name: str, use_MPS: bool,
+                      half_precision: str) -> any:
 
         """
         We have a detector for each custom model. Lookup the detector, or if it's 
@@ -199,9 +218,9 @@ class YOLO31_adapter(ModuleRunner):
 
         return detector
 
-    def do_detection(self, models_dir: str, model_name: str, resolution: int,
-                    use_Cuda: bool, accel_device_name: str, use_MPS: bool,
-                    half_precision: str, img: any, threshold: float):
+    def _do_detection(self, models_dir: str, model_name: str, resolution: int,
+                      use_Cuda: bool, accel_device_name: str, use_MPS: bool,
+                      half_precision: str, img: any, threshold: float):
         
         # We have a detector for each custom model. Lookup the detector, or if it's
         # not found, create a new one and add it to our lookup.
@@ -211,8 +230,8 @@ class YOLO31_adapter(ModuleRunner):
         start_time = time.perf_counter()
 
         try:
-            detector = self.get_detector(models_dir, model_name, resolution, use_Cuda,
-                                         accel_device_name, use_MPS, half_precision)
+            detector = self._get_detector(models_dir, model_name, resolution, use_Cuda,
+                                          accel_device_name, use_MPS, half_precision)
         except Exception as ex:
             create_err_msg = f"{create_err_msg} ({str(ex)})"
 
@@ -269,6 +288,35 @@ class YOLO31_adapter(ModuleRunner):
         except Exception as ex:
             self.report_error(ex, __file__)
             return { "success": False, "error": "Error occurred on the server" }
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            if "predictions" in response:
+                if "inferenceMs" in response:
+                    self.total_success_inf_ms += response["inferenceMs"]
+                    self.success_inferences += 1
+                predictions = response["predictions"]
+                self.num_items_found += len(predictions) 
+
+                for prediction in predictions:
+                    label = prediction["label"]
+                    if label not in self.histogram:
+                        self.histogram[label] = 1
+                    else:
+                        self.histogram[label] += 1
+        else:
+            self.failed_inferences += 1
+
+
+    def _status_summary(self):
+        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self.num_items_found) + "\n"
+        for label in self.histogram:
+            summary += "  " + label + ": " + str(self.histogram[label]) + "\n"
+
+        return summary
 
 
 if __name__ == "__main__":

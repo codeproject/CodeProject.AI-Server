@@ -2,7 +2,7 @@
   "Modules": {
 
     "ObjectDetectionYOLOv5Net": {
-      /* In Docker, when building the image, we copy over the code and config files, which includes
+      /* When building the Docker image we copy over the code and config files, which includes
          this special modulesettings.docker.build.json file that enables us to point the Python
          interpreter to the shared, pre-installed python venv in the Docker image. This file will be
          renamed to modulesettings.docker.json during the Docker image build process.
@@ -15,8 +15,12 @@
       */
 
       // ObjectDetectionYOLOv5Net is currently the fastest non-TPU solution for Arm64
-      "AutoStart": false,
-      "PreInstalled": "true"
+      "InstallOptions" : {
+        "PreInstalled": "true"
+      },
+      "LaunchSettings": {
+        "AutoStart": false
+      }
     }
   }
 }

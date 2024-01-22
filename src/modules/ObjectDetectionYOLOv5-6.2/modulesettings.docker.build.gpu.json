@@ -14,11 +14,13 @@
          packages can be installed and persisted.
       */
 
-      // This NEEDS to be 'shared' for docker pre-installed, but due to PIP issues on GPU docker we
-      // added this file so we could experiment with local installed packages
-      "RuntimeLocation": "Shared", // Can be Local or Shared
-      
-      "PreInstalled": "true"
+      "LaunchSettings": {
+        // This NEEDS to be 'shared' for docker pre-installed
+        "RuntimeLocation": "Shared", // Can be Local or Shared
+      },
+      "InstallOptions" :{
+        "PreInstalled": "true"
+      }
     }
- }
+  }
 }

@@ -2,9 +2,13 @@
   "Modules": {
 
     "OCR": {
-      "Runtime": "python3.7",
-      "InstallGPU": true,
-      "EnableGPU": true 
+      "LaunchSettings": {
+        "Runtime": "python3.7"
+      },
+      "GpuOptions" : {
+        "InstallGPU": true,
+        "EnableGPU": true 
+      }
     }
   }
 }

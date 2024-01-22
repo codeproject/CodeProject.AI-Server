@@ -51,14 +51,10 @@ RULES AND CONVENTIONS
    - For Sound preview, include an AUDIO element with id 'snd' that contains a
      SOURCE tag
 
-5. We recommend wiring up 'onclick' callbacks using AddEventListener. The script
-   in this file will be parsed and injected into a larger file, and event
-   handlers may not be attached correctly otherwise.
-
-6. When this file is parsed and injected into the larger explorer, the HTML is
+5. When this file is parsed and injected into the larger explorer, the HTML is
    injected first, then the script, then the CSS.
 
-7. **To ensure uniqueness of elements** you can include the _MID_ macro in any
+6. **To ensure uniqueness of elements** you can include the _MID_ macro in any
    name. This will be expanded to be [ModuleId]_ where [ModuleId] is the literal
    ID of this module. For instance <div id="_MID_TextBox"> becomes <div id="MyModuleId_TextBox">
 -->
@@ -68,6 +64,7 @@ RULES AND CONVENTIONS
     <title>text Summary Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -77,7 +74,7 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-		function _MID_onSummarizeText(articleText, numberOfSentences) {
+		async function _MID_onSummarizeText(articleText, numberOfSentences) {
 
 			clearImagePreview();
 
@@ -90,15 +87,12 @@ RULES AND CONVENTIONS
 			let params = [['text', articleText], ["num_sentences", numberOfSentences]]
 
 			setResultsHtml("Summarizing text...");
-			submitRequest('text', 'summarize', null, params, function (data) {
+			let data = await submitRequest('text', 'summarize', null, params);
+            if (data) {
 				setResultsHtml((data.summary || "No summary was returned") +
 				               getProcessingMetadataHtml(data));
-			});
+			};
 		}
-        
-        document.getElementById('_MID_summarize')
-                .addEventListener('click',
-                                  () => _MID_onSummarizeText(_MID_articleText.value, _MID_numSentences.value));
 
 // END EXPLORER SCRIPT
     </script>
@@ -113,7 +107,8 @@ RULES AND CONVENTIONS
 
         <div class="form-group row mt-1">
             <div class="col-2">
-                <input class="btn-success col-form-label" type="button" value="Summarize" id="_MID_summarize" />
+                <input class="btn-success col-form-label" type="button" value="Summarize" id="_MID_summarize"
+                       onclick="_MID_onSummarizeText(_MID_articleText.value, _MID_numSentences.value)"/>
             </div>
 
             <label class="col-5 col-form-label text-end">Sentences to produce</label>

@@ -136,7 +136,7 @@ namespace CodeProject.AI.Server.Utilities
             catch (Exception e)
             {
                 error = e.Message;
-                Debug.WriteLine(e);
+                Debug.WriteLine("Error downloading file: " + error);
             }
 
             return (false, error);
@@ -183,7 +183,7 @@ namespace CodeProject.AI.Server.Utilities
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("Error extracting file: " + e.Message);
                 result = false;
             }
 

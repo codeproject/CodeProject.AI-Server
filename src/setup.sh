@@ -311,15 +311,15 @@ function doModuleInstall () {
     write "." $color_mute
     moduleVersion=$(getValueFromModuleSettingsFile       "${moduleDirPath}" "${moduleDirName}" "Version" )
     write "." $color_mute
-    runtime=$(getValueFromModuleSettingsFile             "${moduleDirPath}" "${moduleDirName}" "Runtime")
+    runtime=$(getValueFromModuleSettingsFile             "${moduleDirPath}" "${moduleDirName}" "LaunchSettings.Runtime")
     write "." $color_mute
-    runtimeLocation=$(getValueFromModuleSettingsFile     "${moduleDirPath}" "${moduleDirName}" "RuntimeLocation")
+    runtimeLocation=$(getValueFromModuleSettingsFile     "${moduleDirPath}" "${moduleDirName}" "LaunchSettings.RuntimeLocation")
     write "." $color_mute
-    installGPU=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "InstallGPU")
+    moduleStartFilePath=$(getValueFromModuleSettingsFile "${moduleDirPath}" "${moduleDirName}" "LaunchSettings.FilePath")
     write "." $color_mute
-    moduleStartFilePath=$(getValueFromModuleSettingsFile "${moduleDirPath}" "${moduleDirName}" "FilePath")
+    installGPU=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "GpuOptions.InstallGPU")
     write "." $color_mute
-    platforms=$(getValueFromModuleSettingsFile           "${moduleDirPath}" "${moduleDirName}" "Platforms")
+    platforms=$(getValueFromModuleSettingsFile           "${moduleDirPath}" "${moduleDirName}" "InstallOptions.Platforms")
     write "." $color_mute
     writeLine "Done" $color_success
     
@@ -543,7 +543,12 @@ function doModuleInstall () {
         writeLine "No install.sh present in ${moduleDirPath}" $color_warn
     fi
 
-    writeLine "Module setup time $(date -u -d "0 $SECONDS seconds - $moduleSetupStarttime seconds" +"%H:%M:%S")" "!color_info!"
+    if [ "$os" = "macos" ]; then 
+        diff=$(echo $(($SECONDS-$moduleSetupStarttime)) | awk '{print int($1/60)"min "int($1%60)"s"}')
+        writeLine "Module setup time $diff"
+    else
+        writeLine "Module setup time $(date -u -d "0 $SECONDS seconds - $moduleSetupStarttime seconds" +"%H:%M:%S")" "!color_info!"
+    fi
 
     # return result
     # echo "${module_install_errors}"
@@ -940,7 +945,12 @@ writeLine ""
 writeLine "                Setup complete" "White" "DarkGreen" $lineWidth
 writeLine ""
 
-writeLine "Total setup time $(date -u -d "0 $SECONDS seconds - $mainSetupStarttime seconds" +"%H:%M:%S")" "!color_info!"
+if [ "$os" = "macos" ]; then 
+    diff=$(echo $(($SECONDS-$mainSetupStarttime)) | awk '{print int($1/60)"min "int($1%60)"s"}')
+    writeLine "Total setup time $diff"
+else
+    writeLine "Total setup time $(date -u -d "0 $SECONDS seconds - $mainSetupStarttime seconds" +"%H:%M:%S")" "!color_info!"
+fi
 
 if [ "${success}" != true ]; then
     quit 1

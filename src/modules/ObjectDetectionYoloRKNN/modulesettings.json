@@ -3,26 +3,29 @@
 
     "ObjectDetectionYoloRKNN": {
       "Name": "Object Detection (YOLOv5 RKNN)",
-      "Version": "1.5.0",
+      "Version": "1.6.0",
 
-      // Publishing info
-      "Description": "Provides Object Detection using YOLOv5 RKNN models. This module only works with Rockchip RK3588/RK3588S NPUs like the Orange Pi 5/5B/5 Plus",
-      "Category": "Computer Vision",
-      "Platforms": [ "orangepi" ],
-      "License": "Apache-2.0",
-      "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
-      "Author": "Mike Lud",
-      "Homepage": null,
-      "BasedOn": null,
-      "BasedOnUrl": null,
+      "PublishingInfo" : {
+        "Description": "Provides Object Detection using YOLOv5 RKNN models. This module only works with Rockchip RK3588/RK3588S NPUs like the Orange Pi 5/5B/5 Plus",
+        "IconURL": null,
+        "Category": "Computer Vision",
+        "Stack": "Python, FastDeploy, YOLO",
+        "License": "Apache-2.0",
+        "LicenseUrl": "https://opensource.org/licenses/Apache-2.0",
+        "Author": "Mike Lud",
+        "Homepage": null,
+        "BasedOn": null,
+        "BasedOnUrl": null
+      },
 
-      // Launch instructions
-      "AutoStart": true,
-      "FilePath": "objectdetection_fd_rknn_adapter.py",
-      "Runtime": "python3.9",
-      "RuntimeLocation": "Local",       // Can be Local or Shared
-      "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
-      "Queue": "objectdetection_queue", // We make all Object detectors use the same queue.
+      "LaunchSettings": {
+        "AutoStart": true,
+        "FilePath": "objectdetection_fd_rknn_adapter.py",
+        "Runtime": "python3.9",
+        "RuntimeLocation": "Local",       // Can be Local or Shared
+        "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
+        "Queue": "objectdetection_queue"  // We make all Object detectors use the same queue.
+      },
 
       "EnvironmentVariables": {
         "MODELS_DIR": "%CURRENT_MODULE_PATH%/assets",
@@ -30,26 +33,47 @@
         "MODEL_SIZE": "Small"
       },
       
-      // GPU options
-      "InstallGPU": true,
-      "EnableGPU": true,                // Will be coerced to false if InstallGPU = false
-      "AcceleratorDeviceName": null,    // = default
-      "Parallelism": 1,                 // 0 = Default (number of CPUs - 1)
-      "HalfPrecision": "enable",        // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+      "GpuOptions" : {
+        "InstallGPU": true,
+        "EnableGPU": true,                // Will be coerced to false if InstallGPU = false
+        "AcceleratorDeviceName": null,    // = default
+        "Parallelism": 1,                 // 0 = Default (number of CPUs - 1)
+        "HalfPrecision": "enable"         // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+      },
 
-      // Which server version is compatible with each version of this module.
-      "ModuleReleases": [
-        { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-08-06" },
-        { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-08-06", "ReleaseNotes": "Corrected installer in docker environment" },
-        { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
-        { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" },
-        { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.4.1", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
-        { "ModuleVersion": "1.4.2", "ServerVersionRange": [ "2.3.5", "2.3.4"  ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Updated installer", "Importance": "Minor" },
-        { "ModuleVersion": "1.4.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
-        { "ModuleVersion": "1.4.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
-        { "ModuleVersion": "1.5.0", "ServerVersionRange": [ "2.5.0", ""       ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" }
-      ],
+      "InstallOptions" : {
+        "Platforms":      [ "orangepi" ], // The platforms this module can and cannot be installed on
+        "PreInstalled":   false,          // Is this module pre-installed with the server (eg Docker containers)
+        "ModuleReleases": [               // Which server version is compatible with each version of this module.
+          { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-08-06" },
+          { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-08-06", "ReleaseNotes": "Corrected installer in docker environment" },
+          { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
+          { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" },
+          { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
+          { "ModuleVersion": "1.4.1", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+          { "ModuleVersion": "1.4.2", "ServerVersionRange": [ "2.3.5", "2.3.4"  ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Updated installer", "Importance": "Minor" },
+          { "ModuleVersion": "1.4.3", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+          { "ModuleVersion": "1.4.4", "ServerVersionRange": [ "2.4.2", "2.4.7" ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+          { "ModuleVersion": "1.5.0", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC6" ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
+          { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
+          { "ModuleVersion": "1.5.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
+          { "ModuleVersion": "1.5.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
+          { "ModuleVersion": "1.6.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" }
+        ]
+      },
+
+      "UIElements" : {
+        "Menus": [
+        {
+          "Label": "Model Size",
+          "Options": [
+              { "Label": "Tiny",   "Setting": "MODEL_SIZE", "Value": "tiny"   },
+              { "Label": "Small",  "Setting": "MODEL_SIZE", "Value": "small"  },
+              { "Label": "Medium", "Setting": "MODEL_SIZE", "Value": "medium" },
+              { "Label": "Large",  "Setting": "MODEL_SIZE", "Value": "large"  }
+          ]
+        }]
+      },
 
       "RouteMaps": [
         {

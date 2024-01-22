@@ -2,8 +2,10 @@
   "Modules": {
 
     "BackgroundRemover": {
-      "AutoStart": false,
-      "Runtime": "python"
+      "LaunchSettings": {
+        "AutoStart": false,
+        "Runtime": "python"
+      }
     }
   }
 }

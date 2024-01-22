@@ -24,13 +24,18 @@ class cartooniser_adapter(ModuleRunner):
         self.opts = Options()
 
     def initialise(self) -> None:
-        # GPU support not fully working in Linux
-        # if self.opts.use_gpu and not self.system_info.hasTorchCuda:
-        #     self.opts.use_gpu = False
-        self.opts.use_gpu = False
 
-        if self.opts.use_gpu:
-            self.execution_provider = "CUDA"
+        # GPU support not fully working in Linux
+        # if self.enable_GPU and self.system_info.hasTorchCuda:
+        #    self.execution_provider = "CUDA"
+        # else
+        #    self.enable_GPU = False
+        self.enable_GPU = False
+
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+
 
     def process(self, data: RequestData) -> JSON:
         try:
@@ -38,7 +43,7 @@ class cartooniser_adapter(ModuleRunner):
             model_name: str = data.get_value("model_name", self.opts.model_name)
             # print("model name = " + model_name)
 
-            device_type = "cuda" if self.opts.use_gpu else "cpu"
+            device_type = "cuda" if self.enable_GPU else "cpu"
 
             start_time = time.perf_counter()
             (cartoon, inferenceMs) = inference(img, self.opts.weights_dir, 
@@ -46,7 +51,7 @@ class cartooniser_adapter(ModuleRunner):
 
             processMs = int((time.perf_counter() - start_time) * 1000)
 
-            return { 
+            response = { 
                 "success":     True, 
                 "imageBase64": RequestData.encode_image(cartoon),
                 "processMs":   processMs,
@@ -55,7 +60,21 @@ class cartooniser_adapter(ModuleRunner):
 
         except Exception as ex:
             self.report_error_async(ex, __file__)
-            return {"success": False, "error": "unable to process the image"}
+            response = { "success": False, "error": "unable to process the image" }
+
+        self._update_statistics(response)
+        return response 
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+        }
+
 
     def selftest(self) -> JSON:
         
@@ -75,8 +94,19 @@ class cartooniser_adapter(ModuleRunner):
 
         return { "success": result['success'], "message": "cartoonise test successful" }
 
+
     def cleanup(self) -> None:
         pass
+
+      
+    def _update_statistics(self, response):   
+        if "success" in response and response["success"]:
+            self.success_inferences += 1
+            if "inferenceMs" in response:
+                self.total_success_inf_ms += response["inferenceMs"]
+        else:
+            self.failed_inferences += 1
+
 
 if __name__ == "__main__":
     cartooniser_adapter().start_loop()

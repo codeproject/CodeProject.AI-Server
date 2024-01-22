@@ -278,7 +278,7 @@ namespace CodeProject.AI.Server.Controllers
             var insertions = new List<ExplorerUI>(_installedModules.Count);
             foreach (var module in _installedModules.Values)
             {
-                ExplorerUI? ui = module.ExplorerUI;
+                ExplorerUI? ui = module.UIElements?.ExplorerUI;
                 if (ui is not null && !ui.IsEmpty)
                     insertions.Add(ui);
             }

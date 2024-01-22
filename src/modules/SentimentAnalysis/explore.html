@@ -65,6 +65,7 @@ RULES AND CONVENTIONS
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
@@ -100,7 +101,7 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-        function _MID_onAnalyzeSentiment(articleText) {
+        async function _MID_onAnalyzeSentiment(articleText) {
 
 			clearImagePreview();
 
@@ -112,7 +113,8 @@ RULES AND CONVENTIONS
 			let params = [['text', articleText]]
 
 			setResultsHtml("Performing sentiment analysis...");
-			submitRequest('text', 'sentiment', null, params, function (data) {
+			let data = await submitRequest('text', 'sentiment', null, params)
+            if (data) {
 				if (!data.success) {
 					setResultsHtml("Sentiment analysis failed<br/>" + data.error +
                         getProcessingMetadataHtml(data));
@@ -123,7 +125,7 @@ RULES AND CONVENTIONS
 								   "Text sentiment is " + (data.is_positive ? "positive" : "negative") +
 								   getProcessingMetadataHtml(data));
 				}
-			});
+			};
 		}
 // END EXPLORER SCRIPT
     </script>

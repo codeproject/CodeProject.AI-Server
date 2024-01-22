@@ -31,6 +31,11 @@ class SuperRes_adapter(ModuleRunner):
         if self.enable_GPU and self.can_use_GPU:
             self.execution_provider = "CUDA"
 
+        self.success_inferences   = 0
+        self.total_success_inf_ms = 0
+        self.failed_inferences    = 0
+
+
     def process(self, data: RequestData) -> JSON:
         try:
             img: Image = data.get_image(0)
@@ -39,7 +44,7 @@ class SuperRes_adapter(ModuleRunner):
 
             (out_img, inferenceMs) = superresolution(img)
 
-            return {
+            response = {
                 "success": True,
                 "imageBase64": RequestData.encode_image(out_img),
                 "processMs" : int((time.perf_counter() - start_time) * 1000),
@@ -48,7 +53,21 @@ class SuperRes_adapter(ModuleRunner):
 
         except Exception as ex:
             self.report_error(ex, __file__)
-            return {"success": False, "error": "unable to process the image"}
+            response = {"success": False, "error": "unable to process the image"}
+
+        self._update_statistics(response)
+        return response 
+
+
+    def status(self, data: RequestData = None) -> JSON:
+        return { 
+            "successfulInferences" : self.success_inferences,
+            "failedInferences"     : self.failed_inferences,
+            "numInferences"        : self.success_inferences + self.failed_inferences,
+            "averageInferenceMs"   : 0 if not self.success_inferences 
+                                     else self.total_success_inf_ms / self.success_inferences,
+        }
+
 
     def selftest(self) -> JSON:
         
@@ -65,6 +84,21 @@ class SuperRes_adapter(ModuleRunner):
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
         return { "success": result['success'], "message": "Super resolution test successful" }
+
+
+    def _update_statistics(self, response):
+
+        if "success" in response and response["success"]:
+            self.success_inferences += 1
+            if "inferenceMs" in response:
+                self.total_success_inf_ms += response["inferenceMs"]
+        else:
+            self.failed_inferences += 1
+
+
+    def _status_summary(self):
+        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
+        return summary
 
 
 if __name__ == "__main__":
