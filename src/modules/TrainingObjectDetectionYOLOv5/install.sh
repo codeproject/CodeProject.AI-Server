@@ -42,7 +42,9 @@ if [ "$module_install_errors" = "" ] && [ "$os" = "linux" ] && [ "$architecture"
 
             module_install_errors=""
 
-            echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
+            if [ "$os_name" != "debian" ]; then
+                echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
+            fi
             installAptPackages "libssl1.1"
 
             # LIBSSL: Add link at /usr/lib/libssl.so.1.1 that points to /lib/x86_64-linux-gnu/libssl.so.1.1

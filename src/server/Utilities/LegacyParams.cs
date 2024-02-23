@@ -59,17 +59,18 @@ namespace CodeProject.AI.Server
                 // Activation
                 if (pair.Key.Equals("VISION-FACE", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_FACE", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["Modules:FaceProcessing:EnvironmentVariables:AutoStart"] = pair.Value;
+                    keyValues["Modules:FaceProcessing:LaunchSettings:AutoStart"] = pair.Value;
 
                 if (pair.Key.Equals("VISION-SCENE", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_SCENE", StringComparison.InvariantCultureIgnoreCase))
-                    keyValues["Modules:SceneClassification:EnvironmentVariables:AutoStart"] = pair.Value;
+                    keyValues["Modules:SceneClassification:LaunchSettings:AutoStart"] = pair.Value;
 
                 if (pair.Key.Equals("VISION-DETECTION", StringComparison.InvariantCultureIgnoreCase) ||
                     pair.Key.Equals("VISION_DETECTION", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    keyValues["Modules:VisionObjectDetection:EnvironmentVariables:AutoStart"] = pair.Value;
-                    keyValues["Modules:ObjectDetectionYOLOv5-6.2:EnvironmentVariables:AutoStart"]   = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5-3.1:LaunchSettings:AutoStart"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5-6.2:LaunchSettings:AutoStart"] = pair.Value;
+                    keyValues["Modules:ObjectDetectionYOLOv5Net:LaunchSettings:AutoStart"]  = pair.Value;
                 }
 
                 // Mode, which convolutes resolution and model size

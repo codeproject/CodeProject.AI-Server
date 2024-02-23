@@ -66,10 +66,7 @@ fi
 
 if [ "$os" = "linux" ]; then
 
-    # for curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add... we need gnupg (_, 1 or 2)
-    # if [ ! dpkg -l gnupg > /dev/null ] && [ ! dpkg -l gnupg2 > /dev/null ] && [ ! dpkg -l gnupg1 > /dev/null ]; then
-        installAptPackages "gnupg"
-    # fi
+    installAptPackages "gnupg"
 
     # Select the Edge TPU library version
     if [ "$tpu_speed" = "max" ]; then
@@ -95,7 +92,7 @@ if [ "$os" = "linux" ]; then
     if [ "$found_edgelib" = true ]; then
         writeLine "Edge TPU library found." $color_success
     else
-        # getFromServer "libraries/" "edgetpu_runtime-20221024.zip" "edgetpu_runtime" "Downloading edge TPU runtime..."
+        getFromServer "libraries/" "edgetpu_runtime-20221024.zip" "edgetpu_runtime" "Downloading edge TPU runtime..."
 
         if [ "$use_edge_install_script" = true ]; then
             install_instructions="sudo bash ${moduleDirPath}/edgetpu_runtime/install.sh"
@@ -234,9 +231,28 @@ elif [ "$os" = "macos" ]; then
 fi
 
 if [ "$module_install_errors" == "" ]; then
-    # Download the MobileNet TFLite models and store in /assets
+    # Download the TFLite / edgeTPU models and store in /assets
     # getFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
-    getFromServer "models/" "objectdetect-coral-multitpu-models.zip" "assets" "Downloading MobileNet models..."
+
+    getFromServer "models/" "objectdetection-efficientdet-large-edgetpu.zip" "assets" "Downloading EfficientDet (large) models..."
+    getFromServer "models/" "objectdetection-efficientdet-medium-edgetpu.zip" "assets" "Downloading EfficientDet (medium) models..."
+    getFromServer "models/" "objectdetection-efficientdet-small-edgetpu.zip" "assets" "Downloading EfficientDet (small) models..."
+    getFromServer "models/" "objectdetection-efficientdet-tiny-edgetpu.zip" "assets" "Downloading EfficientDet (tiny) models..."
+
+    getFromServer "models/" "objectdetection-mobilenet-large-edgetpu.zip" "assets" "Downloading MobileNet (large) models..."
+    getFromServer "models/" "objectdetection-mobilenet-medium-edgetpu.zip" "assets" "Downloading MobileNet (medium) models..."
+    getFromServer "models/" "objectdetection-mobilenet-small-edgetpu.zip" "assets" "Downloading MobileNet (small) models..."
+    getFromServer "models/" "objectdetection-mobilenet-tiny-edgetpu.zip" "assets" "Downloading MobileNet (tiny) models..."
+
+    # getFromServer "models/" "objectdetection-yolov5-large-edgetpu.zip" "assets" "Downloading YOLOv5 (large) models..."
+    # getFromServer "models/" "objectdetection-yolov5-medium-edgetpu.zip" "assets" "Downloading YOLOv5 (medium) models..."
+    # getFromServer "models/" "objectdetection-yolov5-small-edgetpu.zip" "assets" "Downloading YOLOv5 (small) models..."
+    # getFromServer "models/" "objectdetection-yolov5-tiny-edgetpu.zip" "assets" "Downloading YOLOv5 (tiny) models..."
+
+    getFromServer "models/" "objectdetection-yolov8-large-edgetpu.zip" "assets" "Downloading YOLOv8 (large) models..."
+    getFromServer "models/" "objectdetection-yolov8-medium-edgetpu.zip" "assets" "Downloading YOLOv8 (medium) models..."
+    getFromServer "models/" "objectdetection-yolov8-small-edgetpu.zip" "assets" "Downloading YOLOv8 (small) models..."
+    getFromServer "models/" "objectdetection-yolov8-tiny-edgetpu.zip" "assets" "Downloading YOLOv8 (tiny) models..."
 
     # TODO: Check assets created and has files
     # module_install_errors=...

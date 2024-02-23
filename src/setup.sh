@@ -700,7 +700,10 @@ fi
 # fi
 
 # Install tools that we know are available via apt-get or brew
-if [ "$os" = "linux" ]; then checkForTool curl; fi
+if [ "$os" = "linux" ]; then 
+    checkForTool curl
+    checkForTool xz-utils
+fi
 checkForTool wget
 checkForTool unzip
 if [ "${useJq}" = true ]; then checkForTool jq; fi

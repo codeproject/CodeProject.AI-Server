@@ -141,6 +141,42 @@ namespace CodeProject.AI.SDK.Common
         }
     }
 
+    /// <summary>
+    /// Represents the runtimes that have been discovered
+    /// </summary>
+    public class Runtimes
+    {
+        /// <summary>
+        /// Gets or sets the default Python install
+        /// </summary>
+        public string DefaultPython      { get; set; } = "Not found";
+
+        /// <summary>
+        /// Gets or sets the default .NET runtime (not SDK) on the system
+        /// </summary>
+        public string DotNetRuntime      { get; set; } = "Not found";
+
+        /// <summary>
+        /// Gets or sets the default .NET SDK on the system
+        /// </summary>
+        public string DotNetSDK          { get; set; } = "Not found";
+
+        /// <summary>
+        /// Gets or sets the version of Go installed
+        /// </summary>
+        public string Go                 { get; set; } = "Not found";
+
+        /// <summary>
+        /// Gets or sets the currently active installation of nodejs
+        /// </summary>
+        public string NodeJS             { get; set; } = "Not found";
+
+        /// <summary>
+        /// Gets or sets the current version of Rust
+        /// </summary>
+        public string Rust               { get; set; } = "Not found";
+    }
+
     public enum RuntimeEnvironment
     {
         /// <summary>
@@ -208,8 +244,10 @@ namespace CodeProject.AI.SDK.Common
         private static bool?         _hasNvidiaCard;
         private static string?       _cuDnnVersion;
         private static bool          _isWSL;
+        private static string?       _osVersion;
+        private static string?       _osName;
         private static bool          _isSSH;
-        private static string?       _defaultPythonVersion;
+        private static Runtimes      _runtimes = new Runtimes();
 
         private static TimeSpan      _nvidiaInfoRefreshTime = TimeSpan.FromSeconds(10);
         private static TimeSpan      _systemInfoRefreshTime = TimeSpan.FromSeconds(1);
@@ -428,7 +466,7 @@ namespace CodeProject.AI.SDK.Common
                     return "Docker";
 
                 if (IsWSL)
-                    return "WSL";
+                    return $"WSL";
                    
                 if (HardwareVendor == "Raspberry Pi" || HardwareVendor == "Orange Pi")
                     return HardwareVendor;
@@ -567,10 +605,20 @@ namespace CodeProject.AI.SDK.Common
         {
             get
             {
+                if (IsWSL)
+                {
+                    return $"{_osName} {_osVersion}";
+                }
+
+                if (IsLinux)
+                {
+                    return $"{_osName} {_osVersion}";
+                }
+
                 // See https://github.com/getsentry/sentry-dotnet/issues/1484. 
                 // C'mon guys: technically the version may be 10.x, but stick to the branding that
                 // the rest of the world understands.
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+                if (IsWindows &&
                     Environment.OSVersion.Version.Major >= 10 &&
                     Environment.OSVersion.Version.Build >= 22000)
                     return RuntimeInformation.OSDescription.Replace("Windows 10.", "Windows 11 version 10.");
@@ -588,12 +636,9 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
-        /// Returns the default Python version for the current system (only returns Major.Minor)
+        /// Returns the runtimes that have been discovered on this system
         /// </summary>
-        public static string DefaultPythonVersion
-        {
-            get { return _defaultPythonVersion is null? string.Empty : _defaultPythonVersion; }
-        }
+        public static Runtimes Runtimes { get; } = new Runtimes();
 
         /// <summary>
         /// Returns a value indicating whether system resources (Memory, CPU) are being monitored.
@@ -622,14 +667,11 @@ namespace CodeProject.AI.SDK.Common
             await GetMemoryInfoAsync().ConfigureAwait(false);
             
             await CheckForWslAsync().ConfigureAwait(false);
+            await CheckOSVersionNameAsync().ConfigureAwait(false);
             await CheckForSshAsync().ConfigureAwait(false);
             await GetcuDNNVersionAsync().ConfigureAwait(false);
 
-            var pattern = "python (?<version>\\d\\.\\d+)";
-            var options = RegexOptions.IgnoreCase;
-            var results = await GetProcessInfoAsync("python3", "--version", pattern, options).ConfigureAwait(false);
-            if ((results?.Count ?? 0) > 0)
-                _defaultPythonVersion = results!["version"];
+            await GetRuntimesAsync().ConfigureAwait(false);
 
             _monitorSystemUsageTask = MonitorSystemUsageAsync();
             _monitoryGpuUsageTask   = MonitorNvidiaGpuUsageAsync();
@@ -647,7 +689,11 @@ namespace CodeProject.AI.SDK.Common
 
             string? gpuDesc = GPU?.Description;
 
-            info.AppendLine($"System:           {SystemName}");
+            if (IsWSL)
+                info.AppendLine($"System:           {SystemName} ({RuntimeInformation.OSDescription})");
+            else
+                info.AppendLine($"System:           {SystemName}");
+
             info.AppendLine($"Operating System: {OperatingSystem} ({OperatingSystemDescription})");
 
             if (CPU is not null)
@@ -696,8 +742,13 @@ namespace CodeProject.AI.SDK.Common
             else
                 info.AppendLine($"Execution Env:    {ExecutionEnvironment}");
             info.AppendLine($"Runtime Env:      {RuntimeEnvironment}");
-            info.AppendLine($".NET framework:   {RuntimeInformation.FrameworkDescription}");
-            info.AppendLine($"Default Python:   {DefaultPythonVersion}");
+            info.AppendLine("Runtimes installed:");
+            info.AppendLine($"  .NET runtime:     {Runtimes.DotNetRuntime}");
+            info.AppendLine($"  .NET SDK:         {Runtimes.DotNetSDK}");
+            info.AppendLine($"  Default Python:   {Runtimes.DefaultPython}");
+            info.AppendLine($"  Go:               {Runtimes.Go}");
+            info.AppendLine($"  NodeJS:           {Runtimes.NodeJS}");
+            // info.AppendLine($"  Rust:             {Runtimes.Rust}");
 
             return info.ToString().Trim();
         }
@@ -1530,6 +1581,45 @@ namespace CodeProject.AI.SDK.Common
             }
         }
 
+        private async static Task CheckOSVersionNameAsync()
+        {
+            if (IsLinux)
+            {
+                // Output is in the form:
+                var results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $NAME\"", null)
+                                                                                .ConfigureAwait(false);
+                if (results is not null)
+                    _osName = results["output"]?.Trim(); // eg "ubuntu", "debian"
+
+                results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $VERSION_ID\"", null)
+                                                                                .ConfigureAwait(false);
+                if (results is not null)
+                    _osVersion = results["output"]?.Trim();    // eg. "22.04" for Ubuntu 22.04, "12" for Debian 12
+            }
+            else if (IsWindows)
+            {
+                _osName = "Windows";
+                if (Environment.OSVersion.Version.Major >= 10 && 
+                    Environment.OSVersion.Version.Build >= 22000)
+                    _osVersion = "11";
+                else
+                    _osVersion = Environment.OSVersion.Version.Major.ToString();
+            }
+            else if (IsMacOS)
+            {
+                string command = "awk '/SOFTWARE LICENSE AGREEMENT FOR macOS/' '/System/Library/CoreServices/Setup Assistant.app/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf' | awk -F 'macOS ' '{print $NF}' | awk '{print substr($0, 0, length($0)-1)}'";
+                var results = await GetProcessInfoAsync("/bin/bash", $"-c \"{command}\"", null)
+                                                                                .ConfigureAwait(false);
+                if (results is not null)
+                    _osName = results["output"];  // eg. "Big Sur"
+
+                results = await GetProcessInfoAsync("/bin/bash", "-c \"sw_vers -productVersion\"", null)
+                                                                                .ConfigureAwait(false);
+                if (results is not null)
+                    _osName = results["output"];    // eg."11.1" for macOS Big Sur
+            }
+        }
+
         private async static Task CheckForSshAsync()
         {
             _isSSH = false;
@@ -1579,6 +1669,39 @@ namespace CodeProject.AI.SDK.Common
                 if (results is not null)
                     _cuDnnVersion = results["output"]?.Trim();
             }
+        }
+
+        private async static Task GetRuntimesAsync()
+        {
+            var pattern = "Microsoft.AspNetCore.App (?<version>\\d+\\.\\d+.\\d+)";
+            var options = RegexOptions.IgnoreCase;
+            var results = await GetProcessInfoAsync("dotnet", "--list-runtimes", pattern, options, true).ConfigureAwait(false);
+            if ((results?.Count ?? 0) > 0)
+                Runtimes.DotNetRuntime = results!["version"];
+
+            pattern = "(?<version>\\d+\\.\\d+.\\d+)";
+            options = RegexOptions.IgnoreCase;
+            results = await GetProcessInfoAsync("dotnet", "--list-sdks", pattern, options, true).ConfigureAwait(false);
+            if ((results?.Count ?? 0) > 0)
+                Runtimes.DotNetSDK = results!["version"];
+
+            pattern = "python (?<version>\\d+\\.\\d+.\\d+)";
+            options = RegexOptions.IgnoreCase;
+            results = await GetProcessInfoAsync("python", "--version", pattern, options).ConfigureAwait(false);
+            if ((results?.Count ?? 0) > 0)
+                Runtimes.DefaultPython = results!["version"];
+
+            pattern = "go version go(?<version>\\d+\\.\\d+\\.\\d+)";
+            options = RegexOptions.IgnoreCase;
+            results = await GetProcessInfoAsync("go", "version", pattern, options).ConfigureAwait(false);
+            if ((results?.Count ?? 0) > 0)
+                Runtimes.Go = results!["version"];
+
+            pattern = "v(?<version>\\d+\\.\\d+\\.\\d+)";
+            options = RegexOptions.IgnoreCase;
+            results = await GetProcessInfoAsync("node", "-v", pattern, options).ConfigureAwait(false);
+            if ((results?.Count ?? 0) > 0)
+                Runtimes.NodeJS = results!["version"];
         }
 
         private static void InitSummary()
@@ -1659,6 +1782,8 @@ namespace CodeProject.AI.SDK.Common
         /// <param name="pattern">The regex pattern to apply to the output of the command. Each
         /// named expression in that pattern will be the name of an entry in the return dictionary</param>
         /// <param name="options">The regex options</param>
+        /// <param name="getLastMatch">If true return the last match, not the first match, in the
+        /// case where <see cref="pattern"/> matches more than one line.
         /// <returns>A Dictionary</returns>
         /// <remarks>Suppose you call the process "dotnet" with args "--version". Say you want to 
         /// extract the Major/Minor version, so your pattern is @"(?<major>\d+)\.(?<minor>\d+)".
@@ -1672,7 +1797,8 @@ namespace CodeProject.AI.SDK.Common
         private async static ValueTask<Dictionary<string, string>?> GetProcessInfoAsync(string command,
                                                                                         string args,
                                                                                         string? pattern = null,
-                                                                                        RegexOptions options = RegexOptions.None)
+                                                                                        RegexOptions options = RegexOptions.None,
+                                                                                        bool getLastMatch = false)
         {
             // We always need this
             options |= RegexOptions.ExplicitCapture;
@@ -1698,18 +1824,31 @@ namespace CodeProject.AI.SDK.Common
                 if (!string.IsNullOrEmpty(pattern))
                 {
                     // Match values in the output against the pattern
-                    Match valueMatch = Regex.Match(output, pattern, options);
-
-                    // Match the names in the pattern against our match name pattern
-                    Regex expression = new Regex(@"\(\?\<(?<matchName>([a-zA-Z_-]+))\>");
-                    var results = expression.Matches(pattern);
-
-                    // For each name we found in the search pattern, get the value of the match of that
-                    // name from the output string and store in the dictionary
-                    foreach (Match patternMatch in results)
+                    Match? valueMatch = null;
+                    if (getLastMatch)
                     {
-                        string matchName = patternMatch.Groups[1].Value;
-                        values[matchName] = valueMatch.Groups[matchName].Value;
+                        MatchCollection matches = Regex.Matches(output, pattern, options);
+                        foreach (Match match in matches)
+                            valueMatch = match;
+                    }
+                    else
+                        valueMatch = Regex.Match(output, pattern, options);
+
+                    if (valueMatch is not null)
+                    {
+                        // Look in the "pattern" string for "(?<name> ... )" explicit match patterns
+                        // and extract the name. We'll then fill the dictionary using this name and 
+                        // the value matched for that name's expression. 
+                        Regex expression = new Regex(@"\(\?\<(?<matchName>([a-zA-Z_-]+))\>");
+                        var captureNames = expression.Matches(pattern);
+
+                        // For each name we found in the search pattern, get the value of the match
+                        // of that name from the output string and store in the dictionary
+                        foreach (Match captureNameMatch in captureNames)
+                        {
+                            string captureName = captureNameMatch.Groups[1].Value;
+                            values[captureName] = valueMatch.Groups[captureName].Value;
+                        }
                     }
                 }
             }

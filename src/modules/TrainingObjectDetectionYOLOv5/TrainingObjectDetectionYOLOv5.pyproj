@@ -15,21 +15,28 @@
     <IsWindowsApplication>False</IsWindowsApplication>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
-    <Environment>CPAI_MODULE_PARALLELISM=2
-YOLOv5_VERBOSE=false</Environment>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
+  
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
+  
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
+
   <ItemGroup>
-    <Compile Include="TrainingObjectDetectionYOLOv5.py" />
+    <Compile Include="training_objectdetection_YOLOv5.py" />
+    <Compile Include="training_objectdetection_YOLOv5_adapter.py" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="assets\" />
+  </ItemGroup>
+  
   <ItemGroup>
     <Content Include="assets\yolov5l.pt" />
     <Content Include="assets\yolov5m.pt" />
@@ -37,11 +44,13 @@ YOLOv5_VERBOSE=false</Environment>
     <Content Include="assets\yolov5s.pt" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="explore.html" />
     <Content Include="package.bat" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="package.sh" />
   </ItemGroup>
+
   <ItemGroup>
     <Content Include="modulesettings.macos.json">
       <DependentUpon>modulesettings.json</DependentUpon>
@@ -53,8 +62,9 @@ YOLOv5_VERBOSE=false</Environment>
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
   </ItemGroup>
+
   <ItemGroup>
-    <Content Include="requirements.cuda11_5.txt" >
+    <Content Include="requirements.cuda11_5.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.txt" />
@@ -74,6 +84,7 @@ YOLOv5_VERBOSE=false</Environment>
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>
+
   <ItemGroup>
     <Interpreter Include="bin\windows\python39\venv\">
       <Id>venv</Id>
@@ -85,9 +96,7 @@ YOLOv5_VERBOSE=false</Environment>
       <Architecture>X64</Architecture>
     </Interpreter>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="assets\" />
-  </ItemGroup>
+
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
        Visual Studio and specify your pre- and post-build commands in

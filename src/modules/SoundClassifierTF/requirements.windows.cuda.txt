@@ -1,0 +1,13 @@
+#! Python3.7
+
+tensorflow-directml-plugin      # Installing Tensorflow (DirectML)
+tf_slim                         # Installing TF-Slim, the lightweight library for defining, training and evaluating complex models in TensorFlow
+
+SciPy==1.7.3                    # Installing SciPy, a library for mathematics, science, and engineering
+numpy==1.20.3                   # Installing NumPy, a package for scientific computing
+Pillow==8.4.0                   # Installing Pillow, a Python Image Library
+
+resampy==0.2.2                  # Installing ReSampy, the library for Efficient sample rate conversion in Python
+soundfile==0.10.3.post1         # Installing soudfile for reading and writing sound files
+
+# last line empty

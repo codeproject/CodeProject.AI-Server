@@ -16,6 +16,9 @@
     <IsWindowsApplication>False</IsWindowsApplication>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
+    <!--
+    <Environment>CPAI_LOG_VERBOSITY=Loud</Environment>
+    -->
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />

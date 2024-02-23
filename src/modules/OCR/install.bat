@@ -18,7 +18,7 @@
 )
 
 :: Download the OCR models and store in /paddleocr
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "ocr-en-pp_ocrv4-paddle.zip" "paddleocr" "Downloading OCR models..."
 
 REM TODO: Check paddleocr created and has files
 REM set moduleInstallErrors=...

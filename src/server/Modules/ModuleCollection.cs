@@ -14,6 +14,7 @@ using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
+using CodeProject.AI.Server.Models;
 using Microsoft.Extensions.Configuration;
 
 namespace CodeProject.AI.Server.Modules
@@ -113,6 +114,13 @@ namespace CodeProject.AI.Server.Modules
         public string? Queue { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating the degree of parallelism (number of threads or number
+        /// of tasks, depending on the implementation) to launch when running this module.
+        /// 0 = default, which is (Number of CPUs / 2).
+        /// </summary>
+        public int? Parallelism { get; set; }
+
+        /// <summary>
         /// Gets or sets the number of MB of memory needed for this module to perform operations.
         /// If null, then no checks done.
         /// </summary>
@@ -141,13 +149,6 @@ namespace CodeProject.AI.Server.Modules
         /// use a GPU, don't". Great for working around GPU issues that would sink the ship.
         /// </summary>
         public bool? EnableGPU { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets a value indicating the degree of parallelism (number of threads or number
-        /// of tasks, depending on the implementation) to launch when running this module.
-        /// 0 = default, which is (Number of CPUs - 1).
-        /// </summary>
-        public int? Parallelism { get; set; }
 
         /// <summary>
         /// Gets or sets the device name (eg CUDA device number, TPU device name) to use. Be careful to
@@ -229,21 +230,27 @@ namespace CodeProject.AI.Server.Modules
         public GpuOptions? GpuOptions { get; set; }
 
         /// <summary>
-        /// Gets or sets the information to pass to the backend analysis modules.
+        /// Gets or sets the model requirements for this module
         /// </summary>
         [JsonPropertyOrder(7)]
+        public ModelPackageAttributes[]? ModelRequirements { get; set; }
+      
+        /// <summary>
+        /// Gets or sets the information to pass to the backend analysis modules.
+        /// </summary>
+        [JsonPropertyOrder(8)]
         public Dictionary<string, object>? EnvironmentVariables { get; set; }
 
         /// <summary>
         /// Gets or sets the UI elements to be injected into UI apps such as dashboards or explorers
         /// </summary>
-        [JsonPropertyOrder(8)]
+        [JsonPropertyOrder(9)]
         public UIElements? UIElements { get; set; }
 
         /// <summary>
         /// Gets or sets a list of RouteMaps.
         /// </summary>
-        [JsonPropertyOrder(9)]
+        [JsonPropertyOrder(10)]
         public ModuleRouteInfo[] RouteMaps { get; set; } = Array.Empty<ModuleRouteInfo>();
 
         /// <summary>
@@ -283,11 +290,11 @@ namespace CodeProject.AI.Server.Modules
                 summary.AppendLine($"FilePath:      {LaunchSettings?.FilePath}");
                 summary.AppendLine($"Pre installed: {InstallOptions?.PreInstalled}");
                 summary.AppendLine($"Start pause:   {LaunchSettings?.PostStartPauseSecs} sec");
+                summary.AppendLine($"Parallelism:   {LaunchSettings?.Parallelism}");
                 summary.AppendLine($"LogVerbosity:  {LaunchSettings?.LogVerbosity}");
                 summary.AppendLine($"Platforms:     {string.Join(',', InstallOptions?.Platforms?? Array.Empty<string>())}");
                 summary.AppendLine($"GPU Libraries: {((GpuOptions?.InstallGPU == true)? "installed if available" : "not installed")}");
                 summary.AppendLine($"GPU Enabled:   {((GpuOptions?.EnableGPU == true)? "enabled" : "disabled")}");
-                summary.AppendLine($"Parallelism:   {GpuOptions?.Parallelism}");
                 summary.AppendLine($"Accelerator:   {GpuOptions?.AcceleratorDeviceName}");
                 summary.AppendLine($"Half Precis.:  {GpuOptions?.HalfPrecision}");
                 summary.AppendLine($"Environment Variables");
@@ -394,23 +401,10 @@ namespace CodeProject.AI.Server.Modules
             {
                 module.LaunchSettings!.AutoStart = value?.ToLower() == "true";
             }
-            else if (name.EqualsIgnoreCase("EnableGPU") ||
-                     name.EqualsIgnoreCase("SupportGPU")) // Legacy from 9Oct2023
-            {
-                module.GpuOptions!.EnableGPU = value?.ToLower() == "true";
-            }
             else if (name.EqualsIgnoreCase("Parallelism"))
             {
                 if (int.TryParse(value, out int parallelism))
-                    module.GpuOptions!.Parallelism = parallelism;
-            }
-            else if (name.EqualsIgnoreCase("UseHalfPrecision"))
-            {
-                module.GpuOptions!.HalfPrecision = value;
-            }
-            else if (name.EqualsIgnoreCase("AcceleratorDeviceName"))
-            {
-                module.GpuOptions!.AcceleratorDeviceName = value;
+                    module.LaunchSettings!.Parallelism = parallelism;
             }
             else if (name.EqualsIgnoreCase("LogVerbosity"))
             {
@@ -422,6 +416,21 @@ namespace CodeProject.AI.Server.Modules
                 if (int.TryParse(value, out int pauseSec))
                     module.LaunchSettings!.PostStartPauseSecs = pauseSec;
             }
+
+            else if (name.EqualsIgnoreCase("EnableGPU") ||
+                     name.EqualsIgnoreCase("SupportGPU")) // Legacy from 9Oct2023
+            {
+                module.GpuOptions!.EnableGPU = value?.ToLower() == "true";
+            }
+            else if (name.EqualsIgnoreCase("UseHalfPrecision"))
+            {
+                module.GpuOptions!.HalfPrecision = value;
+            }
+            else if (name.EqualsIgnoreCase("AcceleratorDeviceName"))
+            {
+                module.GpuOptions!.AcceleratorDeviceName = value;
+            }
+
             else
             {
                 // with lock
@@ -494,28 +503,44 @@ namespace CodeProject.AI.Server.Modules
             {
                 var moduleSettings = (JsonObject)allModules[moduleId]!;
 
-                // Handle pre-defined global values first
                 if (name.EqualsIgnoreCase("Activate") || name.EqualsIgnoreCase("AutoStart"))
                 {
                     JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
                     if (launchSettings is not null)
                         launchSettings["AutoStart"] = value?.ToLower() == "true";
                 }
+                else if (name.EqualsIgnoreCase("Parallelism"))
+                {
+                    if (int.TryParse(value, out int parallelism))
+                    {
+                        JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
+                        if (launchSettings is not null)
+                            launchSettings["Parallelism"] = parallelism;
+                    }
+                }
+                else if (name.EqualsIgnoreCase("PostStartPauseSecs"))
+                {
+                    if (int.TryParse(value, out int pauseSec))
+                    {
+                        JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
+                        if (launchSettings is not null)
+                            launchSettings["PostStartPauseSecs"] = pauseSec;
+                    }
+                }
+                else if (name.EqualsIgnoreCase("LogVerbosity"))
+                {
+                    if (Enum.TryParse(value, out LogVerbosity verbosity))
+                        moduleSettings["LogVerbosity"] = verbosity.ToString();
+                }
+
+
+
                 else if (name.EqualsIgnoreCase("EnableGPU") ||
                          name.EqualsIgnoreCase("SupportGPU")) // Legacy from 9Oct2023
                 {
                     JsonObject? gpuOptions = getModuleSettingSection(moduleSettings, "GpuOptions");
                     if (gpuOptions is not null)
                         gpuOptions["EnableGPU"] = value?.ToLower() == "true";
-                }
-                else if (name.EqualsIgnoreCase("Parallelism"))
-                {
-                    if (int.TryParse(value, out int parallelism))
-                    {
-                        JsonObject? gpuOptions = getModuleSettingSection(moduleSettings, "GpuOptions");
-                        if (gpuOptions is not null)
-                            gpuOptions["Parallelism"] = parallelism;
-                    }
                 }
                 else if (name.EqualsIgnoreCase("UseHalfPrecision"))
                 {
@@ -529,20 +554,7 @@ namespace CodeProject.AI.Server.Modules
                     if (gpuOptions is not null)
                         gpuOptions["AcceleratorDeviceName"] = value;
                 }
-                else if (name.EqualsIgnoreCase("LogVerbosity"))
-                {
-                    if (Enum.TryParse(value, out LogVerbosity verbosity))
-                        moduleSettings["LogVerbosity"] = verbosity.ToString();
-                }
-                else if (name.EqualsIgnoreCase("PostStartPauseSecs"))
-                {
-                    if (int.TryParse(value, out int pauseSec))
-                    {
-                        JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
-                        if (launchSettings is not null)
-                            launchSettings["PostStartPauseSecs"] = pauseSec;
-                    }
-                }
+
                 else
                 {
                     if (moduleSettings["EnvironmentVariables"] is null)
@@ -553,12 +565,33 @@ namespace CodeProject.AI.Server.Modules
                 }
 
                 // Clean up legacy values
+
+                // Activate is now LaunchSettings.AutoStart
                 if (moduleSettings["Activate"] is not null)
                 {
                     JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
                     if (launchSettings is not null && launchSettings["AutoStart"] is null)
                          launchSettings["AutoStart"] = moduleSettings["Activate"];
                     moduleSettings.Remove("Activate");
+                }
+
+                // LogVerbosity is now LaunchSettings.Parallelism
+                if (moduleSettings["LogVerbosity"] is not null)
+                {
+                    JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
+                    if (launchSettings is not null && launchSettings["LogVerbosity"] is null)
+                         launchSettings["LogVerbosity"] = moduleSettings["LogVerbosity"];
+                    moduleSettings.Remove("LogVerbosity");
+                }
+
+                // GpuOptions.Parallelism is now LaunchSettings.Parallelism
+                JsonObject? oldGpuOptions = getModuleSettingSection(moduleSettings, "GpuOptions");
+                if (oldGpuOptions is not null && oldGpuOptions["Parallelism"] is not null)
+                {
+                    JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
+                    if (launchSettings is not null && launchSettings["Parallelism"] is null)
+                         launchSettings["Parallelism"] = oldGpuOptions["Parallelism"];
+                    oldGpuOptions.Remove("Parallelism");
                 }
             }
             catch (Exception e)
@@ -787,12 +820,13 @@ namespace CodeProject.AI.Server.Modules
                 - AutoStart             => LaunchSettings.AutoStart
                 - PostStartPauseSecs    => LaunchSettings.PostStartPauseSecs
                 - LogVerbosity          => LaunchSettings.LogVerbosity
+                - Parallelism           => LaunchSettings.Parallelism
                 - EnableGPU             => GpuOptions.EnableGPU
-                - Parallelism           => GpuOptions.Parallelism
                 - HalfPrecision         => GpuOptions.HalfPrecision
                 - AcceleratorDeviceName => GpuOptions.AcceleratorDeviceName
                 */
 
+                // AutoStart => LaunchSettings.AutoStart
                 if (moduleSettings["AutoStart"] is not null)
                 {
                     changesMade = true;
@@ -802,6 +836,7 @@ namespace CodeProject.AI.Server.Modules
                     moduleSettings.Remove("AutoStart");
                 }
 
+                // PostStartPauseSecs => LaunchSettings.PostStartPauseSecs
                 if (moduleSettings["PostStartPauseSecs"] is not null)
                 {
                     changesMade = true;
@@ -811,6 +846,7 @@ namespace CodeProject.AI.Server.Modules
                     moduleSettings.Remove("PostStartPauseSecs");
                 }
                 
+                // LogVerbosity => LaunchSettings.LogVerbosity
                 if (moduleSettings["LogVerbosity"] is not null)
                 {
                     changesMade = true;
@@ -820,6 +856,28 @@ namespace CodeProject.AI.Server.Modules
                     moduleSettings.Remove("LogVerbosity");
                 }
 
+                // Parallelism => LaunchSettings.Parallelism
+                if (moduleSettings["Parallelism"] is not null)
+                {
+                    changesMade = true;
+                    JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
+                    if (launchSettings is not null && launchSettings["Parallelism"] is null)
+                        launchSettings["Parallelism"] = moduleSettings["Parallelism"]!.GetValue<int>();
+                    moduleSettings.Remove("Parallelism");
+                }
+
+                // GpuOptions.Parallelism => LaunchSettings.Parallelism
+                JsonObject? oldGpuOptions = getModuleSettingSection(moduleSettings, "GpuOptions");
+                if (oldGpuOptions is not null && oldGpuOptions["Parallelism"] is not null)
+                {
+                    changesMade = true;
+                    JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "LaunchSettings");
+                    if (launchSettings is not null && launchSettings["Parallelism"] is null)
+                         launchSettings["Parallelism"] = oldGpuOptions["Parallelism"];
+                    oldGpuOptions.Remove("Parallelism");
+                }
+
+                // EnableGPU => GpuOptions.EnableGPU
                 if (moduleSettings["EnableGPU"] is not null)
                 {
                     changesMade = true;
@@ -829,15 +887,7 @@ namespace CodeProject.AI.Server.Modules
                     moduleSettings.Remove("EnableGPU");
                 }
 
-                if (moduleSettings["Parallelism"] is not null)
-                {
-                    changesMade = true;
-                    JsonObject? launchSettings = getModuleSettingSection(moduleSettings, "GpuOptions");
-                    if (launchSettings is not null && launchSettings["Parallelism"] is null)
-                        launchSettings["Parallelism"] = moduleSettings["Parallelism"]!.GetValue<int>();
-                    moduleSettings.Remove("Parallelism");
-                }
-
+                // HalfPrecision => GpuOptions.HalfPrecision
                 if (moduleSettings["HalfPrecision"] is not null)
                 {
                     changesMade = true;
@@ -847,6 +897,7 @@ namespace CodeProject.AI.Server.Modules
                     moduleSettings.Remove("HalfPrecision");
                 }
 
+                // AcceleratorDeviceName => GpuOptions.AcceleratorDeviceName
                 if (moduleSettings["AcceleratorDeviceName"] is not null)
                 {
                     changesMade = true;

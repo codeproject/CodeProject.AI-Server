@@ -17,7 +17,8 @@ namespace CodeProject.AI.SDK
 
         private record  LoggingData(string message, string category, LogLevel logLevel, string label);
 
-        private static HttpClient? _httpClient;
+        private static HttpClient? _httpGetRequestClient;
+        private static HttpClient? _httpSendResponseClient;
         private Channel<LoggingData> _loggingQueue = Channel.CreateBounded<LoggingData>(1024);
 
         private int _errorPauseSecs = 0;
@@ -27,14 +28,25 @@ namespace CodeProject.AI.SDK
         /// Creates a new instance of a BackendClient object.
         /// </summary>
         /// <param name="url">The URL of the API server</param>
-        /// <param name="timeout">The timeout</param>
+        /// <param name="getRequestTimeout">The timeout for getting a request from the server's
+        /// request queue. This is essentially the "long poll" timeout.
+        /// <param name="sendResponseTimeout">The timeout for sending a response back to the server.
         /// <param name="token">A CancellationToken.</param>
-        public BackendClient(string url, TimeSpan timeout = default, CancellationToken token = default)
+        public BackendClient(string url,
+                             TimeSpan getRequestTimeout = default,
+                             TimeSpan sendResponseTimeout = default,
+                             CancellationToken token = default)
         {
-            _httpClient ??= new HttpClient
+            _httpGetRequestClient ??= new HttpClient
             {
                 BaseAddress = new Uri(url),
-                Timeout     = (timeout == default) ? TimeSpan.FromMinutes(1) : timeout
+                Timeout     = (getRequestTimeout == default) ? TimeSpan.FromSeconds(15) : getRequestTimeout
+            };
+
+            _httpSendResponseClient ??= new HttpClient
+            {
+                BaseAddress = new Uri(url),
+                Timeout     = (sendResponseTimeout == default) ? TimeSpan.FromSeconds(30) : sendResponseTimeout
             };
 
             loggingTask = ProcessLoggingQueue(token);
@@ -50,43 +62,36 @@ namespace CodeProject.AI.SDK
         /// <param name="canUseGPU">Whether or not this module can make use of the current GPU</param>
         /// <returns>The BackendRequest or Null if error</returns>
         public async Task<BackendRequest?> GetRequest(string queueName, string moduleId,
-                                                      CancellationToken token = default,
-                                                      string? executionProvider = null,
-                                                      bool? canUseGPU = false)
+                                                      CancellationToken token = default)
         {
             // We're passing the moduleID as part of the GET request in order to give the server a
             // hint that this module is alive and well.
-
-            // TODO: A better way to pass this is via header:
-            // string requestUri = $"v1/queue/{queueName}";
-            // var request = new HttpRequestMessage() {
-            //     RequestUri = new Uri(requestUri),
-            //     Method = HttpMethod.Get,
-            // };
-            // request.DefaultRequestHeaders.Add("X-CPAI-Moduleid", moduleid);
-            // if (executionProvider != null)
-            //     request.DefaultRequestHeaders.Add("X-CPAI-ExecutionProvider", executionProvider);
-            // httpResponse = await _httpClient!.SendAsync(request, token).ConfigureAwait(false);
-
-            string requestUri = $"v1/queue/{queueName.ToLower()}?moduleid={moduleId}";
-            if (executionProvider != null)
-                requestUri += $"&executionProvider={executionProvider}";
-            if (canUseGPU != null)
-                requestUri += $"&canUseGPU={canUseGPU!.ToString()}";
+            string requestUri = $"v1/queue/{queueName.ToLower()}?moduleId={moduleId}";
 
             BackendRequest? request = null;
             try
             {
-                HttpResponseMessage response = await _httpClient!.GetAsync(requestUri, token);
+                HttpResponseMessage response = await _httpGetRequestClient!.GetAsync(requestUri, token);
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     request = await response.Content.ReadFromJsonAsync<BackendRequest>();
             }
             catch (JsonException)
             {
 #if DEBUG
-                Debug.WriteLine("JsonException GetRequest");
+                Debug.WriteLine($"JsonException in GetRequest for {moduleId}");
 #endif
-                // This is probably due to timing out and therefore no JSON to parse.
+            }
+            catch (TimeoutException)
+            {
+#if DEBUG
+                Debug.WriteLine($"Timeout in GetRequest for {moduleId}");
+#endif
+            }
+            catch (TaskCanceledException)
+            {
+#if DEBUG
+                Debug.WriteLine($"TaskCanceledException in GetRequest for {moduleId}");
+#endif
             }
 #if DEBUG
             catch (Exception ex)
@@ -97,7 +102,7 @@ namespace CodeProject.AI.SDK
             {
 #endif
                 Console.WriteLine($"Unable to get request from {queueName} for {moduleId}");
-                _errorPauseSecs = Math.Min(_errorPauseSecs > 0 ? _errorPauseSecs * 3/2 : 5, 30);
+                _errorPauseSecs = Math.Min(_errorPauseSecs > 0 ? _errorPauseSecs + 1 : 5, 30);
 
                 if (!token.IsCancellationRequested && _errorPauseSecs > 0)
                 {
@@ -122,20 +127,49 @@ namespace CodeProject.AI.SDK
         /// <param name="moduleId">The module sending this response.</param>
         /// <param name="content">The content to send.</param>
         /// <param name="token">A Cancellation Token.</param>
-        /// <param name="executionProvider">The hardware acceleration execution provider</param>
-        /// <param name="canUseGPU">Whether or not this module can make use of the current GPU</param>
         /// <returns>A Task.</returns>
         public async Task SendResponse(string reqid, string moduleId, HttpContent content,
                                        CancellationToken token)
         {
             try
             {
-                await _httpClient!.PostAsync($"v1/queue/{reqid}", content, token)
-                                  .ConfigureAwait(false);
+                await _httpSendResponseClient!.PostAsync($"v1/queue/{reqid}", content, token)
+                                              .ConfigureAwait(false);
             }
             catch 
             {
                 Console.WriteLine($"Unable to send response from module {moduleId} (#reqid {reqid})");
+            }
+        }
+
+        /// <summary>
+        /// Sends status to the CodeProject.AI Server.
+        /// </summary>
+        /// <param name="moduleId">The module sending this response.</param>
+        /// <param name="token">A Cancellation Token.</param>
+        /// <returns>A Task.</returns>
+        public async Task SendStatus(string moduleId, dynamic? statusData, CancellationToken token)
+        {
+            MultipartFormDataContent content = new()
+            {
+                { new StringContent(moduleId), "moduleId" },
+            };
+
+            if (statusData != null)
+            {
+                string json = JsonSerializer.Serialize(statusData, jsonSerializerOptions);
+                content.Add(new StringContent(json), "statusData");
+            }
+
+            try
+            {
+                await _httpSendResponseClient!.PostAsync($"v1/queue/updatemodulestatus/{moduleId}",
+                                                         content, token)
+                                              .ConfigureAwait(false);
+            }
+            catch
+            {
+                Console.WriteLine($"Unable to send status from module {moduleId}");
             }
         }
 
@@ -172,7 +206,7 @@ namespace CodeProject.AI.SDK
 
             try
             {
-                await _httpClient!.PostAsync($"v1/log", form, token).ConfigureAwait(false);
+                await _httpSendResponseClient!.PostAsync($"v1/log", form, token).ConfigureAwait(false);
             }
             catch
             {

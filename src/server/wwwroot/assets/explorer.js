@@ -95,6 +95,8 @@ function getProcessingMetadataHtml(data) {
         html += `<tr><td>Processing</td><td>${data.processMs} ms</td></tr>`;
     if (data.inferenceMs)
         html += `<tr><td>Inference</td><td>${data.inferenceMs} ms</td></tr>`;
+    if (data.timestampUTC)
+        html += `<tr><td>Timestamp (UTC)</td><td>${data.timestampUTC}</td></tr>`;
     html += "</table>";
 
     return html;
@@ -234,6 +236,13 @@ function showResultsImageData(data) {
 
     clearImageResult();
 
+    ShowResultsImage(data.imageBase64)
+}
+
+function showResultsImage(data) {
+
+    clearImageResult();
+
     let imgElm = document.getElementById(imageResultId);
     // If there's no image result element, fallback to the preview element
     if (!imgElm)
@@ -241,11 +250,8 @@ function showResultsImageData(data) {
     if (!imgElm)
         return;
 
-    imgElm.src = "data:image/png;base64," + data.imageBase64;
-	imgElm.style.visibility = "visible";
-
-    if (data.predictions)
-        showResultsBoundingBoxes(data.predictions);
+    imgElm.src = "data:image/png;base64," + data;
+    imgElm.style.visibility = "visible";
 }
 
 function clearImageResult() {
@@ -329,7 +335,7 @@ function showResultsBoundingBoxes(predictions, sortByConfidence = true) {
     let colors = ["179,221,202", "204,223,120", "164,221,239"];
     let colorIndex = 0;
 
-    let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 5 : 7) : 9;
+    let maxLineWidth = predictions.length > 5 ? (predictions.length > 10 ? 7 : 8) : 9;
     for (let i = 0; i < predictions.length; i++) {
 
         let prediction = predictions[i];
@@ -919,10 +925,11 @@ async function getModulesStatuses() {
         
         for (let i = 0; i < data.statuses.length; i++) {
 
-            let moduleId = data.statuses[i].moduleId.replace(" ", "-");
-            let running  = data.statuses[i].status == 'Started';
+            let moduleInfo = data.statuses[i];
 
-            let selector = data.statuses[i].queue;
+            let moduleId = moduleInfo.moduleId.replace(" ", "-");
+            let running  = moduleInfo.status == 'Started';
+            let selector = moduleInfo.queue;
 
             let cards = document.getElementsByClassName('card ' + selector);
             for (const card of cards) {
@@ -965,7 +972,9 @@ async function submitRequest(route, apiName, images, parameters) {
 
     let urlElm = document.getElementById('serviceUrl');
     let url = urlElm? urlElm.value.trim() : apiServiceUrl;
-    url += '/v1/' + route + '/' + apiName;
+    url += '/v1/' + route
+    if (apiName)
+        url = url + '/' + apiName;
 
     let timeoutSecs = serviceTimeoutSec;
     if (document.getElementById("serviceTimeoutSecTxt"))
@@ -1014,10 +1023,11 @@ async function submitRequest(route, apiName, images, parameters) {
 
 // BENCHMARK ===================================================================
 
-async function onBenchmark(fileChooser, model_name, resultElm) {
+const warmupCount          = 3;
+const maxBenchmarkRequests = 50;
+let totalBenchmarkRequests = 0;
 
-    const warmupCount = 3;
-    const runCount    = 50;
+async function onBenchmark(fileChooser, model_name, parallelism) {
 
     clearImagePreview();
 
@@ -1044,18 +1054,39 @@ async function onBenchmark(fileChooser, model_name, resultElm) {
             setResultsHtml("Warm up " + i);
     }
 
+	// Benchmark
     let startMilliseconds = performance.now();
-    let nResponses = 0;
+    totalBenchmarkRequests = 0;
+	for (let i = 0; i < parallelism; i++)
+        sendBenchmarkRequest(route, images, startMilliseconds);
+}
 
-    // Benchmark
-    for (let i = 0; i < runCount; i++) {
-		let data = await submitRequest('vision', route, images);
+function sendBenchmarkRequest(route, images, startMilliseconds) {
 
-        let currentMilliseconds = performance.now();
-        nResponses++;
-        let opsPerSecond = (nResponses * 1000) / (currentMilliseconds - startMilliseconds);
-        setResultsHtml(opsPerSecond.toFixed(1) + " operations per second - " + nResponses + "/" + runCount);
-    }
+    console.log("About to send Benchmark Request")
+
+    totalBenchmarkRequests++;
+    submitRequest('vision', route, images)
+        .then((data) => {
+            let currentMilliseconds = performance.now();
+            let opsPerSecond = (totalBenchmarkRequests * 1000) / (currentMilliseconds - startMilliseconds);
+            setResultsHtml(opsPerSecond.toFixed(1) + " operations per second - " + totalBenchmarkRequests + "/" + maxBenchmarkRequests);
+
+            if (totalBenchmarkRequests < maxBenchmarkRequests)
+                sendBenchmarkRequest(route, images, startMilliseconds);
+        })
+        .catch((error) => {
+            console.log("Benchmark Request failed: " + error);
+        });
+}
+
+function updateBenchmarkParallelismLabel(slider, labelId) {
+
+    if (!slider)
+        return;
+
+    let parallelism = slider.value;
+    document.getElementById(labelId).innerText = parallelism;
 }
 
 // VIDEO DEMO ==================================================================

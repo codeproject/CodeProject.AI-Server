@@ -265,8 +265,8 @@ namespace CodeProject.AI.Server.Modules
             // just hardcode Python and .NET support.
 
             // If it is "Python" then use our default Python location
-            if (runtime == "python" && !string.IsNullOrWhiteSpace(SystemInfo.DefaultPythonVersion))
-                runtime = "python" + SystemInfo.DefaultPythonVersion;
+            if (runtime == "python" && !string.IsNullOrWhiteSpace(SystemInfo.Runtimes.DefaultPython))
+                runtime = "python" + SystemInfo.Runtimes.DefaultPython;
 
             // If it is a Python3X command then replace our marker in the default python path to
             // match the requested interpreter location in order to build the 

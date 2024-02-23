@@ -86,6 +86,8 @@ class PipelinedModelRunner:
     for d in self._interpreters[-1].get_output_details():
       self._output_shapes[d['name']] = d['shape']
 
+    self._dtype = self._interpreters[-1].get_output_details()[0]['dtype']
+
   def __del__(self):
     if self._runner:
       # Push empty request to stop the pipeline in case user forgot.
@@ -190,8 +192,7 @@ class PipelinedModelRunner:
     # 78 B; the name string?
     result = self._runner.Pop()
    
-    dt = self._interpreters[-1].get_output_details()[0]['dtype']
-    if dt == np.uint8:
+    if self._dtype == np.uint8 or self._dtype == np.int8:
       stride = 1
     else:
       stride = 4

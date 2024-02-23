@@ -1,7 +1,6 @@
 #! Python3.8
 
-# -i https://mirror.baidu.com/pypi/simple
-paddlepaddle>=2.5.1             # Installing PaddelPaddle, the Deep Learning platform
+paddlepaddle==2.6.0             # Installing PaddelPaddle, the Deep Learning platform
 
 ## We also need to specify the exact version for paddleocr in Linux because 
 ## v2.6.0.2 and 2.6.0.3 fail to build (lanms-neo fails to build, which is required)

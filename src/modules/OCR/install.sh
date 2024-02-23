@@ -74,7 +74,9 @@ if [ "${module_install_errors}" = "" ] && [ "$os" = "linux" ] && [ "$architectur
 
             module_install_errors=""
 
-            echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
+            if [ "$os_name" != "debian" ]; then
+                echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
+            fi
             installAptPackages "libssl1.1"
 
             write "Ensuring symlinks are created..." $color_info
@@ -105,7 +107,7 @@ fi
 if [ "${module_install_errors}" = "" ]; then
 
     # Download the OCR models and store in /paddleocr
-    getFromServer "models/" "paddleocr-models.zip" "paddleocr" "Downloading OCR models..."
+    getFromServer "models/" "ocr-en-pp_ocrv4-paddle.zip" "paddleocr" "Downloading OCR models..."
 
     # TODO: Check paddleocr created and has files, maybe run paddle check too
     # module_install_errors=...

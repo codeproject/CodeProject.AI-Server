@@ -272,7 +272,7 @@
                 "DOTNET_NOLOGO": "true"
             },
             "logging": {
-                "engineLogging": false,
+                "diagnosticsLog": { "protocolMessages": false },
                 "moduleLoad": false,
                 "exceptions": true,
                 "browserStdOut": false
@@ -298,10 +298,11 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/ALPR/bin/windows/python37/venv/Scripts/python"
+                "python": "${workspaceFolder}/src/modules/ALPR/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
                 "python": "${workspaceFolder}/src/modules/ALPR/bin/linux/python38/venv/bin/python",
@@ -328,7 +329,9 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
+
                 "U2NET_HOME": "${workspaceFolder}/src/modules/BackgroundRemover/models"
             },
             "windows": {
@@ -359,7 +362,9 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
+
                 "WEIGHTS_FOLDER": "${workspaceFolder}/src/modules/Cartooniser/weights",
                 // "LD_LIBRARY_PATH": "%CURRENT_MODULE_PATH%/bin/%OS%/python39/venv/lib/python3.9/site-packages/nvidia/cudnn/lib/"
             },
@@ -391,7 +396,9 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
+
                 "MODELS_FOLDER": "${workspaceFolder}/src/modules/LlamaChat/models"
             },
             "windows": {
@@ -422,6 +429,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "windows": {
@@ -445,15 +453,31 @@
                 "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
             "request": "launch",
             "program": "objectdetection_coral_adapter.py",
-            "args": [ "--selftest" ],
+            // "args": [ "--selftest" ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/src/modules/ObjectDetectionCoral",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
-                "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
+
+                // Std settings
+                "CPAI_CORAL_MULTI_TPU": "true",
+                "CPAI_CORAL_MODEL_NAME": "MobileNet SSD", // "MobileNet SSD", "EfficientDet-Lite", "YOLOv5"
+                "MODEL_SIZE": "Small"
+
+                // YOLOv5 large (segmented model files)
+                // "CPAI_CORAL_MULTI_TPU": "true",
+                // "CPAI_CORAL_MODEL_NAME": "YOLOv5",
+                // "MODEL_SIZE": "Large"
+
+                // EfficientDet-Lite large (single model file)
+                // "CPAI_CORAL_MULTI_TPU": "true",
+                // "CPAI_CORAL_MODEL_NAME": "EfficientDet-Lite",
+                // "MODEL_SIZE": "Medium"
             },
             "windows": {
                 "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
@@ -495,7 +519,6 @@
             }
         },
 
-
         {
             "presentation": {
                 "group": "5 Launch Individual",
@@ -513,6 +536,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
             },
@@ -544,7 +568,9 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
+
                 "MODEL_SIZE": "Small"
             },
             "windows": {
@@ -575,7 +601,9 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
+
                 "MODEL_SIZE": "Small",                
                 "OPENBLAS_CORETYPE": "ARMV8", // needed for Jetson
                 "LD_PRELOAD": "/usr/lib/aarch64-linux-gnu/libgomp.so.1"
@@ -599,8 +627,11 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
+                "CPAI_MODULE_PARALLELISM": "1",
+
                 "MODEL_SIZE": "Tiny"
             },
             "windows": {
@@ -631,8 +662,10 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
+
                 "MODEL_SIZE": "Tiny"
             },
             "windows": {
@@ -653,7 +686,7 @@
             },
             "name": "OCR",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python37/venv/Scripts/python",
+            "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python39/venv/Scripts/python",
             "request": "launch",
             "program": "OCR_adapter.py",
             // "args": [ "--selftest" ],
@@ -663,10 +696,11 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python37/venv/Scripts/python",
+                "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python39/venv/Scripts/python",
             },
             "linux": {
                 "python": "${workspaceFolder}/src/modules/OCR/bin/linux/python38/venv/bin/python3.8",
@@ -716,6 +750,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "windows": {
@@ -746,7 +781,9 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
+
                 "MODELS_DIR": "${workspaceFolder}/src/modules/SoundClassifierTF/assets"
             },
             "windows": {
@@ -777,6 +814,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "windows": {
@@ -820,6 +858,38 @@
                 "group": "5 Launch Individual",
                 "hidden": false
             },
+            "name": "Text2Image",
+            "type": "python",
+            "python": "${workspaceFolder}/src/modules/Text2Image/bin/linux/python38/venv/bin/python",
+            "request": "launch",
+            "program": "Text2Image.py",
+            // "program": "Text2Image_adapter.py",
+            // "args": [ "--selftest" ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/modules/Text2Image",
+            "justMyCode": false,
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
+                "CPAI_PORT": "32168"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/modules/Text2Image/bin/windows/python39/venv/Scripts/python.exe"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/modules/Text2Image/bin/linux/python38/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/modules/Text2Image/bin/macos/python38/venv/bin/python",
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "5 Launch Individual",
+                "hidden": false
+            },
             "name": "TextSummary",
             "type": "python",
             "python": "${workspaceFolder}/src/modules/TextSummary/bin/linux/python38/venv/bin/python",
@@ -832,6 +902,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
                 
                 "NLTK_DATA": "${workspaceFolder}/src/modules/TextSummary/nltk_data"
@@ -864,12 +935,12 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
+                "CPAI_MODULE_REQUIRED_MB":  "1000",
 
                 "YOLOv5_AUTOINSTALL": "false",
                 "YOLOv5_VERBOSE":     "false",
-
-                "CPAI_MODULE_REQUIRED_MB":  "1000",
                 
                 "YOLO_DATASETS_DIRNAME":    "datasets",
                 "YOLO_TRAINING_DIRNAME":    "train",    // compatible with tutorials and default
@@ -889,8 +960,8 @@
                 "env": {
                     "DEBUG_IN_VSCODE": "True",
                     "RUNNING_IN_VSCODE": "True",
-                    "CPAI_PORT": "32168",
-                    
+                    // "CPAI_LOG_VERBOSITY": "Loud",
+                    "CPAI_PORT": "32168",                
                     "CPAI_MODULE_ENABLE_GPU": "False", // https://github.com/ultralytics/yolov5/issues/11235
 
                     "YOLOv5_AUTOINSTALL": "false",
@@ -902,6 +973,74 @@
                     "YOLO_MODELS_DIRNAME":      "assets",
                     "YOLO_DATASET_ZOO_DIRNAME": "zoo"
                 }
+            }
+        },
+
+        // DEMOS -----------------------------------------------------------
+
+        {
+            "presentation": {
+                "group": "99 Demos"
+            },
+
+            "name": "Demo Python Module",
+            "type": "python",
+            "python": "${workspaceFolder}/src/runtimes/bin/linux/python39/venv/bin/python",
+            "request": "launch",
+            "program": "detect.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/modules/DemoModulePython",
+            "justMyCode": false,
+            "args": [ "-i", "${workspaceFolder}\\src\\modules\\DemoModulePython\\test\\home-office.jpg",
+                      "-a", "${workspaceFolder}\\src\\modules\\DemoModulePython\\assets\\",
+                      "-t", "0.6"
+                    ],
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
+                "CPAI_MODULE_PARALLELISM": "1",
+
+                "MODEL_SIZE": "Tiny"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "99 Demos",
+                "hidden": false
+            },
+            "name": "Demo .NET Module",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-demo-net",
+            "program": "${workspaceFolder}/src/modules/ModuleDemoNetSimple/bin/Debug/net7.0/ModuleDemoNetSimple",
+            "linux": {
+                "program": "${workspaceFolder}/src/modules/ModuleDemoNetSimple/bin/Debug/net7.0/ModuleDemoNetSimple.dll",
+            },
+            // "args": [ "--selftest" ],
+            // "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/src/modules/ModuleDemoNetSimple", 
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
+                "DYLD_LIBRARY_PATH" : "/opt/homebrew/lib" // For macOS
             }
         },
 
@@ -984,6 +1123,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "linux": {
@@ -1009,6 +1149,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "windows": {
@@ -1037,6 +1178,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "linux": {
@@ -1062,6 +1204,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "windows": {
@@ -1083,11 +1226,7 @@
             "type": "python",
             "request": "attach",
             "processId": "${command:pickProcess}",
-            "justMyCode": true,
-            "env": {
-                "DEBUG_IN_VSCODE": "True",
-                "RUNNING_IN_VSCODE": "True"
-            }
+            "justMyCode": true
         },
 
         // Demos --------------------------------------------------------------
@@ -1151,6 +1290,7 @@
             "env": {
                 "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
+                // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168"
             },
             "windows": {

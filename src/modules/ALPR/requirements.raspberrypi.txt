@@ -1,7 +1,8 @@
 #! Python3.9
 
 #paddlepaddle==2.4.2            # Will install from QEngineering
-paddleocr                       # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+#paddleocr==2.6.0.1             # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+paddleocr==2.7.0.3              # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
 
 imutils                         # Installing imutils, the image utilities library
 Pillow<10.0.0                   # Installing Pillow, a Python Image Library

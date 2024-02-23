@@ -14,6 +14,7 @@ using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Utils;
 
 using Yolov5Net.Scorer;
+using System.Dynamic;
 
 #pragma warning disable CS0162 // unreachable code
 
@@ -182,14 +183,45 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             return response;
         }
 
-        protected override dynamic? Status()
+        /// <summary>
+        /// Returns an object containing current stats for this module
+        /// </summary>
+        /// <returns>An object</returns>
+        protected override ExpandoObject? Status()
         {
             var status = base.Status();
             if (status is not null)
-                status.Histogram = _histogram;
+            {
+                status.histogram     = _histogram;
+                status.numItemsFound = _numItemsFound;
+            }
 
             return status;
         }            
+
+        /// <summary>
+        /// Called after `process` is called in order to update the stats on the number of successful
+        /// and failed calls as well as average inference time.
+        /// </summary>
+        /// <param name="response"></param>
+        protected override void UpdateStatistics(ModuleResponse response)
+        {
+            base.UpdateStatistics(response);
+
+            if (response.Success && response is ObjectDetectionResponse detectResponse &&
+                detectResponse.Predictions is not null)
+            {
+                _numItemsFound += detectResponse.Count;
+                foreach (var prediction in detectResponse.Predictions)
+                {
+                    string label = prediction.Label ?? "unknown";
+                    if (_histogram.ContainsKey(label))
+                        _histogram[label] = _histogram[label] + 1;
+                    else
+                        _histogram[label] = 1;
+                }
+            }
+        }
 
         /// <summary>
         /// Called when the module is asked to execute a self-test to ensure it install and runs
@@ -233,7 +265,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         protected ModuleResponse DoDetection(string modelPath, RequestFormFile file,
                                              float minConfidence)
         {
-            Logger.LogInformation($"Processing {file.filename}");
+            // Logger.LogTrace($"Processing {file.filename}");
 
             Stopwatch traceSW = Stopwatch.StartNew();
             if (ShowTrace)
@@ -278,42 +310,33 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             else
                 message = "No objects found";
 
-            _numItemsFound += count;
-            foreach (var result in results)
-            {
-                string label = result.Label?.Name ?? "unknown";
-                if (_histogram.ContainsKey(label))
-                    _histogram[label] = _histogram[label] + 1;
-                else
-                    _histogram[label] = 1;
-            }
-
             if (ShowTrace)
                 Console.WriteLine($"Trace: Sending results: {traceSW.ElapsedMilliseconds}ms");
 
             return new ObjectDetectionResponse
             {
-                Count       = count,
-                Message     = message,
-                Predictions = results.Select(x =>
-                                new DetectedObject
-                                {
-                                    Confidence = x.Score,
-                                    Label      = x?.Label?.Name,
-                                    X_min      = (int)x!.Rectangle.Left,
-                                    Y_min      = (int)x!.Rectangle.Top,
-                                    X_max      = (int)(x!.Rectangle.Right),
-                                    Y_max      = (int)(x!.Rectangle.Bottom)
-                                }).ToArray(),
-                InferenceMs = inferenceMs
+                Count           = count,
+                Message         = message,
+                Predictions     = results.Select(x =>
+                                    new DetectedObject
+                                    {
+                                        Confidence = x.Score,
+                                        Label      = x?.Label?.Name,
+                                        X_min      = (int)x!.Rectangle.Left,
+                                        Y_min      = (int)x!.Rectangle.Top,
+                                        X_max      = (int)(x!.Rectangle.Right),
+                                        Y_max      = (int)(x!.Rectangle.Bottom)
+                                    }).ToArray(),
+                InferenceMs     = inferenceMs,
+                InferenceDevice = InferenceDevice
             };
         }
 
         private void UpdateGpuInfo(ObjectDetector detector)
         {
-            HardwareType      = detector.HardwareType;
-            ExecutionProvider = detector.ExecutionProvider;
-            CanUseGPU         = detector.CanUseGPU;
+            InferenceDevice  = detector.InferenceDevice;
+            InferenceLibrary = detector.InferenceLibrary;
+            CanUseGPU        = detector.CanUseGPU;
         }
 
         private ObjectDetector GetDetector(string modelPath, bool addToCache = true)

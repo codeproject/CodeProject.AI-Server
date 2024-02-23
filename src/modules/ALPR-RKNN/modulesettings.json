@@ -3,7 +3,7 @@
 
     "ALPR-RKNN": {
       "Name": "License Plate Reader (RKNN)",
-      "Version": "1.2.0",
+      "Version": "1.2.2",
 
       "PublishingInfo" : {
         "Description": "Detects and readers single-line and multi-line licence plates. This module only works with Rockchip RK3588/RK3588S NPUs like the Orange Pi 5/5B/5 Plus.",
@@ -23,12 +23,13 @@
         "FilePath": "ALPR_adapter.py",
         "Runtime": "python3.9",
         "RuntimeLocation": "Local",     // Can be Local or Shared
-        "Queue": "alpr_queue"           // default is lower(module_id) + '_queue'
+        "Queue": "alpr_queue",          // default is lower(module_id) + '_queue'
+        "Parallelism": 1                // 0 = Default = number of CPUs / 2
       },
 
       "EnvironmentVariables": {
-        "PLATE_CONFIDENCE": 0.5,      // Confidence required in detecting a plate in the first place
-        "PLATE_ROTATE_DEG": 0,        // If non-zero, rotate plate before OCR (+ve = counterclockwise)
+        "PLATE_CONFIDENCE": 0.5,        // Confidence required in detecting a plate in the first place
+        "PLATE_ROTATE_DEG": 0,          // If non-zero, rotate plate before OCR (+ve = counterclockwise)
         "AUTO_PLATE_ROTATE": true,
         "PLATE_RESCALE_FACTOR": 2,
         "OCR_OPTIMIZATION": true,
@@ -40,7 +41,6 @@
         "InstallGPU": true,
         "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
         "AcceleratorDeviceName": null,  // = default
-        "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
         "HalfPrecision": "enable",      // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
         "PostStartPauseSecs": 1         // Generally 1 if using GPU, 0 for CPU
       },
@@ -56,8 +56,46 @@
           { "ModuleVersion": "1.1.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
           { "ModuleVersion": "1.1.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
           { "ModuleVersion": "1.1.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "1.2.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" }
+          { "ModuleVersion": "1.2.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "1.2.1", "ServerVersionRange": [ "2.5.2",     "" ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
+          { "ModuleVersion": "1.2.2", "ServerVersionRange": [ "2.5.2",     "" ], "ReleaseDate": "2024-02-18", "ReleaseNotes": "Added dashboard menu to set plate confidence, auto-rotate and OCR optimisation", "Importance": "Minor" }
         ]
+      },
+
+      "ModelRequirements" : [{
+          "Task": "OCR",
+          "Architecture": "RKNN",
+          "Format": "PaddlePaddle"
+      }],
+
+      "UIElements" : {
+        "Menus": [
+          {
+            "Label": "Plate Confidence",
+            "Options": [
+              { "Label": "50%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.50"  },
+              { "Label": "55%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.55"  },
+              { "Label": "60%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.60"  },
+              { "Label": "65%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.65"  },
+              { "Label": "70%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.70"  },
+              { "Label": "75%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.75"  },
+              { "Label": "80%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.80"  }
+            ]
+          },
+        {
+          "Label": "Auto Plate Rotation",
+          "Options": [
+            { "Label": "Enable",    "Setting": "AUTO_PLATE_ROTATE", "Value": "true"  },
+            { "Label": "Disable",   "Setting": "AUTO_PLATE_ROTATE", "Value": "false" }
+          ]
+        },
+        {
+          "Label": "OCR Optimization",
+          "Options": [
+              { "Label": "Enable",  "Setting": "OCR_OPTIMIZATION", "Value": "true"   },
+              { "Label": "Disable", "Setting": "OCR_OPTIMIZATION", "Value": "false"  }
+          ]
+        }]
       },
 
       "RouteMaps": [

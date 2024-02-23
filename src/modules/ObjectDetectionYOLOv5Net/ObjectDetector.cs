@@ -42,14 +42,14 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         private readonly ILogger<ObjectDetector>      _logger;
 
         /// <summary>
-        /// Gets or sets the execution provider.
+        /// Gets or sets the library in use to power the hardware.
         /// </summary>
-        public string ExecutionProvider { get; set; } = "CPU";
+        public string InferenceLibrary { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the hardware type (CPU or GPU).
         /// </summary>
-        public string HardwareType { get; set; } = "CPU";
+        public string InferenceDevice { get; set; } = "CPU";
 
         /// <summary>
         /// Gets or sets a value indicating whether or not this detector can use the current GPU
@@ -74,13 +74,13 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
                     catch (Exception ex) // something went wrong, probably the device is too old and no longer supported.
                     {
                         // fall back to CPU only
-                        if (ExecutionProvider != "CPU")
+                        if (InferenceDevice != "CPU")
                         {
-                            _logger.LogError($"Unable to load the model with {ExecutionProvider}. Falling back to CPU.");
+                            _logger.LogError($"Unable to load the model with {InferenceLibrary}. Falling back to CPU.");
                             _scorer = new YoloScorer<YoloCocoP5Model>(modelPath);
     
-                            ExecutionProvider = "CPU";
-                            HardwareType      = "CPU";
+                            InferenceLibrary = string.Empty;
+                            InferenceDevice  = "CPU";
                         }
                         else
                             _logger.LogError(ex, $"Unable to load the model at {modelPath}");
@@ -125,9 +125,9 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
 
                         sessionOpts.AppendExecutionProvider_CUDA();
 
-                        ExecutionProvider = "CUDA";
-                        HardwareType      = "GPU";
-                        CanUseGPU         = true;
+                        InferenceLibrary = "CUDA";
+                        InferenceDevice  = "GPU";
+                        CanUseGPU        = true;
                     }
                     catch (Exception ex)
                     {
@@ -152,9 +152,9 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
                         //sessionOpts.EnableMemoryPattern = false;
                         //sessionOpts.ExecutionMode = ExecutionMode.ORT_PARALLEL;
 
-                        ExecutionProvider = "OpenVINO";
-                        HardwareType      = "GPU";
-                        CanUseGPU         = true;
+                        InferenceLibrary = "OpenVINO";
+                        InferenceDevice  = "GPU";
+                        CanUseGPU        = true;
                     }
                     catch (Exception ex)
                     {
@@ -174,20 +174,20 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
                 {
                     try
                     {
-                        _logger.LogDebug($"ObjectDetection (.NET) setting ExecutionProvider = \"DML\"");
+                        _logger.LogDebug($"ObjectDetection (.NET) setting ExecutionProvider = \"DirectML\"");
                         sessionOpts.EnableMemoryPattern    = false;
                         sessionOpts.ExecutionMode          = ExecutionMode.ORT_SEQUENTIAL;
                         sessionOpts.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
                         sessionOpts.AppendExecutionProvider_DML(); // Or set the device Id here in order to choose a card
 
-                        ExecutionProvider = "DirectML";
-                        HardwareType      = "GPU";
-                        CanUseGPU         = true;
+                        InferenceLibrary = "DirectML";
+                        InferenceDevice  = "GPU";
+                        CanUseGPU        = true;
                     }
                     catch(Exception ex)
                     {
                         // do nothing, the provider didn't work so keep going
-                        _logger.LogDebug(ex, $"Exception setting ExecutionProvider = \"DML\"");
+                        _logger.LogDebug(ex, $"Exception setting ExecutionProvider = \"DirectML\"");
                     }
                 }
                 else

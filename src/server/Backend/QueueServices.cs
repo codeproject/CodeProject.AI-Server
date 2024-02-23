@@ -20,7 +20,7 @@ namespace CodeProject.AI.Server.Backend
     /// </summary>
     public class QueueServices
     {
-        private readonly string[] _doNotLogCommands = { "list-custom" };
+        private readonly string[] _doNotLogCommands = { "list-custom", "status" };
 
         private readonly QueueProcessingOptions _settings;
         private readonly ILogger _logger;
@@ -74,25 +74,27 @@ namespace CodeProject.AI.Server.Backend
         {
             Channel<BackendRequestBase> queue = GetOrCreateQueue(queueName);
 
-            // the backend process will return a JSON string as a response.
+            // The backend process will return a JSON string as a response.
             var completion = new TaskCompletionSource<string?>();
 
-            // when the request is dequeued will have to check that the pending response exists and
-            // that the task is not completed.
+            // Link a completion source to the request ID so that when this request is dequeued we
+            // will be able to check that the corresponding task is not completed, but we will also
+            // need to be careful to check that pending response actually exists.
             if (!_pendingResponses.TryAdd(request.reqid, completion))
             {
                 string msg = $"Unable to add pending response id {request.reqid} to queue '{queueName}'.";
                 return new ServerErrorResponse(msg);
             }
 
-            // setup a request timeout.
+            // Setup a request timeout.
             using var cancellationSource = new CancellationTokenSource(_settings.ResponseTimeout);
             var timeoutToken = cancellationSource.Token;
 
             try
             {
-                // setup the timeout callback.
-                using var linkedCTS        = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken);
+                // Setup the timeout callback.
+                using var linkedCTS = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken);
+
                 CancellationToken theToken = linkedCTS.Token;
                 theToken.Register(() => { completion.TrySetCanceled(); });
 
@@ -114,9 +116,13 @@ namespace CodeProject.AI.Server.Backend
                     return new ServerErrorResponse($"The request in '{queueName}' was canceled by caller (#reqid {request.reqid})");
                 }
 
-                // Await the result of the TaskCompletion for the command that was put on the queue
+                // Await the result of the TaskCompletion for the command that was put on the queue.
+                // In other words: wait for the response from the module, and return this response.
+                // The module will call the QueueController.SetResponse method via the /queue API,
+                // which in turn will call this.SetResponse, which will take the data the module sent
+                // and set this data in the TaskCompletionSource object. We get the TaskCompletionSource
+                // object from the _pendingResponses dictionary we filled in just a few lines above.
                 var jsonString = await completion.Task.ConfigureAwait(false);
-
                 if (jsonString is null)
                     return new ServerErrorResponse($"null json returned from backend (#reqid {request.reqid})");
 
@@ -172,14 +178,28 @@ namespace CodeProject.AI.Server.Backend
                 Console.WriteLine("Error setting completion result: " + e.Message);
             }
 
+            // This is purely for debugging / trace: we unpack the response and try and get the
+            // command and message from the response for debug output
             var response = JsonSerializer.Deserialize<JsonObject>(responseString ?? "");
-            string command = response?["command"]?.ToString() ?? "(unknown)";
+            string? command   = response?["command"]?.ToString();
+            string? message   = response?["message"]?.ToString();
+            string? moduleId  = response?["moduleId"]?.ToString() ?? "(unknown module)";
+            string moduleName = response?["moduleName"]?.ToString() ?? "(unknown module)";
+
             if (!_doNotLogCommands.Contains(command))
             {
+                string log = $"Response rec'd from {moduleName}";
+                if (command is not null)
+                    log += $" command '{command}'";
+                log += $" (#reqid {req_id})";
+
                 if (response?["message"] is not null)
-                    _logger.LogTrace($"Response received (#reqid {req_id} for command {command}): {response["message"]}");
-                else
-                    _logger.LogTrace($"Response received (#reqid {req_id} for command {command})");
+                    log += $" ['{message}'] ";
+
+                if (response?["processMs"] is not null)
+                    log += $" took {response["processMs"]}ms";
+
+                _logger.LogInformation(log, response?["moduleName"]?? "", LogLevel.Information, "command timing");
             }
 
             return true;

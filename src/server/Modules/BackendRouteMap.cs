@@ -171,8 +171,12 @@ namespace CodeProject.AI.Server.Modules
             }
         }
 
+        /// <summary>
+        /// The static constructor
+        /// </summary>
         static ModuleRouteInfo()
         {
+            // TODO: [Matthew] Add system routes for cancel_command and command_status
             _systemOutputs = new RouteParameterInfo[]
             {
                 new RouteParameterInfo()
@@ -200,21 +204,14 @@ namespace CodeProject.AI.Server.Modules
                 {
                     Name        = "statusData",
                     Type        = "Object",
-                    Description = "An object containing (if available) the current module status data.",
+                    Description = "[Optional] An object containing (if available) the current module status data.",
                     System      = true
                 },
                 new RouteParameterInfo()
                 {
-                    Name        = "executionProvider",
+                    Name        = "inferenceDevice",
                     Type        = "String",
-                    Description = "The name of the device or package handling the inference. eg CPU, GPU, TPU, DirectML.",
-                    System      = true
-                },
-                new RouteParameterInfo()
-                {
-                    Name        = "canUseGPU",
-                    Type        = "Boolean",
-                    Description = "True if this module can use the current GPU if one is present.",
+                    Description = "The name of the device handling the inference. eg CPU, GPU, TPU",
                     System      = true
                 },
                 new RouteParameterInfo()
@@ -222,6 +219,20 @@ namespace CodeProject.AI.Server.Modules
                     Name        = "analysisRoundTripMs",
                     Type        = "Integer",
                     Description = "The time (ms) for the round trip to the analysis module and back.",
+                    System      = true
+                },
+                new RouteParameterInfo()
+                {
+                    Name        = "processedBy",
+                    Type        = "String",
+                    Description = "The hostname of the server that processed this request.",
+                    System      = true
+                },
+                new RouteParameterInfo()
+                {
+                    Name        = "timestampUTC",
+                    Type        = "String",
+                    Description = "The timestamp (UTC) of the response.",
                     System      = true
                 }
             };

@@ -405,31 +405,35 @@ function checkForTool () {
             # about recursion if calling checkForTool "curl"
             if [ $"$architecture" = 'arm64' ]; then
                 if [ ! -f /usr/local/bin/brew ]; then
-                    writeLine "Installing brew (x64 for arm64)..." $color_info
 
-                    curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh --output install_brew.sh
-                    bash install_brew.sh
-                    # arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+                    checkForAdminAndWarn "arch -x86_64 /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)'"
+                    if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                        writeLine "Installing brew (x64 for arm64)..." $color_info
+                        arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+                        # curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh --output install_brew.sh
+                        # arch -x86_64 /bin/bash -c install_brew.sh
+                        # rm install_brew.sh
 
-                    if [ $? -ne 0 ]; then 
-                        quit 10 # failed to install required tool
+                        if [ $? -ne 0 ]; then 
+                            quit 10 # failed to install required tool
+                        fi
                     fi
-
-                    rm install_brew.sh
                 fi
             else
                 if ! command -v brew > /dev/null; then
                     writeLine "Installing brew..." $color_info
 
-                    curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh --output install_brew.sh
-                    bash install_brew.sh
-                    # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+                    checkForAdminAndWarn "/bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)'"
+                    if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                        curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh --output install_brew.sh
+                        bash install_brew.sh
+                        # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+                        # rm install_brew.sh
 
-                    if [ $? -ne 0 ]; then 
-                        quit 10 # failed to install required tool
+                        if [ $? -ne 0 ]; then 
+                            quit 10 # failed to install required tool
+                        fi
                     fi
-
-                    rm install_brew.sh
                 fi
             fi
 
@@ -609,17 +613,31 @@ function setupDotNet () {
 
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
             if [ "$os" = "linux" ]; then
-                if [ "$architecture" = 'arm64' ]; then
-                    if [ $verbosity = "quiet" ]; then
-                        sudo bash "${sdkScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType" "quiet"
+
+                if [ "$os_name" = "debian" ]; then
+                    wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+                    sudo dpkg -i packages-microsoft-prod.deb
+                    rm packages-microsoft-prod.deb
+
+                    if [ "$requestedType" = "sdk" ]; then
+                        sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion
                     else
-                        sudo bash "${sdkScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType"
-                    fi               
+                        sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion
+                    fi
+
                 else
-                    if [ $verbosity = "quiet" ]; then
-                        sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
+                    if [ "$architecture" = 'arm64' ]; then
+                        if [ $verbosity = "quiet" ]; then
+                            sudo bash "${sdkScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType" "quiet"
+                        else
+                            sudo bash "${sdkScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType"
+                        fi               
                     else
-                        sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
+                        if [ $verbosity = "quiet" ]; then
+                            sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
+                        else
+                            sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
+                        fi
                     fi
                 fi
             else
@@ -639,6 +657,10 @@ function setupDotNet () {
 
             # Add link
             # ln -s /opt/dotnet/dotnet /usr/local/bin
+            
+            # if [ "$os_name" = "debian" ]; then
+            #    sudo ln ~/.dotnet/dotnet /usr/bin
+            #fi
 
             # make link permanent
             if grep -q 'export DOTNET_ROOT=' ~/.bashrc;  then
@@ -748,6 +770,7 @@ function setupPython () {
 
     # A number of global variables are assumed here
     #  - pythonVersion     - version in X.Y format
+    #  - pythonName        - python name in "pythonXY" format
     #  - venvPythonCmdPath - the path to the python interpreter for this venv
     #  - virtualEnvDirPath - the path to the virtual environment for this module
 
@@ -881,7 +904,16 @@ function setupPython () {
 
         # macOS: With my M1 chip and Rosetta I make installing Python a real PITA.
         # Raspberry Pi: Hold my beer 
-        elif [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
+        elif [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || \
+             [ "${systemName}" = "Jetson" ] || [ "$os_name" = "debian" ]; then
+
+            # ensure gcc is installed
+            if [ "$os_name" == "debian" ]; then 
+                # gcc and make
+                installAptPackages "build-essential make"
+                # to build python on Debian
+                installAptPackages "libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev"
+            fi
 
             if [ "$launchedBy" = "server" ]; then
                 writeLine "Installing Python needs to be done manually" $color_error
@@ -892,7 +924,11 @@ function setupPython () {
                 writeLine "then restart CodeProject.AI Server" $color_error
                 quit
             else
-                writeLine "Installing Python. THIS COULD TAKE AN HOUR" "white" "red" 50
+                if [ "$systemName" = "linux" ]; then
+                    writeLine "Installing Python. THIS COULD TAKE 10-15 mins" "white" "red" 50
+                else
+                    writeLine "Installing Python. THIS COULD TAKE AN HOUR" "white" "red" 50
+                fi
             fi
 
             pushd "${appRootDirPath}" > /dev/null
@@ -917,14 +953,19 @@ function setupPython () {
             esac
 
             # install the pre-requisites
-            sudo apt-get update -y && sudo apt --yes --force-yes upgrade
+            checkForAdminAndWarn "sudo apt-get update -y && sudo apt --yes --force-yes upgrade"
+            if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                sudo apt-get update -y && sudo apt --yes --force-yes upgrade
+            fi
 
-            installAptPackages "dist-upgrade wget build-essential checkinstall python3-dev python-setuptools"
+            # Build tools
+            installAptPackages "dist-upgrade build-essential checkinstall python3-dev python-setuptools"
+            installAptPackages "python3-pip libncurses5-dev libgdbm-dev libc6-dev"
+            installAptPackages "zlib1g-dev libssl-dev openssl libffi-dev libncursesw5-dev"
 
-            # Might not be needed
-            installAptPackages "python3-pip python-smbus libncurses5-dev libgdbm-dev libc6-dev tk-dev"
-            installAptPackages "libsqlite3-dev zlib1g-dev libssl-dev openssl libffi-dev libncursesw5-dev"
-            installAptPackages "libreadline6-dev libdb5.3-dev libbz2-dev libexpat1-dev liblzma-dev"
+            # TODO: Need info on why these are needed
+            installAptPackages "libreadline6-dev libbz2-dev libexpat1-dev liblzma-dev"
+            installAptPackages "python-smbus tk-dev libsqlite3-dev libdb5.3-dev "
 
             # Download, build and Install SSL
             # https://www.aliengen.com/blog/install-python-3-7-on-a-raspberry-pi-with-raspbian-8
@@ -943,18 +984,20 @@ function setupPython () {
                 tar -xf openssl-1.1.1c.tar.gz
             fi
 
-            # Build SS
-            cd openssl-1.1.1c/
-            ./config shared --prefix=/usr/local/
-            make -j $(nproc)
+            if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                cd openssl-1.1.1c/
+                # Build SSL
+                sudo ./config shared --prefix=/usr/local/
+                sudo make -j $(nproc)
 
-            # Install
-            sudo make install
-            sudo apt-get install libssl-dev -y
-           
-            # cleanup
-            cd ..
-            sudo rm -rf openssl-1.1.1c
+                # Install
+                sudo make install
+                sudo apt-get install libssl-dev -y
+
+                # cleanup
+                cd ..
+                sudo rm -rf openssl-1.1.1c
+            fi
             
             # Get the Python tar ball and extract into our downloads dir
             mkdir "${pythonName}"
@@ -971,23 +1014,27 @@ function setupPython () {
                 tar -xf Python-${pythonPatchVersion}.tar.xz
             fi
 
-            # Build and install Python
-            cd Python-${pythonPatchVersion}
-            sudo ./configure --enable-optimizations  --prefix=/usr
-            make -j $(nproc) < /dev/null
-            sudo make -j $(nproc) altinstall
-            cd ..
+            if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                # Build and install Python
+                cd Python-${pythonPatchVersion}
+                sudo ./configure --enable-optimizations  --prefix=/usr
+                make -j $(nproc) < /dev/null
+                sudo make -j $(nproc) altinstall
+                cd ..
 
-            # Cleanup
-            sudo rm -rf Python-${pythonPatchVersion}
-            
+                # Cleanup
+                sudo rm -rf Python-${pythonPatchVersion}
+            fi
+
             #. ~/.bashrc
 
             popd > /dev/null
 
             # lsb_release is too short-sighted to handle multiple python packages
             # Modified from https://stackoverflow.com/a/61605955
-            sudo ln -s /usr/share/pyshared/lsb_release.py /usr/lib/python${pythonPatchVersion}/site-packages/lsb_release.py
+            if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                sudo ln -s /usr/share/pyshared/lsb_release.py /usr/lib/python${pythonPatchVersion}/site-packages/lsb_release.py
+            fi
 
             # This was done above, but let's force it here in case it's been changed since
             basePythonCmdPath="python${pythonVersion}"
@@ -996,13 +1043,22 @@ function setupPython () {
             curl --remote-name https://bootstrap.pypa.io/get-pip.py
             # If using wget
             # wget https://bootstrap.pypa.io/get-pip.py
-            sudo "${basePythonCmdPath}" get-pip.py pip==20.3.4
+
+            if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                sudo "${basePythonCmdPath}" get-pip.py pip==20.3.4
+            fi
             rm get-pip.py
 
         # For Linux we'll use apt-get the deadsnakes PPA to get the old version
         # of python. Deadsnakes? Old python? Get it? Get it?! And who said 
         # developers have no sense of humour.
         else
+
+            # https://askubuntu.com/a/1481830
+            # if [ "$os_name" = "debian" ]; then
+            #     This allows adding the deadsnakes PPA, but this ppa doesn't support debian
+            #     sudo apt-get install python3-launchpadlib -y
+            # fi
 
             if [ "${verbosity}" = "loud" ]; then
             
@@ -1211,6 +1267,8 @@ function setupPython () {
     writeLine 'All good' $color_success
 
     write "Upgrading PIP in virtual environment..." $color_primary
+    "${venvPythonCmdPath}" -m pip remove --upgrade pip >/dev/null 2>/dev/null &
+
     "${venvPythonCmdPath}" -m pip install --upgrade pip >/dev/null 2>/dev/null &
     spin $!
     writeLine 'done' $color_success
@@ -1304,6 +1362,8 @@ function installPythonPackagesByName () {
         module_name=""
         if [ "${module:0:4}" != "http" ] && [ "${package_name:(-4)}" != ".whl" ]; then
             module_name=$(echo "$package_name" | sed 's/[<=>,~].*//g')
+            # Now remove any string from [ onwards to get 'module' from module[variant]
+            module_name=${module_name%%[*}
         fi
 
         package_desc=$packages_desc
@@ -1354,7 +1414,7 @@ function installPythonPackagesByName () {
 
                 "$venvPythonCmdPath" -m pip show "${module_name}" >/dev/null  2>/dev/null
                 if [ $? -eq 0 ]; then
-                    write "(✔️ checked) " $color_info
+                    write "(✅ checked) " $color_info
                 else
                     write "(failed check) " $color_error
                 fi
@@ -1633,6 +1693,8 @@ function installRequiredPythonPackages () {
                     module_name=""
                     if [ "${package_name:0:4}" != "http" ] && [ "${package_name:(-4)}" != ".whl" ]; then
                         module_name=$(echo "$package_name" | sed 's/[<=>].*//g')
+                        # Now remove any string from [ onwards to get 'module' from module[variant]
+                        module_name=${module_name%%[*}
                     fi
 
                     # Check if the module name is already installed
@@ -1674,7 +1736,7 @@ function installRequiredPythonPackages () {
                         if [ "${module_name}" != "" ]; then
                             "$venvPythonCmdPath" -m pip show ${module_name} >/dev/null  2>/dev/null
                             if [ $? -eq 0 ]; then
-                                write "(✔️ checked) " $color_info
+                                write "(✅ checked) " $color_info
                             else
                                 write "(failed check) " $color_error
                             fi
@@ -1849,7 +1911,7 @@ function getFromServer () {
 
 move_recursive() {
     if [ ! -d "$1" ] || [ ! -e "$2" ]; then
-        mv "$1" "$2" || exit
+        mv -f "$1" "$2" || echo "Unable to move $1 to $2"
         return
     fi
     for entry in "$1/"* "$1/."[!.]* "$1/.."?*; do
@@ -2408,8 +2470,8 @@ if [[ $OSTYPE == 'darwin'* ]]; then
 else
     os='linux'
     platform='linux'
-    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu"
-    os_vers=$(. /etc/os-release;echo $VERSION_ID) # eg "22.04" for Ubuntu 22.04
+    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu", "debian12"
+    os_vers=$(. /etc/os-release;echo $VERSION_ID) # eg "22.04" for Ubuntu 22.04, "12" for Debian 12
 
     if [ "$architecture" = 'arm64' ]; then platform='linux-arm64'; fi
 

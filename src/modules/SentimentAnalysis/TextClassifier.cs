@@ -76,12 +76,12 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         /// <summary>
         /// Gets or sets the execution provider.
         /// </summary>
-        public string ExecutionProvider { get; set; } = "CPU";
+        public string InferenceLibrary { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the hardware type (CPU or GPU).
         /// </summary>
-        public string HardwareType { get; set; } = "CPU";
+        public string InferenceDevice { get; set; } = "CPU";
 
         /// <summary>
         /// Gets or sets a value indicating whether or not this detector can use the current GPU

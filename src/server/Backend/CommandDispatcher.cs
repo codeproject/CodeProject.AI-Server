@@ -22,14 +22,15 @@ namespace CodeProject.AI.Server.Backend
         }
 
         /// <summary>
-        /// Queues a request
+        /// Queues a request. This request will then be processed and the result placed back on the
+        /// same queue
         /// </summary>
         /// <param name="queueName">The name of the queue</param>
         /// <param name="payload">The payload to place on the queue</param>
         /// <param name="token">The cancellation token</param>
         /// <returns></returns>
-        public async Task<object> QueueRequest(string queueName, RequestPayload payload,
-                                               CancellationToken token = default)
+        public async Task<object> SendRequestAsync(string queueName, RequestPayload payload,
+                                                   CancellationToken token = default)
         {
             var request  = new BackendRequest(payload);
             var response = await _queueServices.SendRequestAsync(queueName.ToLower(), request, token)

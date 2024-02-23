@@ -26,28 +26,31 @@ fi
 
 if [ "$os" = "linux" ]; then
 
-    # "libstdc++.so.6: version `GLIBCXX_3.4.20' not found" -  https://stackoverflow.com/a/46613656
-    write "Adding toolchain repo..." $color_primary
-    apt policy 2>/dev/null | grep ubuntu-toolchain >/dev/null 2>/dev/null
-    if [ "$?" != 0 ]; then
+    if [ "$os_name" = "ubuntu" ]; then # Not for debian
+        # "libstdc++.so.6: version `GLIBCXX_3.4.20' not found" -  https://stackoverflow.com/a/46613656
+        write "Adding toolchain repo..." $color_primary
+        apt policy 2>/dev/null | grep ubuntu-toolchain >/dev/null 2>/dev/null
+        if [ "$?" != 0 ]; then
 
-        # output a warning message if no admin rights and instruct user on manual steps
-        install_instructions="cd ${sdkScriptsDirPath}${newline}sudo bash ../setup.sh"
-        checkForAdminAndWarn "$install_instructions"
+            # output a warning message if no admin rights and instruct user on manual steps
+            install_instructions="cd ${sdkScriptsDirPath}${newline}sudo bash ../setup.sh"
+            checkForAdminAndWarn "$install_instructions"
 
-        if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
-            if [ "${verbosity}" = "quiet" ]; then
-                sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y >/dev/null 2>/dev/null &
-                spin $!
-            else
-                sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+            if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+                if [ "${verbosity}" = "quiet" ]; then
+                    sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y >/dev/null 2>/dev/null &
+                    spin $!
+                else
+                    sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+                fi
             fi
+            
+            writeLine "Done" $color_success
+        else
+            writeLine "Already added" $color_success
         fi
-        
-        writeLine "Done" $color_success
-    else
-        writeLine "Already added" $color_success
-    fi    
+    fi
+    
     installAptPackages "apt-utils"
     
     # - These libraries are needed for System.Drawing to work on Linux in NET 7

@@ -186,11 +186,21 @@ namespace CodeProject.AI.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ServerResponse> ListAvailableModules()
         {
-            List<ModuleDescription> moduleList = await _moduleInstaller.GetInstallableModules()
-                                                                       .ConfigureAwait(false);
+            List<ModuleDescription> installableModules = await _moduleInstaller.GetInstallableModules()
+                                                                               .ConfigureAwait(false);
+
+            // Go through each module description and set the currently installed version
+            foreach (ModuleDescription module in installableModules)
+            {
+                ModuleConfig? installed = _installedModules.Values
+                                                           .FirstOrDefault(m => m.ModuleId == module.ModuleId);
+                if (installed is not null)
+                    module.CurrentlyInstalled = installed.Version;
+            }
+
             return new ModuleListInstallableResponse()
             {
-                Modules = moduleList
+                Modules = installableModules
             };
         }
 
@@ -234,6 +244,15 @@ namespace CodeProject.AI.Server.Controllers
                     installableModules.Add(description);
                 }
             };
+
+            // Now go through each module description and set the currently installed version
+            foreach (ModuleDescription module in installableModules)
+            {
+                ModuleConfig? installed = _installedModules.Values
+                                                           .FirstOrDefault(m => m.ModuleId == module.ModuleId);
+                if (installed is not null)
+                    module.CurrentlyInstalled = installed.Version;
+            }
 
             return new ModuleListInstallableResponse()
             {

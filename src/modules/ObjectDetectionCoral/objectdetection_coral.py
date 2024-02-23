@@ -59,9 +59,9 @@ from pycoral.adapters import detect
 from pycoral.utils.dataset import read_label_file
 from pycoral.utils.edgetpu import make_interpreter
 
-interpreter               = None  # The model interpreter
-interpreter_created       = None  # When was the interpreter created?
-labels                    = None  # set of labels for this model
+interpreter         = None  # The model interpreter
+interpreter_created = None  # When was the interpreter created?
+labels              = None  # set of labels for this model
 
 
 from options import Options
@@ -81,17 +81,17 @@ def init_detect(options: Options) -> str:
     # Initialize TF-Lite interpreter.
     device = ""
     try:
-        device = "tpu"
+        device = "TPU"
         interpreter = make_interpreter(options.model_tpu_file, device=None, delegate=None)
 
-        if interpreter == None:
-            device = "cpu"
+        if not interpreter:
+            device      = "CPU"
             interpreter = make_interpreter(options.model_cpu_file, device="cpu", delegate=None)
 
     except Exception as ex:
         try:
-            print("Unable to find or initialise the Coral TPU. Falling back to CPU-only.")
-            device = "cpu"
+            print("Info: Unable to find or initialise the Coral TPU. Falling back to CPU-only.")
+            device = "CPU"
 
             # We can't use the EdgeTPU libraries for making an interpreter because we don't have an
             # edge TPU device. So, fallback to plain TFLite
@@ -102,7 +102,7 @@ def init_detect(options: Options) -> str:
             print("Error creating interpreter: " + str(ex))
             interpreter = None
 
-    if interpreter == None:
+    if not interpreter:
         device = ""
     else:
         interpreter.allocate_tensors()
@@ -123,6 +123,14 @@ def init_detect(options: Options) -> str:
 
     return device
 
+
+def list_models():
+    return {
+        "success": True,
+        "models": [ 'MobileNet SSD', 'EfficientDet-Lite' ]
+    }
+
+
 def reset_detector():
     global interpreter
 
@@ -139,15 +147,15 @@ def do_detect(options: Options, img: Image, score_threshold: float = 0.5):
     top_k = 1
 
     # Once in a while refresh the interpreter
-    if interpreter != None:
+    if interpreter:
         seconds_since_created = (datetime.now() - interpreter_created).total_seconds()
         if seconds_since_created > options.interpreter_lifespan_secs:
             reset_detector()
 
-    if interpreter == None:
+    if not interpreter:
         init_detect(options)
 
-    if interpreter == None:
+    if not interpreter:
         return {
             "success"     : False,
             "error"       : "Unable to create interpreter",
@@ -202,6 +210,7 @@ def do_detect(options: Options, img: Image, score_threshold: float = 0.5):
         return {
             "success"     : False,
             "count"       : 0,
+            "error"       : "Unable to run inference: " + str(ex),
             "predictions" : [],
             "inferenceMs" : 0
         }

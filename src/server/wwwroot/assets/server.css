@@ -140,14 +140,8 @@ a {
     border-bottom: 1px solid rgb(51, 51, 51);
     color: var(--bs-body-color);
     align-items: center;
-    /*border: transparent solid 1px;*/
 }
     .status-row:hover {
-        /*background-color: var(--bs-gray-300);*/
-        /*filter: brightness(110%);*/
-        /*filter: saturate(200%);*/
-        /*opacity: .9;*/
-        /*border-color: red;*/
         box-shadow: inset 0px 1px 4px 0px #2f2e2e;
     }
     .status-row .startup-summary,
@@ -167,6 +161,17 @@ a {
         max-height: 400px;
         background-color: #eee;
     }
+    .status-row .status {
+        text-wrap: nowrap; 
+        width:9rem;
+    }
+    .status-row.not-available .status { color: #ccc; }
+    .status-row .inference {
+        width: 9rem;
+        text-overflow: ellipsis;
+        text-wrap: nowrap;
+        overflow: hidden;
+    }
 
 svg .action-path { fill: #333; opacity: 0.5;}
 svg .action-path-on { fill: #333; }
@@ -175,13 +180,6 @@ svg:hover .action-path { opacity: 1; }
 .dark-mode svg .action-path { fill: #eee; }
 .dark-mode svg .action-path-on { fill: #fff; }
 
-.status-row .status {
-    text-wrap: nowrap; 
-    width:9rem;
-}
-.status-row .hardware {
-    width:8rem;
-}
 .module-name { 
     text-wrap: nowrap;
     text-overflow: ellipsis;
@@ -191,17 +189,10 @@ svg:hover .action-path { opacity: 1; }
 
 .server-status {
     max-width: 18rem;
-    /*
-    overflow: hidden;
-    display: inline-block;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    */
 }
 .server-summary, .mesh-summary {
     color: #b6b5b5;
     white-space: pre;
-    /* max-width: 42rem; */
     font-family: monospace;
     padding: 0.25rem;
     overflow-x: hidden;

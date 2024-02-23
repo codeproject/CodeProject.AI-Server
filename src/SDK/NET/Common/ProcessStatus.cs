@@ -1,5 +1,6 @@
 ﻿using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 using CodeProject.AI.SDK.API;
@@ -47,6 +48,12 @@ namespace CodeProject.AI.SDK
         /// </summary>
         [EnumMember(Value = "Starting")]
         Starting,
+
+        /// <summary>
+        /// Restarting an already started process
+        /// </summary>
+        [EnumMember(Value = "Restarting")]
+        Restarting,
 
         /// <summary>
         /// Off to the races
@@ -124,7 +131,7 @@ namespace CodeProject.AI.SDK
         /// <summary>
         /// The status data as returned by the module
         /// </summary>
-        public object? StatusData { get; set; }
+        public JsonObject? StatusData { get; set; }
 
         /// <summary>
         /// Gets the number of requests processed
@@ -132,24 +139,14 @@ namespace CodeProject.AI.SDK
         public int RequestCount { get => _requestCount; }
 
         /// <summary>
-        /// Gets or sets the name of the hardware acceleration provider.
-        /// </summary>
-        public string? ExecutionProvider { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the hardware type (CPU or GPU)
-        /// </summary>
-        public string? HardwareType { get; set; } = "CPU";
-
-        /// <summary>
-        /// Gets or sets a value indicating whether or not this detector can use the current GPU
-        /// </summary>
-        public bool? CanUseGPU { get; set; } = false;
-
-        /// <summary>
         /// Gets or sets the menus to be displayed in the dashboard based on the current status of
-        /// this module
+        /// this module.
         /// </summary>
+        /// <remarks>
+        /// This value is initially populated by the modulesettings.json file, but could change
+        /// depending on the state of the module. eg GPU options could be offered, but if the module
+        /// then changes to CPU-only, those GPU options may be removed. It all depends on the status.
+        /// </remarks>
         public DashboardMenu[]? Menus { get; set; }
 
         /// <summary>
@@ -199,9 +196,6 @@ namespace CodeProject.AI.SDK
                 summary.AppendLine($"LastSeen:     {lastSeen}");
                 summary.AppendLine($"Status:       {Status}");
                 summary.AppendLine($"Requests:     {RequestCount} (includes status calls)");
-                summary.AppendLine($"Provider:     {ExecutionProvider}");
-                summary.AppendLine($"CanUseGPU:    {CanUseGPU}");
-                summary.AppendLine($"HardwareType: {HardwareType}");
 
                 return summary.ToString();
             }

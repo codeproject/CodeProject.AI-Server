@@ -300,11 +300,16 @@ MigrationBackup/
 /Installers/downloads
 
 /Installers/macOS/application
+/Installers/macOS/build/
 /Installers/macOS/target
 /Installers/macOS/*.pkg
 /Installers/macOS/CodeProject.AI-Server_*_macOS_*.zip
+
+/Installers/Ubuntu/build/
+/Installers/Ubuntu/installer/
 /Installers/Ubuntu/*.deb
 /Installers/Ubuntu/codeproject.ai-server_*_Ubuntu_*.zip
+
 /Installers/Windows/Inno Setup/Output
 /Installers/Windows/Inno Setup/assets/dotnet-hosting-*.exe
 /Installers/Windows/WIX Toolset/CodeProjectAI.Server.Installer/ServerInstallFiles.wxs
@@ -360,9 +365,16 @@ src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/modules/PortraitFilter/runtimeconfig.template.Designer.cs
 /src/modules/SceneClassifier/assets
 /src/modules/SoundClassifierTF/data/
+/src/modules/Text2Image/assets
 /src/modules/TrainingObjectDetectionYOLOv5/assets
 /src/modules/TrainingObjectDetectionYOLOv5/datasets
 /src/modules/TrainingObjectDetectionYOLOv5/fiftyone
 /src/modules/TrainingObjectDetectionYOLOv5/training
 /src/modules/TrainingObjectDetectionYOLOv5/train
 /src/modules/TrainingObjectDetectionYOLOv5/zoo
+
+/src/modules/ModuleDemoPythonSimple/assets/
+/src/modules/ModuleDemoPythonSimple/bin/
+/src/modules/ModuleDemoNetSimple/assets/
+/src/modules/ModuleDemoNetSimple/bin/
+/src/modules/ModuleDemoNetSimple/obj/

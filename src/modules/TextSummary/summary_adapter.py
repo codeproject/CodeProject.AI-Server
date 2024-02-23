@@ -24,9 +24,7 @@ summary = Summarize()
 class TextSummary(ModuleRunner):
 
     def initialise(self) -> None:
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
+        pass
         
     def process(self, data: RequestData) -> JSON:
         input_text: str    = data.get_value("text")
@@ -56,18 +54,7 @@ class TextSummary(ModuleRunner):
             self.report_error(ex, __file__)
             response = {"success": False, "error": "Unable to summarize" }
 
-        self._update_statistics(response)
         return response
-
-
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-        }
     
 
     def selftest(self) -> JSON:
@@ -83,15 +70,6 @@ class TextSummary(ModuleRunner):
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
         return { "success": result['success'], "message": "Text summary test successful" }
-
-
-    def _update_statistics(self, response):
-        if "success" in response and response["success"]:
-            self.success_inferences += 1
-            if "inferenceMs" in response:
-                self.total_success_inf_ms += response["inferenceMs"]
-        else:
-            self.failed_inferences += 1
 
 
     def _status_summary(self):

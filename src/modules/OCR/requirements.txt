@@ -1,11 +1,7 @@
 #! Python3.7
 
-# this is to stop the error "paddlepaddle 2.5.1 requires protobuf<=3.20.2,>=3.1.0; 
-# platform_system == "Windows", but you have protobuf 4.24.4 which is incompatible"
-protobuf<=3.20.2,>=3.1.0        # Installing protobuf
-
-paddlepaddle==2.5.1             # Installing PaddelPaddle, the Deep Learning platform
-paddleocr                       # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+paddlepaddle>=2.6.0             # Installing PaddelPaddle, the Deep Learning platform
+paddleocr==2.7.0.3              # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
 
 imutils                         # Installing imutils, the image utilities library
 Pillow<10.0.0                   # Installing Pillow, a Python Image Library

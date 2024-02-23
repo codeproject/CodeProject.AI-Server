@@ -37,7 +37,6 @@
     <Content Include="paddleocr\en_PP-OCRv3_rec_infer\inference.pdiparams.info" />
     <Content Include="paddleocr\en_PP-OCRv3_rec_infer\inference.pdmodel" />
     <Content Include="patch\paddlepaddle-2.4.2\image.py" />
-    <Content Include="patch\paddlepaddle-2.4.0rc0\image.py" />
     <Content Include="patch\paddleocr-2.6.0.1\db_postprocess.py" />
     <Content Include="utils\tools.py" />
     <Content Include="__init__.py" />

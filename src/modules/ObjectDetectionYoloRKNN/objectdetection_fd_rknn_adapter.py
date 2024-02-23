@@ -40,15 +40,13 @@ class FastDeploy_adapter(ModuleRunner):
 
         if self.enable_GPU:
             print("Rockchip NPU detected")
-            self.execution_provider = "RKNPU"
+            self.inference_device  = "NPU"
+            self.inference_library = "PaddlePaddle"
 
         init_detect(self.opts)
         
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
-        self.num_items_found      = 0
-        self.histogram            = {}
+        self._num_items_found = 0
+        self._histogram       = {}
 
 
     def process(self, data: RequestData) -> JSON:
@@ -98,20 +96,27 @@ class FastDeploy_adapter(ModuleRunner):
             self.report_error(None, __file__, f"Unknown command {data.command}")
             response = { "success": False, "error": "unsupported command" }
 
-        self._update_statistics(response)
         return response
-            
 
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "numItemsFound"        : self.num_items_found,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-            "histogram"            : self.histogram
-        }
+
+    def status(self) -> JSON:
+        statusData = super().status()
+        statusData["numItemsFound"] = self._num_items_found
+        statusData["histogram"]     = self._histogram
+        return statusData
+
+
+    def update_statistics(self, response):
+        super().update_statistics(response)
+        if "success" in response and response["success"] and "predictions" in response:
+            predictions = response["predictions"]
+            self._num_items_found += len(predictions) 
+            for prediction in predictions:
+                label = prediction["label"]
+                if label not in self._histogram:
+                    self._histogram[label] = 1
+                else:
+                    self._histogram[label] += 1
 
 
     def selftest(self) -> JSON:
@@ -149,30 +154,11 @@ class FastDeploy_adapter(ModuleRunner):
         return { "success": True, "models": self.model_names }
 
 
-    def _update_statistics(self, response):
-
-        if "success" in response and response["success"]:
-            if "predictions" in response:
-                if "inferenceMs" in response:
-                    self.total_success_inf_ms += response["inferenceMs"]
-                    self.success_inferences += 1
-                predictions = response["predictions"]
-                self.num_items_found += len(predictions) 
-
-                for prediction in predictions:
-                    label = prediction["label"]
-                    if label not in self.histogram:
-                        self.histogram[label] = 1
-                    else:
-                        self.histogram[label] += 1
-        else:
-            self.failed_inferences += 1
-
     def _status_summary(self):
-        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
-        summary += "Items detected:       " + str(self.num_items_found) + "\n"
-        for label in self.histogram:
-            summary += "  " + label + ": " + str(self.histogram[label]) + "\n"
+        summary  = "Inference Operations: " + str(self._success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self._num_items_found) + "\n"
+        for label in self._histogram:
+            summary += "  " + label + ": " + str(self._histogram[label]) + "\n"
 
         return summary
 

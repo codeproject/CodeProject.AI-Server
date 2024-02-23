@@ -17,23 +17,22 @@ from threading import Lock
 from PIL import Image
 
 # Import the method of the module we're wrapping
-from superresolution import superresolution, load_pretrained_weights
+from superresolution import superresolution, init_superres
 
 class SuperRes_adapter(ModuleRunner):
 
     def initialise(self) -> None:
         assets_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "assets/"))
-        load_pretrained_weights(assets_path)
 
         # TODO: This module also supports ONNX
         self.can_use_GPU = self.system_info.hasTorchCuda
+        self.can_use_GPU = False # We need to sniff ONNX providers to be able to
+                                 # do this. Code sketched out but not complete
 
+        init_superres(assets_path, self.enable_GPU and self.can_use_GPU)
         if self.enable_GPU and self.can_use_GPU:
-            self.execution_provider = "CUDA"
-
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
+            self.inference_device  = "GPU"
+            self.inference_library = "CUDA"
 
 
     def process(self, data: RequestData) -> JSON:
@@ -55,18 +54,7 @@ class SuperRes_adapter(ModuleRunner):
             self.report_error(ex, __file__)
             response = {"success": False, "error": "unable to process the image"}
 
-        self._update_statistics(response)
         return response 
-
-
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-        }
 
 
     def selftest(self) -> JSON:
@@ -84,16 +72,6 @@ class SuperRes_adapter(ModuleRunner):
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
         return { "success": result['success'], "message": "Super resolution test successful" }
-
-
-    def _update_statistics(self, response):
-
-        if "success" in response and response["success"]:
-            self.success_inferences += 1
-            if "inferenceMs" in response:
-                self.total_success_inf_ms += response["inferenceMs"]
-        else:
-            self.failed_inferences += 1
 
 
     def _status_summary(self):

@@ -72,7 +72,7 @@ class ModuleOptions:
 
     # Whether or not to enable, disable or force half-precision operations. This
     # is module, library and hardware specific, but common for PyTorch
-    half_precision      = _get_env_var("CPAI_HALF_PRECISION",     "enable")
+    half_precision      = _get_env_var("CPAI_HALF_PRECISION",     None) # will set to non-None in module_runner
 
     # Can be Quiet, Info or Loud. Module specific, requires module implementation
     log_verbosity       = _get_env_var("CPAI_LOG_VERBOSITY",      LogVerbosity.Quiet)
@@ -92,11 +92,14 @@ class ModuleOptions:
 
     # Normalise input
     launched_by_server  = str(launched_by_server).lower() == "true"
-    port                = int(port) if port.isnumeric() else 32168
+    port                = int(port) if str(port).isnumeric() else 32168
     enable_GPU          = str(enable_GPU).lower() == "true"
+    required_MB         = int(required_MB) if str(required_MB).isnumeric() else 0
+    parallelism         = int(parallelism) if str(parallelism).isnumeric() else 0
 
-    if half_precision not in [ "force", "enable", "disable" ]:
-        half_precision = "enable"
+    # If a value was found but it was incorrect, ignore it
+    if half_precision and half_precision not in [ "force", "enable", "disable" ]:
+        half_precision = None
 
     if isinstance(log_verbosity, str):
         log_verbosity = LogVerbosity(log_verbosity.lower())
@@ -105,7 +108,6 @@ class ModuleOptions:
     if not log_verbosity:
         log_verbosity = LogVerbosity.Quiet
 
-    parallelism = int(parallelism) if isinstance(parallelism, int) else 0
     if parallelism <= 0:
         if (sys.version_info.major >= 3 and sys.version_info.minor >= 13):
             parallelism = os.process_cpu_count() // 2

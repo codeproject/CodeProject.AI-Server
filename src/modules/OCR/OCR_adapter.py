@@ -41,15 +41,12 @@ class OCR_adapter(ModuleRunner):
         self.opts.use_gpu = self.enable_GPU and self.can_use_GPU
 
         if self.opts.use_gpu:
-            self.processor_type     = "GPU"
-            self.execution_provider = "CUDA"   # PaddleOCR supports only CUDA enabled GPUs at this point
+            self.inference_device  = "GPU"
+            self.inference_library = "CUDA"   # PaddleOCR supports only CUDA enabled GPUs at this point
 
         init_detect_ocr(self.opts)
 
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
-        self.num_items_found      = 0
+        self._num_items_found = 0
 
 
     def process(self, data: RequestData) -> JSON:
@@ -62,7 +59,6 @@ class OCR_adapter(ModuleRunner):
 
             if "error" in result and result["error"]:
                 response = { "success": False, "error": result["error"] }
-                self._update_statistics(response)
                 return response 
 
             predictions = result["predictions"]
@@ -80,19 +76,20 @@ class OCR_adapter(ModuleRunner):
             self.report_error(ex, __file__)
             response = { "success": False, "error": "unable to process the image" }
 
-        self._update_statistics(response)
         return response 
 
 
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "numItemsFound"        : self.num_items_found,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-        }
+    def status(self) -> JSON:
+        statusData = super().status()
+        statusData["numItemsFound"] = self._num_items_found
+        return statusData
+
+
+    def update_statistics(self, response):
+        super().update_statistics(response)
+        if "success" in response and response["success"] and "predictions" in response:
+            predictions = response["predictions"]
+            self._num_items_found += len(predictions) 
 
 
     def selftest(slf) -> JSON:
@@ -103,21 +100,6 @@ class OCR_adapter(ModuleRunner):
         except:
             return { "success": False, "message": "PaddlePaddle self test failed" }
         
-
-    def cleanup(self) -> None:
-        pass
-
-
-    def _update_statistics(self, response):
-
-        if "success" in response and response["success"]:
-            self.success_inferences += 1
-            if "inferenceMs" in response:
-                self.total_success_inf_ms += response["inferenceMs"]
-            if "predictions" in response and response["predictions"]:
-                self.num_items_found += len(response["predictions"]) 
-        else:
-            self.failed_inferences += 1
 
 if __name__ == "__main__":
     OCR_adapter().start_loop()

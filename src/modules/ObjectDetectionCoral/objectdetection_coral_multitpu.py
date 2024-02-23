@@ -34,10 +34,11 @@ cd \src\runtimes\bin\windows\python37
 python.exe coral\pycoral\examples\classify_image.py --model coral\pycoral\test_data\mobilenet_v2_1.0_224_inat_bird_quant.tflite --labels coral\pycoral\test_data\inat_bird_labels.txt --input coral\pycoral\test_data\parrot.jpg
 """
 import argparse
-import time
 import concurrent.futures
-import logging
 import copy
+import logging
+import os
+import time
 
 from PIL import Image
 from PIL import ImageDraw
@@ -59,12 +60,32 @@ def init_detect(options: Options) -> str:
 
     return _tpu_runner.init_interpreters(options)
 
+def list_models():
+    
+    # HACK: If we can't get the TPU interpreter created then let's fall back to
+    #       the non-edge library TPU / TFLite-CPU code
+    if not _tpu_runner or not any(_tpu_runner.interpreters):
+        import objectdetection_coral as odc
+        return odc.list_models()
+
+    return {
+        "success": True,
+        "models": [ 'MobileNet SSD', 'EfficientDet-Lite', 'YOLOv5']
+    }
+
 def do_detect(options: Options, image: Image, score_threshold: float = 0.5):
     
-    # Run inference
-    inference_rs, inferenceMs = _tpu_runner.process_image(options, image, score_threshold)
+    # HACK: If we can't get the TPU interpreter created then let's fall back to
+    #       the non-edge library TPU / TFLite-CPU code
+    if not _tpu_runner.interpreters_ok(options):
+        print("Info: no TPU interpreters: Falling back to CPU detection")
+        import objectdetection_coral as odc
+        return odc.do_detect(options, image, score_threshold)
 
-    if inference_rs == False:
+    # Run inference
+    predictions, inferenceMs = _tpu_runner.process_image(options, image, score_threshold)
+
+    if not predictions:
         return {
             "success"     : False,
             "error"       : "Unable to create interpreter",
@@ -75,7 +96,7 @@ def do_detect(options: Options, image: Image, score_threshold: float = 0.5):
 
     # Get output
     outputs = []
-    for obj in inference_rs:
+    for obj in predictions:
         class_id = obj.id
         caption  = _tpu_runner.labels.get(class_id, class_id)
         score    = float(obj.score)
@@ -107,9 +128,6 @@ def cleanup():
     _tpu_runner.__del__()
   _tpu_runner = None
 
-
-from PIL import Image
-from PIL import ImageDraw
 
 def draw_objects(draw, objs, labels):
   """Draws the bounding box and label for each object."""
@@ -144,6 +162,7 @@ def main():
     logging.root.setLevel(logging.INFO)
 
   options = Options()
+
   # Load segments
   if len(args.model) > 1:
     options.tpu_segment_files = args.model
@@ -157,6 +176,7 @@ def main():
   
   options.label_file = args.labels
   image = Image.open(args.input)
+  init_detect(options)
 
   print('----INFERENCE TIME----')
   print('Note: The first inference is slow because it includes',
@@ -187,7 +207,7 @@ def main():
   # for parallelism.
   print('%.2f ms avg time waiting for inference; %.2f avg TPU ms / run' %
                             (tot_infr_time / args.count,
-                             _tpu_runner.tpu_count * wall_time * 1000 / args.count))
+                             _tpu_runner.device_count * wall_time * 1000 / args.count))
 
   print('-------RESULTS--------')
   if not objs:
@@ -211,3 +231,5 @@ def main():
 if __name__ == '__main__':
   main()
   _tpu_runner = None
+  # Don't wait for threads
+  os._exit(os.EX_OK)

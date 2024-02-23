@@ -194,11 +194,12 @@ namespace CodeProject.AI.Server.Modules
         {
             var moduleDescription = new ModuleDescription()
             {
-                ModuleId       = module.ModuleId,
-                Name           = module.Name,
-                Version        = module.Version,
-                PublishingInfo = module.PublishingInfo,
-                InstallOptions = module.InstallOptions
+                ModuleId           = module.ModuleId,
+                Name               = module.Name,
+                Version            = module.Version,
+                PublishingInfo     = module.PublishingInfo,
+                InstallOptions     = module.InstallOptions,
+                CurrentlyInstalled = module.Version
             };
 
             // Set initial properties. Most importantly it sets the status. 
@@ -404,9 +405,21 @@ namespace CodeProject.AI.Server.Modules
             // Check we don't have a current or newer version already installed            
             ModuleConfig? module = _installedModules.GetModule(moduleId);
 
-            // Sanity check
-            if (module is not null && module.InstallOptions?.PreInstalled == true)
-                return (false, $"Module description for '{moduleId}' is invalid. A 'pre-installed' module can't be downloaded");
+            // A pre-installed module is installed in the /preinstalled-modules folder. This can be
+            // uninstalled, and then downloaded and reinstalled, but we need to ensure it's
+            // uninstalled before we re-install. This isn't actually critical, because we can have
+            // 2 modules installed at the same time: the last one spotted will be the one that gets
+            // launched (pre-installed are checked first, then post-installed, so latest installed
+            // wins)
+            // Some notes:
+            // "PreInstalled" is only set to true for the modulesettings for a module installed in a
+            // docker image. Never for a module outside of this, so the modules.json file listing
+            // downloadable modules should always have this "false".
+            // "module.InstallOptions?.PreInstalled" is the setting for the currently installed 
+            // module, not the module that can be downloaded.
+            // GIVEN ALL THAT: who cares. We can totally uninstall / reinstall something pre-installed.
+            // if (module is not null && module.InstallOptions?.PreInstalled == true)
+            //    return (false, $"Module description for '{moduleId}' is invalid. A 'pre-installed' module can't be downloaded");
 
             if (module is not null && module.Valid && moduleDownload.Status == ModuleStatusType.Installed)
             {

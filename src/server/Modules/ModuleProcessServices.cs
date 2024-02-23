@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
@@ -128,6 +129,126 @@ namespace CodeProject.AI.Server.Modules
         }
 
         /// <summary>
+        /// Updates info on when the given module was last seen.
+        /// </summary>
+        /// <param name="moduleId">The Id of the module</param>
+        /// <returns>True on success; false otherwise</returns>
+        public bool UpdateModuleLastSeen(string moduleId)
+        {
+            if (string.IsNullOrEmpty(moduleId))
+                return false;
+
+            if (!TryGetProcessStatus(moduleId, out ProcessStatus? processStatus))
+                return false;
+
+            if (processStatus!.Status != ProcessStatusType.Stopping && processStatus.Status != ProcessStatusType.Started)
+                processStatus.Status = ProcessStatusType.Started;
+
+            processStatus!.Started ??= DateTime.UtcNow;
+            processStatus.LastSeen = DateTime.UtcNow;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Updates the count of the number of times the given module has processed a request. In
+        /// doing so it will also update the time we last saw the module.
+        /// </summary>
+        /// <param name="moduleId">The Id of the module</param>
+        /// <returns>True on success; false otherwise</returns>
+        public bool UpdateModuleProcessingCount(string moduleId)
+        {
+            // REVIEW: Should we (optionally) call UpdateModuleLastSeen here
+
+            if (string.IsNullOrEmpty(moduleId))
+                return false;
+
+            if (!TryGetProcessStatus(moduleId, out ProcessStatus? processStatus))
+                return false;
+
+            lock (processStatus!)
+            {
+                processStatus.IncrementRequestCount();
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Advises that this module may (or may not) be shutting down. This allows the ProcessStatus
+        /// 'Status' property to have up-to-date info for when it next reports back to the UI.
+        /// </summary>
+        /// <param name="moduleId">The ID of the module</param>
+        /// <param name="signalShutdown">Whether or not this process is shutting down</param>
+        /// <returns>True on success; false otherwise</returns>
+        public bool AdviseProcessShutdown(string moduleId, bool signalShutdown = true)
+        {
+            if (string.IsNullOrEmpty(moduleId))
+                return false;
+
+            if (!TryGetProcessStatus(moduleId, out ProcessStatus? processStatus))
+                return false;
+
+            lock (processStatus!)
+            {
+                processStatus.Status = signalShutdown ? ProcessStatusType.Stopping : ProcessStatusType.Started;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Updates the inferenceDevice, bool canUseGPU information for a module.
+        /// HACK: This is a legacy hack for Modules for server &lt;= 2.5.1. Remove when server &gt;= 2.6
+        /// </summary>
+        /// <param name="moduleId">The ID of the module</param>
+        /// <param name="inferenceDevice">The execution provider, typically the GPU library in use</param>
+        /// <param name="canUseGPU">Whether or not the module can use the current GPU</param>
+        /// <returns>True on success; false otherwise</returns>
+        public bool UpdateProcessStatusData(string moduleId, string? inferenceDevice, bool? canUseGPU)
+        {
+            if (string.IsNullOrEmpty(moduleId))
+                return false;
+
+            if (!TryGetProcessStatus(moduleId, out ProcessStatus? processStatus))
+                return false;
+
+            lock (processStatus!)
+            {
+                processStatus.StatusData?.TryAdd("InferenceDevice", inferenceDevice);
+                processStatus.StatusData?.TryAdd("CanUseGPU",       canUseGPU);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Updates the status information for a module. This info is passed back from a module and
+        /// is ad-hoc data: nothing can be assumed. It's just the bag of info the module has decided
+        /// to share with the world.
+        /// </summary>
+        /// <param name="moduleId">The ID of the module</param>
+        /// <param name="statusData">The status data bag</param>
+        /// <returns>True on success; false otherwise</returns>
+        public bool UpdateProcessStatusData(string moduleId, JsonObject? statusData)
+        {
+            // REVIEW: Should we (optionally) call UpdateModuleLastSeen here?
+
+            if (string.IsNullOrEmpty(moduleId))
+                return false;
+
+            if (!TryGetProcessStatus(moduleId, out ProcessStatus? processStatus))
+                return false;
+
+            lock (processStatus!)
+            {
+                processStatus.StatusData = statusData;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Kills a process
         /// </summary>
         /// <param name="module">The module for the process to be killed</param>
@@ -145,6 +266,10 @@ namespace CodeProject.AI.Server.Modules
                 return true;
             }
 
+            TryGetProcessStatus(module.ModuleId, out ProcessStatus? processStatus);           
+            if (processStatus is not null)
+                processStatus.Status = ProcessStatusType.Stopping;
+
             bool hasExited = true;
             try
             {
@@ -161,7 +286,8 @@ namespace CodeProject.AI.Server.Modules
                 // Send a 'Quit' request but give it time to wrap things up before we step in further
                 var payload = new RequestPayload("Quit");
                 payload.SetValue("moduleId", module.ModuleId);
-                await _queueServices.SendRequestAsync(module.LaunchSettings!.Queue!, new BackendRequest(payload))
+                await _queueServices.SendRequestAsync(module.LaunchSettings!.Queue!, 
+                                                      new BackendRequest(payload))
                                     .ConfigureAwait(false);
 
                 int shutdownServerDelaySecs = _moduleSettings.DelayAfterStoppingModulesSecs;
@@ -187,7 +313,10 @@ namespace CodeProject.AI.Server.Modules
                         _logger.LogDebug($"{module.ModuleId} ended after {stopWatch.ElapsedMilliseconds} ms");
                     }
                     else
+                    {
+                        hasExited = true;
                         _logger.LogInformation($"{module.ModuleId} went quietly");
+                    }
                 }
                 catch(Exception ex)
                 {
@@ -203,7 +332,13 @@ namespace CodeProject.AI.Server.Modules
                 }
             }
             else
+            {
+                hasExited = true;
                 _logger.LogInformation($"{module.ModuleId} has left the building");
+            }
+
+            if (hasExited && processStatus is not null)
+                processStatus.Status = ProcessStatusType.Stopped;
 
             // fire the event
             if (OnModuleStateChange != null)
@@ -303,8 +438,6 @@ namespace CodeProject.AI.Server.Modules
             // actually start a module. At all other times we ensure they start.
             if (!SetPreLaunchProcessStatus(module, true))
                 return false;
-
-            SetPreLaunchProcessStatus(module, true);
 
             if (processStatus!.Status != ProcessStatusType.Enabled)
                 return false;
@@ -414,6 +547,9 @@ namespace CodeProject.AI.Server.Modules
             if (status == null)
                 return false;
 
+            status.Status = module.LaunchSettings?.AutoStart == false 
+                          ? ProcessStatusType.Stopping : ProcessStatusType.Restarting;
+
             // We can't reuse a process (easily). Kill the old and create a brand new one
             if (_runningProcesses.TryGetValue(module.ModuleId, out Process? process) && process != null)
             {
@@ -427,6 +563,8 @@ namespace CodeProject.AI.Server.Modules
             // If we're actually meant to be killing this process, then just leave now.
             if (module.LaunchSettings?.AutoStart == false || !module.IsCompatible(_versionConfig.VersionInfo?.Version))
                 return true;
+
+            status.Status = ProcessStatusType.Restarting;
 
             return await StartProcess(module, null).ConfigureAwait(false);
         }
@@ -642,6 +780,10 @@ namespace CodeProject.AI.Server.Modules
                     return;
                 }
 
+                TryGetProcessStatus(moduleId, out ProcessStatus? processStatus);           
+                if (processStatus is not null)
+                    processStatus.Status = ProcessStatusType.Stopped;
+
                 _logger.LogInformation($"** Module {moduleId} has shutdown");
 
                 // Remove this from the list of running processes
@@ -687,7 +829,7 @@ namespace CodeProject.AI.Server.Modules
                 processEnvironmentVars.TryAdd("CPAI_MODULE_REQUIRED_MB", module.LaunchSettings?.RequiredMb?.ToString());
             processEnvironmentVars.TryAdd("CPAI_LOG_VERBOSITY",      (module.LaunchSettings?.LogVerbosity ?? LogVerbosity.Quiet).ToString());
 
-            processEnvironmentVars.TryAdd("CPAI_MODULE_PARALLELISM", module.GpuOptions?.Parallelism.ToString());
+            processEnvironmentVars.TryAdd("CPAI_MODULE_PARALLELISM", (module.LaunchSettings?.Parallelism ?? 0).ToString());
             processEnvironmentVars.TryAdd("CPAI_MODULE_ENABLE_GPU",  enableGPU.ToString());
             processEnvironmentVars.TryAdd("CPAI_ACCEL_DEVICE_NAME",  module.GpuOptions?.AcceleratorDeviceName);
             processEnvironmentVars.TryAdd("CPAI_HALF_PRECISION",     module.GpuOptions?.HalfPrecision);

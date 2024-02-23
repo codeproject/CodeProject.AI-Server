@@ -2,8 +2,9 @@
 
 # See https://www.paddlepaddle.org.cn/documentation/docs/en/install/pip/linux-pip_en.html#gpu
 
+# PaddlePaddle from PyPi is for CUDA 10.2 only. Need to use paddlepaddle.org for other CUDA versions
 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html
-paddlepaddle-gpu==2.5.1.post112 # Installing PaddlePaddle, Parallel Distributed Deep Learning
+paddlepaddle-gpu==2.6.0.post112 # Installing PaddlePaddle, Parallel Distributed Deep Learning
 
 #paddleocr==2.6.0.1             # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
 paddleocr==2.7.0.3              # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle

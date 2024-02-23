@@ -23,8 +23,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using CodeProject.AI.Server.Modules;
 
+using CodeProject.AI.Server.Modules;
 using CodeProject.AI.Server.Backend;
 using CodeProject.AI.Server.Mesh;
 
@@ -199,27 +199,38 @@ namespace CodeProject.AI.Server
 
             _installConfig.Version = _versionConfig?.VersionInfo?.Version ?? string.Empty;
 
+            var configValues      = new { install = _installConfig };
+            string appDataDir     = Configuration["ApplicationDataDir"] 
+                                  ?? throw new ArgumentNullException("ApplicationDataDir is not defined in configuration");
+            string configFilePath = Path.Combine(appDataDir, InstallConfig.InstallCfgFilename);
+
             try
             {
-                var configValues      = new { install = _installConfig };
-                string appDataDir     = Configuration["ApplicationDataDir"] 
-                                        ?? throw new ArgumentNullException("ApplicationDataDir is not defined in configuration");
-                string configFilePath = Path.Combine(appDataDir, InstallConfig.InstallCfgFilename);
-
                 if (!Directory.Exists(appDataDir))
                     Directory.CreateDirectory(appDataDir);
-
-                var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
-                string configJson = System.Text.Json.JsonSerializer.Serialize(configValues, options);
-
-                File.WriteAllText(configFilePath, configJson);
-
-                // Make sure everyone can get access to this
-                // SetWorldAccessToFile(configFilePath);
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Exception updating Install Config: {ex.Message}");
+                _logger?.LogError($"Unable to create application data folder: {ex.Message}");
+            }
+
+            if (Directory.Exists(appDataDir))
+            {
+                var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                string configJson = System.Text.Json.JsonSerializer.Serialize(configValues, options);
+                try
+                {
+                    if (File.Exists(configFilePath))
+                        File.SetAttributes(configFilePath, FileAttributes.Normal);
+                    File.WriteAllText(configFilePath, configJson);
+
+                    // Make sure everyone can get access to this
+                    // SetWorldAccessToFile(configFilePath);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError($"Exception updating Install Config: {ex.Message}");
+                }
             }
         }
 

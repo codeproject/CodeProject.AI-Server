@@ -12,9 +12,6 @@ from typing import Tuple
 import warnings
 warnings.simplefilter("ignore", DeprecationWarning)
 
-# Some commands are just annoying in the logs
-ignore_timing_commands = [ "list-custom", "status" ]
-
 # Ensure the Python import system looks in the right spot for packages.
 # ie .../pythonXX/venv/Lib/site-packages. This depends on the VENV we're 
 # actually running in. So: get the location of the current executable and 
@@ -40,31 +37,30 @@ from request_data   import RequestData
 from module_options import ModuleOptions
 # from utils.environment_check import check_requirements
 
+
+# Our base class that module adapters should derive from.
+
 class ModuleRunner:
     """
     A thin abstraction + helper methods to allow python modules to communicate 
     with the backend of main API Server
-    
-    TODO: All I/O should be async, non-blocking so that logging doesn't impact 
-    the throughput of the requests. Switching to HTTP2 or some persisting 
-    connection mechanism would speed things up as well.
     """
 
-    async def initialise(self) -> None:
-        """
+    def initialise(self) -> None:
+        """ Overridable:
         Called when this module first starts up. To be overridden by child classes 
         """
         pass
 
-    async def initialize(self) -> None:
-        """
+    def initialize(self) -> None:
+        """ Overridable:
         Called when this module first starts up. To be overridden by child classes.
         This method provided for those who like month-day-year.
         """
         pass
 
-    async def process(self, data: RequestData) -> JSON:
-        """
+    def process(self, data: RequestData) -> JSON:
+        """ Overridable:
         Called each time a request is retrieved from this module's queue is to
         be processed. To be overridden by child classes
 
@@ -72,28 +68,65 @@ class ModuleRunner:
         data - The RequestData retrieved from the processing queue. It contains
                all the info needed for this module to satisfy the request
         returns: A JSON package containing the results of this request.
+
+        [Matthew] add docs: to indicate a long running process, return the function
+        that will be run as long process, rather than a JSON package
+        [Matthew] alternatively, return JSON, and have 'long_process' as a field
+        that has a ref to the method to run. This gets removed from the JSON and
+        then the JSON gets sent back to the client
         """
         pass
 
-    def status(self, data: RequestData = None) -> JSON:
+    def status(self) -> JSON:
         """
-        Called when this module has been asked to provide its current status.
-        Helpful for modules that have long running operations such as training
-        or generative AI.
+        Deprecated: this is here purely for backwards compatibility. Added v2.5.5
         """
-        pass
+        return self.module_status(self)
     
-    def selftest(self) -> JSON:
+    def module_status(self) -> JSON:
+        """ Overridable:
+        Called when this module has been asked to provide its current status.
+        Typically returns statistics and device capabilities
         """
+        return {}
+    
+    def command_status(self, data: RequestData) -> JSON:
+         """ Overridable:
+         Called when this module has been asked to provide the current status of
+         a long running command. Can return None if there's nothing to report, or
+         can return a progress %, or intermediate results (eg current training
+         state), or accumulated results (eg result of long running chat)
+         """
+         return {}
+    
+    def cancel_command_task(self) -> None:
+         """ Overridable:
+         Called when this module is about to be cancelled
+         """
+         pass
+
+    def update_statistics(self, response) -> None:
+        """ Overridable:
+        Called after `process` is called in order to update the stats on the 
+        number of successful and failed calls as well as average inference time.
+        """
+        if "success" in response and response["success"] == True:
+            self._successful_inferences += 1
+            if "inferenceMs" in response:
+                self._total_inference_time_ms += int(response["inferenceMs"])
+        else:
+            self._failed_inferences += 1
+
+    def selftest(self) -> JSON:
+        """ Overridable:
         Called to run general tests against this module to ensure it's in good
         working order. Typically this should run unit and/or integration tests
         and report back the results. Used for post-install checks.
         """
         return { "success": True }
 
-
     def cleanup(self) -> None:
-        """
+        """ Overridable:
         Called when this module has been asked to shutdown. To be overridden by
         child classes to provide the means to cleanup resource use
         """
@@ -105,22 +138,34 @@ class ModuleRunner:
         Constructor. 
         """
 
-        self.system_info             = SystemInfo()
+        self.system_info = SystemInfo()
 
-        # Constants
-        self._error_pause_secs       = 1.0   # For general errors
-        self._conn_error_pause_secs  = 5.0   # for connection / timeout errors
-        self._log_timing_events      = True
-        self._verbose_exceptions     = True
+        # Constants ------------------------------------------------------------
 
-        # Private fields
-        self._execution_provider     = "" # backing field for self.execution_provider
-        self._cancelled              = False
+        # We have a reasonably short "long poll" time to ensure the dashboard gets regular pings
+        # to indicate the module is still alive
+        self._wait_for_command_secs    = 15.0  # Time to wait for a command before cancelling and retrying
+        self._response_timeout_secs    = 10    # For sending info to the server
+        self._status_sleep_time        = 2.0  # Time to wait between status updates
+
+        self._error_pause_secs         = 1.0   # For general errors
+        self._conn_error_pause_secs    = 5.0   # for connection / timeout errors
+        self._log_timing_events        = True
+
+        # Some commands are just annoying in the logs
+        self._ignore_timing_commands   = [ "list-custom", "status" ]
+
+        # Private fields -------------------------------------------------------
+
+        self._cancelled                = False
         self._current_error_pause_secs = 0
-        self._performing_self_test   = False
-        self.selftest_check_packages = True
+        self._performing_self_test     = False
 
-        # Public fields -------------------------------------------------------
+        self._successful_inferences    = 0
+        self._total_inference_time_ms  = 0
+        self._failed_inferences        = 0
+
+        # Public fields --------------------------------------------------------
 
         # A note about the use of ModuleOptions. ModuleOptions is simply a way 
         # to hide all the calls to _get_env_var behind a single class. While
@@ -132,30 +177,36 @@ class ModuleRunner:
         # mutable. 
 
         # Module Descriptors
-        self.module_id           = ModuleOptions.module_id              # ID of the module
-        self.module_name         = ModuleOptions.module_name            # Name of the module
+        self.module_id           = ModuleOptions.module_id             # ID of the module
+        self.module_name         = ModuleOptions.module_name           # Name of the module
 
         # Server API location and Queue
-        self.base_api_url        = ModuleOptions.base_api_url           # Base URL for making calls to the server
-        self.port                = ModuleOptions.port                   # Port on which the server is listening
-        self.queue_name          = ModuleOptions.queue_name             # Name of request queue for this module
+        self.base_api_url        = ModuleOptions.base_api_url          # Base URL for making calls to the server
+        self.port                = ModuleOptions.port                  # Port on which the server is listening
+        self.queue_name          = ModuleOptions.queue_name            # Name of request queue for this module
 
         # General Module and Server settings
-        self.server_root_path    = ModuleOptions.server_root_path       # Absolute folder path to root of this application
-        self.module_path         = ModuleOptions.module_path            # Absolute folder path to this module
-        self.python_dir          = current_python_dir                   # Absolute folder path to Python venv if applicable
-        self.python_pkgs_dir     = package_path                         # Absolute folder path to Python venv packages folder if app.
-        self.log_verbosity       = ModuleOptions.log_verbosity          # Logging level: Quiet, Info or Loud
-        self.launched_by_server  = ModuleOptions.launched_by_server     # Was this module launched by the server (or launched separately?)
+        self.server_root_path    = ModuleOptions.server_root_path      # Absolute folder path to root of this application
+        self.module_path         = ModuleOptions.module_path           # Absolute folder path to this module
+        self.python_dir          = current_python_dir                  # Absolute folder path to Python venv if applicable
+        self.python_pkgs_dir     = package_path                        # Absolute folder path to Python venv packages folder if app.
+        self.log_verbosity       = ModuleOptions.log_verbosity         # Logging level: Quiet, Info or Loud
+        self.launched_by_server  = ModuleOptions.launched_by_server    # Was this module launched by the server (or launched separately?)
+        self.selftest_check_pkgs = True
 
         # Hardware / accelerator info
-        self.required_MB         = int(ModuleOptions.required_MB or 0)  # Min RAM needed to launch this module
-        self.accel_device_name   = ModuleOptions.accel_device_name      # eg CUDA:0, usb:0. Module/library specific
-        self.half_precision      = ModuleOptions.half_precision         # Whether to use half precision in CUDA (module specific)
-        self.parallelism         = ModuleOptions.parallelism            # Number of parallel instances launched at runtime
-        self.enable_GPU          = ModuleOptions.enable_GPU             # Whether to use GPU support if available
-        self.processor_type      = "CPU"                                # The processor type reported as being used (CPU, GPU, TPU etc)
-        self.can_use_GPU         = False                                # Whether this module can support the current hardware
+        self.required_MB         = int(ModuleOptions.required_MB or 0) # Min RAM needed to launch this module
+        self.accel_device_name   = ModuleOptions.accel_device_name     # eg CUDA:0, usb:0. Module/library specific
+        self.parallelism         = ModuleOptions.parallelism           # Number of parallel instances launched at runtime
+        self.enable_GPU          = ModuleOptions.enable_GPU            # Whether to use GPU support if available
+
+        self.inference_device    = "CPU"                               # The processor type reported as being used (CPU, GPU, TPU etc)
+        self.inference_library   = ""                                  # The inference library in use (CUDA, Tensorflow, DirectML, Paddle)
+        self.can_use_GPU         = False                               # Whether this module can support the current hardware
+
+        self.half_precision      = ModuleOptions.half_precision        # Whether to use half precision in CUDA (module specific)
+        if not self.half_precision:
+            self.half_precision = "enable" if self.system_info.hasTorchHalfPrecision else "disable"
 
         # General purpose flags. These aren't currently supported as common flags
         # self.use_CUDA          = ModuleOptions.use_CUDA
@@ -166,11 +217,14 @@ class ModuleRunner:
         # self.use_MPS           = ModuleOptions.use_MPS
 
         # Logger needs to be setup as part of the asyncio loop later on
-        # self._logger = ModuleLogger(self.port, self.server_root_path)
-        self._logger = None
+        # self._logger           = ModuleLogger(self.port, self.server_root_path)
+        self._logger             = None
 
         # Private fields
-        self._base_queue_url = self.base_api_url + "queue/"
+        self._base_queue_url     = self.base_api_url + "queue/"
+        
+        self.long_running_command_task = None
+        self.long_running_command_id   = None
 
         # General setup
 
@@ -179,34 +233,16 @@ class ModuleRunner:
             os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 
-    @property
-    def execution_provider(self) -> str:
-        """ Gets the execution provider (eg. CPU, GPU, TPU, NPU etc) """
-        return self._execution_provider
-      
-    @execution_provider.setter
-    def execution_provider(self, provider) -> None:
-        """ 
-        Sets the execution provider, and in doing so will also ensure the
-        hardware ID makes sense. (Yes, TMI on the hardware ID, but important.
-        hardware_id is still a work in progress).
-        """
-
-        if not provider:
-            self._execution_provider = "CPU"
-        else:
-            self._execution_provider = provider
-
-        if self._execution_provider != "CPU":
-            self.processor_type = "GPU"
-
-
     def start_loop(self) -> None:
         """
         Starts the tasks that will run the execution loops that check the 
         command queue and forwards commands to the module. Each task runs 
         asynchronously, with each task's loop independently querying the 
         command queue and sending commands to the (same) callback function.
+
+        TODO: All I/O should be async, non-blocking so that logging doesn't 
+        impact the throughput of the requests. Switching to HTTP2 or some 
+        persisting connection mechanism would speed things up as well.
         """
 
         # SELF TEST: 
@@ -214,7 +250,7 @@ class ModuleRunner:
         # has been requested, then we'll run that test and exit immediately,
         # rather than firing up the loop to handle messages. 
         # We could call this from the __init__ method to be cleaner, but child
-        # modules would then need to ensure they called super.__init__ at the
+        # modules would then need to ensure they called super().__init__ at the
         # *end* of their __init__ call, rather than at the start, and that's
         # just fragile.
 
@@ -232,7 +268,7 @@ class ModuleRunner:
             else:
                 self.initialize()
 
-            if self.selftest_check_packages:
+            if self.selftest_check_pkgs:
                 self.check_packages()
             result = self.selftest()
             self.cleanup()
@@ -310,6 +346,8 @@ class ModuleRunner:
         if self.log_verbosity == LogVerbosity.Loud:
             print(f"{self.module_id} starting main_init")
 
+        # if Debug:
+        #    self._request_session = aiohttp.ClientSession()
         async with aiohttp.ClientSession() as session:
             self._request_session = session
 
@@ -318,46 +356,46 @@ class ModuleRunner:
 
             # Start with just running one logging loop
             self._logger = ModuleLogger(self.port, self.server_root_path)
-            logging_task = asyncio.create_task(self._logger.logging_loop())
 
-            # Call the init callback if available
-            if True : # self.init_callback:
-                self._logger.log(LogMethod.Info | LogMethod.Server,
-                { 
-                    "filename": __file__,
-                    "loglevel": "trace",
-                    "method": "main_init",
-                    "message": f"Running init for {self.module_name}"
-                })
+            self._logger.log(LogMethod.Info | LogMethod.Server,
+            { 
+                "filename": __file__,
+                "loglevel": "trace",
+                "method": "main_init",
+                "message": f"Trace: Running init for {self.module_name}"
+            })
 
-                # Overriding issue here: We need to await self.initialise in the
-                # asyncio loop. This means we can't just 'await self.initialise'
-                # We also allow initialise or initialize, so let's see which one
-                # has been overridden
+            # NOTE: We need to await self.initialise in the asyncio loop. This
+            # means we can't just 'await self.initialise'. We also allow a
+            # choice between using initialise or initialize, so let's see which
+            # one has been overridden
 
-                # We allow 'initialize' and 'initialise'. Find which was overridden
-                init_method = self.initialize
-                if self.initialize.__qualname__ == "ModuleRunner.initialize":
-                    init_method = self.initialise
+            # We allow 'initialize' and 'initialise'. Find which was overridden
+            init_method = self.initialize
+             # if self.initialize wasn't overridden, use self.initialise
+            if self.initialize.__qualname__ == "ModuleRunner.initialize":
+                init_method = self.initialise
 
-                if self.log_verbosity == LogVerbosity.Loud:
-                    print(f"{self.module_id} call module's init method")
+            if self.log_verbosity == LogVerbosity.Loud:
+                print(f"{self.module_id} call module's init method")
 
-                if asyncio.iscoroutinefunction(init_method):
-                    # if initialise is async, then it's a coroutine. In this
-                    # case we create an awaitable asyncio task to execute this
-                    # method.
-                    init_task = asyncio.create_task(init_method())
-                else:
-                    # If the method is not async, then we wrap it in an awaitable
-                    # method which we await.
-                    loop = asyncio.get_running_loop()
-                    init_task = loop.run_in_executor(None, init_method)
+            if asyncio.iscoroutinefunction(init_method):
+                # if initialise is async, then it's a coroutine. In this case
+                # we create an awaitable asyncio task to execute this method.
+                init_task = asyncio.create_task(init_method())
+            else:
+                # If the method is not async, then we wrap it in an awaitable
+                # method which we await.
+                loop = asyncio.get_running_loop()
+                init_task = loop.run_in_executor(None, init_method)
 
+            try:
                 await init_task
-
-                if self.log_verbosity == LogVerbosity.Loud:
-                    print(f"{self.module_id} module init complete")
+            except Exception as ex:
+                print(f"An exception occurred initialising the module: {str(ex)}")    
+                
+            if self.log_verbosity == LogVerbosity.Loud:
+                print(f"{self.module_id} module init complete")
 
             sys.stdout.flush()
 
@@ -365,24 +403,59 @@ class ModuleRunner:
                 print(f"{self.module_id} setting up main loop")
 
             # Add main processing loop tasks
-            tasks = [ asyncio.create_task(self.main_loop(task_id)) for task_id in range(self.parallelism) ]
+            logging_task = asyncio.create_task(self._logger.logging_loop())
+            status_task  = asyncio.create_task(self.status_update_loop())
+
+            tasks = [ asyncio.create_task(self.main_loop(task_id)) \
+                      for task_id in range(self.parallelism) ]
 
             sys.stdout.flush()
 
             # combine
             tasks.append(logging_task)
+            tasks.append(status_task)
 
             await self.log_async(LogMethod.Info | LogMethod.Server, {
                         "message": self.module_name + " started.",
                         "loglevel": "trace"
                     })
 
-            await asyncio.gather(*tasks)
+            try:
+                await asyncio.gather(*tasks)
+                if self.log_verbosity == LogVerbosity.Loud:
+                    print(f"{self.module_id} all tasks complete. Ending.")
+                    
+            except Exception as ex:
+                print(f"An exception occurred completing all module tasks: {str(ex)}")    
 
-            if self.log_verbosity == LogVerbosity.Loud:
-                print(f"{self.module_id} all tasks complete. Ending.")
-
+            # if Debug:
+            #     await self._request_session.close()
             self._request_session = None
+
+
+    async def status_update_loop(self):
+        """ 
+        Runs the main status update loop which updates the server with the status
+        of each module.
+        """
+        if self.log_verbosity == LogVerbosity.Loud:
+            print(f"starting status_update_loop")
+            
+        self.status_loop_started = True
+        while not self._cancelled:
+            
+            status_object = self._get_module_status()
+            statusData = { "statusData": json.dumps(status_object) }
+
+            try:
+                await self.call_api(f"queue/updatemodulestatus/{self.module_id}",
+                                    None, statusData)
+            except Exception as ex:
+                print(f"An exception occurred updating the module status: {str(ex)}")    
+            
+            await asyncio.sleep(self._status_sleep_time)
+                
+        self.status_loop_started = False
 
 
     # Main loop
@@ -418,12 +491,11 @@ class ModuleRunner:
             # it's always just 1 at a time. At the moment.
             for queue_entry in queue_entries:
                 
-                suppress_timing_log = False
-
                 data: RequestData = RequestData(queue_entry)
 
                 # The method to call to process this request
                 method_to_call = self.process
+                update_status  = True
 
                 # Some requests need to be handled differently
                 if data.command:
@@ -433,8 +505,11 @@ class ModuleRunner:
                         print(f"{self.module_id} command {command} pulled from queue for task {task_id}")
 
                     # Special requests
-                    if command == "quit" and self.module_id.lower() == data.get_value("moduleId").lower():
+                    if command == "quit" and \
+                       self.module_id.lower() == data.get_value("moduleId").lower():
                         
+                        update_status = False
+
                         if self.log_verbosity == LogVerbosity.Loud:
                             print(f"{self.module_id} 'quit' called. Signaling shutdown for task {task_id}")
 
@@ -448,24 +523,27 @@ class ModuleRunner:
                         self._cancelled = True
                         break
                     
-                    elif command == "status":
-                        method_to_call = self.status
+                    elif command == "status" or command == "module_status": # maybe get_.."
+                        update_status  = False
+                        method_to_call = self._get_module_status
+                        
+                    elif command == "get_command_result" or command == "process_status": # maybe get_.."
+                        update_status  = False
+                        method_to_call = self._get_command_status
+                        
+                    elif command == "cancel_command":
+                        update_status  = False
+                        method_to_call = self._cancel_command_task
 
                     elif command == "selftest":
                         # NOTE: selftest generally won't actually be called here - it'll be called 
                         #       via command line. This is here in case selftest is triggered via API
+                        update_status  = False
                         method_to_call = self.selftest
 
                     # Annoying requests
-                    if command in ignore_timing_commands:
-                        suppress_timing_log = True
-
-                if not suppress_timing_log:
-                    process_name = f"Rec'd request for {self.module_name}"
-                    if data.command:
-                        process_name += f" command '{data.command}'"
-                    process_name += f" (#reqid {data.request_id})"
-                    timer: Tuple[str, float] = self.start_timer(process_name)
+                    if command in self._ignore_timing_commands:
+                        update_status = False
 
                 output: JSON = {}
                 try:
@@ -489,13 +567,43 @@ class ModuleRunner:
                     # Await 
                     output = await callbacktask
 
+                    # if a coroutine was returned, then we run the coroutine in
+                    # the background and return a message to the server only one
+                    # long running command can be in progress at a time
+                    if asyncio.iscoroutinefunction(output) or callable(output):
+                        
+                        # REVIEW: [Chris] should we check that the response has been read?
+                        if self.long_running_command_task and not self.long_running_command_task.done():
+                            output = {
+                                "success": False,
+                                "command_id": self.long_running_command_id,
+                                "error":   "A long running command is already in progress"
+                            }
+                        else:
+                            self.long_running_command_id = data.request_id
+                            if asyncio.iscoroutinefunction(output):
+                                self.long_running_command_task = asyncio.create_task(output(data))
+                            else:
+                                loop = asyncio.get_running_loop()
+                                self.long_running_command_task = loop.run_in_executor(None, output, data)
+                                
+                            output = { 
+                                "success":        True, 
+                                "message":        "Command is running in the background",
+                                "command_id":     data.request_id,
+                                "command_status": "running"
+                            }
+
+                    if update_status:
+                        self.update_statistics(output)
+
                     if self.log_verbosity == LogVerbosity.Loud:
                         print(f"{self.module_id} process call complete for task {task_id}")
 
                     # print(f"Process Response is {output['message']}")
 
                 except asyncio.CancelledError:
-                    print(f"The future has been cancelled. Ignoring command {data.command} (#reqid {data.request_id})")
+                    print(f"Task cancelled. Ignoring command {data.command} (#reqid {data.request_id})")
 
                 except Exception as ex:
                     output = {
@@ -514,23 +622,19 @@ class ModuleRunner:
                     })
 
                 finally:
-                    if not suppress_timing_log:
-                        self.end_timer(timer, "command timing", data.command)
-
                     try:
                         if send_response_task != None:
                             if self.log_verbosity == LogVerbosity.Loud:
                                 print(f"{self.module_id} awaiting previous send operation for task {task_id}")
                             await send_response_task
 
-                        output["moduleId"]          = self.module_id
-                        output["moduleName"]        = self.module_name
-                        output["code"]              = 200 if output["success"] == True else 500
-                        output["command"]           = data.command or ''
-                        output["executionProvider"] = self.execution_provider or 'CPU'
-                        output["canUseGPU"]         = self.can_use_GPU
-                        output["statusData"]        = self.status(data)
-                        
+                        output["moduleId"]        = self.module_id
+                        output["moduleName"]      = self.module_name
+                        output["code"]            = 200 if output["success"] == True else 500
+                        output["command"]         = data.command or ''
+                        output["requestId"]       = data.request_id or ''
+                        output["inferenceDevice"] = self.inference_device
+                       
                         if self.log_verbosity == LogVerbosity.Loud:
                             print(f"{self.module_id} sending result of process to server for task {task_id}")
 
@@ -551,6 +655,159 @@ class ModuleRunner:
         if self.log_verbosity == LogVerbosity.Loud:
             print(f"{self.module_id} task {task_id} complete.")
 
+
+    def _get_command_status(self, data: RequestData) -> JSON:
+        """
+        Called when this module has been asked to provide the response to a long
+        running command.
+        """
+        command_id      = data.get_value("commandId")
+        command_success = False
+
+        if not command_id:
+            return {
+                "success": False,
+                "error":   "No command ID provided"
+            }
+        elif not self.long_running_command_id:
+            return {
+                "success": False,
+                "error":   "No long running command is currently in progress"
+            }
+        elif command_id != self.long_running_command_id:
+            return {
+                "success": False,
+                "error":   "The command ID provided does not match the current long running command"
+            }
+        elif not self.long_running_command_task:
+            return {
+                "success": False,
+                "error":   "The long running command task has been lost"
+            }
+        elif not self.long_running_command_task.done():
+            status = self.command_status()
+            status.update({
+                "success":        True,
+                "message":        "The long running command is still in progress",
+                "command_id":     command_id,
+                "command_status": "running",
+            })
+            return status
+        
+        # SUGGEST [Matthew]: Store "output" the next long process starts and always 
+        #         return "output" here
+
+        command_success = True
+        try:
+            result = self.long_running_command_task.result()
+        except Exception as ex:
+            command_success = False
+                
+        output = {
+            "success":        command_success, 
+            "message":        "Command has completed",
+            "command_id":     command_id,
+            "command_status": "completed",
+            "error":          None if command_success else str(ex)
+
+            # All this is automatically added
+            # "moduleId"        : self.module_id,
+            # "moduleName"      : self.module_name,
+            # "code"            : 200 if command_success == True else 500,
+            # "command"         : data.command or '',
+            # "requestId"       : data.request_id or '',
+            # "inferenceDevice" : self.inference_device,
+        }
+        
+        # COMMENT [Matthew]: dict.update. I've never heard of this. This is so cool
+        output.update(result)
+        
+        # moving this to initial command
+        # we want to be able to read the result multiple times until a new command is issued
+        
+        # self.long_running_command_id   = None
+        # self.long_running_command_task = None
+        
+        return output
+    
+    def _get_module_status(self) -> JSON:
+        """
+        Called when this module has been asked to provide its overall status
+        """
+        status = self.module_status()
+        status.update({
+            "inferenceDevice"      : self.inference_device,
+            "inferenceLibrary"     : self.inference_library,
+            "canUseGPU"            : str(self.can_use_GPU).lower(),
+
+            "successfulInferences" : self._successful_inferences,
+            "failedInferences"     : self._failed_inferences,
+            "numInferences"        : self._successful_inferences + self._failed_inferences,
+            "averageInferenceMs"   : 0 if not self._successful_inferences 
+                                     else self._total_inference_time_ms / self._successful_inferences,
+        })
+
+        # HACK: For old modules. Remove server version 2.6
+        if hasattr(self, "execution_provider"):
+            if self.execution_provider == "CPU":
+                status["inferenceDevice"]  = "CPU"
+                status["inferenceLibrary"] = ""
+            else:
+                status["canUseGPU"]        = "True"
+                status["inferenceDevice"]  = "GPU"
+                status["inferenceLibrary"] = self.execution_provider
+
+        return status
+        
+
+    def _cancel_command_task(self, data: RequestData) -> JSON:
+        """
+        This method is called to cancel a long running command.
+        """
+        command_id = data.get_value("commandId")
+        if not command_id:
+            return {
+                "success": False,
+                "error":   "No command ID provided"
+            }
+        elif not self.long_running_command_id:
+            return {
+                "success": False,
+                "error":   "No long running command is currently in progress"
+            }
+        elif command_id != self.long_running_command_id:
+            return {
+                "success": False,
+                "error":   "The command ID provided does not match the current long running command"
+            }
+        elif not self.long_running_command_task:
+            return {
+                "success": False,
+                "error":   "The long running command task has been lost"
+            }
+        
+        self.cancel_command_task()
+
+        self.long_running_command_task.cancel()
+        self.long_running_command_id   = None
+        self.long_running_command_task = None
+        
+        output = {
+            "success":        True, 
+            "message":        "The command has been cancelled",
+            "command_id":     command_id,
+            "command_status": "cancelled",
+
+            "moduleId"        : self.module_id,
+            "moduleName"      : self.module_name,
+            "code"            : 200 if output["success"] == True else 500,
+            "command"         : data.command or '',
+            "requestId"       : data.request_id or '',
+            "inferenceDevice" : self.inference_device,
+        }
+        
+        return output
+    
 
     # Performance timer =======================================================
 
@@ -573,12 +830,12 @@ class ModuleRunner:
         (desc, start_time) = timer
         elapsedMs = (time.perf_counter() - start_time) * 1000
     
-        if self._log_timing_events and not command in { "status" }: # exclude some timing events
+        if self._log_timing_events and command not in self._ignore_timing_commands:
             self.log(LogMethod.Info|LogMethod.Server, {
-                        "message": f"{desc} took {elapsedMs:.0f}ms",
-                        "loglevel": "information",
-                        "label": label
-                     })
+                "message": f"{desc} took {elapsedMs:.0f}ms",
+                "loglevel": "information",
+                "label": label
+            })
 
 
     # Service Commands and Responses ==========================================
@@ -606,9 +863,10 @@ class ModuleRunner:
 
         """
         Gets a command from the queue associated with this object. 
+
         CodeProject.AI works on the  basis of having a client pass requests to 
         the server's public API, which in turns places each request into various 
-        command queues. The backend analysis services continually pull requests
+        command queues. The backend analysis modules continually pull requests
         from the queue that they can service. Each request for a queued command
         is done via a long poll HTTP request.
 
@@ -627,18 +885,24 @@ class ModuleRunner:
         if self.log_verbosity == LogVerbosity.Loud:
             print(f"{self.module_id} in get_command for task {task_id}")
 
+        if not self._request_session or self._request_session.closed:
+            await self.log_async(LogMethod.Error, {
+                "message": f"No open session available for {self.module_id} to connect to the server.",
+                "method": sys._getframe().f_code.co_name,
+                "loglevel": "error",
+                "process": self.queue_name,
+                "filename": __file__
+            })
+            return commands
+
         try:
             url = self._base_queue_url + self.queue_name + "?moduleId=" + self.module_id
-            if self.execution_provider:
-                url += "&executionProvider=" + self.execution_provider
-            if self.can_use_GPU is not None:
-                url += "&canUseGPU=" + str(self.can_use_GPU).lower()
 
             # Send a request to query the queue and wait up to 30 seconds for a
             # response. We're basically long-polling here
             async with self._request_session.get(
                 url,
-                timeout = 30
+                timeout = self._wait_for_command_secs
                 #, verify = False
             ) as session_response:
 
@@ -657,7 +921,7 @@ class ModuleRunner:
 
                         data = RequestData(content)
                         # HACK: logging this command is just annoying to everyone concerned.                        
-                        if data.command not in ignore_timing_commands:
+                        if data.command not in self._ignore_timing_commands:
                             await self.log_async(LogMethod.Info|LogMethod.Server, {
                                 "message": f"Retrieved {self.queue_name} command '{data.command}'",
                                 "loglevel": "debug"
@@ -729,7 +993,8 @@ class ModuleRunner:
             exception_type = ex.__class__.__name__
 
             if hasattr(ex, "os_error") and isinstance(ex.os_error, ConnectionRefusedError):
-                err_msg = f"Unable to check the command queue {self.queue_name}. Is the server running, and can you connect to the server?"
+                err_msg        = f"Unable to check the command queue {self.queue_name}. " + \
+                                  "Is the server running, and can you connect to the server?"
                 exception_type = "ConnectionRefusedError"
                 pause_on_error = True
 
@@ -755,7 +1020,7 @@ class ModuleRunner:
 
                 if not self._cancelled and err_msg and err_msg != 'Session is closed':
                     pause_on_error = True
-                    err_msg = "Error retrieving command [" + exception_type + "]: " + err_msg
+                    err_msg = f"Error retrieving command: {err_msg}"
                     await self.log_async(LogMethod.Error|LogMethod.Server, {
                         "message": err_msg,
                         "method": sys._getframe().f_code.co_name,
@@ -786,11 +1051,11 @@ class ModuleRunner:
 
     async def send_response(self, request_id : str, body : JSON) -> bool:
         """
-        Sends the result of a comment to the analysis services back to the API
-        server who will then pass this result back to the original calling 
+        Sends the result of a command to the analysis modules back to the API
+        server, which will then pass this result back to the original calling 
         client. CodeProject.AI works on the basis of having a client pass 
         requests to the server's public API, which in turns places each request 
-        into various command queues. The backend analysis services continually 
+        into various command queues. The backend analysis modules continually 
         pull requests from the queue that they can service, process each 
         request, and then send the results back to the server.
 
@@ -806,37 +1071,31 @@ class ModuleRunner:
         # responseTimer = self.start_timer(f"Sending response for request from {self.queue_name}")
 
         try:
-            url = self._base_queue_url + request_id + "?moduleId=" + self.module_id
-            if self.execution_provider is not None:
-                url += "&executionProvider=" + self.execution_provider
-            if self.can_use_GPU is not None:
-                url += "&canUseGPU=" + str(self.can_use_GPU).lower()
-            
             # print("Sending response to server")
+            url = self._base_queue_url + request_id + "?moduleId=" + self.module_id
+            
             async with self._request_session.post(
                 url,
                 data    = json.dumps(body),
-                timeout = 10
+                timeout = self._response_timeout_secs
                 #, verify  = False
                 ):
                 success = True
             # print("Response sent")
 
         except asyncio.TimeoutError as t_ex:
-            await asyncio.sleep(self._error_pause_secs)
-
-            if self._verbose_exceptions:
-                print(f"Timeout sending response: {str(t_ex)}")
+            if self.log_verbosity == LogVerbosity.Quiet:
+                print(f"Timeout sending response: Is the API Server running? [{t_ex.__class__.__name__}]")
             else:
-                print(f"Timeout sending response: Is the API Server running? [" + t_ex.__class__.__name__ + "]")
+                print(f"Timeout sending response: {str(t_ex)}")
+            await asyncio.sleep(self._error_pause_secs)
 
         except Exception as ex:
+            # if self.log_verbosity == LogVerbosity.Quiet:
+            #    print(f"Timeout sending response: Is the API Server running? [{ex.__class__.__name__}]")
+            # else:
+            print(f"Error sending response: {str(ex)}")
             await asyncio.sleep(self._error_pause_secs)
-
-            if self._verbose_exceptions:
-                print(f"Error sending response: {str(ex)}")
-            else:
-                print(f"Error sending response: Is the API Server running? [" + ex.__class__.__name__ + "]")
 
         finally:
             #if success:
@@ -847,7 +1106,8 @@ class ModuleRunner:
     async def call_api(self, method:str, files=None, data=None) -> str:
         """ 
         Provides the means to make a call to a CodeProject.AI API. Handy if this
-        module wishes to make use of another module's functionality
+        module wishes to make use of another module's functionality, or simply
+        to pass data back to the server
         """
 
         url = self.base_api_url + method
@@ -861,9 +1121,21 @@ class ModuleRunner:
             for key, file_info in files.items():
                 formdata.add_field(key, file_info[1], filename=file_info[0], content_type=file_info[2])
 
-        async with self._request_session.post(url, data = formdata) as session_response:
-            return await session_response.json()
+        try:
+            async with self._request_session.post(
+                url,
+                data = formdata,
+                timeout = self._response_timeout_secs
+            ) as session_response:
+                response = ""
+                if session_response.content_type == 'text/plain':
+                    response = await session_response.text()
+                elif session_response.content_type == 'application/json':
+                    response = await session_response.json()
+        except Exception as ex:
+            response = ""
 
+        return response
 
     def report_error(self, exception: Exception, filename: str, message: str = None) -> None:
         """

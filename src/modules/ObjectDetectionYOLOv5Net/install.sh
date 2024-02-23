@@ -20,7 +20,7 @@ if [ "$1" != "install" ]; then
 fi
 
 # Pull down the correct .NET image of ObjectDetectionYOLOv5Net based on this OS / GPU combo
-if [ "${executionEnvironment}" = "Production" ]; then
+if [ "${executionEnvironment}" = "Production" ] || [ "${launchedBy}" = "server" ]; then
     imageName="ObjectDetectionYOLOv5Net-CPU-${moduleVersion}.zip"
     if [ "${installGPU}" = "true" ] && [ "${os}" != "macos" ]; then
         # Having issues with the OpenVINO version on linux

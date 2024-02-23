@@ -204,7 +204,7 @@ fi
 # Download the models and store in /assets and /custom-models (already in place in docker)
 if [ "$module_install_errors" = "" ]; then
     getFromServer "models/" "models-yolo8-pt.zip"        "assets" "Downloading Standard YOLO models..."
-    getFromServer "models/" "custom-models-yolo5-pt.zip" "custom-models" "Downloading Custom YOLO models..."
+    getFromServer "models/" "custom-models-yolo8-pt.zip" "custom-models" "Downloading Custom YOLO models..."
 fi
 
 # TODO: Check assets created and has files

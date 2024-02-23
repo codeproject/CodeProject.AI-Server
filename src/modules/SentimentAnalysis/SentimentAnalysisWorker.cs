@@ -48,9 +48,39 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         /// </summary>
         protected override void InitModule()
         {
-            HardwareType      = _textClassifier.HardwareType;
-            ExecutionProvider = _textClassifier.ExecutionProvider;
-            CanUseGPU         = _textClassifier.CanUseGPU;
+            InferenceDevice  = _textClassifier.InferenceDevice;
+            InferenceLibrary = _textClassifier.InferenceLibrary;
+            CanUseGPU        = _textClassifier.CanUseGPU;
+        }
+
+        /// <summary>
+        /// The work happens here.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <returns>The response.</returns>
+        protected override ModuleResponse ProcessRequest(BackendRequest request)
+        {
+            string? text = request?.payload?.GetValue("text");
+            if (text is null)
+                return new ModuleErrorResponse($"{ModuleName} missing 'text' parameter.");
+
+            Stopwatch sw = Stopwatch.StartNew();
+            var result = _textClassifier.PredictSentiment(text);
+            long inferenceMs = sw.ElapsedMilliseconds;
+
+            if (result is null)
+                return new ModuleErrorResponse($"{ModuleName} ProcessRequest returned null. Try reducing the length of the input text.");
+
+            var response = new SentimentAnalysisResponse
+            {
+                Is_positive          = result?.Prediction?[1] > 0.5f,
+                Positive_probability = result?.Prediction?[1],
+                ProcessMs            = inferenceMs,
+                InferenceMs          = inferenceMs,
+                InferenceDevice      = _textClassifier.InferenceDevice
+            };
+
+            return response;
         }
 
         /// <summary>
@@ -72,35 +102,6 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
                 return 0;
 
             return 1;
-        }
-        
-        /// <summary>
-        /// The work happens here.
-        /// </summary>
-        /// <param name="request">The request.</param>
-        /// <returns>The response.</returns>
-        protected override ModuleResponse ProcessRequest(BackendRequest request)
-        {
-            string? text = request?.payload?.GetValue("text");
-            if (text is null)
-                return new ModuleErrorResponse($"{ModuleName} missing 'text' parameter.");
-
-            Stopwatch sw = Stopwatch.StartNew();
-            var result = _textClassifier.PredictSentiment(text);
-            long inferenceMs = sw.ElapsedMilliseconds;
-
-            if (result is null)
-                return new ModuleErrorResponse($"{ModuleName} PredictSentiment returned null. Try reducing the length of the input text.");
-
-            var response = new SentimentAnalysisResponse
-            {
-                Is_positive          = result?.Prediction?[1] > 0.5f,
-                Positive_probability = result?.Prediction?[1],
-                ProcessMs            = inferenceMs,
-                InferenceMs          = inferenceMs
-            };
-
-            return response;
         }
     }
 }

@@ -110,6 +110,8 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
+    let chat = '';
+
     async function _MID_onLlamaChat(prompt, maxTokens, temperature) {
 
         clearImagePreview();
@@ -119,15 +121,46 @@ RULES AND CONVENTIONS
             return;
         }
 
-        let params = [ ['prompt', prompt], ['max_tokens', maxTokens], ['temperature', temperature] ]
+        const params = [ 
+            ['prompt', prompt], 
+            ['max_tokens', maxTokens], 
+            ['temperature', temperature]
+        ];
 
         setResultsHtml("Sending prompt...");
-        let data = await submitRequest('text', 'chat', null, params);
-            if (data) {
-            let answer = data?.reply || "No response";
-            setResultsHtml(answer + getProcessingMetadataHtml(data));
-        };
+        submitRequest('text', 'chat', null, params)
+            .then((data) => {
+                if (data) {
+                    let answer = data?.chat || "No response";
+                    setResultsHtml(answer + getProcessingMetadataHtml(data));
+                }
+                else {
+                    let answer = "Unable to generate response";
+                    setResultsHtml(answer + getProcessingMetadataHtml(data));
+                }
+            })
+            .catch((error) => {
+                let answer = "Unable to generate response: " + (error||"Unknown Error");
+                setResultsHtml(answer + getProcessingMetadataHtml(data));
+            });
     }
+
+    async function _MID_onUpdateChatResponse() {
+
+        let data = await submitRequest('train', 'status', null, null);
+        if (!data || !data.success) {
+            setResultsHtml("Unable to contact module for status update");
+            return 
+        }
+                
+        let actionActive = data.state == "Answering"; // Idle, Thinking
+        setResultsHtml(data.chat);
+    }
+
+    // =====================================================================
+    // Startup
+
+    setInterval(_MID_onUpdateChatResponse, updateStatusFreqSec * 1000);
 
 // END EXPLORER SCRIPT
     </script>

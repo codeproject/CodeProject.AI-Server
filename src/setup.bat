@@ -131,7 +131,7 @@ set launchedBy=user
     )
     if "%~1"=="--verbosity" (
         set "verbosity=%~2"
-        if /i "!verbosity!" neq "loud" if /i "!verbosity!" neq "info" if /i "!verbosity!" neq "quite" (
+        if /i "!verbosity!" neq "loud" if /i "!verbosity!" neq "info" if /i "!verbosity!" neq "quiet" (
             set verbosity=quiet
         )
         shift

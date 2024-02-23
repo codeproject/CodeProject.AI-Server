@@ -3,7 +3,7 @@
 
     "ALPR": {
       "Name": "License Plate Reader",
-      "Version": "2.9.0",
+      "Version": "3.0.2",
 
       "PublishingInfo" : {
         "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
@@ -23,11 +23,12 @@
         "FilePath": "ALPR_adapter.py",
         "Runtime": "python3.8",
         "RuntimeLocation": "Local",     // Can be Local or Shared
-        "Queue": "alpr_queue"           // default is lower(module_id) + '_queue'
+        "Queue": "alpr_queue",          // default is lower(module_id) + '_queue'
+        "Parallelism": 0                // 0 = Default = number of CPUs / 2
       },
 
       "EnvironmentVariables": {
-        "MIN_COMPUTE_CAPABILITY": "7",
+        "MIN_COMPUTE_CAPABILITY": "6",
         "MIN_CUDNN_VERSION": "7",
         
         "PLATE_CONFIDENCE": 0.7,        // Confidence required in detecting a plate in the first place
@@ -36,14 +37,13 @@
         "PLATE_RESCALE_FACTOR": 2,
         "OCR_OPTIMIZATION": true,
         "OCR_OPTIMAL_CHARACTER_HEIGHT": 60,
-        "OCR_OPTIMAL_CHARACTER_WIDTH": 36
+        "OCR_OPTIMAL_CHARACTER_WIDTH": 30
       },
 
       "GpuOptions" : {
         "InstallGPU": false,              // PaddlePaddle-GPU only installs easily on Windows (though with issues on older cards)
         "EnableGPU": true,                // Will be coerced to false if InstallGPU = false
         "AcceleratorDeviceName": null,    // = default
-        "Parallelism": 0,                 // 0 = Default (number of CPUs - 1)
         "HalfPrecision": "enable",        // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
         "PostStartPauseSecs": 1           // Generally 1 if using GPU, 0 for CPU
       },
@@ -67,10 +67,50 @@
           { "ModuleVersion": "2.7.5", "ServerVersionRange": [ "2.4.2", "2.4.7"  ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
           { "ModuleVersion": "2.8.0", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
           { "ModuleVersion": "2.8.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
-          { "ModuleVersion": "2.8.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
-          { "ModuleVersion": "2.8.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "2.9.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" }
+          { "ModuleVersion": "2.8.2", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
+          { "ModuleVersion": "2.8.3", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
+          { "ModuleVersion": "2.9.0", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "2.9.1", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2+" },
+          { "ModuleVersion": "3.0.0", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-11", "ReleaseNotes": "Updated text recognition model to PP-OCRv4 and added AI auto rotation" },
+          { "ModuleVersion": "3.0.1", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-13", "ReleaseNotes": "Corrected NoneType error when auto-rotating plates" },
+          { "ModuleVersion": "3.0.2", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-18", "ReleaseNotes": "Added dashboard menu to set plate confidence, auto-rotate and OCR optimisation", "Importance": "Minor" }
         ]
+      },
+
+      "ModelRequirements" : [{
+          "Task": "OCR",
+          "Architecture": "PP-OCRv3",
+          "Format": "PaddlePaddle"
+      }],
+
+      "UIElements" : {
+        "Menus": [
+          {
+            "Label": "Plate Confidence",
+            "Options": [
+              { "Label": "50%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.50"  },
+              { "Label": "55%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.55"  },
+              { "Label": "60%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.60"  },
+              { "Label": "65%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.65"  },
+              { "Label": "70%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.70"  },
+              { "Label": "75%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.75"  },
+              { "Label": "80%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.80"  }
+            ]
+          },
+        {
+          "Label": "Auto Plate Rotation",
+          "Options": [
+            { "Label": "Enable",    "Setting": "AUTO_PLATE_ROTATE", "Value": "true"  },
+            { "Label": "Disable",   "Setting": "AUTO_PLATE_ROTATE", "Value": "false" }
+          ]
+        },
+        {
+          "Label": "OCR Optimization",
+          "Options": [
+              { "Label": "Enable",  "Setting": "OCR_OPTIMIZATION", "Value": "true"   },
+              { "Label": "Disable", "Setting": "OCR_OPTIMIZATION", "Value": "false"  }
+          ]
+        }]
       },
 
       "RouteMaps": [

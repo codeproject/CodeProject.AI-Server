@@ -169,7 +169,13 @@ namespace CodeProject.AI.Server.Mesh
             // See https://stackoverflow.com/a/42098280
             using (Socket socket = new(AddressFamily.InterNetwork, SocketType.Dgram, 0))
             {
-                socket.Connect("8.8.8.8", 65530); // IP doesn't actually need to be connected
+                try
+                {
+                    socket.Connect("8.8.8.8", 65530); // IP doesn't actually need to be connected
+                }
+                catch
+                {
+                }
                 IPEndPoint? endPoint = socket.LocalEndPoint as IPEndPoint;
                 _activeIPAddress = endPoint?.Address ?? IPAddress.Any;
             }
@@ -787,7 +793,9 @@ namespace CodeProject.AI.Server.Mesh
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception in BroadcastMessageAsync");
+
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogError(ex, "Exception in BroadcastMessageAsync");
                 // Ignore socket exceptions
             }
         }

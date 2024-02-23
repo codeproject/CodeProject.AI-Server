@@ -1,7 +1,7 @@
 #! Python3.7
 
-paddlepaddle>=2.5.1             # Installing PaddelPaddle, the Deep Learning platform
-paddleocr                       # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+paddlepaddle>=2.6.0             # Installing PaddelPaddle, the Deep Learning platform
+paddleocr==2.7.0.3              # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
 
 imutils                         # Installing imutils, the image utilities library
 Pillow<10.0.0                   # Installing Pillow, a Python Image Library

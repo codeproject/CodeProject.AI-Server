@@ -86,7 +86,7 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
             if not "success" in detect_plate_response or not detect_plate_response["success"]:
                 message = detect_plate_response["error"] if "error" in detect_plate_response \
                                                          else "Unable to find plate"
-                return { "error": detect_plate_response["error"], "inferenceMs": inferenceMs }
+                return { "error": message, "inferenceMs": inferenceMs }
 
             # Note: we will only get plates that have at least opts.plate_confidence 
             # confidence. 
@@ -95,7 +95,10 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
 
         except Exception as ex:
             await module_runner.report_error_async(ex, __file__)
-            return { "error": "Error in detect_platenumber: " + str(ex), "inferenceMs": inferenceMs }
+            return { 
+                "error": f"Error trying to locate license plate ({ex.__class__.__name__})",
+                "inferenceMs": inferenceMs
+            }
 
     # We have a plate (or plates) detected, so let's prep the original image for some work
     numpy_image = np.array(pillow_image)
@@ -122,7 +125,38 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
 
         # Work out the angle we need to rotate the image to de-skew it (or use the manual override).
         if opts.auto_plate_rotate:
-            plate_rotate_deg = tool.compute_skew(numpy_plate)
+            angle       = 0
+            angle_count = 0
+            res         = None
+
+            bounding_box_result = ocr.ocr(numpy_plate, rec=False, cls=False)
+                       
+            for box in range(len(bounding_box_result)):
+                res = bounding_box_result[box]
+                if res:
+                    if len(res) == 4 and len(res[0]) == 2:
+                        x1, y1 = res[0][0], res[0][1]
+                        x2, y2 = res[1][0], res[1][1]
+                        angle += tool.calculate_angle(x1, y1, x2, y2)
+                        angle_count += 1
+                    else:
+                        for line in res:
+                            x1, y1 = line[0][0], line[0][1]
+                            x2, y2 = line[1][0], line[1][1]
+                            angle += tool.calculate_angle(x1, y1, x2, y2)
+                            angle_count += 1
+
+                            x1, y1 = line[3][0], line[3][1]
+                            x2, y2 = line[2][0], line[2][1]
+                            angle += tool.calculate_angle(x1, y1, x2, y2)
+                            angle_count += 1
+
+            plate_rotate_deg = angle / angle_count if angle_count > 0 else 0
+            
+            if debug_log:
+                with open("log.txt", "a") as text_file:
+                    text_file.write(str(plate_rotate_deg) + "  " + str(angle_count) + "\n" + "\n")
+            
         else:
             plate_rotate_deg = opts.plate_rotate_deg
 
@@ -204,7 +238,7 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
 
         if debug_log:
             with open("log.txt", "a") as text_file:
-                text_file.write(f"{resize_height_factor}x{resize_width_factor} - {avg_char_height}x{avg_char_width}\n\n")
+                text_file.write(f"{resize_height_factor}x{resize_width_factor} - {prev_avg_char_height}x{prev_avg_char_width}\n\n")
 
         """
         dimensions: Size = Size(numpy_plate.shape[1], numpy_plate.shape[0])

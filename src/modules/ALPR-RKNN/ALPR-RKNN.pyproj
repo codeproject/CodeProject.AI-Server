@@ -26,9 +26,6 @@
     <Content Include="explore.html" />
     <Content Include="options.py" />
     <Content Include="ALPR_adapter.py" />
-    <Content Include="patch\paddlepaddle-2.4.2\image.py" />
-    <Content Include="patch\paddlepaddle-2.4.0rc0\image.py" />
-    <Content Include="patch\paddleocr-2.6.0.1\db_postprocess.py" />
     <Content Include="requirements.orangepi.txt" />
     <Content Include="utils\tools.py" />
     <Content Include="install.sh" />
@@ -62,10 +59,6 @@
     <Folder Include="paddleocr\en_PP-OCRv3_det_infer\" />
     <Folder Include="paddleocr\en_PP-OCRv3_rec_infer\" />
     <Folder Include="utils\" />
-    <Folder Include="patch\" />
-    <Folder Include="patch\paddlepaddle-2.4.2\" />
-    <Folder Include="patch\paddlepaddle-2.4.0rc0\" />
-    <Folder Include="patch\paddleocr-2.6.0.1\" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="bin\windows\python37\venv\">

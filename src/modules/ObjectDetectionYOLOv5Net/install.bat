@@ -13,8 +13,12 @@
     @goto:eof
 ) 
 
+set installBinaries=false
+if /i "!executionEnvironment!" == "Production" set installBinaries=true
+if /i "!launchedBy!" == "server" set installBinaries=true
+
 :: Pull down the correct .NET image of ObjectDetectionYOLOv5Net based on this OS / GPU combo
-if /i "!executionEnvironment!" == "Production" (
+if /i "!installBinaries!" == "true" (
     set imageName=ObjectDetectionYOLOv5Net-CPU-!moduleVersion!.zip
     if /i "!installGPU!" == "true" (
         set imageName=ObjectDetectionYOLOv5Net-DirectML-!moduleVersion!.zip

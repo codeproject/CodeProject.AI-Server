@@ -18,6 +18,7 @@ from ALPR import init_detect_platenumber, detect_platenumber
 
 class ALPR_adapter(ModuleRunner):
 
+
     def __init__(self):
         super().__init__()
         self.opts = Options()
@@ -40,15 +41,11 @@ class ALPR_adapter(ModuleRunner):
         self.opts.use_gpu = self.enable_GPU and self.can_use_GPU
 
         if self.opts.use_gpu:
-            self.processor_type     = "GPU"
-            self.execution_provider = "CUDA"   # PaddleOCR supports only CUDA enabled GPUs at this point
+            self.inference_device  = "GPU"
+            self.inference_library = "CUDA"   # PaddleOCR supports only CUDA enabled GPUs at this point
 
         init_detect_platenumber(self.opts)
-
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
-        self.num_items_found      = 0
+        self._num_items_found = 0
 
 
     async def process(self, data: RequestData) -> JSON:
@@ -61,7 +58,6 @@ class ALPR_adapter(ModuleRunner):
 
             if "error" in result and result["error"]:
                 response = { "success": False, "error": result["error"] }
-                self._update_statistics(response)
                 return response 
 
             predictions = result["predictions"]
@@ -74,29 +70,30 @@ class ALPR_adapter(ModuleRunner):
 
             response = {
                 "success": True, 
-                "predictions": predictions, 
-                "message": message,
                 "processMs" : int((time.perf_counter() - start_time) * 1000),
-                "inferenceMs" : result["inferenceMs"]
+                "inferenceMs" : result["inferenceMs"],
+                "predictions": predictions, 
+                "message": message
             }
 
         except Exception as ex:
             await self.report_error_async(ex, __file__)
             response = { "success": False, "error": "unable to process the image" }
 
-        self._update_statistics(response)
         return response 
 
 
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "numItemsFound"        : self.num_items_found,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-        }
+    def status(self) -> JSON:
+        statusData = super().status()
+        statusData["numItemsFound"] = self._num_items_found
+        return statusData
+
+
+    def update_statistics(self, response):
+        super().update_statistics(response)
+        if "success" in response and response["success"] and "predictions" in response:
+            predictions = response["predictions"]
+            self._num_items_found += len(predictions) 
 
 
     def selftest(slf) -> JSON:
@@ -106,23 +103,6 @@ class ALPR_adapter(ModuleRunner):
             return { "success": True, "message": "PaddlePaddle self test successful" }
         except:
             return { "success": False, "message": "PaddlePaddle self test failed" }
-
-
-    def cleanup(self) -> None:
-        pass
-
-
-    def _update_statistics(self, response):
-
-        if "success" in response and response["success"]:
-            if "predictions" in response:
-                if "inferenceMs" in response:
-                    self.total_success_inf_ms += response["inferenceMs"]
-                    self.success_inferences += 1
-                predictions = response["predictions"]
-                self.num_items_found += len(predictions) 
-        else:
-            self.failed_inferences += 1
 
 
 if __name__ == "__main__":

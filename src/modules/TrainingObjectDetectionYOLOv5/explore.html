@@ -61,7 +61,7 @@ RULES AND CONVENTIONS
 -->
 <head>
     <meta charset="utf-8" />
-    <title>LlamaChat Module Test</title>
+    <title>YOLOv5 Training Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
     <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
@@ -441,9 +441,11 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-		let _MID_trainingResultsShown = true; // Have successful results been displayed?
-								              // initialize to true or onTrainingModelInfo 
-										      // will be called on the first onTrainingStatus call.
+
+        // Have final training or dataset creation results been displayed? Initialize to true or
+        // onTrainingModelInfo will be called on the first onTrainingStatus call.
+		let _MID_trainingResultsShown = true;
+        let _MID_datasetCreationResultsShown = true;
 
 		async function _MID_onTrainingStatus() {
 
@@ -461,6 +463,26 @@ RULES AND CONVENTIONS
 		    }
 					
             /*
+
+            data = { 
+                action: "CreateDataset",
+                analysisRoundTripMs: 5,
+                code: 200,
+                command: "status",
+                dataset_name: "car",
+                inferenceDevice: "CPU",
+                is_busy: false,
+                message: "Memory: Need 10000Mb, only 3657.0Mb available",
+                model_name: null,
+                moduleId: "TrainingObjectDetectionYOLOv5",
+                moduleName: "TrainingObjectDetectionYOLOv5",
+                processedBy: "localhost",
+                progress: 0,
+                requestId: "82f717cb-f0e1-4e08-abb8-1a4cd3d9628e",
+                state: "Failed",
+                success: true,
+                timestampUTC: "Tue, 13 Feb 2024 15:04:28 GMT"
+            }
             let summary = `State: ${data.state}<br>`
                         + `Action: ${data.action}<br>`
                         + `Message: ${data.message}<br>`
@@ -470,9 +492,8 @@ RULES AND CONVENTIONS
             setResultsHtml(summary);
             */
 
-            // TODO: Would be nice (but not necessary) to have the training module 
-            // calculate these values for us so we don't have to keep up with enums and
-            // states
+            // TODO: Would be nice (but not necessary) to have the training module calculate these
+            // values for us so we don't have to keep up with enums and states
             let actionActive    = data.state == "Running"; // || data.state == "Initializing" || data.state == "Cancelling";
             let creatingDataset = actionActive && data.action == "CreateDataset";
             let doingTraining   = actionActive && (data.action == "TrainModel" ||
@@ -512,7 +533,6 @@ RULES AND CONVENTIONS
             if (creatingDataset) {
                 _MID_datasetProgress.innerHTML = progressStr + "%";
                 _MID_datasetProgress.parentElement.classList.remove("bg-transparent");
-                //	onTrainingDatasetInfo(data.dataset_name);
 
                 if (data.progress < 1)
                     _MID_datasetProgress.classList.add("progress-bar-striped", "progress-bar-animated");
@@ -545,12 +565,16 @@ RULES AND CONVENTIONS
                 _MID_trainingProgress.ariaValueNow = "0";
             }
 
-            // We never know when each status call is done, and between calls the training
-            // may have ended. If this is the case, we need to ensure we've done one last
-            // info update to get the final results.
+            // We never know when each status call is done, and between each status update, the
+            // training or dataset creation may have ended. If this is the case, we need to ensure
+            //  we've done one last info update to get the final results.
             if (!_MID_trainingResultsShown && !doingTraining) {
                 _MID_trainingResultsShown = true;
                 _MID_onTrainingModelInfo(data.model_name);
+            }
+            if (!_MID_datasetCreationResultsShown && !creatingDataset) {
+                _MID_datasetCreationResultsShown = true;
+                _MID_onTrainingDatasetInfo(data.dataset_name);
             }
 
             _MID_datasetProgress.style.width  = _MID_datasetProgress.ariaValueNow + "%";
@@ -568,8 +592,10 @@ RULES AND CONVENTIONS
 
             let data = await submitRequest('train', 'create_dataset', null, params);
             if (data) {
-                if (data.success)
+                if (data.success) {
                     setResultsHtml(`Creating the Dataset '${dataset_name}'`);
+                    _MID_datasetCreationResultsShown = false;
+                } 
                 else
                     setResultsHtml("Create Dataset failed to start: " + data.error);
             }

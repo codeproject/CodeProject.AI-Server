@@ -27,38 +27,46 @@ class CoralObjectDetector_adapter(ModuleRunner):
         if not self.launched_by_server:
             self.queue_name = "objectdetection_queue"
 
-        if self.enable_GPU:
-            self.enable_GPU = self.system_info.hasCoralTPU
+        self.inference_library = "TF-Lite"
 
         if self.enable_GPU:
-            print("Edge TPU detected")
-            self.execution_provider = "TPU"
+            self.enable_GPU = self.system_info.hasCoralTPU
+            if self.enable_GPU:
+                print("Info: TPU detected")
 
         # Multi-TPU depends on pycoral.bind._pywrap which we only have if the
         # Coral libs are installed and accessible. Test this first
         if opts.use_multi_tpu and self.enable_GPU:
-            print("Using Multi-TPU")
+            print("Info: Attempting multi-TPU initialisation")
     
             import objectdetection_coral_multitpu as odcm
             device = odcm.init_detect(opts)
+
+            # Fallback if we need to
+            if not device:
+                print("Info: Failed to init multi-TPU. Falling back to single TPU.")
+                opts.use_multi_tpu = False
+
+                import objectdetection_coral as odc
+                device = odc.init_detect(opts)
+
         else:
-            if self.enable_GPU:
-                print("Using Edge TPU")
-            else:
-                print("Using CPU")
             import objectdetection_coral as odc
             device = odc.init_detect(opts)
 
-        if device.upper() == "TPU":
-            self.execution_provider = "Multi-TPU" if opts.use_multi_tpu else "TPU"
+        if not device or device.upper() == "CPU":
+            self.inference_device = "CPU"
+            print("Info: Using CPU")
         else:
-            self.execution_provider = "CPU"
+            if opts.use_multi_tpu:
+                print("Info: Supporting multiple Edge TPUs")
+                self.inference_device = "Multi-TPU"
+            else:
+                print("Info: Using Edge TPU")
+                self.inference_device = "TPU"
 
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
-        self.num_items_found      = 0
-        self.histogram            = {}
+        self._num_items_found = 0
+        self._histogram       = {}
 
         
     #async 
@@ -67,14 +75,18 @@ class CoralObjectDetector_adapter(ModuleRunner):
         # The route to here is /v1/vision/detection
 
         if data.command == "list-custom":               # list all models available
-            if opts.use_YOLO:
-                return { "success": True, "models": [ 'YOLOv5'] }
-            else:
-                return { "success": True, "models": [ 'EfficientDet'] }
+            return self._list_models()     
 
         if data.command == "detect" or data.command == "custom":
             threshold: float  = float(data.get_value("min_confidence", opts.min_confidence))
             img: Image        = data.get_image(0)
+
+            model_name:str = "MobileNet SSD"
+            if data.segments and data.segments[0]:
+                model_name = data.segments[0]
+
+            if model_name.lower() != opts.model_name.lower():
+                opts.set_model(model_name)
 
             # response = await self._do_detection(img, threshold)
             response = self._do_detection(img, threshold)
@@ -83,20 +95,27 @@ class CoralObjectDetector_adapter(ModuleRunner):
             self.report_error(None, __file__, f"Unknown command {data.command}")
             response = { "success": False, "error": "unsupported command" }
 
-        self._update_statistics(response)
         return response
 
 
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "numItemsFound"        : self.num_items_found,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-            "histogram"            : self.histogram
-        }
+    def status(self) -> JSON:
+        statusData = super().status()
+        statusData["numItemsFound"] = self._num_items_found
+        statusData["histogram"]     = self._histogram
+        return statusData
+
+
+    def update_statistics(self, response):
+        super().update_statistics(response)
+        if "success" in response and response["success"] and "predictions" in response:
+            predictions = response["predictions"]
+            self._num_items_found += len(predictions) 
+            for prediction in predictions:
+                label = prediction["label"]
+                if label not in self._histogram:
+                    self._histogram[label] = 1
+                else:
+                    self._histogram[label] += 1
 
 
     def selftest(self) -> JSON:
@@ -122,6 +141,15 @@ class CoralObjectDetector_adapter(ModuleRunner):
             cleanup()
 
 
+    def _list_models(self):
+        if opts.use_multi_tpu and self.enable_GPU:
+            from objectdetection_coral_multitpu import list_models
+        else:
+            from objectdetection_coral import list_models
+
+        return list_models()
+
+
     # async 
     def _do_detection(self, img: any, score_threshold: float):
         
@@ -141,12 +169,12 @@ class CoralObjectDetector_adapter(ModuleRunner):
             if not result['success']:
                 return {
                     "success"     : False,
+                    "error"       : result["error"] if "error" in result else "Unable to perform detection",
+                    "inferenceMs" : result['inferenceMs'],
+                    "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
                     "predictions" : [],
                     "message"     : '',
-                    "error"       : result["error"] if "error" in result else "Unable to perform detection",
-                    "count"       : 0,
-                    "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
-                    "inferenceMs" : result['inferenceMs']
+                    "count"       : 0
                 }
             
             predictions = result["predictions"]
@@ -162,12 +190,12 @@ class CoralObjectDetector_adapter(ModuleRunner):
             # print(message)
 
             return {
+                "success"     : result['success'],
+                "inferenceMs" : result['inferenceMs'],
+                "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
                 "message"     : message,
                 "count"       : result["count"],
-                "predictions" : result['predictions'],
-                "success"     : result['success'],
-                "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
-                "inferenceMs" : result['inferenceMs']
+                "predictions" : result['predictions']
             }
 
         except UnidentifiedImageError as img_ex:
@@ -181,30 +209,11 @@ class CoralObjectDetector_adapter(ModuleRunner):
             return { "success": False, "error": "Error occurred on the server"}
 
 
-    def _update_statistics(self, response):
-
-        if "success" in response and response["success"]:
-            if "predictions" in response:
-                if "inferenceMs" in response:
-                    self.total_success_inf_ms += response["inferenceMs"]
-                    self.success_inferences += 1
-                predictions = response["predictions"]
-                self.num_items_found += len(predictions) 
-
-                for prediction in predictions:
-                    label = prediction["label"]
-                    if label not in self.histogram:
-                        self.histogram[label] = 1
-                    else:
-                        self.histogram[label] += 1
-        else:
-            self.failed_inferences += 1
-
     def _status_summary(self):
-        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
-        summary += "Items detected:       " + str(self.num_items_found) + "\n"
-        for label in self.histogram:
-            summary += "  " + label + ": " + str(self.histogram[label]) + "\n"
+        summary  = "Inference Operations: " + str(self._success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self._num_items_found) + "\n"
+        for label in self._histogram:
+            summary += "  " + label + ": " + str(self._histogram[label]) + "\n"
 
         return summary
 

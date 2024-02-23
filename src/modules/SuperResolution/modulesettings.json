@@ -3,7 +3,7 @@
 
     "SuperResolution": {
       "Name": "Super Resolution",
-      "Version": "1.9.0",
+      "Version": "1.9.1",
 
       "PublishingInfo" : {
         "Description": "Increases the resolution of an image using AI", 
@@ -24,7 +24,8 @@
         "Runtime": "python3.8",
         "RuntimeLocation": "Local",       // Can be Local or Shared
         "PostStartPauseSecs": 0,          // Generally 1 if using GPU, 0 for CPU
-        "Queue": "superresolution_queue"  // default is lower(module_id) + '_queue'
+        "Queue": "superresolution_queue", // default is lower(module_id) + '_queue'
+        "Parallelism": 1                  // 0 = Default = number of CPUs / 2
       },
 
       "EnvironmentVariables": {
@@ -36,7 +37,6 @@
         "InstallGPU": false,              // GPU support not provided
         "EnableGPU": true,                // Will be coerced to false if InstallGPU = false
         "AcceleratorDeviceName": null,    // = default
-        "Parallelism": 1,                 // 0 = Default (number of CPUs - 1)
         "HalfPrecision": "enable"         // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
       },
 
@@ -60,10 +60,17 @@
           { "ModuleVersion": "1.8.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
           { "ModuleVersion": "1.8.2", "ServerVersionRange": [ "2.5.0-RC6", ""  ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
           { "ModuleVersion": "1.8.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "1.9.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" }
+          { "ModuleVersion": "1.9.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "1.9.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
         ]
       },
       
+      "ModelRequirements" : [{
+          "Task": "Super Resolution",
+          "Architecture": "VGGish",
+          "Format": "ONNXRuntime"
+      }],
+
       "RouteMaps": [
         {
           "Name": "Super Resolution",

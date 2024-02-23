@@ -3,7 +3,7 @@
 
     "ObjectDetectionYoloRKNN": {
       "Name": "Object Detection (YOLOv5 RKNN)",
-      "Version": "1.6.0",
+      "Version": "1.6.1",
 
       "PublishingInfo" : {
         "Description": "Provides Object Detection using YOLOv5 RKNN models. This module only works with Rockchip RK3588/RK3588S NPUs like the Orange Pi 5/5B/5 Plus",
@@ -24,7 +24,8 @@
         "Runtime": "python3.9",
         "RuntimeLocation": "Local",       // Can be Local or Shared
         "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
-        "Queue": "objectdetection_queue"  // We make all Object detectors use the same queue.
+        "Queue": "objectdetection_queue", // We make all Object detectors use the same queue.
+        "Parallelism": 1                  // 0 = Default = number of CPUs / 2
       },
 
       "EnvironmentVariables": {
@@ -37,7 +38,6 @@
         "InstallGPU": true,
         "EnableGPU": true,                // Will be coerced to false if InstallGPU = false
         "AcceleratorDeviceName": null,    // = default
-        "Parallelism": 1,                 // 0 = Default (number of CPUs - 1)
         "HalfPrecision": "enable"         // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
       },
 
@@ -58,9 +58,16 @@
           { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
           { "ModuleVersion": "1.5.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
           { "ModuleVersion": "1.5.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "1.6.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" }
+          { "ModuleVersion": "1.6.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
         ]
       },
+
+      "ModelRequirements" : [{
+          "Task": "Object Detection",
+          "Architecture": "YOLOv5",
+          "Format": "RKNN"
+      }],
 
       "UIElements" : {
         "Menus": [

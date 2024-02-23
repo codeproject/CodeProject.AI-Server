@@ -48,7 +48,6 @@ class ModuleLogger():
         self.log_dir              = log_dir
         self.defaultLogging       = LogMethod.File | LogMethod.Info   # Always included
         self._sync_log_lock       = Lock()
-        self._verbose_exceptions  = True
         self._logging_queue       = Queue(1024)
         self._cancelled           = False
         self._server_healthy      = True # We'll be optimistic to start
@@ -91,7 +90,7 @@ class ModuleLogger():
         sys._getframe().f_code.co_name, and then name of that method that call
         it via sys._getframe().f_back.f_code.co_name.
 
-        This can obviously be extended so that this methid here can query the
+        This can obviously be extended so that this method here can query the
         method name the log was called from without needing the caller to provide
         its own name.
 

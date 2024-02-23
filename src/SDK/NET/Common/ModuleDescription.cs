@@ -123,6 +123,25 @@ namespace CodeProject.AI.SDK
         public ModuleRelease? LatestRelease { get; set; }
 
         /// <summary>
+        /// Gets or sets the Version of this module currently installed, or null of this module is
+        /// not currently installed. This value is not deserialised, but instead must be set by the
+        /// server.
+        /// </summary>
+        public string? CurrentlyInstalled { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not an update for the currently installed version is
+        /// available.
+        /// </summary>
+        public bool UpdateAvailable
+        {
+            get 
+            {
+                return VersionInfo.Compare(LatestRelease?.ModuleVersion, CurrentlyInstalled) > 0;
+            }
+        }
+
+        /// <summary>
         /// Gets a value indicating whether or not this is a valid module that can actually be
         /// started.
         /// </summary>
@@ -176,7 +195,8 @@ namespace CodeProject.AI.SDK
                           ? ModuleStatusType.NotAvailable : ModuleStatusType.Available;
         }
 
-        private static void SetLatestCompatibleVersion(ModuleDescription module, string currentServerVersion)
+        private static void SetLatestCompatibleVersion(ModuleDescription module, 
+                                                       string currentServerVersion)
         {
             foreach (ModuleRelease release in module!.InstallOptions!.ModuleReleases!)
             {

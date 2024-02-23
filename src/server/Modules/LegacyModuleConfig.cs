@@ -296,13 +296,13 @@ namespace CodeProject.AI.Server.Modules
                     Command            = Command,
                     PostStartPauseSecs = PostStartPauseSecs,
                     Queue              = Queue,
+                    Parallelism        = Parallelism,
                     RequiredMb         = RequiredMb
                 },
                 GpuOptions = new GpuOptions()
                 {
                     InstallGPU            = InstallGPU,
                     EnableGPU             = EnableGPU,
-                    Parallelism           = Parallelism,
                     AcceleratorDeviceName = AcceleratorDeviceName,
                     HalfPrecision         = HalfPrecision
                 },

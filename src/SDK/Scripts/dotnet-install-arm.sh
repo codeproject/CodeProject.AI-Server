@@ -172,12 +172,26 @@ if [ -d /home/pi/ ]; then
         echo 'Adding Link to .bashrc'
         echo 'export DOTNET_ROOT=/opt/dotnet' >> /home/pi/.bashrc
     fi
-else
+elif [ -f ~/.bashrc ]; then
     if grep -q 'export DOTNET_ROOT=' ~/.bashrc;  then
         echo 'Already added link to .bashrc'
     else
         echo 'Adding Link to .bashrc'
         echo 'export DOTNET_ROOT=/opt/dotnet' >> ~/.bashrc
+    fi
+elif [ -f ~/.bash_profile ]; then
+    if grep -q 'export DOTNET_ROOT=' ~/.bash_profile;  then
+        echo 'Already added link to .bash_profile'
+    else
+        echo 'Adding Link to .bash_profile'
+        echo 'export DOTNET_ROOT=/opt/dotnet' >> ~/.bash_profile
+    fi
+elif [ -f ~/.zshrc ]; then
+    if grep -q 'export DOTNET_ROOT=' ~/.zshrc;  then
+        echo 'Already added link to .zshrc'
+    else
+        echo 'Adding Link to .zshrc'
+        echo 'export DOTNET_ROOT=/opt/dotnet' >> ~/.zshrc
     fi
 fi
 

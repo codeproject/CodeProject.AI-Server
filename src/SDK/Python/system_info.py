@@ -18,10 +18,6 @@ class SystemInfo:
         """ 
         Constructor. 
         """
-
-        # Constants
-        self._verbose_exceptions     = True
-
         # Private fields
         self._osVersion              = None
 

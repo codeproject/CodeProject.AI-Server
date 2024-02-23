@@ -6,8 +6,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-using CodeProject.AI.Server.Modules;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -48,6 +46,8 @@ namespace CodeProject.AI.Server
     /// <summary>
     /// A logging provider specifically for the AI server. This provider is registered when the 
     /// server starts and will capture and store all logging events called from ILogger instances.
+    /// Output is colourised by log level (configurable in appsettings) and logs are also stored to
+    /// a file.
     /// </summary>
     public sealed class ServerLogger : ILogger
     {
@@ -139,11 +139,6 @@ namespace CodeProject.AI.Server
             {
                 logLevel = LogLevel.Debug;
             }
-            // Pointless
-            else if (message.Contains("Microsoft.Hosting.Lifetime[0]"))
-            {
-                return;
-            }
             // ONNX/Tensorflow output is WAY too verbose for an error
             else if (message.Contains("I tensorflow/cc/saved_model/reader.cc:") ||
                      message.Contains("I tensorflow/cc/saved_model/loader.cc:"))
@@ -154,6 +149,12 @@ namespace CodeProject.AI.Server
             else if (message.Contains("Fusing layers...") || message.Contains("YOLOv5m summary"))
             {
                 logLevel = LogLevel.Debug;
+            }
+            // Pointless
+            else if (message.Contains("Microsoft.Hosting.Lifetime[0]") || 
+                     message.Contains("apt WARNING: does not have a stable CLI"))
+            {
+                return;
             }
 
             // We're using the .NET logger which means we don't have a huge amount of control

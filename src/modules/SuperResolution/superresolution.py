@@ -19,7 +19,8 @@ from module_options import ModuleOptions
 
 # print(torch.__version__)
 
-# Super Resolution Model Definition in Pytorch
+# Super Resolution Model Definition in Pytorch. The model comes directly from 
+# PyTorch’s examples without modification:
 class SuperResolutionNet(nn.Module):
 
     def __init__(self, upscale_factor, inplace=False):
@@ -47,16 +48,22 @@ class SuperResolutionNet(nn.Module):
         init.orthogonal_(self.conv3.weight, init.calculate_gain('relu'))
         init.orthogonal_(self.conv4.weight)
 
+
 # Create the super-resolution model by using the above model definition.
 assets_path = ""
+use_CUDA    = False
 torch_model = SuperResolutionNet(upscale_factor=3)
 
-
-# Load Pretrained Model Weights
-def load_pretrained_weights(path: str):
+def init_superres(weights_path: str, use_CUDA_gpu: bool):
 
     global assets_path
-    assets_path = path
+    global use_CUDA
+
+    assets_path = weights_path
+    use_CUDA    = use_CUDA_gpu
+
+# Example of Exporting a Model from PyTorch Pretrained Model Weights to ONNX
+def export_pytorch_to_onnx():
 
     model_url = os.path.normpath(assets_path + '/superres_epoch100-44c6958e.pth')
     batch_size = 1    # just a random number
@@ -71,11 +78,24 @@ def load_pretrained_weights(path: str):
 
     torch_model.load_state_dict(torch.load(model_url, map_location=map_location))
 
-    # set the model to inference mode
+    # set the model to inference mode. This is required since operators like 
+    # dropout or batchnorm behave differently in inference and training mode.
     torch_model.eval()
     
     x = torch.randn(1, 1, 224, 224, requires_grad=True)
     torch_model.eval()
+
+    # Export the model
+    torch.onnx.export(torch_model,               # model being run
+                      x,                         # model input (or a tuple for multiple inputs)
+                      "super_resolution.onnx",   # where to save the model (can be a file or file-like object)
+                      export_params=True,        # store the trained parameter weights inside the model file
+                      opset_version=10,          # the ONNX version to export the model to
+                      do_constant_folding=True,  # whether to execute constant folding for optimization
+                      input_names = ['input'],   # the model's input names
+                      output_names = ['output'], # the model's output names
+                      dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
+                                    'output' : {0 : 'batch_size'}})
 
 
 # Preprocessing Image
@@ -94,7 +114,7 @@ def pre_process_image(orig_img: Image):
 
 
 # Run Model on Onnxruntime
-def run_onnx(asset_path: str, processed_img: Image) -> any:
+def run_onnx(assets_path: str, processed_img: Image, use_CUDA: bool) -> any:
 
     # Start from ORT 1.10, ORT requires explicitly setting the providers 
     # parameter if you want to use execution providers other than the default 
@@ -104,19 +124,19 @@ def run_onnx(asset_path: str, processed_img: Image) -> any:
     # For example, if NVIDIA GPU is available and ORT Python package is built 
     # with CUDA, then call API as following:
     # onnxruntime.InferenceSession(path/to/model, providers=['CUDAExecutionProvider'])
-    model_path = os.path.normpath(asset_path + "/super-resolution-10.onnx")
+    model_path = os.path.normpath(assets_path + "/super-resolution-10.onnx")
 
-    # if ModuleOptions.enable_GPU and torch.cuda.is_available():
+    providers = onnxruntime.get_available_providers()
+    # We need to check if CUDAExecutionProvider is in the list of providers
+    # if use_CUDA and torch.cuda.is_available():
     #     ort_session = onnxruntime.InferenceSession(model_path, providers=['CUDAExecutionProvider'])
     # else:
     #     ort_session = onnxruntime.InferenceSession(model_path)
-    providers = onnxruntime.get_available_providers()
-    ort_session = onnxruntime.InferenceSession(model_path,  providers=providers)
-    
+    ort_session = onnxruntime.InferenceSession(model_path, providers=providers)
         
-    ort_inputs = {ort_session.get_inputs()[0].name: processed_img} 
-    ort_outs = ort_session.run(None, ort_inputs)   
-    output = ort_outs[0]
+    ort_inputs  = {ort_session.get_inputs()[0].name: processed_img} 
+    ort_outputs = ort_session.run(None, ort_inputs)   
+    output      = ort_outputs[0]
 
     return output
 
@@ -142,7 +162,7 @@ def superresolution(img: Image) -> Tuple[any, int]: # Tuple[Image, int]
     (img_norm, img_cb, img_cr) = pre_process_image(img)
 
     start_time = time.perf_counter()
-    output = run_onnx(assets_path, img_norm)
+    output = run_onnx(assets_path, img_norm, use_CUDA)
     inferenceMs : int = int((time.perf_counter() - start_time) * 1000)
 
     result = post_process_image(output, img_cb, img_cr)

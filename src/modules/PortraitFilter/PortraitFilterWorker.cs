@@ -56,8 +56,8 @@ namespace CodeProject.AI.Modules.PortraitFilter
             {
                 // use the defaults
                 _deepPersonLab = new DeepPersonLab(modelPath);
-                ExecutionProvider = "CPU";
-                HardwareType      = "CPU";
+                InferenceLibrary = "CPU";
+                InferenceDevice  = "CPU";
             }
         }
 
@@ -81,7 +81,7 @@ namespace CodeProject.AI.Modules.PortraitFilter
             if (file?.data is null)
                 return new ModuleErrorResponse("Portrait Filter File or file data is null.");
 
-            Logger.LogInformation($"Processing {file.filename}");
+            // Logger.LogTrace($"Processing {file.filename}");
 
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -118,9 +118,10 @@ namespace CodeProject.AI.Modules.PortraitFilter
                 return new ModuleErrorResponse("Portrait Filter returned null.");
             
             return new PortraitResponse { 
-                Filtered_image = result,
-                ProcessMs      = sw.ElapsedMilliseconds,
-                InferenceMs    = inferenceMs
+                Filtered_image  = result,
+                ProcessMs       = sw.ElapsedMilliseconds,
+                InferenceMs     = inferenceMs,
+                InferenceDevice = InferenceDevice
             };
         }
 
@@ -174,8 +175,8 @@ namespace CodeProject.AI.Modules.PortraitFilter
                     {
                         sessionOpts.AppendExecutionProvider_CUDA();
 
-                        ExecutionProvider = "CUDA";
-                        HardwareType      = "GPU";
+                        InferenceLibrary = "CUDA";
+                        InferenceDevice   = "GPU";
                         CanUseGPU         = true;
                     }
                     catch
@@ -198,8 +199,8 @@ namespace CodeProject.AI.Modules.PortraitFilter
                         //sessionOpts.EnableMemoryPattern = false;
                         //sessionOpts.ExecutionMode = ExecutionMode.ORT_PARALLEL;
 
-                        ExecutionProvider = "OpenVINO";
-                        HardwareType      = "GPU";
+                        InferenceLibrary = "OpenVINO";
+                        InferenceDevice   = "GPU";
                         CanUseGPU         = true;
                     }
                     catch
@@ -221,8 +222,8 @@ namespace CodeProject.AI.Modules.PortraitFilter
                         sessionOpts.AppendExecutionProvider_DML();
                         sessionOpts.EnableMemoryPattern = false;
 
-                        ExecutionProvider = "DirectML";
-                        HardwareType      = "GPU";
+                        InferenceLibrary = "DirectML";
+                        InferenceDevice   = "GPU";
                         CanUseGPU         = true;
                     }
                     catch

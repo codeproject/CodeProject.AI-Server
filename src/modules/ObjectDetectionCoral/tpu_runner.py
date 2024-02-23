@@ -15,6 +15,7 @@
 # limitations under the License.
 import threading
 import os
+import platform
 import time
 import logging
 import queue
@@ -26,7 +27,7 @@ from PIL import Image
 
 # For Linux we have installed the pycoral libs via apt-get, not PIP in the venv,
 # so make sure the interpreters can find the coral libraries
-# COMMENTED: No longer the case
+# COMMENTED: No longer the case. PyCoral now installed again via PIP
 # import platform
 # if platform.system() == "Linux":
 #     import sys
@@ -91,10 +92,13 @@ class TPURunner(object):
         self.max_pipeline_queue_length    = MAX_PIPELINE_QUEUE_LEN
         self.warn_temperature_thresh_C    = WARN_TEMPERATURE_THRESHOLD_CELSIUS
 
-        self.device_type          = None  # The type of device in use (TPU or CPU)
+        self.device_type          = None  # The type of device in use (TPU or CPU, but we're going to ignore CPU here)
         self.device_count         = 0     # Number of devices (TPUs or single CPU) we end up using
+        self.segment_count        = 1     # Number of segment files used (or 1 if a single file is used)   
         self.interpreters         = []    # The model interpreters
         self.interpreters_created = None  # When were the interpreters created?
+        self.model_name           = None  # Name of current model in use
+        self.model_size           = None  # Size of current model in use
         self.labels               = None  # set of labels for this model
         self.runners              = None  # Pipeline(s) to run the model
 
@@ -102,9 +106,9 @@ class TPURunner(object):
         self.postboxes            = None  # Store output
         self.postmen              = None
         self.runner_lock          = threading.Lock()
-        self.mp_pool              = None
         
         self.last_check_timer     = None
+        self.last_check_interpreter_creation_timer = None
         self.printed_shape_map    = {}
 
         self.watchdog_time        = None
@@ -112,7 +116,7 @@ class TPURunner(object):
         self.watchdog_thread      = threading.Thread(target=self._watchdog)
         self.watchdog_thread.start()
 
-        logging.info("{} version: {}".format(Image.__name__, Image.__version__))
+        logging.info(f"{Image.__name__} version: {Image.__version__}")
 
         # Find the temperature file
         # https://coral.ai/docs/pcie-parameters/
@@ -122,13 +126,14 @@ class TPURunner(object):
 
         tpu_count = len(list_edge_tpus())
 
-        for fn in temp_fname_formats:
-            for i in range(tpu_count):
-                if os.path.exists(fn.format(i)):
-                    self.temp_fname_format = fn
-                    logging.info("Found temperature file at: "+fn.format(i))
-                    return
-        logging.debug("Unable to find a temperature file")
+        if platform.system() == "Linux":
+            for fn in temp_fname_formats:
+                for i in range(tpu_count):
+                    if os.path.exists(fn.format(i)):
+                        self.temp_fname_format = fn
+                        logging.info("Found temperature file at: "+fn.format(i))
+                        return
+            logging.debug("Unable to find a temperature file")
 
 
     def _watchdog(self):
@@ -170,9 +175,9 @@ class TPURunner(object):
             
             # Exit if the pipeline is done
             if not rs:
-                logging.debug("Popped EOF in {}".format(threading.get_ident()))
+                logging.debug("Popped EOF in tid {}".format(threading.get_ident()))
                 return
-            logging.debug("Popped results in {}".format(threading.get_ident()))
+            logging.debug("Popped results in tid {}".format(threading.get_ident()))
                 
             # Get the next receiving queue and deliver the results.
             # Neither of these get() or put() operations should be blocking
@@ -180,7 +185,7 @@ class TPURunner(object):
             q.get(timeout=self.max_idle_secs_before_recycle).put(rs, timeout=self.max_idle_secs_before_recycle)
 
 
-    def _get_devices(self):
+    def _get_tpu_devices(self):
         """Returns list of device names in usb:N or pci:N format.
 
         This function prefers returning PCI Edge TPU first.
@@ -200,12 +205,62 @@ class TPURunner(object):
                ['usb:%d' % i for i in range(max(0, len(edge_tpus) - num_pci_devices))]
 
 
+    def _get_model_filenames(self, options: Options, tpu_list) -> list[str]:
+        """
+        Returns a list of filenames based on the list of available TPUs and 
+        supplied model and segment filenames. If we don't have segment filenames
+        (ie just a complete TPU model filename) then return that. If we have
+        more than one list of segment files then use the list of files that best
+        matches the number of TPUs we have, otherwise use the single list we
+        have. If all else fails return the single TPU filename as a list.
+        NOTE: This method also updates self.device_count and self.segment_count
+              based on the choice of whether it uses a single model or a set of
+              segment file names
+        """
+
+        # if TPU no-show then default is CPU
+        self.device_type   = 'CPU'
+        self.device_count  = 1  # CPU. At this point we don't know if we have TPU
+        self.segment_count = 1  # Single CPU model file
+        if not any(tpu_list):
+            return []
+
+        self.device_type   = 'TPU'
+
+        # If TPU found then default is single TPU model file (no segments)
+        self.device_count  = len(tpu_list)  # TPUs. We've at least found one
+        self.segment_count = 1              # Single TPU model name at this point
+        if not any(options.tpu_segments_lists):
+            return [options.model_tpu_file]
+            
+        # We have a list of segment files
+        if isinstance(options.tpu_segments_lists[0], list):
+            # Look for a good match between available TPUs and segment counts
+            # Prioritize first match
+            for fname_list in options.tpu_segments_lists:
+                segment_count = len(fname_list)
+                if segment_count <= self.device_count and \
+                   segment_count % self.device_count == 0:
+                    self.segment_count = segment_count
+                    return fname_list
+        else:
+            # Only one list of segments; use it regardless of even match to TPU count
+            segment_count = len(options.tpu_segments_lists)
+            if segment_count <= self.device_count:
+                self.segment_count = segment_count
+                self.device_count  = (self.device_count // segment_count) * segment_count
+                return options.tpu_segments_lists
+
+        # Couldn't find a good fit, use single segment
+        return [options.model_tpu_file]
+
+
     # Should be called while holding runner_lock (if called at run time)
     def init_interpreters(self, options: Options) -> str:
         """
         Initializes the interpreters with the TFLite models.
         
-        Also loads and initalizes the pipeline runners. To do this, it needs
+        Also loads and initializes the pipeline runners. To do this, it needs
         to figure out if we're using segmented pipelines, if we can load all
         the segments to the TPUs, and how to allocate them. For example, if
         we have three TPUs and request a model that contains two segments,
@@ -231,69 +286,69 @@ class TPURunner(object):
 
         self.interpreters = []
         self.runners      = []
-        self.device_type  = ""
-        
-        segment_count = 1
-        if any(options.tpu_segment_files):
-            segment_count = max(1, len(options.tpu_segment_files))
 
-        # Only allocate the TPUs we will use
-        tpu_list = self._get_devices()
-        self.device_count = (len(tpu_list) // segment_count) * segment_count
-       
+        tpu_list          = self._get_tpu_devices()
+
+        # This will update self.device_count and self.segment_count
+        tpu_model_files   = self._get_model_filenames(options, tpu_list)
+        
         # Read labels
-        self.labels = read_label_file(options.label_file) \
-                                                   if options.label_file else {}
-        
-        # Initialize TF-Lite interpreters.
-        self.device_type = "tpu"
+        self.labels       = read_label_file(options.label_file) if options.label_file else {}
 
+        # Initialize EdgeTPU interpreters.
+        self.device_type = "TPU"
         for i in range(self.device_count):
+                    
             # If we have a segmented file, alloc all segments into all TPUs, but 
             # no more than that. For CPU there will only be a single file.
-            if segment_count > 1:
-                tpu_segment_file = options.tpu_segment_files[i % segment_count]
-            else:
-                tpu_segment_file = options.model_tpu_file
+            fname = tpu_model_files[i % len(tpu_model_files)]
 
-            if os.path.exists(tpu_segment_file):
-                logging.debug("Loading: {}".format(tpu_segment_file))
+            if os.path.exists(fname):
+                logging.debug(f"Loading: {fname}")
             else:
-                # No TPU file. Maybe we have a CPU file we can use instead?
-                logging.error("TPU file doesn't exist: {}".format(tpu_segment_file))
+                # No TPU file. If we can't load one of the files, something's
+                # very wrong, so quit the whole thing
+                logging.error(f"TPU file {fname} doesn't exist")
                 self.interpreters = []
                 break
             
             try:
-                interpreter = make_interpreter(tpu_segment_file, device=tpu_list[i], delegate=None)
+                interpreter = make_interpreter(fname, device=tpu_list[i], delegate=None)
                 self.interpreters.append(interpreter)
-            except:
+            except Exception as in_ex:
                 # If we fail to create even one of the interpreters then fail all. 
                 # TODO: An option here is to remove the failed TPU from the list
-                # of TPUs and try the others. Maybe there's paired PCI cards and
-                # a USB, and the USB is failing?
-                logging.error("Unable to create interpreter for TPU {}".format(tpu_list[i]))
+                #       of TPUs and try the others. Maybe there's paired PCI cards
+                #       and a USB, and the USB is failing?
+                logging.error(f"Unable to create interpreter for TPU {tpu_list[i]}: {in_ex}")
                 self.interpreters = []
                 break
             
-        logging.debug("Loaded {} TPUs".format(len(self.interpreters)))
 
-        # Fallback to CPU if no luck with TPUs
-        if not any(self.interpreters):
-            
+        if any(self.interpreters):
+            logging.debug(f"Loaded {len(self.interpreters)} TPUs")
+        else:          
+            # Fallback to CPU if no luck with TPUs
             logging.info("No Coral TPUs found or able to be initialized. Using CPU.")
-            self.device_count = 1
-            segment_count     = 1
-            self.device_type  = "cpu"
+            self.device_count  = 1
+            self.segment_count = 1
+            self.device_type   = "CPU"
 
             try:
                 # First pass is to try the edgeTPU library to create the interpreter
                 # for the CPU file. Can't say I've ever had success with this
                 interpreter = make_interpreter(options.model_cpu_file, device="cpu", delegate=None)
                 self.interpreters = [interpreter]
-            except:
-                # If the edgeTPU library didn't work for CPU then fall back to
-                # plain TF-Lite
+            except Exception as ex:
+                logging.warning(f"Unable to create interpreter for CPU using edgeTPU library: {ex}")
+                self.interpreters  = []
+                self.device_count  = 0
+                self.segment_count = 0
+                self.device_type   = None
+                """
+                # We could fall back to plain TF-Lite but this class is for TPU
+                # processing, not CPU. We will just return empty handed and let
+                # the caller fallback to whatever CPU solution they have handy.
                 try:
                     import tflite_runtime.interpreter as tflite
                     interpreter = tflite.Interpreter(options.model_cpu_file, None)
@@ -301,10 +356,11 @@ class TPURunner(object):
                 except Exception as ex:
                     logging.warning("Error creating interpreter: " + str(ex))
                     self.interpreters = []
-        
+                """
+
         # Womp womp
         if not any(self.interpreters):
-            return ""
+            return self.device_type
 
         # Initialize interpreters
         for i in self.interpreters:
@@ -313,42 +369,48 @@ class TPURunner(object):
         self.interpreters_created = datetime.now()
 
         # Initialize runners/pipelines
-        for i in range(0, self.device_count, segment_count):
-            interpreter = self.interpreters[i:i+segment_count]
+        for i in range(0, self.device_count, self.segment_count):
+            interpreter = self.interpreters[i:i+self.segment_count]
+
+            # NOTE: The PipelinedModuleRunner class calls 
+            #       _pywrap_coral.PipelinedModelRunnerWrapper which requires an
+            #       interpreter created by the edgeTPU library, not the plain
+            #       TFLite library
             runner      = pipeline.PipelinedModelRunner(interpreter)
             runner.set_input_queue_size(self.max_pipeline_queue_length)
             runner.set_output_queue_size(self.max_pipeline_queue_length)
             self.runners.append(runner)
 
         # Sanity check
-        assert len(self.runners) == self.device_count, "No. runners MUST equal no. devices"
+        assert len(self.runners)*self.segment_count == self.device_count, "No. runners MUST equal no. devices"
 
         # Setup postal queue
         self.postboxes = []
         self.postmen   = []
 
-        for i in range(0, self.device_count):
+        for r in self.runners:
             # Start the queue. Set a size limit to keep the queue from going
             # off the rails. An OOM condition will bring everything else down.
             q = queue.Queue(maxsize=self.max_pipeline_queue_length)
             self.postboxes.append(q)
 
             # Start the receiving worker
-            r = self.runners[i]
             t = threading.Thread(target=self._post_service, args=[r, q])
             t.start()
             self.postmen.append(t)
 
         # Get input and output tensors.
-        input_details  = self.get_input_details()
-        output_details = self.get_output_details()
+        self.input_details  = self.interpreters[0].get_input_details()[0]
+        self.output_details = self.interpreters[-1].get_output_details()[0]
 
         # Print debug
         logging.debug("{}, device & segment counts: {} & {}\n"
-                      .format(self.device_type, self.device_count, segment_count))
+                      .format(self.device_type,
+                              self.device_count,
+                              self.segment_count))
         logging.debug("Interpreter count: {}\n".format(len(self.interpreters)))
-        logging.debug(f"Input details: {input_details}\n")
-        logging.debug(f"Output details: {output_details}\n")
+        logging.debug(f"Input details: {self.input_details}\n")
+        logging.debug(f"Output details: {self.output_details}\n")
 
         return self.device_type
 
@@ -359,51 +421,69 @@ class TPURunner(object):
         need to (re)initialize the interpreters/workers/pipelines. The system
         is setup to refresh the TF interpreters once an hour.
         
-        I suspect that many of the problems I saw reported with the use of the
-        Coral TPUs online were due to overheating chips. There were a few
-        comments along the lines of: "Works great, but after running for a bit
-        it became unstable and crashed. I had to back way off and it works fine
-        now!" This seems symptomatic of the TPU throttling itself as it heats
-        up, reducing its own workload, and giving unexpected results to the end
-        user.
+        I suspect that many of the problems reported with the use of the Coral
+        TPUs were due to overheating chips. There were a few comments along the
+        lines of: "Works great, but after running for a bit it became unstable
+        and crashed. I had to back way off and it works fine now" This seems
+        symptomatic of the TPU throttling itself as it heats up, reducing its
+        own workload, and giving unexpected results to the end user.
+
+        Discussion on TPU temperatures:
+        https://coral.ai/docs/m2-dual-edgetpu/datasheet/
+        https://github.com/magic-blue-smoke/Dual-Edge-TPU-Adapter/issues/7
         """
         now_ts = datetime.now()
         
+        # Force if we've changed the model
+        force = False
+
+        if not self.runners:
+            logging.debug("No runners found. Recreating.")
+            force = True
+
+        if options.model_name != self.model_name or \
+           options.model_size != self.model_size:
+            self.model_name = options.model_name
+            self.model_size = options.model_size
+            logging.debug("Model change detected. Forcing model reload.")
+            force = True
+
         # Check to make sure we aren't checking too often
         if any(self.interpreters) and self.last_check_timer != None and \
-           (now_ts - self.last_check_timer).total_seconds() < 10:
+           not force and (now_ts - self.last_check_timer).total_seconds() < 10:
             return True
+        
         self.last_check_timer = now_ts
         
         # Check temperatures
-        msg = "TPU {} is {}C and will likely be throttled"
         if self.temp_fname_format != None:
+            msg = "TPU {} is {}C and will likely be throttled"
+            temp_arr = []
             for i in range(len(self.interpreters)):
-                temp_arr = []
                 if os.path.exists(self.temp_fname_format.format(i)):
                     with open(self.temp_fname_format.format(i), "r") as fp:
-                        # Convert from milidegree C to degree C
+                        # Convert from millidegree C to degree C
                         temp = int(fp.read()) // 1000
-                        temp_arr.append(temp)
-                        
+                        temp_arr.append(temp)            
                         if self.warn_temperature_thresh_C <= temp:
                             logging.warning(msg.format(i, temp))
-
+            if any(temp_arr):
                 logging.debug("Temperatures: {} avg; {} max; {} total".format(
                                                 sum(temp_arr) // len(temp_arr),
                                                 max(temp_arr),
                                                 len(temp_arr)))
+            else:
+                logging.warning("Unable to find temperatures!")
 
         # Once an hour, refresh the interpreters
         if any(self.interpreters):
-            if (now_ts - self.interpreters_created).total_seconds() > \
-                                                 self.interpreter_lifespan_secs:
+            current_age_sec = (now_ts - self.interpreters_created).total_seconds()
+            if force or current_age_sec > self.interpreter_lifespan_secs:
                 logging.info("Refreshing the Tensorflow Interpreters")
 
                 # Close all existing work before destroying...
                 with self.runner_lock:
                     self._delete()
-                    
                     # Re-init while we still have the lock
                     self.init_interpreters(options)
 
@@ -453,10 +533,32 @@ class TPURunner(object):
         self.interpreters   = []
 
 
+    def interpreters_ok(self, options:Options) -> bool:
+        
+        """ Check we have valid interpreters """
+        if any(self.interpreters):
+            return True
+        
+
+        # Force if we've changed the model
+        force = options.model_name != self.model_name or \
+                options.model_size != self.model_size
+
+        # Check to make sure we aren't checking too often
+        now_ts = datetime.now()
+        if force \
+           or not self.last_check_interpreter_creation_timer \
+           or (now_ts - self.last_check_interpreter_creation_timer).total_seconds() > 120:
+            self.last_check_interpreter_creation_timer = now_ts
+            return self._periodic_check(options)
+        
+        return False
+
+
     def process_image(self,
                       options:Options,
                       image: Image,
-                      score_threshold: float):
+                      score_threshold: float) -> (list[detect.Object], int):
         """
         Execute all the default image processing operations.
         
@@ -471,13 +573,16 @@ class TPURunner(object):
         - Return inference timing.
         """
 
+        # Recreate the interpreters if they are stale, but also check if we can
+        # and have created interpreters. It's not always successful...
         if not self._periodic_check(options):
-            return False, False
+            return None, 0
 
         all_objects = []
-        all_queues = []
-        name = self.get_input_details()['name']
-        _, m_height, m_width, _ = self.get_input_details()['shape']
+        all_queues  = []
+
+        name = self.input_details['name']
+        _, m_height, m_width, _ = self.input_details['shape']
         i_width, i_height = image.size
         
         # Potentially resize & pipeline a number of tiles
@@ -499,19 +604,19 @@ class TPURunner(object):
                                 (1 + self.next_runner_idx) % len(self.runners)
 
         # Wait for the results here
-        tot_infr_time = 0
+        tot_inference_time = 0
         for rs_queue, rs_loc in all_queues:
             # Wait for results
             # We may have to wait a few seconds at most, but I'd expect the
             # pipeline to clear fairly quickly.
             start_inference_time = time.perf_counter()
             result = rs_queue.get(timeout=self.max_idle_secs_before_recycle)
-            tot_infr_time += time.perf_counter() - start_inference_time
+            tot_inference_time += time.perf_counter() - start_inference_time
             assert result
 
             boxes, class_ids, scores, count = self._decode_result(result, score_threshold)
             
-            logging.debug("BBox scaling params: {}x{}, {}x{}, {:.2f}x{:.2f}".
+            logging.debug("BBox scaling params: {}x{}, ({},{}), {:.2f}x{:.2f}".
                 format(m_width, m_height,*rs_loc))
 
             # Create Objects for each valid result
@@ -534,56 +639,230 @@ class TPURunner(object):
                                                  bbox=bbox.map(int)))
         
         # Convert to ms
-        tot_infr_time = int(tot_infr_time * 1000)
+        tot_inference_time = int(tot_inference_time * 1000)
 
         # Remove duplicate objects
-        idxs = self._non_max_suppression(all_objects, options.iou_threshold)
+        unique_indexes = self._non_max_suppression(all_objects, options.iou_threshold)
         
-        return ([all_objects[i] for i in idxs], tot_infr_time)
+        return ([all_objects[i] for i in unique_indexes], tot_inference_time)
         
         
-    def _decode_result(self, result,
-                        score_threshold: float):
-        result_list = result.values()
+    def _decode_result(self, result, score_threshold: float):
+        
+        result_list = list(result.values())
         if len(result_list) == 4:
-            return result_list
-            
-        max_value = np.iinfo(self.get_output_details()['dtype']).max
-        
-        # Decode YOLOv5 result
-        boxes = []
-        class_ids = []
-        scores = []
-        for dict_values in result_list:
-            for r in dict_values:
-                for row in r:
-            
-                    # Score
-                    score = row[4]/max_value
-                    if score < score_threshold:
-                        continue
-            
-                    # BBox
-                    bbox = (row[1] - row[3]/2,
-                            row[0] - row[2]/2,
-                            row[1] + row[3]/2,
-                            row[0] + row[2]/2)
-                    bbox = [x / max_value for x in bbox]
-            
-                    # Classes
-                    class_score = 0
-                    class_id = -1
-                    for i in range(5, 85):
-                        if class_score < row[i]:
-                            class_score = row[i]
-                            class_id = i - 5
+            # Easy case with SSD MobileNet & EfficientDet_Lite
+            if result_list[3].size == 1:
+                return result_list
+            else:
+                return (result_list[1], result_list[3], result_list[0], result_list[2])
 
-                    boxes.append(bbox)
-                    class_ids.append(class_id)
-                    scores.append(score)
+        min_value = np.iinfo(self.output_details['dtype']).min
+        max_value = np.iinfo(self.output_details['dtype']).max
+        logging.debug("Scaling output values in range {} to {}".format(min_value, max_value))
+
+        output_zero = self.output_details['quantization'][1]
+        output_scale = self.output_details['quantization'][0]
+        
+        # Decode YOLO result
+        boxes     = []
+        class_ids = []
+        scores    = []
+        for dict_values in result_list:
+            j, k = dict_values[0].shape
+
+                    # YOLOv8 is flipped for some reason. We will use that to decide if we're
+                    # using a v8 or v5-based network.
+            if j < k:
+                rs = self._yolov8_non_max_suppression(
+                    (dict_values.astype('float32') - output_zero) * output_scale,
+                    conf_thres=score_threshold)
+            else:
+                rs = self._yolov5_non_max_suppression(
+                    (dict_values.astype('float32') - output_zero) * output_scale,
+                    conf_thres=score_threshold)
+
+            for a in rs:
+                for r in a:
+                    boxes.append(r[0:4])
+                    class_ids.append(int(r[5]))
+                    scores.append(r[4])
 
         return ([boxes], [class_ids], [scores], [len(scores)])
+
+
+    def _xywh2xyxy(self, xywh):
+        # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+        xyxy = np.copy(xywh)
+        xyxy[:, 1] = xywh[:, 0] - xywh[:, 2] / 2  # top left x
+        xyxy[:, 0] = xywh[:, 1] - xywh[:, 3] / 2  # top left y
+        xyxy[:, 3] = xywh[:, 0] + xywh[:, 2] / 2  # bottom right x
+        xyxy[:, 2] = xywh[:, 1] + xywh[:, 3] / 2  # bottom right y
+        return xyxy
+
+    
+    def _nms(self, dets, scores, thresh):
+        '''
+        dets is a numpy array : num_dets, 4
+        scores ia  nump array : num_dets,
+        '''
+
+        x1 = dets[:, 0]
+        y1 = dets[:, 1]
+        x2 = dets[:, 2]
+        y2 = dets[:, 3]
+
+        areas = (x2 - x1 + 1e-9) * (y2 - y1 + 1e-9)
+        order = scores.argsort()[::-1] # get boxes with more ious first
         
+        keep = []
+        while order.size > 0:
+            i = order[0] # pick maxmum iou box
+            other_box_ids = order[1:]
+            keep.append(i)
+            
+            xx1 = np.maximum(x1[i], x1[other_box_ids])
+            yy1 = np.maximum(y1[i], y1[other_box_ids])
+            xx2 = np.minimum(x2[i], x2[other_box_ids])
+            yy2 = np.minimum(y2[i], y2[other_box_ids])
+            
+            w = np.maximum(0.0, xx2 - xx1 + 1e-9) # maximum width
+            h = np.maximum(0.0, yy2 - yy1 + 1e-9) # maxiumum height
+            inter = w * h
+              
+            ovr = inter / (areas[i] + areas[other_box_ids] - inter)
+            
+            inds = np.where(ovr <= thresh)[0]
+            order = order[inds + 1]
+
+        return np.array(keep)
+
+
+    def _yolov8_non_max_suppression(self, prediction, conf_thres=0.25, iou_thres=0.45,
+                                    labels=(), max_det=3000):
+
+        nc = prediction.shape[1] - 4  # number of classes
+        bs = prediction.shape[0]  # batch size
+        nm = prediction.shape[1] - nc - 4
+        mi = 4 + nc  # mask start index
+
+        xc = np.amax(prediction[:, 4:mi], 1) > conf_thres  # candidates
+
+        prediction = prediction.transpose(0,2,1)  # shape(1,84,6300) to shape(1,6300,84)
+
+        # Checks
+        assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
+        assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
+
+        # Settings
+        min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
+        max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
+        time_limit = 10.0  # seconds to quit after
+
+        t = time.time()
+        output = [np.zeros((0, 6))] * prediction.shape[0]
+        for xi, x in enumerate(prediction):  # image index, image inference
+            # Apply constraints
+            x = x[xc[xi]]  # confidence
+
+            # If none remain process next image
+            if not x.shape[0]:
+                continue
+
+            # Box (center x, center y, width, height) to (x1, y1, x2, y2)
+            box = self._xywh2xyxy(x[:, :4])
+
+            # Detections matrix nx6 (xyxy, conf, cls)
+            conf = np.amax(x[:, 4:], axis=1, keepdims=True)
+            j = np.argmax(x[:, 4:], axis=1).reshape(conf.shape)
+            x = np.concatenate((box, conf, j.astype(float)), axis=1)[conf.flatten() > conf_thres]
+
+            # Check shape
+            n = x.shape[0]  # number of boxes
+            if not n:  # no boxes
+                continue
+            elif n > max_nms:  # excess boxes
+                x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
+
+            # Batched NMS
+            c = x[:, 5:6] * max_wh  # classes
+            boxes, scores = x[:, :4] + c, x[:, 4]  # boxes (offset by class), scores
+            
+            i = self._nms(boxes, scores, iou_thres)  # NMS
+            
+            if i.shape[0] > max_det:  # limit detections
+                i = i[:max_det]
+
+            output[xi] = x[i]
+            if (time.time() - t) > time_limit:
+                logging.warning(f'NMS time limit {time_limit}s exceeded')
+                break  # time limit exceeded
+
+        return output        
+
+        
+    def _yolov5_non_max_suppression(self,
+        							prediction,
+        							conf_thres=0.25,
+        							iou_thres=0.45,
+        							max_det=300):
+        # Checks
+        assert 0 <= conf_thres <= 1, f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
+        assert 0 <= iou_thres <= 1, f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
+
+        bs = prediction.shape[0]  # batch size
+        nc = prediction.shape[2] - 5  # number of classes
+        xc = prediction[..., 4] > conf_thres  # candidates
+
+        # Settings
+        # min_wh = 2  # (pixels) minimum box width and height
+        max_wh = 7680  # (pixels) maximum box width and height
+        max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
+        time_limit = 0.5 + 0.05 * bs  # seconds to quit after
+
+        t = time.time()
+        mi = 5 + nc  # mask start index
+        output = [np.zeros((0, 6))] * bs
+        for xi, x in enumerate(prediction):  # image index, image inference
+            # Apply constraints
+            x = x[xc[xi]]  # confidence
+        
+            # If none remain process next image
+            if not x.shape[0]:
+                continue
+
+            # Compute conf
+            x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
+
+            # Box/Mask
+            box = self._xywh2xyxy(x[:, :4])  # center_x, center_y, width, height) to (x1, y1, x2, y2)
+            mask = x[:, mi:]  # zero columns if no masks
+
+            # Detections matrix nx6 (xyxy, conf, cls)
+            conf = np.amax(x[:, 5:], axis=1, keepdims=True)
+            j = np.argmax(x[:, 5:], axis=1).reshape(conf.shape)
+            x = np.concatenate((box, conf, j.astype(float)), axis=1)[conf.flatten() > conf_thres]
+
+            # Check shape
+            n = x.shape[0]  # number of boxes
+            if not n:  # no boxes
+                continue
+            elif n > max_nms:  # excess boxes
+                x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
+
+            # Batched NMS
+            c = x[:, 5:6] * max_wh  # classes
+            boxes, scores = x[:, :4] + c, x[:, 4]  # boxes (offset by class), scores
+            i = self._nms(boxes, scores, iou_thres)  # NMS
+            i = i[:max_det]  # limit detections
+
+            output[xi] = x[i]
+            if (time.time() - t) > time_limit:
+                LOGGER.warning(f"WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded")
+                break  # time limit exceeded
+
+        return output
+
         
     def _non_max_suppression(self, objects, threshold):
         """Returns a list of indexes of objects passing the NMS.
@@ -601,40 +880,46 @@ class TPURunner(object):
             return [0]
 
         boxes = np.array([o.bbox for o in objects])
-        xmins = boxes[:, 0]
-        ymins = boxes[:, 1]
-        xmaxs = boxes[:, 2]
-        ymaxs = boxes[:, 3]
+        x_mins = boxes[:, 0]
+        y_mins = boxes[:, 1]
+        x_maxs = boxes[:, 2]
+        y_maxs = boxes[:, 3]
 
-        areas = (xmaxs - xmins) * (ymaxs - ymins)
-        scores = [o.score for o in objects]
-        idxs = np.argsort(scores)
+        areas   = (x_maxs - x_mins) * (y_maxs - y_mins)
+        scores  = [o.score for o in objects]
+        indexes = np.argsort(scores)
         
         logging.debug("Starting NMS with {} objects".format(len(objects)))
 
-        selected_idxs = []
-        while idxs.size != 0:
+        selected_indexes = []
+        while indexes.size != 0:
 
-            selected_idx = idxs[-1]
-            selected_idxs.append(selected_idx)
+            selected_index = indexes[-1]
+            selected_indexes.append(selected_index)
 
-            overlapped_xmins = np.maximum(xmins[selected_idx], xmins[idxs[:-1]])
-            overlapped_ymins = np.maximum(ymins[selected_idx], ymins[idxs[:-1]])
-            overlapped_xmaxs = np.minimum(xmaxs[selected_idx], xmaxs[idxs[:-1]])
-            overlapped_ymaxs = np.minimum(ymaxs[selected_idx], ymaxs[idxs[:-1]])
+            overlapped_x_mins = np.maximum(x_mins[selected_index], x_mins[indexes[:-1]])
+            overlapped_y_mins = np.maximum(y_mins[selected_index], y_mins[indexes[:-1]])
+            overlapped_x_maxs = np.minimum(x_maxs[selected_index], x_maxs[indexes[:-1]])
+            overlapped_y_maxs = np.minimum(y_maxs[selected_index], y_maxs[indexes[:-1]])
 
-            w = np.maximum(0, overlapped_xmaxs - overlapped_xmins)
-            h = np.maximum(0, overlapped_ymaxs - overlapped_ymins)
+            width  = np.maximum(0, overlapped_x_maxs - overlapped_x_mins)
+            height = np.maximum(0, overlapped_y_maxs - overlapped_y_mins)
 
-            intersections = w * h
-            unions = areas[idxs[:-1]] + areas[selected_idx] - intersections
-            ious = intersections / unions
+            intersections = width * height
+            unions = areas[indexes[:-1]] + areas[selected_index] - intersections
+            ious   = intersections / unions
 
-            idxs = np.delete(
-                idxs, np.concatenate(([len(idxs) - 1], np.where(ious > threshold)[0])))
+            if np.isnan(np.sum(ious)):
+                logging.warning("Zero area detected, ignoring")
+                indexes = np.delete(
+                    indexes, np.concatenate(([len(indexes) - 1], np.where(not np.isnan(ious))[0])))
+                continue
+            
+            indexes = np.delete(
+                indexes, np.concatenate(([len(indexes) - 1], np.where(ious > threshold)[0])))
 
-        logging.debug("Finishing NMS with {} objects".format(len(selected_idxs)))
-        return selected_idxs
+        logging.debug("Finishing NMS with {} objects".format(len(selected_indexes)))
+        return selected_indexes
         
         
     def _resize_and_chop_tiles(self,
@@ -686,6 +971,9 @@ class TPURunner(object):
         resamp_img = image.convert('RGB').resize((resamp_x, resamp_y),
                                                  Image.LANCZOS)
 
+        input_zero = self.input_details['quantization'][1]
+        input_scale = self.input_details['quantization'][0]
+
         # Do chunking
         tiles = []
         for x_off in range(0, resamp_x - options.tile_overlap, m_width - options.tile_overlap):
@@ -693,10 +981,14 @@ class TPURunner(object):
                 cropped_arr = np.asarray(resamp_img.crop((x_off,
                                                           y_off,
                                                           x_off + m_width,
-                                                          y_off + m_height)), dtype='uint8')
+                                                          y_off + m_height)), dtype=np.float32)
                 logging.debug("Resampled image tile {} at offset {}, {}".format(cropped_arr.shape, x_off, y_off))
 
-                tiles.append((cropped_arr, (x_off, y_off, i_width/resamp_x, i_height/resamp_y)))
+                # Normalize from 8-bit image to whatever the input is
+                cropped_arr = (cropped_arr/(256.0 * input_scale)) + input_zero
+
+                tiles.append((cropped_arr.astype(self.input_details['dtype']),
+                              (x_off, y_off, i_width/resamp_x, i_height/resamp_y)))
         return tiles
 
 
@@ -728,17 +1020,10 @@ class TPURunner(object):
         tiles that are each neither very warped or have wasted input pixels.
         The downside is, of course, that we are doing twice as much work.
         """
-        _, m_height, m_width, _ = self.get_input_details()['shape']
+        _, m_height, m_width, _ = self.input_details['shape']
 
         # This function used to be multi-process, but it seems Pillow handles
         # that better and faster than we would. So we just call into tile-
         # generation as a function here.
         return self._resize_and_chop_tiles(options, image, m_width, m_height)
 
-
-    def get_output_details(self):
-        return self.interpreters[-1].get_output_details()[0]
-
-
-    def get_input_details(self):
-        return self.interpreters[0].get_input_details()[0]

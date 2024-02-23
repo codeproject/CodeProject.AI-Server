@@ -47,9 +47,28 @@ if exist edgetpu_runtime (
     )
 )
 
-:: Download the MobileNet TFLite models and store in /assets
-REM call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetect-coral-multitpu-models.zip" "assets" "Downloading MobileNet models..."
+:: Download the TFLite/edgeTPU models and store in /assets
+:: call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetect-coral-multitpu-models.zip" "assets" "Downloading MobileNet models..."
+
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-efficientdet-large-edgetpu.zip" "assets" "Downloading EfficientDet (large) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-efficientdet-medium-edgetpu.zip" "assets" "Downloading EfficientDet (medium) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-efficientdet-small-edgetpu.zip" "assets" "Downloading EfficientDet (small) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-efficientdet-tiny-edgetpu.zip" "assets" "Downloading EfficientDet (tiny) models..."
+
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-mobilenet-large-edgetpu.zip" "assets" "Downloading MobileNet (large) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-mobilenet-medium-edgetpu.zip" "assets" "Downloading MobileNet (medium) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-mobilenet-small-edgetpu.zip" "assets" "Downloading MobileNet (small) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-mobilenet-tiny-edgetpu.zip" "assets" "Downloading MobileNet (tiny) models..."
+
+:: call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-yolov5-large-edgetpu.zip" "assets" "Downloading YOLOv5 (large) models..."
+:: call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-yolov5-medium-edgetpu.zip" "assets" "Downloading YOLOv5 (medium) models..."
+:: call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-yolov5-small-edgetpu.zip" "assets" "Downloading YOLOv5 (small) models..."
+:: call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-yolov5-tiny-edgetpu.zip" "assets" "Downloading YOLOv5 (tiny) models..."
+
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-yolov8-large-edgetpu.zip" "assets" "Downloading YOLOv8 (large) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-yolov8-medium-edgetpu.zip" "assets" "Downloading YOLOv8 (medium) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-yolov8-small-edgetpu.zip" "assets" "Downloading YOLOv8 (small) models..."
+call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "objectdetection-yolov8-tiny-edgetpu.zip" "assets" "Downloading YOLOv8 (tiny) models..."
 
 REM TODO: Check assets created and has files
 REM set moduleInstallErrors=...

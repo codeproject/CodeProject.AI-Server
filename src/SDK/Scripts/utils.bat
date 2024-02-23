@@ -881,7 +881,8 @@ shift & goto :%~1
         if /i "%package_name:~0,4%" neq "http" (
             if /i "%package_name:~-4%" neq ".whl" ( 
                 REM Extract the module_name from the form "module_name[(<=|==|=>|)version[,<=|=>|)version]]  # comment"
-                for /f "tokens=1 delims=>=<~, " %%G in ("!package_name!") do set "module_name=%%G"
+                REM Note we're also handling the form module_name[variant] (eg diffusers[torch])
+                for /f "tokens=1 delims=[]>=<~, " %%G in ("!package_name!") do set "module_name=%%G"
             )
         )
 
@@ -931,7 +932,7 @@ shift & goto :%~1
                 if /i "%package_name:~-4%" neq ".whl" ( 
 
                     REM Remove module endings starting with "==" using findstr and loop
-                    for /f "tokens=1,2 delims=>==< " %%a in ("!package_name!") do (
+                    for /f "tokens=1,2 delims=[]>==< " %%a in ("!package_name!") do (
                         set "module_name=%%a"
                         REM set "module_version=%%b"
                         set "module_name=!module_name:==!"
@@ -1095,7 +1096,8 @@ shift & goto :%~1
                     if /i "%module:~0,4%" neq "http" (
                         if /i "%module:~-4%" neq ".whl" ( 
                             REM Extract the module_name from the form "module_name[(<=|==|=>|)version[,<=|=>|)version]]  # comment"
-                            for /f "tokens=1 delims=>=<~, " %%G in ("!module!") do set "module_name=%%G"
+                            REM Note we're also handling the form module_name[variant] (eg diffusers[torch])
+                            for /f "tokens=1 delims=[]>=<~, " %%G in ("!module!") do set "module_name=%%G"
                         )
                     )
 

@@ -272,11 +272,11 @@ namespace CodeProject.AI.Server.Controllers
                     Autostart             = module.LaunchSettings!.AutoStart ?? false,
                     LogVerbosity          = module.LaunchSettings!.LogVerbosity,
                     PostStartPauseSecs    = module.LaunchSettings!.PostStartPauseSecs,
+                    Parallelism           = module.LaunchSettings?.Parallelism,
                     InstallGPU            = module.GpuOptions?.InstallGPU,
                     EnableGPU             = module.GpuOptions?.EnableGPU,
                     AcceleratorDeviceName = module.GpuOptions?.AcceleratorDeviceName,
-                    HalfPrecision         = module.GpuOptions?.HalfPrecision,
-                    Parallelism           = module.GpuOptions?.Parallelism
+                    HalfPrecision         = module.GpuOptions?.HalfPrecision
                 },
                 EnvironmentVariables = processEnvironmentVars
             };

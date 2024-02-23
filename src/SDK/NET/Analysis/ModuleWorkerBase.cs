@@ -17,6 +17,10 @@ namespace CodeProject.AI.SDK
     /// </summary>
     public abstract class ModuleWorkerBase : BackgroundService
     {
+        private readonly string[] _doNotLogCommands = { "list-custom", "status" };
+
+        private readonly TimeSpan      _status_delay = TimeSpan.FromSeconds(2);
+
         private readonly string?       _queueName;
         private readonly string?       _moduleId;
         private readonly int           _parallelism     = 1;
@@ -31,8 +35,8 @@ namespace CodeProject.AI.SDK
 
         private bool _cancelled         = false;
         private bool _performSelfTest   = false;
-        private int  _successInferences;
-        private long _totalSuccessInf_ms;
+        private int  _successfulInferences;
+        private long _totalSuccessInferenceMs;
         private int  _failedInferences;
 
         /// <summary>
@@ -51,11 +55,6 @@ namespace CodeProject.AI.SDK
         public bool   EnableGPU  { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the name of the hardware acceleration execution provider
-        /// </summary>
-        public string? ExecutionProvider { get; set; } = "CPU";
-
-        /// <summary>
         /// Gets or sets a value indicating whether or not this detector can use the current GPU
         /// </summary>
         public bool CanUseGPU { get; set; } = false;
@@ -63,7 +62,12 @@ namespace CodeProject.AI.SDK
         /// <summary>
         /// Gets or sets the hardware type that's in use (CPU or GPU)
         /// </summary>
-        public string? HardwareType { get; set; } = "CPU";
+        public string? InferenceDevice { get; set; } = "CPU";
+
+        /// <summary>
+        /// Gets or sets the name of the hardware acceleration execution provider
+        /// </summary>
+        public string? InferenceLibrary { get; set; } = "CPU";
 
         /// <summary>
         /// Gets the logger instance.
@@ -79,8 +83,12 @@ namespace CodeProject.AI.SDK
         public ModuleWorkerBase(ILogger logger, IConfiguration configuration,
                                 IHostApplicationLifetime hostApplicationLifetime)
         {
+            // _logger      = logger;
+
+            using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
+            _logger = factory.CreateLogger<ModuleWorkerBase>();
+
             _cancelled   = false;
-            _logger      = logger;
             _appLifetime = hostApplicationLifetime;
 
             string currentModuleDirPath = GetModuleDirectoryPath();
@@ -101,6 +109,10 @@ namespace CodeProject.AI.SDK
 
             _performSelfTest = configuration.GetValue<bool>("CPAI_MODULE_DO_SELFTEST", false);
 
+            // We have a reasonably short "long poll" time to ensure the dashboard gets regular pings
+            // to indicate the module is still alive
+            TimeSpan longPoll        = TimeSpan.FromSeconds(15); // For getting a request from the server
+            TimeSpan responseTimeout = TimeSpan.FromSeconds(10); // For sending info to the server
 
             // We want this big enough to increase throughput, but not so big as to
             // cause thread starvation.
@@ -108,11 +120,8 @@ namespace CodeProject.AI.SDK
                 _parallelism = Environment.ProcessorCount/2;
 
             var token = _cancellationTokenSource.Token;
-#if DEBUG
-            _apiClient = new BackendClient($"http://localhost:{port}/", TimeSpan.FromSeconds(30), token);
-#else
-            _apiClient = new BackendClient($"http://localhost:{port}/", token: token);
-#endif
+            _apiClient = new BackendClient($"http://localhost:{port}/", longPoll, responseTimeout,
+                                           token: token);
         }
 
 #region CodeProject.AI Module callbacks ============================================================
@@ -138,13 +147,33 @@ namespace CodeProject.AI.SDK
         protected virtual dynamic? Status()
         {
             dynamic status = new ExpandoObject();
-            status.SuccessfulInferences = _successInferences;
-            status.FailedInferences     = _failedInferences;
-            status.NumInferences        = _successInferences + _failedInferences;
-            status.AverageInferenceMs   = _successInferences > 0 
-                                        ? _totalSuccessInf_ms / _successInferences : 0;
+            status.inferenceDevice      = InferenceDevice;
+            status.inferenceLibrary     = InferenceLibrary;
+            status.canUseGPU            = CanUseGPU;
+
+            status.successfulInferences = _successfulInferences;
+            status.failedInferences     = _failedInferences;
+            status.numInferences        = _successfulInferences + _failedInferences;
+            status.averageInferenceMs   = _successfulInferences > 0 
+                                        ? _totalSuccessInferenceMs / _successfulInferences : 0;
 
             return status;
+        }
+
+        /// <summary>
+        /// Called after `process` is called in order to update the stats on the number of successful
+        /// and failed calls as well as average inference time.
+        /// </summary>
+        /// <param name="response"></param>
+        protected virtual void UpdateStatistics(ModuleResponse response)
+        {
+            if (response.Success)
+            {
+                _successfulInferences++;
+                _totalSuccessInferenceMs += response.InferenceMs;   
+            }
+            else
+                _failedInferences++;
         }
 
         /// <summary>
@@ -167,6 +196,17 @@ namespace CodeProject.AI.SDK
 
 #endregion CodeProject.AI Module callbacks =========================================================
 
+        private async Task StatusUpdateLoop(CancellationToken token)
+        {
+            await Task.Yield();
+
+            while (!token.IsCancellationRequested && !_cancelled)
+            {
+                await _apiClient.SendStatus(_moduleId!, Status(), token).ConfigureAwait(false);
+                await Task.Delay(_status_delay, token).ConfigureAwait(false);
+            }
+        }
+
         /// <summary>
         /// This is the main processing loop which polls the request queue on the server for this
         /// module, gets the requests from the server, calls the Process method, then sends the
@@ -180,8 +220,7 @@ namespace CodeProject.AI.SDK
         private async Task ProcessQueue(CancellationToken token, int taskNumber)
         {
             Task<BackendRequest?> requestTask = _apiClient.GetRequest(_queueName!, _moduleId!,
-                                                                      token, ExecutionProvider, 
-                                                                      CanUseGPU);
+                                                                      token);
             Task? responseTask = null;
             BackendRequest? request;
 
@@ -190,8 +229,7 @@ namespace CodeProject.AI.SDK
                 try
                 {
                     request     = await requestTask.ConfigureAwait(false);
-                    requestTask = _apiClient.GetRequest(_queueName!, _moduleId!, token,
-                                                       ExecutionProvider, CanUseGPU);
+                    requestTask = _apiClient.GetRequest(_queueName!, _moduleId!, token);
                     if (request is null)
                         continue;
 
@@ -204,26 +242,19 @@ namespace CodeProject.AI.SDK
                         return;
                     }
 
-                    Stopwatch stopWatch = Stopwatch.StartNew();
+                    Stopwatch stopWatch     = Stopwatch.StartNew();
                     ModuleResponse response = ProcessRequest(request);
                     stopWatch.Stop();
 
-                    if (response.Success)
-                    {
-                        _successInferences++;
-                        _totalSuccessInf_ms += response.InferenceMs;   
-                    }
-                    else
-                        _failedInferences++;
+                    if (!_doNotLogCommands.Contains(request.reqtype))
+                        UpdateStatistics(response);
 
-                    long processMs = stopWatch.ElapsedMilliseconds;
-                    response.ModuleName        = ModuleName;
-                    response.ModuleId          = _moduleId;
-                    response.ProcessMs         = processMs;
-                    response.ExecutionProvider = ExecutionProvider ?? string.Empty;
-                    response.Command           = request.payload?.command ?? string.Empty;
-                    response.CanUseGPU         = CanUseGPU;
-                    response.StatusData        = Status();
+                    long processMs      = stopWatch.ElapsedMilliseconds;
+                    response.ModuleName = ModuleName;
+                    response.ModuleId   = _moduleId;
+                    response.ProcessMs  = processMs;
+                    response.Command    = request.payload?.command ?? string.Empty;
+                    response.RequestId  = request.reqid;
 
                     HttpContent content = JsonContent.Create(response, response.GetType());
 
@@ -233,10 +264,6 @@ namespace CodeProject.AI.SDK
                         await responseTask.ConfigureAwait(false);
 
                     responseTask = _apiClient.SendResponse(request.reqid, _moduleId!, content, token);
-
-                    _apiClient.LogToServer($"Command completed in {response.ProcessMs} ms.",
-                                           $"{ModuleName}",  LogLevel.Information, 
-                                           "command timing");
                 }
                 catch (TaskCanceledException) when (_cancelled)
                 {
@@ -313,6 +340,8 @@ namespace CodeProject.AI.SDK
                 List<Task> tasks = new List<Task>();
                 for (int i = 0; i < _parallelism; i++)
                     tasks.Add(ProcessQueue(token, i));
+
+                tasks.Add(StatusUpdateLoop(token));
 
                 await Task.WhenAll(tasks).ConfigureAwait(false);
 

@@ -123,6 +123,20 @@
         },   
 
         {
+            "label": "build-demo-net",      // Builds ONLY the Yolo .NET analysis module
+            "type": "process",
+            "group": "build",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/modules/ModuleDemoNetSimple",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },   
+
+        {
             "label": "build-portraitfilter",      // Builds ONLY the .NET portrait filter  module
             "type": "process",
             "group": "build",

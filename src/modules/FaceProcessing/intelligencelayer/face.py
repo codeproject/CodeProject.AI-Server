@@ -100,11 +100,11 @@ class Face_adapter(ModuleRunner):
 
         # We'll assume that USE_CUDA / USE_MPS are correct to avoid slow code
         if SharedOptions.USE_CUDA:
-            self.processor_type     = "GPU"
-            self.execution_provider = "CUDA"
+            self.inference_device  = "GPU"
+            self.inference_library = "CUDA"
         elif SharedOptions.USE_MPS:
-            self.processor_type     = "GPU"
-            self.execution_provider = "MPS"
+            self.inference_device  = "GPU"
+            self.inference_library = "MPS"
 
         if SharedOptions.USE_CUDA and self.half_precision == 'enable' and \
            not self.system_info.hasTorchHalfPrecision:
@@ -118,10 +118,7 @@ class Face_adapter(ModuleRunner):
         faceUpdate_thread = threading.Thread(None, self._update_faces, args = (5,))
         faceUpdate_thread.start()
 
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
-        self.num_items_found      = 0
+        self._num_items_found = 0
 
 
     def process(self, data: RequestData) -> JSON:
@@ -160,18 +157,20 @@ class Face_adapter(ModuleRunner):
                 "loglevel": "error",
             })
 
-        self._update_statistics(response)
         return response 
 
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "numItemsFound"        : self.num_items_found,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-        }
+
+    def status(self) -> JSON:
+        statusData = super().status()
+        statusData["numItemsFound"] = self._num_items_found
+        return statusData
+
+
+    def update_statistics(self, response):
+        super().update_statistics(response)
+        if "success" in response and response["success"] and "predictions" in response:
+            predictions = response["predictions"]
+            self._num_items_found += len(predictions) 
 
 
     def selftest(self) -> JSON:
@@ -844,23 +843,10 @@ class Face_adapter(ModuleRunner):
 
         return output
 
-    def _update_statistics(self, response):
-
-        if "success" in response and response["success"]:
-            if "predictions" in response:
-                if "inferenceMs" in response:
-                    self.total_success_inf_ms += response["inferenceMs"]
-                    self.success_inferences += 1
-                predictions = response["predictions"]
-                self.num_items_found += len(predictions) 
-        else:
-            self.failed_inferences += 1
-        
-
 
     def _status_summary(self):
-        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
-        summary += "Items detected:       " + str(self.num_items_found) + "\n"
+        summary  = "Inference Operations: " + str(self._success_inferences)  + "\n"
+        summary += "Items detected:       " + str(self._num_items_found) + "\n"
         return summary
 
 

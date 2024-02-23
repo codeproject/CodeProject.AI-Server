@@ -23,10 +23,6 @@ class LLama_Adapter(ModuleRunner):
         verbose = self.log_verbosity != LogVerbosity.Quiet
         init_chat(model_path="./models/codellama-7b.Q4_K_M.gguf", n_ctx=512, verbose=verbose)
 
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
-
 
     def process(self, data: RequestData) -> JSON:
         
@@ -37,9 +33,9 @@ class LLama_Adapter(ModuleRunner):
         try:
             start_time = time.perf_counter()
 
-            prompt = "Q: " + prompt + " A: "
+            prompt = "USER: " + prompt + " ASSISTANT: "
             reply_text: str = do_completion(prompt=prompt, temperature=temperature, max_tokens=max_tokens,
-                                            stream=False, stop=[ "\n", "Q:" ])
+                                            stream=False, stop=[ "USER:" ])
             # reply_text: str = do_chat(prompt=prompt, temperature=temperature, max_tokens=max_tokens,
             #                          stream=False,  stop=None)
 
@@ -58,18 +54,7 @@ class LLama_Adapter(ModuleRunner):
             self.report_error(ex, __file__)
             response = { "success": False, "error": "Unable to generate text" }
 
-        self._update_statistics(response)
         return response 
-
-
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-        }
 
 
     def selftest(self) -> JSON:
@@ -87,15 +72,6 @@ class LLama_Adapter(ModuleRunner):
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
         return { "success": result['success'], "message": "Face detection test successful" }
-
-
-    def _update_statistics(self, response):   
-        if "success" in response and response["success"]:
-            self.success_inferences += 1
-            if "inferenceMs" in response:
-                self.total_success_inf_ms += response["inferenceMs"]
-        else:
-            self.failed_inferences += 1
 
 
 if __name__ == "__main__":

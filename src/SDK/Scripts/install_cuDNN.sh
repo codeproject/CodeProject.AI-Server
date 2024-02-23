@@ -2,7 +2,7 @@
 
 # CodeProject.AI Server 
 #
-# Ubuntu / WSL cuDNN install script
+# Ubuntu / Debian / WSL cuDNN install script
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#wsl
 #
 # CUDA support:
@@ -114,9 +114,9 @@ esac
 
 cudnn_version="8.9.5.*"             # latest, works with CUDA 11.8+
 
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID) # eg "ubuntu20.04"
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID) # eg "ubuntu20.04", "debian12"
 
-OS_name="${distribution//./}"       # eg "ubuntu2204"
+OS_name="${distribution//./}"       # eg "ubuntu2204", "debian12"
 if [ "${systemName}" == 'WSL' ]; then OS_name="wsl-ubuntu"; fi
 
 system_arch="$architecture"

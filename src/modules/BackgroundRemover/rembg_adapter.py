@@ -39,15 +39,11 @@ class rembg_adapter(ModuleRunner):
     def initialise(self) -> None:   
         """ Initialises the module """
 
-        self.selftest_check_packages = False # Too messy, will fail
+        self.selftest_check_pkgs = False # Too messy, will fail
 
-        if self.enable_GPU:
-            if self.system_info.hasONNXRuntimeGPU:
-                self.execution_provider = "ONNX"
-
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
+        if self.enable_GPU and self.system_info.hasONNXRuntimeGPU:
+            self.inference_device  = "GPU"
+            self.inference_library = "ONNX"
 
 
     def process(self, data: RequestData) -> JSON:
@@ -72,18 +68,7 @@ class rembg_adapter(ModuleRunner):
             self.report_error(ex, __file__)
             response = { "success": False, "error": "unable to process the image" }
 
-        self._update_statistics(response)
         return response 
-
-
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-        }
 
 
     def selftest(self) -> JSON:
@@ -103,23 +88,7 @@ class rembg_adapter(ModuleRunner):
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
         return { "success": result['success'], "message": "Remove background test successful" }
-
-
-    def cleanup(self) -> None:
-        pass
-
-
-    def _update_statistics(self, response):
-        
-        if "success" in response and response["success"]:
-            if "inferenceMs" in response:
-                self.total_success_inf_ms += response["inferenceMs"]
-                self.success_inferences += 1
-        else:
-            self.failed_inferences += 1
-
-
-   
+ 
 
 if __name__ == "__main__":
     rembg_adapter().start_loop()

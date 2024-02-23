@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
@@ -22,7 +23,6 @@ using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Modules;
 using CodeProject.AI.Server.Mesh;
-using System.Net;
 
 namespace CodeProject.AI.Server.Controllers
 {
@@ -70,7 +70,7 @@ namespace CodeProject.AI.Server.Controllers
 
 
         /// <summary>
-        /// Initializes a new instance of the VisionController class.
+        /// Initializes a new instance of the ProxyController class.
         /// </summary>
         /// <param name="dispatcher">The Command Dispatcher instance.</param>
         /// <param name="routeMap">The Route Manager</param>
@@ -102,11 +102,12 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="pathSuffix">The path for this request without the "v1". This will be in the
         /// form "category/module[/command]". eg "image/alpr" or "vision/custom/modelName".</param>
         /// <returns>The result of the command, or error.</returns>
-        [HttpPost("{**pathSuffix}")]
+        [HttpPost]
+        [Route("{**pathSuffix}", Order = 10)]
         public async Task<IActionResult> Post(string pathSuffix)
         {
             if (_verbose)
-                Debug.WriteLine("Received call to " + pathSuffix);
+                Debug.WriteLine("TRACE: Received call to " + pathSuffix);
 
             // check if this is a forwarded request and if so run locally.
             Microsoft.Extensions.Primitives.StringValues forwardedHeader;
@@ -117,6 +118,8 @@ namespace CodeProject.AI.Server.Controllers
             if (isForwardedRequest && !_meshManager.AcceptForwardedRequests)
                 return BadRequest("This server does not accept forwarded requests.");
 
+            object? response = null;
+
             if (!isForwardedRequest && _meshManager.AllowRequestForwarding)
             {
                 // Find the 'best' server to use for this request.
@@ -126,26 +129,152 @@ namespace CodeProject.AI.Server.Controllers
                 if (server is not null && !server.IsLocalServer)
                 {
                     if (_verbose)
-                        Debug.WriteLine("Forwarding to server " + server);
+                        Debug.WriteLine("TRACE: Forwarding to server " + server);
 
-                    return await DispatchRemoteRequest(pathSuffix, server).ConfigureAwait(false);
+                    response = await DispatchRemoteRequest(pathSuffix, server).ConfigureAwait(false);
+                    // return await DispatchRemoteRequest(pathSuffix, server).ConfigureAwait(false);
                 }
             }
 
-            // we are not forwarding, so this is a local request, do it the normal way.
-            if (_routeMap.TryGetValue(pathSuffix, "POST", out RouteQueueInfo? routeInfo))
+            // we have not forwarded, so this is a local request, do it the normal way.
+            if (response is null && _routeMap.TryGetValue(pathSuffix, "POST", out RouteQueueInfo? routeInfo))
             {
                 if (_verbose)
-                    Debug.WriteLine("Processing locally");
+                    Debug.WriteLine("TRACE: Processing locally");
 
-                return await DispatchLocalRequest(pathSuffix, routeInfo!).ConfigureAwait(false);
+                response = await DispatchLocalRequest(pathSuffix, routeInfo!).ConfigureAwait(false); 
+                // return await DispatchLocalRequest(pathSuffix, routeInfo!).ConfigureAwait(false);
+            }
+            else if (_verbose)
+                Debug.WriteLine("ERROR: Unable to process: no suitable mesh server or local route found");
+
+            if (response is null)
+            {
+                return NotFound();
+            }
+            else if (response is string responseString)
+            {
+                return new ObjectResult(responseString);
+            }
+            else if (response is JsonObject responseObject)
+            {
+                // Add common reporting properties
+                responseObject["timestampUTC"] = DateTime.UtcNow.ToString("R");
+                // Or to create a form that show DateKind, use
+                // responseObject["timestampUTC"] = DateTime.Now.ToUniversalTime().ToString("O");
+
+                // Report to debug
+                // long timeMs = responseObject["analysisRoundTripMs"]?.GetValue<long>() ?? 0;
+                // Debug.WriteLine($"INFO: {pathSuffix} call processed in {timeMs}ms");
+
+                responseString = JsonSerializer.Serialize(responseObject);
+                return new ContentResult
+                {
+                    Content     = responseString,
+                    ContentType = "application/json",
+                    StatusCode  = StatusCodes.Status200OK
+                };                
+            }
+            else
+            {
+                return new ObjectResult(response);
+            }
+        }
+
+        // Long Running Task
+
+        /// <summary>
+        /// Gets the result of the command from the module.
+        /// REVIEW:[Matthew] I don't understand why we aren't simply using the [Route("{**pathSuffix}"]
+        /// route. Doing it this way means the server needs to understand the inner workings of the
+        /// life cycle of a long running module, and it means changes to the way the module works
+        /// means the server needs to be updated. Please don't couple of they don't absolutely need
+        /// coupling. I would make the route /v1/moduleid/process-status/request_id so that command =
+        /// 'process_status' and segment[0] = command_id. Same for cancelcommand
+        /// (/v1/moduleid/cancel-process/request_id) (I'd use name request_id rather than command_id
+        /// to be consistent and not switch terms - assuming command_id is actually the request Id)
+        /// </summary>
+        /// <param name="moduleId"></param>
+        /// <param name="commandId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("getcommandresult", Order = 0)]
+        public async Task<IActionResult> GetCommandResult([FromForm] string moduleId,[FromForm]string commandId)
+        {
+            var command = "get_command_result";
+
+            var result =  await SendCommandToModuleAsync(moduleId, commandId, command).ConfigureAwait(false);
+            return result;
+        }
+
+        /// <summary>
+        /// Cancels the command from the module.
+        /// REVIEW:[Matthew] Don't see why this is here. See above
+        /// </summary>
+        /// <param name="moduleId"></param>
+        /// <param name="commandId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("cancelcommand", Order = 0)]
+        public async Task<IActionResult> CancelCommand([FromForm] string moduleId, [FromForm] string commandId)
+        {
+            var command = "cancel_command";
+
+            var result =  await SendCommandToModuleAsync(moduleId, commandId, command).ConfigureAwait(false);
+            return result;
+        }
+
+        private async Task<IActionResult> SendCommandToModuleAsync(string moduleId, string commandId, string command)
+        {
+            if (string.IsNullOrEmpty(moduleId) || string.IsNullOrEmpty(commandId))
+                return BadRequest("ModuleId and CommandId are required");
+
+            ModuleConfig? moduleConfig = _installedModules.Values
+                                          .FirstOrDefault(x => x.ModuleId == moduleId);
+            if (moduleConfig is null)
+                return BadRequest("Module not found");
+
+            string? queue = moduleConfig.LaunchSettings?.Queue;
+            if (string.IsNullOrEmpty(queue))
+                return BadRequest("Module does not have a queue");
+
+            var payload = CreatePayload("",
+                new RouteQueueInfo("", "POST", queue, command));
+
+            var response = await _dispatcher.SendRequestAsync(queue, payload).ConfigureAwait(false);
+            if (response is null)
+            {
+                return NotFound();
+            }
+            else if (response is string responseString && !string.IsNullOrWhiteSpace(responseString))
+            {
+                JsonObject? responseObject = null;
+
+                responseObject = JsonSerializer.Deserialize<JsonObject>(responseString) ?? new JsonObject();
+                // Add common reporting properties
+                if (responseObject is not null)
+                {
+                    responseObject["timestampUTC"] = DateTime.UtcNow.ToString("R");
+                    // Or to create a form that show DateKind, use
+                    // responseObject["timestampUTC"] = DateTime.Now.ToUniversalTime().ToString("O");
+
+                    // Report to debug
+                    // long timeMs = responseObject["analysisRoundTripMs"]?.GetValue<long>() ?? 0;
+                    // Debug.WriteLine($"INFO: {pathSuffix} call processed in {timeMs}ms");
+
+                    responseString = JsonSerializer.Serialize(responseObject);
+                    return new ContentResult
+                    {
+                        Content = responseString,
+                        ContentType = "application/json",
+                        StatusCode = StatusCodes.Status200OK
+                    };
+                }
             }
 
-            if (_verbose)
-                Debug.WriteLine("Unable to process: no suitable mesh server or local route found");
-
-            return NotFound();
+            return new ObjectResult(response);
         }
+
 
         /// <summary>
         /// Gets a summary, in Markdown form, of the API for each module.
@@ -261,8 +390,9 @@ namespace CodeProject.AI.Server.Controllers
         /// form "category/module[/command]". eg "image/alpr" or "vision/custom/modelName".</param>
         /// <param name="server">The server that will be handling this request</param>
         /// <returns>An IActionResult</returns>
-        private async Task<IActionResult> DispatchRemoteRequest(string pathSuffix, 
-                                                                MeshServerRoutingEntry server)
+        // private async Task<IActionResult> DispatchRemoteRequest(string pathSuffix, 
+        private async Task<object?> DispatchRemoteRequest(string pathSuffix, 
+                                                          MeshServerRoutingEntry server)
         {
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -289,15 +419,16 @@ namespace CodeProject.AI.Server.Controllers
                 }
                 else
                 {
-                    if (!responseObject!.ContainsKey("error"))
-
-                    error     = $"{responseObject!["error"]} ({server.Status.Hostname})";
+                    if (responseObject?.ContainsKey("error") == true)
+                        error = $"{responseObject!["error"]} ({server.Status.Hostname})";
+                    else
+                        error = $"Error in DispatchRemoteRequest ({server.Status.Hostname})";
                     elapsedMs = 30_000;
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error in DispatchRemoteRequest: " + ex);
+                Debug.WriteLine($"Error in DispatchRemoteRequest ({server.Status.Hostname}): {ex}");
 
                 // Bump the response to 30s to push this server out of contention. Maybe also add
                 // exception info to the message
@@ -323,9 +454,16 @@ namespace CodeProject.AI.Server.Controllers
             if (responseObject!.ContainsKey("analysisRoundTripMs"))
                 responseObject["analysisRoundTripMs"] = elapsedMs;
 
-            responseObject["processedBy"] = server.Status.Hostname;
+            responseObject["processedBy"]  = server.Status.Hostname;
+            return responseObject;
 
-            UpdateProcessStatus(responseObject);
+            /*
+            responseObject["timestampUTC"] = DateTime.UtcNow.ToString("R");
+            // Or to create a form that show DateKind, use
+            // responseObject["timestampUTC"] = DateTime.Now.ToUniversalTime().ToString("O");
+
+            // We don't update a module's status when that module is on a remove server
+            // _moduleProcessService.UpdateProcessStatusData(responseObject);
 
             // Don't use JsonResult as it will chunk the response and Blue Iris will roll over and
             // die.
@@ -335,11 +473,13 @@ namespace CodeProject.AI.Server.Controllers
                 Content     = responseString,
                 ContentType = "application/json",
                 
-                // NOTE: Always return a 200 even if the remote server failed. WE are returning just
-                // fine, and if the remote server failed our Content will contain an object that has
-                // success = false and an error message. But the HTTP call was still successful.
+                // NOTE: Always return a 200 even if the remote server failed. We are returning just
+                // fine, and if the remote server failed then our Content will contain an object
+                // that has success = false and an error message. However, the HTTP call itself was
+                // still successful.
                 StatusCode  = StatusCodes.Status200OK
             };
+            */
         }
 
         /// <summary>
@@ -349,15 +489,16 @@ namespace CodeProject.AI.Server.Controllers
         /// form "category/module[/command]". eg "image/alpr" or "vision/custom/modelName".</param>
         /// <param name="routeInfo">The route and queue to which this request should be placed</param>
         /// <returns>An IActionResult</returns>
-        private async Task<IActionResult> DispatchLocalRequest(string pathSuffix, RouteQueueInfo routeInfo)
+        // private async Task<IActionResult> DispatchLocalRequest(string pathSuffix, RouteQueueInfo routeInfo)
+        private async Task<object?> DispatchLocalRequest(string pathSuffix, RouteQueueInfo routeInfo)
         {
             // TODO: We have enough info in the routeInfo object to be able to validate that the
-            //       request by checking that all the required values are present. Let's to that.
+            //       request by checking that all the required values are present. Let's do that.
             RequestPayload payload = CreatePayload(pathSuffix, routeInfo!);
 
             Stopwatch sw = Stopwatch.StartNew();
 
-            object response = await _dispatcher.QueueRequest(routeInfo!.QueueName, payload)
+            object response = await _dispatcher.SendRequestAsync(routeInfo!.QueueName, payload)
                                                .ConfigureAwait(false);
 
             long analysisRoundTripMs = sw.ElapsedMilliseconds;
@@ -374,12 +515,27 @@ namespace CodeProject.AI.Server.Controllers
                 responseObject["analysisRoundTripMs"] = analysisRoundTripMs;
                 responseObject["processedBy"]         = "localhost";
 
+                // responseObject["timestampUTC"] = DateTime.UtcNow.ToString("R");
+                // Or to create a form that show DateKind, use
+                // responseObject["timestampUTC"] = DateTime.Now.ToUniversalTime().ToString("O");
+
                 _meshManager.AddResponseTime(null, pathSuffix, (int)analysisRoundTripMs);
 
+                string? moduleId = responseObject?["moduleId"]?.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(moduleId))
+                {
+                    _moduleProcessService.UpdateModuleLastSeen(moduleId);
+
+                    var statusData = responseObject?["statusData"] as JsonObject;
+                    if (statusData is not null)
+                        _moduleProcessService.UpdateProcessStatusData(moduleId, statusData);
+                }
+
+                return responseObject;
+
+                /*
                 // Check for, and execute if needed, triggers
                 ProcessTriggers(routeInfo!.QueueName, responseObject);
-
-                UpdateProcessStatus(responseObject);
 
                 // Wrap it back up. Don't use JsonResult as it will chunk the response and Blue Iris
                 // will roll over and die.
@@ -390,23 +546,12 @@ namespace CodeProject.AI.Server.Controllers
                     ContentType = "application/json",
                     StatusCode  = StatusCodes.Status200OK
                 };
+                */
             }
             else
-                return new ObjectResult(response);
-        }
-
-        private void UpdateProcessStatus(JsonObject responseObject)
-        {
-            string? moduleId = responseObject?["moduleId"]?.GetValue<string>();
-            if (string.IsNullOrWhiteSpace(moduleId))
-                return;
-
-            var statusData = responseObject?["statusData"];
-            if (statusData is not null)
             {
-                if (_moduleProcessService.TryGetProcessStatus(moduleId, out ProcessStatus? status))
-                    if (status is not null)
-                        status.StatusData = statusData;
+                return response;
+                // return new ObjectResult(response);
             }
         }
 

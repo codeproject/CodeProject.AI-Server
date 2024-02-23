@@ -1,5 +1,6 @@
 #! Python3.8
 
+# Pillow-SIMD>=4.0.0        # Installing Pillow (SIMD), an optimised Python Image Library
 Pillow>=4.0.0               # Installing Pillow, a Python Image Library
 
 # This is only for Python 3.6 - 3.9. For anything else we will need to build our

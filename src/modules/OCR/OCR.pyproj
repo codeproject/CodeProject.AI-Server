@@ -26,7 +26,6 @@
     <Compile Include="options.py" />
     <Compile Include="OCR_adapter.py" />
     <Compile Include="patch\paddlepaddle-2.4.2\image.py" />
-    <Compile Include="patch\paddlepaddle-2.4.0rc0\image.py" />
     <Compile Include="patch\paddleocr-2.6.0.1\db_postprocess.py" />
     <Compile Include="__init__.py" />
     <Content Include="explore.html" />

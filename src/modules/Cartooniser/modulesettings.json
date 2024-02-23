@@ -3,7 +3,7 @@
 
     "Cartooniser": {
       "Name": "Cartooniser",
-      "Version": "1.5.0",
+      "Version": "1.5.1",
 
       "PublishingInfo" : {
         "Description": "Convert a photo into an anime style cartoon", 
@@ -24,7 +24,8 @@
         "Runtime": "python3.8",
         "RuntimeLocation": "Local",     // Can be Local or Shared
         "PostStartPauseSecs": 0,        // Generally 1 if using GPU, 0 for CPU
-        "Queue": null                   // use default
+        "Queue": null,                  // use default
+        "Parallelism": 1                // 0 = Default = number of CPUs / 2
       },
 
       "EnvironmentVariables": {
@@ -36,7 +37,6 @@
         "InstallGPU": false,            // GPU support not provided
         "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
         "AcceleratorDeviceName": null,  // = default
-        "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
         "HalfPrecision": "enable"       // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
       },
 
@@ -54,11 +54,18 @@
           { "ModuleVersion": "1.3.4", "ServerVersionRange": [ "2.4.2", "2.4.9"  ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
           { "ModuleVersion": "1.4.0", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
           { "ModuleVersion": "1.4.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
-          { "ModuleVersion": "1.4.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
-          { "ModuleVersion": "1.4.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "1.5.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" }
+          { "ModuleVersion": "1.4.2", "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
+          { "ModuleVersion": "1.4.3", "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
+          { "ModuleVersion": "1.5.0", "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "1.5.1", "ServerVersionRange": [ "2.5.2", ""     ],   "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
         ]
       },
+
+      "ModelRequirements" : [{
+          "Task": "Style Transfer",
+          "Architecture": "U2Net",
+          "Format": "PyTorch"
+      }],
 
       "RouteMaps": [
         {

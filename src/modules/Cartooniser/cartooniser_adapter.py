@@ -27,14 +27,11 @@ class cartooniser_adapter(ModuleRunner):
 
         # GPU support not fully working in Linux
         # if self.enable_GPU and self.system_info.hasTorchCuda:
-        #    self.execution_provider = "CUDA"
+        #    self.inference_device  = "GPU"
+        #    self.inference_library = "CUDA"
         # else
         #    self.enable_GPU = False
         self.enable_GPU = False
-
-        self.success_inferences   = 0
-        self.total_success_inf_ms = 0
-        self.failed_inferences    = 0
 
 
     def process(self, data: RequestData) -> JSON:
@@ -62,18 +59,7 @@ class cartooniser_adapter(ModuleRunner):
             self.report_error_async(ex, __file__)
             response = { "success": False, "error": "unable to process the image" }
 
-        self._update_statistics(response)
         return response 
-
-
-    def status(self, data: RequestData = None) -> JSON:
-        return { 
-            "successfulInferences" : self.success_inferences,
-            "failedInferences"     : self.failed_inferences,
-            "numInferences"        : self.success_inferences + self.failed_inferences,
-            "averageInferenceMs"   : 0 if not self.success_inferences 
-                                     else self.total_success_inf_ms / self.success_inferences,
-        }
 
 
     def selftest(self) -> JSON:
@@ -93,19 +79,6 @@ class cartooniser_adapter(ModuleRunner):
         # print(f"Info: Self-test output for {self.module_id}: {result}")
 
         return { "success": result['success'], "message": "cartoonise test successful" }
-
-
-    def cleanup(self) -> None:
-        pass
-
-      
-    def _update_statistics(self, response):   
-        if "success" in response and response["success"]:
-            self.success_inferences += 1
-            if "inferenceMs" in response:
-                self.total_success_inf_ms += response["inferenceMs"]
-        else:
-            self.failed_inferences += 1
 
 
 if __name__ == "__main__":

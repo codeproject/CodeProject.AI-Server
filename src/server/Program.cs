@@ -141,10 +141,23 @@ namespace CodeProject.AI.Server
                 Console.WriteLine("Unable to create Mutex (but we'll carry on): " + ex.Message);
             }
 
-            if (mutex is not null && !mutex.WaitOne(0))
+            try
             {
-                mutex.Dispose();
-                Console.WriteLine($"{productName} is already running. Exiting.");
+                if (mutex is not null && !mutex.WaitOne(0))
+                {
+                    mutex.Dispose();
+                    Console.WriteLine($"{productName} is already running. Exiting.");
+                    return;
+                }
+            }
+            catch (AbandonedMutexException)
+            {
+                Console.WriteLine($"Looks like {productName} may have exited incorrectly last time. Continuing.");
+            }
+            catch(Exception)
+            {
+                mutex!.Dispose();
+                Console.WriteLine($"Unable to get an exclusive lock for {productName}. It could already be running. Exiting.");
                 return;
             }
 
@@ -461,8 +474,8 @@ namespace CodeProject.AI.Server
 
                 // Add the modulesettings.json files to get analysis module settings
                 // NOTE: This method will load up the config with the files added above. If you need
-                // to access a config value in AddModulesConfigFiles, ensure it's been added before
-                // this point
+                // to access a config value in AddModulesConfigFiles, ensure that value has been 
+                // added before this point
                 AddModulesConfigurationFiles(config);
 
                 // Add the last saved config values for modules as set by the user
@@ -857,8 +870,6 @@ namespace CodeProject.AI.Server
                                        .AddFilter("System", LogLevel.Warning)
                                        .AddServerLogger(configuration =>
                                        {
-                                            // Replace warning value from appsettings.json of "Cyan"
-                                            // configuration.LogLevels[LogLevel.Warning] = ConsoleColor.DarkCyan;
                                             // Replace warning value from appsettings.json of "Red"
                                             // configuration.LogLevels[LogLevel.Error] = ConsoleColor.DarkRed;
                                         });

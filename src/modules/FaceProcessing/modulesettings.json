@@ -3,7 +3,7 @@
 
     "FaceProcessing": {
       "Name": "Face Processing",
-      "Version": "1.10.0",
+      "Version": "1.10.1",
 
       "PublishingInfo" : {
         "Description": "A number of Face image APIs including detect, recognize, and compare.",
@@ -23,7 +23,8 @@
         "Runtime": "python3.8",
         "RuntimeLocation": "Shared", 
         "PostStartPauseSecs": 3,        // 1 if using GPU, 0 for CPU
-        "Queue": "faceprocessing_queue" // default is lower(module_id) + '_queue'
+        "Queue": "faceprocessing_queue",// default is lower(module_id) + '_queue'
+        "Parallelism": 0                // 0 = Default = number of CPUs / 2
       },
 
       "EnvironmentVariables": {
@@ -43,7 +44,6 @@
         "InstallGPU": true,
         "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
         "AcceleratorDeviceName": null,  // = default
-        "Parallelism": 0,               // 0 = Default (number of CPUs - 1)
         "HalfPrecision": "enable"       // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
       },
 
@@ -66,11 +66,23 @@
           { "ModuleVersion": "1.8.5",  "ServerVersionRange": [ "2.4.2", "2.4.9"  ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
           { "ModuleVersion": "1.9.0",  "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
           { "ModuleVersion": "1.9.1",  "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
-          { "ModuleVersion": "1.9.2",  "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
-          { "ModuleVersion": "1.9.3",  "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "1.10.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" }
+          { "ModuleVersion": "1.9.2",  "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
+          { "ModuleVersion": "1.9.3",  "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
+          { "ModuleVersion": "1.10.0", "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "1.10.1", "ServerVersionRange": [ "2.5.2", ""     ],   "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
         ]
       },
+
+      "ModelRequirements" : [{
+          "Task": "Face Detection", 
+          "Architecture": "YOLOv5",
+          "Format": "PyTorch"
+      },
+      {
+          "Task": "Face Classification",
+          "Architecture": "Bottleneck_IR",
+          "Format": "PyTorch"
+      }],
 
       "UIElements" : {
         "Menus": [{

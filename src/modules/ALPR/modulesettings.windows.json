@@ -3,7 +3,7 @@
 
     "ALPR": {
       "LaunchSettings": {
-        "Runtime": "python3.7" // needs to be 3.6 - 3.8 to match the wheels from NVIDIA
+        "Runtime": "python3.9"
       },
       "GpuOptions" : {
         "InstallGPU": true,

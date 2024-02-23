@@ -1,0 +1,33 @@
+{
+    "Models": [
+    {
+        "Category": "Computer Vision",
+        "Task": "OCR",
+        "Packages": [
+        {
+            "Architecture": "PP-OCRv4",
+            "Task": "OCR",
+            "Format": "Paddle",
+            "Name": "Paddle Paddle OCR v4 models",
+            "Description": "Paddle Paddle OCR v4 models",
+            "Classes": "en",            // English
+            "Filename": "ocr-en-pp_ocrv4-paddle.zip",
+            "PackageSizeKb": 10872,
+            "Version": "4.0",
+            "Creator": "PaddlePaddle",
+            "License": "Apache-2.0",
+            "ModelSizeSet": [
+            {
+                "SizeName": "",         // one size fits all
+                "ModelFile": {
+                    "SizeName": "",
+                    "FileSize": "",
+                    "Filename": "",
+                    "FileSpecifier": ""
+                },
+                "DeviceSpecificFile": null,
+                "PartialFiles": null
+            }]
+        }]
+    }]
+}

@@ -115,24 +115,24 @@ namespace CodeProject.AI.Server.Backend
                 _logger.LogCritical(filename + message.Substring("critical: ".Length));
             else if (testString.StartsWith("err: "))
                 _logger.LogError(filename + message.Substring("err: ".Length));
-            else if (testString.StartsWith("error: "))
-                _logger.LogError(filename + message.Substring("error: ".Length));
+            else if (testString.StartsWith("error:"))
+                _logger.LogError(filename + message.Substring("error:".Length));
             else if (testString.StartsWith("warn: "))
                 _logger.LogWarning(filename + message.Substring("warn: ".Length));
-            else if (testString.StartsWith("warning: "))
-                _logger.LogWarning(filename + message.Substring("warning: ".Length));
+            else if (testString.StartsWith("warning:"))
+                _logger.LogWarning(filename + message.Substring("warning:".Length));
             else if (testString.StartsWith("info: "))
                 _logger.LogInformation(filename + message.Substring("info: ".Length));
             else if (testString.StartsWith("information: "))
                 _logger.LogInformation(filename + message.Substring("information: ".Length));
             else if (testString.StartsWith("dbg: "))
                 _logger.LogDebug(filename + message.Substring("dbg: ".Length));
-            else if (testString.StartsWith("debug: "))
-                _logger.LogDebug(filename + message.Substring("debug: ".Length));
+            else if (testString.StartsWith("debug:"))
+                _logger.LogDebug(filename + message.Substring("debug:".Length));
             else if (testString.StartsWith("trc: "))
                 _logger.LogTrace(filename + message.Substring("trc: ".Length));
-            else if (testString.StartsWith("trace: "))
-                _logger.LogTrace(filename + message.Substring("trace: ".Length));
+            else if (testString.StartsWith("trace:"))
+                _logger.LogTrace(filename + message.Substring("trace:".Length));
             else
                 _logger.LogInformation(filename + message);
         }

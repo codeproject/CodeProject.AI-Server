@@ -29,7 +29,8 @@ class CoralClassifier_adapter(ModuleRunner):
 
         if self.enable_GPU:
             print("Edge TPU detected")
-            self.execution_provider = "TPU"
+            self.inference_device  = "TPU"
+            self.inference_library = "TF-Lite"
         # else:
         #    opts.model_tpu_file = None # disable TPU
 

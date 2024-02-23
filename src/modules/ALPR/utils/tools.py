@@ -132,11 +132,25 @@ def largest_rotated_rect(size: Size, angle: int) -> Size:
     return Size(bb_w - 2 * x, bb_h - 2 * y)
 
 
+def calculate_angle(x1, y1, x2, y2) -> float:
+    delta_y = y2 - y1
+    delta_x = x2 - x1
+
+    # Calculate the angle in radians using atan2
+    angle_radians = math.atan2(delta_y, delta_x)
+
+    # Convert radians to degrees
+    angle_degrees = math.degrees(angle_radians)
+
+    return angle_degrees
+
+
+"""
 def compute_skew(src_img: ImageType) -> float:
-    """
-    Computes the degrees by which an image containing a licence plate (or anything
-    vaguely rectangular that's longer than it is high) is skewed
-    """
+
+    # Computes the degrees by which an image containing a licence plate (or anything
+    # vaguely rectangular that's longer than it is high) is skewed
+    
     try:
         dimensions: Size = Size(src_img.shape[1], src_img.shape[0])
         dimensions.integerize()
@@ -224,6 +238,7 @@ def equalize(image: ImageType) -> ImageType:
     image_eq = cv2.merge((b_image_eq, g_image_eq, r_image_eq))
 
     return image_eq
+"""
 
 def merge_text_detections(bounding_boxes) -> Tuple[str, float, int, int]:
     

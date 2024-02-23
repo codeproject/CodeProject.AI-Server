@@ -19,6 +19,9 @@ let _installNotice       = null;  // Human readable text about current install/u
 let _requestIdMap        = new Map();
 let _logEntries          = new Map();
 
+// Elements
+const checkForUpdatesId  = "checkUpdates"       // whether to check the main server for updates
+
 
 // Displays log output
 function showLogOutput(text, variant) {
@@ -38,6 +41,10 @@ function showLogOutput(text, variant) {
  * @param showResult - if true then a result is shown even if no update is available.
  */
 async function checkForUpdates(showResult) {
+
+    let checkForUpdatesElm = document.getElementById(checkForUpdatesId);
+    if (checkForUpdatesElm && !checkForUpdatesElm.checked)
+        return;
 
     let update = document.getElementById("update");
     update.innerHTML = "Checking for updates";
@@ -80,6 +87,12 @@ async function checkForUpdates(showResult) {
  */
 function updateSetting(event, moduleId, setting, value) {
     event.preventDefault();
+
+    if (setting == 'AutoStart')
+        UpdateModuleStatus(moduleId, value ? "Starting" : "Stopping");
+    else
+        UpdateModuleStatus(moduleId, "Restarting");
+
     makePOST("server/settings/" + moduleId, setting, value.toString());
 }
 
@@ -121,13 +134,14 @@ async function getSystemStatus() {
     };
 }
 
+let lastMenuUpdate = new Date().getTime();
 /**
  * Query the server for a list of services that are installed, and their status.
  * The results of this will be used to populate the serviceStatus table
  */
 async function getModulesStatuses() {
 
-    let data = await makeGET('server/status/modules/list?random=' + new Date().getTime()); 
+    let data = await makeGET('module/list/status?random=' + new Date().getTime()); 
     if (data && data.statuses) {
 
         let statusTable = document.getElementById('serviceStatus');
@@ -139,16 +153,20 @@ async function getModulesStatuses() {
 
             let moduleInfo = data.statuses[i];
 
-            let moduleId          = moduleInfo.moduleId;
-            let moduleName        = moduleInfo.name;
-            let status            = moduleInfo.status;
-            let lastSeen          = moduleInfo.lastSeen? new Date(moduleInfo.lastSeen) : null;
-            let requestCount      = moduleInfo.requestCount;
-            let hardwareType      = moduleInfo.hardwareType;
-            let executionProvider = moduleInfo.executionProvider;
-            let canUseGPU         = moduleInfo.canUseGPU;
-            let menus             = moduleInfo.menus;
-            let numInferences     = moduleInfo.statusData?.numInferences;
+            let moduleId         = moduleInfo.moduleId;
+            let moduleName       = moduleInfo.name;
+            let started          = moduleInfo.started? new Date(moduleInfo.started) : null;
+            let lastSeen         = moduleInfo.lastSeen? new Date(moduleInfo.lastSeen) : null;
+            let requestCount     = moduleInfo.requestCount;
+            let menus            = moduleInfo.menus;
+            let status           = moduleInfo.status;
+            let numInferences    = moduleInfo.statusData?.numInferences    || 0;
+            let inferenceDevice  = moduleInfo.statusData?.inferenceDevice  || '';
+            let inferenceLibrary = moduleInfo.statusData?.inferenceLibrary || '';
+            let canUseGPU        = moduleInfo.statusData?.canUseGPU        || false;
+
+            // if (status === "Started")
+            //     console.log(`${moduleId.padEnd(25)} last seen ${lastSeen}`);
 
             let numberFormat  = Intl.NumberFormat();
             let countRequests = numberFormat.format(parseInt(requestCount));
@@ -159,69 +177,24 @@ async function getModulesStatuses() {
             }
 
             // Have we lost contact with a module that should be running?
-            if (status === "Started" && lastSeen && (new Date() - lastSeen)/1000 > lostConnectionSec)
+            let recentlySeen = lastSeen && (new Date() - lastSeen)/1000 < lostConnectionSec;
+
+            if (started && !lastSeen && (new Date() - started)/1000 > 120)
+                status = "FailedStart";
+            else if (status.toLowerCase() === "started" && lastSeen && !recentlySeen)
                 status = "LostContact";
+            else if (recentlySeen && status.toLowerCase() != "restarted" && 
+                     status.toLowerCase() != "stopping" && status.toLowerCase() != "stopped")
+                status = "Started";
 
-            let className  = status.toLowerCase();
-            let statusDesc = "Unknown";
+            const [classNames, statusDesc] = getStatusDescClass(status);
 
-            switch (status) {
-                case "Enabled":
-                    statusDesc = "Enabled";
-                    className = "alert-info"
-                    break;
-                case "NotEnabled":
-                    statusDesc = "Not Enabled";
-                    className = "alert-light"
-                    break;
-                case "Starting":
-                    statusDesc = "Starting";
-                    className = "alert-info"
-                    break;
-                case "Started":
-                    statusDesc = "Started";
-                    className = "alert-success"
-                    break;
-                case "NotStarted":
-                    statusDesc = "Not Started";
-                    className = "alert-light"
-                    break;
-                case "NotAvailable":
-                    statusDesc = "Not Available";
-                    className = "alert-light"
-                    break;
-                case "FailedStart":
-                    statusDesc = "Failed to Start";
-                    className = "alert-danger"
-                    break;
-                case "Crashed":
-                    statusDesc = "Crashed";
-                    className = "alert-danger"
-                    break;
-                case "Stopping":
-                    statusDesc = "Stopping";
-                    className = "alert-warning"
-                    break;
-                case "Uninstalling":
-                    statusDesc = "Uninstalling";
-                    className = "alert-warning"
-                    break;
-                case "Stopped":
-                    statusDesc = "Stopped";
-                    className = "alert-light"
-                    break;
-                case "LostContact":
-                    statusDesc = "Lost Contact";
-                    className = "bg-dark text-muted"
-                    break;
-            }
-
-            let hardware = (!hardwareType || hardwareType.toLowerCase() === "cpu") ? "CPU" : "GPU";
-            if (executionProvider)
-                hardware += ` (${executionProvider})`;
-
-            if (!_usingGPU && hardware == "GPU")
+            if (!_usingGPU && inferenceDevice == "GPU")
                 _usingGPU = true;
+
+            let inferenceOn = inferenceDevice || "CPU";
+            if (inferenceLibrary)
+                inferenceOn += ` (${inferenceLibrary})`;
 
             let currentSummary = moduleInfo.summary.replace(/[\n\r]+/g, "<br>");
             let startupSummary = moduleInfo.startupSummary.replace(/[\n\r]+/g, "<br>");
@@ -233,7 +206,45 @@ async function getModulesStatuses() {
                 installSummary = "<br><br><b>Installation Log</b><br>" + installSummary;
             }
 
-            let rowClass = `d-flex justify-content-between status-row ${className}`;
+            // Dropdown menu
+            let dropDown = ``;
+
+            // Toggle GPU support
+            if (canUseGPU) {
+                dropDown +=
+                      `<li><a class=\"dropdown-item small\" href=\"#\" onclick=\"updateSetting(event, '${moduleId}', 'EnableGPU', false)\">Disable GPU</a></li>`
+                    + `<li><a class=\"dropdown-item small\" href=\"#\" onclick=\"updateSetting(event, '${moduleId}', 'EnableGPU', true)\">Enable GPU</a></li>`;
+            }
+
+            if (menus && menus.length > 0) {
+                for (menu of menus) {
+                    dropDown +=
+                      `<li><a class=\"dropdown-item small\" href=\"#\">${menu.label} »</a>`
+                    + " <ul class=\"submenu dropdown-menu dropdown-menu-right\">";
+
+                    for (option of menu.options)
+                        dropDown +=
+                        ` <li><a class=\"dropdown-item small\" href=\"#\" ` +
+                        `onclick=\"updateSetting(event, '${moduleId}', '${option.setting}', '${option.value}')\">${option.label}</a></li>`;
+
+                    dropDown +=
+                        " </ul>"
+                    + "</li>";
+                }
+            }
+
+            if (dropDown) {
+                dropDown =
+                    `<button class="btn dropdown-toggle p-1" type="button" id="dropdownMenu${i}" data-bs-toggle="dropdown">`
+                +   `<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" version="1.1" x="0px" y="0px" viewBox="0 0 100 100" xml:space="preserve">`
+                +   `<path class="action-path-on" d="M60.1,88.7c-0.1,0-0.3,0-0.4,0c-2.1-0.4-4-1.8-5-3.7c-0.1-0.1-0.1-0.2-0.2-0.3c-0.1-0.2-0.9-1.7-3.2-1.8c0,0-0.1,0-0.1,0  c-0.8,0-1.5,0-2.3,0c0,0-0.1,0-0.1,0c-2.4,0-3.2,1.7-3.2,1.8c-0.1,0.1-0.1,0.2-0.2,0.3c-1,1.9-2.9,3.3-5,3.7c-0.3,0.1-0.6,0.1-0.9,0  c-1.9-0.5-3.9-1.2-5.7-2.1c-0.3-0.1-0.5-0.3-0.7-0.5c-1.3-1.7-1.9-4-1.4-6.1c0-0.1,0-0.2,0.1-0.4c0-0.2,0.4-1.9-1.3-3.4  c0,0-0.1-0.1-0.1-0.1c-0.6-0.5-1.2-1-1.8-1.5c0,0,0,0,0,0c-0.8-0.6-1.6-0.9-2.5-0.9c-0.7,0-1.2,0.2-1.2,0.2  c-0.1,0.1-0.2,0.1-0.4,0.1c-2,0.8-4.4,0.7-6.3-0.4c-0.3-0.1-0.5-0.3-0.6-0.6c-1.1-1.6-2.1-3.3-3-5.1c-0.1-0.3-0.2-0.5-0.2-0.8  c0-2.2,1.1-4.4,2.8-5.7c0.1-0.1,0.2-0.2,0.3-0.2c0.1-0.1,1.5-1.2,1.2-3.5c0,0,0,0,0-0.1c-0.2-0.7-0.3-1.5-0.4-2.3c0-0.1,0-0.1,0-0.1  c-0.4-2.3-2.3-2.8-2.3-2.8c-0.1,0-0.2-0.1-0.4-0.1c-2.1-0.7-3.9-2.4-4.6-4.5c-0.1-0.3-0.1-0.5-0.1-0.8c0.2-1.8,0.5-3.7,1-5.6  c0.1-0.3,0.2-0.5,0.4-0.7c1.5-1.8,3.7-2.8,5.9-2.7c0.1,0,0.2,0,0.4,0c0.5,0,2.1-0.1,3.1-1.9c0,0,0-0.1,0.1-0.1  c0.3-0.6,0.7-1.3,1.2-2c0,0,0-0.1,0.1-0.1c1.1-2,0.2-3.5,0.1-3.7c-0.1-0.1-0.1-0.2-0.2-0.3c-1.2-2-1.5-4.4-0.6-6.6  c0.1-0.2,0.2-0.5,0.4-0.7c1.3-1.3,2.7-2.5,4.2-3.5c0.2-0.2,0.5-0.3,0.7-0.3c2.3-0.5,4.7,0.2,6.4,1.7c0.1,0.1,0.2,0.1,0.3,0.2  c0,0,0.9,0.8,2.2,0.8c0.4,0,0.9-0.1,1.4-0.2c0,0,0,0,0,0c0.8-0.3,1.6-0.6,2.3-0.8c2.1-0.8,2.4-2.6,2.4-2.8c0-0.1,0-0.2,0.1-0.3  c0.3-2.3,1.7-4.4,3.8-5.5c0.2-0.1,0.5-0.2,0.7-0.2c2-0.1,3.4-0.1,5.4,0c0.3,0,0.5,0.1,0.7,0.2c2.1,1.1,3.5,3.1,3.8,5.4  c0,0.1,0.1,0.2,0.1,0.4c0,0.2,0.3,1.9,2.4,2.8c0,0,0,0,0,0c0.8,0.2,1.6,0.5,2.3,0.8c0,0,0,0,0,0c0.5,0.2,1,0.3,1.4,0.3  c1.4,0,2.2-0.8,2.2-0.8c0.1-0.1,0.2-0.2,0.3-0.2c1.7-1.5,4.1-2.2,6.4-1.7c0.3,0.1,0.5,0.2,0.7,0.3c1.5,1.1,2.9,2.3,4.2,3.5  c0.2,0.2,0.3,0.4,0.4,0.7c0.8,2.2,0.6,4.6-0.6,6.6c0,0.1-0.1,0.2-0.2,0.3c-0.1,0.1-1,1.7,0.1,3.7c0,0,0,0.1,0.1,0.1  c0.4,0.7,0.8,1.3,1.2,2c0,0,0,0.1,0.1,0.1c1,1.7,2.6,1.9,3.1,1.9c0.1,0,0.3,0,0.4,0c2.2-0.1,4.5,0.9,5.9,2.7  c0.2,0.2,0.3,0.5,0.4,0.7c0.5,1.8,0.8,3.7,1,5.6c0,0.3,0,0.5-0.1,0.8c-0.8,2.2-2.5,3.8-4.6,4.5c-0.1,0.1-0.2,0.1-0.4,0.1  c-0.2,0-1.9,0.6-2.3,2.9c0,0,0,0.1,0,0.1c-0.1,0.8-0.2,1.6-0.4,2.3c0,0,0,0.1,0,0.1C81,59.9,82.5,61,82.5,61  c0.1,0.1,0.2,0.2,0.3,0.3c1.7,1.4,2.8,3.5,2.8,5.7c0,0.3-0.1,0.6-0.2,0.8c-0.8,1.7-1.8,3.5-3,5.1c-0.2,0.2-0.4,0.4-0.6,0.6  c-1.1,0.6-2.3,0.9-3.6,0.9l0,0c-0.9,0-1.9-0.2-2.7-0.5c-0.1,0-0.2-0.1-0.4-0.1c0,0,0,0,0,0c0,0-0.5-0.2-1.2-0.2  c-0.9,0-1.7,0.3-2.4,0.9c0,0,0,0-0.1,0c-0.5,0.5-1.1,1-1.8,1.5c0,0-0.1,0-0.1,0.1c-1.5,1.3-1.5,2.7-1.4,3.3c0.1,0.2,0.1,0.4,0.1,0.6  c0,0,0,0,0,0c0.4,2.1-0.1,4.3-1.5,5.9c-0.2,0.2-0.4,0.4-0.7,0.5c-1.8,0.8-3.8,1.5-5.7,2.1C60.4,88.7,60.2,88.7,60.1,88.7z   M35.7,83.4c1.4,0.6,2.8,1.1,4.2,1.5c1-0.3,1.8-1,2.2-1.9c0.1-0.1,0.1-0.2,0.2-0.4c0.8-1.4,2.8-3.4,6.2-3.5c0.1,0,0.1,0,0.1,0  c0,0,0.1,0,0.1,0c0.8,0,1.5,0,2.3,0c0,0,0.1,0,0.1,0c0,0,0.1,0,0.1,0c3.3,0.1,5.4,2.1,6.2,3.5c0.1,0.1,0.2,0.2,0.2,0.4  c0.4,0.9,1.2,1.6,2.2,1.9c1.4-0.4,2.9-0.9,4.2-1.5c0.5-0.9,0.7-1.9,0.4-2.9c0-0.1-0.1-0.3-0.1-0.4c-0.3-1.6,0-4.4,2.5-6.7  c0,0,0.1-0.1,0.1-0.1c0,0,0.1-0.1,0.1-0.1c0.7-0.5,1.2-1,1.8-1.5c0,0,0.1-0.1,0.1-0.1c0,0,0.1,0,0.1-0.1c1.4-1.1,3-1.7,4.7-1.7  c1,0,1.8,0.2,2.3,0.4c0.1,0,0.3,0.1,0.4,0.1c0.5,0.2,1,0.3,1.5,0.3l0,0c0.5,0,1-0.1,1.4-0.3c0.8-1.2,1.6-2.5,2.2-3.8  c-0.1-1-0.7-2-1.5-2.6c-0.1-0.1-0.2-0.2-0.3-0.3c-1.3-1.1-2.9-3.4-2.4-6.7c0,0,0-0.1,0-0.1c0,0,0-0.1,0-0.1c0.2-0.7,0.3-1.5,0.4-2.3  c0-0.1,0-0.1,0-0.2c0,0,0-0.1,0-0.1c0.7-3.3,3-4.9,4.5-5.5c0.1-0.1,0.2-0.1,0.4-0.2c1-0.3,1.9-1,2.4-2c-0.2-1.4-0.4-2.8-0.7-4.1  c-0.8-0.8-1.8-1.2-2.9-1.1c-0.2,0-0.3,0-0.5,0c-1.1,0-4.1-0.4-6.1-3.6c0,0-0.1-0.1-0.1-0.1c-0.4-0.8-0.8-1.4-1.2-2.1  c0,0-0.1-0.1-0.1-0.1c0,0,0-0.1-0.1-0.1c-1.6-3-0.9-5.7-0.1-7.1c0.1-0.1,0.1-0.2,0.2-0.4c0.6-0.9,0.8-2,0.5-3.1  c-1-0.9-2-1.8-3.1-2.6c-1.1-0.1-2.2,0.3-3,1c-0.1,0.1-0.2,0.2-0.4,0.3C67.3,24,65.8,25,63.5,25c-0.8,0-1.7-0.1-2.5-0.4  c0,0-0.1,0-0.1,0c0,0-0.1,0-0.1,0c-0.7-0.3-1.5-0.6-2.2-0.8c0,0-0.1,0-0.1,0c0,0,0,0-0.1,0c-3.1-1.2-4.4-3.8-4.7-5.4  c0-0.1-0.1-0.3-0.1-0.4c-0.1-1.1-0.7-2.1-1.6-2.7c-1.5-0.1-2.5-0.1-4,0c-0.9,0.6-1.5,1.6-1.6,2.7c0,0.1,0,0.3-0.1,0.4  c-0.3,1.6-1.5,4.2-4.7,5.4c0,0,0,0-0.1,0c0,0-0.1,0-0.1,0c-0.7,0.2-1.5,0.5-2.2,0.8c0,0-0.1,0-0.1,0c0,0-0.1,0-0.1,0  c-0.8,0.3-1.6,0.4-2.5,0.4c-2.3,0-3.8-1-4.5-1.6c-0.1-0.1-0.2-0.2-0.4-0.3c-0.8-0.8-1.9-1.2-3-1c-1.1,0.8-2.1,1.7-3.1,2.6  c-0.3,1.1-0.1,2.2,0.5,3.1c0.1,0.1,0.1,0.2,0.2,0.4c0.8,1.4,1.5,4.2-0.1,7.1c0,0,0,0.1,0,0.1c0,0-0.1,0.1-0.1,0.1  c-0.4,0.7-0.8,1.3-1.2,2c0,0.1-0.1,0.1-0.1,0.2c-2,3.2-5,3.6-6.1,3.6c-0.1,0-0.3,0-0.4,0c-1.1-0.1-2.1,0.3-2.9,1.1  c-0.3,1.4-0.6,2.8-0.7,4.1c0.5,1,1.3,1.7,2.4,2c0.1,0,0.3,0.1,0.4,0.2c1.5,0.6,3.8,2.2,4.5,5.5c0,0,0,0.1,0,0.1c0,0.1,0,0.1,0,0.2  c0.1,0.8,0.2,1.5,0.4,2.3c0,0,0,0.1,0,0.1c0,0,0,0.1,0,0.1c0.5,3.3-1.1,5.6-2.4,6.7c-0.1,0.1-0.2,0.2-0.3,0.3  c-0.9,0.6-1.4,1.6-1.5,2.6c0.7,1.3,1.4,2.6,2.2,3.8c0.9,0.4,2,0.4,3-0.1c0.1-0.1,0.3-0.1,0.4-0.1c0.5-0.2,1.3-0.4,2.3-0.4  c1.7,0,3.3,0.6,4.7,1.7c0,0,0,0,0.1,0c0.1,0,0.1,0.1,0.2,0.1c0.5,0.5,1.1,1,1.8,1.5c0,0,0.1,0.1,0.1,0.1c0,0,0.1,0.1,0.1,0.1  c2.5,2.2,2.8,5.1,2.5,6.7c0,0.1,0,0.3-0.1,0.4C35,81.5,35.2,82.5,35.7,83.4z M50,70.2c-10.8,0-19.5-8.8-19.5-19.5S39.2,31.1,50,31.1  s19.5,8.8,19.5,19.5S60.8,70.2,50,70.2z M50,34.8c-8.7,0-15.9,7.1-15.9,15.9S41.3,66.5,50,66.5s15.9-7.1,15.9-15.9  S58.7,34.8,50,34.8z"></path></svg>`
+                +   `</button>`
+                +   `<ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu${i}">`
+                +   dropDown
+                +   `</ul>`;
+            }
+
+            let rowClass = `d-flex justify-content-between status-row ${classNames}`;
 
             let row = document.getElementById('module-info-' + moduleId);
             if (!row) {
@@ -244,7 +255,7 @@ async function getModulesStatuses() {
                     `<div id='module-info-${moduleId}' class='${rowClass}'>`
                     + `<div class='module-name me-auto'><b>${moduleName}</b> <span class="version ms-1 text-muted">${moduleInfo.version}</span></div>`
                     + `<div class='status me-1'>${statusDesc}</div>`
-                    + `<div class='hardware text-end me-1'>${hardware}</div>`
+                    + `<div class='inference text-end me-1'>${inferenceOn}</div>`
 
                     + `<div class='dropdown ms-2' style='width:3rem'>`
                     +  `<button class='btn dropdown-toggle p-1' type='button' id='dropdownMenuInfo${i}' data-bs-toggle='dropdown'>Info</button>`
@@ -262,12 +273,12 @@ async function getModulesStatuses() {
                     +       `<div class='install-summary'>${installSummary}</div>`
                     +     `</div>`
                     +  `</li></ul>`
-                    + `</div>`                                   
+                    + `</div>`;
 
 
                 if (status == "NotAvailable") {
                     rowHtml += 
-                            "<div class='ms-2' style='width:9.7rem'></div>";
+                            "<div class='ms-2' style='width:7.3rem'></div>";
                 } 
                 else {
                     rowHtml += 
@@ -298,55 +309,12 @@ async function getModulesStatuses() {
                         + `<svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 512 512"><title>Start</title>`
                         + `<path class="action-path" d="M60.54,512c-17.06,0-30.43-13.86-30.43-31.56V31.55C30.12,13.86,43.48,0,60.55,0A32.94,32.94,0,0,1,77,4.52L465.7,229c10.13,5.85,16.18,16,16.18,27s-6,21.2-16.18,27L77,507.48A32.92,32.92,0,0,1,60.55,512Z"/></svg>`
                         + `</a>`
-                        + '</div>';
-
-                    // Dropdown menu
-                    let dropDown = ``;
-
-                    // Toggle GPU support
-                    if (canUseGPU) {
-                        dropDown +=
-                                `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'EnableGPU', false)\">Disable GPU</a></li>`
-                            + `<li><a class='dropdown-item small' href='#' onclick=\"updateSetting(event, '${moduleId}', 'EnableGPU', true)\">Enable GPU</a></li>`;
-                    }
-
-                    if (menus && menus.length > 0) {
-                        for (menu of menus) {
-                            dropDown +=
-                                `<li><a class='dropdown-item small' href='#'>${menu.label} &raquo;</a>`
-                            + " <ul class='submenu dropdown-menu dropdown-menu-right'>";
-
-                            for (option of menu.options)
-                                dropDown +=
-                                ` <li><a class='dropdown-item small' href='#' ` +
-                                `   onclick=\"updateSetting(event, '${moduleId}', '${option.setting}', '${option.value}')\">${option.label}</a></li>`;
-
-                            dropDown +=
-                                " </ul>"
-                            + "</li>";
-                        }
-                    }
-
-                    if (dropDown) {
-                        rowHtml +=
-                            "<div class='dropdown ms-0 me-3' style='width:1.4rem'>"
-                        +   `<button class='btn dropdown-toggle p-1' type='button' id='dropdownMenu${i}' data-bs-toggle='dropdown'>`
-                        +   "<svg xmlns='http://www.w3.org/2000/svg' width='24px' height='24px' version='1.1' x='0px' y='0px' viewBox='0 0 100 100' xml:space='preserve'>"
-                        +   "<path class='action-path-on' d='M60.1,88.7c-0.1,0-0.3,0-0.4,0c-2.1-0.4-4-1.8-5-3.7c-0.1-0.1-0.1-0.2-0.2-0.3c-0.1-0.2-0.9-1.7-3.2-1.8c0,0-0.1,0-0.1,0  c-0.8,0-1.5,0-2.3,0c0,0-0.1,0-0.1,0c-2.4,0-3.2,1.7-3.2,1.8c-0.1,0.1-0.1,0.2-0.2,0.3c-1,1.9-2.9,3.3-5,3.7c-0.3,0.1-0.6,0.1-0.9,0  c-1.9-0.5-3.9-1.2-5.7-2.1c-0.3-0.1-0.5-0.3-0.7-0.5c-1.3-1.7-1.9-4-1.4-6.1c0-0.1,0-0.2,0.1-0.4c0-0.2,0.4-1.9-1.3-3.4  c0,0-0.1-0.1-0.1-0.1c-0.6-0.5-1.2-1-1.8-1.5c0,0,0,0,0,0c-0.8-0.6-1.6-0.9-2.5-0.9c-0.7,0-1.2,0.2-1.2,0.2  c-0.1,0.1-0.2,0.1-0.4,0.1c-2,0.8-4.4,0.7-6.3-0.4c-0.3-0.1-0.5-0.3-0.6-0.6c-1.1-1.6-2.1-3.3-3-5.1c-0.1-0.3-0.2-0.5-0.2-0.8  c0-2.2,1.1-4.4,2.8-5.7c0.1-0.1,0.2-0.2,0.3-0.2c0.1-0.1,1.5-1.2,1.2-3.5c0,0,0,0,0-0.1c-0.2-0.7-0.3-1.5-0.4-2.3c0-0.1,0-0.1,0-0.1  c-0.4-2.3-2.3-2.8-2.3-2.8c-0.1,0-0.2-0.1-0.4-0.1c-2.1-0.7-3.9-2.4-4.6-4.5c-0.1-0.3-0.1-0.5-0.1-0.8c0.2-1.8,0.5-3.7,1-5.6  c0.1-0.3,0.2-0.5,0.4-0.7c1.5-1.8,3.7-2.8,5.9-2.7c0.1,0,0.2,0,0.4,0c0.5,0,2.1-0.1,3.1-1.9c0,0,0-0.1,0.1-0.1  c0.3-0.6,0.7-1.3,1.2-2c0,0,0-0.1,0.1-0.1c1.1-2,0.2-3.5,0.1-3.7c-0.1-0.1-0.1-0.2-0.2-0.3c-1.2-2-1.5-4.4-0.6-6.6  c0.1-0.2,0.2-0.5,0.4-0.7c1.3-1.3,2.7-2.5,4.2-3.5c0.2-0.2,0.5-0.3,0.7-0.3c2.3-0.5,4.7,0.2,6.4,1.7c0.1,0.1,0.2,0.1,0.3,0.2  c0,0,0.9,0.8,2.2,0.8c0.4,0,0.9-0.1,1.4-0.2c0,0,0,0,0,0c0.8-0.3,1.6-0.6,2.3-0.8c2.1-0.8,2.4-2.6,2.4-2.8c0-0.1,0-0.2,0.1-0.3  c0.3-2.3,1.7-4.4,3.8-5.5c0.2-0.1,0.5-0.2,0.7-0.2c2-0.1,3.4-0.1,5.4,0c0.3,0,0.5,0.1,0.7,0.2c2.1,1.1,3.5,3.1,3.8,5.4  c0,0.1,0.1,0.2,0.1,0.4c0,0.2,0.3,1.9,2.4,2.8c0,0,0,0,0,0c0.8,0.2,1.6,0.5,2.3,0.8c0,0,0,0,0,0c0.5,0.2,1,0.3,1.4,0.3  c1.4,0,2.2-0.8,2.2-0.8c0.1-0.1,0.2-0.2,0.3-0.2c1.7-1.5,4.1-2.2,6.4-1.7c0.3,0.1,0.5,0.2,0.7,0.3c1.5,1.1,2.9,2.3,4.2,3.5  c0.2,0.2,0.3,0.4,0.4,0.7c0.8,2.2,0.6,4.6-0.6,6.6c0,0.1-0.1,0.2-0.2,0.3c-0.1,0.1-1,1.7,0.1,3.7c0,0,0,0.1,0.1,0.1  c0.4,0.7,0.8,1.3,1.2,2c0,0,0,0.1,0.1,0.1c1,1.7,2.6,1.9,3.1,1.9c0.1,0,0.3,0,0.4,0c2.2-0.1,4.5,0.9,5.9,2.7  c0.2,0.2,0.3,0.5,0.4,0.7c0.5,1.8,0.8,3.7,1,5.6c0,0.3,0,0.5-0.1,0.8c-0.8,2.2-2.5,3.8-4.6,4.5c-0.1,0.1-0.2,0.1-0.4,0.1  c-0.2,0-1.9,0.6-2.3,2.9c0,0,0,0.1,0,0.1c-0.1,0.8-0.2,1.6-0.4,2.3c0,0,0,0.1,0,0.1C81,59.9,82.5,61,82.5,61  c0.1,0.1,0.2,0.2,0.3,0.3c1.7,1.4,2.8,3.5,2.8,5.7c0,0.3-0.1,0.6-0.2,0.8c-0.8,1.7-1.8,3.5-3,5.1c-0.2,0.2-0.4,0.4-0.6,0.6  c-1.1,0.6-2.3,0.9-3.6,0.9l0,0c-0.9,0-1.9-0.2-2.7-0.5c-0.1,0-0.2-0.1-0.4-0.1c0,0,0,0,0,0c0,0-0.5-0.2-1.2-0.2  c-0.9,0-1.7,0.3-2.4,0.9c0,0,0,0-0.1,0c-0.5,0.5-1.1,1-1.8,1.5c0,0-0.1,0-0.1,0.1c-1.5,1.3-1.5,2.7-1.4,3.3c0.1,0.2,0.1,0.4,0.1,0.6  c0,0,0,0,0,0c0.4,2.1-0.1,4.3-1.5,5.9c-0.2,0.2-0.4,0.4-0.7,0.5c-1.8,0.8-3.8,1.5-5.7,2.1C60.4,88.7,60.2,88.7,60.1,88.7z   M35.7,83.4c1.4,0.6,2.8,1.1,4.2,1.5c1-0.3,1.8-1,2.2-1.9c0.1-0.1,0.1-0.2,0.2-0.4c0.8-1.4,2.8-3.4,6.2-3.5c0.1,0,0.1,0,0.1,0  c0,0,0.1,0,0.1,0c0.8,0,1.5,0,2.3,0c0,0,0.1,0,0.1,0c0,0,0.1,0,0.1,0c3.3,0.1,5.4,2.1,6.2,3.5c0.1,0.1,0.2,0.2,0.2,0.4  c0.4,0.9,1.2,1.6,2.2,1.9c1.4-0.4,2.9-0.9,4.2-1.5c0.5-0.9,0.7-1.9,0.4-2.9c0-0.1-0.1-0.3-0.1-0.4c-0.3-1.6,0-4.4,2.5-6.7  c0,0,0.1-0.1,0.1-0.1c0,0,0.1-0.1,0.1-0.1c0.7-0.5,1.2-1,1.8-1.5c0,0,0.1-0.1,0.1-0.1c0,0,0.1,0,0.1-0.1c1.4-1.1,3-1.7,4.7-1.7  c1,0,1.8,0.2,2.3,0.4c0.1,0,0.3,0.1,0.4,0.1c0.5,0.2,1,0.3,1.5,0.3l0,0c0.5,0,1-0.1,1.4-0.3c0.8-1.2,1.6-2.5,2.2-3.8  c-0.1-1-0.7-2-1.5-2.6c-0.1-0.1-0.2-0.2-0.3-0.3c-1.3-1.1-2.9-3.4-2.4-6.7c0,0,0-0.1,0-0.1c0,0,0-0.1,0-0.1c0.2-0.7,0.3-1.5,0.4-2.3  c0-0.1,0-0.1,0-0.2c0,0,0-0.1,0-0.1c0.7-3.3,3-4.9,4.5-5.5c0.1-0.1,0.2-0.1,0.4-0.2c1-0.3,1.9-1,2.4-2c-0.2-1.4-0.4-2.8-0.7-4.1  c-0.8-0.8-1.8-1.2-2.9-1.1c-0.2,0-0.3,0-0.5,0c-1.1,0-4.1-0.4-6.1-3.6c0,0-0.1-0.1-0.1-0.1c-0.4-0.8-0.8-1.4-1.2-2.1  c0,0-0.1-0.1-0.1-0.1c0,0,0-0.1-0.1-0.1c-1.6-3-0.9-5.7-0.1-7.1c0.1-0.1,0.1-0.2,0.2-0.4c0.6-0.9,0.8-2,0.5-3.1  c-1-0.9-2-1.8-3.1-2.6c-1.1-0.1-2.2,0.3-3,1c-0.1,0.1-0.2,0.2-0.4,0.3C67.3,24,65.8,25,63.5,25c-0.8,0-1.7-0.1-2.5-0.4  c0,0-0.1,0-0.1,0c0,0-0.1,0-0.1,0c-0.7-0.3-1.5-0.6-2.2-0.8c0,0-0.1,0-0.1,0c0,0,0,0-0.1,0c-3.1-1.2-4.4-3.8-4.7-5.4  c0-0.1-0.1-0.3-0.1-0.4c-0.1-1.1-0.7-2.1-1.6-2.7c-1.5-0.1-2.5-0.1-4,0c-0.9,0.6-1.5,1.6-1.6,2.7c0,0.1,0,0.3-0.1,0.4  c-0.3,1.6-1.5,4.2-4.7,5.4c0,0,0,0-0.1,0c0,0-0.1,0-0.1,0c-0.7,0.2-1.5,0.5-2.2,0.8c0,0-0.1,0-0.1,0c0,0-0.1,0-0.1,0  c-0.8,0.3-1.6,0.4-2.5,0.4c-2.3,0-3.8-1-4.5-1.6c-0.1-0.1-0.2-0.2-0.4-0.3c-0.8-0.8-1.9-1.2-3-1c-1.1,0.8-2.1,1.7-3.1,2.6  c-0.3,1.1-0.1,2.2,0.5,3.1c0.1,0.1,0.1,0.2,0.2,0.4c0.8,1.4,1.5,4.2-0.1,7.1c0,0,0,0.1,0,0.1c0,0-0.1,0.1-0.1,0.1  c-0.4,0.7-0.8,1.3-1.2,2c0,0.1-0.1,0.1-0.1,0.2c-2,3.2-5,3.6-6.1,3.6c-0.1,0-0.3,0-0.4,0c-1.1-0.1-2.1,0.3-2.9,1.1  c-0.3,1.4-0.6,2.8-0.7,4.1c0.5,1,1.3,1.7,2.4,2c0.1,0,0.3,0.1,0.4,0.2c1.5,0.6,3.8,2.2,4.5,5.5c0,0,0,0.1,0,0.1c0,0.1,0,0.1,0,0.2  c0.1,0.8,0.2,1.5,0.4,2.3c0,0,0,0.1,0,0.1c0,0,0,0.1,0,0.1c0.5,3.3-1.1,5.6-2.4,6.7c-0.1,0.1-0.2,0.2-0.3,0.3  c-0.9,0.6-1.4,1.6-1.5,2.6c0.7,1.3,1.4,2.6,2.2,3.8c0.9,0.4,2,0.4,3-0.1c0.1-0.1,0.3-0.1,0.4-0.1c0.5-0.2,1.3-0.4,2.3-0.4  c1.7,0,3.3,0.6,4.7,1.7c0,0,0,0,0.1,0c0.1,0,0.1,0.1,0.2,0.1c0.5,0.5,1.1,1,1.8,1.5c0,0,0.1,0.1,0.1,0.1c0,0,0.1,0.1,0.1,0.1  c2.5,2.2,2.8,5.1,2.5,6.7c0,0.1,0,0.3-0.1,0.4C35,81.5,35.2,82.5,35.7,83.4z M50,70.2c-10.8,0-19.5-8.8-19.5-19.5S39.2,31.1,50,31.1  s19.5,8.8,19.5,19.5S60.8,70.2,50,70.2z M50,34.8c-8.7,0-15.9,7.1-15.9,15.9S41.3,66.5,50,66.5s15.9-7.1,15.9-15.9  S58.7,34.8,50,34.8z' /></svg>"
-                        +   "</button>"
-                        +   `<ul class='dropdown-menu dropdown-menu-right' aria-labelledby="dropdownMenu${i}">`
-                        +   dropDown
-                        +   `</ul>`
-                        + "</div>";
-                    }
-                    else {
-                        rowHtml +=
-                        "<div class='ms-2' style='width:1.8rem'></div>"
-                    }
+                        + '</div>'
                 }
 
                 rowHtml +=
-                        "</div>";
+                          "<div class='context-menu ms-0 me-3' style='width:1.4rem'>" + dropDown + "</div>";
+                    + "</div>";
 
                 row.outerHTML = rowHtml;
             }
@@ -354,8 +322,16 @@ async function getModulesStatuses() {
                 row.className = rowClass;
                 row.querySelector("div span.version").innerHTML    = moduleInfo.version;
                 row.querySelector("div.status").innerHTML          = statusDesc;
-                row.querySelector("div.hardware").innerHTML        = hardware;
-                
+                row.querySelector("div.inference").innerHTML       = inferenceOn;
+
+                // let oldDropDown = row.querySelector("div.context-menu").innerHTML;
+                // if (dropDown != oldDropDown) // Doesn't work. 'show' class, aria-expanded etc ruin it
+                let nowTime = new Date().getTime();
+                if (nowTime - lastMenuUpdate > 10000) {
+                    row.querySelector("div.context-menu").innerHTML = dropDown;
+                    lastMenuUpdate = nowTime;
+                }
+
                 let procCount = row.querySelector("div.proc-count");
                 if (procCount) {
                     procCount.innerHTML = countRequests;
@@ -383,6 +359,83 @@ async function getModulesStatuses() {
                 row.remove();
         });
     }
+}
+
+function UpdateModuleStatus(moduleId, status) {
+
+    const [classNames, statusDesc] = getStatusDescClass(status);
+    let row = document.getElementById('module-info-' + moduleId);
+    if (row) {
+        row.querySelector("div.status").innerHTML = statusDesc;
+        const classes = classNames.split(" ");
+        for (let className of classes)
+            row.classList.add(className);
+    }
+}
+
+function getStatusDescClass(status) {
+        
+    let className  = status.toLowerCase();
+    let statusDesc = "Unknown";
+
+    switch (status) {
+        case "Enabled":
+            statusDesc = "Enabled";
+            className = "alert-info"
+            break;
+        case "NotEnabled":
+            statusDesc = "Not Enabled";
+            className = "alert-light"
+            break;
+        case "Starting":
+            statusDesc = "Starting";
+            className = "alert-info"
+            break;
+        case "Started":
+            statusDesc = "Started";
+            className = "alert-success"
+            break;
+        case "NotStarted":
+            statusDesc = "Not Started";
+            className = "alert-light"
+            break;
+        case "NotAvailable":
+            statusDesc = "Not Available";
+            className = "alert-light"
+            break;
+        case "FailedStart":
+            statusDesc = "Failed to Start";
+            className = "alert-danger"
+            break;
+        case "Crashed":
+            statusDesc = "Crashed";
+            className = "alert-danger"
+            break;
+        case "Stopping":
+            statusDesc = "Stopping";
+            className = "alert-warning"
+            break;
+        case "Restarting":
+            statusDesc = "Restarting";
+            className = "alert-light"
+            break;
+        case "Uninstalling":
+            statusDesc = "Uninstalling";
+            className = "alert-warning"
+            break;
+        case "Stopped":
+            statusDesc = "Stopped";
+            className = "alert-light"
+            break;
+        case "LostContact":
+            statusDesc = "Lost Contact";
+            className = "bg-dark text-muted"
+            break;
+    }
+
+    let classNames = className + " " + statusDesc.replace(" ", "-").toLowerCase();
+
+    return [classNames, statusDesc];
 }
 
 // Mesh ========================================================================
@@ -415,21 +468,22 @@ function meshStatusSummary(data) {
 
     summary += "\n";
     
-    let remoteServerCount = data.serverInfos.length;
-    if (data.localServer)
+    let remoteServerCount = data.serverInfos?.length;
+    if (data.localServer && remoteServerCount)
         remoteServerCount--;
 
     summary += `Remote Servers in mesh: ${remoteServerCount}\n\n`;
 
     let count = 0;
-    for (let serverInfo of data.serverInfos) {
-        if (!serverInfo.isLocalServer) {
-            if (count > 0) summary += "\n";
+    if (data.serverInfos)
+        for (let serverInfo of data.serverInfos) {
+            if (!serverInfo.isLocalServer) {
+                if (count > 0) summary += "\n";
 
-            summary += meshServerSummary(serverInfo);
-            count++;
+                summary += meshServerSummary(serverInfo);
+                count++;
+            }
         }
-    }
    
     return summary;
 }
@@ -581,7 +635,7 @@ function addLogEntry(id, date, logLevel, label, entry, refreshDisplay = true) {
     logText = convertXtermToCss(logText);
 
     // unicode gets messed up. TODO: Fix this!
-    logText = logText.replace("âœ”ï¸", "✔️");
+    logText = logText.replace("âœ”ï¸", "✅");
 
     const html = id
                ? `<div id='log${id}' class='${logLevel} ${label} ${className}'>${idText}${dateText}:${requestIdMarker}${logText}${logMessage}</div>`
@@ -719,6 +773,10 @@ var isModuleActionInProgress = false;
  */
 async function getDownloadableModules() {
 
+    let checkForUpdatesElm = document.getElementById(checkForUpdatesId);
+    if (checkForUpdatesElm && !checkForUpdatesElm.checked)
+        return;
+
     let data = await makeGET('module/list/?random=' + new Date().getTime());
     if (data && data.modules) {
 
@@ -728,32 +786,35 @@ async function getDownloadableModules() {
         data.modules.sort((a, b) => (a.publishingInfo.category||'').localeCompare(b.publishingInfo.category||'') || 
                                     a.name.localeCompare(b.name));
 
-        var currentCategory = null;
+        let moduleOperationSpotted = false;
+        let currentCategory = null;
         for (let i = 0; i < data.modules.length; i++) {
 
             let moduleInfo = data.modules[i];
 
-            let moduleId        = moduleInfo.moduleId;
-            let moduleName      = moduleInfo.name;
-            let currentVersion  = moduleInfo.version || '';
-            let category        = moduleInfo.publishingInfo.category;
-            let license         = moduleInfo.publishingInfo.licenseUrl && moduleInfo.publishingInfo.license 
-                                ? `<a class='me-2' href='${moduleInfo.publishingInfo.licenseUrl}'>${moduleInfo.publishingInfo.license}</a>` : '';
-            let author          = moduleInfo.publishingInfo.author     || '';
-            let homepage        = moduleInfo.publishingInfo.homepage   || '';
-            let basedOn         = moduleInfo.publishingInfo.basedOn    || '';
-            let basedOnUrl      = moduleInfo.publishingInfo.basedOnUrl || '';
+            let moduleId           = moduleInfo.moduleId;
+            let moduleName         = moduleInfo.name;
+            let currentVersion     = moduleInfo.version || '';
+            let category           = moduleInfo.publishingInfo.category;
+            let license            = moduleInfo.publishingInfo.licenseUrl && moduleInfo.publishingInfo.license
+                                   ? `<a class='me-2' href='${moduleInfo.publishingInfo.licenseUrl}'>${moduleInfo.publishingInfo.license}</a>`: '';
+            let author             = moduleInfo.publishingInfo.author     || '';
+            let homepage           = moduleInfo.publishingInfo.homepage   || '';
+            let basedOn            = moduleInfo.publishingInfo.basedOn    || '';
+            let basedOnUrl         = moduleInfo.publishingInfo.basedOnUrl || '';
 
-            let latestVersion   = moduleInfo.latestRelease?.moduleVersion || '';
-            let latestReleased  = moduleInfo.latestRelease?.releaseDate   || '';
-            let importance      = moduleInfo.latestRelease?.importance    || '';
-            let status          = moduleInfo.status;
+            let currentlyInstalled = moduleInfo.currentlyInstalled           || '';
+            let latestVersion      = moduleInfo.latestRelease?.moduleVersion || '';
+            let latestReleased     = moduleInfo.latestRelease?.releaseDate   || '';
+            let importance         = moduleInfo.latestRelease?.importance    || '';
+            let updateAvailable    = moduleInfo.updateAvailable;
+            let status             = moduleInfo.status;
 
-            let downloadable    = moduleInfo.isDownloadable? '' 
-                                : '<div title="This module is not downloadable" class="text-light me-2">Private</div>';
+            let downloadable = moduleInfo.isDownloadable? ''
+                                :  '<div title="This module is not downloadable" class="text-light me-2">Private</div>';
 
             let updateDesc      = '';
-            if (currentVersion && currentVersion != latestVersion) {
+            if (updateAvailable && currentlyInstalled) {
                 status     = 'UpdateAvailable';
                 updateDesc = 'New version available';
                 if (importance)
@@ -780,11 +841,6 @@ async function getDownloadableModules() {
             let statusDesc       = status;
             let action           = "";
 
-            if (status === "Installing")
-                _installNotice = `Installing ${moduleName}...`;
-            else if (status === "Uninstalling")
-                _installNotice = `Uninstalling ${moduleName}...`;
-
             switch (status) {
                 case "Available":
                     statusDesc    = "Available";
@@ -805,6 +861,10 @@ async function getDownloadableModules() {
                     btnClassName  = "d-none";
                     statClassName = "text-info";
                     action        = "";
+
+                    _installNotice = `Installing ${moduleName}...`;
+                    moduleOperationSpotted = true;
+
                     break;
 
                 case "Installed":
@@ -833,6 +893,10 @@ async function getDownloadableModules() {
                     btnClassName  = "d-none";
                     statClassName = "text-info";
                     action        = "";
+
+                    _installNotice = `Uninstalling ${moduleName}...`;
+                    moduleOperationSpotted = true;
+
                     break;
 
                 case "UninstallFailed":
@@ -882,7 +946,7 @@ async function getDownloadableModules() {
                     +     `<div class='me-auto'><b>${moduleName}</b></div>${downloadable}`
 
                     +     `<div class='me-3'>`
-                    +        `<button class='btn dropdown-toggle p-0 version' type='button' id='dropdownVersionHistory${i}' data-bs-toggle='dropdown'>${currentVersion}</button>`
+                    +        `<button class='btn dropdown-toggle p-0 version' type='button' id='dropdownVersionHistory${i}' data-bs-toggle='dropdown'>${currentlyInstalled}</button>`
                     +        `<ul class='dropdown-menu' aria-labelledby="dropdownVersionHistory${i}"><li>`
                     +        `<div class='module-history small font-monospace p-2 overflow-auto'>${moduleHistory}</div>`
                     +        `</li></ul>`
@@ -940,8 +1004,8 @@ async function getDownloadableModules() {
                 actionElm.dataset.action        = action;
                 actionElm.dataset.latestVersion = latestVersion;
 
-                let versionElm = row.querySelector("div.version");
-                versionElm.innerHTML = currentVersion;
+                let versionElm = row.querySelector("button.version");
+                versionElm.innerHTML = currentlyInstalled;
 
                 let moduleHistoryElm = row.querySelector("div.module-history");
                 moduleHistoryElm.innerHTML = moduleHistory;
@@ -952,7 +1016,7 @@ async function getDownloadableModules() {
             }
         }
 
-        isModuleActionInProgress = _installNotice;
+        isModuleActionInProgress = !!_installNotice;
 
         for (let i = 0; i < data.modules.length; i++) {
             let moduleIdKey = data.modules[i].moduleId.replace(/[^a-zA-Z0-9\-]+/g, "");
@@ -974,6 +1038,9 @@ async function getDownloadableModules() {
         }
         else
             installNotice.innerHTML = '';
+
+        if (!isModuleActionInProgress)
+            setModuleUpdateStatus("")
     }
 }
 

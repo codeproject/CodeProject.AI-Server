@@ -21,15 +21,15 @@
         public string? Command { get; set; }
 
         /// <summary>
-        /// Gets or sets the execution provider (hardware or library) that handles the AI 
-        /// acceleration.
+        /// Gets or sets the ID of the request being serviced
         /// </summary>
-        public string? ExecutionProvider { get; set; }
-
+        public string? RequestId { get; set; }
+        
         /// <summary>
-        /// Gets or sets whether this module is able to make use of a GPU.
+        /// Gets or sets the name of the device that performed the inference operation for this 
+        /// request. eg CPU, GPU, TPU, NPU etc
         /// </summary>
-        public bool CanUseGPU { get; set; }
+        public string? InferenceDevice { get; set; }
 
         /// <summary>
         /// Gets or sets the number of milliseconds required to perform the AI inference operation(s)
@@ -48,13 +48,26 @@
         /// response.
         /// </summary>
         public long AnalysisRoundTripMs { get; set; }
+    }
+
+    /*
+    /// <summary>
+    /// The common data for responses from analysis modules.
+    /// </summary>
+    public class StatusResponse : BaseResponse
+    {
+        /// <summary>
+        /// Gets or sets the Id of the Module handling this request
+        /// </summary>
+        public string? ModuleId { get; set; }
 
         /// <summary>
         /// Gets or set a dictionary representing the current module status
         /// </summary>
         public object? StatusData { get; set; }
     }
-
+    */
+    
     /// <summary>
     /// Represents a failed response from a module.
     /// </summary>

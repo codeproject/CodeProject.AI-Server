@@ -3,7 +3,7 @@
 
     "SceneClassifier": {
       "Name": "Scene Classification",
-      "Version": "1.7.0",
+      "Version": "1.7.1",
 
       "PublishingInfo" : {
         "Description": "Classifies an image according to one of 365 pre-trained scenes", 
@@ -22,9 +22,10 @@
         "AutoStart": true,
         "FilePath": "scene_adapter.py",
         "Runtime": "python3.8",
-        "RuntimeLocation": "Shared",        // Can be Local or Shared
-        "PostStartPauseSecs": 1,            // Generally 1 if using GPU, 0 for CPU
-        "Queue": "sceneclassifier_queue"    // default is lower(module_id) + '_queue'
+        "RuntimeLocation": "Shared",      // Can be Local or Shared
+        "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
+        "Queue": "sceneclassifier_queue", // default is lower(module_id) + '_queue'
+        "Parallelism": 1                  // 0 = Default = number of CPUs / 2
       },
 
       "EnvironmentVariables": {
@@ -35,10 +36,9 @@
 
       "GpuOptions" : {
         "InstallGPU": true,
-        "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
-        "AcceleratorDeviceName": null,  // = default
-        "Parallelism": 1,               // 0 = Default (number of CPUs - 1)
-        "HalfPrecision": "enable"       // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+        "EnableGPU": true,                // Will be coerced to false if InstallGPU = false
+        "AcceleratorDeviceName": null,    // = default
+        "HalfPrecision": "enable"         // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
       },
 
       "InstallOptions" : {
@@ -59,9 +59,16 @@
           { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
           { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
           { "ModuleVersion": "1.6.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "1.7.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" }
+          { "ModuleVersion": "1.7.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "1.7.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
         ]
       },
+
+      "ModelRequirements" : [{
+          "Task": "Scene Classification",
+          "Architecture": "ResNet-50",
+          "Format": "PyTorch"
+      }],
 
       "RouteMaps": [
         {
