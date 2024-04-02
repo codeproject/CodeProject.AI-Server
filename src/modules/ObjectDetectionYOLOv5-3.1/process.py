@@ -89,6 +89,13 @@ class YOLODetector(object):
             else self.model.names
         )
 
+        # Fix for issue "AttributeError: 'Upsample' object has no attribute 'recompute_scale_factor'"
+        # https://github.com/ultralytics/yolov5/issues/6948#issuecomment-1519070669
+        import torch.nn as nn
+        for m in self.model.modules():
+            if isinstance(m, nn.Upsample):
+                m.recompute_scale_factor = None
+
         # Multi-GPU untested: use all GPUs for inference
         # self.model = torch.nn.DataParallel(model) #, device_ids=[0, 1, 2])        
 

@@ -16,7 +16,7 @@ fi
 
 module_install_errors=""
 
-if [ "${systemName}" != "Orange Pi" ]; then
+if [ "${edgeDevice}" != "Orange Pi" ]; then
     module_install_errors="Unable to install on non-Orange Pi hardware."
 else
     # Download the OCR models and store in /paddleocr

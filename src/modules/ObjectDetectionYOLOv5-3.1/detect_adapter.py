@@ -296,14 +296,5 @@ class YOLO31_adapter(ModuleRunner):
             return { "success": False, "error": "Error occurred on the server" }
 
 
-    def _status_summary(self):
-        summary  = "Inference Operations: " + str(self._success_inferences)  + "\n"
-        summary += "Items detected:       " + str(self._num_items_found) + "\n"
-        for label in self._histogram:
-            summary += "  " + label + ": " + str(self._histogram[label]) + "\n"
-
-        return summary
-
-
 if __name__ == "__main__":
     YOLO31_adapter().start_loop()

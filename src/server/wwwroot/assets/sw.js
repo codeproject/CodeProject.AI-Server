@@ -11,7 +11,7 @@ self.addEventListener('install', (e) => {
         console.log('[Service Worker] Caching all: app shell and content');
 
         await cache.add('dashboard.js');
-        await cache.add('dashboard.css');
+        await cache.add('server.css');
         await cache.add('assets/bootstrap-dark.min.css');
         await cache.add('assets/bootstrap.min.css');
     })());

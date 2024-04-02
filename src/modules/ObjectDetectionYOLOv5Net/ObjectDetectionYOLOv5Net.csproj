@@ -118,16 +118,11 @@
 
 	<ItemGroup>
 	  <Content Include="favicon.ico" />
+	  <Content Update="explore.html" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\SDK\NET\NET.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Update="explore.html">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
 	</ItemGroup>
 
 	<!-- These make the downloadable exe's huge. The installers will pull down

@@ -140,12 +140,14 @@ namespace CodeProject.AI.Server.Controllers
         }
 
         /// <summary>
-        /// Updates the StatusData in the ProcessStatus object for a module
-        /// REVIEW: [Matthew] Should be in StatusController (to complement ListModulesStatus)
+        /// Allows modules to update their status be sending StatusData, and having this be updated
+        /// in the module's associated ProcessStatus object 
         /// </summary>
         /// <param name="moduleId">The id of the request the response is for.</param>
         /// <param name="statusData"></param>
         /// <returns>The Request Object.</returns>
+        // REVIEW: Possible rename this to BackendController and map both /vi/queue and /v1/backend
+        //         to maintain backwards compatibility for the modules.
         [HttpPost("updatemodulestatus/{moduleId}", Name = "UpdateModuleStatusData")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -94,32 +94,7 @@ namespace CodeProject.AI.Server.Modules
             _meshMonitor      = meshMonitor;
             _logger           = logger;
 
-            // The very first thing we need to do is twofold:
-            // 1. Update missing or optional properties. In the JSON settings file, ModuleId is
-            //    specified as a key for the module info object, but not a property. Queue can be
-            //    specified, or can be left blank to allow a default to be used. Fix these, and
-            //    a couple of other things, up.
-            // 2. Remove invalid modules. This can happen in the case where a module was installed,
-            //    a setting for that module then persisted in the settings override .json file, and
-            //    then the module is removed. Our config system will load up the persisted override
-            //    settings and see some settings for the (now removed) module, and add that fragment
-            //    of a module settings to the modules list, resulting in an invalid module in the
-            //    list.
-
             _logger.LogInformation($"** Server version:   {_versionConfig.VersionInfo!.Version}");
-
-            List<string> keys = _installedModules!.Keys.ToList();
-            foreach (string moduleId in keys)
-            {
-                ModuleConfig? module = _installedModules[moduleId];
-
-                // Complete the ModuleConfig's setup, but remove the listing if that's not possible
-                if (module is null || !module.Initialise(moduleId, moduleSettings.ModulesDirPath,
-                                                         moduleSettings.PreInstalledModulesDirPath))
-                {
-                    _installedModules.Remove(moduleId, out _);
-                }
-            }
 #if DEBUG
             // Create a modules.json file each time we run
             string path = Path.Combine(ModuleSettings.DownloadedModulePackagesDirPath,
@@ -176,7 +151,7 @@ namespace CodeProject.AI.Server.Modules
                 // Queues) even if launchModules=false. This allows the server to list the processes
                 // and also to listen on the queue for the process's module in case the module is
                 // started by something other than the server. Eg a debugger.
-                string? installSummary = await _moduleInstaller.GetInstallationSummary(module!.ModuleId!)
+                string? installSummary = await _moduleInstaller.GetInstallationSummaryAsync(module!.ModuleId!)
                                                                .ConfigureAwait(false);
                 ProcessService.AddProcess(module, launchModules, installSummary);
             }
@@ -252,7 +227,7 @@ namespace CodeProject.AI.Server.Modules
 
             if (!ProcessService.TryGetProcessStatus(module.ModuleId, out ProcessStatus? _))
             {
-                string? installSummary = await _moduleInstaller.GetInstallationSummary(module.ModuleId)
+                string? installSummary = await _moduleInstaller.GetInstallationSummaryAsync(module.ModuleId)
                                                                .ConfigureAwait(false);
                 ProcessService.AddProcess(module, true, installSummary);
             }

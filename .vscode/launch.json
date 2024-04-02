@@ -96,14 +96,13 @@
                 "RUNNING_IN_VSCODE": "true",
                 "DOTNET_NOLOGO": "true"
             }
-            /*
-            "logging": {
-                "engineLogging": false,
-                "moduleLoad": false,
-                "exceptions": false,
-                "browserStdOut": false
-            }
-            */
+
+            // "logging": {
+            //     "engineLogging": false,
+            //     "moduleLoad": false,
+            //     "exceptions": false,
+            //     "browserStdOut": false
+            // }
         },        
         {
             "presentation": {
@@ -157,15 +156,14 @@
                 "RUNNING_IN_VSCODE": "true",
                 "DOTNET_NOLOGO": "true"
             }
-            /*
-            "logging": {
-                "engineLogging": false,
-                "moduleLoad": false,
-                "exceptions": false,
-                "browserStdOut": false
-            }
-            */
-        },              {
+            // "logging": {
+            //     "engineLogging": false,
+            //     "moduleLoad": false,
+            //     "exceptions": false,
+            //     "browserStdOut": false
+            // }
+        },
+        {
             "presentation": {
                 "group": "2 Build Arm64"
             },
@@ -216,14 +214,13 @@
                 "RUNNING_IN_VSCODE": "true",
                 "DOTNET_NOLOGO": "true"
             }
-            /*
-            "logging": {
-                "engineLogging": false,
-                "moduleLoad": false,
-                "exceptions": false,
-                "browserStdOut": false
-            }
-            */
+
+            // "logging": {
+            //    "engineLogging": false,
+            //    "moduleLoad": false,
+            //    "exceptions": false,
+            //    "browserStdOut": false
+            //}
         },
         {
             "presentation": {
@@ -279,7 +276,8 @@
             },
         },
 
-        // Launch Individual --------------------------------------------------
+
+        // Launch Individual Modules -------------------------------------------
 
         {
             "presentation": {
@@ -388,7 +386,7 @@
             "type": "python",
             "python": "${workspaceFolder}/src/modules/LlamaChat/bin/linux/python39/venv/bin/python",
             "request": "launch",
-            "program": "Llama_adapter.py",
+            "program": "llama_chat_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/src/modules/LlamaChat",
@@ -408,7 +406,7 @@
                 "python": "${workspaceFolder}/src/modules/LlamaChat/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/LlamaChat/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/src/modules/LlamaChat/bin/macos/python310/venv/bin/python",
             }
         },
 
@@ -784,13 +782,16 @@
                 // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
 
+                "TF_ENABLE_ONEDNN_OPTS" : "0",  // Turn of oneDNN custom ops
+                "TF_CPP_MIN_LOG_LEVEL" : "2",   // 1 = no info, 2 = no info,warn, 3 = nothing
+
                 "MODELS_DIR": "${workspaceFolder}/src/modules/SoundClassifierTF/assets"
             },
             "windows": {
                 "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/windows/python39/venv/Scripts/python",
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/linux/python38/venv/bin/python3",
+                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/linux/python39/venv/bin/python3",
             },
             "osx": {
                 "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/macos/python38/venv/bin/python",
@@ -860,10 +861,9 @@
             },
             "name": "Text2Image",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/Text2Image/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/src/modules/Text2Image/bin/linux/python39/venv/bin/python",
             "request": "launch",
-            "program": "Text2Image.py",
-            // "program": "Text2Image_adapter.py",
+            "program": "stable_diffusion_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/src/modules/Text2Image",
@@ -878,10 +878,10 @@
                 "python": "${workspaceFolder}/src/modules/Text2Image/bin/windows/python39/venv/Scripts/python.exe"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/Text2Image/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/src/modules/Text2Image/bin/linux/python39/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/Text2Image/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/src/modules/Text2Image/bin/macos/python39/venv/bin/python",
             }
         },
 
@@ -927,7 +927,7 @@
             "type": "python",
             "python": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5/bin/macos/python38/venv/bin/python",
             "request": "launch",
-            "program": "TrainingObjectDetectionYOLOv5.py",
+            "program": "training_objectdetection_YOLOv5_adapter.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5",
             // "args": [ "--selftest" ],
@@ -973,74 +973,6 @@
                     "YOLO_MODELS_DIRNAME":      "assets",
                     "YOLO_DATASET_ZOO_DIRNAME": "zoo"
                 }
-            }
-        },
-
-        // DEMOS -----------------------------------------------------------
-
-        {
-            "presentation": {
-                "group": "99 Demos"
-            },
-
-            "name": "Demo Python Module",
-            "type": "python",
-            "python": "${workspaceFolder}/src/runtimes/bin/linux/python39/venv/bin/python",
-            "request": "launch",
-            "program": "detect.py",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/DemoModulePython",
-            "justMyCode": false,
-            "args": [ "-i", "${workspaceFolder}\\src\\modules\\DemoModulePython\\test\\home-office.jpg",
-                      "-a", "${workspaceFolder}\\src\\modules\\DemoModulePython\\assets\\",
-                      "-t", "0.6"
-                    ],
-            "env": {
-                "DEBUG_IN_VSCODE": "True",
-                "RUNNING_IN_VSCODE": "True",
-                "CPAI_PORT": "32168",
-                "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
-                "CPAI_MODULE_PARALLELISM": "1",
-
-                "MODEL_SIZE": "Tiny"
-            },
-            "windows": {
-                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python"
-            },
-            "linux": {
-                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
-            },
-            "osx": {
-                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
-            }
-        },
-
-        {
-            "presentation": {
-                "group": "99 Demos",
-                "hidden": false
-            },
-            "name": "Demo .NET Module",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-demo-net",
-            "program": "${workspaceFolder}/src/modules/ModuleDemoNetSimple/bin/Debug/net7.0/ModuleDemoNetSimple",
-            "linux": {
-                "program": "${workspaceFolder}/src/modules/ModuleDemoNetSimple/bin/Debug/net7.0/ModuleDemoNetSimple.dll",
-            },
-            // "args": [ "--selftest" ],
-            // "cwd": "${workspaceFolder}",
-            "cwd": "${workspaceFolder}/src/modules/ModuleDemoNetSimple", 
-            "stopAtEntry": false,
-            "console": "internalConsole",
-            "requireExactSource": false,
-            "justMyCode": false,
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "RUNNING_IN_VSCODE": "true",
-                "DOTNET_NOLOGO": "true",
-                "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
-                "DYLD_LIBRARY_PATH" : "/opt/homebrew/lib" // For macOS
             }
         },
 
@@ -1112,116 +1044,6 @@
                 "group": "5 Launch Individual",
                 "hidden": true
             },
-            "name": "Shared Python 3.7/3.8: Current File",
-            "type": "python",
-            "python": "${workspaceFolder}/src/modules/bin/windows/python37/venv/Scripts/python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "cwd": "${fileDirname}",
-            "justMyCode": false,
-            "env": {
-                "DEBUG_IN_VSCODE": "True",
-                "RUNNING_IN_VSCODE": "True",
-                // "CPAI_LOG_VERBOSITY": "Loud",
-                "CPAI_PORT": "32168"
-            },
-            "linux": {
-                "python": "${workspaceFolder}/src/modules/bin/linux/python38/venv/bin/python",
-            },
-            "osx": {
-                "python": "${workspaceFolder}/src/modules/bin/macos/python38/venv/bin/python",
-            }
-        },
-        {
-            "presentation": {
-                "group": "5 Launch Individual",
-                "hidden": true
-            },
-            "name": "Local Python 3.7/3.8: Current File",
-            "type": "python",
-            "python": "${fileDirname}/bin/linux/python38/venv/bin/python3.8",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "cwd": "${fileDirname}",
-            "justMyCode": false,
-            "env": {
-                "DEBUG_IN_VSCODE": "True",
-                "RUNNING_IN_VSCODE": "True",
-                // "CPAI_LOG_VERBOSITY": "Loud",
-                "CPAI_PORT": "32168"
-            },
-            "windows": {
-                "python": "${fileDirname}/bin/windows/python37/venv/Scripts/python"
-            },
-            "linux": {
-                "python": "${fileDirname}/bin/linux/python38/venv/bin/python3.8"
-            },
-            "osx": {
-                "python": "${fileDirname}/bin/macos/python38/venv/bin/python"
-            }
-        },
-        {
-            "presentation": {
-                "group": "5 Launch Individual",
-                "hidden": true
-            },
-            "name": "Shared Python 3.9: Current File",
-            "type": "python",
-            "python": "${workspaceFolder}/src/modules/bin/windows/python39/venv/Scripts/python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "cwd": "${fileDirname}",
-            "justMyCode": false,
-            "env": {
-                "DEBUG_IN_VSCODE": "True",
-                "RUNNING_IN_VSCODE": "True",
-                // "CPAI_LOG_VERBOSITY": "Loud",
-                "CPAI_PORT": "32168"
-            },
-            "linux": {
-                "python": "${workspaceFolder}/src/modules/bin/linux/python39/venv/bin/python",
-            },
-            "osx": {
-                "python": "${workspaceFolder}/src/modules/bin/macos/python39/venv/bin/python",
-            }
-        },
-        {
-            "presentation": {
-                "group": "5 Launch Individual",
-                "hidden": true
-            },
-            "name": "Local Python 3.9: Current File",
-            "type": "python",
-            "python": "${fileDirname}/bin/linux/python39/venv/bin/python3.9",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "cwd": "${fileDirname}",
-            "justMyCode": false,
-            "env": {
-                "DEBUG_IN_VSCODE": "True",
-                "RUNNING_IN_VSCODE": "True",
-                // "CPAI_LOG_VERBOSITY": "Loud",
-                "CPAI_PORT": "32168"
-            },
-            "windows": {
-                "python": "${fileDirname}/bin/windows/python39/venv/Scripts/python"
-            },
-            "linux": {
-                "python": "${fileDirname}/bin/linux/python39/venv/bin/python3.9"
-            },
-            "osx": {
-                "python": "${fileDirname}/bin/macos/python39/venv/bin/python"
-            }
-        },
-        {
-            "presentation": {
-                "group": "5 Launch Individual",
-                "hidden": true
-            },
             "name": "Python: Attach via ProcessID",
             "type": "python",
             "request": "attach",
@@ -1229,11 +1051,11 @@
             "justMyCode": true
         },
 
-        // Demos --------------------------------------------------------------
+        // Demo clients --------------------------------------------------------
         
         {
             "presentation": {
-                "group": "9 Demos",
+                "group": "9 Demo clients",
                 // "order": 90
             },
             "name": "[Win] Build Explorer App",
@@ -1243,7 +1065,7 @@
             "console": "internalConsole",
             "request": "launch",
             "preLaunchTask": "build-explorer",
-            "cwd": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/",
+            "cwd": "${workspaceFolder}/demos/clients/dotNet/CodeProject.AI.Explorer/",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -1253,7 +1075,7 @@
 
         {
             "presentation": {
-                "group": "9 Demos",
+                "group": "9 Demo clients",
                 // "order": 90
             },
             "name": "[Win] Run Explorer App",
@@ -1261,7 +1083,7 @@
             "request": "launch",
             "preLaunchTask": "build-explorer",
             "windows": {
-                "program": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/CodeProject.AI.Explorer.exe",
+                "program": "${workspaceFolder}/demos/clients/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/CodeProject.AI.Explorer.exe",
             },
             "args": [],
             "cwd": "${workspaceFolder}",
@@ -1276,7 +1098,7 @@
 
         {
             "presentation": {
-                "group": "9 Demos",
+                "group": "9 Demo clients",
                 "hidden": false
             },
             "name": "Racoon detector",
@@ -1285,7 +1107,7 @@
             "request": "launch",
             "program": "racoon_detect.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/demos/Python/ObjectDetect",
+            "cwd": "${workspaceFolder}/demos/clients/Python/ObjectDetect",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -1301,6 +1123,133 @@
             },
             "osx": {
                 "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+            }
+        },
+
+        // DEMO MODULES --------------------------------------------------------
+
+        {
+            "presentation": {
+                "group": "99 Demos",
+                "Order": 1,
+            },
+
+            "name": "Python Simple Module",
+            "type": "python",
+            "python": "${workspaceFolder}/src/runtimes/bin/linux/python39/venv/bin/python",
+            "request": "launch",
+            // "program": "detect.py",
+            "program": "detect_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/demos/modules/PythonSimple",
+            "justMyCode": false,
+            "args": [ "-i", "${workspaceFolder}\\demos\\modules\\PythonSimple\\test\\home-office.jpg",
+                      "-a", "${workspaceFolder}\\demos\\modules\\PythonSimple\\assets\\",
+                      "-t", "0.6"
+                    ],
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "CPAI_MODULE_QUEUENAME": "objectdetection_queue",
+
+                "MODEL_SIZE": "Tiny"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+            }
+        },
+        {
+            "presentation": {
+                "group": "99 Demos"
+            },
+
+            "name": "Python Long Process Module",
+            "type": "python",
+            "python": "${workspaceFolder}/src/runtimes/bin/linux/python39/venv/bin/python",
+            "request": "launch",
+            "program": "long_process_demo_adapter.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/demos/modules/PythonLongProcess",
+            "justMyCode": false,
+            "args": [  ],
+            "env": {
+                "DEBUG_IN_VSCODE": "True",
+                "RUNNING_IN_VSCODE": "True",
+                "CPAI_PORT": "32168",
+                "CPAI_MODULE_PARALLELISM": "1",
+
+                "MODEL_SIZE": "Tiny"
+            },
+            "windows": {
+                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python"
+            },
+            "linux": {
+                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+            },
+            "osx": {
+                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "99 Demos",
+                "hidden": false
+            },
+            "name": ".NET Simple Module",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-demo-net",
+            "program": "${workspaceFolder}/demos/modules/DotNetSimple/bin/Debug/net7.0/DotNetSimple",
+            "linux": {
+                "program": "${workspaceFolder}/demos/modules/DotNetSimple/bin/Debug/net7.0/DotNetSimple.dll",
+            },
+            // "args": [ "--selftest" ],
+            // "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/demos/modules/DotNetSimple", 
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true",
+                "DYLD_LIBRARY_PATH" : "/opt/homebrew/lib" // For macOS
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "99 Demos",
+                "hidden": false
+            },
+            "name": ".NET Long Process Module",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-demo_module_dotnetlongprocess",
+            "program": "${workspaceFolder}/demos/modules/DotNetLongProcess/bin/Debug/net7.0/DotNetLongProcess",
+            "linux": {
+                "program": "${workspaceFolder}/demos/modules/DotNetLongProcess/bin/Debug/net7.0/DotNetLongProcess.dll",
+            },
+            // "args": [ "--selftest" ],
+            // "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/demos/modules/DotNetLongProcess", 
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "requireExactSource": false,
+            "justMyCode": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true",
             }
         }
     ]

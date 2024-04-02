@@ -302,36 +302,36 @@ shift & goto :%~1
     REM Clean up directories to force a download and re-copy if necessary. Note that:
     REM  - moduleDirName is the name of the current module's directory
     REM  - moduleDirPath is the path to the module's directory
-    REM  - downloadDirPath is the path where downloads are always stored (typically src/downloads)
+    REM  - downloadDirPath is the path where downloads are stored (typically src/downloads)
     if /i "%forceOverwrite%" == "true" (
         REM Force Re-download, then force re-copy of downloads to install dir
-        if exist "!downloadDirPath!\!moduleDirName!\!fileToGet!" (
-            del /s %rmdirFlags% "!downloadDirPath!\!moduleDirName!\!fileToGet!"
+        if exist "!downloadDirPath!\!modulesDir!\!moduleDirName!\!fileToGet!" (
+            del /s %rmdirFlags% "!downloadDirPath!\!modulesDir!\!moduleDirName!\!fileToGet!"
         )
         if exist "!moduleDirPath!\!moduleAssetsDirName!" rmdir /s %rmdirFlags% "!moduleDirPath!\!moduleAssetsDirName!"
     )
     
-    REM Download !storageUrl!fileToGet to downloadDirPath and extract into downloadDirPath\moduleDirName\ModuleAssetDir
+    REM Download !storageUrl!fileToGet to downloadDirPath and extract into downloadDirPath\modules\moduleDirName\ModuleAssetDir
 
     REM Params are: S3 storage bucket | fileToGet     | zip lives in...      | zip expanded to moduleDir/... | message
     REM eg                   "S3_bucket/folder"  "rembg-models.zip" \downloads\myModuleDir"          "assets"            "Downloading models..."
-    call :DownloadAndExtract "!storageUrl!!folder!" "!fileToGet!" "!downloadDirPath!\!moduleDirName!" "!moduleAssetsDirName!" "!message!"
+    call :DownloadAndExtract "!storageUrl!!folder!" "!fileToGet!" "!downloadDirPath!\!modulesDir!\!moduleDirName!" "!moduleAssetsDirName!" "!message!"
 
-    REM Copy downloadDirPath\moduleDirName\moduleAssetsDirName folder to modulesDirPath\moduleDirName\
-    if exist "!downloadDirPath!\!moduleDirName!\!moduleAssetsDirName!" (
+    REM Copy downloadDirPath\modules\moduleDirName\moduleAssetsDirName folder to modulesDirPath\moduleDirName\
+    if exist "!downloadDirPath!\!modulesDir!\!moduleDirName!\!moduleAssetsDirName!" (
 
         REM if /i "%verbosity%" neq "quiet" ( ... )
 
         call :Write "Copying contents of !fileToGet! to !moduleAssetsDirName!..."
 
-        REM move "!downloadDirPath!\!moduleDirName!\!moduleAssetsDirName!" !moduleDirPath!
+        REM move "!downloadDirPath!\!modulesDir!\!moduleDirName!\!moduleAssetsDirName!" !moduleDirPath!
         REM if errorlevel 1 (
         REM     call :WriteLine "Failed" !color_error!
         REM ) else (
         REM     call :WriteLine "done" !color_success!
         REM )
 
-        robocopy /E "!downloadDirPath!\!moduleDirName!\!moduleAssetsDirName! " ^
+        robocopy /E "!downloadDirPath!\!modulesDir!\!moduleDirName!\!moduleAssetsDirName! " ^
                     "!moduleDirPath!\!moduleAssetsDirName! " !roboCopyFlags! /MOVE >NUL
         if errorlevel 16 (
             call :WriteLine "Failed" !color_error!
@@ -458,7 +458,7 @@ shift & goto :%~1
 
     popd
 
-    call :WriteLine "Done." "!color_success!"
+    call :WriteLine "done." "!color_success!"
 
     exit /b
 
@@ -524,7 +524,7 @@ shift & goto :%~1
 
     call :Write "Checking for .NET !requestedNetMajorVersion!.0..."
 
-    set currentDotNetVersion=None
+    set currentDotNetVersion=0
     set comparison=-1
 
     if /i "!requestedType!" == "SDK" (
@@ -695,7 +695,7 @@ shift & goto :%~1
     ) else (
         if /i "%verbosity%" neq "quiet" call :WriteLine "Virtual Environment doesn't exist. Creating at !virtualEnvDirPath!"
         "!basePythonCmdPath!" -m venv "!virtualEnvDirPath!"
-        call :WriteLine "Done" %color_success%
+        call :WriteLine "done" %color_success%
     )
 
     REM Ensure Python in the venv Exists
@@ -843,7 +843,7 @@ shift & goto :%~1
 
     REM A number of global variables are assumed here
     REM  - pythonVersion     - version in X.Y format
-    REM  - installLocation   - can be "Shared" or "Local"
+    REM  - installLocation   - can be "Shared", "Local" or "System"
     REM  - pythonName        - eg python37 or python311
     REM  - venvPythonCmdPath - the path to the python interpreter for this venv
     REM  - virtualEnvDirPath - the path to the virtual environment for this module
@@ -940,9 +940,9 @@ shift & goto :%~1
 
                     "!venvPythonCmdPath!" -m pip show !module_name! >NUL 2>&1
                     if !errorlevel! == 0 (
-                        call :Write "(checked) " !color_success!
+                        call :Write "(✅ checked) " !color_success!
                     ) else (
-                        call :Write "(failed check) " !color_error!
+                        call :Write "(❌ failed check) " !color_error!
                     )
                 ) else (
                     call :Write "(not checked) " !color_warn!
@@ -951,7 +951,7 @@ shift & goto :%~1
                 call :Write "(not checked) " !color_warn!
             )
         
-            call :WriteLine "Done" %color_success%
+            call :WriteLine "done" %color_success%
 
         ) else (
             call :WriteLine "Already installed" %color_success%
@@ -995,7 +995,7 @@ shift & goto :%~1
     ) else (
         "!venvPythonCmdPath!" -m ensurepip
     )
-    call :WriteLine "Done" %color_success%
+    call :WriteLine "done" %color_success%
 
     call :Write "Ensuring Python package manager (pip) is up to date..."
 
@@ -1018,7 +1018,7 @@ shift & goto :%~1
                               --trusted-host pypi.org --upgrade pip !pipFlags!
     )
     
-    call :WriteLine "Done" %color_success%
+    call :WriteLine "done" %color_success%
 
 
     REM ========================================================================
@@ -1139,15 +1139,15 @@ shift & goto :%~1
 
                             "!venvPythonCmdPath!" -m pip show !module_name! >NUL 2>&1
                             if !errorlevel! == 0 (
-                                call :Write "(checked) " !color_success!
+                                call :Write "(✅ checked) " !color_success!
                             ) else (
-                                call :Write "(failed check) " !color_error!
+                                call :Write "(❌ failed check) " !color_error!
                             )
                         ) else (
                             call :Write "(not checked) " !color_warn!
                         )
                         
-                        call :WriteLine "Done" %color_success%
+                        call :WriteLine "done" %color_success%
                     ) else (
                         call :WriteLine "Already installed" %color_success%
                     )
@@ -1157,6 +1157,43 @@ shift & goto :%~1
             )
         )
     )
+
+    exit /b
+
+
+:DownloadModels
+    REM Downloads the models listed in a module's modulesettings file and marked as needing to be installed
+    SetLocal EnableDelayedExpansion
+
+    call :Write "Scanning modulesettings for downloadable models..."
+
+    set foundModels=false
+
+    for /L %%i in (0,1,100) Do (
+
+        call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.DownloadableModels[%%i].Name"
+        if /i "!moduleSettingsFileValue!" == "" (
+            if /i "!foundModels!" == "false" call :WriteLine "No models specified" "!color_mute!"
+            exit /b
+        )
+
+        set modelName=!moduleSettingsFileValue!
+        call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.DownloadableModels[%%i].PreInstall"
+        if /i "!moduleSettingsFileValue!" == "true" (
+
+            if /i "!foundModels!" == "false" call :WriteLine "Processing model list"
+            set foundModels=true
+
+            call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.DownloadableModels[%%i].Filename"
+            set modelFileName=!moduleSettingsFileValue!
+            call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.DownloadableModels[%%i].Folder"
+            set modelFolderName=!moduleSettingsFileValue!
+
+            call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "!modelFileName!" "!modelFolderName!" "Downloading !modelName!..."
+        )
+    )
+
+    if /i "!foundModels!" == "false" call :WriteLine "No models specified" "!color_mute!"
 
     exit /b
 
@@ -1215,7 +1252,7 @@ shift & goto :%~1
                 set "part=%%~a"
                 REM echo !part!
                 if /i "!prevPart!" == "cuDNN" (
-                    if "!part:~0,1!" == "v" (
+                    if /i "!part:~0,1!" == "v" (
                         set "cuDNN_version=!part:~1!"
                         REM @echo cuDNN version = !cuDNN_version!
                         exit /b
@@ -1254,8 +1291,9 @@ shift & goto :%~1
         )
     )
 
-    REM The order in which modulesettings files are added is
-    REM WE DO NOT SUPPORT DOCKER IN Windows at the moment
+    REM Module settings files are loaded in this order. Each file will overwrite (but not delete)
+    REM settings of the previous file. Becuase of this, we're going to search the files in REVERSE
+    REM order until we find the first value based on the most specific to least specific file.
     REM   modulesettings.json
     REM   modulesettings.development.json 
     REM   modulesettings.os.json
@@ -1265,8 +1303,6 @@ shift & goto :%~1
     REM   (not supported) modulesettings.docker.json
     REM   (not supported) modulesettings.docker.development.json
     REM   (not needed yet) modulesettings.device.json (device = raspberrypi, orangepi, jetson)
-    REM
-    REM So we need to check each modulesettings file in REVERSE order until we find a value for 'key'
     
     set moduleSettingValue=
     
@@ -1326,22 +1362,22 @@ REM Gets a value from the modulesettings.json file (any JSON file, really) based
 REM purely on the name of the propery. THIS METHOD DOES NOT TAKE INTO ACCOUNT THE
 REM DEPTH OF A PROPERTY. If the property is at the root level or 10 levels down,
 REM it's all the same. The extraction is done purely by grep/sed, so is very niaive. 
-:GetValueFromModuleSettings  jsonFile key returnValue
+:GetValueFromModuleSettings  jsonFilePath key returnValue
     set "moduleSettingValue="
     SetLocal EnableDelayedExpansion
 
-    set jsonFile=%~1
+    set jsonFilePath=%~1
     set key=%~2
 
     if "!debug_json_parse!" == "true" (
         if /i "!verbosity!" neq "quiet" (
-            call :WriteLine "Searching for '%key%' in '%jsonFile%'" "!color_info!"
+            call :WriteLine "Searching for '%key%' in '%jsonFilePath%'" "!color_info!"
         )
     )
 
-    if not exist "!jsonFile!" (
+    if not exist "!jsonFilePath!" (
         if "!debug_json_parse!" == "true" if /i "!verbosity!" neq "quiet" (
-            call :WriteLine "Can't find '%jsonFile%'" "!color_info!"
+            call :WriteLine "Can't find '%jsonFilePath%'" "!color_info!"
         )
         EndLocal & set "moduleSettingValue="
         exit /b
@@ -1379,7 +1415,7 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
         REM )
 
         REM Step 1. Encode "!"
-        powershell -Command "(Get-Content '!jsonFile!') -replace '^!','^^^!' | Out-File -FilePath 'temp_settings1.json' -Force -Encoding utf8"
+        powershell -Command "(Get-Content '!jsonFilePath!') -replace '^!','^^^!' | Out-File -FilePath 'temp_settings1.json' -Force -Encoding utf8"
 
         REM Step 2. Strip comments
         call :StripJSONComments temp_settings1.json temp_settings2.json
@@ -1398,17 +1434,17 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
     ) else if /i "!parse_mode!" == "parsejson" (     
 
         REM Handling quotes and spaces inside a FOR loop is a PITA. Use this trick to get to the
-        REM directory containing the JSON file so we can skip quotes on !jsonFile!
-        pushd "!jsonFile!\.."
+        REM directory containing the JSON file so we can skip quotes on !jsonFilePath!
+        pushd "!jsonFilePath!\.."
 
 		REM Extract the filename.ext from the json file since it's now in the current dir. This
         REM allows us to parse the JSON file without quotes. ASSUMING jsonFile DOESN'T HAVE SPACES
-		for %%A in ("!jsonFile!") do set "jsonFileCurrentDir=%%~nxA"
+		for %%A in ("!jsonFilePath!") do set "jsonFileName=%%~nxA"
         
-        REM Run the ParseJSON command on jsonFile, and collect ALL lines of output (eg arrays) into
-        REM the jsonValue var. Note the quotes around ParseJSON, but not around key or jsonFileCurrentDir
+        REM Run the ParseJSON command on jsonFilePath, and collect ALL lines of output (eg arrays) 
+        REM into the jsonValue var. Note the quotes around ParseJSON, but not around key or jsonFileName
         set "jsonValue="
-        for /f "usebackq tokens=*" %%i in (` "%sdkPath%\Utilities\ParseJSON\ParseJSON.exe" !key! !jsonFileCurrentDir! `) do (
+        for /f "usebackq tokens=*" %%i in (` "%sdkPath%\Utilities\ParseJSON\ParseJSON.exe" !key! !jsonFileName! `) do (
             set jsonValue=!jsonValue!%%i
         )
 
@@ -1419,7 +1455,7 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
 
         REM or use inbuilt DOS commands. This will not allow JSON path searching so is very limited
         set jsonValue=
-        for /f "usebackq tokens=2 delims=:," %%a in (`findstr /I /R /C:"\"!key!\"[^^{]*$" "!jsonFile!"`) do (
+        for /f "usebackq tokens=2 delims=:," %%a in (`findstr /I /R /C:"\"!key!\"[^^{]*$" "!jsonFilePath!"`) do (
             set "jsonValue=%%a"
             set jsonValue=!jsonValue:"=!
             set "jsonValue=!jsonValue: =!"
@@ -1428,9 +1464,9 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
 
     if "!debug_json_parse!" == "true" (
         if "!jsonValue!" == "" (
-            call :WriteLine "Cannot find !key! in !jsonFile!" "!color_info!"
+            call :WriteLine "Cannot find !key! in !jsonFilePath!" "!color_info!"
         ) else (
-            call :WriteLine "** !key! is !jsonValue! in !jsonFile!" "!color_info!"
+            call :WriteLine "** !key! is !jsonValue! in !jsonFilePath!" "!color_info!"
         )
     )
 

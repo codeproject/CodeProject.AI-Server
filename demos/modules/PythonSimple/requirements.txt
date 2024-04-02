@@ -1,0 +1,12 @@
+#! Python3.8
+
+# CPU specific Torch 1.13.0. Size ~830Mb
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==1.13.0+cpu               # Installing PyTorch, for Tensor computation and Deep neural networks
+--extra-index-url https://download.pytorch.org/whl/cpu
+torchvision==0.14.0+cpu         # Installing TorchVision, for Computer Vision based AI
+
+# Specific version because we have a patch
+ultralytics==8.1.2              # Installing Ultralytics package for object detection in images
+
+# last line empty.

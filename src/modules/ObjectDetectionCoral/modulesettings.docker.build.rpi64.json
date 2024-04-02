@@ -14,15 +14,12 @@
          packages can be installed and persisted.
       */
 
-      "InstallOptions" : {
-        "PreInstalled": "true"
-      },
       "LaunchSettings": {
         // This is usable on an RPi, but it needs better modules, and hopefully Coral.AI device, to
         // be truly fast
         "AutoStart": true,
-        // This NEEDS to be 'shared' for docker pre-installed
-        "RuntimeLocation": "Shared" // Can be Local or Shared
+        // This NEEDS to be 'System' for docker pre-installed
+        "RuntimeLocation": "System" // Can be Local, Shared or System
       },
       "EnvironmentVariables": {
         "MODEL_SIZE": "Tiny"

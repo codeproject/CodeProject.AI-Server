@@ -20,10 +20,10 @@ namespace CodeProject.AI.SDK
         Unknown = 0,
 
         /// <summary>
-        /// Not enabled (but available to be enabled)
+        /// Not set to auto-start (but available to be started)
         /// </summary>
-        [EnumMember(Value = "NotEnabled")]
-        NotEnabled,
+        [EnumMember(Value = "NoAutoStart")]
+        NoAutoStart,
 
         /// <summary>
         /// Not available. Maybe not valid, maybe not available on this platform.
@@ -32,10 +32,10 @@ namespace CodeProject.AI.SDK
         NotAvailable,
 
         /// <summary>
-        /// Good to go
+        /// Will be started when the server starts
         /// </summary>
-        [EnumMember(Value = "Enabled")]
-        Enabled,
+        [EnumMember(Value = "AutoStart")]
+        AutoStart,
 
         /// <summary>
         /// It's ready to rock and/or roll but wasn't started (maybe due to debugging settings)
@@ -132,6 +132,11 @@ namespace CodeProject.AI.SDK
         /// The status data as returned by the module
         /// </summary>
         public JsonObject? StatusData { get; set; }
+
+        /// <summary>
+        /// The array of models that can be downloaded by this module
+        /// </summary>
+        public ModelDownload[]? DownloadableModels { get; set; }
 
         /// <summary>
         /// Gets the number of requests processed

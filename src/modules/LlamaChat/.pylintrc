@@ -1,0 +1,5 @@
+[MAIN]
+recursive = True
+source-roots = ../../SDK/Python, bin/windows/python39/venv/Lib/site-packages
+defining-attr-methods = __init__, initialise
+disable = line-too-long

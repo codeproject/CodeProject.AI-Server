@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.SDK
 {
@@ -163,30 +164,20 @@ namespace CodeProject.AI.SDK
         /// ModuleDescription objects are typically created by deserialising a JSON file so we don't
         /// get a chance at create time to supply supplementary information or adjust values that
         /// may not have been set (eg moduleId). Specifically, this function will set the status and
-        /// the moduleDirPath / WorkingDirectory, as well as setting the latest compatible version from
-        /// the module's ModuleRelease list. But this could change without notice.
+        /// the moduleDirPath / WorkingDirectory, as well as setting the latest compatible version
+        /// from the module's ModuleRelease list. But this could change without notice.
         /// </summary>
         /// <param name="module">This module that requires initialisation</param>
         /// <param name="currentServerVersion">The current version of the server</param>
-        /// <param name="modulesDirPath">The path to the folder containing all downloaded and installed
-        /// modules</param>
-        /// <param name="preInstalledModulesDirPath">The path to the folder containing all pre-installed
-        /// modules</param>
-        /// <remarks>Modules are usually downloaded and installed in the modulesDirPath, but we can
-        /// 'pre-install' them in situations like a Docker image. We pre-install modules in a
-        /// separate folder than the downloaded and installed modules in order to avoid conflicts 
-        /// (in Docker) when a user maps a local folder to the modules dir. Doing this to the 'pre
-        /// installed' dir would make the contents (the preinstalled modules) disappear.</remarks>
+        /// <param name="moduleDirPath">The path to the folder containing this module</param>
         public static void Initialise(this ModuleDescription module, string currentServerVersion, 
-                                      string modulesDirPath, string preInstalledModulesDirPath)
-        {
-            if (module.InstallOptions!.PreInstalled)
-                module.ModuleDirPath = Path.Combine(preInstalledModulesDirPath, module.ModuleId!);
-            else
-                module.ModuleDirPath = Path.Combine(modulesDirPath, module.ModuleId!);
+                                      string moduleDirPath)
+        {           
+            module.ModuleDirPath    = moduleDirPath;
             module.WorkingDirectory = module.ModuleDirPath; // This once was allowed to be different to moduleDirPath
 
             // Find the most recent version of this module that's compatible with the current server
+            module.CheckVersionAgainstModuleReleases();
             SetLatestCompatibleVersion(module, currentServerVersion);
 
             // Set the status of all entries based on availability on this platform

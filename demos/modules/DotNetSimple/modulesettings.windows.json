@@ -1,0 +1,10 @@
+{
+  "Modules": {
+
+    "DotNetSimple": {
+      "LaunchSettings": {
+        "FilePath": "bin\\DotNetSimple.exe"
+      }
+    }
+  }
+}

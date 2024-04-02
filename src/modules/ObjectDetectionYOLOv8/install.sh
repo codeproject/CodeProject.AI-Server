@@ -21,7 +21,7 @@ fi
 
 # For Jetson, we need to install Torch before the other packages.
 # A huge thanks to QEngineering: https://qengineering.eu/install-pytorch-on-jetson-nano.html
-if [ "$module_install_errors" = "" ] && [ "$systemName" = "Jetson" ]; then 
+if [ "$module_install_errors" = "" ] && [ "$edgeDevice" = "Jetson" ]; then 
 
     # NOTE: Pytorch 2.0 and above uses CUDA 11. The Jetson Nano has CUDA 10.2.
     # Due to low-level GPU incompatibility, installing CUDA 11 on your Nano is 
@@ -192,20 +192,22 @@ if [ "$module_install_errors" = "" ] && [ "$inDocker" != true ] && [ "$os" = "li
     #
     #    sudo apt-get install ./amdgpu-install_5.4.50402-1_all.deb
     #    spin $!
-    #    writeLine "Done" "$color_success"
+    #    writeLine "done" "$color_success"
     #
     #    writeLine 'Installing ROCm drivers...'
     #    sudo amdgpu-install --usecase=dkms,graphics,multimedia,opencl,hip,hiplibsdk,rocm
     #    spin $!
-    #    writeLine "Done" "$color_success"
+    #    writeLine "done" "$color_success"
     # fi
 fi
 
 # Download the models and store in /assets and /custom-models (already in place in docker)
-if [ "$module_install_errors" = "" ]; then
-    getFromServer "models/" "models-yolo8-pt.zip"        "assets" "Downloading Standard YOLO models..."
-    getFromServer "models/" "custom-models-yolo8-pt.zip" "custom-models" "Downloading Custom YOLO models..."
-fi
+# if [ "$module_install_errors" = "" ]; then
+#     getFromServer "models/" "models-yolo8-pt.zip"                     "assets" "Downloading YOLO object detection models..."
+#     getFromServer "models/" "objectsegmentation-coco-yolov8-pt-m.zip" "assets" "Downloading YOLO segmentation models..."
+#
+#     getFromServer "models/" "objectdetection-custom-yolov8-pt-m.zip" "custom-models" "Downloading Custom YOLO models..."
+# fi
 
 # TODO: Check assets created and has files
 # module_install_errors=...

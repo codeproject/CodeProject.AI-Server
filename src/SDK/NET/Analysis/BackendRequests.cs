@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Text.Json.Serialization;
 
+using CodeProject.AI.SDK.Utils;
+
 using SkiaSharp;
 
 namespace CodeProject.AI.SDK

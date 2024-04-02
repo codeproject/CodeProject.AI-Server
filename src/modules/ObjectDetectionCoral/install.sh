@@ -32,8 +32,8 @@ if [ "$2" = "max" ]; then tpu_speed="max"; fi
 # We may need admin rights, so we may as well check now.
 checkForAdminRights
 
-if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || \
-   [ "${systemName}" = "Jetson" ]; then
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
+   [ "${edgeDevice}" = "Jetson" ]; then
 
     if [ "$isAdmin" = false ]; then
     
@@ -58,7 +58,7 @@ if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || 
         module_install_errors=""
         installAptPackages "libopenblas-dev libblas-dev m4 cmake cython python3-dev python3-yaml python3-setuptools"
 
-        if [ "${systemName}" = "Jetson" ]; then
+        if [ "${edgeDevice}" = "Jetson" ]; then
             installAptPackages "libc-bin=2.29 libc6=2.29"
         fi
     fi
@@ -125,13 +125,13 @@ if [ "$os" = "linux" ]; then
                 # Add the Debian package repository to your system
                 echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
 
-                if [ ! -d "${downloadDirPath}/${ModuleDirName}" ]; then mkdir -p "${downloadDirPath}/${ModuleDirName}"; fi
-                pushd "${downloadDirPath}/${ModuleDirName}" >/dev/null 2>/dev/null
+                if [ ! -d "${downloadDirPath}/${ModuleDirName}" ]; then mkdir -p "${downloadDirPath}/${modulesDir}/${ModuleDirName}"; fi
+                pushd "${downloadDirPath}/${modulesDir}/${ModuleDirName}" >/dev/null 2>/dev/null
 
                 write "Downloading signing keys..." $color_mute
                 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg -s --output apt-key.gpg >/dev/null 2>/dev/null &
                 spin $!
-                writeLine "Done" "$color_success"
+                writeLine "done" "$color_success"
 
                 write "Installing signing keys..." $color_mute
                 # TODO: We need to transition away from apt key. See https://opensource.com/article/22/9/deprecated-linux-apt-key
@@ -139,7 +139,7 @@ if [ "$os" = "linux" ]; then
                 # place it directly in the /etc/apt/trusted.gpg.d/ directory
                 sudo apt-key add apt-key.gpg >/dev/null 2>/dev/null &
                 spin $!
-                writeLine "Done" "$color_success"
+                writeLine "done" "$color_success"
         
                 popd >/dev/null 2>/dev/null
 
@@ -168,7 +168,7 @@ elif [ "$os" = "macos" ]; then
     # write "Updating macports..."
     # sudo /opt/local/bin/port selfupdate >/dev/null
     # spin $!
-    # writeLine "Done" "$color_success"
+    # writeLine "done" "$color_success"
 
     /opt/local/bin/port version 2>/dev/null
     if [ "$?" != "0" ]; then
@@ -216,10 +216,10 @@ elif [ "$os" = "macos" ]; then
         package_desc="Tensorflow Lite for Coral"
         pip_options="--extra-index-url https://google-coral.github.io/py-repo/"
 
-        if [ "$os_name" = "Big Sur" ] && [ "$architecture" = "x86_64" ]; then   # macOS 11.x on Intel
+        if [ "$os_name" = "Big Sur" ] && [ "$architecture" = "x86_64" ]; then   # macOS 11.x on Intel, kernal 20.x
             installPythonPackagesByName "$package" "$package_desc" "$pip_options"
             installPythonPackagesByName "pycoral"
-        elif [ "$os_name" = "Monterey" ] && [ "$architecture" = "arm64" ]; then # macOS 12.x on Apple Silicon
+        elif [ "$os_name" = "Monterey" ] && [ "$architecture" = "arm64" ]; then # macOS 12.x on Apple Silicon, , kernal 21.x
             installPythonPackagesByName "$package" "$package_desc" "$pip_options"
             installPythonPackagesByName "pycoral"
         else
@@ -231,28 +231,32 @@ elif [ "$os" = "macos" ]; then
 fi
 
 if [ "$module_install_errors" == "" ]; then
-    # Download the TFLite / edgeTPU models and store in /assets
+    # Download the full set of TFLite / edgeTPU models and store in /assets
     # getFromServer "models/" "objectdetect-coral-models.zip" "assets" "Downloading MobileNet models..."
 
-    getFromServer "models/" "objectdetection-efficientdet-large-edgetpu.zip" "assets" "Downloading EfficientDet (large) models..."
-    getFromServer "models/" "objectdetection-efficientdet-medium-edgetpu.zip" "assets" "Downloading EfficientDet (medium) models..."
-    getFromServer "models/" "objectdetection-efficientdet-small-edgetpu.zip" "assets" "Downloading EfficientDet (small) models..."
-    getFromServer "models/" "objectdetection-efficientdet-tiny-edgetpu.zip" "assets" "Downloading EfficientDet (tiny) models..."
+    # Download individual assets
+    # getFromServer "models/" "objectdetection-efficientdet-large-edgetpu.zip" "assets" "Downloading EfficientDet (large) models..."
+    # getFromServer "models/" "objectdetection-efficientdet-medium-edgetpu.zip" "assets" "Downloading EfficientDet (medium) models..."
+    # getFromServer "models/" "objectdetection-efficientdet-small-edgetpu.zip" "assets" "Downloading EfficientDet (small) models..."
+    # getFromServer "models/" "objectdetection-efficientdet-tiny-edgetpu.zip" "assets" "Downloading EfficientDet (tiny) models..."
 
-    getFromServer "models/" "objectdetection-mobilenet-large-edgetpu.zip" "assets" "Downloading MobileNet (large) models..."
-    getFromServer "models/" "objectdetection-mobilenet-medium-edgetpu.zip" "assets" "Downloading MobileNet (medium) models..."
-    getFromServer "models/" "objectdetection-mobilenet-small-edgetpu.zip" "assets" "Downloading MobileNet (small) models..."
-    getFromServer "models/" "objectdetection-mobilenet-tiny-edgetpu.zip" "assets" "Downloading MobileNet (tiny) models..."
+    # getFromServer "models/" "objectdetection-mobilenet-large-edgetpu.zip" "assets" "Downloading MobileNet (large) models..."
+    # getFromServer "models/" "objectdetection-mobilenet-medium-edgetpu.zip" "assets" "Downloading MobileNet (medium) models..."
+    # getFromServer "models/" "objectdetection-mobilenet-small-edgetpu.zip" "assets" "Downloading MobileNet (small) models..."
+    # getFromServer "models/" "objectdetection-mobilenet-tiny-edgetpu.zip" "assets" "Downloading MobileNet (tiny) models..."
 
     # getFromServer "models/" "objectdetection-yolov5-large-edgetpu.zip" "assets" "Downloading YOLOv5 (large) models..."
     # getFromServer "models/" "objectdetection-yolov5-medium-edgetpu.zip" "assets" "Downloading YOLOv5 (medium) models..."
     # getFromServer "models/" "objectdetection-yolov5-small-edgetpu.zip" "assets" "Downloading YOLOv5 (small) models..."
     # getFromServer "models/" "objectdetection-yolov5-tiny-edgetpu.zip" "assets" "Downloading YOLOv5 (tiny) models..."
 
-    getFromServer "models/" "objectdetection-yolov8-large-edgetpu.zip" "assets" "Downloading YOLOv8 (large) models..."
-    getFromServer "models/" "objectdetection-yolov8-medium-edgetpu.zip" "assets" "Downloading YOLOv8 (medium) models..."
-    getFromServer "models/" "objectdetection-yolov8-small-edgetpu.zip" "assets" "Downloading YOLOv8 (small) models..."
-    getFromServer "models/" "objectdetection-yolov8-tiny-edgetpu.zip" "assets" "Downloading YOLOv8 (tiny) models..."
+    # getFromServer "models/" "objectdetection-yolov8-large-edgetpu.zip" "assets" "Downloading YOLOv8 (large) models..."
+    # getFromServer "models/" "objectdetection-yolov8-medium-edgetpu.zip" "assets" "Downloading YOLOv8 (medium) models..."
+    # getFromServer "models/" "objectdetection-yolov8-small-edgetpu.zip" "assets" "Downloading YOLOv8 (small) models..."
+    # getFromServer "models/" "objectdetection-yolov8-tiny-edgetpu.zip" "assets" "Downloading YOLOv8 (tiny) models..."
+
+    # - no downloads here. It's all handled via modulesettings now
+    echo
 
     # TODO: Check assets created and has files
     # module_install_errors=...

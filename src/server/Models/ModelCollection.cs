@@ -66,8 +66,8 @@ namespace CodeProject.AI.Server.Models
         [JsonIgnore]
         public string Description => "Models for " + Category + " that perform " + Task;
 
-       /// <summary>
-        /// The category this model belongs to. This could be things like 'Vision', 'Audio'
+        /// <summary>
+        /// The category this model belongs to. This could be things like 'Vision', 'Audition'
         /// </summary>
         public string? Category { get; set; }
 

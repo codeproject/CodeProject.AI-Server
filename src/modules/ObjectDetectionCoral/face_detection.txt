@@ -1,5 +1,0 @@
-Model:
-https://github.com/google/mediapipe/tree/master/mediapipe/examples/coral/models
-
-Model output:
-https://developers.google.com/mediapipe/solutions/vision/face_detector/python

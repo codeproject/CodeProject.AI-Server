@@ -143,7 +143,7 @@ def remove(
         return (np.asarray(cutout), inference_time)
 
     bio = io.BytesIO()
-    cutout.save(bio, "PNG")
+    cutout.save(bio, "JPG")
     bio.seek(0)
 
     return (bio.read(), inference_time)

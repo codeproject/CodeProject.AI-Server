@@ -3,7 +3,7 @@
 
     "BackgroundRemover": {
       "Name": "Background Remover",
-      "Version": "1.8.1",
+      "Version": "1.9.0",
 
       "PublishingInfo" : {
         "Description": "Automatically removes the background from a picture", 
@@ -22,7 +22,7 @@
         "AutoStart": false,
         "FilePath": "rembg_adapter.py",
         "Runtime": "python3.9",
-        "RuntimeLocation": "Local",     // Can be Local or Shared
+        "RuntimeLocation": "Local",     // Can be Local, Shared or System
         /* Alternatively: "Command": "%RUNTIMES_PATH%\\bin\\windows\\python39\\venv\\Scripts\\python", */
         "PostStartPauseSecs": 0,        // Generally 1 if using GPU, 0 for CPU
         "Parallelism": 0                // 0 = Default = number of CPUs / 2
@@ -41,7 +41,6 @@
 
       "InstallOptions" : {
         "Platforms": [ "all", "!linux", "!raspberrypi", "!orangepi", "!jetson" ], // issues with numpy on linux
-        "PreInstalled":   false,        // Is this module pre-installed with the server (eg Docker containers)
         "ModuleReleases": [             // Which server version is compatible with each version of this module.
           { "ModuleVersion": "1.0",   "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-11-01" },
           { "ModuleVersion": "1.1",   "ServerVersionRange": [ "1.6.9", "2.0.8"  ], "ReleaseDate": "2022-11-01" },
@@ -56,10 +55,11 @@
           { "ModuleVersion": "1.6.4", "ServerVersionRange": [ "2.4.2", ""       ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
           { "ModuleVersion": "1.7.0", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
           { "ModuleVersion": "1.7.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
-          { "ModuleVersion": "1.7.2", "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
-          { "ModuleVersion": "1.7.3", "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "1.8.0", "ServerVersionRange": [ "2.5.0-RC6", "" ],   "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
-          { "ModuleVersion": "1.8.1", "ServerVersionRange": [ "2.5.2", ""       ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
+          { "ModuleVersion": "1.7.2", "ServerVersionRange": [ "2.5.0-RC6", ""   ],   "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
+          { "ModuleVersion": "1.7.3", "ServerVersionRange": [ "2.5.0-RC6", ""   ],   "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
+          { "ModuleVersion": "1.8.0", "ServerVersionRange": [ "2.5.0-RC6", ""   ],   "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "1.8.1", "ServerVersionRange": [ "2.5.2", "2.6.0"  ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
+          { "ModuleVersion": "1.9.0", "ServerVersionRange": [ "2.6.1", ""       ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Fixes for macOS, updated for Server 2.6" }
         ]
       },
 

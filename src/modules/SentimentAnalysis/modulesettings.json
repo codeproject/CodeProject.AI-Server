@@ -3,7 +3,7 @@
 
     "SentimentAnalysis": {
       "Name": "Sentiment Analysis",
-      "Version": "1.7.1",
+      "Version": "1.8.0",
 
       "PublishingInfo" : {
         "Description": "Provides an analysis of the sentiment of a piece of text. Positive or negative?", 
@@ -22,7 +22,7 @@
         "AutoStart": false,
         "Runtime": "dotnet",
         "FilePath": "SentimentAnalysis.exe",
-        "RuntimeLocation": "Shared",      // Can be Local or Shared. .NET so moot point here
+        "RuntimeLocation": "System",      // Can be Local, Shared or System
         "PostStartPauseSecs": 0,          // Generally 1 if using GPU, 0 for CPU
         "Parallelism": 1                  // 0 = Default = number of CPUs / 2
       },
@@ -41,7 +41,6 @@
 
       "InstallOptions" : {
         "Platforms": [ "windows", "macos" ], // No tensorflow found in linux, and no '*-arm64' because ML.NET only supports x86 and x64 chips
-        "PreInstalled":   false,          // Is this module pre-installed with the server (eg Docker containers)
         "ModuleReleases": [               // Which server version is compatible with each version of this module.
           { "ModuleVersion": "1.0",   "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-06-01" },
           { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1",   "2.1.6"  ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
@@ -57,7 +56,8 @@
           { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
           { "ModuleVersion": "1.6.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
           { "ModuleVersion": "1.7.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
-          { "ModuleVersion": "1.7.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
+          { "ModuleVersion": "1.7.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
+          { "ModuleVersion": "1.8.0", "ServerVersionRange": [ "2.6.0", ""     ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updated for server 2.6" }
         ]
       },
       

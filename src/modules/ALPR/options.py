@@ -1,3 +1,4 @@
+import os
 from module_options import ModuleOptions
 
 class Options:
@@ -26,7 +27,11 @@ class Options:
         self.OCR_optimization             = str(ModuleOptions.getEnvVariable("OCR_OPTIMIZATION", "True")).lower() == "true"
         self.OCR_optimal_character_height = int(ModuleOptions.getEnvVariable("OCR_OPTIMAL_CHARACTER_HEIGHT", 60))
         self.OCR_optimal_character_width  = int(ModuleOptions.getEnvVariable("OCR_OPTIMAL_CHARACTER_WIDTH", 36))
-
+        self.remove_spaces                = str(ModuleOptions.getEnvVariable("REMOVE_SPACES", "False")).lower() == "true"
+        self.save_cropped_plate           = str(ModuleOptions.getEnvVariable("SAVE_CROPPED_PLATE", "False")).lower() == "true"
+        self.root_path                    = os.path.normpath(ModuleOptions.getEnvVariable("ROOT_PATH"))
+        self.cropped_plate_dir            = os.path.normpath(ModuleOptions.getEnvVariable("CROPPED_PLATE_DIR", f"{self.root_path}/custom-models"))
+        
         # PaddleOCR settings
         self.use_gpu               = ModuleOptions.enable_GPU  # We'll disable this if we can't find GPU libraries
         self.box_detect_threshold  = 0.40  # confidence threshold for text box detection

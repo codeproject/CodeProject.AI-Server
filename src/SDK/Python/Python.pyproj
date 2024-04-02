@@ -31,6 +31,7 @@
     <Compile Include="utils\cpuinfo.py" />
     <Compile Include="utils\image_utils.py" />
     <Compile Include="utils\environment_check.py" />
+    <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />

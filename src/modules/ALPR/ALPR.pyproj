@@ -139,10 +139,10 @@
     <Folder Include="patch\paddleocr-2.6.0.1\" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="bin\windows\python37\venv\">
+    <Interpreter Include="bin\windows\python39\venv\">
       <Id>venv</Id>
-      <Version>3.7</Version>
-      <Description>venv (Python 3.7 (64-bit))</Description>
+      <Version>3.9</Version>
+      <Description>venv (Python 3.9 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>

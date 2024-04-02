@@ -1,5 +1,10 @@
-﻿namespace CodeProject.AI.SDK.API
+﻿using System.Text.Json.Serialization;
+
+namespace CodeProject.AI.SDK.API
 {
+    public delegate Task<ModuleResponse> LongProcessMethod(BackendRequest request,
+                                                           CancellationToken cancellationToken);
+
     /// <summary>
     /// The common data for responses from analysis modules.
     /// </summary>
@@ -19,7 +24,7 @@
         /// Gets or sets the optional command associated with this request
         /// </summary>
         public string? Command { get; set; }
-
+       
         /// <summary>
         /// Gets or sets the ID of the request being serviced
         /// </summary>
@@ -48,26 +53,16 @@
         /// response.
         /// </summary>
         public long AnalysisRoundTripMs { get; set; }
-    }
-
-    /*
-    /// <summary>
-    /// The common data for responses from analysis modules.
-    /// </summary>
-    public class StatusResponse : BaseResponse
-    {
-        /// <summary>
-        /// Gets or sets the Id of the Module handling this request
-        /// </summary>
-        public string? ModuleId { get; set; }
 
         /// <summary>
-        /// Gets or set a dictionary representing the current module status
+        /// The long process delegate to be executed. Long process modules will return this value in
+        /// the <see cref="ProcessRequest"/> method to indicate to the module runner that the module
+        /// has a long process, and that this method should be run in the background.
         /// </summary>
-        public object? StatusData { get; set; }
+        [JsonIgnore]
+        public LongProcessMethod? LongProcessMethod { get; set; }
     }
-    */
-    
+   
     /// <summary>
     /// Represents a failed response from a module.
     /// </summary>
@@ -88,5 +83,23 @@
             Success = false;
             Error   = error;
         }
+    }
+
+    public class ModuleLongProcessCancelResponse : ModuleResponse
+    {
+        /// <summary>
+        /// Gets or sets the message, if any.
+        /// </summary>
+        public string? Message { get; set; }
+
+        /// <summary>
+        /// Gets or sets the CommandId of the long process being cancelled.
+        /// </summary>
+        public string? CommandId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the current command status
+        /// </summary>
+        public string? CommandStatus { get; set; }
     }
 }

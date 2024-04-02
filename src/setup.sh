@@ -64,11 +64,11 @@ attemptSudoWithoutAdminRights=true
 
 # Debug flags for downloads and installs
 
-# After a successful install, run a self-test for the module just installed
-doPostInstallSelfTest=true
-
 # Perform *only* the post install self tests
 selfTestOnly=false
+
+# Perform self-tests unless this is false
+noSelfTest=false
 
 # If files are already present, then don't overwrite if this is false
 forceOverwrite=false
@@ -110,10 +110,10 @@ appRootDirPath="${setupScriptDirPath}"
 storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/'
 
 # The name of the source directory (in development)
-srcDir='src'
+srcDirName='src'
 
 # The name of the app directory (in docker)
-appDir='app'
+appDirName='app'
 
 # The name of the dir, within the current directory, where install assets will
 # be downloaded
@@ -125,9 +125,15 @@ runtimesDir='runtimes'
 # The name of the dir holding the downloaded/sideloaded backend analysis services
 modulesDir="modules"
 
+# The name of the dir holding downloaded models for the modules. NOTE: this is 
+# not currently used, but here for future-proofing
+modelsDir="models"
+
+
 # The location of directories relative to the root of the solution directory
 runtimesDirPath="${appRootDirPath}/${runtimesDir}"
 modulesDirPath="${appRootDirPath}/${modulesDir}"
+modelsDirPath="${appRootDirPath}/${modelsDir}"
 downloadDirPath="${appRootDirPath}/${downloadDir}"
 sdkPath="${appRootDirPath}/SDK"
 sdkScriptsDirPath="${sdkPath}/Scripts"
@@ -226,15 +232,15 @@ exec 3>&1
 # If we're calling this script from the /src folder directly (and the /src
 # folder actually exists) then we're Setting up the dev environment. Otherwise
 # we're installing a module.
-setupMode='InstallModule'
+setupMode='SetupModule'
 currentDirName=$(basename "$(pwd)")     # Get current dir name (not full path)
 currentDirName=${currentDirName:-/} # correct for the case where pwd=/
 
 # when executionEnvironment = "Development" this may be the case
-if [ "$currentDirName" = "$srcDir" ]; then setupMode='SetupDevEnvironment'; fi
+if [ "$currentDirName" = "$srcDirName" ]; then setupMode='SetupEverything'; fi
 
 # when executionEnvironment = "Production" this may be the case
-if [ "$currentDirName" = "$appDir" ]; then setupMode='SetupDevEnvironment'; fi
+if [ "$currentDirName" = "$appDirName" ]; then setupMode='SetupEverything'; fi
 
 
 # In Development, this script is in the /src folder. In Production there is no
@@ -247,7 +253,7 @@ setupScriptDirName=${setupScriptDirName:-/} # correct for the case where pwd=/
 popd >/dev/null
 
 executionEnvironment='Production'
-if [ "$setupScriptDirName" = "$srcDir" ]; then executionEnvironment='Development'; fi
+if [ "$setupScriptDirName" = "$srcDirName" ]; then executionEnvironment='Development'; fi
 
 # The absolute path to the installer script and the app root directory. Note that
 # this script (and the SDK folder) is either in the "/src" dir (for Development) 
@@ -321,7 +327,7 @@ function doModuleInstall () {
     write "." $color_mute
     platforms=$(getValueFromModuleSettingsFile           "${moduleDirPath}" "${moduleDirName}" "InstallOptions.Platforms")
     write "." $color_mute
-    writeLine "Done" $color_success
+    writeLine "done" $color_success
     
     if [ "$moduleName" = "" ]; then moduleName="$moduleDirName"; fi
 
@@ -352,7 +358,7 @@ function doModuleInstall () {
         return
     fi
 
-    if [ "${runtimeLocation}" = "" ]; then runtimeLocation="Shared"; fi
+    if [ "${runtimeLocation}" = "" ]; then runtimeLocation="Local"; fi
 
     if [ "${allowSharedPythonInstallsForModules}" = false ]; then
         if [[ "${moduleDirPath}" == *"/modules/"* ]] && [ "${runtimeLocation}" = "Shared" ]; then
@@ -407,7 +413,7 @@ function doModuleInstall () {
     module_install_errors=""
 
     if [ -f "${moduleDirPath}/install.sh" ]; then
-
+       
         # If a python version has been specified then we'll automatically setup
         # the correct python environment. We do this before the script runs so 
         # the script can use python in the script.
@@ -436,24 +442,30 @@ function doModuleInstall () {
         # for, and install, the requirements file for the module, and then also 
         # the requirements file for the SDK since it'll be assumed the Python SDK
         # will come into play.
-        if [ "$module_install_errors" = "" ] && [ "${pythonVersion}" != "" ]; then
-            if [ "$selfTestOnly" = false ]; then
+        if [ "$selfTestOnly" = false ]; then
+            if [ "$module_install_errors" = "" ]; then
 
-                writeLine "Installing Python packages for ${moduleName}"
+                if [ "${pythonVersion}" != "" ]; then
+                    writeLine "Installing Python packages for ${moduleName}"
 
-                write "Installing GPU-enabled libraries: " $color_info
-                if [ "$installGPU" = "true" ]; then writeLine "If available" $color_success; else writeLine "No" $color_warn; fi
+                    write "Installing GPU-enabled libraries: " $color_info
+                    if [ "$installGPU" = "true" ]; then writeLine "If available" $color_success; else writeLine "No" $color_warn; fi
 
-                installRequiredPythonPackages 
-                if [ $? -gt 0 ]; then 
-                    module_install_errors="Unable to install Python packages for ${moduleName}"; 
+                    installRequiredPythonPackages 
+                    if [ $? -gt 0 ]; then 
+                        module_install_errors="Unable to install Python packages for ${moduleName}"; 
+                    fi
+
+                    writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
+                    installRequiredPythonPackages "${sdkPath}/Python"
+                    if [ $? -gt 0 ]; then 
+                        module_install_errors="Unable to install Python packages for CodeProject SDK"; 
+                    fi
                 fi
 
-                writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
-                installRequiredPythonPackages "${sdkPath}/Python"
-                if [ $? -gt 0 ]; then 
-                    module_install_errors="Unable to install Python packages for CodeProject SDK"; 
-                fi
+                downloadModels
+            else
+                writeLine "Skipping PIP installs and model downloads due to install error (${module_install_errors})" $color_warn
             fi
         fi
 
@@ -473,7 +485,7 @@ function doModuleInstall () {
         fi
 
         # Perform a self-test
-        if [ "${doPostInstallSelfTest}" = true ] && [ "${module_install_errors}" = "" ]; then
+        if [ "${noSelfTest}" = false ] && [ "${module_install_errors}" = "" ]; then
 
             pushd "${moduleDirPath}" >/dev/null
             if [ "${verbosity}" = "quiet" ]; then
@@ -563,19 +575,20 @@ function correctLineEndings () {
     local filePath="$1"
 
     # Force correct BOM and CRLF issues in the script. Just in case
-    if [[ $OSTYPE == 'darwin'* ]]; then           # macOS
-         if [[ ${OSTYPE:6} -ge 13 ]]; then        # Monterry is 'darwin21' -> "21"
+    if [[ $OSTYPE == 'darwin'* ]]; then           # macOS.
+        darwinVersion=$(echo "$OSTYPE" | cut -d '.' -f 1)
+        if [[ ${darwinVersion} -ge 13 ]]; then    # Sonoma 14.3 is 'darwin23.2.1' -> '23'
             sed -i'.bak' -e '1s/^\xEF\xBB\xBF//' "${filePath}" > /dev/null 2>&1 # remove BOM
             sed -i'.bak' -e 's/\r$//' "${filePath}"            > /dev/null 2>&1 # CRLF to LF
             rm "${filePath}.bak"                               > /dev/null 2>&1 # Clean up. macOS requires backups for sed
-         fi
+        fi
     else                                          # Linux
         sed -i '1s/^\xEF\xBB\xBF//' "${filePath}" > /dev/null 2>&1 # remove BOM
         sed -i 's/\r$//' "${filePath}"            > /dev/null 2>&1 # CRLF to LF
     fi
 }
 
-# $os, $platform and $architecture and $systemName will be set by this script
+# $os, $platform and $architecture, edgeDevice and $systemName will be set by this script
 correctLineEndings "${sdkScriptsDirPath}/utils.sh"
 source "${sdkScriptsDirPath}/utils.sh"
 
@@ -624,7 +637,7 @@ fi
 
 # --progress-bar is in pip 22+. TODO: Sniff pip version, update if necessary,
 # and disable progress bar if we can
-# if [ "$setupMode" != 'SetupDevEnvironment' ]; then
+# if [ "$setupMode" != 'SetupEverything' ]; then
 #    pipFlags="${pipFlags} --progress-bar off"
 # fi
 
@@ -645,7 +658,7 @@ if [ "$useColor" != true ]; then
     pipFlags="${pipFlags} --no-color"
 fi
 
-if [ "$setupMode" = 'SetupDevEnvironment' ]; then
+if [ "$setupMode" = 'SetupEverything' ]; then
     scriptTitle='          Setting up CodeProject.AI Development Environment'
 else
     scriptTitle='             Installing CodeProject.AI Analysis Module'
@@ -676,6 +689,7 @@ if [ "$verbosity" != "quiet" ]; then
     writeLine 
     writeLine "os, arch             = ${os} ${architecture}"      $color_mute
     writeLine "systemName, platform = ${systemName}, ${platform}" $color_mute
+    writeLine "edgeDevice           = ${edgeDevice}"              $color_mute
     writeLine "SSH                  = ${inSSH}"                   $color_mute
     writeLine "setupMode            = ${setupMode}"               $color_mute
     writeLine "executionEnvironment = ${executionEnvironment}"    $color_mute
@@ -720,6 +734,8 @@ writeLine
 # Create some directories (run under a subshell, all with sudo)
 
 CreateWriteableDir "${downloadDirPath}"   "downloads"
+CreateWriteableDir "${modulesDirPath}"    "modules download"
+CreateWriteableDir "${modelsDirPath}"     "models download"
 CreateWriteableDir "${runtimesDirPath}"   "runtimes"
 CreateWriteableDir "${commonDataDirPath}" "persisted data"
 
@@ -741,11 +757,11 @@ hasCUDA=false
 cuDNN_version=""
 if [ "$os" = "macos" ]; then 
     cuda_version=""
-elif [ "${systemName}" = "Jetson" ]; then
+elif [ "${edgeDevice}" = "Jetson" ]; then
     hasCUDA=true
     cuda_version=$(getCudaVersion)
     cuDNN_version=$(getcuDNNVersion)
-elif [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ]; then
+elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ]; then
     cuda_version=""
 else 
     cuda_version=$(getCudaVersion)
@@ -807,7 +823,7 @@ fi
 write "ROCm (AMD) Present:    "
 
 hasROCm=false
-if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Jetson" ]; then
     hasROCm=false
 elif [ "$os" = "linux" ]; then 
     if [ ! -x "$(command -v rocminfo)" ]; then
@@ -834,30 +850,36 @@ if [ "$hasMPS" = true ]; then writeLine "Yes" $color_success; else writeLine "No
 
 success=true
 
-if [ "$setupMode" = 'SetupDevEnvironment' ]; then 
+if [ "$setupMode" = 'SetupEverything' ]; then 
+
+    # Start with the CodeProject.AI SDK and Server
 
     if [ "$selfTestOnly" = false ]; then
+
+        setupSSL
+    
         writeLine
         writeLine "Processing CodeProject.AI SDK" "White" "DarkGreen" $lineWidth
         writeLine
 
+        currentDir="$(pwd)"
         moduleDirName="SDK"
         moduleDirPath="${appRootDirPath}/${moduleDirName}"
         
-        currentDir="$(pwd)"
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
         if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi
         cd "$currentDir" >/dev/null
 
+
         writeLine
         writeLine "Processing CodeProject.AI Server" "White" "DarkGreen" $lineWidth
         writeLine
 
+        currentDir="$(pwd)"
         moduleDirName="server"
         moduleDirPath="${appRootDirPath}/${moduleDirName}"
         
-        currentDir="$(pwd)"
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
         if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi
@@ -885,12 +907,13 @@ if [ "$setupMode" = 'SetupDevEnvironment' ]; then
 
     # Setup Demos
     if [ "$selfTestOnly" = false ]; then
+
         writeLine
-        writeLine "Processing demos" "White" "Blue" $lineWidth
+        writeLine "Processing demo clients" "White" "Blue" $lineWidth
         writeLine
 
-        moduleDirName="demos"
-        moduleDirPath="${rootDirPath}/${moduleDirName}"
+        moduleDirName="clients"
+        moduleDirPath="${rootDirPath}/demos/${moduleDirName}"
 
         currentDir="$(pwd)"
         correctLineEndings "${moduleDirPath}/install.sh"
@@ -899,8 +922,29 @@ if [ "$setupMode" = 'SetupDevEnvironment' ]; then
         # if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi   
         cd "$currentDir" >/dev/null
 
-        writeLine "Done" $color_success
+        writeLine "done" $color_success
     fi
+
+    writeLine
+    writeLine "Processing demo modules" "White" "Blue" $lineWidth
+    writeLine
+
+    oldModulesDirPath="${modulesDirPath}"
+    modulesDirPath="${rootDirPath}/demos/modules/"
+    for d in ${modulesDirPath}/*/ ; do
+        moduleDirName=$(basename "$d")
+        currentDir="$(pwd)"
+        doModuleInstall "${moduleDirName}"
+        cd "$currentDir" >/dev/null
+
+        if [ "${module_install_errors}" != "" ]; then
+            success=false
+            writeLine "Install failed: ${module_install_errors}" "$color_error"
+        fi
+    done
+    modulesDirPath="${oldModulesDirPath}"
+
+    writeLine "done" $color_success
     
 else
 
@@ -921,9 +965,9 @@ else
             source "${moduleDirPath}/install.sh" "install"
             cd "$currentDir" >/dev/null
         fi
-    elif [ "$moduleDirName" = "demos" ]; then
+    elif [ "$moduleDirName" = "clients" ]; then
         if [ "$selfTestOnly" = false ]; then
-            moduleDirPath="${rootDirPath}/${moduleDirName}"
+            moduleDirPath="${rootDirPath}/demos/${moduleDirName}"
             
             currentDir="$(pwd)"
             correctLineEndings "${moduleDirPath}/install.sh"
@@ -931,7 +975,20 @@ else
             cd "$currentDir" >/dev/null
         fi
     else
-        doModuleInstall "${moduleDirName}"
+
+        pushd "../.." >/dev/null
+        parentParentPath=$(pwd)
+        popd >/dev/null
+        parentParentDirName=$(basename "$parentParentPath")
+
+        if [ "$parentParentDirName" = "demos" ]; then
+            oldModulesDirPath="$modulesDirPath"
+            modulesDirPath="${rootDirPath}/demos/modules/"
+            doModuleInstall "${moduleDirName}"
+            modulesDirPath="$oldModulesDirPath"
+        else
+            doModuleInstall "${moduleDirName}"
+        fi
     fi
 
     if [ "${module_install_errors}" != "" ]; then

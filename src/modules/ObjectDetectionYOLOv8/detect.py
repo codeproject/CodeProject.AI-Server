@@ -5,6 +5,7 @@ import time
 from threading import Lock
 
 import torch
+import numpy as np
 from PIL import UnidentifiedImageError
 
 from ultralytics import YOLO
@@ -116,7 +117,8 @@ def get_detector(module_runner, models_dir: str, model_name: str, resolution: in
 
 def do_detection(module_runner, models_dir: str, model_name: str, resolution: int,
                  use_Cuda: bool, accel_device_name: int, use_MPS: bool,
-                 use_DirectML: bool, half_precision: str, img: any, threshold: float):
+                 use_DirectML: bool, half_precision: str, img: any, threshold: float,
+                 do_segmentation: bool = False):
     
     # We have a detector for each custom model. Lookup the detector, or if it's
     # not found, create a new one and add it to our lookup.
@@ -160,6 +162,11 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
             # for xyxy, conf, cls in boxes:
             for i in range(len(boxes.conf)):
                 score = boxes.conf[i].item()
+
+                if do_segmentation:
+                    mask   = masks[i]
+                    points = np.int32([mask.xy])
+
                 if score >= threshold:
                     x_min = boxes.xyxy[i][0].item()
                     y_min = boxes.xyxy[i][1].item()
@@ -177,6 +184,9 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
                         "y_max": int(y_max),
                     }
 
+                    if do_segmentation:
+                        detection["mask"] = points.tolist()[0][0]
+                        
                     outputs.append(detection)
 
         if len(outputs) > 3:

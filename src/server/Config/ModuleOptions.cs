@@ -14,6 +14,16 @@ namespace CodeProject.AI.Server
         public string? ModuleListUrl { get; set; }
 
         /// <summary>
+        /// The URL the server uses to get a list of all downloadable models.
+        /// </summary>
+        public string? ModelListUrl { get; set; }
+
+        /// <summary>
+        /// The URL of the location of the models that can be downloaded.
+        /// </summary>
+        public string? ModelStorageUrl { get; set; }
+
+        /// <summary>
         /// Gets or sets the timeout for installing a module
         /// </summary>
         public TimeSpan ModuleInstallTimeout { get; set; }
@@ -59,15 +69,26 @@ namespace CodeProject.AI.Server
         public string? PreInstalledModulesDirPath { get; set; }
 
         /// <summary>
-        /// Gets or sets the root directory that contains the downloaded / sideloaded modules.
+        /// Gets or sets the root directory that contains the downloaded / side-loaded modules.
         /// </summary>
         public string? ModulesDirPath { get; set; }
 
-         /// <summary>
-        /// Gets the absolute path to the download modules zip packages that have been
-        /// downloaded from the modules registry
+        /// <summary>
+        /// Gets or sets the root directory that contains the demo modules.
+        /// </summary>
+        public string? DemoModulesDirPath { get; set; }
+
+        /// <summary>
+        /// Gets the absolute path to the download modules zip packages that have been downloaded
+        /// from the modules registry
         /// </summary>
         public string? DownloadedModulePackagesDirPath {get; set; }
+
+        /// <summary>
+        /// Gets the absolute path to the download model zip packages that have been downloaded
+        /// from the model zoo.
+        /// </summary>
+        public string? DownloadedModelsPackagesDirPath { get; set; }
 
         /// <summary>
         /// Gets or sets the directory that contains the Module Installers.
@@ -86,12 +107,62 @@ namespace CodeProject.AI.Server
         /// <summary>
         /// Gets or sets the collection of modules to initially load and versions.
         /// </summary>
-        /// <remarks>The KeyValue pair is (ModuleId, Version).</remarks>
-        public Dictionary<string, string>? InitialModules { get; set; }
+        /// <remarks>  
+        /// This needs to be a single value so that lower config levels can override it.
+        /// The format is "moduleid:version; moduleid:version; ..." 
+        /// with the ":version" optional.
+        /// </remarks>
+        public string? InitialModules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to run initial installs concurrently.
         /// </summary>
         public bool ConcurrentInitialInstalls { get; set; } = false;
+
+        /// <summary>
+        /// Gets a list of the initial modules to load.
+        /// </summary>
+        /// <remarks>
+        /// The format is "moduleid:version; moduleid:version; ..." 
+        /// with the ":version" optional.
+        ///  </remarks>
+        public List<InitialModule> GetInitialModulesList()
+        {
+            var initialModuleList = new List<InitialModule>();
+            if (InitialModules is not null)
+            {
+                string[] moduleList = InitialModules.Split(';', 
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                foreach (var module in moduleList)
+                {
+                    string[] moduleParts = module.Split(':',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    initialModuleList.Add(new InitialModule
+                    {
+                        ModuleId = moduleParts[0],
+                        Version = (moduleParts.Length == 2) ? moduleParts[1] : string.Empty
+                    });
+                }
+            }
+
+            return initialModuleList;
+        }
+    }
+
+    /// <summary>
+    /// An initial module to load.
+    /// </summary>
+    public class InitialModule
+    {
+        /// <summary>
+        /// The module id.
+        /// </summary>
+        public string ModuleId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The version of the module.
+        /// </summary>  
+        public string Version { get; set; } = string.Empty;
     }
 }

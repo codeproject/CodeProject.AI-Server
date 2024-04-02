@@ -240,7 +240,7 @@ def equalize(image: ImageType) -> ImageType:
     return image_eq
 """
 
-def merge_text_detections(bounding_boxes) -> Tuple[str, float, int, int]:
+def merge_text_detections(bounding_boxes, remove_spaces) -> Tuple[str, float, int, int]:
     
     pattern            = re.compile('[^a-zA-Z0-9]+')
     tallest_box        = None
@@ -286,7 +286,10 @@ def merge_text_detections(bounding_boxes) -> Tuple[str, float, int, int]:
                 text = text + ' '
             merged_text += text
 
-    merged_text  = pattern.sub(' ', merged_text)
+    if remove_spaces:
+        merged_text  = pattern.sub('', merged_text)
+    else:
+        merged_text  = pattern.sub(' ', merged_text)
 
     if debug_log == True:
         with open("logbox.txt", "a") as text_file:

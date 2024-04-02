@@ -19,7 +19,7 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-if [ "$systemName" = "Jetson" ]; then 
+if [ "$edgeDevice" = "Jetson" ]; then 
 
     pyNumber="${pythonVersion/./}"
 
@@ -42,8 +42,8 @@ fi
 getFromServer "models/" "models-face-pt.zip" "assets" "Downloading Face models..."
 
 # ... also needs SQLite
-if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || \
-   [ "${systemName}" = "Jetson" ]; then
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
+   [ "${edgeDevice}" = "Jetson" ]; then
     installAptPackages "sqlite3"
 fi
 

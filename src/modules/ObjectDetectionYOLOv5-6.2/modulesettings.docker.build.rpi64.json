@@ -15,16 +15,11 @@
       */
 
       "LaunchSettings": {
-        // This NEEDS to be 'shared' for docker pre-installed
-        "RuntimeLocation": "Shared", // Can be Local or Shared
+        // This NEEDS to be 'System' for docker pre-installed
+        "RuntimeLocation": "System", // Can be Local, Shared or System
         // ObjectDetectNet is faster, but set this up just in case
         "AutoStart": true
       },
-      
-      "InstallOptions" :{
-        "PreInstalled": "true"
-      },
-
       "EnvironmentVariables": {
         "MODEL_SIZE": "Tiny" // tiny, small, medium, large
       }

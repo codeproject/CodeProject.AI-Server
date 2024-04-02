@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.Server.Models;
 using CodeProject.AI.Server.Modules;
 
 using Microsoft.AspNetCore.Http;
@@ -26,6 +27,7 @@ namespace CodeProject.AI.Server.Controllers
         private readonly ModuleSettings        _moduleSettings;
         private readonly ModuleCollection      _installedModules;
         private readonly ModuleInstaller       _moduleInstaller;
+        private readonly ModelDownloader       _modelDownloader;
         private readonly ModuleProcessServices _moduleProcessService;
 
         private readonly ILogger               _logger;
@@ -38,21 +40,24 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="moduleOptions">The module options instance</param>
         /// <param name="moduleCollectionOptions">The collection of modules.</param>
         /// <param name="moduleInstaller">The module installer instance.</param>
+        /// <param name="modelDownloader">The model downloader instance.</param>
         /// <param name="moduleProcessService">The module process service</param>
         /// <param name="logger">The logger</param>
         public ModuleController(IOptions<VersionConfig>    versionOptions,
                                 ModuleSettings             moduleSettings,
                                 IOptions<ModuleOptions>    moduleOptions,
                                 IOptions<ModuleCollection> moduleCollectionOptions,
-                                ModuleInstaller moduleInstaller,
-                                ModuleProcessServices moduleProcessService,
-                                ILogger<LogController> logger)
+                                ModuleInstaller            moduleInstaller,
+                                ModelDownloader            modelDownloader,
+                                ModuleProcessServices      moduleProcessService,
+                                ILogger<LogController>     logger)
         {
             _versionConfig        = versionOptions.Value;
             _moduleOptions        = moduleOptions.Value;
             _moduleSettings       = moduleSettings;
             _installedModules     = moduleCollectionOptions.Value;
             _moduleInstaller      = moduleInstaller;
+            _modelDownloader      = modelDownloader;
             _moduleProcessService = moduleProcessService;
             _logger               = logger;
         }
@@ -72,16 +77,16 @@ namespace CodeProject.AI.Server.Controllers
                 IFormCollection form = Request.Form;
                 
                 if (string.IsNullOrWhiteSpace(_moduleOptions.InstallPassword))
-                    return CreateErrorResponse("No security credentials have been set for module uploads. Not proceeding.");
+                    return new ServerErrorResponse("No security credentials have been set for module uploads. Not proceeding.");
 
                 // Add any form files
                 var uploadedFile = form.Files.FirstOrDefault();
                 if (uploadedFile is null || uploadedFile.Length == 0)
-                    return CreateErrorResponse("No file was uploaded");
+                    return new ServerErrorResponse("No file was uploaded");
 
                 string? password = form["install-pwd"][0];
                 if (password is null || password != _moduleOptions.InstallPassword)
-                    return CreateErrorResponse("The supplied module upload password was incorrect. Not proceeding.");
+                    return new ServerErrorResponse("The supplied module upload password was incorrect. Not proceeding.");
 
                 string tempName        = Guid.NewGuid().ToString();
                 string downloadDirPath = _moduleSettings.DownloadedModulePackagesDirPath 
@@ -96,11 +101,11 @@ namespace CodeProject.AI.Server.Controllers
                 (bool success, string error) = await _moduleInstaller.InstallModuleAsync(downloadDirPath, null)
                                                                      .ConfigureAwait(false);
     
-                return success? new ServerResponse() : CreateErrorResponse("Unable install module: " + error);
+                return success? new ServerResponse() : new ServerErrorResponse("Unable install module: " + error);
             }
             catch (Exception ex)
             {
-                return CreateErrorResponse("Unable to upload and install module: " + ex.Message);
+                return new ServerErrorResponse("Unable to upload and install module: " + ex.Message);
                 // nothing to do here, just no Form available
             }
         }
@@ -118,19 +123,20 @@ namespace CodeProject.AI.Server.Controllers
         public async Task<ServerResponse> ListInstalledModules()
         {
             if (_installedModules?.Count is null || _installedModules.Count == 0)
-                return CreateErrorResponse("No backend modules have been registered yet");
+                return new ServerErrorResponse("No backend modules have been registered yet");
 
             string currentServerVersion = _versionConfig.VersionInfo!.Version;
 
             var modules = _installedModules?.Values?
                             .Select(module => ModuleInstaller.ModuleDescriptionFromModuleConfig(module, true, 
-                                                                                                currentServerVersion,
-                                                                                                _moduleSettings.ModulesDirPath,
-                                                                                                _moduleSettings.PreInstalledModulesDirPath))
+                                                                                                currentServerVersion))
+                                                                                                // _moduleSettings.ModulesDirPath,
+                                                                                                // _moduleSettings.PreInstalledModulesDirPath,
+                                                                                                // _moduleSettings.DemoModulesDirPath))
                             .ToList() ?? new List<ModuleDescription>();
 
             // Mark those modules that can't be downloaded
-            List<ModuleDescription> downloadables = await _moduleInstaller.GetInstallableModules()
+            List<ModuleDescription> downloadables = await _moduleInstaller.GetInstallableModulesAsync()
                                                                           .ConfigureAwait(false);
             foreach (ModuleBase module in modules)
             {
@@ -162,7 +168,7 @@ namespace CodeProject.AI.Server.Controllers
         public ServerResponse ListRunningModulesConfig()
         {
             if (_installedModules?.Count is null || _installedModules.Count == 0)
-                return CreateErrorResponse("No backend modules have been registered yet");
+                return new ServerErrorResponse("No backend modules have been registered yet");
 
             var statuses = _moduleProcessService.ListProcessStatuses();
             var modules  = _installedModules?.Values
@@ -186,7 +192,7 @@ namespace CodeProject.AI.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ServerResponse> ListAvailableModules()
         {
-            List<ModuleDescription> installableModules = await _moduleInstaller.GetInstallableModules()
+            List<ModuleDescription> installableModules = await _moduleInstaller.GetInstallableModulesAsync()
                                                                                .ConfigureAwait(false);
 
             // Go through each module description and set the currently installed version
@@ -216,7 +222,7 @@ namespace CodeProject.AI.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ServerResponse> ListAllModules()
         {
-            List<ModuleDescription> installableModules = await _moduleInstaller.GetInstallableModules()
+            List<ModuleDescription> installableModules = await _moduleInstaller.GetInstallableModulesAsync()
                                                                                .ConfigureAwait(false) 
                                                        ?? new List<ModuleDescription>();
             
@@ -237,9 +243,10 @@ namespace CodeProject.AI.Server.Controllers
                 if (installedModuleDesc is null)
                 {
                     var description = ModuleInstaller.ModuleDescriptionFromModuleConfig(module, true,
-                                                                                        currentServerVersion,
-                                                                                        _moduleSettings.ModulesDirPath,
-                                                                                        _moduleSettings.PreInstalledModulesDirPath);
+                                                                                        currentServerVersion);
+                                                                                        // _moduleSettings.ModulesDirPath,
+                                                                                        // _moduleSettings.PreInstalledModulesDirPath,
+                                                                                        // _moduleSettings.DemoModulesDirPath);
                     description.IsDownloadable = false;  
                     installableModules.Add(description);
                 }
@@ -268,15 +275,22 @@ namespace CodeProject.AI.Server.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ServerResponse ListModulesStatus()
+        public async Task<ServerResponse> ListModulesStatus()
         {
-            // Get the statuses
             var statuses = _moduleProcessService.ListProcessStatuses();
+
+            // Get the downloadable models and update the statuses where possible
+            ModelDownloadCollection downloadables = await _modelDownloader.GetDownloadableModelsAsync()
+                                                                          .ConfigureAwait(false);
+            foreach (var status in statuses)
+            {
+                if (downloadables.ContainsKey(status.ModuleId!))
+                    status.DownloadableModels = downloadables[status.ModuleId!];
+            }
+
             var response = new ModuleStatusesResponse
             {
-                Statuses = statuses
-                            // .Where(module => module.Status != ProcessStatusType.NotEnabled)
-                           .ToList()
+                Statuses = statuses.ToList()
             };
 
             return response;
@@ -331,7 +345,7 @@ namespace CodeProject.AI.Server.Controllers
                                                                               noCache, verbosity);
             (bool success, string error) = await downloadTask.ConfigureAwait(false);
             
-            return success? new ServerResponse() : CreateErrorResponse(error);
+            return success? new ServerResponse() : new ServerErrorResponse(error);
         }
 
         /// <summary>
@@ -347,7 +361,7 @@ namespace CodeProject.AI.Server.Controllers
             (bool success, string error) = await _moduleInstaller.UninstallModuleAsync(moduleId)
                                                                  .ConfigureAwait(false);
             
-            return success? new ServerResponse() : CreateErrorResponse(error);
+            return success? new ServerResponse() : new ServerErrorResponse(error);
         }
 
         /// <summary>
@@ -361,7 +375,7 @@ namespace CodeProject.AI.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ServerDataResponse<string>> GetInstallLogsAsync(string moduleId)
         {
-            string? logs = await _moduleInstaller.GetInstallationSummary(moduleId)
+            string? logs = await _moduleInstaller.GetInstallationSummaryAsync(moduleId)
                                                  .ConfigureAwait(false);
             return new ServerDataResponse<string>() { Data = logs };
             
@@ -375,14 +389,8 @@ namespace CodeProject.AI.Server.Controllers
                 };
             }
 
-            return CreateErrorResponse(error);
+            return new ServerErrorResponse(error);
             */
-        }
-
-        private ServerErrorResponse CreateErrorResponse(string message)
-        {
-            _logger.LogError(message);
-            return new ServerErrorResponse(message);
         }
     }
 }

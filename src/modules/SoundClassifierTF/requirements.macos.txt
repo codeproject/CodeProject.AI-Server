@@ -10,4 +10,5 @@ Pillow==8.4.0                   # Installing Pillow, a Python Image Library
 resampy                         # Installing ReSampy, the library for Efficient sample rate conversion in Python
 soundfile==0.10.3.post1         # Installing soudfile for reading and writing sound files
 
+Matplotlib                      # Installing Matplotlib, the Python plotting package
 # last line empty

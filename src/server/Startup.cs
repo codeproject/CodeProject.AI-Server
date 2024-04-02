@@ -187,6 +187,7 @@ namespace CodeProject.AI.Server
 
         private void InitializeInstallConfig()
         {
+            // If the install config does not exist or has no ID, then we need to set it.
             if (_installConfig is null || _installConfig.Id == Guid.Empty)
             {
                 _installConfig ??= new InstallConfig();
@@ -194,7 +195,8 @@ namespace CodeProject.AI.Server
             }
 
             // if this is a new install or replacing a pre V2.1 version
-            if (string.IsNullOrEmpty(_installConfig.Version))
+            // or there is an install file, then we need to install the initial modules.
+            if (string.IsNullOrEmpty(_installConfig.Version) || File.Exists(ModuleInstaller.InstallModulesFileName))
                 ModuleInstaller.QueueInitialModulesInstallation();
 
             _installConfig.Version = _versionConfig?.VersionInfo?.Version ?? string.Empty;

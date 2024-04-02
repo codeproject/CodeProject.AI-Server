@@ -202,14 +202,6 @@ class YOLO62_adapter(ModuleRunner):
         return { "success": result['success'], "message": "Object detection test successful" }
 
 
-    def _status_summary(self):
-        summary  = "Inference Operations: " + str(self._success_inferences)  + "\n"
-        summary += "Items detected:       " + str(self._num_items_found) + "\n"
-        for label in self._histogram:
-            summary += "  " + label + ": " + str(self._histogram[label]) + "\n"
-
-        return summary
-
     def _list_models(self, models_path: str):
 
         """

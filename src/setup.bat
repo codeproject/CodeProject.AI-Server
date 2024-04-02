@@ -48,14 +48,14 @@ set allowSharedPythonInstallsForModules=true
 
 :: Debug flags for downloads and installs
 
-:: After a successful install, run a self-test for the module just installed
-set doPostInstallSelfTest=true
-
-:: Perform *only* the post install self tests
+:: Setup only the server, nothing else
 set setupServerOnly=false
 
 :: Perform *only* the post install self tests
 set selfTestOnly=false
+
+:: Perform self-tests unless this is false
+set noSelfTest=false
 
 :: If files are already present, then don't overwrite if this is false
 set forceOverwrite=false
@@ -65,19 +65,19 @@ set forceOverwrite=false
 :: doesn't exist the install will fail.
 set offlineInstall=false
 
-REM For speeding up debugging
+:: For speeding up debugging
 set skipPipInstall=false
 
-REM Whether or not to install all python packages in one step (-r requirements.txt)
-REM or step by step. Doing this allows the PIP manager to handle incompatibilities 
-REM better.
-REM ** WARNING ** There is a big tradeoff on keeping the users informed and speed/
-REM reliability. Generally one-step shouldn't be needed. But it often is. And it
-REM often doesn't actually solve problems either. Overall it's safer, but not a 
-REM panacea
+:: Whether or not to install all python packages in one step (-r requirements.txt)
+:: or step by step. Doing this allows the PIP manager to handle incompatibilities 
+:: better.
+:: ** WARNING ** There is a big tradeoff on keeping the users informed and speed/
+:: reliability. Generally one-step shouldn't be needed. But it often is. And it
+:: often doesn't actually solve problems either. Overall it's safer, but not a 
+:: panacea
 set oneStepPIP=false
 
-REM Whether or not to use the jq utility for JSON parsing. If false, use ParseJSON
+:: Whether or not to use the jq utility for JSON parsing. If false, use ParseJSON
 set useJq=false
 set debug_json_parse=false
 
@@ -93,8 +93,11 @@ set appRootDirPath=!setupScriptDirPath!
 :: The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
 set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/
 
-:: The name of the source directory
-set srcDir=src
+:: The name of the source directory (in development)
+set srcDirName=src
+
+:: The name of the app directory (in docker)
+set appDirName=app
 
 :: The name of the dir, within the current directory, where install assets will
 :: be downloaded
@@ -106,11 +109,16 @@ set runtimesDir=runtimes
 :: The name of the dir holding the downloaded/sideloaded backend analysis services
 set modulesDir=modules
 
+:: The name of the dir holding downloaded models for the modules. NOTE: this is 
+:: not currently used, but here for future-proofing
+set modelsDir=models
+
 :: The location of directories relative to the root of the solution directory
 set sdkPath=!appRootDirPath!SDK
 set sdkScriptsDirPath=!sdkPath!\Scripts
 set runtimesDirPath=!appRootDirPath!!runtimesDir!
 set modulesDirPath=!appRootDirPath!!modulesDir!
+set modelsDirPath=!appRootDirPath!!modelsDir!
 set downloadDirPath=!appRootDirPath!!downloadDir!
 
 :: Who launched this script? user or server?
@@ -143,6 +151,11 @@ set launchedBy=user
         shift
         goto :param_loop
     )
+    if "%~1"=="--no-selftest" (
+        set noSelfTest=true
+        shift
+        goto :param_loop
+    )
     if "%~1"=="--server-only" (
         set setupServerOnly=true
         shift
@@ -167,9 +180,14 @@ if /i "%offlineInstall%" == "true" set forceOverwrite=false
 :: If we're calling this script from the /src folder directly (and the /src
 :: folder actually exists) then we're Setting up the dev environment. Otherwise
 :: we're installing a module.
-set setupMode=InstallModule
+set setupMode=SetupModule
 for /f "delims=\" %%a in ("%cd%") do @set CurrDirName=%%~nxa
-if /i "%CurrDirName%" == "%srcDir%" set setupMode=SetupDevEnvironment
+
+rem when executionEnvironment = "Development" this may be the case
+if /i "%CurrDirName%" == "%srcDirName%" set setupMode=SetupEverything
+
+rem when executionEnvironment = "Production" this may be the case
+if /i "$CurrDirName" == "%appDirName%" set setupMode=SetupEverything
 
 :: In Development, this script is in the /src folder. In Production there is no
 :: /src folder; everything is in the root folder. So: go to the folder
@@ -179,7 +197,7 @@ pushd "!setupScriptDirPath!"
 for /f "delims=\" %%a in ("%cd%") do @set CurrDirName=%%~nxa
 popd
 set executionEnvironment=Production
-if /i "%CurrDirName%" == "%srcDir%" set executionEnvironment=Development
+if /i "%CurrDirName%" == "%srcDirName%" set executionEnvironment=Development
 
 :: The absolute path to the installer script and the root directory. Note that
 :: this script (and the SDK folder) is either in the /src dir or the root dir
@@ -197,6 +215,10 @@ set os=windows
 set platform=windows
 set systemName=Windows
 
+:: Blank because we don't currently support an edge device running Windows. In
+:: Linux this could be Raspberry Pi, Orange Pi or Jetson
+set edgeDevice=
+
 :: This can be x86 (32-bit), AMD64 (Intel/AMD 64bit), ARM64 (Arm 64bit)
 set architecture=%PROCESSOR_ARCHITECTURE%
 
@@ -213,7 +235,7 @@ if /i "!architecture!" == "ARM64" (
 
 :: Let's go
 if /i "!useColor!" == "true" call "!sdkScriptsDirPath!\utils.bat" setESC
-if /i "!setupMode!" == "SetupDevEnvironment" (
+if /i "!setupMode!" == "SetupEverything" (
     set scriptTitle=          Setting up CodeProject.AI Development Environment
 ) else (
     set scriptTitle=             Installing CodeProject.AI Analysis Module
@@ -251,6 +273,7 @@ if /i "%verbosity%" neq "quiet" (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine 
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "os, arch             = !os! !architecture!"      !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "systemName, platform = !systemName!, !platform!" !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "edgeDevice           = !edgeDevice!"             !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupMode            = !setupMode!"              !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment = !executionEnvironment!"   !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath          = !rootDirPath!"            !color_mute!
@@ -273,8 +296,11 @@ call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
 call "!sdkScriptsDirPath!\utils.bat" Write "Creating Directories..."
 if not exist "!downloadDirPath!\" mkdir "!downloadDirPath!"
+if not exist "!downloadDirPath!\!modulesDir!\" mkdir "!downloadDirPath!\!modulesDir!\"
+if not exist "!downloadDirPath!\!modelsDir!\" mkdir "!downloadDirPath!\!modelsDir!\"
+
 if not exist "!runtimesDirPath!\" mkdir "!runtimesDirPath!"
-call "!sdkScriptsDirPath!\utils.bat" WriteLine "Done" "Green"
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "done" "Green"
 call "!sdkScriptsDirPath!\utils.bat" WriteLine ""
 
 :: Report on GPU ability
@@ -316,12 +342,23 @@ if /i "%hasROCm%" == "true" (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "No" !color_warn!
 )
 
+REM quick detour to ensure ParseJSON is installed
+if /i "!executionEnvironment!" == "Development" (
+    pushd SDK\Utilities\ParseJSON
+    if not exist ParseJSON.exe (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Building ParseJSON"
+        dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
+        if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
+    )
+    popd
+)
+
 
 :: And off we go...
 
 set success=true
 
-if /i "!setupMode!" == "SetupDevEnvironment" (
+if /i "!setupMode!" == "SetupEverything" (
 
     REM Start with the CodeProject.AI SDK and Server
 
@@ -363,6 +400,7 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
     REM dir, as well as setting up the demos
 
     if /i "!setupServerOnly!" == "false" (
+    
         REM  TODO: This should be just a simple for /d %%D in ("!modulesDirPath!") do (
         for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
             set moduleDirName=%%~nxD
@@ -373,27 +411,43 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
         call "!sdkScriptsDirPath!\utils.bat" WriteLine
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "Module setup Complete" "Green"
 
-        REM Install Demos
+        REM Install Demo clients
         if /i "!selfTestOnly!" == "false" (
             call "!sdkScriptsDirPath!\utils.bat" WriteLine
-            call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing Demos" "White" "Blue" !lineWidth!
+            call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing Demo clients" "White" "Blue" !lineWidth!
             call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
             set currentDir=%cd%
-            set moduleDirName=demos
-            set moduleDirPath=!rootDirPath!\!moduleDirName!
+            set moduleDirName=clients
+            set moduleDirPath=!rootDirPath!\demos\!moduleDirName!
             call "!moduleDirPath!\install.bat" install
 
             REM Don't really care about demos enough to fail the entire setup script
             REM if errorlevel 1 set success=false
             cd "!currentDir!"
         )
+
+        REM Install Demo modules
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing Demo Modules" "White" "Blue" !lineWidth!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
+        set oldModulesDirPath=!modulesDirPath!
+        set modulesDirPath=!rootDirPath!\demos\modules\
+        for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
+            set moduleDirName=%%~nxD
+            call :DoModuleInstall !moduleDirName! errors
+            if "!moduleInstallErrors!" NEQ "" set success=false
+        )
+        set modulesDirPath=!oldModulesDirPath!
     )
 
 ) else (
 
     if /i "!setupServerOnly!" == "false" (
+
         REM Install an individual module
+        
         for %%I in (.) do set moduleDirName=%%~nxI
 
         if /i "!moduleDirName!" == "server" (
@@ -404,16 +458,25 @@ if /i "!setupMode!" == "SetupDevEnvironment" (
                 call "!moduleDirPath!\install.bat" install
                 cd "!currentDir!"
             )
-        ) else if /i "!moduleDirName!" == "demos" (
+        ) else if /i "!moduleDirName!" == "clients" (
             if /i "!selfTestOnly!" == "false" (
-                set moduleDirPath=!rootDirPath!\!moduleDirName!
+                set moduleDirPath=!rootDirPath!\demos\!moduleDirName!
 
                 set currentDir=%cd%
                 call "!moduleDirPath!\install.bat" install
                 cd "!currentDir!"
             )
         ) else (
-            call :DoModuleInstall !moduleDirName! errors
+            REM Quick check to see if we're in the demos folder
+            for %%I in (..\..) do set parentParentDirName=%%~nxI
+            if /i "!parentParentDirName!" == "demos" (
+                set oldModulesDirPath=!modulesDirPath!
+                set modulesDirPath=!rootDirPath!\demos\modules\
+                call :DoModuleInstall !moduleDirName! errors
+                set modulesDirPath=!oldModulesDirPath!
+            ) else (
+                call :DoModuleInstall !moduleDirName! errors
+            )
             if "!moduleInstallErrors!" NEQ "" set success=false
         )
     )
@@ -512,7 +575,7 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
     set platforms=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Done" !color_success!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "done" !color_success!
 
     if "!moduleName!" == "" set moduleName=!moduleDirName!
 
@@ -634,9 +697,9 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
         REM look for, and install, the requirements file for the module, and
         REM then also the requirements file for the SDK since it'll be assumed
         REM the Python SDK will come into play.
-        if "!pythonVersion!" neq "" (
+        if /i "!selfTestOnly!" == "false" (
             if /i "!moduleInstallErrors!" == "" (
-                if /i "!selfTestOnly!" == "false" (
+                if "!pythonVersion!" neq "" (
                     call "!sdkScriptsDirPath!\utils.bat" WriteLine "Installing Python packages for !moduleName!"
 
                     call "!sdkScriptsDirPath!\utils.bat" Write "Installing GPU-enabled libraries: " $color_info
@@ -649,8 +712,11 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
                     call "!sdkScriptsDirPath!\utils.bat" InstallRequiredPythonPackages "%sdkPath%\Python"
                     if errorlevel 1 set moduleInstallErrors=Unable to install Python packages for CodeProject SDK
                 )
+
+                call "!sdkScriptsDirPath!\utils.bat" downloadModels 
+
             ) else (
-                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Skipping PIP installs due to install error (!moduleInstallErrors!)" !color_warn!
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Skipping PIP installs and model downloads due to install error (!moduleInstallErrors!)" !color_warn!
             )
         )
 
@@ -670,7 +736,7 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
         )
 
         REM Perform a self-test
-        if /i "!doPostInstallSelfTest!" == "true" if "!moduleInstallErrors!" == "" (
+        if /i "!noSelfTest!" == "false" if "!moduleInstallErrors!" == "" (
 
             set currentDir=%cd%
             cd "!moduleDirPath!"

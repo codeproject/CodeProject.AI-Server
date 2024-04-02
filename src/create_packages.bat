@@ -30,7 +30,7 @@ set setupScriptDirPath=%~dp0
 set appRootDirPath=!setupScriptDirPath!
 
 :: The name of the source directory
-set srcDir=src
+set srcDirName=src
 
 :: The name of the dir, within the current directory, where install assets will
 :: be downloaded
@@ -55,6 +55,10 @@ set useJq=false
         if not "!arg_name:--no-dotnet=!" == "!arg_name!" set includeDotNet=false
         if not "!arg_name:--path-to-setup=!" == "!arg_name!" (
             set setupScriptDirPath=!arg_value!
+            shift
+        )
+        if not "!arg_name:--verbosity=!" == "!arg_name!" (
+            set verbosity=!arg_value!
             shift
         )
     )
@@ -82,7 +86,7 @@ for /f "delims=\" %%a in ("%cd%") do @set setupScriptDirName=%%~nxa
 popd
 
 set executionEnvironment=Production
-if /i "%setupScriptDirName%" == "%srcDir%" set executionEnvironment=Development
+if /i "%setupScriptDirName%" == "%srcDirName%" set executionEnvironment=Development
 
 :: The absolute path to the setup script and the root directory. Note that
 :: this script (and the SDK folder) is either in the /src dir or the root dir
@@ -165,7 +169,7 @@ for /f "delims=" %%a in ('dir /a:d /b "!modulesDirPath!"') do (
         if "!includeDotNet!" == "false" if /i "!packageModuleId!" == "SentimentAnalysis"        set doPackage=false
 
         if "!doPackage!" == "false" (
-            call "!sdkScriptsDirPath!\utils.bat" WriteLine "Skipping packaging module !packageModuleId!..." "Red"
+            call "!sdkScriptsDirPath!\utils.bat" WriteLine "Skipping packaging module !packageModuleId!..." "DarkRed"
         ) else (
             REM Read the version from the modulesettings.json file and then pass this 
             REM version to the package.bat file.
@@ -179,25 +183,30 @@ for /f "delims=" %%a in ('dir /a:d /b "!modulesDirPath!"') do (
         ) else if "!doPackage!" == "true" (
 
             pushd "!packageModuleDirPath!" 
-
-            call "!sdkScriptsDirPath!\utils.bat" Write "Packaging !packageModuleId! !packageVersion!..." "White"
+            if /i "%verbosity%" == "loud" cd
 
             rem Create module download package
-            call package.bat !packageModuleId! !packageVersion!
-            if errorlevel 1 call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error in package.bat for !packageModuleDirName!" "Red"
+            if exist package.bat (
+                call "!sdkScriptsDirPath!\utils.bat" Write "Packaging !packageModuleId! !packageVersion!..." "White"
+                call package.bat !packageModuleId! !packageVersion!
+                if errorlevel 1 call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error in package.bat for !packageModuleDirName!" "Red"
+
+                rem Move package into modules download cache
+
+                rem echo Moving !packageModuleDirPath!\!packageModuleId!-!version!.zip to !downloadDirPath!\!modulesDir!\
+                move /Y !packageModuleDirPath!\!packageModuleId!-!packageVersion!.zip !downloadDirPath!\!modulesDir!\  >NUL
+
+                if errorlevel 1 (
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error" "Red"
+                    set success=false
+                ) else (
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "done" "DarkGreen"
+                )
+            ) else (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "No package.bat file found..." "Red"
+            )
 
             popd
-            
-            rem Move package into modules download cache       
-            rem echo Moving !packageModuleDirPath!\!packageModuleId!-!version!.zip to !downloadDirPath!\modules\
-            move /Y !packageModuleDirPath!\!packageModuleId!-!packageVersion!.zip !downloadDirPath!\modules\  >NUL 2>&1
-
-            if errorlevel 1 (
-                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error" "Red"
-                set success=false
-            ) else (
-                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Done" "DarkGreen"
-            )
         )
     )
 )

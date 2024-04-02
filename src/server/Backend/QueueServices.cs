@@ -20,7 +20,11 @@ namespace CodeProject.AI.Server.Backend
     /// </summary>
     public class QueueServices
     {
-        private readonly string[] _doNotLogCommands = { "list-custom", "status" };
+        private readonly string[] _doNotLogCommands = { 
+            "list-custom", 
+            "get_module_status", "status", "get_status", // status is deprecated alias
+            "get_command_status"
+        };
 
         private readonly QueueProcessingOptions _settings;
         private readonly ILogger _logger;

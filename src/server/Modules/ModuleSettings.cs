@@ -17,9 +17,10 @@ namespace CodeProject.AI.Server.Modules
     {
         // marker for path substitution
         const string RootPathMarker                   = "%ROOT_PATH%";
-        const string runtimesDirPathMarker            = "%RUNTIMES_PATH%";
+        const string RuntimesDirPathMarker            = "%RUNTIMES_PATH%";
         const string PreinstalledModulesDirPathMarker = "%PREINSTALLED_MODULES_PATH%";
-        const string modulesDirPathMarker             = "%MODULES_PATH%";
+        const string ModulesDirPathMarker             = "%MODULES_PATH%";
+        const string DemoModulesDirPathMarker         = "%DEMO_MODULES_PATH%";
         const string CurrentModuleDirPathMarker       = "%CURRENT_MODULE_PATH%";
         const string PlatformMarker                   = "%PLATFORM%";
         const string OSMarker                         = "%OS%";  
@@ -66,10 +67,21 @@ namespace CodeProject.AI.Server.Modules
         public string ModulesDirPath => _moduleOptions.ModulesDirPath!;
 
         /// <summary>
-        /// Gets the absolute path to the download modules zip packages that have been
-        /// downloaded from the modules registry
+        /// Gets the absolute path to the demo AI modules
+        /// </summary>
+        public string DemoModulesDirPath => _moduleOptions.DemoModulesDirPath!;
+
+        /// <summary>
+        /// Gets the absolute path to the download modules zip packages that have been downloaded
+        /// from the modules registry
         /// </summary>
         public string DownloadedModulePackagesDirPath => _moduleOptions.DownloadedModulePackagesDirPath!;
+
+        /// <summary>
+        /// Gets the absolute path to the download models zip packages that have been downloaded
+        /// from the modules registry
+        /// </summary>
+        public string DownloadedModelsPackagesDirPath => _moduleOptions.DownloadedModelsPackagesDirPath!;
 
         /// <summary>
         /// Gets the path to the modules installer script. This will be a batch file or bash file
@@ -85,86 +97,6 @@ namespace CodeProject.AI.Server.Modules
                     return _moduleOptions.ModuleInstallerScriptsDirPath + "\\setup.bat";
 
                 return _moduleOptions.ModuleInstallerScriptsDirPath + "/setup.sh";
-            }
-        }
-
-        /// <summary>
-        /// Adds a module's modulesettings.*.json files to a configuration builder in the correct
-        /// order, taking into account the environment and platform.
-        /// </summary>
-        /// <param name="config">The IConfigurationBuilder object</param>
-        /// <param name="moduleDirPath">The directory containing the module</param>
-        /// <param name="reloadOnChange">Whether to trigger a reload if the files change</param>
-        public static void LoadModuleSettings(IConfigurationBuilder config, string moduleDirPath,
-                                              bool reloadOnChange)
-        {
-            string runtimeEnv      = SystemInfo.RuntimeEnvironment == RuntimeEnvironment.Development
-                                   ? "development" : string.Empty;
-            string os              = SystemInfo.OperatingSystem.ToLower();
-            string architecture    = SystemInfo.Architecture.ToLower();
-            string deviceSpecifier = string.Empty;
-            if (SystemInfo.SystemName == "Raspberry Pi")
-                deviceSpecifier = "raspberrypi";
-            else if (SystemInfo.SystemName == "Orange Pi")
-                deviceSpecifier = "orangepi";
-            else if (SystemInfo.SystemName == "Jetson")
-                deviceSpecifier = "jetson";
-
-            // modulesettings.json
-            // modulesettings.development.json
-            // modulesettings.os.json
-            // modulesettings.os.development.json
-            // modulesettings.os.architecture.json
-            // modulesettings.os.architecture.development.json
-            // modulesettings.docker.json
-            // modulesettings.docker.development.json
-            // modulesettings.device_specifier.json     device_specifier = raspberrypi, orangepi, jetson
-            // modulesettings.device_specifier.development.json
-
-            string basename     = Constants.ModulesSettingFilenameNoExt; // "modulesettings"
-            string settingsFile = Path.Combine(moduleDirPath, $"{basename}.json");
-            config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-
-            if (!string.IsNullOrEmpty(runtimeEnv))
-            {
-                settingsFile = Path.Combine(moduleDirPath, $"{basename}.{runtimeEnv}.json");
-                config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-            }
-
-            settingsFile = Path.Combine(moduleDirPath, $"{basename}.{os}.json");
-            config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-
-            if (!string.IsNullOrEmpty(runtimeEnv))
-            {
-                settingsFile = Path.Combine(moduleDirPath, $"{basename}.{os}.{runtimeEnv}.json");
-                config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-            }
-
-            settingsFile = Path.Combine(moduleDirPath, $"{basename}.{os}.{architecture}.json");
-            config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-
-            if (!string.IsNullOrEmpty(runtimeEnv))
-            {
-                settingsFile = Path.Combine(moduleDirPath, $"{basename}.{os}.{architecture}.{runtimeEnv}.json");
-                config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-            }
-
-            if (SystemInfo.IsDocker)
-            {
-                settingsFile = Path.Combine(moduleDirPath, $"{basename}.docker.json");
-                config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-            }
-
-            if (!string.IsNullOrEmpty(deviceSpecifier))
-            {
-                settingsFile = Path.Combine(moduleDirPath, $"{basename}.{deviceSpecifier}.json");
-                config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-
-                if (!string.IsNullOrEmpty(runtimeEnv))
-                {
-                    settingsFile = Path.Combine(moduleDirPath, $"{basename}.{deviceSpecifier}.{runtimeEnv}.json");
-                    config.AddJsonFileSafe(settingsFile, optional: true, reloadOnChange: reloadOnChange);
-                }
             }
         }
 
@@ -190,33 +122,6 @@ namespace CodeProject.AI.Server.Modules
             ExpandMacros();
         }
 
-        /*
-        /// <summary>
-        /// Returns a string that represents the path to the current directory a module lives in.
-        /// Note that a module's folder is always the same name as its Id.
-        /// </summary>
-        /// <param name="module">The module to launch</param>
-        /// <returns>A string object</returns>
-        public string GetModuleDirPath(ModuleBase module)
-        {
-            if (module.PreInstalled)
-                return Path.Combine(PreInstalledModulesDirPath, module.ModuleId!);
-
-            return Path.Combine(ModulesDirPath, module.ModuleId!);
-        }
-
-        /// <summary>
-        /// Returns a string that represents the working directory for a module. Note,
-        /// module.WorkingDirectory can be used instead of this.
-        /// </summary>
-        /// <param name="module">The module to launch</param>
-        /// <returns>A string object</returns>
-        public string GetWorkingDirectory(ModuleBase module)
-        {
-            return GetModuleDirPath(module);
-        }
-        */
-
         /// <summary>
         /// Returns a string that represents the command to run to launch a module. Order of 
         /// precedence is the module's Command, the Runtime, and then a guess based on FilePath.
@@ -225,7 +130,6 @@ namespace CodeProject.AI.Server.Modules
         /// <returns>A string object</returns>
         public string? GetCommandPath(ModuleConfig module)
         {
-            // string? command = ExpandOption(module.Command, GetModuleDirPath(module)) ??
             string? command = ExpandOption(module.LaunchSettings!.Command, module.ModuleDirPath) ??
                               GetCommandByRuntime(module) ??
                               GetCommandByFilepath(module);
@@ -273,13 +177,27 @@ namespace CodeProject.AI.Server.Modules
             // "/runtimes/bin/linux/python38/venv/bin/python3" path.
             if (runtime.StartsWith("python"))
             {
-                // HACK: In Docker, Python installations for downloaded modules can be local for 
-                // downloaded modules, or shared for pre-installed modules. For preinstalled modules
-                // hardcoded into the Docker image, the python installs and package installs are
-                // done at the system level, and not in a virtual environment. This means Python
-                // command is in the format of "python3.N" rather than
-                // "/runtimes/bin/linux/python3N/venv/bin/python3"
-                if (SystemInfo.IsDocker && module.InstallOptions!.PreInstalled)
+                // HACK: In Docker, Python installations for modules can be local for downloaded
+                // modules, or shared for pre-installed modules. For preinstalled modules hardcoded
+                // into the Docker image, the python runtimes and package are installs at the
+                // system level, and not in a virtual environment. This means Python command is in
+                // the format of "python3.N" rather than "/runtimes/bin/linux/python3N/venv/bin/python3"
+                // ie. Python runtime location is 'System'.
+                if (SystemInfo.IsDocker)
+                {
+                    if (SystemInfo.IsWindows)
+                    {
+                        if (module.ModuleDirPath.StartsWithIgnoreCase(PreInstalledModulesDirPath))
+                            module.LaunchSettings!.RuntimeLocation = "System";
+                    }
+                    // Do a case-sensitive for Linux / macOS
+                    else if (module.ModuleDirPath.StartsWith(PreInstalledModulesDirPath))
+                    {
+                        module.LaunchSettings!.RuntimeLocation = "System";
+                    }
+                }
+
+                if (module.LaunchSettings!.RuntimeLocation == "System")
                     return runtime;
 
                 // In Docker we don't allow non-pre-installed modules to have shared venv's. Force
@@ -287,7 +205,7 @@ namespace CodeProject.AI.Server.Modules
                 if (SystemInfo.IsDocker && module.LaunchSettings!.RuntimeLocation == "Shared")
                     module.LaunchSettings!.RuntimeLocation = "Local";
 
-                string pythonName = runtime.Replace(".", string.Empty).ToLower();
+                string pythonName  = runtime.Replace(".", string.Empty).ToLower();
                 string commandPath = _moduleOptions.PythonRelativeInterpreterPath!
                                                    .Replace(PythonNameMarker, pythonName);
                 commandPath = commandPath.TrimStart('\\','/');
@@ -361,10 +279,14 @@ namespace CodeProject.AI.Server.Modules
             _moduleOptions.RuntimesDirPath                  = Path.GetFullPath(ExpandOption(_moduleOptions.RuntimesDirPath)!);
             _moduleOptions.ModulesDirPath                   = Path.GetFullPath(ExpandOption(_moduleOptions.ModulesDirPath)!);
             _moduleOptions.PreInstalledModulesDirPath       = Path.GetFullPath(ExpandOption(_moduleOptions.PreInstalledModulesDirPath)!);
+            _moduleOptions.DemoModulesDirPath               = Path.GetFullPath(ExpandOption(_moduleOptions.DemoModulesDirPath)!);
             _moduleOptions.DownloadedModulePackagesDirPath  = Path.GetFullPath(ExpandOption(_moduleOptions.DownloadedModulePackagesDirPath)!);
+            _moduleOptions.DownloadedModelsPackagesDirPath  = Path.GetFullPath(ExpandOption(_moduleOptions.DownloadedModelsPackagesDirPath)!);
             _moduleOptions.ModuleInstallerScriptsDirPath    = Path.GetFullPath(ExpandOption(_moduleOptions.ModuleInstallerScriptsDirPath)!);
 
             _moduleOptions.ModuleListUrl                    = ExpandOption(_moduleOptions.ModuleListUrl);
+            _moduleOptions.ModelListUrl                     = ExpandOption(_moduleOptions.ModelListUrl);
+            _moduleOptions.ModelStorageUrl                  = ExpandOption(_moduleOptions.ModelStorageUrl);
             _moduleOptions.PythonRelativeInterpreterPath    = ExpandOption(_moduleOptions.PythonRelativeInterpreterPath);
 
             // Correct the slashes
@@ -373,6 +295,7 @@ namespace CodeProject.AI.Server.Modules
             _moduleOptions.RuntimesDirPath                  = Text.FixSlashes(_moduleOptions.RuntimesDirPath);
             _moduleOptions.ModulesDirPath                   = Text.FixSlashes(_moduleOptions.ModulesDirPath);
             _moduleOptions.PreInstalledModulesDirPath       = Text.FixSlashes(_moduleOptions.PreInstalledModulesDirPath);
+            _moduleOptions.DemoModulesDirPath               = Text.FixSlashes(_moduleOptions.DemoModulesDirPath);
             _moduleOptions.ModuleInstallerScriptsDirPath    = Text.FixSlashes(_moduleOptions.ModuleInstallerScriptsDirPath);
 
             // _moduleOptions.ModuleListUrl                 = Text.FixSlashes(_moduleOptions.ModuleListUrl); - Don't: it will kill "file://"
@@ -381,6 +304,7 @@ namespace CodeProject.AI.Server.Modules
             // _logger.LogInformation($"ROOT_PATH              = {_serverOptions.ApplicationRootPath}");
             _logger.LogInformation($"RUNTIMES_PATH             = {_moduleOptions.RuntimesDirPath}");
             _logger.LogInformation($"PREINSTALLED_MODULES_PATH = {_moduleOptions.PreInstalledModulesDirPath}");
+            _logger.LogInformation($"DEMO_MODULES_PATH         = {_moduleOptions.DemoModulesDirPath}");
             _logger.LogInformation($"MODULES_PATH              = {_moduleOptions.ModulesDirPath}");
             _logger.LogInformation($"PYTHON_PATH               = {_moduleOptions.PythonRelativeInterpreterPath}");
             _logger.LogInformation($"Data Dir                  = {_appDataDirectory}");
@@ -397,14 +321,15 @@ namespace CodeProject.AI.Server.Modules
             if (string.IsNullOrWhiteSpace(value))
                 return null;
 
-            value = value.Replace(runtimesDirPathMarker, _moduleOptions.RuntimesDirPath);
+            value = value.Replace(RuntimesDirPathMarker,    _moduleOptions.RuntimesDirPath);
             value = value.Replace(PreinstalledModulesDirPathMarker,  _moduleOptions.PreInstalledModulesDirPath);
-            value = value.Replace(modulesDirPathMarker,  _moduleOptions.ModulesDirPath);
-            value = value.Replace(RootPathMarker,        Server.Program.ApplicationRootPath);
-            value = value.Replace(PlatformMarker,        SystemInfo.Platform.ToLower());
-            value = value.Replace(OSMarker,              SystemInfo.OperatingSystem.ToLower());
-            value = value.Replace(PythonPathMarker,      _moduleOptions.PythonRelativeInterpreterPath);
-            value = value.Replace(DataDirMarker,         _appDataDirectory);
+            value = value.Replace(ModulesDirPathMarker,     _moduleOptions.ModulesDirPath);
+            value = value.Replace(DemoModulesDirPathMarker, _moduleOptions.DemoModulesDirPath);
+            value = value.Replace(RootPathMarker,           Server.Program.ApplicationRootPath);
+            value = value.Replace(PlatformMarker,           SystemInfo.Platform.ToLower());
+            value = value.Replace(OSMarker,                 SystemInfo.OperatingSystem.ToLower());
+            value = value.Replace(PythonPathMarker,         _moduleOptions.PythonRelativeInterpreterPath);
+            value = value.Replace(DataDirMarker,            _appDataDirectory);
 
             if (!string.IsNullOrEmpty(currentModuleDirPath))
                 value = value.Replace(CurrentModuleDirPathMarker, currentModuleDirPath);

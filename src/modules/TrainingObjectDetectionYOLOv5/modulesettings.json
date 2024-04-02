@@ -3,7 +3,7 @@
 
     "TrainingObjectDetectionYOLOv5": {
       "Name": "Training for YoloV5 6.2",
-      "Version": "1.6.2",
+      "Version": "1.6.3",
 
       "PublishingInfo" : {
         "Description": "Train custom models for YOLOv5 v6.2 with support for CPUs, CUDA enabled GPUs, and Apple Silicon.", 
@@ -20,9 +20,9 @@
 
       "LaunchSettings": {
         "AutoStart": false,
-        "FilePath": "TrainingObjectDetectionYOLOv5.py",
+        "FilePath": "training_objectdetection_YOLOv5_adapter.py",
         "Runtime": "python3.8",
-        "RuntimeLocation": "Local",       // Can be Local or Shared. If Local, update install.* files.
+        "RuntimeLocation": "Local",       // Can be Local, Shared or System. If Local, update install.* files.
         "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
         "Queue": null,                    // default is lower(module_id) + '_queue'
         "Parallelism": 2,                 // 0 = Default = number of CPUs / 2
@@ -38,7 +38,6 @@
 
       "InstallOptions" : {
         "Platforms": [ "all", "!raspberrypi", "!orangepi", "!jetson"],
-        "PreInstalled":   false,          // Is this module pre-installed with the server (eg Docker containers)
         "ModuleReleases": [               // Which server version is compatible with each version of this module.
           { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.1.10", "2.1.10" ], "ReleaseDate": "2022-08-02" },
           { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1.11", "2.1.12" ], "ReleaseDate": "2023-08-12", "ReleaseNotes": "Added 'patience', 'workers' as parameters" },
@@ -57,7 +56,8 @@
           { "ModuleVersion": "1.5.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
           { "ModuleVersion": "1.6.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
           { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
-          { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.5.4", ""     ], "ReleaseDate": "2024-02-16", "ReleaseNotes": "Corrects issues with display of progress and status."}
+          { "ModuleVersion": "1.6.2", "ServerVersionRange": [ "2.5.4", ""     ], "ReleaseDate": "2024-02-16", "ReleaseNotes": "Corrects issues with display of progress and status."},
+          { "ModuleVersion": "1.6.3", "ServerVersionRange": [ "2.5.4", ""     ], "ReleaseDate": "2024-02-16", "ReleaseNotes": "Correcting startup file." }
        ]
       },
 
@@ -185,9 +185,9 @@
 
         {
           "Name": "Training Status (YOLOv5 6.2)",
-          "Route": "train/status",
+          "Route": "train/get_status",
           "Method": "POST",
-          "Command": "status",
+          "Command": "get_status",
           "MeshEnabled": false,
           "Description": "Gets the training status",
           "Inputs": [

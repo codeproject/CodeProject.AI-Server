@@ -19,13 +19,13 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Jetson" ]; then
     module_install_errors="Unable to install on Pi or Jetson hardware."
 fi
 
 # For Jetson, we need to install Torch before the other packages.
 # A huge thanks to QEngineering: https://qengineering.eu/install-pytorch-on-jetson-nano.html
-if [ "$module_install_errors" = "" ] && [ "$systemName" = "Jetson" ]; then 
+if [ "$module_install_errors" = "" ] && [ "$edgeDevice" = "Jetson" ]; then 
 
     # NOTE: Pytorch 2.0 and above uses CUDA 11. The Jetson Nano has CUDA 10.2.
     # Due to low-level GPU incompatibility, installing CUDA 11 on your Nano is 
@@ -39,14 +39,14 @@ if [ "$module_install_errors" = "" ] && [ "$systemName" = "Jetson" ]; then
     installPythonPackagesByName "future wheel mock pillow testresources setuptools==58.3.0 Cython"
 
     # install gdown to download from Google drive and download wheel
-    if [ ! -f "${downloadDirPath}/ObjectDetectionYOLOv5-6.2/torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl" ]; then
+    if [ ! -f "${downloadDirPath}/${modulesDir}/${moduleDirName}/torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl" ]; then
         installPythonPackagesByName "gdown"
         gdown https://drive.google.com/uc?id=1TqC6_2cwqiYacjoLhLgrZoap6-sVL2sd
-        mv -f torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl "${downloadDirPath}/ObjectDetectionYOLOv5-6.2/"
+        mv -f torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl "${downloadDirPath}/${modulesDir}/${moduleDirName}/"
     fi
 
     # install PyTorch 1.10.0
-    installPythonPackagesByName "${downloadDirPath}/ObjectDetectionYOLOv5-6.2/torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl" "PyTorch"
+    installPythonPackagesByName "${downloadDirPath}/${modulesDir}/${moduleDirName}/torch-1.10.0a0+git36449ea-cp36-cp36m-linux_aarch64.whl" "PyTorch"
 
 fi
 
@@ -67,12 +67,12 @@ if [ "$module_install_errors" = "" ] && [ "$inDocker" != true ] && [ "$os" = "li
     #
     #    sudo apt-get install ./amdgpu-install_5.4.50402-1_all.deb
     #    spin $!
-    #    writeLine "Done" "$color_success"
+    #    writeLine "done" "$color_success"
     #
     #    writeLine 'Installing ROCm drivers...'
     #    sudo amdgpu-install --usecase=dkms,graphics,multimedia,opencl,hip,hiplibsdk,rocm
     #    spin $!
-    #    writeLine "Done" "$color_success"
+    #    writeLine "done" "$color_success"
     # fi
 fi
 

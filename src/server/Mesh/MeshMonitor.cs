@@ -181,10 +181,17 @@ namespace CodeProject.AI.Server.Mesh
             }
 
             // set _localAddress as the first IPv4 address of the local machine
-            foreach (IPAddress address in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
+            try
             {
-                if (address.AddressFamily == AddressFamily.InterNetwork)
-                    _localIPAddresses.Add(address);
+                foreach (IPAddress address in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
+                {
+                    if (address.AddressFamily == AddressFamily.InterNetwork)
+                        _localIPAddresses.Add(address);
+                }
+            }
+            catch
+            {
+                // can get "nodename nor servname provided, or not known"
             }
 
             // Setup the list of known servers

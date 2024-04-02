@@ -3,7 +3,7 @@
 
     "Text2Image": {
       "Name": "Text to Image",
-      "Version": "1.0.0",
+      "Version": "1.1.2",
 
       "PublishingInfo": {
         "Description": "Generates an image from a text prompt.",
@@ -13,48 +13,45 @@
         "LicenseUrl": "http://www.codeproject.com/info/cpol10.aspx",
         "Author": "Matthew Dennis",
         "Homepage": "https://codeproject.com/ai",
-        "BasedOn": "Difussers", // What project is this based on?
+        "BasedOn": "Diffusers",                                  // What project is this based on?
         "BasedOnUrl": "https://github.com/huggingface/diffusers" // The URL for that project
       },
 
       "LaunchSettings": {
-        "AutoStart": false, // Start this when the server starts
-        "FilePath": "text2image.py", // Name of file that gets launched  
-        "Runtime": "python3.9", // file is launched by Python
-        "RuntimeLocation": "Local", // We want our own virt. env., not a shared one
-        "PostStartPauseSecs": 1, // Generally 1 if using GPU, 0 for CPU
-        "Queue": "text2image_queue", // Can be left as null if you wish
-        "Parallelism": 1 // 0 = Default (number of CPUs - 1)
+        "AutoStart": false,                        // Start this when the server starts
+        "FilePath": "stable_diffusion_adapter.py", // Name of file that gets launched  
+        "Runtime": "python3.9",                    // file is launched by Python
+        "RuntimeLocation": "Local",                // We want our own virt. env., not a shared one
+        "PostStartPauseSecs": 1,                   // Generally 1 if using GPU, 0 for CPU
+        "Queue": "text2image_queue",               // Can be left as null if you wish
+        "Parallelism": 1                           // 0 = Default (number of CPUs - 1)
       },
 
       "EnvironmentVariables": {
         // "MODEL_SIZE": "Medium", // tiny, small, medium, large
         "CPAI_MODULE_TEXT2IMAGE_MODELS_DIR": "%CURRENT_MODULE_PATH%/assets",
-        "CPAI_MODULE_TEXT2IMAGE_MODEL_NAME": "stable-diffusion-v1-5"
+        "CPAI_MODULE_TEXT2IMAGE_MODEL_NAME": "@runwayml/stable-diffusion-v1-5"
       },
 
       "GpuOptions": {
-        "InstallGPU": true, // Should we install GPU enabled code?
-        "EnableGPU": true, // Should we enable GPU support (if installed)
+        "InstallGPU": true,            // Should we install GPU enabled code?
+        "EnableGPU": true,             // Should we enable GPU support (if installed)
         "AcceleratorDeviceName": null, // eg "cuda:0" or just leave blank for default
-        "HalfPrecision": "enable" // For code that supports half-precision. Use 'Force', 'Enable', 'Disable'
+        "HalfPrecision": "enable"      // For code that supports half-precision. Use 'Force', 'Enable', 'Disable'
       },
 
       "InstallOptions": {
-        "Platforms": [ "windows", "linux" ],
-        "ModuleReleases": [
-          {
-            "ModuleVersion": "1.0.0",
-            "ServerVersionRange": [ "2.5.5", "" ],
-            "ReleaseDate": "2024-04-20",
-            "ReleaseNotes": "Initial Release",
-            "Importance": "Major"
-          }
+        "Platforms": [ "windows", "macos", "linux" ], // "macos-arm64"
+        "ModuleReleases":
+        [
+          { "ModuleVersion": "1.0.0", "ServerVersionRange": [ "2.5.5", "2.6.0" ], "ReleaseDate": "2024-03-20", "ReleaseNotes": "Initial Release", "Importance": "Major" },
+          { "ModuleVersion": "1.1.0", "ServerVersionRange": [ "2.5.6", "2.6.0" ], "ReleaseDate": "2024-03-28", "ReleaseNotes": "Updated for new long running process handling", "Importance": "Major" },
+          { "ModuleVersion": "1.1.1", "ServerVersionRange": [ "2.6.0", "2.6.0" ], "ReleaseDate": "2024-03-26", "ReleaseNotes": "Bug fixes" },
+          { "ModuleVersion": "1.1.2", "ServerVersionRange": [ "2.6.1", ""      ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updates for server 2.6" }
         ]
       },
       "UIElements": {
         "Menus": [
-          /*
           {
             "Label": "Half Precision",
             "Options": [
@@ -75,7 +72,6 @@
               }
             ]
           }
-          */
         ]
       },
 
@@ -122,7 +118,7 @@
             {
               "Name": "width",
               "Type": "Integer",
-              "Description": "The width of the image to be created. Defaults to 512.",
+              "Description": "The width of the image to be created. Defaults to 512. Must be a multiple of 8.",
               "DefaultValue": 512,
               "MinValue": 16,
               "MaxValue": 1024
@@ -130,7 +126,7 @@
             {
               "Name": "height",
               "Type": "Integer",
-              "Description": "The height of the image to be created.",
+              "Description": "The height of the image to be created. Must be a multiple of 8.",
               "DefaultValue": 512,
               "MinValue": 16,
               "MaxValue": 1024
@@ -157,13 +153,13 @@
               "Description": "An array of 1-4 images generated."
             }
           ]
-        },
-
-        {
+        }
+/*
+        ,{
           "Name": "Get Long Process Status",
-          "Route": "text2image/process_status",
+          "Route": "text2image/get_command_status",
           "Method": "POST",
-          "Command": "process_status",
+          "Command": "get_command_status",
           "MeshEnabled": false,
           "Description": "Gets the status of a long running command.",
           "Inputs": [
@@ -174,37 +170,22 @@
             }
           ]
         },
-
         {
-          "Name": "Get Long Command Result",
-          "Route": "text2image/getcommandresult",
-          "Method": "POST",
-          "Command": "get_command_result",
-          "Description": "Gets the response from a long running command.",
-          "Inputs": [
-            {
-              "Name": "command_id",
-              "Type": "Text",
-              "Description": "The id of the command to get the result for."
-            }
-          ]
-        },
-
-        {
-          "Name": "Cancel Command",
-          "Route": "text2image/cancelcommand",
+          "Name": "Get Long Process Status",
+          "Route": "text2image/cancel_command",
           "Method": "POST",
           "Command": "cancel_command",
+          "MeshEnabled": false,
           "Description": "Cancels a long running command.",
           "Inputs": [
             {
               "Name": "command_id",
               "Type": "Text",
-              "Description": "The id of the command to cancel."
+              "Description": "The id of the command to be cancelled."
             }
           ]
         }
-
+        */
       ]
     }
   }

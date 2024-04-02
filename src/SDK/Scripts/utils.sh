@@ -288,7 +288,7 @@ function CreateWriteableDir () {
         #sudo 
         mkdir -p "${path}" >/dev/null 2>/dev/null
         if [ $? -eq 0 ]; then 
-            writeLine "Done" $color_success
+            writeLine "done" $color_success
         else
             writeLine "Needs admin permission to create folder" $color_error
             displayMacOSDirCreatePermissionError
@@ -301,7 +301,7 @@ function CreateWriteableDir () {
             write "Setting permissions on ${desc} folder..." $color_primary 
             sudo chmod a+w "${path}" >/dev/null 2>/dev/null
             if [ $? -eq 0 ]; then 
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
             else
                 writeLine "Needs admin permission to set folder permissions" $color_error
             fi
@@ -323,7 +323,7 @@ function checkForAdminRights () {
     if [[ $EUID = 0 ]]; then isAdmin=true; fi
 
     # On RPi, you get root access
-    if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ]; then isAdmin=true; fi
+    if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ]; then isAdmin=true; fi
 
     # In Docker you have admin rights
     if [ "${systemName}" = "Docker" ]; then isAdmin=true; fi
@@ -444,12 +444,12 @@ function checkForTool () {
                 brew install ${name} > /dev/null
             fi
         else
-
             checkForAdminAndWarn "sudo apt update -y && sudo apt install ${name} -y"
 
             if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
                 writeLine "Installing ${name}..." $color_info
-                sudo apt update -y & sudo apt install ${name} -y > /dev/null
+                sudo apt update -y > /dev/null & sudo apt install ${name} -y > /dev/null
+                stty sane > /dev/null
             fi
         fi
 
@@ -488,6 +488,49 @@ function checkForTool () {
     return 0
 }
 
+function setupSSL() {
+    if [ "$os" = "linux" ] && [ "$architecture" == "x86_64" ]; then
+
+        if [ ! -f /usr/lib/x86_64-linux-gnu/libssl.so.1.1 ] || [ ! -e /usr/lib/libcrypto.so.1.1 ]; then
+
+            # output a warning message if no admin rights and instruct user on manual steps
+            install_instructions="cd ${setupScriptDirPath}${newline}sudo bash setup.sh"
+            checkForAdminAndWarn "$install_instructions"
+
+            if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+
+                module_install_errors=""
+
+                if [ "$os_name" != "debian" ]; then
+                    echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list
+                fi
+                installAptPackages "libssl1.1"
+
+                write "Ensuring symlinks are created..." $color_info
+
+                # LIBSSL: Add link at /usr/lib/libssl.so.1.1 that points to /lib/x86_64-linux-gnu/libssl.so.1.1
+                if [ -f /lib/x86_64-linux-gnu/libssl.so.1.1 ] && [ ! -e /usr/lib/libssl.so.1.1 ]; then
+                    if [ "${verbosity}" = "loud" ]; then
+                        sudo ln -s /lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1
+                    else
+                        sudo ln -s /lib/x86_64-linux-gnu/libssl.so.1.1 /usr/lib/libssl.so.1.1 >/dev/null 2>/dev/null
+                    fi
+                fi
+
+                # LIBRYPTO: Add link at /usr/lib/libcrypto.so.1.1 that points to /lib/x86_64-linux-gnu/libcrypto.so.1.1
+                if [ -f /lib/x86_64-linux-gnu/libcrypto.so.1.1 ] && [ ! -e /usr/lib/libcrypto.so.1.1 ]; then
+                    if [ "${verbosity}" = "loud" ]; then
+                        sudo ln -s /lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
+                    else
+                        sudo ln -s /lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1 >/dev/null 2>/dev/null
+                    fi
+                fi
+
+                writeLine "Done" $color_success
+            fi
+        fi
+    fi
+}
 
 function getDotNetVersion() {
 
@@ -615,14 +658,14 @@ function setupDotNet () {
             if [ "$os" = "linux" ]; then
 
                 if [ "$os_name" = "debian" ]; then
-                    wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-                    sudo dpkg -i packages-microsoft-prod.deb
-                    rm packages-microsoft-prod.deb
+                    wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
+                    sudo dpkg -i packages-microsoft-prod.deb >/dev/null
+                    rm packages-microsoft-prod.deb >/dev/null
 
                     if [ "$requestedType" = "sdk" ]; then
-                        sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion
+                        sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
                     else
-                        sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion
+                        sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
                     fi
 
                 else
@@ -832,7 +875,7 @@ function setupPython () {
     else
 
         # output a warning message if no admin rights and instruct user on manual steps
-        if [ "$setupMode" = 'SetupDevEnvironment' ]; then 
+        if [ "$setupMode" = 'SetupEverything' ]; then 
             install_instructions="cd ${setupScriptDirPath}${newline}sudo bash setup.sh"
         else
             install_instructions="cd ${moduleDirPath}${newline}sudo bash ../../setup.sh"
@@ -900,19 +943,19 @@ function setupPython () {
                 basePythonCmdPath="/usr/local/opt/python@${pythonVersion}/bin/python${pythonVersion}"
             fi 
 
-            writeLine "Done" $color_success
+            writeLine "done" $color_success
 
         # macOS: With my M1 chip and Rosetta I make installing Python a real PITA.
         # Raspberry Pi: Hold my beer 
-        elif [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || \
-             [ "${systemName}" = "Jetson" ] || [ "$os_name" = "debian" ]; then
+        elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
+             [ "${edgeDevice}" = "Jetson" ] || [ "$os_name" = "debian" ]; then
 
             # ensure gcc is installed
             if [ "$os_name" == "debian" ]; then 
                 # gcc and make
                 installAptPackages "build-essential make"
                 # to build python on Debian
-                installAptPackages "libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev"
+                installAptPackages "openssl-dev libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev"
             fi
 
             if [ "$launchedBy" = "server" ]; then
@@ -924,7 +967,7 @@ function setupPython () {
                 writeLine "then restart CodeProject.AI Server" $color_error
                 quit
             else
-                if [ "$systemName" = "linux" ]; then
+                if [ "$os_name" = "debian" ]; then
                     writeLine "Installing Python. THIS COULD TAKE 10-15 mins" "white" "red" 50
                 else
                     writeLine "Installing Python. THIS COULD TAKE AN HOUR" "white" "red" 50
@@ -955,7 +998,7 @@ function setupPython () {
             # install the pre-requisites
             checkForAdminAndWarn "sudo apt-get update -y && sudo apt --yes --force-yes upgrade"
             if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
-                sudo apt-get update -y && sudo apt --yes --force-yes upgrade
+                sudo apt-get update -y && sudo apt --yes --force-yes upgrade >/dev/null
             fi
 
             # Build tools
@@ -971,28 +1014,28 @@ function setupPython () {
             # https://www.aliengen.com/blog/install-python-3-7-on-a-raspberry-pi-with-raspbian-8
 
             # Download
-            cd $downloadDir
-            mkdir --parents "${os}/Lib"
+            cd $downloadDir 
+            mkdir --parents "${os}/Lib" >/dev/null
             cd "${os}/Lib"
 
             if [ ! -f "openssl-1.1.1c.tar.gz" ]; then
-                curl $curlFlags --remote-name https://www.openssl.org/source/openssl-1.1.1c.tar.gz  
+                curl $curlFlags --remote-name https://www.openssl.org/source/openssl-1.1.1c.tar.gz
                 # If using wget
                 # wget $wgetFlags https://www.openssl.org/source/openssl-1.1.1c.tar.gz
             fi
             if [ ! -d "openssl-1.1.1c" ]; then
-                tar -xf openssl-1.1.1c.tar.gz
+                tar -xf openssl-1.1.1c.tar.gz >/dev/null
             fi
 
             if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
                 cd openssl-1.1.1c/
                 # Build SSL
                 sudo ./config shared --prefix=/usr/local/
-                sudo make -j $(nproc)
+                sudo make -j $(nproc) >/dev/null
 
                 # Install
-                sudo make install
-                sudo apt-get install libssl-dev -y
+                sudo make install >/dev/null
+                sudo apt-get install libssl-dev -y >/dev/null
 
                 # cleanup
                 cd ..
@@ -1000,8 +1043,8 @@ function setupPython () {
             fi
             
             # Get the Python tar ball and extract into our downloads dir
-            mkdir "${pythonName}"
-            cd "${pythonName}"
+            mkdir "${pythonName}" >/dev/null
+            cd "${pythonName}" >/dev/null
 
             if [ ! -f "Python-${pythonPatchVersion}.tar.xz" ]; then
                 # curl https://www.python.org/ftp/python/${pythonPatchVersion}/Python-${pythonPatchVersion}.tar.xz | tar -xf
@@ -1015,11 +1058,26 @@ function setupPython () {
             fi
 
             if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
+
                 # Build and install Python
                 cd Python-${pythonPatchVersion}
-                sudo ./configure --enable-optimizations  --prefix=/usr
-                make -j $(nproc) < /dev/null
-                sudo make -j $(nproc) altinstall
+
+                if [ "$os_name" == "debian" ]; then 
+                    # Native debian is giving us troubles. The instructions should be optimised down
+                    # to just what's needed, but for now we'll just throw everything at the problem
+                    # until we find a solution to the "SSLError("Can't connect to HTTPS URL because 
+                    # the SSL module is not available.")' issue
+                    sudo apt install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev
+                    sudo ./configure --enable-optimizations 
+                    make
+                    sudo make install
+                else
+                    sudo ./configure --enable-optimizations  --prefix=/usr >/dev/null
+                    if [ "$nproc" = "" ]; then nproc=1; fi
+                    make -j $(nproc) > /dev/null 
+                    sudo make -j $(nproc) altinstall >/dev/null
+                fi
+
                 cd ..
 
                 # Cleanup
@@ -1063,7 +1121,7 @@ function setupPython () {
             if [ "${verbosity}" = "loud" ]; then
             
                 writeLine "Updating apt-get" $color_info
-                sudo apt-get update -y
+                sudo apt-get update -y 
                 
                 writeLine "Installing software-properties-common" $color_info
                 sudo apt install software-properties-common -y
@@ -1084,26 +1142,26 @@ function setupPython () {
 
                 write "Installing Python ${pythonVersion} library..." $color_primary
                 sudo apt install python${pythonVersion} -y
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
 
             elif [ "${verbosity}" = "info" ]; then           
 
                 write "Updating apt-get " $color_info
                 sudo apt-get update -y >/dev/null &
                 spin $!
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
 
                 write "Installing software-properties-common " $color_info
                 sudo apt install software-properties-common -y >/dev/null &
                 spin $!
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
 
                 write "Adding deadsnakes as a Python install source (PPA) " $color_info
                 apt policy | grep deadsnakes/ppa > /dev/null
                 if [ "$?" != "0" ]; then
                     sudo add-apt-repository ppa:deadsnakes/ppa -y >/dev/null &
                     spin $!
-                    writeLine "Done" $color_success
+                    writeLine "done" $color_success
                 else
                     writeLine "Already added" $color_success
                 fi
@@ -1111,17 +1169,17 @@ function setupPython () {
                 write "Updating apt " $color_info
                 sudo apt update -y >/dev/null &
                 spin $!
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
 
                 write "Upgrading apt " $color_info
                 sudo apt upgrade  -y >/dev/null  &
                 spin $!
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
 
                 write "Installing Python Library ${pythonVersion} " $color_info
                 sudo apt install python${pythonVersion} -y >/dev/null  &
                 spin $!
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
 
             else
 
@@ -1148,7 +1206,7 @@ function setupPython () {
                 sudo apt install python${pythonVersion} -y >/dev/null 2>/dev/null &
                 spin $!
 
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
 
             fi
         fi
@@ -1160,7 +1218,7 @@ function setupPython () {
 
     # Check permissions again. This check was done if python wasn't found, but 
     # was NOT done if python was found. Do it again just to be safe
-    if [ "$setupMode" = 'SetupDevEnvironment' ]; then 
+    if [ "$setupMode" = 'SetupEverything' ]; then 
         install_instructions="cd ${setupScriptDirPath}${newline}sudo bash setup.sh"
     else
         install_instructions="cd ${moduleDirPath}${newline}sudo bash ../../setup.sh"
@@ -1174,22 +1232,29 @@ function setupPython () {
         if [ "${verbosity}" = "quiet" ]; then
             sudo apt-get install --reinstall python${pythonVersion}-distutils -y >/dev/null 2>/dev/null  &
             spin $! # process ID of the python install call
-            "$venvPythonCmdPath" -m ensurepip >/dev/null 2>/dev/null  &
+            "$basePythonCmdPath" -m ensurepip >/dev/null 2>/dev/null  &
             spin $! # process ID of the python install call
         else
             sudo apt-get install --reinstall python${pythonVersion}-distutils -y
-            "$venvPythonCmdPath" -m ensurepip
+            "$basePythonCmdPath" -m ensurepip
         fi
         writeLine 'done' $color_success
     fi
 
     write "Upgrading PIP in base python install..." $color_primary
-    if [ "${verbosity}" = "quiet" ]; then
-        "${basePythonCmdPath}" -m pip install --upgrade pip >/dev/null 2>/dev/null  &
-        spin $! # process ID of the python install call
-    else
-        "${basePythonCmdPath}" -m pip install --upgrade pip
-    fi
+
+    #if [ "$os_name" != "debian" ]; then
+    #    curl https://bootstrap.pypa.io/get-pip.py
+    #    sudo "${basePythonCmdPath}" get-pip.py
+    #else
+        trustedHosts="--trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org" 
+        if [ "${verbosity}" = "quiet" ]; then
+            "${basePythonCmdPath}" -m pip install ${trustedHosts} --upgrade pip >/dev/null 2>/dev/null  &
+            spin $! # process ID of the python install call
+        else
+            "${basePythonCmdPath}" -m pip install ${trustedHosts} --upgrade pip
+        fi
+    #fi
     writeLine 'done' $color_success
 
     # =========================================================================
@@ -1215,7 +1280,7 @@ function setupPython () {
                 write "Installing Virtual Environment tools for mac..." $color_primary
                 "${basePythonCmdPath}" -m pip $pipFlags install setuptools virtualenv virtualenvwrapper >/dev/null 2>/dev/null &
                 spin $!
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
             else
                 writeLine "Installing Virtual Environment tools for mac..." $color_primary
                 "${basePythonCmdPath}" -m pip $pipFlags install setuptools virtualenv virtualenvwrapper
@@ -1252,7 +1317,7 @@ function setupPython () {
             return 5 # unable to create Python virtual environment
         fi
 
-        writeLine "Done" $color_success
+        writeLine "done" $color_success
     fi
 
     # Ensure Python Exists in the venv
@@ -1278,7 +1343,7 @@ function setupPython () {
         write 'Installing updated setuptools in venv...' $color_primary
         "$venvPythonCmdPath" -m pip install -U setuptools >/dev/null 2>/dev/null &
         spin $!
-        writeLine "Done" $color_success
+        writeLine "done" $color_success
     fi
 
     return 0
@@ -1337,7 +1402,7 @@ function installPythonPackagesByName () {
         write 'Ensuring PIP compatibility...' $color_primary
         "$venvPythonCmdPath" -m ensurepip >/dev/null 2>/dev/null &
         spin $!
-        writeLine 'Done' $color_success
+        writeLine 'done' $color_success
 
     else
         
@@ -1416,14 +1481,14 @@ function installPythonPackagesByName () {
                 if [ $? -eq 0 ]; then
                     write "(✅ checked) " $color_info
                 else
-                    write "(failed check) " $color_error
+                    write "(❌ failed check) " $color_error
                 fi
             else
                 write "(not checked) " $color_mute
             fi
 
             if [ $status -eq 0 ]; then
-                writeLine "Done" $color_success
+                writeLine "done" $color_success
             else
                 writeLine "Failed" $color_error
             fi
@@ -1485,7 +1550,7 @@ function installRequiredPythonPackages () {
         write 'Ensuring PIP compatibility...' $color_primary
         "$venvPythonCmdPath" -m ensurepip >/dev/null 2>/dev/null &
         spin $!
-        writeLine 'Done' $color_success
+        writeLine 'done' $color_success
 
     else
         
@@ -1536,13 +1601,8 @@ function installRequiredPythonPackages () {
 
     requirementsFilename=""
 
-    device_specifier=""
-    if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
-        device_specifier="${platform}"
-    fi
-
-    if [ "$device_specifier" != "" ] && [ -f "${requirementsDir}/requirements.${device_specifier}.txt" ]; then
-        requirementsFilename="requirements.${device_specifier}.txt"
+    if [ "$edgeDevice" != "" ] && [ -f "${requirementsDir}/requirements.${edgeDevice}.txt" ]; then
+        requirementsFilename="requirements.${edgeDevice}.txt"
     fi
 
     if [ "$requirementsFilename" = "" ]; then
@@ -1738,14 +1798,14 @@ function installRequiredPythonPackages () {
                             if [ $? -eq 0 ]; then
                                 write "(✅ checked) " $color_info
                             else
-                                write "(failed check) " $color_error
+                                write "(❌ failed check) " $color_error
                             fi
                         else
                             write "(not checked) " $color_mute
                         fi
 
                         if [ $status -eq 0 ]; then
-                            writeLine "Done" $color_success
+                            writeLine "done" $color_success
                         else
                             writeLine "Failed" $color_error
                         fi
@@ -1796,7 +1856,7 @@ function installAptPackages () {
     done
 
     if [ "${verbosity}" != "quiet" ]; then
-        writeLine " Done" $color_success
+        writeLine " done" $color_success
     fi
 
     if [[ -n "${pkgs_to_install}" ]]; then
@@ -1824,7 +1884,7 @@ function installAptPackages () {
                 spin $!
                 sudo apt-get install -y -qq ${options} ${pkgs_to_install} >/dev/null 2>/dev/null &
                 spin $!
-                writeLine " Done" $color_success
+                writeLine " done" $color_success
             else
                 writeLine "Installing missing dependencies:"
                 writeLine " -> ${pkgs_to_install}"
@@ -1844,6 +1904,35 @@ function installAptPackages () {
             writeLine "All dependencies already installed." $color_success
         fi
     fi
+}
+
+function downloadModels () {
+
+    write "Scanning modulesettings for downloadable models..."
+
+    foundModels=false
+
+    index=0
+    while [ true ]; do
+        modelName=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleDirName" "InstallOptions.DownloadableModels[${index}].Name")
+        if [ "$modelName" = "" ]; then break; fi
+    
+        preinstall=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleDirName" "InstallOptions.DownloadableModels[${index}].PreInstall")
+        if [ "$preinstall" = true ]; then
+
+            if [ "$foundModels" = false ]; then writeLine "Processing model list"; fi
+            foundModels=true
+
+            modelFileName=$(getValueFromModuleSettingsFile   "$moduleDirPath" "$moduleDirName" "InstallOptions.DownloadableModels[${index}].Filename")
+            modelFolderName=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleDirName" "InstallOptions.DownloadableModels[${index}].Folder")
+            
+            getFromServer "models/" "$modelFileName" "$modelFolderName" "Downloading ${modelName}..."
+        fi
+
+        let index=index+1 
+    done
+
+    if [ "$foundModels" = false ]; then writeLine "No models specified" $color_mute; fi
 }
 
 function getFromServer () {
@@ -1869,30 +1958,30 @@ function getFromServer () {
     if [ "${forceOverwrite}" = true ]; then
         # if [ $verbosity -ne "quiet" ]; then echo "Forcing overwrite"; fi
 
-        rm -rf "${downloadDirPath}/${moduleDirName}/${fileToGet}"
+        rm -rf "${downloadDirPath}/${modulesDir}/${moduleDirName}/${fileToGet}"
         rm -rf "${moduleDirPath}/${moduleAssetsDirName}"
     fi
 
-    # Download !$storageUrl$folder$fileToGet to $downloadDirPath and extract into $downloadDirPath/$moduleDirName/$moduleAssetsDirName
+    # Download !$storageUrl$folder$fileToGet to $downloadDirPath and extract into $downloadDirPath/${modulesDir}/$moduleDirName/$moduleAssetsDirName
     # Params are: S3 storage bucket | fileToGet     | zip lives in...      | zip expanded to moduleDir/... | message
     # eg               "S3_bucket/folder"    "rembg-models.zip"    /downloads/myModuleDir/"        "assets"             "Downloading models..."
-    downloadAndExtract "${storageUrl}${folder}" "$fileToGet" "${downloadDirPath}/${moduleDirName}" "${moduleAssetsDirName}" "${message}"
+    downloadAndExtract "${storageUrl}${folder}" "$fileToGet" "${downloadDirPath}/${modulesDir}/${moduleDirName}" "${moduleAssetsDirName}" "${message}"
 
-    # Copy downloadDirPath\moduleDirName\moduleAssetsDirName folder to modules\moduleDirName\moduleAssetsDirName
-    if [ -d "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}" ]; then
+    # Copy downloadDirPath/modules/moduleDirName/moduleAssetsDirName folder to modules/moduleDirName/moduleAssetsDirName
+    if [ -d "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}" ]; then
 
         if [ ! -d "${moduleDirPath}/${moduleAssetsDirName}" ]; then
             mkdir -p "${moduleDirPath}/${moduleAssetsDirName}"
         fi;
 
         # pushd then cp to stop "cannot stat" error
-        pushd "${downloadDirPath}/${moduleDirName}" >/dev/null
+        pushd "${downloadDirPath}/${modulesDir}/${moduleDirName}" >/dev/null
 
         write "Moving contents of ${fileToGet} to ${moduleAssetsDirName}..."
-        # mv -f "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}/*" "${moduleDirPath}/${moduleAssetsDirName}/"
-        # rsync --remove-source-files "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}/"
-        move_recursive "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}"
-        rm -rf "${downloadDirPath}/${moduleDirName}/${moduleAssetsDirName}"
+        # mv -f "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}/*" "${moduleDirPath}/${moduleAssetsDirName}/"
+        # rsync --remove-source-files "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}/"
+        move_recursive "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}"
+        rm -rf "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}"
 
         if [ "$?" != "0" ]; then
             writeLine "Failed." $color_error
@@ -2017,7 +2106,7 @@ function downloadAndExtract () {
 
     popd >/dev/null
 
-    writeLine 'Done.' $color_success
+    writeLine 'done.' $color_success
 
     return 0
 }
@@ -2030,7 +2119,7 @@ function downloadAndExtract () {
 
 function getCudaVersion () { 
 
-    if [ "${systemName}" = "Jetson" ]; then
+    if [ "${edgeDevice}" = "Jetson" ]; then
         cuda_version="${JETSON_CUDA}"
         if [ "$cuda_version" = "" ]; then
             # Contains something like "CUDA Version 10.2.300"We'll just grab the '10.2'
@@ -2112,41 +2201,33 @@ function getValueFromModuleSettingsFile () {
         key=$".Modules.${moduleId}.${property}"
     fi
 
-    # NOTE: We are only searching non-development files here
-    # The order in which modulesettings files are added is
+    # Module settings files are loaded in this order. Each file will overwrite (but not delete)
+    # settings of the previous file. Becuase of this, we're going to search the files in REVERSE
+    # order until we find the first value based on the most specific to least specific file.
     #   modulesettings.json
-    #   (not searched) modulesettings.development.json 
+    #   modulesettings.development.json 
     #   modulesettings.os.json
-    #   (not searched) modulesettings.os.development.json
+    #   modulesettings.os.development.json
     #   modulesettings.os.architecture.json
-    #   (not searched) modulesettings.os.architecture.development.json
-    #   modulesettings.docker.json
-    #   (not supported) modulesettings.docker.development.json
+    #   modulesettings.os.architecture.development.json
+    #   (not searched) modulesettings.docker.json
+    #   (not searched) modulesettings.docker.development.json
     #   modulesettings.device.json (device = raspberrypi, orangepi, jetson)
     #   modulesettings.device.development.json
     # So we need to check each modulesettings file in reverse order until we find a value for 'key'
     
-    device_specifier=""
-    if [ "${systemName}" = "Raspberry Pi" ]; then
-        device_specifier="raspberrypi"
-    elif [ "${systemName}" = "Orange Pi" ]; then
-        device_specifier="orangepi"
-    elif [ "${systemName}" = "Jetson" ]; then
-        device_specifier="jetson"
-    fi
-
     dev_specifier=""
     if [ "$executionEnvironment" = "Development" ]; then dev_specifier="development"; fi
 
     settings_file_used=""
 
-    if [ "$device_specifier" != "" ] && [ "$dev_specifier" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${device_specifier}.${dev_specifier}.json" "${key}")
-        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${device_specifier}.${dev_specifier}.json"; fi
+    if [ "$edgeDevice" != "" ] && [ "$dev_specifier" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${edgeDevice}.${dev_specifier}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${edgeDevice}.${dev_specifier}.json"; fi
     fi
-    if [ "$device_specifier" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${device_specifier}.json" "${key}")
-        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${device_specifier}.json"; fi
+    if [ "$edgeDevice" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${edgeDevice}.json" "${key}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${edgeDevice}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ] && [ "$dev_specifier" != "" ]; then
         moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.${dev_specifier}.json" "${key}")
@@ -2247,6 +2328,7 @@ function getValueFromModuleSettings () {
 
             jsonValue=$(echo "$file_contents" | jq -r "$key")
             # echo "jsonValue = $jsonValue" >&3
+            # quit
 
         elif ["$parse_mode" = "parsejson" ]; then
 
@@ -2261,7 +2343,7 @@ function getValueFromModuleSettings () {
 
             jsonValue=$(echo "${file_contents}" | dotnet "${sdkPath}/Utilities/ParseJSON/ParseJSON.dll" "$key")
 
-        else # I have given up all hope. I abandon myself to the fates. May God have mercy on my soul
+        else # I have given up all hope. I will use regex and abandon myself to the fates. May God have mercy on my soul
 
             # 1. look for "name" : "text" (with text having optional quotes)
             # 2. pipe the result to sed and replace the entire string with whatever is
@@ -2465,10 +2547,12 @@ if [[ $OSTYPE == 'darwin'* ]]; then
     os_vers=$(sw_vers -productVersion) # eg "11.1" for macOS Big Sur
 
     systemName=$os
+    edgeDevice=''
 
     if [ "$architecture" = 'arm64' ]; then platform='macos-arm64'; fi
 else
     os='linux'
+    edgeDevice=''
     platform='linux'
     os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu", "debian12"
     os_vers=$(. /etc/os-release;echo $VERSION_ID) # eg "22.04" for Ubuntu 22.04, "12" for Debian 12
@@ -2482,12 +2566,15 @@ else
 
     if [[ "${modelInfo}" == *"Raspberry Pi"* ]]; then       # elif [ $(uname -n) = "raspberrypi" ]; then
         systemName='Raspberry Pi'
+        edgeDevice='Raspberry Pi'
         platform='raspberrypi'
     elif [[ "${modelInfo}" == *"Orange Pi"* ]]; then        # elif [ $(uname -n) = "orangepi5" ]; then
         systemName='Orange Pi'
+        edgeDevice='Orange Pi'
         platform='orangepi'
     elif [[ "${modelInfo}" == *"NVIDIA Jetson"* ]]; then    # elif [ $(uname -n) = "nano" ]; then
         systemName='Jetson'
+        edgeDevice='Jetson'
         platform='jetson'
         # Get the good stuff
         source "${sdkScriptsDirPath}/jetson_libraries.sh"
@@ -2513,7 +2600,7 @@ if [ "$os" = "macos" ]; then
         termBg=$(osascript -e \
             'tell application "Terminal" 
                get background color of selected tab of window 1
-            end tell') >/dev/null 2>&1
+            end tell' 2>/dev/null)
 
         if [[ $termBg ]]; then
             IFS=','; colors=($termBg); IFS=' ';

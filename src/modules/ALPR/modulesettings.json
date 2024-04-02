@@ -3,7 +3,7 @@
 
     "ALPR": {
       "Name": "License Plate Reader",
-      "Version": "3.0.2",
+      "Version": "3.1.0",
 
       "PublishingInfo" : {
         "Description": "Detects and readers single-line and multi-line licence plates using YOLO object detection and the PaddleOCR toolkit",
@@ -22,7 +22,7 @@
         "AutoStart": true,
         "FilePath": "ALPR_adapter.py",
         "Runtime": "python3.8",
-        "RuntimeLocation": "Local",     // Can be Local or Shared
+        "RuntimeLocation": "Local",     // Can be Local, Shared or System
         "Queue": "alpr_queue",          // default is lower(module_id) + '_queue'
         "Parallelism": 0                // 0 = Default = number of CPUs / 2
       },
@@ -37,7 +37,11 @@
         "PLATE_RESCALE_FACTOR": 2,
         "OCR_OPTIMIZATION": true,
         "OCR_OPTIMAL_CHARACTER_HEIGHT": 60,
-        "OCR_OPTIMAL_CHARACTER_WIDTH": 30
+        "OCR_OPTIMAL_CHARACTER_WIDTH": 30,
+        "REMOVE_SPACES": false,
+        "SAVE_CROPPED_PLATE": false,
+        "ROOT_PATH": "%ROOT_PATH%",
+        "CROPPED_PLATE_DIR": "%ROOT_PATH%/Server/wwwroot"
       },
 
       "GpuOptions" : {
@@ -50,7 +54,6 @@
 
       "InstallOptions" : {
         "Platforms":      [ "all" ],      // The platforms this module can and cannot be installed on
-        "PreInstalled":   false,          // Is this module pre-installed with the server (eg Docker containers)
         "ModuleReleases": [               // Which server version is compatible with each version of this module.
           { "ModuleVersion": "1.0",   "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-11-01" },
           { "ModuleVersion": "2.1",   "ServerVersionRange": [ "2.0.9", "2.0.9"  ], "ReleaseDate": "2022-12-01" },
@@ -73,7 +76,9 @@
           { "ModuleVersion": "2.9.1", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2+" },
           { "ModuleVersion": "3.0.0", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-11", "ReleaseNotes": "Updated text recognition model to PP-OCRv4 and added AI auto rotation" },
           { "ModuleVersion": "3.0.1", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-13", "ReleaseNotes": "Corrected NoneType error when auto-rotating plates" },
-          { "ModuleVersion": "3.0.2", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-18", "ReleaseNotes": "Added dashboard menu to set plate confidence, auto-rotate and OCR optimisation", "Importance": "Minor" }
+          { "ModuleVersion": "3.0.2", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-18", "ReleaseNotes": "Added dashboard menu to set plate confidence, auto-rotate and OCR optimisation", "Importance": "Minor" },
+          { "ModuleVersion": "3.0.3", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-28", "ReleaseNotes": "Added dashboard menu to set remove spaces and save cropped plate", "Importance": "Minor" },
+          { "ModuleVersion": "3.1.0", "ServerVersionRange": [ "2.5.2",     ""   ], "ReleaseDate": "2024-02-28", "ReleaseNotes": "Updated for server 2.6" }
         ]
       },
 
@@ -88,28 +93,43 @@
           {
             "Label": "Plate Confidence",
             "Options": [
-              { "Label": "50%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.50"  },
-              { "Label": "55%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.55"  },
-              { "Label": "60%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.60"  },
-              { "Label": "65%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.65"  },
-              { "Label": "70%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.70"  },
-              { "Label": "75%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.75"  },
-              { "Label": "80%",     "Setting": "PLATE_CONFIDENCE", "Value": "0.80"  }
+              { "Label": "50%",           "Setting": "PLATE_CONFIDENCE", "Value": "0.50"  },
+              { "Label": "55%",           "Setting": "PLATE_CONFIDENCE", "Value": "0.55"  },
+              { "Label": "60%",           "Setting": "PLATE_CONFIDENCE", "Value": "0.60"  },
+              { "Label": "65%",           "Setting": "PLATE_CONFIDENCE", "Value": "0.65"  },
+              { "Label": "70% (Default)", "Setting": "PLATE_CONFIDENCE", "Value": "0.70"  },
+              { "Label": "75%",           "Setting": "PLATE_CONFIDENCE", "Value": "0.75"  },
+              { "Label": "80%",           "Setting": "PLATE_CONFIDENCE", "Value": "0.80"  }
             ]
           },
         {
           "Label": "Auto Plate Rotation",
           "Options": [
-            { "Label": "Enable",    "Setting": "AUTO_PLATE_ROTATE", "Value": "true"  },
-            { "Label": "Disable",   "Setting": "AUTO_PLATE_ROTATE", "Value": "false" }
+            { "Label": "Enable (Default)",  "Setting": "AUTO_PLATE_ROTATE", "Value": "true"  },
+            { "Label": "Disable",           "Setting": "AUTO_PLATE_ROTATE", "Value": "false" }
           ]
         },
         {
           "Label": "OCR Optimization",
           "Options": [
-              { "Label": "Enable",  "Setting": "OCR_OPTIMIZATION", "Value": "true"   },
-              { "Label": "Disable", "Setting": "OCR_OPTIMIZATION", "Value": "false"  }
+              { "Label": "Enable (Default)",  "Setting": "OCR_OPTIMIZATION", "Value": "true"   },
+              { "Label": "Disable",           "Setting": "OCR_OPTIMIZATION", "Value": "false"  }
           ]
+        },
+        {
+          "Label": "Save Cropped Plate",
+          "Options": [
+            { "Label": "Enable",            "Setting": "SAVE_CROPPED_PLATE", "Value": "true"   },
+            { "Label": "Disable (Default)", "Setting": "SAVE_CROPPED_PLATE", "Value": "false"  }
+        ]
+        },
+        {
+          "Label": "Remove Spaces",
+          "Options": [
+              { "Label": "Enable",            "Setting": "REMOVE_SPACES", "Value": "true"   },
+              { "Label": "Disable (Default)", "Setting": "REMOVE_SPACES", "Value": "false"  }
+          ]
+
         }]
       },
 

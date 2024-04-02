@@ -14,6 +14,7 @@ using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Backend;
+using CodeProject.AI.Server.Models;
 
 namespace CodeProject.AI.Server.Modules
 {
@@ -30,6 +31,7 @@ namespace CodeProject.AI.Server.Modules
         private readonly QueueServices                  _queueServices;
         private readonly ILogger<ModuleProcessServices> _logger;
         private readonly ModuleSettings                 _moduleSettings;
+        private readonly ModelDownloader                _modelDownloader;
         private readonly BackendRouteMap                _routeMap;
 
         /// <summary>
@@ -40,20 +42,23 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="queueServices">The QueueServices instance.</param>
         /// <param name="logger">The Logger.</param>
         /// <param name="moduleSettings">The module settings.</param>
+        /// <param name="modelDownloader">The model downloader</param>
         /// <param name="routeMap">The BackendRouteMap.</param>
         public ModuleProcessServices(IOptions<VersionConfig> versionOptions,
                                      IOptions<ServerOptions> serverOptions,
                                      QueueServices queueServices, 
                                      ILogger<ModuleProcessServices> logger,
                                      ModuleSettings moduleSettings,
+                                     ModelDownloader modelDownloader,
                                      BackendRouteMap routeMap)
         {
-            _versionConfig  = versionOptions.Value;
-            _serverOptions  = serverOptions.Value;
-            _queueServices  = queueServices;
-            _logger         = logger;
-            _moduleSettings = moduleSettings;
-            _routeMap       = routeMap;
+            _versionConfig   = versionOptions.Value;
+            _serverOptions   = serverOptions.Value;
+            _queueServices   = queueServices;
+            _logger          = logger;
+            _moduleSettings  = moduleSettings;
+            _modelDownloader = modelDownloader;
+            _routeMap        = routeMap;
         }
 
         /// <summary>
@@ -158,8 +163,6 @@ namespace CodeProject.AI.Server.Modules
         /// <returns>True on success; false otherwise</returns>
         public bool UpdateModuleProcessingCount(string moduleId)
         {
-            // REVIEW: Should we (optionally) call UpdateModuleLastSeen here
-
             if (string.IsNullOrEmpty(moduleId))
                 return false;
 
@@ -232,8 +235,6 @@ namespace CodeProject.AI.Server.Modules
         /// <returns>True on success; false otherwise</returns>
         public bool UpdateProcessStatusData(string moduleId, JsonObject? statusData)
         {
-            // REVIEW: Should we (optionally) call UpdateModuleLastSeen here?
-
             if (string.IsNullOrEmpty(moduleId))
                 return false;
 
@@ -366,19 +367,25 @@ namespace CodeProject.AI.Server.Modules
             if (!allowOverwrite && TryGetProcessStatus(module?.ModuleId!, out ProcessStatus? _))
                 return;
 
-            // string? summary = module!.SettingsSummary; // non-expanded version
-            string? summary = module!.SettingsSummary(_moduleSettings);
+            // TODO: The menus may change depending on state (eg GPU goes offline, so GPU options no
+            // longer available). Enable Menus to be updated
+            var    menus   = module!.UIElements?.Menus;
+            var    models  = module!.InstallOptions?
+                                    .DownloadableModels.Select(m => ModelDownload.FromConfig(m))?
+                                    .ToArray();
+            string summary = module!.SettingsSummary(_moduleSettings) ?? string.Empty;
 
             ProcessStatus status = new ProcessStatus()
             {
-                ModuleId       = module!.ModuleId,
-                Name           = module.Name,
-                Version        = module.Version,
-                Queue          = module.LaunchSettings!.Queue,
-                Menus          = module.UIElements?.Menus,
-                Status         = ProcessStatusType.Unknown,
-                StartupSummary = summary ?? string.Empty,
-                InstallSummary = installSummary ?? string.Empty,
+                ModuleId           = module!.ModuleId,
+                Name               = module.Name,
+                Version            = module.Version,
+                Queue              = module.LaunchSettings!.Queue,
+                Menus              = menus,
+                DownloadableModels = models,
+                Status             = ProcessStatusType.Unknown,
+                StartupSummary     = summary,
+                InstallSummary     = installSummary ?? string.Empty,
             };
 
             if (allowOverwrite)
@@ -405,41 +412,46 @@ namespace CodeProject.AI.Server.Modules
             if (module is null || string.IsNullOrWhiteSpace(module.ModuleId))
                 return false;
 
-            // Update with updated startup settings
-            // string? settingsSummary = module!.SettingsSummary; // non-expanded version
-            string settingsSummary = module!.SettingsSummary(_moduleSettings) ?? string.Empty;
+            // TODO: The menus may change depending on state (eg GPU goes offline, so GPU options no
+            // longer available). Enable Menus to be updated
+            var    menus   = module!.UIElements?.Menus;
+            var    models  = module!.InstallOptions?
+                                    .DownloadableModels.Select(m => ModelDownload.FromConfig(m))?
+                                    .ToArray();
+            string summary = module!.SettingsSummary(_moduleSettings) ?? string.Empty;
 
             if (TryGetProcessStatus(module.ModuleId, out ProcessStatus? processStatus) &&
                 processStatus is not null)
             {
-                if (!string.IsNullOrWhiteSpace(settingsSummary))
-                    processStatus.StartupSummary = settingsSummary;
+                if (!string.IsNullOrWhiteSpace(summary))
+                    processStatus.StartupSummary = summary;
             }
             else
             {
                 processStatus = new ProcessStatus()
                 {
-                    ModuleId = module.ModuleId,
-                    Name     = module.Name,
-                    Version  = module.Version,
-                    Queue    = module.LaunchSettings!.Queue,
-                    Menus    = module.UIElements?.Menus,
-                    Status   = ProcessStatusType.Unknown,
-                    StartupSummary = settingsSummary,
-                    InstallSummary = installSummary ?? string.Empty,
+                    ModuleId           = module.ModuleId,
+                    Name               = module.Name,
+                    Version            = module.Version,
+                    Queue              = module.LaunchSettings!.Queue,
+                    Menus              = menus,
+                    DownloadableModels = models,
+                    Status             = ProcessStatusType.Unknown,
+                    StartupSummary     = summary,
+                    InstallSummary     = installSummary ?? string.Empty,
                 };
 
                 _processStatuses.TryAdd(module.ModuleId, processStatus);
             }
 
-            // The module will need its status to be "Enabled" in order to be launched. We set
+            // The module will need its status to be "AutoStart" in order to be launched. We set
             // "launchModules" = true here since this method will be called after the server has
             // already started. Only on server start do we entertain the possibility that we won't
             // actually start a module. At all other times we ensure they start.
             if (!SetPreLaunchProcessStatus(module, true))
                 return false;
 
-            if (processStatus!.Status != ProcessStatusType.Enabled)
+            if (processStatus!.Status != ProcessStatusType.AutoStart)
                 return false;
 
             Process? process = null;
@@ -464,7 +476,7 @@ namespace CodeProject.AI.Server.Modules
                 // Start the process
                 _logger.LogTrace($"Starting {Text.ShrinkPath(process.StartInfo.FileName, 50)} {Text.ShrinkPath(process.StartInfo.Arguments, 50)}");
 
-                string[] lines = settingsSummary.Split('\n');
+                string[] lines = summary.Split('\n');
 
                 _logger.LogInformation("");
                 foreach (string line in lines)
@@ -573,7 +585,7 @@ namespace CodeProject.AI.Server.Modules
         /// Sets the current status of the module just before it's to be started
         /// </summary>
         /// <param name="module">The module to be restarted</param>
-        /// <param name="launchingProcess">Whether or not we will be actually launching the module's
+        /// <param name="launchingProcess">Whether or not we will be actually launch the module's
         /// process</param>
         /// <returns>True on success; false otherwise</returns>
         public bool SetPreLaunchProcessStatus(ModuleConfig module, bool launchingProcess)
@@ -589,9 +601,9 @@ namespace CodeProject.AI.Server.Modules
             if (module.IsCompatible(_versionConfig.VersionInfo?.Version))
             {
                 if (!module.LaunchSettings!.AutoStart == true)
-                    status.Status = ProcessStatusType.NotEnabled;
+                    status.Status = ProcessStatusType.NoAutoStart;
                 else if (launchingProcess)
-                    status.Status = ProcessStatusType.Enabled;
+                    status.Status = ProcessStatusType.AutoStart;
                 else
                     status.Status = ProcessStatusType.NotStarted;
             }
@@ -622,8 +634,13 @@ namespace CodeProject.AI.Server.Modules
 
             _queueServices.EnsureQueueExists(module.LaunchSettings!.Queue);
 
-            foreach (var routeInfo in module.RouteMaps)
-                _routeMap.Register(routeInfo, module.LaunchSettings!.Queue!);
+            // Add the routes the module has defined
+            foreach (ModuleRouteInfo routeInfo in module.RouteMaps)
+                _routeMap.Register(routeInfo, module.LaunchSettings!.Queue!, module.ModuleId);
+
+            // Add the system routes
+            foreach (ModuleRouteInfo routeInfo in ModuleRouteInfo.SystemDefaultRouteMaps)
+                _routeMap.Register(routeInfo, module.LaunchSettings!.Queue!, module.ModuleId);
 
             return true;
         }
@@ -808,12 +825,18 @@ namespace CodeProject.AI.Server.Modules
             // processEnvironmentVars = processEnvironmentVars.ToDictionary(kvp => kvp.Key.ToUpper(),
             //                                                              kvp => ExpandOption(kvp.Value));
 
-            var keys = processEnvironmentVars.Keys.ToList();
+            List<string> keys = processEnvironmentVars.Keys.ToList();
             foreach (string key in keys)
             {
                 string? value = processEnvironmentVars[key.ToUpper()];
-                processEnvironmentVars[key.ToUpper()] = _moduleSettings.ExpandOption(value, 
-                                                                                     module.ModuleDirPath);
+
+                // don't expand if it starts with @
+                if (value != null && value.StartsWith("@"))
+                    value = value.Substring(1);
+                else
+                    value = _moduleSettings.ExpandOption(value, module.ModuleDirPath);
+
+                processEnvironmentVars[key.ToUpper()] = value;
             }
 
             // And now add general vars
@@ -838,11 +861,11 @@ namespace CodeProject.AI.Server.Modules
             // child process. Otherwise the NET module may start in Production mode. We *hope* the
             // environment vars are passed down to to spawned processes, but we'll add these two
             // just in case.
-            var aspnetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            string? aspnetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             if (aspnetEnv != null)
                 processEnvironmentVars.TryAdd("ASPNETCORE_ENVIRONMENT", aspnetEnv);
 
-            var dotnetEnv = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+            string? dotnetEnv = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
             if (dotnetEnv != null)
                 processEnvironmentVars.TryAdd("DOTNET_ENVIRONMENT", dotnetEnv);
 

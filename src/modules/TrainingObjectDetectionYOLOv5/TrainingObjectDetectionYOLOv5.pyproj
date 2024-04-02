@@ -86,9 +86,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Interpreter Include="bin\windows\python39\venv\">
+    <Interpreter Include="bin\windows\python37\venv\">
       <Id>venv</Id>
-      <Version>3.9</Version>
+      <Version>3.7</Version>
       <Description>venv</Description>
       <InterpreterPath>scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>scripts\pythonw.exe</WindowsInterpreterPath>

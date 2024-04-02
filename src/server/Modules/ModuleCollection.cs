@@ -10,12 +10,13 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Configuration;
+
 using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Models;
-using Microsoft.Extensions.Configuration;
 
 namespace CodeProject.AI.Server.Modules
 {
@@ -85,12 +86,8 @@ namespace CodeProject.AI.Server.Modules
         /// values are:
         /// "Shared" - the runtime is installed in the /modules folder 
         /// "Local" - the runtime is installed locally in this modules folder
+        /// "System" - the runtime is installed in the system globally
         /// </summary>
-        /// <remarks>
-        /// We set the default location to "Local" as this is the safest option and resolves
-        /// an issue with installing in Docker as old modules do not have this value, and in
-        /// Docker all modules are installed as Local.
-        /// </remarks>
         public string RuntimeLocation  { get; set; } = "Local";
 
         /// <summary>
@@ -288,7 +285,6 @@ namespace CodeProject.AI.Server.Modules
                 summary.AppendLine($"Runtime:       {LaunchSettings?.Runtime}");
                 summary.AppendLine($"Runtime Loc:   {LaunchSettings?.RuntimeLocation}");
                 summary.AppendLine($"FilePath:      {LaunchSettings?.FilePath}");
-                summary.AppendLine($"Pre installed: {InstallOptions?.PreInstalled}");
                 summary.AppendLine($"Start pause:   {LaunchSettings?.PostStartPauseSecs} sec");
                 summary.AppendLine($"Parallelism:   {LaunchSettings?.Parallelism}");
                 summary.AppendLine($"LogVerbosity:  {LaunchSettings?.LogVerbosity}");
@@ -343,17 +339,8 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="module">This module that requires initialisation</param>
         /// <param name="moduleId">The id of the module. This isn't included in the object in JSON
         /// file, instead, the moduleId is the key for the module's object in the JSON file</param>
-        /// <param name="modulesDirPath">The path to the folder containing all downloaded and installed
-        /// modules</param>
-        /// <param name="preInstalledModulesDirPath">The path to the folder containing all pre-installed
-        /// modules</param>
-        /// <remarks>Modules are usually downloaded and installed in the modulesDirPath, but we can
-        /// 'pre-install' them in situations like a Docker image. We pre-install modules in a
-        /// separate folder than the downloaded and installed modules in order to avoid conflicts 
-        /// (in Docker) when a user maps a local folder to the modules dir. Doing this to the 'pre
-        /// installed' dir would make the contents (the preinstalled modules) disappear.</remarks>
-        public static bool Initialise(this ModuleConfig module, string moduleId, string modulesDirPath,
-                                      string preInstalledModulesDirPath)
+        /// <param name="moduleDirPath">The path to the folder containing this module</param>
+        public static bool Initialise(this ModuleConfig module, string moduleId, string moduleDirPath)
         {
             if (module is null)
                 return false;
@@ -364,11 +351,9 @@ namespace CodeProject.AI.Server.Modules
             if (!module.Valid)
                 return false;
 
-            if (module.InstallOptions!.PreInstalled == true)
-                module.ModuleDirPath = Path.Combine(preInstalledModulesDirPath, module.ModuleId!);
-            else
-                module.ModuleDirPath = Path.Combine(modulesDirPath, module.ModuleId!);
+            module.CheckVersionAgainstModuleReleases();
 
+            module.ModuleDirPath    = moduleDirPath;
             module.WorkingDirectory = module.ModuleDirPath; // This once was allowed to be different to moduleDirPath
 
             if (string.IsNullOrEmpty(module.LaunchSettings?.Queue))
@@ -712,7 +697,7 @@ namespace CodeProject.AI.Server.Modules
 
             // Load up the modulesettings.*.json files
             var config = new ConfigurationBuilder();
-            ModuleSettings.LoadModuleSettings(config, directoryPath, false);
+            config.AddModuleSettingsConfigFiles(directoryPath, false);
             IConfiguration configuration = config.Build();
 
             // Bind the values in the configuration to a ModuleConfig object
@@ -1054,7 +1039,6 @@ namespace CodeProject.AI.Server.Modules
                                             Version        = m.Version,
                                             PublishingInfo = m.PublishingInfo,
                                             InstallOptions = new {
-                                                PreInstalled   = m.InstallOptions!.PreInstalled,
                                                 Platforms      = m.InstallOptions!.Platforms,
                                                 ModuleReleases = m.InstallOptions!.ModuleReleases.ToArray()
                                             },
@@ -1077,7 +1061,6 @@ namespace CodeProject.AI.Server.Modules
                             Version        = module.Version,
                             PublishingInfo = module.PublishingInfo,
                             InstallOptions = new {
-                                PreInstalled   = module.InstallOptions.PreInstalled,
                                 Platforms      = module.InstallOptions.Platforms,
                                 ModuleReleases = post24Releases
                             },
@@ -1102,7 +1085,6 @@ namespace CodeProject.AI.Server.Modules
                             Version        = module.Version,
                             PublishingInfo = module.PublishingInfo,
                             InstallOptions = new {
-                                PreInstalled   = module.InstallOptions.PreInstalled,
                                 Platforms      = module.InstallOptions.Platforms,
                                 ModuleReleases = pre24Releases
                             },
@@ -1177,11 +1159,11 @@ namespace CodeProject.AI.Server.Modules
 
                 list.AppendLine("<div class='text-muted'>");
                 if (!string.IsNullOrWhiteSpace(module.PublishingInfo.Homepage))
-                    list.Append($"<a href='${module.PublishingInfo.Homepage}'>Project</a> by {author}"); 
+                    list.Append($"<a href='{module.PublishingInfo.Homepage}'>Project</a> by {author}"); 
                 else
                     list.Append($"By {author}");                 
                 if (!string.IsNullOrWhiteSpace(module.PublishingInfo.BasedOnUrl))
-                    list.Append($", based on <a href='${module.PublishingInfo.BasedOnUrl}'>{basedOn}</a>."); 
+                    list.Append($", based on <a href='{module.PublishingInfo.BasedOnUrl}'>{basedOn}</a>."); 
                 else if (!string.IsNullOrWhiteSpace(module.PublishingInfo.BasedOn))
                     list.Append($", based on {module.PublishingInfo.BasedOn}."); 
                 list.AppendLine("</div>");

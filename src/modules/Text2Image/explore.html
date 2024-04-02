@@ -68,7 +68,7 @@ RULES AND CONVENTIONS
     <title>Text2Image Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <!--<link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/server.css?v=2.5.0.0">-->
     <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
@@ -87,41 +87,50 @@ RULES AND CONVENTIONS
         <div class="form-group row">
             <div>
                 <label for="_MID_prompt" class="col-form-label col-2">Prompt</label>
-                <textarea id="_MID_prompt" class="w-100" style="height:100px"></textarea>
+                <textarea id="_MID_prompt" class="w-100" style="height:100px"
+                    title="The prompt to be used by Stable Diffusion to create the image"></textarea>
             </div>
             <div>
                 <label for="_MID_negative_prompt" class="col-form-label">Negative Prompt</label>
-                <textarea id="_MID_negative_prompt" class="w-100" style="height:100px"></textarea>
+                <textarea id="_MID_negative_prompt" class="w-100" style="height:100px"
+                    title="The negative prompt to be used by Stable Diffusion to create the image"></textarea>
             </div>
 
             <div class="row mb-3">
                 <div class="col-4">
                     <label for"_MID_num_images" class="form-label">Images</label>
-                    <input type="number" id="_MID_num_images" class="form-control" min="1" max="4" steps="1" value="1" />
+                    <input type="number" id="_MID_num_images" class="form-control" 
+                        min="1" max="4" steps="1" value="1" title="The number of images to generate. Defaults to 1."/>
                 </div>
                 <div class="col-4">
                     <label for="_MID_seed" class="form-label">Seed</label>
-                    <input id="_MID_seed_fixed" class="form-check-input ms-2" type="checkbox" />
-                    <label for="_MID_seed_fixed" class="form-ceck-label ">Fixed</label>
-                    <input id="_MID_seed" class="form-control" type="number" value="0" />
+                    <input id="_MID_seed" class="form-control" type="number" value="0" 
+                        title="The seed to use for the diffusion random number generator. If Fixed is checked will use this value, otherwise uses random value."/>
+                    <label for="_MID_seed_fixed" class="form-check-label" >Fixed</label>
+                    <input id="_MID_seed_fixed" class="form-check-input ms-2" type="checkbox" 
+                            title="If checked, will use the value above rather than a random value. This allows for reproducible image generation."/>
                 </div>
                 <div class="col-4">
                     <label for="_MID_num_steps" class="form-label">Steps</label>
-                    <input type="number" id="_MID_num_steps" class="form-control" min="1" max="100" steps="1" value="8" />
+                    <input type="number" id="_MID_num_steps" class="form-control" min="1" max="100"
+                        steps="1" value="40" title="The number of inference steps to run"/>
                 </div>
             </div>
             <div class="row mb-3">
                 <div class="col-4">
                     <label for="_MID_guidance" class="form-label">Guidance</label>
-                    <input type="number" id="_MID_guidance" class="form-control" min="0.0" max="20.0" steps="0.1" value="7" />
+                    <input type="number" id="_MID_guidance" class="form-control" min="0.0" max="20.0" 
+                        steps="0.1" value="7" title="How well the process aligns with the prompt for image generation (0.0 - 20.0)."/>
                 </div>
                 <div class="col-4">
                     <label for="_MID_width" class="form-label">Width</label>
-                    <input type="number" id="_MID_width" class="form-control" min="128" max="1024" steps="8" value="512" />
+                    <input type="number" id="_MID_width" class="form-control" min="128" max="1024" 
+                        steps="8" value="512" title="The width of the image to be created. Defaults to 512. Must be a multiple of 8."/>
                 </div>
                 <div class="col-4">
                     <label for="_MID_height" class="form-label">Height</label>
-                    <input type="number" id="_MID_height" class="form-control" min="128" max="1024" steps="8" value="512" />
+                    <input type="number" id="_MID_height" class="form-control" min="128" max="1024" 
+                        steps="8" value="512" title="The height of the image to be created. Must be a multiple of 8."/>
                 </div>
             </div>
             <input id="_MID_generte" class="form-control btn-success" type="button" value="Generate Image"
@@ -145,11 +154,6 @@ RULES AND CONVENTIONS
     <script type="text/javascript">
         // START EXPLORER SCRIPT
 
-        // a function to do an async delay
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
         async function _MID_onGenerateImages() {
 
             clearImagePreview();
@@ -160,13 +164,13 @@ RULES AND CONVENTIONS
             }
 
             setResultsHtml("Generating Images...");
-            let params = [['prompt', _MID_prompt.value],
+            let params = [['prompt',                _MID_prompt.value],
                           ['num_images_per_prompt', _MID_num_images.value],
-                          ['seed', _MID_seed_fixed.checked ? _MID_seed.value : null],
-                          ['num_inference_steps', _MID_num_steps.value],
-                          ['guidance_scale', _MID_guidance.value],
-                          ['width', _MID_width.value],
-                          ['height', _MID_height.value]];
+                          ['seed',                  _MID_seed_fixed.checked ? _MID_seed.value : null],
+                          ['num_inference_steps',   _MID_num_steps.value],
+                          ['guidance_scale',        _MID_guidance.value],
+                          ['width',                 _MID_width.value],
+                          ['height',                _MID_height.value]];
 
             if (_MID_negative_prompt.value != "") {
                 params.push(['negative_prompt', _MID_negative_prompt.value]);
@@ -175,34 +179,48 @@ RULES AND CONVENTIONS
             let data = await submitRequest('text2image', 'create', null, params);
             if (data) {
                 // get the commandId to so we can poll for the results
-                commandId = data.command_id;
-                moduleId = data.moduleId;
+                _MID_commandId = data.commandId;
+                _MID_moduleId  = data.moduleId;
 
-                params = [['commandId', commandId], ['moduleId', moduleId]];
-                done = false;
-                loopCount = 0;
-                spinner = "|/-\\";
+                params         = [['commandId', _MID_commandId], ['moduleId', _MID_moduleId]];
+                done           = false;
+                loopCount      = 0;
+                spinner        = "|/-\\";
 
                 while (!done) {
-                    spinChar = spinner.charAt(loopCount++ % spinner.length);
+                    
                     await delay(1000);
-                    let results = await submitRequest('text2image', 'process_status', null, params);
-                    if (results) {
-                        if (results.success == true) {
-                            if (results.command_status == "completed") {
-                                done = true;
-                                showResultsImage(results.images[0]);
-                            }
-                        setResultsHtml(spinChar + results.message);
-                        }
-                        else if (results.status == "failed") {
+
+                    let results = await submitRequest('text2image', 'get_command_status', null, params);
+                    if (results && results.success) {
+
+                        if (results.commandStatus == "failed") {
                             done = true;
-                            setResultsHtml("Image generation failed<br/>" + results.error +
-                                getProcessingMetadataHtml(results));
+                            setResultsHtml(results?.error || "Unknown error");
+                        } 
+                        else {
+                            let message = results.message;
+                            if (results.commandStatus == "completed") {
+                                done = true;
+                                _MID_seed.value = results?.seed || 0;
+                            }
+                            else {
+                                spinChar = spinner.charAt(loopCount++ % spinner.length);
+                                message = spinChar + " " + message;
+                            }
+
+                            setResultsHtml(message);
+
+                            if (results.images && results.images.length > 0)
+                                showResultsImage(results.images[0], results.width, results.height);
                         }
                     }
+                    else {
+                        // TODO: check for timeouts and other network errors.
+                        done = true;
+                        // setResultsHtml(results?.error || "No response from server");
+                    }
                 }
-
             };
         }
 

@@ -64,7 +64,7 @@ RULES AND CONVENTIONS
     <title>YOLOv5 Training Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/server.css?v=2.5.0.0">
     <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
@@ -455,7 +455,7 @@ RULES AND CONVENTIONS
             if (panel && !panel.classList.contains("active"))
                 return;
 
-            let data = await submitRequest('train', 'status', null, null);
+            let data = await submitRequest('train', 'get_status', null, null);
             if (!data || !data.success) {
                 _MID_trainingAction.value  = "Unknown"
                 _MID_trainingState.value   = "Unknown";

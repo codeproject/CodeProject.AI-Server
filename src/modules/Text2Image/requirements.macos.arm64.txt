@@ -1,0 +1,10 @@
+#! Python3.9
+
+# Looking for more info on M1 chips? https://developer.apple.com/forums/thread/695963
+
+torch                           # Installing PyTorch, for Tensor computation and Deep neural networks
+
+diffusers[torch]                # Installing Diffusers for state-of-the-art diffusion in PyTorch and JAX.
+transformers                    # Installing transformers for State-of-the-art machine Learning for JAX, PyTorch and TensorFlow
+
+# last line empty

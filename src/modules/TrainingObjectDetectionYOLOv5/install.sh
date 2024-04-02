@@ -22,7 +22,7 @@ fi
 # This is needed. 
 oneStepPIP=false
 
-if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ] || [ "${systemName}" = "Jetson" ]; then
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Jetson" ]; then
     module_install_errors="Unable to install on Pi or Jetson hardware."
 fi
 

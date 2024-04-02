@@ -38,7 +38,9 @@
 #   sudo apt-get -y install cuda-X.Y
 
 
-cuda_version=$1
+# cuda_version=$1
+# Get major.minor CUDA version
+cuda_version=$(cut -d '.' -f 1,2 <<< "$1")
 
 # This script is intended to be called from setup.sh, which includes architecture
 # and os vars as well as writeline methods. If we don't find them, do quick checks
@@ -135,7 +137,7 @@ fi
 if [ "${systemName}" != 'WSL' ]; then
     write " - Installing kernel headers and development packages for the currently running kernel..." $color_mute
     sudo apt-get install linux-headers-$(uname -r)
-    writeLine "Done" $color_success
+    writeLine "done" $color_success
 fi
 
 
@@ -149,11 +151,11 @@ fi
 
 write " - Removing signing key 7fa2af80..." $color_mute
 apt-key del 7fa2af80 >/dev/null 2>/dev/null
-writeLine "Done" $color_success
+writeLine "done" $color_success
 
 write " - Removing signing key 3bf863cc..." $color_mute
 apt-key del 3bf863cc >/dev/null 2>/dev/null
-writeLine "Done" $color_success
+writeLine "done" $color_success
 
 # INSTALL NEW KEY
 
@@ -169,7 +171,7 @@ if [ ! -f "$keyring_package" ]; then
     if [ ! -f "$keyring_package" ]; then 
         writeLine "Unable to download ${keyring_package}" "$color_error"
     else
-        writeLine "Done" $color_success
+        writeLine "done" $color_success
     fi
 else
     writeLine "Key management package already exists" "$color_info"
@@ -179,7 +181,7 @@ if [ -f "$keyring" ]; then
     write " - Installing key..." $color_mute
     dpkg -E -G -i ${keyring_package}  >/dev/null 2>/dev/null # don't install same or older package
     sudo rm ${keyring_package}
-    writeLine "Done" $color_success
+    writeLine "done" $color_success
 fi
 popd  >/dev/null 2>/dev/null
 
@@ -188,14 +190,14 @@ popd  >/dev/null 2>/dev/null
 
 # write " - Removing existing CUDA toolkit..." $color_mute
 # sudo apt-get remove nvidia-cuda-toolkit
-# writeLine "Done" $color_success
+# writeLine "done" $color_success
 
 write " - Installing CUDA library..." $color_mute
 sudo apt-get update -y >/dev/null 2>/dev/null &
 spin $!
 sudo apt-get install cuda-${cuda_version} -y >/dev/null 2>/dev/null &
 spin $!
-writeLine "Done" $color_success
+writeLine "done" $color_success
 
 
 # ==============================================================================
@@ -205,7 +207,7 @@ writeLine "Done" $color_success
 write " - Installing zlib1g..." $color_mute
 sudo apt-get install zlib1g -y >/dev/null 2>/dev/null &
 spin $!
-writeLine "Done" $color_success
+writeLine "done" $color_success
 
 # wget https://developer.download.nvidia.com/compute/cuda/repos/<distro>/<arch>/cuda-archive-keyring.gpg
 # sudo mv cuda-archive-keyring.gpg /usr/share/keyrings/cuda-archive-keyring.gpg
@@ -221,7 +223,7 @@ sudo apt-get install libcudnn8=${cudnn_version}-1+cuda${cuda_version} -y >/dev/n
 spin $!
 sudo apt-get install libcudnn8-dev=${cudnn_version}-1+cuda${cuda_version} -y >/dev/null 2>/dev/null &
 spin $!
-writeLine "Done" $color_success
+writeLine "done" $color_success
 
 # ==============================================================================
 # EXPORTING PATHS
@@ -276,7 +278,7 @@ fi
 
 # cat "${HOME}/.bashrc"
 
-writeLine "Done" $color_success
+writeLine "done" $color_success
 
 # ==============================================================================
 # FINAL
@@ -286,7 +288,7 @@ writeLine "Done" $color_success
 write " - Installing NVIDIA GPU Direct Storage..." $color_mute
 sudo apt-get install nvidia-gds -y >/dev/null 2>/dev/null &
 spin $!
-writeLine "Done" $color_success
+writeLine "done" $color_success
 
 # writeLine "==================================================================" $color_warn
 # writeLine "A number of packages have been installed and are no longer needed." $color_warn

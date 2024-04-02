@@ -1289,7 +1289,7 @@ generate_akams_links() {
         count=${#pathElems[@]}
         specific_version="${pathElems[count-2]}"
         unset IFS;
-        say_verbose "Version: '$specific_version'."
+        say_verbose ".NET Version: '$specific_version'."
 
         #Retrieve effective version
         effective_version="$(get_specific_product_version "$azure_feed" "$specific_version" "$download_link")"

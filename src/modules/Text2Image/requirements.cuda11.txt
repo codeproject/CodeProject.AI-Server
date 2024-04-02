@@ -4,13 +4,7 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torch==2.0.1                    # Installing PyTorch, an open source machine learning framework
 
-# Do we need these?
---find-links https://download.pytorch.org/whl/torch_stable.html
- torchvision==0.15.2            # Installing TorchVision, for working with computer vision models
---find-links https://download.pytorch.org/whl/torch_stable.html
-torchaudio==2.0.2               # Installing TorchAudio
-
-diffusers["torch"]              # Installing Diffusers for state-of-the-art diffusion in PyTorch and JAX.
+diffusers[torch]                # Installing Diffusers for state-of-the-art diffusion in PyTorch and JAX.
 transformers                    # Installing transformers for State-of-the-art machine Learning for JAX, PyTorch and TensorFlow
 
 # last line empty.

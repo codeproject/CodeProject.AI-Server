@@ -64,106 +64,194 @@ RULES AND CONVENTIONS
     <title>LlamaChat Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/server.css?v=2.5.0.0">
     <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
     <style>
 /* START EXPLORER STYLE */
+.auto-height{
+    resize: none;
+    overflow: hidden;
+    min-height: 32px;
+    width: calc(100% - 4.25rem)
+}
 /* END EXPLORER STYLE */
     </style>
 
 </head>
 <body class="dark-mode">
-<div class="mx-auto" style="max-width: 800px;">
-    <h2 class="mb-3">LlamaChat Module Test</h2>
-    <form method="post" action="" enctype="multipart/form-data" id="myform">
+    <div class="mx-auto" style="max-width: 800px;">
+        <h2 class="mb-3">LlamaChat Module Test</h2>
+        <form method="post" action="" enctype="multipart/form-data" id="myform">
 
-<!-- START EXPLORER MARKUP -->
-        <div class="form-group mt-1">
-            Ask a question:
-            <textarea id="_MID_promptText" class="w-100" style="height:200px"></textarea>
-        </div>
+            <!-- START EXPLORER MARKUP -->
+            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-        <div class="form-group row mt-1">
-            <div class="col-2">
-                <input class="btn-success col-form-label" type="button" value="Post" id="_MID_prompt"
-                       onclick="_MID_onLlamaChat(_MID_promptText.value, _MID_maxTokens.value, _MID_temperature.value)" />
+            <!-- - to use with syntax highlighting. Except this doesn't work. Thanks docs.
+            <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/marked-highlight/lib/index.umd.js"></script>
+            <script>
+            const {markedHighlight} = globalThis.markedHighlight;
+            </script>
+            -->
+
+            <div class="form-group">
+                <label class="form-label text-end">How can I help you?</label>
+                <div class="input-group mt-1">
+                    <textarea id="_MID_promptText" class="auto-height me-1" rows="1" 
+                              placeholder="Ask a question"></textarea>
+                    <input class="btn btn-info btn-sm " id="_MID_queryBtn"
+                           type="button" value="Send" style="height:2rem;width:4rem"
+                           onclick="_MID_onLlamaChat(_MID_promptText.value, _MID_maxTokens.value, _MID_temperature.value)">
+                    <input class="btn btn-warning btn-sm " type="button" value="Stop" id="_MID_stopBtn"
+                           onclick="_MID_onLlamaStop()" style="display: none;height:2rem;width:4rem" />
+                </div>
+            </div>
+            <div class="mt-2">
+                <div id="_MID_answerText" style="resize:vertical;height: 10rem;white-space: pre-wrap;" class="overflow-auto bg-white text-dark w-100"><div class='text-muted'>Answer will appear here...</div>
+                </div>
+            </div>
+            <div class="form-group row mt-1">
+                <label class="col-3 col-form-label text-end">Max tokens</label>
+                <input class="form-control" value="0" id="_MID_maxTokens" type="number"
+                       style="width:5rem" />
+
+                <label class="col-3 col-form-label text-end">Temperature</label>
+                <input class="form-control" value="0.8" id="_MID_temperature" type="text"
+                       style="width:5rem" />
+            </div>
+            <div><small><b>Warning: </b>LLMs can fabricate and hallucinate. <b>Always</b> verify results.</small></div>
+            <!-- END EXPLORER MARKUP -->
+
+            <div class="mt-3">
+                <h2>Status</h2>
+                <div id="results" name="results" class="bg-light p-3" style="min-height: 100px;"></div>
             </div>
 
-            <label class="col-3 col-form-label text-end">Max tokens</label>
-            <input class="form-control" value="256" id="_MID_maxTokens" type="number"
-                    style="width:5rem" />									
+        </form>
 
-            <label class="col-3 col-form-label text-end">Temperature</label>
-            <input class="form-control" value="0.5" id="_MID_temperature" type="text"
-                    style="width:5rem" />
-        </div>
-<!-- END EXPLORER MARKUP -->
-
-        <div>
-            <h2>Results</h2>
-            <div id="results" name="results" class="bg-light p-3" style="min-height: 100px;"></div>
-        </div>
-
-    </form>
-
-    <script type="text/javascript">
-// START EXPLORER SCRIPT
-    let chat = '';
-
-    async function _MID_onLlamaChat(prompt, maxTokens, temperature) {
-
-        clearImagePreview();
-
-        if (!prompt) {
-            alert("No text was provided for Llama chat");
-            return;
-        }
-
-        const params = [ 
-            ['prompt', prompt], 
-            ['max_tokens', maxTokens], 
-            ['temperature', temperature]
-        ];
-
-        setResultsHtml("Sending prompt...");
-        submitRequest('text', 'chat', null, params)
-            .then((data) => {
-                if (data) {
-                    let answer = data?.chat || "No response";
-                    setResultsHtml(answer + getProcessingMetadataHtml(data));
-                }
-                else {
-                    let answer = "Unable to generate response";
-                    setResultsHtml(answer + getProcessingMetadataHtml(data));
-                }
-            })
-            .catch((error) => {
-                let answer = "Unable to generate response: " + (error||"Unknown Error");
-                setResultsHtml(answer + getProcessingMetadataHtml(data));
+        <script type="text/javascript">
+            // START EXPLORER SCRIPT
+            // set the auto-height textarea(s)
+            document.querySelectorAll('.auto-height').forEach(function (el) {
+                el.style.height = (el.scrollHeight) + "px";
+                el.addEventListener("input", function (e) {
+                    this.style.height = "auto";
+                    this.style.height = (this.scrollHeight) + "px";
+                });
             });
-    }
 
-    async function _MID_onUpdateChatResponse() {
+            let renderMarkdown = false;
+            let chat           = '';
+            let commandId      = '';
 
-        let data = await submitRequest('train', 'status', null, null);
-        if (!data || !data.success) {
-            setResultsHtml("Unable to contact module for status update");
-            return 
-        }
-                
-        let actionActive = data.state == "Answering"; // Idle, Thinking
-        setResultsHtml(data.chat);
-    }
+            async function _MID_onLlamaChat(prompt, maxTokens, temperature) {
+                // show the stop button and hide the query button
+               _MID_queryBtn.style.display = "none";
+               _MID_stopBtn.style.display  = "inline";
+               clearImagePreview();
 
-    // =====================================================================
-    // Startup
+                if (!prompt) {
+                    alert("No text was provided for Llama chat");
+                    return;
+                }
 
-    setInterval(_MID_onUpdateChatResponse, updateStatusFreqSec * 1000);
+                let params = [
+                    ['prompt',      prompt],
+                    ['max_tokens',  maxTokens],
+                    ['temperature', temperature]
+                ];
 
-// END EXPLORER SCRIPT
-    </script>
-</div>
+                setResultsHtml("Sending prompt...");
+                let data = await submitRequest('text', 'chat', null, params)
+                if (data) {
+                    _MID_answerText.innerHTML = "<div class='text-muted'>Answer will appear here...</div>";
+
+                   // get the commandId to so we can poll for the results
+                    commandId = data.commandId;
+                    moduleId  = data.moduleId;
+
+                    params   = [['commandId', commandId], ['moduleId', moduleId]];
+                    let done = false;
+
+                    /*
+                     - to use with syntax highlighting. Except this doesn't work. Thanks docs.
+                    const marked = new Marked(
+                        markedHighlight({
+                            langPrefix: 'hljs language-',
+                            highlight(code, lang, info) {
+                            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                            return hljs.highlight(code, { language }).value;
+                            }
+                        })
+                    );
+                    */
+
+                    while (!done) {
+
+                        await delay(250);
+
+                        let results = await submitRequest('LlamaChat', 'get_command_status', null, params);
+                        if (results) {
+                            if (results.success) {
+
+                                done = results.commandStatus == "completed";
+                                let html = '';
+                                if (renderMarkdown) {
+                                    html = marked.parse("<b>You</b>: " + prompt + "\n\n<b>Assistant</b>: " + results.reply);
+                                } 
+                                else {
+                                    html = "<b>You</b>: " + prompt + "<br><br><b>Assistant</b>: "
+                                         + results.reply.replace(/[\u00A0-\u9999<>\&]/g, function(i) {
+                                               return '&#'+i.charCodeAt(0)+';';
+                                           });
+                                }
+
+                                _MID_answerText.innerHTML = html
+                                _MID_answerText.scrollTop = _MID_answerText.scrollHeight;
+                                if (done) {
+                                    // only clear the prompt if the command is done and not canceled
+                                    // otherwise leave it so the user can modify it and re-run.
+                                    if (results.stop_reason != "cancelled") {
+                                        _MID_promptText.value              = "";
+                                        _MID_promptText.style.scrollHeight = 32;
+                                        _MID_promptText.style.height       = "32px";
+                                    }
+                                    setResultsHtml("Done");
+                               }
+                            }
+                            else {
+                                // TODO: check for timeouts and other network errors.
+                                done = true;
+                                // setResultsHtml(results?.error || "No response from server");
+                            }
+                        }
+                    }
+
+                    // show the query button and hide the stop button
+                    _MID_queryBtn.style.display = "inline";
+                    _MID_stopBtn.style.display  = "none";
+                    _MID_promptText.focus();
+               }
+            }
+
+            async function _MID_onLlamaStop() {
+                let params = [['commandId', commandId], ['moduleId', 'LlamaChat']];
+                let result = await submitRequest('LlamaChat', 'cancel_command', null, params);
+                setResultsHtml("Command stopped");
+                // show the query button and hide the stop button
+                _MID_queryBtn.style.display = "inline";
+                _MID_stopBtn.style.display  = "none";
+                _MID_promptText.focus();
+            }
+
+            // =====================================================================
+            // Startup
+
+
+            // END EXPLORER SCRIPT
+        </script>
+    </div>
 </body>
 </html>

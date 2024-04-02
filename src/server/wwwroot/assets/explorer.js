@@ -11,7 +11,10 @@ const soundPreviewId    = "sndPreview"    // Previews a sound
 const imgResultMaskId   = "imgMask";      // If using SVG to draw image annotations
 const imageResultId     = "imgResult"     // Displays an image result
 
-
+// a function to do an async delay
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Setup =======================================================================
 
@@ -210,7 +213,7 @@ function clearImagePreview() {
 /**
 If the supplied file is an image, displays this image in the image results pane
 */
-function showResultsImage(imageToSet) {
+function showResultsImage(imageToSet, width, height) {
 
     clearImageResult();
 
@@ -226,20 +229,23 @@ function showResultsImage(imageToSet) {
         imgElm.src = URL.createObjectURL(imageToSet);
         imgElm.style.height     = "auto";
         imgElm.style.visibility = "visible";
+
+        if (width) imgElm.style.width  = width + "px";
+        if (height) imgElm.style.height = height + "px";
     }
     else {
         alert('Please select a valid image file.');
     }
 }
 
-function showResultsImageData(data) {
+function showResultsImageData(data, width, height) {
 
     clearImageResult();
 
-    ShowResultsImage(data.imageBase64)
+    showResultsImage(data.imageBase64, width, height)
 }
 
-function showResultsImage(data) {
+function showResultsImage(data, width, height) {
 
     clearImageResult();
 
@@ -251,6 +257,8 @@ function showResultsImage(data) {
         return;
 
     imgElm.src = "data:image/png;base64," + data;
+    if (width) imgElm.style.width  = width + "px";
+    if (height) imgElm.style.height = height + "px";
     imgElm.style.visibility = "visible";
 }
 
@@ -285,6 +293,106 @@ function adjustOverlayToFitResultImage() {
     return true;
 }
 
+/**
+ Drawing segmentation masks over an image based on the masks returned by a segmentation inference.
+ @param {boolean} [cutout=false] Whether to draw a dim mask and cutout the shapes, or draw shapes as
+ coloured overlay
+ @param {boolean} [sortByConfidence=true] Whether to sort the masks by confidence when drawing
+ */
+function showResultsMasks(predictions, sortByConfidence = true, cutout = false) {
+
+    let imgElm = document.getElementById(imageResultId);
+    // If there's no image result element, fallback to the preview element
+    if (!imgElm)
+        imgElm = document.getElementById(imagePreviewId);
+    if (!imgElm)
+        return;
+
+    if (!imgElm.width || !imgElm.height)
+        return;
+
+    if (!(predictions && predictions.length > 0))
+        return;
+        
+    // Sort descending
+    if (sortByConfidence) {
+        predictions.sort(function (a, b) {
+            return b.confidence - a.confidence;
+        });
+    }
+
+    let xRatio = imgElm.width * 1.0 / imgElm.naturalWidth;
+    let yRatio = imgElm.height * 1.0 / imgElm.naturalHeight;
+
+    // Start the SVG
+    let svg = `<svg viewBox="0 0 ${imgElm.width} ${imgElm.height}">`;
+
+    let fill = cutout? "#999" : "#fff";
+
+    // We'll create a ask that is dark (#999) and for each bounding polygon we'll draw a lighter
+    // 'hole' in the mask the size and shape of the the bounding polygon.
+    svg += `
+        <defs>
+            <mask id="mask">
+                <rect fill="${fill}" x="0" y="0" width="${imgElm.width}" height="${imgElm.height}"></rect>`;
+
+    if (cutout) {
+        for (let i = 0; i < predictions.length; i++) {
+            let prediction = predictions[i];
+            let coords = prediction.mask.map((c,i) =>  i?`${Math.round(c[0]* xRatio)} ${Math.round(c[1]* yRatio)}`
+                                                        :`M${Math.round(c[0]* xRatio)} ${Math.round(c[1]* yRatio)}`).join(" ") + "Z";
+            svg += `<path fill="#ffffff" d="${coords}" />`;
+        }
+    }
+
+    svg += `
+            </mask>
+        </defs>`;
+
+    // Draw the mask
+    svg += `
+        <image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
+                xlink:href="${imgElm.src}" width="${imgElm.width}" height="${imgElm.height}"></image>`;
+
+    let colors = ["179,221,202", "204,223,120", "164,221,239"];
+    let colorIndex = 0;
+
+    // Draw labels
+    for (let i = 0; i < predictions.length; i++) {
+
+        let prediction = predictions[i];
+        let left   = Math.min(prediction.x_min,  prediction.x_max) * xRatio;
+        let top    = Math.min(prediction.y_min,  prediction.y_max) * yRatio;
+        let width  = Math.abs(prediction.x_min - prediction.x_max) * xRatio;
+        let height = Math.abs(prediction.y_min - prediction.y_max) * yRatio;
+        let color  = colors[colorIndex++ % colors.length];
+
+        if (!cutout) {
+            // Shape of detected object
+            let coords = prediction.mask.map((c,i) =>  i?`${Math.round(c[0]* xRatio)} ${Math.round(c[1]* yRatio)}`
+                                                        :`M${Math.round(c[0]* xRatio)} ${Math.round(c[1]* yRatio)}`).join(" ") + "Z";
+            svg += `<path fill="rgba(${color}, 0.5)" d="${coords}" />`;
+        }
+
+        // label
+        let label = prediction.label || prediction.userid;
+        if (label)
+            svg += `<text x="${left + width/2}" y="${top + height/2}" dominant-baseline="middle"
+          text-anchor="middle" style="stroke: none; fill:rgba(${color}, 1);font-size:14px">${label || ""}</text>`;
+    }
+
+    svg += `
+        </svg>`;
+
+    const imgMaskElm = document.getElementById(imgResultMaskId);
+    imgMaskElm.style.height = imgElm.height + 'px';
+    imgMaskElm.style.width  = imgElm.width + 'px';
+    imgMaskElm.innerHTML    = svg;
+
+    imgMaskElm.style.visibility = "visible";
+    imgElm.style.visibility     = "hidden";
+}
+
 function showResultsBoundingBoxes(predictions, sortByConfidence = true) {
 
     let imgElm = document.getElementById(imageResultId);
@@ -310,12 +418,15 @@ function showResultsBoundingBoxes(predictions, sortByConfidence = true) {
     let xRatio = imgElm.width * 1.0 / imgElm.naturalWidth;
     let yRatio = imgElm.height * 1.0 / imgElm.naturalHeight;
 
-    let svg = `
-        <svg viewBox="0 0 ${imgElm.width} ${imgElm.height}">
+    // Start the SVG
+    let svg = `<svg viewBox="0 0 ${imgElm.width} ${imgElm.height}">`;
+
+    // We'll create a ask that is dark (#999) and for each bounding box draw a lighter 'hole' in
+    // the mask the size of the bounding box.
+    svg += `
         <defs>
             <mask id="mask">
                 <rect fill="#999" x="0" y="0" width="${imgElm.width}" height="${imgElm.height}"></rect>`;
-
     for (let i = 0; i < predictions.length; i++) {
         let prediction = predictions[i];
         let left   = Math.min(prediction.x_min,  prediction.x_max) * xRatio;
@@ -325,13 +436,16 @@ function showResultsBoundingBoxes(predictions, sortByConfidence = true) {
 
         svg += `<rect fill="#ffffff" x="${left}" y="${top}" width="${width}" height="${height}"></rect>`;
     }
-
     svg += `
             </mask>
-        </defs>
+        </defs>`;
+
+    // Draw the mask
+    svg += `
         <image mask="url(#mask)" xmlns:xlink="http://www.w3.org/1999/xlink"
                 xlink:href="${imgElm.src}" width="${imgElm.width}" height="${imgElm.height}"></image>`;
 
+    // Now draw borders around each bounding box
     let colors = ["179,221,202", "204,223,120", "164,221,239"];
     let colorIndex = 0;
 
@@ -951,7 +1065,7 @@ async function getModulesStatuses() {
 
 async function submitRequest(route, apiName, images, parameters) {
 
-    showLogOutput("Sending request to AI server", "info");
+    showCommunication(true);
 
     let formData = new FormData();
 
@@ -992,7 +1106,7 @@ async function submitRequest(route, apiName, images, parameters) {
             signal: controller.signal
         });
 
-        showLogOutput("");
+        showCommunication(false);
         clearTimeout(timeoutId);
 
         if (response.ok) {

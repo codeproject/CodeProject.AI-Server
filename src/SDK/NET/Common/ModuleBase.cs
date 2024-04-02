@@ -108,16 +108,15 @@ namespace CodeProject.AI.SDK
         public string[] Platforms { get; set; } = Array.Empty<string>();
 
         /// <summary>
-        /// Gets or sets a value indicating whether this module was pre-installed (eg Docker). If
-        /// the module was preinstalled, this value is true, otherwise false.
-        /// </summary>
-        public bool PreInstalled { get; set; } = false;
-
-        /// <summary>
         /// Gets or sets the list of module versions and the server version that matches each of
         /// these versions. This determines whether the module can be installed on a given server.
         /// </summary>
         public ModuleRelease[] ModuleReleases { get; set; } = Array.Empty<ModuleRelease>();
+
+        /// <summary>
+        /// Gets or sets the list of downloadable models for this module
+        /// </summary>
+        public ModelConfig[] DownloadableModels { get; set; } = Array.Empty<ModelConfig>();
     }
 
     /// <summary>
@@ -179,9 +178,10 @@ namespace CodeProject.AI.SDK
         {
             get
             {
-                return !string.IsNullOrWhiteSpace(ModuleId) &&
-                       !string.IsNullOrWhiteSpace(Name)     &&
-                       InstallOptions?.Platforms?.Length > 0;
+                return !string.IsNullOrWhiteSpace(ModuleId)  &&
+                       !string.IsNullOrWhiteSpace(Name)      &&
+                       InstallOptions?.Platforms?.Length > 0 &&
+                       InstallOptions?.ModuleReleases.Length > 0;
             }
         }
 
@@ -200,6 +200,33 @@ namespace CodeProject.AI.SDK
     /// </summary>
     public static class ModuleBaseExtensions
     {
+        /// <summary>
+        /// Checks that the version of this module is the same as the highest module version listed
+        /// in the InstallOptions.ModuleReleases array. If there's a discrepancy, the version of the
+        /// module is reset as the highest in the list, and a warning generated
+        /// </summary>
+        /// <param name="module">This module</param>
+        public static void CheckVersionAgainstModuleReleases(this ModuleBase module)
+        {
+            if (module is null || !module.Valid)
+                return;
+
+            string? maxReleaseVersion = null;
+            foreach (ModuleRelease release in module.InstallOptions!.ModuleReleases)
+            {
+                if (string.IsNullOrWhiteSpace(maxReleaseVersion))
+                    maxReleaseVersion = release.ModuleVersion;
+                else if (VersionInfo.Compare(maxReleaseVersion, release.ModuleVersion) < 0)
+                    maxReleaseVersion = release.ModuleVersion;
+            }
+
+            if (!maxReleaseVersion.EqualsIgnoreCase(module.Version))
+            {
+                Console.WriteLine($"ERROR: Module {module.Name} has version {module.Version}, but ModelReleases has max version as {maxReleaseVersion}");
+                module.Version = maxReleaseVersion;
+            }
+        }
+        
         /// <summary>
         /// Gets a value indicating whether or not this module is compatible with the given server
         /// version on the current system.

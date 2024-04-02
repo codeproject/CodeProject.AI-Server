@@ -68,7 +68,7 @@ RULES AND CONVENTIONS
     <title>Sound Classifier (TensorFlow) Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/server.css?v=2.5.0.0">
     <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
@@ -100,6 +100,11 @@ RULES AND CONVENTIONS
                 Your browser does not support the audio element.
             </audio>
         </div>
+        <div class="w-100 position-relative form-control my-4 p-0">
+            <div id="imgMask" class="position-absolute"
+                    style="left:0;top:0;pointer-events:none;z-index:10"></div>
+            <img src="" id="imgPreview" class="w-100" style="height:250px;visibility:hidden">
+        </div>
         <div>
             <h2>Results</h2>
             <div id="results" name="results" class="bg-light p-3" style="min-height: 100px;"></div>
@@ -129,6 +134,7 @@ RULES AND CONVENTIONS
 							   "<td> " + confidence(data.confidence) + "</td ></tr> " +
 							   "<table>" +
 							   getProcessingMetadataHtml(data));
+				showResultsImageData(data);
 			};
 		}
 // END EXPLORER SCRIPT

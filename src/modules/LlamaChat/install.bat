@@ -44,14 +44,20 @@ REM ) else (
 REM     call "!sdkScriptsDirPath!\utils.bat" WriteLine "python-llama-cpp already installed." "!color_success!"
 REM )
 
-set fileToGet=codellama-7b.Q4_K_M.gguf
+REM URL: https://huggingface.co/TheBloke/CodeLlama-7B-GGUF/resolve/main/codellama-7b.Q4_K_M.gguf
+REM URL: https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q4_K_M.gguf
+REM URL: https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf - 4GB
+
+set sourceUrl=https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/
+set fileToGet=mistral-7b-instruct-v0.2.Q4_K_M.gguf
 
 if not exist "!moduleDirPath!/models/!fileToGet!" (
-    set sourceUrl=https://huggingface.co/TheBloke/CodeLlama-7B-GGUF/resolve/main/
-    set destination=!downloadDirPath!\!moduleDirName!\!fileToGet!
+    set destination=!downloadDirPath!\!modulesDir!\!moduleDirName!\!fileToGet!
 
-    if not exist !downloadDirPath!\!moduleDirName! mkdir !downloadDirPath!\!moduleDirName!
-    if not exist "!moduleDirPath!/models" mkdir "!moduleDirPath!/models"
+    if not exist "!downloadDirPath!\!modulesDir!\!moduleDirName!" mkdir "!downloadDirPath!\!modulesDir!\!moduleDirName!"
+    if not exist "!moduleDirPath!\models" mkdir "!moduleDirPath!\models"
+
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Downloading !fileToGet!" "!color_info!"
 
     powershell -command "Start-BitsTransfer -Source '!sourceUrl!!fileToGet!' -Destination '!destination!'"
     if errorlevel 1 (
@@ -66,7 +72,12 @@ if not exist "!moduleDirPath!/models/!fileToGet!" (
         )
     )
 
-    if exist "!destination!" move "!destination!" "!moduleDirPath!/models/"
+    if exist "!destination!" (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Moving !fileToGet! into the models folder." "!color_info!"
+        move "!destination!" "!moduleDirPath!/models/" > nul
+    ) else (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Download faild. Sad face." "!color_warn!"
+    )
 ) else (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "!fileToGet! already downloaded." "!color_success!"
 )

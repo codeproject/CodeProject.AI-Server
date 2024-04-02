@@ -197,7 +197,7 @@ class YoloV5Trainer_adaptor(ModuleRunner):
             "train_model":     self.start_train_model_action,
             "resume_training": self.start_resume_train_model_action,
             "list-classes":    self.list_classes,
-            "status":          self.get_status,
+            "get_status":      self.get_status,
             "model_info":      self.get_model_info,
             "dataset_info":    self.get_dataset_info,
             "cancel":          self.cancel_current_action

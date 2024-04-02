@@ -15,45 +15,31 @@
 # limitations under the License.
 import threading
 import os
+import errno
 import platform
 import time
 import logging
 import queue
+import gc
 
 from datetime import datetime
 
 import numpy as np
 from PIL import Image
 
-# For Linux we have installed the pycoral libs via apt-get, not PIP in the venv,
-# so make sure the interpreters can find the coral libraries
-# COMMENTED: No longer the case. PyCoral now installed again via PIP
-# import platform
-# if platform.system() == "Linux":
-#     import sys
-#     version = sys.version_info
-#     path = f"/usr/lib/python{version.major}.{version.minor}/site-packages/"
-#     sys.path.insert(0, path)
-
 try:
     from pycoral.utils.dataset import read_label_file
-    from pycoral.utils.edgetpu import make_interpreter
-    from pycoral.utils.edgetpu import list_edge_tpus
+    from pycoral.utils import edgetpu
 except ImportError:
     logging.exception("Missing pycoral function. Perhaps you are using a funky version of pycoral?")
     exit()
 
-# Ok, here we need a few bugfixes in a custom pipeline runner...
-import pipelined_model_runner as pipeline
 from pycoral.adapters import detect
 
 from options import Options
 
 
-# Refresh the interpreters once an hour. I'm unsure if this is needed. There
-# seems to be a memory leak in the C code that this doesn't fix. I believe the
-# leak is related to the 'name' string here:
-# https://github.com/google-coral/pycoral/blob/master/src/coral_wrapper.cc#L512
+# Refresh the pipe once an hour. I'm unsure if this is needed.
 INTERPRETER_LIFESPAN_SECONDS = 3600
 
 # Don't let the queues fill indefinitely until something more unexpected goes
@@ -76,9 +62,332 @@ MAX_WAIT_TIME = 60.0
 WATCHDOG_IDLE_SECS = 5.0
 
 
-class TPURunner(object):
+class TPUException(Exception):
+    pass
 
-    def __init__(self):
+
+class DynamicInterpreter(object):
+    def __init__(self, fname_list: list, tpu_name: str, queues: list, rebalancing_lock: threading.Lock):
+        self.fname_list = fname_list
+        self.tpu_name = tpu_name
+        self.queues = queues
+        self.rebalancing_lock = rebalancing_lock
+
+        self.timings    = [0.0] * len(fname_list)
+        self.q_len      = [0] * len(fname_list)
+        self.exec_count = [0] * len(fname_list)
+
+        try:
+            self.delegate = edgetpu.load_edgetpu_delegate({'device': tpu_name})
+        except Exception as in_ex:
+            # If we fail to create even one of the interpreters then fail all. 
+            # Throw exception and caller can try to recreate without the TPU.
+            # An option here is to remove the failed TPU from the list
+            # of TPUs and try the others. Maybe there's paired PCI cards
+            # and a USB, and the USB is failing?
+            logging.warning(f"Unable to load delegate for TPU {self.tpu_name}: {in_ex}")
+            raise TPUException(self.tpu_name)
+
+
+    def start(self, seg_idx: int, fbytes: bytes):
+        logging.info(f"Loading into {self.tpu_name}: {self.fname_list[seg_idx]}")
+
+        try:
+            self.interpreter = edgetpu.make_interpreter(fbytes, delegate=self.delegate)
+        except Exception as in_ex:
+            # If we fail to create even one of the interpreters then fail all. 
+            # Throw exception and caller can try to recreate without the TPU.
+            # An option here is to remove the failed TPU from the list
+            # of TPUs and try the others. Maybe there's paired PCI cards
+            # and a USB, and the USB is failing?
+            logging.warning(f"Unable to create interpreter for TPU {self.tpu_name}: {in_ex}")
+            raise TPUException(self.tpu_name)
+
+        self.interpreter.allocate_tensors()
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
+
+        # Start processing loop per TPU
+        self.thread = threading.Thread(target=self._interpreter_runner, args=[seg_idx])
+        self.thread.start()
+
+
+    def _interpreter_runner(self, seg_idx: int):
+        # Input tensors for this interpreter
+        input_tensors = {}
+        for details in self.input_details:
+            input_tensors[details['name']] = self.interpreter.tensor(details['index'])
+
+        # Setup input/output queues
+        in_q = self.queues[seg_idx]
+        if len(self.queues) > seg_idx+1:
+            out_q = self.queues[seg_idx+1]
+        else:
+            out_q = None
+
+        in_names  = [d['name']  for d in self.input_details ]
+        out_names = [d['name']  for d in self.output_details]
+        indices   = [d['index'] for d in self.output_details]
+
+        expected_input_size = np.prod(self.input_details[0]['shape'])
+        interpreter_handle = self.interpreter._native_handle()
+
+        # Run interpreter loop; consume & produce results
+        while True:
+            # Pull next input from the queue
+            working_tensors = in_q.get()
+            
+            # Exit if the pipeline is done
+            if not working_tensors:
+                logging.debug("Get EOF in tid {}".format(threading.get_ident()))
+                self.interpreter = None
+                self.input_details = None
+                self.output_details = None
+                if self.rebalancing_lock.locked():
+                    self.rebalancing_lock.release()
+                return
+
+            start_inference_time = time.perf_counter_ns()
+
+            if len(in_names) == 1:
+                # Invoke_with_membuffer() directly on numpy memory,
+                # but only works with a single input
+                edgetpu.invoke_with_membuffer(interpreter_handle,
+                                              working_tensors[0][in_names[0]].ctypes.data,
+                                              expected_input_size)
+            else:
+                # Set inputs
+                for name in in_names:
+                    input_tensors[name]()[0] = working_tensors[0][name]
+
+                # Run segment
+                self.interpreter.invoke()
+
+            if out_q:
+                # Fetch results
+                for name, index in zip(out_names, indices):
+                    working_tensors[0][name] = self.interpreter.get_tensor(index)
+
+                # Deliver to next queue in pipeline
+                out_q.put(working_tensors)
+            else:
+                # Fetch results
+                # Deliver to final results queue
+                working_tensors[1].put([self.interpreter.get_tensor(index) for index in indices])
+
+            # Convert elapsed time to double precision ms
+            self.timings[seg_idx] += (time.perf_counter_ns() - start_inference_time) / (1000.0 * 1000.0)
+            self.q_len[seg_idx] += in_q.qsize()
+            self.exec_count[seg_idx] += 1
+
+    def __del__(self):
+        # Print performance info
+        t_str = ""
+        q_str = ""
+        for t, q, c in zip(self.timings, self.q_len, self.exec_count):
+            if c > 0:
+                avg_time = t / c
+                avg_q = q / c
+            else:
+                avg_time = 0.0
+                avg_q = 0.0
+            t_str += " {:5.1f}".format(avg_time)
+            q_str += " {:5.1f}".format(avg_q)
+        logging.info(f"{self.tpu_name} per-segment timing (ms) & queue len:{t_str};{q_str}")
+
+        self.interpreter = None
+        self.input_details = None
+        self.output_details = None
+        self.delegate = None
+        self.queues = None
+
+
+class DynamicPipeline(object):
+    
+    def __init__(self, tpu_list: list, fname_list: list):
+        seg_count = len(fname_list)
+        assert seg_count <= len(tpu_list), "seg_count: {} tpu_list: {}".format(seg_count, len(tpu_list))
+
+        self.max_idle_secs_before_recycle = MAX_WAIT_TIME
+        self.max_pipeline_queue_length    = MAX_PIPELINE_QUEUE_LEN
+        
+        self.fname_list         = fname_list
+        self.tpu_list           = tpu_list
+
+        # Input queues for each segment
+        self.queues = [queue.Queue(maxsize=self.max_pipeline_queue_length) for i in range(seg_count)]
+
+        self.interpreters       = [[]  for i in range(seg_count)]
+        self.moving_avg         = [0.0 for i in range(seg_count)]
+        self.balance_lock       = threading.Lock()
+        self.rebalancing_lock   = threading.Lock()
+
+        # Read file data
+        self.fbytes_list = []
+        for fname in fname_list:
+            if not os.path.exists(fname):
+                # No TPU file. If we can't load one of the files, something's
+                # very wrong, so quit the whole thing
+                logging.error(f"TFLite file {fname} doesn't exist")
+                self.interpreters = []
+                raise FileNotFoundError(
+                    errno.ENOENT, os.strerror(errno.ENOENT), fname)
+
+            with open(fname, "rb") as fd:
+                self.fbytes_list.append(fd.read())
+
+        # Fill TPUs with interpreters
+        with self.balance_lock:
+            for i, tpu_name in enumerate(tpu_list):
+                seg_idx = i % len(fname_list)
+
+                i = DynamicInterpreter(fname_list, tpu_name, self.queues, self.rebalancing_lock)
+                i.start(seg_idx, self.fbytes_list[seg_idx])
+                self.interpreters[seg_idx].append(i)
+
+        self.first_name = self.interpreters[0][0].input_details[0]['name']
+
+
+    def enqueue(self, in_tensor, out_q: queue.Queue):
+        self.queues[0].put(({self.first_name: in_tensor}, out_q))
+
+
+    def balance_queues(self):
+        # Don't bother if someone else is working on balancing
+        if len(self.queues) <= 1 or len(self.tpu_list) <= 2 or \
+           len(self.queues) == len(self.tpu_list) or \
+           not self.balance_lock.acquire(blocking=False):
+            return
+
+        def eval_timings(interpreter_counts):
+            # How much time are we allocating for each segment
+            time_alloc = []
+
+            for idx in range(len(self.interpreters)):
+                # Find average runtime for this segment
+                avg_times = []
+                for interpreters in self.interpreters:
+                    avg_times += [i.timings[idx] / i.exec_count[idx] for i in interpreters if i.exec_count[idx] != 0]
+
+                if avg_times:
+                    avg_time = sum(avg_times) / len(avg_times)
+                else:
+                    return 0, 0, 0.0
+
+                # Adjust for number of TPUs allocated to it
+                time_alloc.append(avg_time / interpreter_counts[idx])
+
+            min_t = 100000000
+            min_i = -1
+            max_t = 0
+            max_i = -1
+
+            # Find segments that maybe should swap
+            for i, t in enumerate(time_alloc):
+                # Max time needs to be shortened so add an interpreter.
+                if t > max_t:
+                    max_t = t
+                    max_i = i
+
+                # Min time needs to be lengthened so rem an interpreter,
+                # but only if it has more than one interpreter
+                if t < min_t and len(self.interpreters[i]) > 1:
+                    min_t = t
+                    min_i = i
+
+            return min_i, max_i, max(time_alloc)
+
+        interpreter_counts = [len(i) for i in self.interpreters]
+        min_i, max_i, current_max = eval_timings(interpreter_counts)
+        interpreter_counts[min_i] -= 1
+        interpreter_counts[max_i] += 1
+        _, _, new_max = eval_timings(interpreter_counts)
+
+        # Return if we don't want to swap (+/- 1 ms)
+        if new_max+1.0 >= current_max:
+            self.balance_lock.release()
+            return
+
+        logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:5.2f} to {new_max:5.2f})")
+
+        # Sending False kills the processing loop
+        self.rebalancing_lock.acquire()
+        self.queues[min_i].put(False)
+
+        # This is ugly, but I can't think of something better
+        # Threads are blocked by queues. Queues may not have a stream
+        # of work cycling them. Therefore must kill with an
+        # enqueued command. But we don't know which thread picks
+        # up the command from the queue.
+
+        # Block & wait
+        realloc_interp = None
+        with self.rebalancing_lock:
+            for idx, interpreter in enumerate(self.interpreters[min_i]):
+                if not interpreter.interpreter:
+                    realloc_interp = self.interpreters[min_i].pop(idx)
+                    break
+        if not realloc_interp:
+            logging.warning("Unable to find killed interpreter")
+            self.balance_lock.release()
+            return
+
+        # Add to large (too-slow) queue
+        realloc_interp.start(max_i, self.fbytes_list[max_i])
+        self.interpreters[max_i].append(realloc_interp)
+
+        self.balance_lock.release()
+        self.print_queue_len()
+
+
+    def print_queue_len(self):
+        len_str = ""
+        seg_str = ""
+        for i, q in zip(self.interpreters, self.queues):
+            len_str += " {:2}".format(q.qsize())
+            seg_str += " {:2}".format(len(i))
+        logging.info(f"Queue len: ({len_str}); Segment alloc: ({seg_str})")
+
+
+    def __del__(self):
+        self.delete()
+
+
+    def _halt_interpreters(self, seg_idx: int):
+        
+        if not self.interpreters or seg_idx < 0 or seg_idx >= len(self.interpreters):
+            return
+        
+        # Insert EOF to each queue
+        for i in self.interpreters[seg_idx]:
+            self.queues[seg_idx].put(False)
+
+        # Wait for threads to finish
+        for interpreter in self.interpreters[seg_idx]:
+            t = interpreter.thread
+            logging.debug("Joining thread {} for DynamicPipeline.delete()".format(t.native_id))
+            t.join(timeout=self.max_idle_secs_before_recycle)
+            if t.is_alive():
+                logging.warning("Pipe thread didn't join!")
+
+
+    def delete(self):
+        with self.balance_lock:
+            # Insert EOF to each queue
+            # Wait for threads to finish
+            # Init structures
+            for q_idx, q in enumerate(self.queues):
+                self._halt_interpreters(q_idx)
+                self.queues[q_idx] = queue.Queue(maxsize=self.max_pipeline_queue_length)
+
+                if self.interpreters and len(self.interpreters) > q_idx:
+                    self.interpreters[q_idx] = []
+
+        self.fbytes_list = None
+
+
+class TPURunner(object):
+    def __init__(self, tpu_limit: int = -1):
         """
         Init object and do a check for the temperature file. Right now
         the temperature file would only be supported on Linux systems
@@ -88,27 +397,19 @@ class TPURunner(object):
         
         self.watchdog_idle_secs           = WATCHDOG_IDLE_SECS
         self.max_idle_secs_before_recycle = MAX_WAIT_TIME
-        self.interpreter_lifespan_secs    = INTERPRETER_LIFESPAN_SECONDS
-        self.max_pipeline_queue_length    = MAX_PIPELINE_QUEUE_LEN
+        self.pipe_lifespan_secs           = INTERPRETER_LIFESPAN_SECONDS
         self.warn_temperature_thresh_C    = WARN_TEMPERATURE_THRESHOLD_CELSIUS
 
         self.device_type          = None  # The type of device in use (TPU or CPU, but we're going to ignore CPU here)
-        self.device_count         = 0     # Number of devices (TPUs or single CPU) we end up using
-        self.segment_count        = 1     # Number of segment files used (or 1 if a single file is used)   
-        self.interpreters         = []    # The model interpreters
-        self.interpreters_created = None  # When were the interpreters created?
+        self.pipe                 = None
+        self.pipe_created         = None  # When was the pipe created?
         self.model_name           = None  # Name of current model in use
         self.model_size           = None  # Size of current model in use
         self.labels               = None  # set of labels for this model
-        self.runners              = None  # Pipeline(s) to run the model
 
-        self.next_runner_idx      = 0     # Which runner to execute on next?
-        self.postboxes            = None  # Store output
-        self.postmen              = None
         self.runner_lock          = threading.Lock()
         
-        self.last_check_timer     = None
-        self.last_check_interpreter_creation_timer = None
+        self.last_check_time      = None
         self.printed_shape_map    = {}
 
         self.watchdog_time        = None
@@ -116,6 +417,7 @@ class TPURunner(object):
         self.watchdog_thread      = threading.Thread(target=self._watchdog)
         self.watchdog_thread.start()
 
+        logging.info(f"edgetpu version: {edgetpu.get_runtime_version()}")
         logging.info(f"{Image.__name__} version: {Image.__version__}")
 
         # Find the temperature file
@@ -123,8 +425,9 @@ class TPURunner(object):
         temp_fname_formats = ['/dev/apex_{}/temp',
                               '/sys/class/apex/apex_{}/temp']
         self.temp_fname_format = None
+        self.tpu_limit = tpu_limit
 
-        tpu_count = len(list_edge_tpus())
+        tpu_count = min(len(edgetpu.list_edge_tpus()), tpu_limit)
 
         if platform.system() == "Linux":
             for fn in temp_fname_formats:
@@ -139,9 +442,9 @@ class TPURunner(object):
     def _watchdog(self):
         self.watchdog_time = time.time()
         while not self.watchdog_shutdown:
-            if any(self.interpreters) and \
+            if self.pipe and \
                time.time() - self.watchdog_time > self.max_idle_secs_before_recycle*2:
-                 logging.warning("No work in {} seconds, watchdog shutting down TPU runners!".format(self.max_idle_secs_before_recycle*2))
+                 logging.warning("No work in {} seconds, watchdog shutting down TPUs.".format(self.max_idle_secs_before_recycle*2))
                  self.runner_lock.acquire(timeout=self.max_idle_secs_before_recycle)
                  self._delete()
                  self.runner_lock.release()
@@ -149,40 +452,6 @@ class TPURunner(object):
             time.sleep(self.watchdog_idle_secs)
 
         logging.debug("Watchdog caught shutdown in {}".format(threading.get_ident()))
-
-                    
-    def _post_service(self, r: pipeline.PipelinedModelRunner, q: queue.Queue):
-        """
-        A worker thread that loops to pull results from the pipelined model
-        runner and deliver them to the requesting thread's queue. This is the
-        main interface for receiving results from a pipeline runner.
-        
-        There are timeouts in the queues' usage here, but we don't expect them
-        to ever be blocked. The intention is so if anything starts going 'off
-        the rails' in regards to work synchronization, it blows up one of our
-        queues first instead of giving us a more difficult OOM or deadlock
-        condition.
-        
-        When a 'NOOP' is enqueued in the pipeline, it finishes its work and
-        shuts down. That condition is detected here and exits the thread.
-        """
-        while True:
-            # Get the next result from runner N
-            rs = r.pop()
-
-            # Alert the watchdog that there is activity. Down, boy.
-            self.watchdog_time = time.time()
-            
-            # Exit if the pipeline is done
-            if not rs:
-                logging.debug("Popped EOF in tid {}".format(threading.get_ident()))
-                return
-            logging.debug("Popped results in tid {}".format(threading.get_ident()))
-                
-            # Get the next receiving queue and deliver the results.
-            # Neither of these get() or put() operations should be blocking
-            # in the normal case.
-            q.get(timeout=self.max_idle_secs_before_recycle).put(rs, timeout=self.max_idle_secs_before_recycle)
 
 
     def _get_tpu_devices(self):
@@ -196,16 +465,21 @@ class TPURunner(object):
         Raises:
         RuntimeError: if not enough devices are available
         """
-        edge_tpus = list_edge_tpus()
+        edge_tpus = edgetpu.list_edge_tpus()
 
         num_pci_devices = sum(1 for device in edge_tpus if device['type'] == 'pci')
         logging.debug("{} PCIe TPUs detected".format(num_pci_devices))
 
-        return ['pci:%d' % i for i in range(min(len(edge_tpus), num_pci_devices))] + \
-               ['usb:%d' % i for i in range(max(0, len(edge_tpus) - num_pci_devices))]
+        tpu_l = ['pci:%d' % i for i in range(min(len(edge_tpus), num_pci_devices))] + \
+                ['usb:%d' % i for i in range(max(0, len(edge_tpus) - num_pci_devices))]
+
+        if self.tpu_limit > 0:
+            return tpu_l[:self.tpu_limit]
+        else:
+            return tpu_l
 
 
-    def _get_model_filenames(self, options: Options, tpu_list) -> list[str]:
+    def _get_model_filenames(self, options: Options, tpu_list: list) -> list:
         """
         Returns a list of filenames based on the list of available TPUs and 
         supplied model and segment filenames. If we don't have segment filenames
@@ -220,16 +494,16 @@ class TPURunner(object):
 
         # if TPU no-show then default is CPU
         self.device_type   = 'CPU'
-        self.device_count  = 1  # CPU. At this point we don't know if we have TPU
-        self.segment_count = 1  # Single CPU model file
+        device_count  = 1  # CPU. At this point we don't know if we have TPU
+        segment_count = 1  # Single CPU model file
         if not any(tpu_list):
             return []
 
-        self.device_type   = 'TPU'
+        self.device_type   = 'Multi-TPU'
 
         # If TPU found then default is single TPU model file (no segments)
-        self.device_count  = len(tpu_list)  # TPUs. We've at least found one
-        self.segment_count = 1              # Single TPU model name at this point
+        device_count  = len(tpu_list)  # TPUs. We've at least found one
+        segment_count = 1              # Single TPU model name at this point
         if not any(options.tpu_segments_lists):
             return [options.model_tpu_file]
             
@@ -239,16 +513,12 @@ class TPURunner(object):
             # Prioritize first match
             for fname_list in options.tpu_segments_lists:
                 segment_count = len(fname_list)
-                if segment_count <= self.device_count and \
-                   segment_count % self.device_count == 0:
-                    self.segment_count = segment_count
+                if segment_count <= device_count:
                     return fname_list
         else:
             # Only one list of segments; use it regardless of even match to TPU count
             segment_count = len(options.tpu_segments_lists)
-            if segment_count <= self.device_count:
-                self.segment_count = segment_count
-                self.device_count  = (self.device_count // segment_count) * segment_count
+            if segment_count <= device_count:
                 return options.tpu_segments_lists
 
         # Couldn't find a good fit, use single segment
@@ -256,38 +526,22 @@ class TPURunner(object):
 
 
     # Should be called while holding runner_lock (if called at run time)
-    def init_interpreters(self, options: Options) -> str:
+    def init_pipe(self, options: Options) -> tuple[str, str]:
         """
-        Initializes the interpreters with the TFLite models.
+        Initializes the pipe with the TFLite models.
         
-        Also loads and initializes the pipeline runners. To do this, it needs
+        To do this, it needs
         to figure out if we're using segmented pipelines, if we can load all
         the segments to the TPUs, and how to allocate them. For example, if
         we have three TPUs and request a model that contains two segments,
-        we will load the two segments into two TPUs. If we have four TPUs
-        and load the same model, we will create two pipeline runners with
-        two segments each.
-        
-        We also kick off the 'postmen' here that are threads responsible for
-        transferring output from the pipeline to queues held by each thread
-        requesting inference. These queues block until results are available
-        for the thread. The postmen and queues are necessary because otherwise
-        there would be no way of keeping track of which results align with
-        which incoming request.
-        
-        The postmen each have 'postboxes' that are queues that they deliver
-        results into. The next item in the postbox aligns with the next result
-        in the pipeline. The items in the postboxes are themselves queues. This
-        is because the thread requesting work is blocked waiting for a result
-        to be placed in each of these queues (it's the postman's responsibility
-        to make this transfer.) When the requesting thread's result is enqueued
-        it is unblocked and proceeds to process the results.
+        we will load the two segments into two TPUs.
         """
 
-        self.interpreters = []
-        self.runners      = []
+        error = ""
 
         tpu_list          = self._get_tpu_devices()
+        self.model_name   = options.model_name
+        self.model_size   = options.model_size
 
         # This will update self.device_count and self.segment_count
         tpu_model_files   = self._get_model_filenames(options, tpu_list)
@@ -295,131 +549,66 @@ class TPURunner(object):
         # Read labels
         self.labels       = read_label_file(options.label_file) if options.label_file else {}
 
-        # Initialize EdgeTPU interpreters.
-        self.device_type = "TPU"
-        for i in range(self.device_count):
-                    
-            # If we have a segmented file, alloc all segments into all TPUs, but 
-            # no more than that. For CPU there will only be a single file.
-            fname = tpu_model_files[i % len(tpu_model_files)]
+        # Initialize EdgeTPU pipe.
+        self.device_type = "Multi-TPU"
 
-            if os.path.exists(fname):
-                logging.debug(f"Loading: {fname}")
-            else:
-                # No TPU file. If we can't load one of the files, something's
-                # very wrong, so quit the whole thing
-                logging.error(f"TPU file {fname} doesn't exist")
-                self.interpreters = []
-                break
-            
+        try:
+            self.pipe = DynamicPipeline(tpu_list, tpu_model_files)
+        except TPUException as tpu_ex:
+            self.pipe = None
+            logging.warning(f"TPU Exception creating interpreter: {tpu_ex}")
+            error = "Failed to create interpreter (Coral issue)"
+        except FileNotFoundError:
+            self.pipe = None
+            logging.warning(f"Model file not found: {ex}")
+            error = "Model file not found. Please download the model if possible"
+        except Exception as ex:
+            self.pipe = None
+            logging.warning(f"Exception creating interpreter: {ex}")
+            error = "Unable to create the interpreter"
+
+        if not self.pipe:
+            logging.warning(f"No Coral TPUs found or able to be initialized. Using CPU.")
             try:
-                interpreter = make_interpreter(fname, device=tpu_list[i], delegate=None)
-                self.interpreters.append(interpreter)
-            except Exception as in_ex:
-                # If we fail to create even one of the interpreters then fail all. 
-                # TODO: An option here is to remove the failed TPU from the list
-                #       of TPUs and try the others. Maybe there's paired PCI cards
-                #       and a USB, and the USB is failing?
-                logging.error(f"Unable to create interpreter for TPU {tpu_list[i]}: {in_ex}")
-                self.interpreters = []
-                break
-            
-
-        if any(self.interpreters):
-            logging.debug(f"Loaded {len(self.interpreters)} TPUs")
-        else:          
-            # Fallback to CPU if no luck with TPUs
-            logging.info("No Coral TPUs found or able to be initialized. Using CPU.")
-            self.device_count  = 1
-            self.segment_count = 1
-            self.device_type   = "CPU"
-
-            try:
-                # First pass is to try the edgeTPU library to create the interpreter
-                # for the CPU file. Can't say I've ever had success with this
-                interpreter = make_interpreter(options.model_cpu_file, device="cpu", delegate=None)
-                self.interpreters = [interpreter]
+                # Try the edgeTPU library to create the interpreter for the CPU
+                # file. Can't say I've ever had success with this
+                self.pipe = DynamicPipeline(["cpu"], [options.model_cpu_file])
+                self.device_type = "CPU"
             except Exception as ex:
                 logging.warning(f"Unable to create interpreter for CPU using edgeTPU library: {ex}")
-                self.interpreters  = []
-                self.device_count  = 0
-                self.segment_count = 0
-                self.device_type   = None
-                """
-                # We could fall back to plain TF-Lite but this class is for TPU
-                # processing, not CPU. We will just return empty handed and let
-                # the caller fallback to whatever CPU solution they have handy.
-                try:
-                    import tflite_runtime.interpreter as tflite
-                    interpreter = tflite.Interpreter(options.model_cpu_file, None)
-                    self.interpreters = [interpreter]
-                except Exception as ex:
-                    logging.warning("Error creating interpreter: " + str(ex))
-                    self.interpreters = []
-                """
+                self.device_type = None
+                error = error + ". Unable to create interpreter for CPU using edgeTPU library"
+                # Raising this exception kills everything dead. We can still fallback, so don't do this
+                # raise
 
-        # Womp womp
-        if not any(self.interpreters):
-            return self.device_type
+        if self.device_type:
+            self.pipe_created = datetime.now()
 
-        # Initialize interpreters
-        for i in self.interpreters:
-            i.allocate_tensors()
+            self.input_details  = self.pipe.interpreters[0][0].input_details[0]
+            self.output_details = self.pipe.interpreters[-1][0].output_details[0]
 
-        self.interpreters_created = datetime.now()
+            # Print debug
+            logging.info("{} device & segment counts: {} & {}"
+                        .format(self.device_type,
+                                len(self.pipe.tpu_list),
+                                len(self.pipe.fname_list)))
+            logging.debug(f"Input details: {self.input_details}")
+            logging.debug(f"Output details: {self.output_details}")
 
-        # Initialize runners/pipelines
-        for i in range(0, self.device_count, self.segment_count):
-            interpreter = self.interpreters[i:i+self.segment_count]
-
-            # NOTE: The PipelinedModuleRunner class calls 
-            #       _pywrap_coral.PipelinedModelRunnerWrapper which requires an
-            #       interpreter created by the edgeTPU library, not the plain
-            #       TFLite library
-            runner      = pipeline.PipelinedModelRunner(interpreter)
-            runner.set_input_queue_size(self.max_pipeline_queue_length)
-            runner.set_output_queue_size(self.max_pipeline_queue_length)
-            self.runners.append(runner)
-
-        # Sanity check
-        assert len(self.runners)*self.segment_count == self.device_count, "No. runners MUST equal no. devices"
-
-        # Setup postal queue
-        self.postboxes = []
-        self.postmen   = []
-
-        for r in self.runners:
-            # Start the queue. Set a size limit to keep the queue from going
-            # off the rails. An OOM condition will bring everything else down.
-            q = queue.Queue(maxsize=self.max_pipeline_queue_length)
-            self.postboxes.append(q)
-
-            # Start the receiving worker
-            t = threading.Thread(target=self._post_service, args=[r, q])
-            t.start()
-            self.postmen.append(t)
-
-        # Get input and output tensors.
-        self.input_details  = self.interpreters[0].get_input_details()[0]
-        self.output_details = self.interpreters[-1].get_output_details()[0]
-
-        # Print debug
-        logging.debug("{}, device & segment counts: {} & {}\n"
-                      .format(self.device_type,
-                              self.device_count,
-                              self.segment_count))
-        logging.debug("Interpreter count: {}\n".format(len(self.interpreters)))
-        logging.debug(f"Input details: {self.input_details}\n")
-        logging.debug(f"Output details: {self.output_details}\n")
-
-        return self.device_type
+        return (self.device_type, error)
 
 
-    def _periodic_check(self, options: Options):
+    def _periodic_check(self, options: Options, force: bool = False,
+                        check_temp: bool = True, check_refresh: bool = True) -> tuple[bool, str]:
         """
         Run a periodic check to ensure the temperatures are good and we don't
         need to (re)initialize the interpreters/workers/pipelines. The system
         is setup to refresh the TF interpreters once an hour.
+
+        @param options       - options for creating interpreters
+        @param force         - force the recreation of interpreters
+        @param check_temp    - perform a temperature check (PCIe only)
+        @param check_refresh - check for, and refresh, old interpreters
         
         I suspect that many of the problems reported with the use of the Coral
         TPUs were due to overheating chips. There were a few comments along the
@@ -432,67 +621,74 @@ class TPURunner(object):
         https://coral.ai/docs/m2-dual-edgetpu/datasheet/
         https://github.com/magic-blue-smoke/Dual-Edge-TPU-Adapter/issues/7
         """
+        error  = None
         now_ts = datetime.now()
         
-        # Force if we've changed the model
-        force = False
-
-        if not self.runners:
-            logging.debug("No runners found. Recreating.")
+        if not self.pipe:
+            logging.debug("No pipe found. Recreating.")
             force = True
 
+        # Force if we've changed the model
         if options.model_name != self.model_name or \
            options.model_size != self.model_size:
-            self.model_name = options.model_name
-            self.model_size = options.model_size
             logging.debug("Model change detected. Forcing model reload.")
             force = True
 
         # Check to make sure we aren't checking too often
-        if any(self.interpreters) and self.last_check_timer != None and \
-           not force and (now_ts - self.last_check_timer).total_seconds() < 10:
-            return True
-        
-        self.last_check_timer = now_ts
+        if self.pipe and self.last_check_time != None and \
+           not force and (now_ts - self.last_check_time).total_seconds() < 10:
+            return True, None
+
+        self.last_check_time = now_ts
         
         # Check temperatures
-        if self.temp_fname_format != None:
-            msg = "TPU {} is {}C and will likely be throttled"
-            temp_arr = []
-            for i in range(len(self.interpreters)):
-                if os.path.exists(self.temp_fname_format.format(i)):
-                    with open(self.temp_fname_format.format(i), "r") as fp:
-                        # Convert from millidegree C to degree C
-                        temp = int(fp.read()) // 1000
-                        temp_arr.append(temp)            
-                        if self.warn_temperature_thresh_C <= temp:
-                            logging.warning(msg.format(i, temp))
-            if any(temp_arr):
-                logging.debug("Temperatures: {} avg; {} max; {} total".format(
-                                                sum(temp_arr) // len(temp_arr),
-                                                max(temp_arr),
-                                                len(temp_arr)))
-            else:
-                logging.warning("Unable to find temperatures!")
+        if check_temp:
+            if self.temp_fname_format != None and self.pipe:
+                msg = "TPU {} is {}C and will likely be throttled"
+                temp_arr = []
+                for i in range(len(self.pipe.tpu_list)):
+                    if os.path.exists(self.temp_fname_format.format(i)):
+                        with open(self.temp_fname_format.format(i), "r") as fp:
+                            # Convert from millidegree C to degree C
+                            temp = int(fp.read()) // 1000
+                            temp_arr.append(temp)            
+                            if self.warn_temperature_thresh_C <= temp:
+                                logging.warning(msg.format(i, temp))
+                if any(temp_arr):
+                    logging.debug("Temperatures: {} avg; {} max; {} total".format(
+                                                    sum(temp_arr) // len(temp_arr),
+                                                    max(temp_arr),
+                                                    len(temp_arr)))
+                else:
+                    logging.warning("Unable to find temperatures!")
 
-        # Once an hour, refresh the interpreters
-        if any(self.interpreters):
-            current_age_sec = (now_ts - self.interpreters_created).total_seconds()
-            if force or current_age_sec > self.interpreter_lifespan_secs:
-                logging.info("Refreshing the Tensorflow Interpreters")
+        # Once an hour, refresh the pipe
+        if (force or check_refresh) and self.pipe:
+            current_age_sec = (now_ts - self.pipe_created).total_seconds()
+            if force or current_age_sec > self.pipe_lifespan_secs:
+                logging.info("Refreshing the TFLite Interpreters")
 
                 # Close all existing work before destroying...
-                with self.runner_lock:
-                    self._delete()
-                    # Re-init while we still have the lock
-                    self.init_interpreters(options)
+                self._delete()
+
+                # Re-init while we still have the lock
+                try:
+                    (device, error) = self.init_pipe(options)
+                except:
+                    self.pipe = None
 
         # (Re)start them if needed
-        if not any(self.interpreters):
-            with self.runner_lock:
-                self.init_interpreters(options)
+        if not self.pipe:
+            logging.info("Initializing the TFLite Interpreters")
+            try:
+                (device, error) = self.init_pipe(options)
+            except:
+                self.pipe = None
 
-        return any(self.interpreters)
+        if self.pipe:
+            self.pipe.balance_queues()
+
+        return (bool(self.pipe), error)
 
 
     def __del__(self):
@@ -503,54 +699,17 @@ class TPURunner(object):
 
 
     def _delete(self):
-        """
-        Close and delete each of the pipelines and interpreters while flushing
-        existing work.
-        """
-        # Close each of the pipelines
-        if self.runners:
-            for i in range(len(self.runners)):
-                self.runners[i].push({})
-
-        # The above should trigger all workers to end. If we are deleting in an
-        # off-the-rails context, it's likely that something will have trouble
-        # closing out its work.
-        if self.postmen:
-            for t in self.postmen:
-                logging.debug("Joining thread {} for TPURunner._delete()".format(t.native_id))
-                t.join(timeout=self.max_idle_secs_before_recycle)
-                if t.is_alive():
-                    logging.warning("Thread didn't join!")
-
-        if self.runners:
-            for i in range(len(self.runners)):
-                self.runners[i] = None
-
-        # Delete
-        self.postmen        = None
-        self.postboxes      = None
-        self.runners        = None
-        self.interpreters   = []
+        # Close pipeline
+        if self.pipe:
+            self.pipe.delete()
+            self.pipe = None
+        gc.collect()
 
 
-    def interpreters_ok(self, options:Options) -> bool:
-        
+    def pipeline_ok(self) -> bool:
         """ Check we have valid interpreters """
-        if any(self.interpreters):
+        if self.pipe and any(self.pipe.interpreters):
             return True
-        
-
-        # Force if we've changed the model
-        force = options.model_name != self.model_name or \
-                options.model_size != self.model_size
-
-        # Check to make sure we aren't checking too often
-        now_ts = datetime.now()
-        if force \
-           or not self.last_check_interpreter_creation_timer \
-           or (now_ts - self.last_check_interpreter_creation_timer).total_seconds() > 120:
-            self.last_check_interpreter_creation_timer = now_ts
-            return self._periodic_check(options)
         
         return False
 
@@ -558,7 +717,20 @@ class TPURunner(object):
     def process_image(self,
                       options:Options,
                       image: Image,
-                      score_threshold: float) -> (list[detect.Object], int):
+                      score_threshold: float) -> (list, int, str):
+        while True:
+            try:
+                return self._process_image(options, image, score_threshold)
+            except queue.Empty:
+                logging.warning("Queue stalled; refreshing interpreters.")
+                with self.runner_lock:
+                    self._periodic_check(options, force=True)
+
+
+    def _process_image(self,
+                       options:Options,
+                       image: Image,
+                       score_threshold: float) -> (list, int, str):
         """
         Execute all the default image processing operations.
         
@@ -573,15 +745,9 @@ class TPURunner(object):
         - Return inference timing.
         """
 
-        # Recreate the interpreters if they are stale, but also check if we can
-        # and have created interpreters. It's not always successful...
-        if not self._periodic_check(options):
-            return None, 0
-
         all_objects = []
         all_queues  = []
 
-        name = self.input_details['name']
         _, m_height, m_width, _ = self.input_details['shape']
         i_width, i_height = image.size
         
@@ -589,19 +755,16 @@ class TPURunner(object):
         for rs_image, rs_loc in self._get_tiles(options, image):
             rs_queue = queue.Queue(maxsize=1)
             all_queues.append((rs_queue, rs_loc))
-            logging.debug("Enqueuing tile in pipeline {}".format(self.next_runner_idx))
+            logging.debug("Enqueuing tile in pipeline")
 
             with self.runner_lock:
-                # Push the resampled image and where to put the results.
-                # There shouldn't be any wait time to put() into the queue, so
-                # if we are blocked here, something has gone off the rails.
-                self.runners[self.next_runner_idx].push({name: rs_image})
-                self.postboxes[self.next_runner_idx].put(rs_queue,
-                                                         timeout=self.max_idle_secs_before_recycle)
+                # Recreate the pipe if it is stale, but also check if we can
+                # and have created the pipe. It's not always successful...
+                (pipe_ok, error) = self._periodic_check(options)
+                if not pipe_ok:
+                    return None, 0, error
 
-                # Increment the next runner to use
-                self.next_runner_idx = \
-                                (1 + self.next_runner_idx) % len(self.runners)
+            self.pipe.enqueue(rs_image, rs_queue)   
 
         # Wait for the results here
         tot_inference_time = 0
@@ -643,13 +806,12 @@ class TPURunner(object):
 
         # Remove duplicate objects
         unique_indexes = self._non_max_suppression(all_objects, options.iou_threshold)
+        self.watchdog_time = time.time()
         
-        return ([all_objects[i] for i in unique_indexes], tot_inference_time)
+        return ([all_objects[i] for i in unique_indexes], tot_inference_time, None)
         
         
-    def _decode_result(self, result, score_threshold: float):
-        
-        result_list = list(result.values())
+    def _decode_result(self, result_list, score_threshold: float):
         if len(result_list) == 4:
             # Easy case with SSD MobileNet & EfficientDet_Lite
             if result_list[3].size == 1:
@@ -671,8 +833,8 @@ class TPURunner(object):
         for dict_values in result_list:
             j, k = dict_values[0].shape
 
-                    # YOLOv8 is flipped for some reason. We will use that to decide if we're
-                    # using a v8 or v5-based network.
+            # YOLOv8 is flipped for some reason. We will use that to decide if we're
+            # using a v8 or v5-based network.
             if j < k:
                 rs = self._yolov8_non_max_suppression(
                     (dict_values.astype('float32') - output_zero) * output_scale,
@@ -704,7 +866,7 @@ class TPURunner(object):
     def _nms(self, dets, scores, thresh):
         '''
         dets is a numpy array : num_dets, 4
-        scores ia  nump array : num_dets,
+        scores is a numpy array : num_dets,
         '''
 
         x1 = dets[:, 0]
@@ -717,7 +879,7 @@ class TPURunner(object):
         
         keep = []
         while order.size > 0:
-            i = order[0] # pick maxmum iou box
+            i = order[0] # pick maximum iou box
             other_box_ids = order[1:]
             keep.append(i)
             
@@ -727,7 +889,7 @@ class TPURunner(object):
             yy2 = np.minimum(y2[i], y2[other_box_ids])
             
             w = np.maximum(0.0, xx2 - xx1 + 1e-9) # maximum width
-            h = np.maximum(0.0, yy2 - yy1 + 1e-9) # maxiumum height
+            h = np.maximum(0.0, yy2 - yy1 + 1e-9) # maximum height
             inter = w * h
               
             ovr = inter / (areas[i] + areas[other_box_ids] - inter)
@@ -742,8 +904,6 @@ class TPURunner(object):
                                     labels=(), max_det=3000):
 
         nc = prediction.shape[1] - 4  # number of classes
-        bs = prediction.shape[0]  # batch size
-        nm = prediction.shape[1] - nc - 4
         mi = 4 + nc  # mask start index
 
         xc = np.amax(prediction[:, 4:mi], 1) > conf_thres  # candidates
@@ -755,7 +915,7 @@ class TPURunner(object):
         assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
 
         # Settings
-        min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
+        _, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
         max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
         time_limit = 10.0  # seconds to quit after
 
@@ -811,7 +971,6 @@ class TPURunner(object):
         assert 0 <= iou_thres <= 1, f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
 
         bs = prediction.shape[0]  # batch size
-        nc = prediction.shape[2] - 5  # number of classes
         xc = prediction[..., 4] > conf_thres  # candidates
 
         # Settings
@@ -821,7 +980,6 @@ class TPURunner(object):
         time_limit = 0.5 + 0.05 * bs  # seconds to quit after
 
         t = time.time()
-        mi = 5 + nc  # mask start index
         output = [np.zeros((0, 6))] * bs
         for xi, x in enumerate(prediction):  # image index, image inference
             # Apply constraints
@@ -836,7 +994,6 @@ class TPURunner(object):
 
             # Box/Mask
             box = self._xywh2xyxy(x[:, :4])  # center_x, center_y, width, height) to (x1, y1, x2, y2)
-            mask = x[:, mi:]  # zero columns if no masks
 
             # Detections matrix nx6 (xyxy, conf, cls)
             conf = np.amax(x[:, 5:], axis=1, keepdims=True)
@@ -858,13 +1015,13 @@ class TPURunner(object):
 
             output[xi] = x[i]
             if (time.time() - t) > time_limit:
-                LOGGER.warning(f"WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded")
+                logging.warning(f"WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded")
                 break  # time limit exceeded
 
         return output
 
         
-    def _non_max_suppression(self, objects, threshold):
+    def _non_max_suppression(self, objects: list, threshold: float) -> list:
         """Returns a list of indexes of objects passing the NMS.
 
         Args:
@@ -925,8 +1082,8 @@ class TPURunner(object):
     def _resize_and_chop_tiles(self,
                                options: Options,
                                image: Image,
-                               m_width,
-                               m_height):
+                               m_width: int,
+                               m_height: int):
         """
         Run the image resizing in an independent process pool.
         
@@ -958,7 +1115,27 @@ class TPURunner(object):
         # Resample image to this size
         resamp_x = int(m_width  + (tiles_x - 1) * (m_width  - options.tile_overlap))
         resamp_y = int(m_height + (tiles_y - 1) * (m_height - options.tile_overlap))
+
         logging.debug("Resizing to {} x {} for tiling".format(resamp_x, resamp_y))
+
+        # From: https://uploadcare.com/blog/fast-import-of-pillow-images-to-numpy-opencv-arrays/
+        def to_numpy(im, shape, typestr):
+            # unpack data
+            e = Image._getencoder(im.mode, 'raw', im.mode)
+            e.setimage(im.im)
+
+            # NumPy buffer for the result
+            data = np.empty(shape, dtype=typestr)
+            mem = data.data.cast('B', (data.data.nbytes,))
+
+            bufsize, s, offset = 65536, 0, 0
+            while not s:
+                l, s, d = e.encode(bufsize)
+                mem[offset:offset + len(d)] = d
+                offset += len(d)
+            if s < 0:
+                raise RuntimeError("encoder error %d in tobytes" % s)
+            return data
         
         # It'd be useful to print this once at the beginning of the run
         key = "{} {}".format(*image.size)
@@ -968,27 +1145,26 @@ class TPURunner(object):
             self.printed_shape_map[key] = True
 
         # Chop & resize image piece
-        resamp_img = image.convert('RGB').resize((resamp_x, resamp_y),
-                                                 Image.LANCZOS)
-
-        input_zero = self.input_details['quantization'][1]
-        input_scale = self.input_details['quantization'][0]
+        resamp_img = image.convert('RGB')
+        resamp_img.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
 
         # Do chunking
         tiles = []
         for x_off in range(0, resamp_x - options.tile_overlap, m_width - options.tile_overlap):
             for y_off in range(0, resamp_y - options.tile_overlap, m_height - options.tile_overlap):
-                cropped_arr = np.asarray(resamp_img.crop((x_off,
-                                                          y_off,
-                                                          x_off + m_width,
-                                                          y_off + m_height)), dtype=np.float32)
+                cropped_arr = to_numpy(resamp_img.crop((x_off,
+                                                        y_off,
+                                                        x_off + m_width,
+                                                        y_off + m_height)), self.input_details['shape'][1:], np.uint8)
+
                 logging.debug("Resampled image tile {} at offset {}, {}".format(cropped_arr.shape, x_off, y_off))
+                resamp_info = (x_off, y_off, i_width/resamp_img.width, i_height/resamp_img.height)
 
                 # Normalize from 8-bit image to whatever the input is
-                cropped_arr = (cropped_arr/(256.0 * input_scale)) + input_zero
-
-                tiles.append((cropped_arr.astype(self.input_details['dtype']),
-                              (x_off, y_off, i_width/resamp_x, i_height/resamp_y)))
+                if self.input_details['dtype'] == np.int8:
+                    tiles.append(((cropped_arr - 128).astype(np.int8), resamp_info))
+                else:
+                    tiles.append((cropped_arr, resamp_info))
         return tiles
 
 

@@ -17,7 +17,11 @@ namespace CodeProject.AI.SDK
     /// </summary>
     public abstract class ModuleWorkerBase : BackgroundService
     {
-        private readonly string[] _doNotLogCommands = { "list-custom", "status" };
+        private readonly string[] _doNotLogCommands = { 
+            "list-custom", 
+            "get_module_status", "status", "get_status", // status is deprecated alias
+            "get_command_status"
+        };
 
         private readonly TimeSpan      _status_delay = TimeSpan.FromSeconds(2);
 
@@ -38,6 +42,11 @@ namespace CodeProject.AI.SDK
         private int  _successfulInferences;
         private long _totalSuccessInferenceMs;
         private int  _failedInferences;
+
+        private Task<ModuleResponse>? _longRunningTask;
+        private string? _longRunningCommandId;
+        private ModuleResponse? _lastLongRunningOutput;
+        private CancellationTokenSource? _longProcessCancellationTokenSource;
 
         /// <summary>
         /// Gets or sets the name of this Module
@@ -129,7 +138,7 @@ namespace CodeProject.AI.SDK
         /// <summary>
         /// Called before the main processing loops are started
         /// </summary>
-        protected virtual void InitModule()
+        protected virtual void Initialize()
         {
         }
 
@@ -138,26 +147,43 @@ namespace CodeProject.AI.SDK
         /// </summary>
         /// <param name="request">The Request data.</param>
         /// <returns>An object to serialize back to the server.</returns>
-        protected abstract ModuleResponse ProcessRequest(BackendRequest request);
+        protected abstract ModuleResponse Process(BackendRequest request);
 
         /// <summary>
         /// Returns an object containing current stats for this module
         /// </summary>
         /// <returns>An object</returns>
-        protected virtual dynamic? Status()
+        protected virtual ExpandoObject? ModuleStatus()
         {
-            dynamic status = new ExpandoObject();
-            status.inferenceDevice      = InferenceDevice;
-            status.inferenceLibrary     = InferenceLibrary;
-            status.canUseGPU            = CanUseGPU;
-
-            status.successfulInferences = _successfulInferences;
-            status.failedInferences     = _failedInferences;
-            status.numInferences        = _successfulInferences + _failedInferences;
-            status.averageInferenceMs   = _successfulInferences > 0 
-                                        ? _totalSuccessInferenceMs / _successfulInferences : 0;
+            ExpandoObject status = new {
+                InferenceDevice      = InferenceDevice,
+                inferenceLibrary     = InferenceLibrary,
+                canUseGPU            = CanUseGPU,
+                
+                successfulInferences = _successfulInferences,
+                failedInferences     = _failedInferences,
+                numInferences        = _successfulInferences + _failedInferences,
+                averageInferenceMs   = _successfulInferences > 0 
+                                        ? _totalSuccessInferenceMs / _successfulInferences : 0
+            }.ToExpando();
 
             return status;
+        }
+
+        /// <summary>
+        /// Returns the status of a long running command
+        /// </summary>
+        /// <returns>A ExpandoObject object</returns>
+        protected virtual ExpandoObject? CommandStatus()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Called when this module is about to be cancelled
+        /// </summary>
+        protected virtual void CancelCommandTask()
+        {
         }
 
         /// <summary>
@@ -165,8 +191,11 @@ namespace CodeProject.AI.SDK
         /// and failed calls as well as average inference time.
         /// </summary>
         /// <param name="response"></param>
-        protected virtual void UpdateStatistics(ModuleResponse response)
+        protected virtual void UpdateStatistics(ModuleResponse? response)
         {
+            if (response is null)
+                return;
+
             if (response.Success)
             {
                 _successfulInferences++;
@@ -196,13 +225,13 @@ namespace CodeProject.AI.SDK
 
 #endregion CodeProject.AI Module callbacks =========================================================
 
-        private async Task StatusUpdateLoop(CancellationToken token)
+        private async Task ModuleStatusUpdateLoop(CancellationToken token)
         {
             await Task.Yield();
 
             while (!token.IsCancellationRequested && !_cancelled)
             {
-                await _apiClient.SendStatus(_moduleId!, Status(), token).ConfigureAwait(false);
+                await _apiClient.SendModuleStatus(_moduleId!, ModuleStatus(), token).ConfigureAwait(false);
                 await Task.Delay(_status_delay, token).ConfigureAwait(false);
             }
         }
@@ -242,27 +271,95 @@ namespace CodeProject.AI.SDK
                         return;
                     }
 
-                    Stopwatch stopWatch     = Stopwatch.StartNew();
-                    ModuleResponse response = ProcessRequest(request);
+                    ExpandoObject response;
+
+                    Stopwatch stopWatch = Stopwatch.StartNew();
+                    if (request.payload?.command?.EqualsIgnoreCase("get_module_status") == true)
+                    {
+                        response = GetModuleStatus(request);
+                    }
+                    else if (request.payload?.command?.EqualsIgnoreCase("get_command_status") == true)
+                    {
+                        response = await GetCommandStatus(request).ConfigureAwait(false);
+                    }
+                    else if (request.payload?.command?.EqualsIgnoreCase("cancel_command") == true)
+                    {
+                        response = CancelRequest(request).ToExpando();
+                    }
+                    else
+                    {
+                        ModuleResponse moduleResponse = Process(request);
+                        if (!_doNotLogCommands.Contains(request.reqtype))
+                            UpdateStatistics(moduleResponse);
+
+                        if (moduleResponse.LongProcessMethod is not null)
+                        {
+                            if (_longRunningTask is not null && !_longRunningTask.IsCompleted)
+                            {
+                                response = new { 
+                                    Success   = false,
+                                    CommandId = _longRunningCommandId,
+                                    Error     = "A long running command is already in progress"
+                                }.ToExpando();
+                            }
+                            else
+                            {
+                                // We have a previous long running process that is now done, but we
+                                // have not stored (nor returned) the result. We can read the result
+                                // now, but we have to start a new process, so...???
+                                // if (_longRunningTask is not null && _longRunningTask.IsCompleted &&
+                                //     _lastLongRunningLastOutput is null)
+                                //    _lastLongRunningLastOutput = ...
+
+                                // Store request Id as the command Id for later, reset the last result
+                                string? commandId = request.reqid;
+
+                                _longRunningCommandId  = commandId;
+                                _lastLongRunningOutput = null;
+                                _longRunningTask       = null;
+
+                                // Start the long running process
+                                Console.WriteLine("Starting long process with command ID " + commandId);
+
+                                _longProcessCancellationTokenSource = new CancellationTokenSource();
+                                CancellationToken cancellationToken = _longProcessCancellationTokenSource.Token;
+                                _longRunningTask = Task.Run(() => moduleResponse.LongProcessMethod(request, cancellationToken),
+                                                            cancellationToken);
+
+                                response = new { 
+                                    Success       = true,
+                                    CommandId     = commandId,
+                                    Message       = "Command is running in the background",
+                                    CommandStatus = "running"
+                                }.ToExpando();
+                            }
+                        }
+                        else
+                            response = moduleResponse.ToExpando();
+                    }
                     stopWatch.Stop();
 
-                    if (!_doNotLogCommands.Contains(request.reqtype))
-                        UpdateStatistics(response);
-
-                    long processMs      = stopWatch.ElapsedMilliseconds;
-                    response.ModuleName = ModuleName;
-                    response.ModuleId   = _moduleId;
-                    response.ProcessMs  = processMs;
-                    response.Command    = request.payload?.command ?? string.Empty;
-                    response.RequestId  = request.reqid;
-
-                    HttpContent content = JsonContent.Create(response, response.GetType());
+                    // Fill in system-added values for the response
+                    response = response.Merge(new {
+                        ModuleName = ModuleName,
+                        ModuleId   = _moduleId,
+                        ProcessMs  = stopWatch.ElapsedMilliseconds,
+                        Command    = request.payload?.command ?? string.Empty,
+                        RequestId  = request.reqid
+                    }.ToExpando());
 
                     // Slightly faster as we don't wait for the request to complete before moving
                     // on to the next.
                     if (responseTask is not null)
                         await responseTask.ConfigureAwait(false);
 
+                    /* This doesn't actually work
+                    var options = new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+                    HttpContent content = JsonContent.Create(response, response.GetType(), options: options);
+                    */
+
+                    response.ToCamelCase();
+                    HttpContent content = JsonContent.Create(response, response.GetType());
                     responseTask = _apiClient.SendResponse(request.reqid, _moduleId!, content, token);
                 }
                 catch (TaskCanceledException) when (_cancelled)
@@ -298,6 +395,121 @@ namespace CodeProject.AI.SDK
             // await StopAsync(token).ConfigureAwait(false);
         }
 
+        protected ExpandoObject GetModuleStatus(BackendRequest request)
+        {
+            return new { Success = false }.ToExpando();
+        }
+
+        protected async Task<ExpandoObject> GetCommandStatus(BackendRequest request)
+        {
+            string? commandId = request.payload?.GetValue("commandId");
+
+            if (_longRunningTask is null)
+                return new { Success = false, Error = "There is no current command running" }.ToExpando();
+
+            if (string.IsNullOrWhiteSpace(commandId))
+                return new { Success = false, Error = "No command ID provided" }.ToExpando();
+
+            if (string.IsNullOrWhiteSpace(_longRunningCommandId))
+                return new { Success = false, Error = "No command is currently in progress" }.ToExpando();
+
+            if (!commandId.EqualsIgnoreCase(_longRunningCommandId))
+                return new { Success = false, Error = $"The command {_longRunningCommandId} does not exist" }.ToExpando();
+
+            if (_longRunningTask.IsCompleted)
+            {
+                // Get the output, but get it only once
+                if (_lastLongRunningOutput is null)
+                {
+                    try
+                    {
+                        _lastLongRunningOutput = await _longRunningTask;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine($"{nameof(OperationCanceledException)} thrown");
+                        _lastLongRunningOutput = new ModuleErrorResponse("The long operation was cancelled");
+                    }
+                    finally
+                    {
+                        _longProcessCancellationTokenSource?.Dispose();
+                        _longProcessCancellationTokenSource = null;
+                    }
+                }
+
+                var completedStatus = new {
+                    Success       = true,
+                    Message       = "The command has completed",
+                    CommandId     = commandId,
+                    CommandStatus = "completed",
+                    Result        = _lastLongRunningOutput
+                }.ToExpando();
+
+                return completedStatus.Merge(_lastLongRunningOutput.ToExpando());
+            }
+
+            // Finally, we have a command in progress, so return the intermediate status
+            ExpandoObject runningStatus = new {
+                Success       = true,
+                Message       = "The command is still in progress",
+                CommandId     = commandId,
+                CommandStatus = "running"
+            }.ToExpando();
+            ExpandoObject? commandStatus = CommandStatus();
+
+            var status = runningStatus.Merge(commandStatus);
+            return status;
+        }
+
+        protected ModuleResponse CancelRequest(BackendRequest request)
+        {
+            string? commandId = request.payload.GetValue("commandId");
+            if (string.IsNullOrWhiteSpace(commandId))
+                return new ModuleErrorResponse("No command ID provided");
+
+            if (string.IsNullOrWhiteSpace(_longRunningCommandId))
+                return new ModuleErrorResponse("No long running command is currently in progress");
+
+            if (!commandId.EqualsIgnoreCase(_longRunningCommandId))
+                return new ModuleErrorResponse("The command ID provided does not match the current long running command");
+
+            if (_longRunningTask is null)
+                return new ModuleErrorResponse("The long running command task has been lost");
+        
+            // Call the module's override method. This is where the module author can do whatever
+            // they need to do to gracefully shutdown the long running process.
+            CancelCommandTask();
+
+            // In the Python implementation we have a 'force_shutdown' var that, if set, will instruct
+            // the calling code to forcibly shutdown the long process on cancel in case the 
+            // 'CancelCommandTask' call didn't result in the long process actually shutting down. We
+            // can't safely do that here. Instead we use the usual cancellation tokens and rely on 
+            // the long process itself to shutdown as required
+            _longProcessCancellationTokenSource?.Cancel();
+
+            // NOTE: At this point the long running task may still be running! 
+            if (_longRunningTask.IsCompleted)
+            {
+                _longRunningCommandId = null;
+                _longRunningTask      = null;
+            }
+
+            var output = new ModuleLongProcessCancelResponse()
+            {
+                Success         = true,
+                Message         =  "The command has been cancelled",
+                CommandId       = request.reqid,
+                CommandStatus   = "Cancelled",
+
+                ModuleId        = _moduleId,
+                ModuleName      = ModuleName,
+                Command         = request.payload.command,
+                RequestId       = request.reqid
+            };
+
+            return output;
+        }
+
 #region Service Worker Start/Stop/Cleanup overrides ================================================
 
         /// <summary>
@@ -325,7 +537,7 @@ namespace CodeProject.AI.SDK
 
             _apiClient.LogToServer($"{ModuleName} module started.", $"{ModuleName}",
                                    LogLevel.Information, string.Empty);
-            InitModule();
+            Initialize();
 
             if (_performSelfTest)
             {
@@ -341,7 +553,7 @@ namespace CodeProject.AI.SDK
                 for (int i = 0; i < _parallelism; i++)
                     tasks.Add(ProcessQueue(token, i));
 
-                tasks.Add(StatusUpdateLoop(token));
+                tasks.Add(ModuleStatusUpdateLoop(token));
 
                 await Task.WhenAll(tasks).ConfigureAwait(false);
 
@@ -362,6 +574,7 @@ namespace CodeProject.AI.SDK
                                    LogLevel.Information, string.Empty);
 
             _cancellationTokenSource.Cancel();
+            _longProcessCancellationTokenSource?.Cancel();
 
             await base.StopAsync(token).ConfigureAwait(false);
         }
@@ -372,6 +585,8 @@ namespace CodeProject.AI.SDK
         public override void Dispose()
         {
             _cancellationTokenSource?.Dispose();
+            _longProcessCancellationTokenSource?.Dispose();
+
             base.Dispose();
             GC.SuppressFinalize(this);
         }

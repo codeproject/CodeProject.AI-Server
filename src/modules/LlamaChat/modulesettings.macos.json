@@ -1,0 +1,9 @@
+{
+  "Modules": {
+    "LlamaChat": {
+      "LaunchSettings": {
+        "Runtime": "python3.10"
+      }
+    }
+  }
+}

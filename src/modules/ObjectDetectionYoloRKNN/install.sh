@@ -23,7 +23,7 @@ fi
 # We need to work around this - except this lib is tied hard to the OS. Most likely
 # solution is we use the standard FastDeploy libs for non-RockNPU hardware
 
-if [ "${systemName}" != "Orange Pi" ]; then
+if [ "${edgeDevice}" != "Orange Pi" ]; then
     # writeLine "ObjectDetection (Fast Deploy RKNN) can only be installed on Orange Pi devices" "$color_error"
     module_install_errors="Unable to install on non-Orange Pi hardware."
 else

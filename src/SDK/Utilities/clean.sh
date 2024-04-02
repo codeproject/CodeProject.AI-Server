@@ -175,6 +175,8 @@ pythonModules=( "ALPR" "ALPR"-RKNN "BackgroundRemover" "Cartooniser" "FaceProces
                 "ObjectDetectionCoral" "ObjectDetectionYOLOv5-3.1" "ObjectDetectionYOLOv5-6.2"    \
                 "ObjectDetectionYOLOv8" "ObjectDetectionYoloRKNN" "TrainingObjectDetectionYOLOv5" \
                 "OCR" "SceneClassifier" "SoundClassifierTF" "SuperResolution" "TextSummary")
+dotNetDemoModules=( "DotNetLongProcess" "DotNetSimple" )
+pythonDemoModules=( "PythonLongProcess" "PythonSimple" )
 
 
 if [ "$1" = "" ]; then
@@ -253,8 +255,14 @@ if [ "$cleanBuild" = true ]; then
     do
         removeDir "${rootDir}/src/modules/${name}/bin/"
         removeDir "${rootDir}/src/modules/${name}/obj/"
+        rm "${rootDir}/src/modules/${name}/${name}-*"
     done
-    rm "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/ObjectDetectionYOLOv5Net-*"
+    for name in "${dotNetDemoModules[@]}"
+    do
+        removeDir "${rootDir}/src/modules/${name}/bin/"
+        removeDir "${rootDir}/src/modules/${name}/obj/"
+        rm "${rootDir}/src/modules/${name}/${name}-*"
+    done
 
     cleanSubDirs "${rootDir}/Installers/Windows" "bin/Debug/"
     cleanSubDirs "${rootDir}/Installers/Windows" "bin/Release/"
@@ -269,10 +277,10 @@ if [ "$cleanBuild" = true ]; then
     rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json"
     rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.xml"
 
-    cleanSubDirs "${rootDir}/demos"              "bin/Debug/"
-    cleanSubDirs "${rootDir}/demos"              "bin/Release/"
-    cleanSubDirs "${rootDir}/demos"              "obj/Debug/"
-    cleanSubDirs "${rootDir}/demos"              "obj/Release/"
+    cleanSubDirs "${rootDir}/demos/clients"      "bin/Debug/"
+    cleanSubDirs "${rootDir}/demos/clients"      "bin/Release/"
+    cleanSubDirs "${rootDir}/demos/clients"      "obj/Debug/"
+    cleanSubDirs "${rootDir}/demos/clients"      "obj/Release/"
 
     cleanSubDirs "${rootDir}/tests"              "bin/Debug/"
     cleanSubDirs "${rootDir}/tests"              "bin/Release/"
@@ -286,13 +294,6 @@ if [ "$cleanInstallCurrentOS" = true ]; then
     writeLine "Cleaning ${platform} Install" "White" "Blue" $lineWidth
     writeLine 
 
-    # Clean .NET build dirs
-    for name in "${dotNetModules[@]}"
-    do
-        removeDir "${rootDir}/src/modules/${name}/bin/"
-        removeDir "${rootDir}/src/modules/${name}/obj/"
-    done
-
     # Clean shared python venvs
     removeDir "${rootDir}/src/runtimes/bin/${os}/"
 
@@ -300,6 +301,10 @@ if [ "$cleanInstallCurrentOS" = true ]; then
     for name in "${pythonModules[@]}"
     do
         removeDir "${rootDir}/src/modules/${name}/bin/${os}/"
+    done
+    for name in "${pythonDemoModules[@]}"
+    do
+        removeDir "${rootDir}/demos/modules/${name}/bin/${os}/"
     done
 fi
 
@@ -326,6 +331,10 @@ if [ "$cleanInstallAll" = true ]; then
     do
         removeDir "${rootDir}/src/modules/${name}/bin/"
     done
+    for name in "${pythonDemoModules[@]}"
+    do
+        removeDir "${rootDir}/demos/modules/${name}/bin/"
+    done
 fi
 
 if [ "$cleanAssets" = true ]; then
@@ -334,6 +343,7 @@ if [ "$cleanAssets" = true ]; then
     writeLine "Cleaning assets" "White" "Blue" $lineWidth
     writeLine 
 
+    # Production modules
     removeDir "${rootDir}/src/modules/ALPR/paddleocr"
     removeDir "${rootDir}/src/modules/ALPR-RKNN/paddleocr"
     removeDir "${rootDir}/src/modules/BackgroundRemover/models"
@@ -352,12 +362,19 @@ if [ "$cleanAssets" = true ]; then
     removeDir "${rootDir}/src/modules/OCR/paddleocr"
     removeDir "${rootDir}/src/modules/SceneClassifier/assets"
     removeDir "${rootDir}/src/modules/SoundClassifierTF/data"
+    removeDir "${rootDir}/src/modules/Text2Image/assets"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/datasets"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/fiftyone"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/training"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/zoo"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/custom-models"
+
+    # Demo modules
+    removeDir "${rootDir}/demos/modules/DotNetLongProcess/assets"
+    removeDir "${rootDir}/demos/modules/DotNetSimple/assets"
+    removeDir "${rootDir}/demos/modules/PythonLongProcess/assets"
+    removeDir "${rootDir}/demos/modules/PythonSimple/assets"
 fi
 
 if [ "$cleanDownloadCache" = true ]; then
@@ -367,13 +384,18 @@ if [ "$cleanDownloadCache" = true ]; then
     writeLine 
 
     for path in ${rootDir}/src/downloads/* ; do
-        if [ -d "$path" ] && [ "$path" != "${rootDir}/src/downloads/modules" ]; then
+        if [ -d "$path" ] && [ "$path" != "${rootDir}/src/downloads/modules" ] && [ "$path" != "${rootDir}/src/downloads/models" ]; then
             removeDir "${path}"
         fi
     done
 
     for path in ${rootDir}/src/downloads/modules/* ; do
         if [ -d "$path" ] && [ "$path" != "${rootDir}/src/downloads/modules/readme.txt" ]; then
+            removeFile "${path}"
+        fi
+    done
+    for path in ${rootDir}/src/downloads/models/* ; do
+        if [ -d "$path" ] && [ "$path" != "${rootDir}/src/downloads/models/models.json" ]; then
             removeFile "${path}"
         fi
     done

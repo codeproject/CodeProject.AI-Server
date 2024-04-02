@@ -31,7 +31,7 @@ lineWidth=70
 setupScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 # The name of the source directory (in development)
-srcDir='src'
+srcDirName='src'
 
 # The name of the dir, within the current directory, where install assets will
 # be downloaded
@@ -61,7 +61,7 @@ setupScriptDirName=${setupScriptDirName:-/} # correct for the case where pwd=/
 popd >/dev/null
 
 executionEnvironment='Production'
-if [ "$setupScriptDirName" == "$srcDir" ]; then executionEnvironment='Development'; fi
+if [ "$setupScriptDirName" == "$srcDirName" ]; then executionEnvironment='Development'; fi
 
 # The absolute path to the installer script and the root directory. Note that
 # this script (and the SDK folder) is either in the /src dir or the root dir
@@ -180,14 +180,14 @@ for d in ${modulesDirPath}/*/ ; do
             popd >/dev/null
             
             # Move package into modules download cache       
-            # echo Moving ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip to ${downloadDirPath}/modules/
-            mv -f ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip ${downloadDirPath}/modules/  >/dev/null
+            # echo Moving ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip to ${downloadDirPath}/${modulesDir}/
+            mv -f ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip ${downloadDirPath}/${modulesDir}/  >/dev/null
 
             if [ $? -ne 0 ]; then
                 writeLine "Error" "Red"
                 success="false"
             else
-                writeLine "Done" "DarkGreen"
+                writeLine "done" "DarkGreen"
             fi
         fi
     fi

@@ -1,0 +1,6 @@
+#! Python3.8
+
+# Specific version because we have a patch
+ultralytics==8.1.2              # Installing Ultralytics package for object detection in images
+
+# last line empty.

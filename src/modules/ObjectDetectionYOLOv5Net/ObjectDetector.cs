@@ -251,7 +251,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             if (imageData == null)
                 return null;
 
-            var image = ImageUtils.GetImage(imageData);
+            SKImage? image = ImageUtils.GetImage(imageData);
             if (image is null)
                 return null;
                 

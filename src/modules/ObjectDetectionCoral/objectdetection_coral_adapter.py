@@ -13,6 +13,21 @@ from module_runner import ModuleRunner
 from options import Options
 from PIL import UnidentifiedImageError, Image
 
+# Make sure we can find the coral libraries
+import platform
+if platform.system() == "Darwin": # or platform.system() == "Linux"
+    search_path = ''
+    # if platform.system() == "Linux": # Linux installs in global sitepackages
+    #     search_path = f"/usr/lib/python{version.major}.{version.minor}/site-packages/"
+    # else:
+    if platform.uname()[4] == 'x86_64' and platform.release()[:2] != '20':   # macOS 11 / Big Sur on Intel can install pycoral PIP
+       search_path = f"./pycoral_simplified/"    # macOS will use the simplified library
+    elif platform.uname()[4] == 'arm64' and platform.release()[:2] != '21':  # macOS 12 / Monterey on arm64 can install pycoral PIP
+       search_path = f"./pycoral_simplified/"    # macOS will use the simplified library
+    if search_path:
+        import sys
+        sys.path.insert(0, search_path)
+
 # Import the method of the module we're wrapping
 opts = Options()
 
@@ -40,19 +55,19 @@ class CoralObjectDetector_adapter(ModuleRunner):
             print("Info: Attempting multi-TPU initialisation")
     
             import objectdetection_coral_multitpu as odcm
-            device = odcm.init_detect(opts)
+            (device, error) = odcm.init_detect(opts)
 
             # Fallback if we need to
             if not device:
                 print("Info: Failed to init multi-TPU. Falling back to single TPU.")
                 opts.use_multi_tpu = False
 
-                import objectdetection_coral as odc
-                device = odc.init_detect(opts)
+                import objectdetection_coral_singletpu as odcs
+                (device, error) = odcs.init_detect(opts)
 
         else:
-            import objectdetection_coral as odc
-            device = odc.init_detect(opts)
+            import objectdetection_coral_singletpu as odcs
+            (device, error) = odcs.init_detect(opts)
 
         if not device or device.upper() == "CPU":
             self.inference_device = "CPU"
@@ -90,6 +105,7 @@ class CoralObjectDetector_adapter(ModuleRunner):
 
             # response = await self._do_detection(img, threshold)
             response = self._do_detection(img, threshold)
+
         else:
             # await self.report_error_async(None, __file__, f"Unknown command {data.command}")
             self.report_error(None, __file__, f"Unknown command {data.command}")
@@ -145,9 +161,9 @@ class CoralObjectDetector_adapter(ModuleRunner):
         if opts.use_multi_tpu and self.enable_GPU:
             from objectdetection_coral_multitpu import list_models
         else:
-            from objectdetection_coral import list_models
+            from objectdetection_coral_singletpu import list_models
 
-        return list_models()
+        return list_models(opts)
 
 
     # async 
@@ -160,10 +176,9 @@ class CoralObjectDetector_adapter(ModuleRunner):
         if opts.use_multi_tpu and self.enable_GPU:
             from objectdetection_coral_multitpu import do_detect
         else:
-            from objectdetection_coral import do_detect
+            from objectdetection_coral_singletpu import do_detect
 
         try:
-
             result = do_detect(opts, img, score_threshold)   
 
             if not result['success']:
@@ -188,6 +203,10 @@ class CoralObjectDetector_adapter(ModuleRunner):
                 message = "No objects found"
             
             # print(message)
+                
+            # Update the device on which inferencing occurred
+            if "inferenceDevice" in result:
+                self.inference_device = result["inferenceDevice"]
 
             return {
                 "success"     : result['success'],
@@ -207,15 +226,6 @@ class CoralObjectDetector_adapter(ModuleRunner):
             # await self.report_error_async(ex, __file__)
             self.report_error(ex, __file__)
             return { "success": False, "error": "Error occurred on the server"}
-
-
-    def _status_summary(self):
-        summary  = "Inference Operations: " + str(self._success_inferences)  + "\n"
-        summary += "Items detected:       " + str(self._num_items_found) + "\n"
-        for label in self._histogram:
-            summary += "  " + label + ": " + str(self._histogram[label]) + "\n"
-
-        return summary
 
 
 if __name__ == "__main__":

@@ -245,7 +245,7 @@ namespace CodeProject.AI.Server.Controllers
             var response = new ModuleStatusesResponse
             {
                 Statuses = statuses
-                            // .Where(module => module.Status != ProcessStatusType.NotEnabled)
+                            // .Where(module => module.Status != ProcessStatusType.NoAutoStart)
                            .ToList()
             };
 

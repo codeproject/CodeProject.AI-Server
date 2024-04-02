@@ -216,7 +216,7 @@ IF exist "!cuDNNPattern!" (
             )
         )
 
-        echo Done.
+        echo done.
 
         REM Only process the first archive we find
         call :InstallChecks

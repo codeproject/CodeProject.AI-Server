@@ -18,9 +18,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
-		<UserSecretsId>dotnet-PortraitFilter-C4FF0E02-9BBA-46BE-B89E-9C2DA88576BD</UserSecretsId>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
-		<!--<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>-->
 		<TargetFramework>net7.0</TargetFramework>
 		<Platform>AnyCPU</Platform>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
@@ -33,7 +31,6 @@
 		<DebugSymbols>false</DebugSymbols>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
-		<!--<PublishSingleFile>true</PublishSingleFile>-->
 		<DefineConstants>$(DefineConstants);</DefineConstants>
 	</PropertyGroup>
 

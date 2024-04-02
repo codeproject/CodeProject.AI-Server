@@ -89,11 +89,11 @@ namespace CodeProject.AI.Server.Modules
         /// </summary>
         public string[] Platforms { get; set; } = Array.Empty<string>();
 
-        /// <summary>
-        /// Gets or sets a value indicating whether this module was pre-installed (eg Docker). If
-        /// the module was preinstalled, this value is true, otherwise false.
-        /// </summary>
-        public bool PreInstalled { get; set; } = false;
+        // <summary>
+        // Gets or sets a value indicating whether this module was pre-installed (eg Docker). If
+        // the module was preinstalled, this value is true, otherwise false.
+        // </summary>
+        // public bool PreInstalled { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the list of module versions and the server version that matches each of
@@ -134,13 +134,9 @@ namespace CodeProject.AI.Server.Modules
         /// Gets or sets where the runtime executables for this module should be found. Valid
         /// values are:
         /// "Shared" - the runtime is installed in the /modules folder 
-        /// "Local" - the runtime is installed locally in this modules folder
+        /// "Local"  - the runtime is installed locally in this modules folder
+        /// "System" - the runtime is installed in the system globally
         /// </summary>
-        /// <remarks>
-        /// We set the default location to "Local" as this is the safest option and resolves
-        /// an issue with installing in Docker as old modules do not have this value, and in
-        /// Docker all modules are installed as Local.
-        /// </remarks>
         public string RuntimeLocation  { get; set; } = "Local";
 
         /// <summary>
@@ -284,7 +280,7 @@ namespace CodeProject.AI.Server.Modules
                 InstallOptions = new InstallOptions()
                 {
                     Platforms      = Platforms,
-                    PreInstalled   = PreInstalled,
+                    // PreInstalled   = PreInstalled,
                     ModuleReleases = ModuleReleases
                 },
                 LaunchSettings = new LaunchSettings()

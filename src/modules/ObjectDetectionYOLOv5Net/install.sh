@@ -55,7 +55,7 @@ if [ "$os" = "macos" ]; then
             arch -x86_64 /usr/local/bin/brew install onnxruntime  >/dev/null 2>/dev/null &
         fi
         spin $!
-        writeLine "Done" "$color_success"
+        writeLine "done" "$color_success"
 
     else
 
@@ -65,7 +65,7 @@ if [ "$os" = "macos" ]; then
         elif [ "${platform}" = "macos-arm64" ]; then
             arch -x86_64 /usr/local/bin/brew list onnxruntime || arch -x86_64 /usr/local/bin/brew install onnxruntime
         fi
-        writeLine "Done" "$color_success"
+        writeLine "done" "$color_success"
 
     fi
 fi

@@ -14,9 +14,6 @@
          packages can be installed and persisted.
       */
 
-      "InstallOptions" : {
-        "PreInstalled": "true"
-      }
     }
   }
 }

@@ -6,13 +6,14 @@ r"""Test on audio model."""
 from __future__ import print_function
 import time
 
-import sys
+# import sys
 # sys.path.append('./audio')
 
 #import tensorflow as tf
 # https://stackoverflow.com/a/58473210
 import tensorflow.compat.v1 as tf
 tf.compat.v1.disable_v2_behavior()
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 import numpy as np
 from os.path import join as pjoin
@@ -23,7 +24,6 @@ import audio.audio_model
 import audio.audio_util as util
 from audio.audio_feature_extractor import VGGishExtractor
 from audio.audio_records import RecordsParser
-
 
 NUM_VGGISH_FEATURE_PER_EXAMPLE = audio_params.NUM_VGGISH_FEATURE_PER_EXAMPLE
 
@@ -52,7 +52,7 @@ def _restore_from_defined_and_ckpt(sess, ckpt):
         audio.audio_model.load_audio_slim_checkpoint(sess, ckpt)
 
 def inference_waveform(wave_form: any, sample_rate):
-    """Test audio model on a wav form. Added chris.maunder@codeproject.com 27Dec2023"""
+    """Test audio model on a wav form. Added by chris.maunder@codeproject.com 27Dec2023"""
     graph = tf.Graph()
     with tf.Session(graph=graph, config=SESS_CONFIG) as sess:
         with VGGishExtractor(VGGISH_CKPT, VGGISH_PCA, audio_params.VGGISH_INPUT_TENSOR_NAME, \
@@ -116,7 +116,7 @@ def inference_wav(wav_file: str, label: int):
         predictions = np.mean(predictions, axis=0)
         label_pred = np.argmax(predictions)
         prob = predictions[label_pred] * 100
-        
+       
         print('\n'*3)
         print(f'{dict(zip(range(len(predictions)), predictions))}')
         print(f'true label: {label}')

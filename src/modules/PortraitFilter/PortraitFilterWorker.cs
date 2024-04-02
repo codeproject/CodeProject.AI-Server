@@ -66,7 +66,7 @@ namespace CodeProject.AI.Modules.PortraitFilter
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns>The response.</returns>
-        protected override ModuleResponse ProcessRequest(BackendRequest request)
+        protected override ModuleResponse Process(BackendRequest request)
         {
             if (_deepPersonLab == null)
                 return new ModuleErrorResponse($"{ModuleName} missing _deepPersonLab object.");
@@ -137,7 +137,7 @@ namespace CodeProject.AI.Modules.PortraitFilter
             payload.AddFile(Path.Combine(moduleDirPath!, "test/woman-selfie.jpg"));
 
             var request = new BackendRequest(payload);
-            ModuleResponse response = ProcessRequest(request);
+            ModuleResponse response = Process(request);
 
             if (response.Success)
                 return 0;

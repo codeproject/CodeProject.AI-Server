@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "DotNetLongProcess": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "CPAI_MODULE_ENABLE_GPU": "true"
+      },
+      "dotnetRunMessages": "true"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

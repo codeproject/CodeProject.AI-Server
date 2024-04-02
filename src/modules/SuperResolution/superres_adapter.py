@@ -74,10 +74,5 @@ class SuperRes_adapter(ModuleRunner):
         return { "success": result['success'], "message": "Super resolution test successful" }
 
 
-    def _status_summary(self):
-        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
-        return summary
-
-
 if __name__ == "__main__":
     SuperRes_adapter().start_loop()

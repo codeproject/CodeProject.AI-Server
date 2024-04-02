@@ -4,16 +4,17 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
+using CodeProject.AI.SDK.Utils;
+
 using SkiaSharp;
 using Yolov5Net.Scorer.Models.Abstract;
-using System.Numerics;
-using CodeProject.AI.SDK.Utils;
 
 namespace Yolov5Net.Scorer
 {

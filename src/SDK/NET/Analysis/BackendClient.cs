@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Dynamic;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -148,7 +149,7 @@ namespace CodeProject.AI.SDK
         /// <param name="moduleId">The module sending this response.</param>
         /// <param name="token">A Cancellation Token.</param>
         /// <returns>A Task.</returns>
-        public async Task SendStatus(string moduleId, dynamic? statusData, CancellationToken token)
+        public async Task SendModuleStatus(string moduleId, ExpandoObject? statusData, CancellationToken token)
         {
             MultipartFormDataContent content = new()
             {

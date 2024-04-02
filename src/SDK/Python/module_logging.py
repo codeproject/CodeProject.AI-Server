@@ -102,9 +102,12 @@ class ModuleLogger():
 
         # so we have basic logging before main loop starts
         if not self.logging_loop_started:
-            message = data.get("message", "")
-            if message and isinstance(message, str):
-                print(message)
+            try:
+                message = data.get("message", "")
+                if message and isinstance(message, str):
+                    print(message)
+            except:
+                pass
         else:
             try:
                 await self._logging_queue.put(LogItem(logMethod, data))

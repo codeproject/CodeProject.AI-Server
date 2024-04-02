@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "ObjectDetectionYOLOv5Net": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "CPAI_MODULE_ENABLE_GPU": "true",
+        "CPAI_MODULE_PARALLELISM": "0",
+        "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
+      },
+      "dotnetRunMessages": "true"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

@@ -47,7 +47,8 @@
             "dependsOn": [
                 "build-yolo-net",
                 "build-portraitfilter",
-                "build-sentimentanalysis"
+                "build-sentimentanalysis",
+                "build-demo_module_dotnetlongprocess"
             ]
         },
 
@@ -123,13 +124,27 @@
         },   
 
         {
-            "label": "build-demo-net",      // Builds ONLY the Yolo .NET analysis module
+            "label": "build-demo_module_dotnetlongprocess",      // Builds ONLY the demo .NET analysis module
             "type": "process",
             "group": "build",
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/modules/ModuleDemoNetSimple",
+                "${workspaceFolder}/demos/modules/DotNetLongProcess",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },   
+
+        {
+            "label": "build-demo-net",      // Builds ONLY the demo .NET analysis module
+            "type": "process",
+            "group": "build",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/demos/modules/DotNetSimple",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -171,7 +186,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer",
+                "${workspaceFolder}/demos/clients/dotNet/CodeProject.AI.Explorer",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -208,7 +223,7 @@
             "label": "start-explorer",        // Starts the Explorer Windows form app. No building or launching of API server done.
             "group": "none",
             // Windows form apps only work in Windows
-            "command": "${workspaceFolder}/demos/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/win-x64/",
+            "command": "${workspaceFolder}/demos/clients/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/win-x64/",
             "args": [],
             "type": "process"
         },

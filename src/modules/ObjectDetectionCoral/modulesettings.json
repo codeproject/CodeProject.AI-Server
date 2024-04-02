@@ -3,7 +3,7 @@
 
     "ObjectDetectionCoral": {
       "Name": "Object Detection (Coral)",
-      "Version": "2.1.4",
+      "Version": "2.2.0",
       
       "PublishingInfo" : {
         "Description": "The object detection module uses the Coral TPU to locate and classify the objects the models have been trained on.",
@@ -22,7 +22,7 @@
         "AutoStart": false,
         "FilePath": "objectdetection_coral_adapter.py",
         "Runtime": "python3.9",
-        "RuntimeLocation": "Local",       // Can be Local or Shared
+        "RuntimeLocation": "Local",       // Can be Local, Shared or System
         "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
         "Queue": "objectdetection_queue", // We make all Object detectors use the same queue.
         "Parallelism": 1                  // 0 = Default = number of CPUs / 2
@@ -51,7 +51,6 @@
 
       "InstallOptions" : {
         "Platforms":      [ "all" ],      // The platforms this module can and cannot be installed on
-        "PreInstalled":   false,          // Is this module pre-installed with the server (eg Docker containers)
         "ModuleReleases": [               // Which server version is compatible with each version of this module.
           { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-07-11" },
           { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-07-12" },
@@ -73,13 +72,38 @@
           { "ModuleVersion": "1.8.0", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
           { "ModuleVersion": "2.0.0", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-11", "ReleaseNotes": "Multi-TPU support" },
           { "ModuleVersion": "2.0.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
-          { "ModuleVersion": "2.0.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
-          { "ModuleVersion": "2.0.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
-          { "ModuleVersion": "2.1.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
-          { "ModuleVersion": "2.1.1", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Typo in the Linux installer corrected that was blocking installs" },
-          { "ModuleVersion": "2.1.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-29", "ReleaseNotes": "Multi-TPU now falls back to CPU on edge library load failure" },
-          { "ModuleVersion": "2.1.3", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
-          { "ModuleVersion": "2.1.4", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-18", "ReleaseNotes": "Added dashboard menu to allow model selection" }
+          { "ModuleVersion": "2.0.2", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
+          { "ModuleVersion": "2.0.3", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
+          { "ModuleVersion": "2.1.0", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "2.1.1", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Typo in the Linux installer corrected that was blocking installs" },
+          { "ModuleVersion": "2.1.2", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-29", "ReleaseNotes": "Multi-TPU now falls back to CPU on edge library load failure" },
+          { "ModuleVersion": "2.1.3", "ServerVersionRange": [ "2.5.2", ""       ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
+          { "ModuleVersion": "2.1.4", "ServerVersionRange": [ "2.5.2", ""       ], "ReleaseDate": "2024-02-18", "ReleaseNotes": "Added dashboard menu to allow model selection" },
+          { "ModuleVersion": "2.1.5", "ServerVersionRange": [ "2.5.2", ""       ], "ReleaseDate": "2024-03-12", "ReleaseNotes": "Bug fix for Multi-TPU." },
+          { "ModuleVersion": "2.1.6", "ServerVersionRange": [ "2.5.2", "2.6.0"  ], "ReleaseDate": "2024-03-12", "ReleaseNotes": "Improvements to Multi-TPU error handling, added YOLOv5 models." },
+          { "ModuleVersion": "2.2.0", "ServerVersionRange": [ "2.6.1", ""       ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Improvements to pipelining and error handling" }
+        ],
+        "DownloadableModels":[
+
+          { "Name": "EfficientDet Large",  "Filename": "objectdetection-efficientdet-large-edgetpu.zip",  "Folder": "assets", "Description": "EfficientDet object detection, Large",  "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "EfficientDet Medium", "Filename": "objectdetection-efficientdet-medium-edgetpu.zip", "Folder": "assets", "Description": "EfficientDet object detection, Medium", "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "EfficientDet Small",  "Filename": "objectdetection-efficientdet-small-edgetpu.zip",  "Folder": "assets", "Description": "EfficientDet object detection, Small",  "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "EfficientDet Tiny",   "Filename": "objectdetection-efficientdet-tiny-edgetpu.zip",   "Folder": "assets", "Description": "EfficientDet object detection, Tiny",   "FileSizeKb": 275800, "PreInstall": false },
+
+          { "Name": "MobileNet Large",  "Filename": "objectdetection-mobilenet-large-edgetpu.zip",  "Folder": "assets", "Description": "MobileNet object detection, Large",  "FileSizeKb": 275800, "PreInstall": true },
+          { "Name": "MobileNet Medium", "Filename": "objectdetection-mobilenet-medium-edgetpu.zip", "Folder": "assets", "Description": "MobileNet object detection, Medium", "FileSizeKb": 275800, "PreInstall": true },
+          { "Name": "MobileNet Small",  "Filename": "objectdetection-mobilenet-small-edgetpu.zip",  "Folder": "assets", "Description": "MobileNet object detection, Small",  "FileSizeKb": 275800, "PreInstall": true },
+          { "Name": "MobileNet Tiny",   "Filename": "objectdetection-mobilenet-tiny-edgetpu.zip",   "Folder": "assets", "Description": "MobileNet object detection, Tiny",   "FileSizeKb": 275800, "PreInstall": true },
+
+          { "Name": "YOLOv5 Large",  "Filename": "objectdetection-yolov5-large-edgetpu.zip",  "Folder": "assets", "Description": "YOLOv5 object detection, Large",  "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "YOLOv5 Medium", "Filename": "objectdetection-yolov5-medium-edgetpu.zip", "Folder": "assets", "Description": "YOLOv5 object detection, Medium", "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "YOLOv5 Small",  "Filename": "objectdetection-yolov5-small-edgetpu.zip",  "Folder": "assets", "Description": "YOLOv5 object detection, Small",  "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "YOLOv5 Tiny",   "Filename": "objectdetection-yolov5-tiny-edgetpu.zip",   "Folder": "assets", "Description": "YOLOv5 object detection, Tiny",   "FileSizeKb": 275800, "PreInstall": false },
+
+          { "Name": "YOLOv8 Large",  "Filename": "objectdetection-yolov8-large-edgetpu.zip",  "Folder": "assets", "Description": "YOLOv8 object detection, Large",  "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "YOLOv8 Medium", "Filename": "objectdetection-yolov8-medium-edgetpu.zip", "Folder": "assets", "Description": "YOLOv8 object detection, Medium", "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "YOLOv8 Small",  "Filename": "objectdetection-yolov8-small-edgetpu.zip",  "Folder": "assets", "Description": "YOLOv8 object detection, Small",  "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "YOLOv8 Tiny",   "Filename": "objectdetection-yolov8-tiny-edgetpu.zip",   "Folder": "assets", "Description": "YOLOv8 object detection, Tiny",   "FileSizeKb": 275800, "PreInstall": false }
         ]
       },
 
@@ -88,6 +112,7 @@
           "Label": "Model",
           "Options": [
               { "Label": "MobileNet SSD",     "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "MobileNet SSD"     },
+              { "Label": "YOLOv5",            "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "YOLOv5"            },
               { "Label": "YOLOv8",            "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "YOLOv8"            },
               { "Label": "EfficientDet Lite", "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "EfficientDet-Lite" }
           ]

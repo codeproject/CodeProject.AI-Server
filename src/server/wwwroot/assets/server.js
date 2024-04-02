@@ -97,22 +97,41 @@ function toggleColourMode() {
  * Updates the main status message regarding server state
  */
 function setServerStatus(text, variant, tooltip) {
+
+    const serverStatusElm = document.getElementById("serverStatus");
+    if (!serverStatusElm)
+        return;
+
     tooltip = tooltip||'';
     if (variant)
-        document.getElementById("serverStatus").innerHTML = `<span class='text-white p-1 bg-${variant}' title='${tooltip}'>${text}</span>`;
+        serverStatusElm.innerHTML = `<span class='text-white p-1 bg-${variant}' title='${tooltip}'>${text}</span>`;
     else
-        document.getElementById("serverStatus").innerHTML = `<span class='text-white p-1' title='${tooltip}'>${text}</span>`;
+        serverStatusElm.innerHTML = `<span class='text-white p-1' title='${tooltip}'>${text}</span>`;
 }
 
 function setServerHostname(text,) {
-    document.getElementById("hostname").innerHTML = "<span class='text-white hostname-label'>" + text + "</span>";
+    const hostnameElm = document.getElementById("hostname");
+    if (hostnameElm) hostnameElm.innerHTML = "<span class='text-white hostname-label'>" + text + "</span>";
+}
+
+function showCommunication(active) {
+    const statusElm = document.getElementById("communication");
+    if (!statusElm) return;
+    if (active)
+        statusElm.classList.add("active");
+    else
+        statusElm.classList.remove("active");
 }
 
 function setModuleUpdateStatus(text, variant) {
+    const moduleUpdateStatusElm = document.getElementById("moduleUpdateStatus");
+    if (!moduleUpdateStatusElm)
+        return;
+
     if (variant)
-        document.getElementById("moduleUpdateStatus").innerHTML = "<span class='p-1 text-" + variant + "'>" + text + "</span>";
+        moduleUpdateStatusElm.innerHTML = "<span class='p-1 text-" + variant + "'>" + text + "</span>";
     else
-        document.getElementById("moduleUpdateStatus").innerHTML = "<span class='text-white p-1'>" + text + "</span>";
+        moduleUpdateStatusElm.innerHTML = "<span class='text-white p-1'>" + text + "</span>";
 }
 
 
@@ -209,11 +228,15 @@ async function makeGET(path) {
         const controller = new AbortController()
         timeoutId = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
+        showCommunication(true);
+
         let response = await fetch(url, {
             method: "GET",
             cache: "no-cache",
             signal: controller.signal 
         });
+
+        showCommunication(false);
 
         if (response) {
             clearTimeout(timeoutId);
@@ -312,12 +335,16 @@ async function makePOST(path, key, value) {
         const controller  = new AbortController()
         timeoutId   = setTimeout(() => controller.abort(), timeoutSecs * 1000)
 
+        showCommunication(true);
+
         let response = await fetch(url, {
             method: "POST",
             body: formData,
             cache: "no-cache",
             signal: controller.signal
         });
+
+        showCommunication(true);
 
         if (response) {
             clearTimeout(timeoutId);

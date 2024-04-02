@@ -20,7 +20,8 @@ namespace CodeProject.AI.Utilities
         static void Main(string[] args)
         {
 #if TEST_INPUT    
-            string jsonPath = "$.Modules.ALPR-4\\.1.Platforms";     // A string from an array
+            // string jsonPath = "$.Modules.ALPR-4\\.1.Platforms";     // A string from an array
+            string jsonPath = "$.Modules.ObjectDetectionYOLOv8.InstallOptions.DownloadableModels[0]";
             string filePath = "test.json";
 #else
             if (args.Length < 1 || args.Length > 2)
@@ -29,8 +30,8 @@ namespace CodeProject.AI.Utilities
                 return;
             }
 
-            string jsonPath   = args[0];
-            string filePath   = args.Length > 1 ? args[1] : string.Empty;
+            string jsonPath = args[0];
+            string filePath = args.Length > 1 ? args[1] : string.Empty;
 #endif
 
             // Get the JSON path from the command line arguments
@@ -60,8 +61,8 @@ namespace CodeProject.AI.Utilities
             // Parse and extract
             if (!string.IsNullOrWhiteSpace(jsonString))
             {
-                var jsonObject     = DeserializeJson(jsonString);
-                var extractedValue = ExtractValue(jsonObject, jsonPath);
+                JsonNode? jsonObject     = DeserializeJson(jsonString);
+                object?   extractedValue = ExtractValue(jsonObject, jsonPath);
                 if (extractedValue is not null)
                     Console.WriteLine(extractedValue?.ToString());
             }
@@ -130,11 +131,7 @@ namespace CodeProject.AI.Utilities
 
             jsonPath = jsonPath.TrimStart('$');
 
-            // Extract value using JSON path
-            // var pathSegments = jsonPath.Split(new char[] { '.','[',']' }, StringSplitOptions.RemoveEmptyEntries);
-            var pathSegments = Regex.Split(jsonPath, "(?<!\\\\)[.]");
-                                              // or @"(?<!\\)\."
-
+            var pathSegments = Regex.Split(jsonPath, "(?<!\\\\)[.[\\]]");
             foreach (var rawSegment in pathSegments)
             {
                 if (string.IsNullOrWhiteSpace(rawSegment))

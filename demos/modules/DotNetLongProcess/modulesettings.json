@@ -1,0 +1,133 @@
+{
+  "Modules": {
+
+    "DotNetLongProcess": {
+      "Name": ".NET Long Process Demo",
+      "Version": "1.0.0",
+
+      "PublishingInfo" : {
+        "Description": "Provides a template for a .NET module that runs a long process.",
+        "Category": "Computer Vision",
+        "Stack": "C#",
+        "License": "MIT",
+        "LicenseUrl": "https://opensource.org/licenses/MIT",
+        "Author": "Chris Maunder",
+        "Homepage": "https://codeproject.com/ai",
+        "BasedOn":     null,
+        "BasedOnUrl":  null
+      },
+
+      "LaunchSettings": {
+        "AutoStart": false,
+        "FilePath": "bin/DotNetLongProcess.dll",  // The default for Linux / macOS
+        "Runtime": "dotnet",
+        "RuntimeLocation": "System",      // Can be Local, Shared or System
+        "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
+        "Queue": null,                    // use default queue.
+        "Parallelism": 0                  // 0 = Default = number of CPUs / 2
+      },
+
+      "EnvironmentVariables": {
+        "MODEL_SIZE": "MEDIUM",
+        "MODELS_DIR": "%CURRENT_MODULE_PATH%\\assets"
+      },
+
+      "GpuOptions" : {
+        "InstallGPU": true,
+        "EnableGPU": true,              // Will be coerced to false if InstallGPU = false
+        "AcceleratorDeviceName": null,  // = default
+        "HalfPrecision": "enable"       // 'Force', 'Enable', 'Disable': whether to force on, allow, or disable half-precision ops
+      },
+
+      "InstallOptions" : {
+        "Platforms": [ "all" ],     // The platforms this module can and cannot be installed on
+        "ModuleReleases": [         // Which server version is compatible with each version of this module.
+          { "ModuleVersion": "1.0.0", "ServerVersionRange": [ "2.6.1", ""     ], "ReleaseDate": "2023-02-14", "ReleaseNotes": "Initial Release", "Importance": "Major" }
+        ]
+      },
+
+      "ModelRequirements" : [{
+          "Task": "Object Detection",
+          "Architecture": "YOLOv8",
+          "Format": "ONNX"
+      }],
+
+      /*
+      "UIElements" : {
+        "Menus": [{
+          "Label": "Model Size",
+          "Options": [
+              { "Label": "Tiny",   "Setting": "MODEL_SIZE", "Value": "tiny"   },
+              { "Label": "Small",  "Setting": "MODEL_SIZE", "Value": "small"  },
+              { "Label": "Medium", "Setting": "MODEL_SIZE", "Value": "medium" },
+              { "Label": "Large",  "Setting": "MODEL_SIZE", "Value": "large"  }
+          ]
+        }]
+      },
+      */
+
+      "RouteMaps": [
+        {
+          "Name": ".NET Long process command",
+          "Route": "dotnetlongprocess/long-process",
+          "Method": "POST",
+          "Command": "command",
+          "Description": "The demo long running command.",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The image to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0.",
+              "DefaultValue": 0.4,
+              "MinValue": 0.0,
+              "MaxValue": 1.0
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "message",
+              "Type": "String",
+              "Description": "A summary of the inference operation."
+            },
+            {
+              "Name": "error",
+              "Type": "String",
+              "Description": "(Optional) An description of the error if success was false."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            },
+            {
+              "Name": "count",
+              "Type": "Integer",
+              "Description": "The number of objects found."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+

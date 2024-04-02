@@ -98,7 +98,8 @@ class SoundClassification_adapter(ModuleRunner):
 
     def selftest(self) -> JSON:
         
-        file_name = os.path.join("test", "klaxon.wav")
+        # file_name = os.path.join("test", "klaxon.wav")
+        file_name = os.path.join("test", "mixkit-dog-barking-twice-1.wav")
 
         request_data = RequestData()
         request_data.queue   = self.queue_name
@@ -112,6 +113,54 @@ class SoundClassification_adapter(ModuleRunner):
 
         return { "success": result['success'], "message": "Sound Classification test successful" }
 
+    def _create_spectrogram(self, data, sample_rate):
+        
+        import matplotlib
+        matplotlib.use('Agg')  # Use Agg backend (non-interactive)
+        import matplotlib.pyplot as plt
+        from PIL import Image
+        from io import BytesIO
+
+        spectrogram = None
+        try:
+            # Check if the audio is mono or stereo
+            if len(data.shape) == 1:  # Mono audio
+                data = data.reshape(-1, 1)  # Reshape to 2D array with one column
+                num_channels = 1
+            else:  # Stereo or more channels
+                num_channels = data.shape[1]
+
+            # Calculate and plot the spectrogram for each channel
+            for channel in range(num_channels):
+                plt.subplot(num_channels, 1, channel + 1)
+                # cmap='viridis'
+                # cmap='inferno' - not bad
+                # cmap='spectral' - boring
+                cmap='hsv'
+                cmap='hot'
+                plt.specgram(data[:, channel], Fs=sample_rate, NFFT=1024, cmap=cmap)
+                plt.ylabel(f'Channel {channel + 1}')
+
+            # Save the plot
+
+            # spectrogram = Image.fromarray(spectrum)
+
+            fig, ax = plt.gcf(), plt.gca()
+            fig.canvas.draw()
+
+            width, height = fig.canvas.get_width_height()
+            spectrogram = Image.frombytes('RGB', (width, height), fig.canvas.tostring_rgb())
+
+            # Close and free memory
+            plt.close()
+
+            # spectrogram.show()
+
+        except Exception as ex:
+            print(ex)
+
+        return spectrogram
+    
 
     def _do_classification(self, data: RequestData, score_threshold: float):
         
@@ -122,7 +171,9 @@ class SoundClassification_adapter(ModuleRunner):
                 sample_rate, wav_data = wavfile.read(wav_stream)
                 assert wav_data.dtype == np.int16, 'Bad sample type: %r' % wav_data.dtype
                 samples = wav_data / 32768.0  # Convert to [-1.0, +1.0]
-            
+
+                spectrogram = self._create_spectrogram(wav_data, sample_rate)
+
             if not wav_data.any() or not sample_rate:
                 return {
                     "success"     : False, 
@@ -152,6 +203,7 @@ class SoundClassification_adapter(ModuleRunner):
                     "label"       : '', 
                     "message"     : '',
                     "error"       : "Unable to classify sound",
+                    "imageBase64":  RequestData.encode_image(spectrogram) if spectrogram else None,
                     "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
                     "inferenceMs" : inference_time,
                 }
@@ -161,6 +213,7 @@ class SoundClassification_adapter(ModuleRunner):
                 "label"       : label, 
                 "confidence"  : prob,
                 "message"     : f"Detected sound {label}",
+                "imageBase64" :  RequestData.encode_image(spectrogram) if spectrogram else None,
                 "processMs"   : int((time.perf_counter() - start_process_time) * 1000),
                 "inferenceMs" : inference_time
             }

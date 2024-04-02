@@ -2,13 +2,13 @@
   "versionSection": {
     "versionInfo": {
       "Major": 2,
-      "Minor": 5,
-      "Patch": 5,
+      "Minor": 6,
+      "Patch": 1,
       "Build": 0,
       "PreRelease": "",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.5.5.zip",
-      "ReleaseNotes": "Improved runtime reporting, support for long running processes"
+      "File": "CodeProject.AI-Server-win-x64-2.6.1.zip",
+      "ReleaseNotes": "Added long-running process support for .NET. Refactoring and bug fixes."
     }
   }
 }

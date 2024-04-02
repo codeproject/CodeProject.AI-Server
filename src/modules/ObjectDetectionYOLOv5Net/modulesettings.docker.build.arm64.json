@@ -15,9 +15,6 @@
       */
 
       // ObjectDetectionYOLOv5Net is currently the fastest non-TPU solution for Arm64
-      "InstallOptions" : {
-        "PreInstalled": "true"
-      },
       "LaunchSettings": {
         "AutoStart": false
       }

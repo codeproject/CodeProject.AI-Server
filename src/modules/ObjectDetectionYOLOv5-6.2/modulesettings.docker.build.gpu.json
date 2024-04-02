@@ -15,11 +15,8 @@
       */
 
       "LaunchSettings": {
-        // This NEEDS to be 'shared' for docker pre-installed
-        "RuntimeLocation": "Shared", // Can be Local or Shared
-      },
-      "InstallOptions" :{
-        "PreInstalled": "true"
+        // This NEEDS to be 'System' for docker pre-installed
+        "RuntimeLocation": "System" // Can be Local, Shared or System
       }
     }
   }

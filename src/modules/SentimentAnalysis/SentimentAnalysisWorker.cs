@@ -46,7 +46,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         /// <summary>
         /// Called before the main processing loops are started
         /// </summary>
-        protected override void InitModule()
+        protected override void Initialize()
         {
             InferenceDevice  = _textClassifier.InferenceDevice;
             InferenceLibrary = _textClassifier.InferenceLibrary;
@@ -58,7 +58,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns>The response.</returns>
-        protected override ModuleResponse ProcessRequest(BackendRequest request)
+        protected override ModuleResponse Process(BackendRequest request)
         {
             string? text = request?.payload?.GetValue("text");
             if (text is null)
@@ -96,7 +96,7 @@ namespace CodeProject.AI.Modules.SentimentAnalysis
             payload.SetValue("text", "This is a shiny happy wonderful sentence");
 
             var request = new BackendRequest(payload);
-            ModuleResponse response = ProcessRequest(request);
+            ModuleResponse response = Process(request);
 
             if (response.Success)
                 return 0;

@@ -45,7 +45,7 @@ if [ "$os" = "linux" ]; then
                 fi
             fi
             
-            writeLine "Done" $color_success
+            writeLine "done" $color_success
         else
             writeLine "Already added" $color_success
         fi
@@ -85,7 +85,7 @@ else
             spin $!
         fi
 
-        writeLine "Done" $color_success
+        writeLine "done" $color_success
     else
         writeLine "Installing System.Drawing support "
 
@@ -97,7 +97,7 @@ else
             brew list libomp     || brew install libomp
         fi
         
-        writeLine "Done" $color_success
+        writeLine "done" $color_success
     fi
 fi
 
@@ -119,7 +119,7 @@ fi
 
 # CUDA -------------------------------------------------------------------------
 
-if [ "${systemName}" = "Jetson" ]; then
+if [ "${edgeDevice}" = "Jetson" ]; then
     echo ${PATH} | grep /usr/bin/cuda/bin >/dev/null 2>/dev/null
     if [ "$?" = "1" ] && [ -d "/usr/bin/cuda/bin" ]; then 
         export PATH=${PATH};/usr/bin/cuda/bin

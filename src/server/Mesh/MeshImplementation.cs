@@ -67,11 +67,8 @@ namespace CodeProject.AI.Server.Mesh
         /// </summary>
         /// <returns>A <see cref="MeshServerBroadcastData"/> object</returns>
         /// <remarks>
-        /// REVIEW: [Matthew] This still has a huge code smell to me. We have machinery in place
-        ///                   that requires a generic IMeshNodeStatusBuilder to implement a Build()
-        ///                   method for each ServerMeshStatus that could be used. I can understand
-        ///                   having a mock method that populates a ServerMeshStatus, but I can't
-        ///                   understand a scenario where we would want a *different* ServerMeshStatus.
+        /// REVIEW: This has now served it's purpose and is to be moved as a simple function into
+        ///         MeshMonitor
         ///</remarks>
         public MeshServerBroadcastData Build(BaseMeshMonitor<MeshServerBroadcastData> meshMonitor)
         {
@@ -100,7 +97,7 @@ namespace CodeProject.AI.Server.Mesh
                                                               .Select(s => s.Status.Hostname);
 
             // Description and platform
-            string systemDescription = $"{SystemInfo.SystemName} ({SystemInfo.Architecture})";
+            string systemDescription = $"{SystemInfo.SystemName} ({SystemInfo.OSAndArchitecture})";
             if (SystemInfo.GPU is not null)
             {
                 if (SystemInfo.GPU.HardwareVendor == "Apple" || 

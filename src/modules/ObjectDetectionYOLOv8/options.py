@@ -3,9 +3,10 @@ from module_options import ModuleOptions
 
 class Settings:
 
-    def __init__(self, RESOLUTION, STD_MODEL_NAME):
-        self.RESOLUTION     = RESOLUTION
-        self.STD_MODEL_NAME = STD_MODEL_NAME
+    def __init__(self, RESOLUTION, STD_MODEL_NAME, STD_SEG_MODEL_NAME):
+        self.RESOLUTION         = RESOLUTION
+        self.STD_MODEL_NAME     = STD_MODEL_NAME
+        self.STD_SEG_MODEL_NAME = STD_SEG_MODEL_NAME
 
 
 class Options:
@@ -16,11 +17,11 @@ class Options:
 
         # see https://github.com/ultralytics/yolov5 for resolution data
         self.MODEL_SETTINGS = {
-            "tiny":   Settings(STD_MODEL_NAME = "yolov8n", RESOLUTION = 640),
-            "small":  Settings(STD_MODEL_NAME = "yolov8s", RESOLUTION = 640),
-            "medium": Settings(STD_MODEL_NAME = "yolov8m", RESOLUTION = 640),
-            "large":  Settings(STD_MODEL_NAME = "yolov8l", RESOLUTION = 640),
-            "huge":   Settings(STD_MODEL_NAME = "yolov8x", RESOLUTION = 640)  
+            "tiny":   Settings(STD_MODEL_NAME = "yolov8n", STD_SEG_MODEL_NAME = "yolov8n-seg", RESOLUTION = 640),
+            "small":  Settings(STD_MODEL_NAME = "yolov8s", STD_SEG_MODEL_NAME = "yolov8s-seg", RESOLUTION = 640),
+            "medium": Settings(STD_MODEL_NAME = "yolov8m", STD_SEG_MODEL_NAME = "yolov8m-seg", RESOLUTION = 640),
+            "large":  Settings(STD_MODEL_NAME = "yolov8l", STD_SEG_MODEL_NAME = "yolov8l-seg", RESOLUTION = 640),
+            "huge":   Settings(STD_MODEL_NAME = "yolov8x", STD_SEG_MODEL_NAME = "yolov8x-seg", RESOLUTION = 640)  
         }
 
         # -------------------------------------------------------------------------
@@ -48,8 +49,9 @@ class Options:
 
         # Get settings
         settings = self.MODEL_SETTINGS[self.model_size]   
-        self.resolution_pixels = settings.RESOLUTION
-        self.std_model_name    = settings.STD_MODEL_NAME
+        self.resolution_pixels  = settings.RESOLUTION
+        self.std_model_name     = settings.STD_MODEL_NAME
+        self.std_seg_model_name = settings.STD_SEG_MODEL_NAME
 
         # -------------------------------------------------------------------------
         # dump the important variables

@@ -1,15 +1,9 @@
 #! Python3.9
 
---extra-index-url  https://download.pytorch.org/whl/cu121
+--extra-index-url https://download.pytorch.org/whl/cu121
 torch==2.1.2                    # Installing PyTorch, for Tensor computation and Deep neural networks
 
-# Do we need these?
---extra-index-url  https://download.pytorch.org/whl/cu121
-torchvision==0.16.2             # Installing TorchVision, for Computer Vision based AI
---extra-index-url  https://download.pytorch.org/whl/cu121
-torchaudio==2.1.2               # Installing TorchAudio
-
-diffusers["torch"]              # Installing Diffusers for state-of-the-art diffusion in PyTorch and JAX.
+diffusers[torch]                # Installing Diffusers for state-of-the-art diffusion in PyTorch and JAX.
 transformers                    # Installing transformers for State-of-the-art machine Learning for JAX, PyTorch and TensorFlow
 
 # last line empty

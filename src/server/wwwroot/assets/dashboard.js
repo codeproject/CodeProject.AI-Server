@@ -77,6 +77,23 @@ async function checkForUpdates(showResult) {
     }
 }
 
+async function downloadModel(event, moduleId, modelFilename, installFolderName) {
+    event.preventDefault();
+
+    let route     = `model/download/${moduleId}/${modelFilename}/${installFolderName}`;
+    let verbosity = document.getElementById('install-verbosity').value;
+    let noCache   = document.getElementById('noCache').checked;
+    route += `?noCache=${noCache}&verbosity=${verbosity}`;
+
+    let data = await makePOST(route);
+    if (data.success) {
+        addLogEntry(null, new Date(), "information", "", `${highlightMarker} ${modelFilename} has been downloaded and installed.`);
+    } 
+    else {
+        addLogEntry(null, new Date(), "error", "", `Unable to download and install ${modelFilename}: ${data.error}`);
+    }
+}
+
 /**
  * Calls the settings API to update a setting with the given value for the 
  * given module
@@ -159,6 +176,7 @@ async function getModulesStatuses() {
             let lastSeen         = moduleInfo.lastSeen? new Date(moduleInfo.lastSeen) : null;
             let requestCount     = moduleInfo.requestCount;
             let menus            = moduleInfo.menus;
+            let models           = moduleInfo.downloadableModels;
             let status           = moduleInfo.status;
             let numInferences    = moduleInfo.statusData?.numInferences    || 0;
             let inferenceDevice  = moduleInfo.statusData?.inferenceDevice  || '';
@@ -216,11 +234,32 @@ async function getModulesStatuses() {
                     + `<li><a class=\"dropdown-item small\" href=\"#\" onclick=\"updateSetting(event, '${moduleId}', 'EnableGPU', true)\">Enable GPU</a></li>`;
             }
 
+            if (models && models.length > 0) {
+                dropDown +=
+                      `<li><a class=\"dropdown-item small\" href=\"#\">Download Models »</a>`
+                    + " <ul class=\"submenu dropdown-menu dropdown-menu-end\">";
+
+                for (model of models) {
+                    // var filename = model.filename.replace(".", "%2E");
+                    // var filename = model.filename.replace(/\.[^/.]+$/, "");
+                    var filename  = model.filename;
+                    var className = model.cached? "text-success" : "";
+                    var title     = model.cached? "Already cached" : "Ready for download";
+                    dropDown +=
+                      ` <li><a class='dropdown-item small ${className}' title='${title}' href='#' ` +
+                      `onclick=\"downloadModel(event, '${moduleId}', '${filename}', '${model.folder}')\">${model.name}</a></li>`;
+                }
+
+                dropDown +=
+                      " </ul>"
+                    + "</li>";
+            }
+
             if (menus && menus.length > 0) {
                 for (menu of menus) {
                     dropDown +=
                       `<li><a class=\"dropdown-item small\" href=\"#\">${menu.label} »</a>`
-                    + " <ul class=\"submenu dropdown-menu dropdown-menu-right\">";
+                    + " <ul class=\"submenu dropdown-menu dropdown-menu-end\">";
 
                     for (option of menu.options)
                         dropDown +=
@@ -239,7 +278,7 @@ async function getModulesStatuses() {
                 +   `<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" version="1.1" x="0px" y="0px" viewBox="0 0 100 100" xml:space="preserve">`
                 +   `<path class="action-path-on" d="M60.1,88.7c-0.1,0-0.3,0-0.4,0c-2.1-0.4-4-1.8-5-3.7c-0.1-0.1-0.1-0.2-0.2-0.3c-0.1-0.2-0.9-1.7-3.2-1.8c0,0-0.1,0-0.1,0  c-0.8,0-1.5,0-2.3,0c0,0-0.1,0-0.1,0c-2.4,0-3.2,1.7-3.2,1.8c-0.1,0.1-0.1,0.2-0.2,0.3c-1,1.9-2.9,3.3-5,3.7c-0.3,0.1-0.6,0.1-0.9,0  c-1.9-0.5-3.9-1.2-5.7-2.1c-0.3-0.1-0.5-0.3-0.7-0.5c-1.3-1.7-1.9-4-1.4-6.1c0-0.1,0-0.2,0.1-0.4c0-0.2,0.4-1.9-1.3-3.4  c0,0-0.1-0.1-0.1-0.1c-0.6-0.5-1.2-1-1.8-1.5c0,0,0,0,0,0c-0.8-0.6-1.6-0.9-2.5-0.9c-0.7,0-1.2,0.2-1.2,0.2  c-0.1,0.1-0.2,0.1-0.4,0.1c-2,0.8-4.4,0.7-6.3-0.4c-0.3-0.1-0.5-0.3-0.6-0.6c-1.1-1.6-2.1-3.3-3-5.1c-0.1-0.3-0.2-0.5-0.2-0.8  c0-2.2,1.1-4.4,2.8-5.7c0.1-0.1,0.2-0.2,0.3-0.2c0.1-0.1,1.5-1.2,1.2-3.5c0,0,0,0,0-0.1c-0.2-0.7-0.3-1.5-0.4-2.3c0-0.1,0-0.1,0-0.1  c-0.4-2.3-2.3-2.8-2.3-2.8c-0.1,0-0.2-0.1-0.4-0.1c-2.1-0.7-3.9-2.4-4.6-4.5c-0.1-0.3-0.1-0.5-0.1-0.8c0.2-1.8,0.5-3.7,1-5.6  c0.1-0.3,0.2-0.5,0.4-0.7c1.5-1.8,3.7-2.8,5.9-2.7c0.1,0,0.2,0,0.4,0c0.5,0,2.1-0.1,3.1-1.9c0,0,0-0.1,0.1-0.1  c0.3-0.6,0.7-1.3,1.2-2c0,0,0-0.1,0.1-0.1c1.1-2,0.2-3.5,0.1-3.7c-0.1-0.1-0.1-0.2-0.2-0.3c-1.2-2-1.5-4.4-0.6-6.6  c0.1-0.2,0.2-0.5,0.4-0.7c1.3-1.3,2.7-2.5,4.2-3.5c0.2-0.2,0.5-0.3,0.7-0.3c2.3-0.5,4.7,0.2,6.4,1.7c0.1,0.1,0.2,0.1,0.3,0.2  c0,0,0.9,0.8,2.2,0.8c0.4,0,0.9-0.1,1.4-0.2c0,0,0,0,0,0c0.8-0.3,1.6-0.6,2.3-0.8c2.1-0.8,2.4-2.6,2.4-2.8c0-0.1,0-0.2,0.1-0.3  c0.3-2.3,1.7-4.4,3.8-5.5c0.2-0.1,0.5-0.2,0.7-0.2c2-0.1,3.4-0.1,5.4,0c0.3,0,0.5,0.1,0.7,0.2c2.1,1.1,3.5,3.1,3.8,5.4  c0,0.1,0.1,0.2,0.1,0.4c0,0.2,0.3,1.9,2.4,2.8c0,0,0,0,0,0c0.8,0.2,1.6,0.5,2.3,0.8c0,0,0,0,0,0c0.5,0.2,1,0.3,1.4,0.3  c1.4,0,2.2-0.8,2.2-0.8c0.1-0.1,0.2-0.2,0.3-0.2c1.7-1.5,4.1-2.2,6.4-1.7c0.3,0.1,0.5,0.2,0.7,0.3c1.5,1.1,2.9,2.3,4.2,3.5  c0.2,0.2,0.3,0.4,0.4,0.7c0.8,2.2,0.6,4.6-0.6,6.6c0,0.1-0.1,0.2-0.2,0.3c-0.1,0.1-1,1.7,0.1,3.7c0,0,0,0.1,0.1,0.1  c0.4,0.7,0.8,1.3,1.2,2c0,0,0,0.1,0.1,0.1c1,1.7,2.6,1.9,3.1,1.9c0.1,0,0.3,0,0.4,0c2.2-0.1,4.5,0.9,5.9,2.7  c0.2,0.2,0.3,0.5,0.4,0.7c0.5,1.8,0.8,3.7,1,5.6c0,0.3,0,0.5-0.1,0.8c-0.8,2.2-2.5,3.8-4.6,4.5c-0.1,0.1-0.2,0.1-0.4,0.1  c-0.2,0-1.9,0.6-2.3,2.9c0,0,0,0.1,0,0.1c-0.1,0.8-0.2,1.6-0.4,2.3c0,0,0,0.1,0,0.1C81,59.9,82.5,61,82.5,61  c0.1,0.1,0.2,0.2,0.3,0.3c1.7,1.4,2.8,3.5,2.8,5.7c0,0.3-0.1,0.6-0.2,0.8c-0.8,1.7-1.8,3.5-3,5.1c-0.2,0.2-0.4,0.4-0.6,0.6  c-1.1,0.6-2.3,0.9-3.6,0.9l0,0c-0.9,0-1.9-0.2-2.7-0.5c-0.1,0-0.2-0.1-0.4-0.1c0,0,0,0,0,0c0,0-0.5-0.2-1.2-0.2  c-0.9,0-1.7,0.3-2.4,0.9c0,0,0,0-0.1,0c-0.5,0.5-1.1,1-1.8,1.5c0,0-0.1,0-0.1,0.1c-1.5,1.3-1.5,2.7-1.4,3.3c0.1,0.2,0.1,0.4,0.1,0.6  c0,0,0,0,0,0c0.4,2.1-0.1,4.3-1.5,5.9c-0.2,0.2-0.4,0.4-0.7,0.5c-1.8,0.8-3.8,1.5-5.7,2.1C60.4,88.7,60.2,88.7,60.1,88.7z   M35.7,83.4c1.4,0.6,2.8,1.1,4.2,1.5c1-0.3,1.8-1,2.2-1.9c0.1-0.1,0.1-0.2,0.2-0.4c0.8-1.4,2.8-3.4,6.2-3.5c0.1,0,0.1,0,0.1,0  c0,0,0.1,0,0.1,0c0.8,0,1.5,0,2.3,0c0,0,0.1,0,0.1,0c0,0,0.1,0,0.1,0c3.3,0.1,5.4,2.1,6.2,3.5c0.1,0.1,0.2,0.2,0.2,0.4  c0.4,0.9,1.2,1.6,2.2,1.9c1.4-0.4,2.9-0.9,4.2-1.5c0.5-0.9,0.7-1.9,0.4-2.9c0-0.1-0.1-0.3-0.1-0.4c-0.3-1.6,0-4.4,2.5-6.7  c0,0,0.1-0.1,0.1-0.1c0,0,0.1-0.1,0.1-0.1c0.7-0.5,1.2-1,1.8-1.5c0,0,0.1-0.1,0.1-0.1c0,0,0.1,0,0.1-0.1c1.4-1.1,3-1.7,4.7-1.7  c1,0,1.8,0.2,2.3,0.4c0.1,0,0.3,0.1,0.4,0.1c0.5,0.2,1,0.3,1.5,0.3l0,0c0.5,0,1-0.1,1.4-0.3c0.8-1.2,1.6-2.5,2.2-3.8  c-0.1-1-0.7-2-1.5-2.6c-0.1-0.1-0.2-0.2-0.3-0.3c-1.3-1.1-2.9-3.4-2.4-6.7c0,0,0-0.1,0-0.1c0,0,0-0.1,0-0.1c0.2-0.7,0.3-1.5,0.4-2.3  c0-0.1,0-0.1,0-0.2c0,0,0-0.1,0-0.1c0.7-3.3,3-4.9,4.5-5.5c0.1-0.1,0.2-0.1,0.4-0.2c1-0.3,1.9-1,2.4-2c-0.2-1.4-0.4-2.8-0.7-4.1  c-0.8-0.8-1.8-1.2-2.9-1.1c-0.2,0-0.3,0-0.5,0c-1.1,0-4.1-0.4-6.1-3.6c0,0-0.1-0.1-0.1-0.1c-0.4-0.8-0.8-1.4-1.2-2.1  c0,0-0.1-0.1-0.1-0.1c0,0,0-0.1-0.1-0.1c-1.6-3-0.9-5.7-0.1-7.1c0.1-0.1,0.1-0.2,0.2-0.4c0.6-0.9,0.8-2,0.5-3.1  c-1-0.9-2-1.8-3.1-2.6c-1.1-0.1-2.2,0.3-3,1c-0.1,0.1-0.2,0.2-0.4,0.3C67.3,24,65.8,25,63.5,25c-0.8,0-1.7-0.1-2.5-0.4  c0,0-0.1,0-0.1,0c0,0-0.1,0-0.1,0c-0.7-0.3-1.5-0.6-2.2-0.8c0,0-0.1,0-0.1,0c0,0,0,0-0.1,0c-3.1-1.2-4.4-3.8-4.7-5.4  c0-0.1-0.1-0.3-0.1-0.4c-0.1-1.1-0.7-2.1-1.6-2.7c-1.5-0.1-2.5-0.1-4,0c-0.9,0.6-1.5,1.6-1.6,2.7c0,0.1,0,0.3-0.1,0.4  c-0.3,1.6-1.5,4.2-4.7,5.4c0,0,0,0-0.1,0c0,0-0.1,0-0.1,0c-0.7,0.2-1.5,0.5-2.2,0.8c0,0-0.1,0-0.1,0c0,0-0.1,0-0.1,0  c-0.8,0.3-1.6,0.4-2.5,0.4c-2.3,0-3.8-1-4.5-1.6c-0.1-0.1-0.2-0.2-0.4-0.3c-0.8-0.8-1.9-1.2-3-1c-1.1,0.8-2.1,1.7-3.1,2.6  c-0.3,1.1-0.1,2.2,0.5,3.1c0.1,0.1,0.1,0.2,0.2,0.4c0.8,1.4,1.5,4.2-0.1,7.1c0,0,0,0.1,0,0.1c0,0-0.1,0.1-0.1,0.1  c-0.4,0.7-0.8,1.3-1.2,2c0,0.1-0.1,0.1-0.1,0.2c-2,3.2-5,3.6-6.1,3.6c-0.1,0-0.3,0-0.4,0c-1.1-0.1-2.1,0.3-2.9,1.1  c-0.3,1.4-0.6,2.8-0.7,4.1c0.5,1,1.3,1.7,2.4,2c0.1,0,0.3,0.1,0.4,0.2c1.5,0.6,3.8,2.2,4.5,5.5c0,0,0,0.1,0,0.1c0,0.1,0,0.1,0,0.2  c0.1,0.8,0.2,1.5,0.4,2.3c0,0,0,0.1,0,0.1c0,0,0,0.1,0,0.1c0.5,3.3-1.1,5.6-2.4,6.7c-0.1,0.1-0.2,0.2-0.3,0.3  c-0.9,0.6-1.4,1.6-1.5,2.6c0.7,1.3,1.4,2.6,2.2,3.8c0.9,0.4,2,0.4,3-0.1c0.1-0.1,0.3-0.1,0.4-0.1c0.5-0.2,1.3-0.4,2.3-0.4  c1.7,0,3.3,0.6,4.7,1.7c0,0,0,0,0.1,0c0.1,0,0.1,0.1,0.2,0.1c0.5,0.5,1.1,1,1.8,1.5c0,0,0.1,0.1,0.1,0.1c0,0,0.1,0.1,0.1,0.1  c2.5,2.2,2.8,5.1,2.5,6.7c0,0.1,0,0.3-0.1,0.4C35,81.5,35.2,82.5,35.7,83.4z M50,70.2c-10.8,0-19.5-8.8-19.5-19.5S39.2,31.1,50,31.1  s19.5,8.8,19.5,19.5S60.8,70.2,50,70.2z M50,34.8c-8.7,0-15.9,7.1-15.9,15.9S41.3,66.5,50,66.5s15.9-7.1,15.9-15.9  S58.7,34.8,50,34.8z"></path></svg>`
                 +   `</button>`
-                +   `<ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu${i}">`
+                +   `<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenu${i}">`
                 +   dropDown
                 +   `</ul>`;
             }
@@ -253,10 +292,42 @@ async function getModulesStatuses() {
 
                 let rowHtml =
                     `<div id='module-info-${moduleId}' class='${rowClass}'>`
-                    + `<div class='module-name me-auto'><b>${moduleName}</b> <span class="version ms-1 text-muted">${moduleInfo.version}</span></div>`
-                    + `<div class='status me-1'>${statusDesc}</div>`
-                    + `<div class='inference text-end me-1'>${inferenceOn}</div>`
+                    + `<div class='module-name me-auto'><b>${moduleName}</b> <span class="version ms-1 text-muted">${moduleInfo.version}</span></div>`;
 
+                if (status == "NotAvailable") {
+                    countRequests = "";
+                    rowHtml += 
+                            "<div class='ms-2' style='width:7.3rem'></div>";
+                } 
+                else {
+                    rowHtml += 
+                          `<div class='ms-2 text-nowrap' style='width:4em'>`
+                        + `<a class='me-0' href='#' title='Restart' onclick=\"updateSetting(event, '${moduleId}', 'Restart',    'now')">`
+                        + `<svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 512 512"><title>Restart</title>`
+                        + `<g transform="matrix(27.423195, 0, 0, 27.423195, -73.373978, -90.935013)">`
+                        + `<path class="action-path" d="M 9.203 17.507 C 8.914 17.507 8.687 17.272 8.687 16.972 L 8.687 9.351 C 8.687 9.051 8.914 8.816 9.203 8.816 C 9.302 8.816 9.398 8.843 9.483 8.893 L 16.081 12.703 C 16.253 12.803 16.356 12.975 16.356 13.162 C 16.356 13.348 16.254 13.522 16.081 13.62 L 9.483 17.431 C 9.398 17.48 9.302 17.507 9.203 17.507 L 9.203 17.507 Z"/>`
+                        + `<path class="action-path" d="M 18.268 3.559 C 18.549 3.675 18.731 3.948 18.731 4.252 L 18.731 8.494 C 18.731 8.909 18.396 9.244 17.981 9.244 L 13.739 9.244 C 13.435 9.244 13.162 9.062 13.046 8.781 C 12.93 8.501 12.994 8.179 13.208 7.964 L 14.811 6.361 C 12.178 5.26 9.027 5.781 6.884 7.924 C 4.053 10.755 4.053 15.346 6.884 18.177 C 9.716 21.008 14.306 21.008 17.137 18.177 C 18.783 16.531 19.473 14.291 19.204 12.144 C 19.153 11.733 19.444 11.358 19.855 11.307 C 20.266 11.255 20.641 11.547 20.693 11.958 C 21.016 14.544 20.185 17.25 18.198 19.238 C 14.781 22.655 9.241 22.655 5.824 19.238 C 2.407 15.821 2.407 10.28 5.824 6.863 C 8.562 4.125 12.662 3.582 15.942 5.231 L 17.451 3.721 C 17.666 3.507 17.988 3.443 18.268 3.559 Z"/>`
+                        + `</g></svg>`
+                        + `</a>`
+
+                        + `<a class='me-0' href='#' title='Stop' onclick="updateSetting(event, '${moduleId}', 'AutoStart',   false)">`
+                        + `<?xml version="1.0" encoding="utf-8"?>`
+                        + `<svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">`
+                        + `<title>Stop</title><path class="action-path" d="M7 7H17V17H7V7Z" />`
+                        + `</svg>`
+                        + `</a>`
+
+                        + `<a class='me-1' href='#' title='Start' onclick="updateSetting(event, '${moduleId}', 'AutoStart',   true)">`
+                        + `<svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 512 512"><title>Start</title>`
+                        + `<path class="action-path" d="M60.54,512c-17.06,0-30.43-13.86-30.43-31.56V31.55C30.12,13.86,43.48,0,60.55,0A32.94,32.94,0,0,1,77,4.52L465.7,229c10.13,5.85,16.18,16,16.18,27s-6,21.2-16.18,27L77,507.48A32.92,32.92,0,0,1,60.55,512Z"/></svg>`
+                        + `</a>`
+                        + '</div>'
+                }
+
+                rowHtml += 
+                      `<div class='status me-1'>${statusDesc}</div>`
+                    + `<div class='inference text-end me-1'>${inferenceOn}</div>`
+                    + `<div class='proc-count text-end text-nowrap me-1' title='${countTitle}' style='width:3rem'>${countRequests}</div>`
                     + `<div class='dropdown ms-2' style='width:3rem'>`
                     +  `<button class='btn dropdown-toggle p-1' type='button' id='dropdownMenuInfo${i}' data-bs-toggle='dropdown'>Info</button>`
                     +  `<ul class='dropdown-menu' aria-labelledby="dropdownMenuInfo${i}"><li>`
@@ -275,42 +346,6 @@ async function getModulesStatuses() {
                     +  `</li></ul>`
                     + `</div>`;
 
-
-                if (status == "NotAvailable") {
-                    rowHtml += 
-                            "<div class='ms-2' style='width:7.3rem'></div>";
-                } 
-                else {
-                    rowHtml += 
-                            `<div class='proc-count text-end text-nowrap me-1' title='${countTitle}' style='width:3rem'>${countRequests}</div>`
-                        +  `<div class='ms-2 text-nowrap' style='width:4em'>`
-                        + `<a class='me-1' href='#' title='Restart' onclick=\"updateSetting(event, '${moduleId}', 'Restart',    'now')">`
-                        + `<svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 512 512"><title>Restart</title>`
-                        + `<g transform="matrix(27.423195, 0, 0, 27.423195, -73.373978, -90.935013)">`
-                        + `<path class="action-path" d="M 9.203 17.507 C 8.914 17.507 8.687 17.272 8.687 16.972 L 8.687 9.351 C 8.687 9.051 8.914 8.816 9.203 8.816 C 9.302 8.816 9.398 8.843 9.483 8.893 L 16.081 12.703 C 16.253 12.803 16.356 12.975 16.356 13.162 C 16.356 13.348 16.254 13.522 16.081 13.62 L 9.483 17.431 C 9.398 17.48 9.302 17.507 9.203 17.507 L 9.203 17.507 Z"/>`
-                        + `<path class="action-path" d="M 18.268 3.559 C 18.549 3.675 18.731 3.948 18.731 4.252 L 18.731 8.494 C 18.731 8.909 18.396 9.244 17.981 9.244 L 13.739 9.244 C 13.435 9.244 13.162 9.062 13.046 8.781 C 12.93 8.501 12.994 8.179 13.208 7.964 L 14.811 6.361 C 12.178 5.26 9.027 5.781 6.884 7.924 C 4.053 10.755 4.053 15.346 6.884 18.177 C 9.716 21.008 14.306 21.008 17.137 18.177 C 18.783 16.531 19.473 14.291 19.204 12.144 C 19.153 11.733 19.444 11.358 19.855 11.307 C 20.266 11.255 20.641 11.547 20.693 11.958 C 21.016 14.544 20.185 17.25 18.198 19.238 C 14.781 22.655 9.241 22.655 5.824 19.238 C 2.407 15.821 2.407 10.28 5.824 6.863 C 8.562 4.125 12.662 3.582 15.942 5.231 L 17.451 3.721 C 17.666 3.507 17.988 3.443 18.268 3.559 Z"/>`
-                        + `</g></svg>`
-                        + `</a>`
-
-                        + `<a class='me-1' href='#' title='Stop' onclick="updateSetting(event, '${moduleId}', 'AutoStart',   false)">`
-                        + `<?xml version="1.0" encoding="utf-8"?>`
-                        + `<svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">`
-                        + `<title>Stop</title><path class="action-path" d="M7 7H17V17H7V7Z" />`
-                        + `</svg>`
-                        + `</a>`
-
-//                              + `<a class='me-1' href='#' title='Pause' onclick="updateSetting(event, '${moduleId}', 'AutoStart',   false)">`
-//                              + `<svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 512 512"><title>Pause</title>`
-//                              + `<path class="action-path" d="M395,512a73.14,73.14,0,0,1-73.14-73.14V73.14a73.14,73.14,0,1,1,146.29,0V438.86A73.14,73.14,0,0,1,395,512Z"/>`
-//                              + `<path class="action-path" d="M117,512a73.14,73.14,0,0,1-73.14-73.14V73.14a73.14,73.14,0,1,1,146.29,0V438.86A73.14,73.14,0,0,1,117,512Z"/></svg>`
-//                              + `</a>`
-
-                        + `<a class='me-1' href='#' title='Start' onclick="updateSetting(event, '${moduleId}', 'AutoStart',   true)">`
-                        + `<svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 512 512"><title>Start</title>`
-                        + `<path class="action-path" d="M60.54,512c-17.06,0-30.43-13.86-30.43-31.56V31.55C30.12,13.86,43.48,0,60.55,0A32.94,32.94,0,0,1,77,4.52L465.7,229c10.13,5.85,16.18,16,16.18,27s-6,21.2-16.18,27L77,507.48A32.92,32.92,0,0,1,60.55,512Z"/></svg>`
-                        + `</a>`
-                        + '</div>'
-                }
 
                 rowHtml +=
                           "<div class='context-menu ms-0 me-3' style='width:1.4rem'>" + dropDown + "</div>";
@@ -379,12 +414,12 @@ function getStatusDescClass(status) {
     let statusDesc = "Unknown";
 
     switch (status) {
-        case "Enabled":
-            statusDesc = "Enabled";
+        case "AutoStart":
+            statusDesc = "AutoStart";
             className = "alert-info"
             break;
-        case "NotEnabled":
-            statusDesc = "Not Enabled";
+        case "NoAutoStart":
+            statusDesc = "Ready";
             className = "alert-light"
             break;
         case "Starting":
@@ -456,7 +491,7 @@ function meshStatusSummary(data) {
 
     if (data.localServer)
     {
-        summary += meshServerSummary(data.localServer);
+        summary += meshServerSummary(data.localServer, true);
     }
     else
     {
@@ -480,7 +515,7 @@ function meshStatusSummary(data) {
             if (!serverInfo.isLocalServer) {
                 if (count > 0) summary += "\n";
 
-                summary += meshServerSummary(serverInfo);
+                summary += meshServerSummary(serverInfo, false);
                 count++;
             }
         }
@@ -488,7 +523,7 @@ function meshStatusSummary(data) {
     return summary;
 }
 
-function meshServerSummary(server) {
+function meshServerSummary(server, isLocal) {
     const indent = "    ";
 
     let maxPathLength = 0;
@@ -527,12 +562,13 @@ function meshServerSummary(server) {
     summary += `${indent}Routes Available: (${totalRequests} processed)\n<div class='${routePanelClasses}'>`;
     for (let routeInfo of server.routeInfos) {
         let padding = maxPathLength + 4;
-        // let hit  = route.numberOfRequests == 1 ? "request" : "requests";
-        let hit     = "processed";
+
+        let processed = isLocal? "processed" : "requests forwarded";
+        let avgTime   = isLocal? "avg process time" : "avg round trip";
 
         summary += `${indent}${indent}${routeInfo.route.padEnd(padding)}`;
-        summary += `${routeInfo.effectiveResponseTime}ms, `;
-        summary += `${routeInfo.numberOfRequests} ${hit}`;
+        summary += `${routeInfo.effectiveResponseTime}ms (${avgTime}), `;
+        summary += `${routeInfo.numberOfRequests} ${processed}`;
         summary += "\n";
     }
     if (server.routeInfos)
@@ -725,6 +761,7 @@ function clearLogs() {
     _logEntries.clear();
     _displayDirty = true;
     displayLogs();
+    return false;
 }
 
 /**

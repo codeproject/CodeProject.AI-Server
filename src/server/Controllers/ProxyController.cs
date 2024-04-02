@@ -103,7 +103,7 @@ namespace CodeProject.AI.Server.Controllers
         /// form "category/module[/command]". eg "image/alpr" or "vision/custom/modelName".</param>
         /// <returns>The result of the command, or error.</returns>
         [HttpPost]
-        [Route("{**pathSuffix}", Order = 10)]
+        [Route("{**pathSuffix}")]
         public async Task<IActionResult> Post(string pathSuffix)
         {
             if (_verbose)
@@ -181,49 +181,6 @@ namespace CodeProject.AI.Server.Controllers
             }
         }
 
-        // Long Running Task
-
-        /// <summary>
-        /// Gets the result of the command from the module.
-        /// REVIEW:[Matthew] I don't understand why we aren't simply using the [Route("{**pathSuffix}"]
-        /// route. Doing it this way means the server needs to understand the inner workings of the
-        /// life cycle of a long running module, and it means changes to the way the module works
-        /// means the server needs to be updated. Please don't couple of they don't absolutely need
-        /// coupling. I would make the route /v1/moduleid/process-status/request_id so that command =
-        /// 'process_status' and segment[0] = command_id. Same for cancelcommand
-        /// (/v1/moduleid/cancel-process/request_id) (I'd use name request_id rather than command_id
-        /// to be consistent and not switch terms - assuming command_id is actually the request Id)
-        /// </summary>
-        /// <param name="moduleId"></param>
-        /// <param name="commandId"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("getcommandresult", Order = 0)]
-        public async Task<IActionResult> GetCommandResult([FromForm] string moduleId,[FromForm]string commandId)
-        {
-            var command = "get_command_result";
-
-            var result =  await SendCommandToModuleAsync(moduleId, commandId, command).ConfigureAwait(false);
-            return result;
-        }
-
-        /// <summary>
-        /// Cancels the command from the module.
-        /// REVIEW:[Matthew] Don't see why this is here. See above
-        /// </summary>
-        /// <param name="moduleId"></param>
-        /// <param name="commandId"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("cancelcommand", Order = 0)]
-        public async Task<IActionResult> CancelCommand([FromForm] string moduleId, [FromForm] string commandId)
-        {
-            var command = "cancel_command";
-
-            var result =  await SendCommandToModuleAsync(moduleId, commandId, command).ConfigureAwait(false);
-            return result;
-        }
-
         private async Task<IActionResult> SendCommandToModuleAsync(string moduleId, string commandId, string command)
         {
             if (string.IsNullOrEmpty(moduleId) || string.IsNullOrEmpty(commandId))
@@ -274,7 +231,6 @@ namespace CodeProject.AI.Server.Controllers
 
             return new ObjectResult(response);
         }
-
 
         /// <summary>
         /// Gets a summary, in Markdown form, of the API for each module.

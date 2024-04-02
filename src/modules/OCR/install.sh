@@ -20,7 +20,7 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ]; then
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ]; then
 
     installPythonPackagesByName "opencv-python>=4.2.0" "OpenCV, the Computer Vision library for Python"
 
@@ -28,7 +28,7 @@ if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ]; th
     write "Updating apt-get..."
     sudo apt-get update -y >/dev/null 2>/dev/null
     sudo apt-get upgrade -y >/dev/null 2>/dev/null
-    writeLine "Done" "$color_success"
+    writeLine "done" "$color_success"
 
     # install dependencies
     installAptPackages "cmake"
@@ -56,7 +56,7 @@ if [ "${systemName}" = "Raspberry Pi" ] || [ "${systemName}" = "Orange Pi" ]; th
 
     # module_install_errors=...
 
-elif [ "${systemName}" = "Jetson" ]; then
+elif [ "${edgeDevice}" = "Jetson" ]; then
     module_install_errors="Unable to install PaddleOCR on Jetson."
 fi
 
@@ -99,7 +99,7 @@ if [ "${module_install_errors}" = "" ] && [ "$os" = "linux" ] && [ "$architectur
                 fi
             fi
 
-            writeLine "Done" $color_success
+            writeLine "done" $color_success
         fi
     fi
 fi

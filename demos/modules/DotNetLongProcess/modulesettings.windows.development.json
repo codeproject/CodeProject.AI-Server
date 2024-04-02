@@ -1,0 +1,10 @@
+{
+  "Modules": {
+
+    "DotNetLongProcess": {
+      "LaunchSettings": {
+        "FilePath": "bin/Debug/net7.0/DotNetLongProcess.exe"
+      }
+    }
+  }
+}

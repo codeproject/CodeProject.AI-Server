@@ -193,10 +193,5 @@ class Scene_adapter(ModuleRunner):
                 self._init_models(re_entered = True)
 
 
-    def _status_summary(self):
-        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
-        return summary
-
-
 if __name__ == "__main__":
     Scene_adapter().start_loop()

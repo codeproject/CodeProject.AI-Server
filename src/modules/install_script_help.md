@@ -84,6 +84,7 @@ As an example, `requirements.linux.arm64.cuda11_7.txt` would be a requirements f
 | `architecture`      | "x86_64" or "arm64" |
 | `platform`          | "linux", "linux-arm64", "macos" or "macos-arm64", "windows" or "windows-arm64" |
 | `systemName`        | General name for the system. Value can be one of: Windows, Linux, macOS, WSL, Raspberry Pi, Orange Pi, Jetson, or Docker |
+| `edgeDevice`        | Raspberry Pi, Orange PI, Jetson, or blank if none of these |
 |||
 | `rootDirPath`       | the root path of the installation (eg: ~/CodeProject/AI) |
 | `sdkScriptsDirPath` | the path to the installation utility scripts ($rootDirPath/SDK/Scripts) |

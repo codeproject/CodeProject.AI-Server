@@ -68,7 +68,7 @@ RULES AND CONVENTIONS
     <title>Object Detection (YOLOv5 RKNN) Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/server.css?v=2.5.0.0">
     <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
@@ -159,7 +159,7 @@ RULES AND CONVENTIONS
 			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
-			setResultsHtml("Detecting objects using custom model...");
+			setResultsHtml(`Detecting objects using model ${model_name}...`);
 			let data = await submitRequest('vision', 'custom/' + model_name, images, null);
             if (data) {
 				showResultsBoundingBoxes(data.predictions);

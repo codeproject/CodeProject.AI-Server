@@ -1,0 +1,12 @@
+#! Python3.9
+
+torch                           # Installing PyTorch, for Tensor computation and Deep neural networks
+
+# https://pypi.org/project/optimum/
+# optimum[openvino, nncf]       # Installing Optimum to allow OpenVINO and the Neural Network Compression Framework integration
+optimum[openvino]               # Installing Optimum to allow OpenVINO integration
+
+diffusers[torch]                # Installing Diffusers for state-of-the-art diffusion in PyTorch and JAX.
+transformers                    # Installing transformers for State-of-the-art machine Learning for JAX, PyTorch and TensorFlow
+
+# last line empty

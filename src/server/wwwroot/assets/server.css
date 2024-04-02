@@ -20,6 +20,9 @@ a {
 .explorer .nav-tabs .nav-link { padding: 0.5rem 0.5rem; }
 .nav-tabs .nav-link.active { background-color: #303030; }
 
+.signal        { filter: grayscale(.8); }
+.signal.active { filter: grayscale(0); }
+
 .hostname-label {
     max-width: 8rem;
     overflow: hidden;
@@ -166,6 +169,7 @@ a {
         width:9rem;
     }
     .status-row.not-available .status { color: #ccc; }
+    .status-row.ready .status { color: #d9ffd9; }
     .status-row .inference {
         width: 9rem;
         text-overflow: ellipsis;
@@ -203,9 +207,9 @@ svg:hover .action-path { opacity: 1; }
 }
 li:hover .submenu {
     display: block;
-    position: absolute;
-    transform: translate(100%,-1.5rem);
+    transform: translate(10rem,-1.5rem);
 }
+
 .site-title {
     text-decoration: none !important;
     font-size: 2.7rem;

@@ -100,6 +100,19 @@ class YOLOv8_adapter(ModuleRunner):
 
             response = self._list_custom_models()
 
+        elif data.command == "segment":                  # Perform object segmentation
+
+            # The route to here is /v1/vision/segmentation
+
+            threshold: float = float(data.get_value("min_confidence", "0.4"))
+            img: Image       = data.get_image(0)
+
+            response = do_detection(self, self.opts.models_dir,
+                                    self.opts.std_seg_model_name, self.opts.resolution_pixels,
+                                    self.use_CUDA, self.accel_device_name,
+                                    self.use_MPS, self.use_DirectML, self.half_precision,
+                                    img, threshold, True)
+
         elif data.command == "detect":                  # Perform 'standard' object detection
 
             # The route to here is /v1/vision/detection
@@ -111,7 +124,7 @@ class YOLOv8_adapter(ModuleRunner):
                                     self.opts.std_model_name, self.opts.resolution_pixels,
                                     self.use_CUDA, self.accel_device_name,
                                     self.use_MPS, self.use_DirectML, self.half_precision,
-                                    img, threshold)
+                                    img, threshold, False)
 
         elif data.command == "custom":                  # Perform custom object detection
 
@@ -220,15 +233,6 @@ class YOLOv8_adapter(ModuleRunner):
             self.models_last_checked = time.time()
 
         return { "success": True, "models": self.custom_model_names }
-
-
-    def _status_summary(self):
-        summary  = "Inference Operations: " + str(self._success_inferences)  + "\n"
-        summary += "Items detected:       " + str(self._num_items_found) + "\n"
-        for label in self._histogram:
-            summary += "  " + label + ": " + str(self._histogram[label]) + "\n"
-
-        return summary
 
 
 if __name__ == "__main__":

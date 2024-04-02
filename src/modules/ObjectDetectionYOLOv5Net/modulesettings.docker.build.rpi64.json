@@ -14,9 +14,6 @@
          packages can be installed and persisted.
       */
 
-      "InstallOptions" : {
-        "PreInstalled": "true"
-      },
       "LaunchSettings": {
         // ObjectDetectionYOLOv5Net is currently the fastest non-TPU solution for RPi, with a tiny model
         "AutoStart": false

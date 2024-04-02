@@ -69,9 +69,10 @@ class ModuleRunner:
                all the info needed for this module to satisfy the request
         returns: A JSON package containing the results of this request.
 
-        [Matthew] add docs: to indicate a long running process, return the function
-        that will be run as long process, rather than a JSON package
-        [Matthew] alternatively, return JSON, and have 'long_process' as a field
+        Notes: to indicate a long running process, return the function that will
+               be run as the long process rather than a JSON package
+
+        TODO: alternatively, return JSON, and have 'long_process' as a field
         that has a ref to the method to run. This gets removed from the JSON and
         then the JSON gets sent back to the client
         """
@@ -90,7 +91,7 @@ class ModuleRunner:
         """
         return {}
     
-    def command_status(self, data: RequestData) -> JSON:
+    def command_status(self) -> JSON:
          """ Overridable:
          Called when this module has been asked to provide the current status of
          a long running command. Can return None if there's nothing to report, or
@@ -153,7 +154,11 @@ class ModuleRunner:
         self._log_timing_events        = True
 
         # Some commands are just annoying in the logs
-        self._ignore_timing_commands   = [ "list-custom", "status" ]
+        self._ignore_timing_commands   = [ 
+            "list-custom",
+            "get_module_status", "status", "get_status", # status is deprecated alias
+            "get_command_status"
+        ]
 
         # Private fields -------------------------------------------------------
 
@@ -223,8 +228,14 @@ class ModuleRunner:
         # Private fields
         self._base_queue_url     = self.base_api_url + "queue/"
         
+        # if cancel_command_task is called and force_shutdown is true, then the
+        # long running process will be killed. Setting false (either here or in
+        # a cancel_command_task override) allows the long process to stop gracefully
+        self.force_shutdown = True
+
         self.long_running_command_task = None
         self.long_running_command_id   = None
+        self.last_long_running_output  = None
 
         # General setup
 
@@ -495,7 +506,7 @@ class ModuleRunner:
 
                 # The method to call to process this request
                 method_to_call = self.process
-                update_status  = True
+                update_statistics  = True
 
                 # Some requests need to be handled differently
                 if data.command:
@@ -508,7 +519,7 @@ class ModuleRunner:
                     if command == "quit" and \
                        self.module_id.lower() == data.get_value("moduleId").lower():
                         
-                        update_status = False
+                        update_statistics = False
 
                         if self.log_verbosity == LogVerbosity.Loud:
                             print(f"{self.module_id} 'quit' called. Signaling shutdown for task {task_id}")
@@ -523,27 +534,28 @@ class ModuleRunner:
                         self._cancelled = True
                         break
                     
-                    elif command == "status" or command == "module_status": # maybe get_.."
-                        update_status  = False
-                        method_to_call = self._get_module_status
-                        
-                    elif command == "get_command_result" or command == "process_status": # maybe get_.."
-                        update_status  = False
-                        method_to_call = self._get_command_status
+                    elif command == "status" or command == "get_module_status": 
+                        update_statistics = False
+                        method_to_call    = self._get_module_status
+                    
+                    elif command == "get_command_status":
+                        update_statistics = False
+                        method_to_call    = self._get_command_status
                         
                     elif command == "cancel_command":
-                        update_status  = False
-                        method_to_call = self._cancel_command_task
+                        update_statistics = False
+                        method_to_call    = self._cancel_command_task
 
                     elif command == "selftest":
-                        # NOTE: selftest generally won't actually be called here - it'll be called 
-                        #       via command line. This is here in case selftest is triggered via API
-                        update_status  = False
-                        method_to_call = self.selftest
+                        # NOTE: selftest generally won't actually be called here 
+                        #       - it'll be called via command line. This is here
+                        #       in case selftest is triggered via API
+                        update_statistics = False
+                        method_to_call    = self.selftest
 
                     # Annoying requests
                     if command in self._ignore_timing_commands:
-                        update_status = False
+                        update_statistics = False
 
                 output: JSON = {}
                 try:
@@ -560,27 +572,39 @@ class ModuleRunner:
                         callbacktask = asyncio.create_task(method_to_call(data))
                     else:
                         # If the method is not async, then we wrap it in an
-                        # awaitable method which we await.
+                        # awaitable method which we will await.
                         loop = asyncio.get_running_loop()
                         callbacktask = loop.run_in_executor(None, method_to_call, data)
 
                     # Await 
                     output = await callbacktask
 
-                    # if a coroutine was returned, then we run the coroutine in
-                    # the background and return a message to the server only one
+                    # if a coroutine was returned then this is a "long process"
+                    # call. We'll run the coroutine (the long process) in the
+                    # background and return a message to the server. Only one
                     # long running command can be in progress at a time
                     if asyncio.iscoroutinefunction(output) or callable(output):
                         
-                        # REVIEW: [Chris] should we check that the response has been read?
                         if self.long_running_command_task and not self.long_running_command_task.done():
                             output = {
                                 "success": False,
-                                "command_id": self.long_running_command_id,
-                                "error":   "A long running command is already in progress"
+                                "commandId": self.long_running_command_id,
+                                "error": "A long running command is already in progress"
                             }
                         else:
-                            self.long_running_command_id = data.request_id
+                            # We have a previous long running process that is now
+                            # done, but we have not stored (nor returned) the
+                            # result. We can read the result now, but we have to
+                            # start a new process, so...???
+                            # if self.long_running_command_task and self.long_running_command_task.done() and \
+                            #   not self.last_long_running_output:
+                            #    last_long_running_output = ...
+
+                            # Store the request ID as the command Id for later, reset the last result
+                            self.long_running_command_id  = data.request_id
+                            self.last_long_running_output = None
+
+                            # Start the long running process
                             if asyncio.iscoroutinefunction(output):
                                 self.long_running_command_task = asyncio.create_task(output(data))
                             else:
@@ -588,13 +612,13 @@ class ModuleRunner:
                                 self.long_running_command_task = loop.run_in_executor(None, output, data)
                                 
                             output = { 
-                                "success":        True, 
-                                "message":        "Command is running in the background",
-                                "command_id":     data.request_id,
-                                "command_status": "running"
+                                "success":       True, 
+                                "message":       "Command is running in the background",
+                                "commandId":     data.request_id,
+                                "commandStatus": "running"
                             }
 
-                    if update_status:
+                    if update_statistics:
                         self.update_statistics(output)
 
                     if self.log_verbosity == LogVerbosity.Loud:
@@ -638,7 +662,8 @@ class ModuleRunner:
                         if self.log_verbosity == LogVerbosity.Loud:
                             print(f"{self.module_id} sending result of process to server for task {task_id}")
 
-                        send_response_task = asyncio.create_task(self.send_response(data.request_id, output))
+                        co_route = self.send_response(data.request_id, output)
+                        send_response_task = asyncio.create_task(co_route)
                         
                     except Exception as ex:
                         print(f"An exception occurred sending the inference response (#reqid {data.request_id}): {str(ex)}")
@@ -665,76 +690,93 @@ class ModuleRunner:
         command_success = False
 
         if not command_id:
+            # Bad input
             return {
-                "success": False,
-                "error":   "No command ID provided"
+                "success":       False,
+                "commandStatus": "unknown",
+                "error":         "No command ID provided"
             }
+        
         elif not self.long_running_command_id:
+            # Nothing running
             return {
-                "success": False,
-                "error":   "No long running command is currently in progress"
+                "success":       False,
+                "commandStatus": "not started",
+                "error":         "No long running command is currently in progress"
             }
+        
         elif command_id != self.long_running_command_id:
+            # Mistaken identity: we know not of this "command_id" that you speak
             return {
-                "success": False,
-                "error":   "The command ID provided does not match the current long running command"
+                "success":       False,
+                "commandStatus": "unknown",
+                "error":         "The command ID provided does not match the current long running command"
             }
+        
         elif not self.long_running_command_task:
+            # This is not the long running process you are looking for
             return {
-                "success": False,
-                "error":   "The long running command task has been lost"
+                "success":       False,
+                "commandStatus": "unknown",
+                "error":         "The long running command task has been lost"
             }
+        
         elif not self.long_running_command_task.done():
-            status = self.command_status()
-            status.update({
-                "success":        True,
-                "message":        "The long running command is still in progress",
-                "command_id":     command_id,
-                "command_status": "running",
-            })
+            # Long process is still running
+
+            status = {
+                "success":       True,
+                "message":       "The long running command is still in progress",
+                "commandId":     command_id,
+                "commandStatus": "running",
+            }
+
+            command_status = self.command_status()
+            
+            if command_status:
+                status.update(command_status)
+
             return status
         
-        # SUGGEST [Matthew]: Store "output" the next long process starts and always 
-        #         return "output" here
+        else:
+            # The long process has ended. If we've stored the last result return
+            # it, else get the result and store it
+            command_success = True
 
-        command_success = True
-        try:
-            result = self.long_running_command_task.result()
-        except Exception as ex:
-            command_success = False
-                
-        output = {
-            "success":        command_success, 
-            "message":        "Command has completed",
-            "command_id":     command_id,
-            "command_status": "completed",
-            "error":          None if command_success else str(ex)
+            if not self.last_long_running_output:
+                error  = None
+                result = None
+                if self.long_running_command_task:
+                    try:
+                        result = self.long_running_command_task.result()
+                    except Exception as ex:
+                        command_success = False
+                        error = str(ex)
+                else:
+                    command_success = False
+                    error = "Lost contact with long running task"
 
-            # All this is automatically added
-            # "moduleId"        : self.module_id,
-            # "moduleName"      : self.module_name,
-            # "code"            : 200 if command_success == True else 500,
-            # "command"         : data.command or '',
-            # "requestId"       : data.request_id or '',
-            # "inferenceDevice" : self.inference_device,
-        }
-        
-        # COMMENT [Matthew]: dict.update. I've never heard of this. This is so cool
-        output.update(result)
-        
-        # moving this to initial command
-        # we want to be able to read the result multiple times until a new command is issued
-        
-        # self.long_running_command_id   = None
-        # self.long_running_command_task = None
-        
-        return output
+                self.last_long_running_output = {
+                    "success":       command_success, 
+                    "message":       "Command has completed",
+                    "commandId":     command_id,
+                    "commandStatus": "completed",
+                    "error":         error
+                }
+                if result:
+                    self.last_long_running_output.update(result) # 'update' merges the two objects
+            
+            return self.last_long_running_output
     
+
     def _get_module_status(self) -> JSON:
         """
         Called when this module has been asked to provide its overall status
         """
         status = self.module_status()
+        if status is None:
+            status = {}
+            
         status.update({
             "inferenceDevice"      : self.inference_device,
             "inferenceLibrary"     : self.inference_library,
@@ -786,21 +828,48 @@ class ModuleRunner:
                 "error":   "The long running command task has been lost"
             }
         
+        # We want module authors to focus on logic not plumbing. Long running 
+        # modules will have unique needs when it comes to shutting down, but we
+        # should provide a default solution for the simple case (no resource 
+        # cleanup issues), so the module author does not need to add plumbing.
+        # However, we also provide the means for an author to do a careful 
+        # shutdown if required. In this case, the module author can set
+        # self.force_shutdown = False in their override of cancel_command_task.
+        # NOTE: self.force_shutdown = True by default.
+
+        # Call the module's override method (if provided)
+        # This is where the module author can whatever they need to do to
+        # gracefully shutdown the long running process. If the module author
+        # sets force_shutdown to False, then we assume the module will handle
+        # the shutdown itself and we don't cancel the task.
         self.cancel_command_task()
 
-        self.long_running_command_task.cancel()
-        self.long_running_command_id   = None
-        self.long_running_command_task = None
+        # If the module's override of cancel_command_task didn't set force_shutdown
+        # to False then we go ahead and kill this process. Otherwise we assume the 
+        # module will gracefully shut itself down
+        if self.force_shutdown:
+            try:
+                if not self.long_running_command_task.done():
+                    self.long_running_command_task.cancel()
+            except:
+                pass
+
+        # NOTE: At this point the long running task may still be running! By
+        #       allowing modules to abort the shutdown, we let a long running 
+        #       process continue on so it has time to shutdown properly.
+        if self.long_running_command_task.done():
+            self.long_running_command_id   = None
+            self.long_running_command_task = None
         
         output = {
-            "success":        True, 
-            "message":        "The command has been cancelled",
-            "command_id":     command_id,
-            "command_status": "cancelled",
+            "success"         : True, 
+            "message"         : "The command has been cancelled",
+            "commandId"       : command_id,
+            "commandStatus"   : "cancelled",
 
             "moduleId"        : self.module_id,
             "moduleName"      : self.module_name,
-            "code"            : 200 if output["success"] == True else 500,
+            "code"            : 200,
             "command"         : data.command or '',
             "requestId"       : data.request_id or '',
             "inferenceDevice" : self.inference_device,
@@ -1182,7 +1251,7 @@ class ModuleRunner:
             # DISABLED: check_installed_packages is deprecated
             # print(check_installed_packages(requirements_filepath, False))
             # DISABLED: check_requirements causes Paddle to explode with warnings 
-            # about Setuptools replacing distutils
+            #           about Setuptools replacing distutils
             # print(check_requirements(requirements_filepath, False))
             pass
 

@@ -1,0 +1,12 @@
+#! Python3.8
+
+## For CUDA 11.7 (NOT torch 2.0+)
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==1.13.0+cu117             # Installing PyTorch, an open source machine learning framework
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.14.0+cu117       # Installing TorchVision, for working with computer vision models
+
+# Specific version because we have a patch
+ultralytics==8.1.2              # Installing Ultralytics package for object detection in images
+
+# last line empty..

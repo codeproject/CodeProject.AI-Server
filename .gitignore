@@ -294,10 +294,16 @@ MigrationBackup/
 
 *.DS_Store
 
-/demos/Python/detected
-/demos/Python/Vision/detected
 
-/Installers/downloads
+# CodeProject.AI ===============================================================
+
+# Demos ------------------------------------------------------------------------
+
+/demos/clients/Python/detected
+/demos/clients/Python/Vision/detected
+
+
+# Installers -------------------------------------------------------------------
 
 /Installers/macOS/application
 /Installers/macOS/build/
@@ -314,32 +320,28 @@ MigrationBackup/
 /Installers/Windows/Inno Setup/assets/dotnet-hosting-*.exe
 /Installers/Windows/WIX Toolset/CodeProjectAI.Server.Installer/ServerInstallFiles.wxs
 
-/src/server/installconfig.json
 
-# The compiled form of the ParseJSON utility. We move the compiled files to its base dir it for convenience
-/src/SDK/Utilities/ParseJSON/ParseJSON
-/src/SDK/Utilities/ParseJSON/ParseJSON.exe
-/src/SDK/Utilities/ParseJSON/ParseJSON.deps.json
-/src/SDK/Utilities/ParseJSON/ParseJSON.dll
-/src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json
-/src/SDK/Utilities/ParseJSON/ParseJSON.xml
+# Downloads --------------------------------------------------------------------
+
+# Linux utilities
+wget-log*
 
 # keep the folder structure but don't git commit the cached downloads
 !/src/downloads
 /src/downloads/*
+
 !/src/downloads/modules
 /src/downloads/modules/*
 !/src/downloads/modules/readme.txt
 
-# Generated exe packages
-/src/modules/ObjectDetectionYOLOv5Net/ObjectDetectionYOLOv5Net-*-[0-9].[0-9].zip
-/src/modules/ObjectDetectionYOLOv5Net/ObjectDetectionYOLOv5Net-*-[0-9].[0-9].[0-9].zip
+!/src/downloads/models
+/src/downloads/models/*
+!/src/downloads/models/models.json
 
-# Downloaded assets for modules
+
+# Downloaded assets and libraries for modules
 /src/modules/ALPR/paddleocr
-/src/modules/ALPR/plate.png
 /src/modules/ALPR-RKNN/paddleocr
-/src/modules/ALPR-RKNN/plate.png
 /src/modules/BackgroundRemover/models
 /src/modules/Cartooniser/weights
 /src/modules/FaceProcessing/assets
@@ -347,7 +349,6 @@ MigrationBackup/
 /src/modules/LlamaChat/models/
 /src/modules/ObjectDetectionCoral/assets
 src/modules/ObjectDetectionCoral/edgetpu_runtime
-src/modules/ObjectDetectionCoral/libedgetpu.*
 src/modules/ObjectDetectionYoloRKNN/assets
 src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/modules/ObjectDetectionYOLOv5Net/assets/
@@ -359,10 +360,7 @@ src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/modules/ObjectDetectionYOLOv5-6.2/custom-models
 /src/modules/ObjectDetectionYOLOv8/assets
 /src/modules/ObjectDetectionYOLOv8/custom-models
-/src/modules/ObjectDetectionYOLOv8/torchvision/
-/src/modules/ObjectDetectionYOLOv8/ultralytics/
 /src/modules/OCR/paddleocr
-/src/modules/PortraitFilter/runtimeconfig.template.Designer.cs
 /src/modules/SceneClassifier/assets
 /src/modules/SoundClassifierTF/data/
 /src/modules/Text2Image/assets
@@ -373,8 +371,34 @@ src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/modules/TrainingObjectDetectionYOLOv5/train
 /src/modules/TrainingObjectDetectionYOLOv5/zoo
 
-/src/modules/ModuleDemoPythonSimple/assets/
-/src/modules/ModuleDemoPythonSimple/bin/
-/src/modules/ModuleDemoNetSimple/assets/
-/src/modules/ModuleDemoNetSimple/bin/
-/src/modules/ModuleDemoNetSimple/obj/
+/demos/modules/DotNetLongProcess/assets/
+/demos/modules/DotNetSimple/assets/
+/demos/modules/PythonLongProcess/assets
+/demos/modules/PythonSimple/assets
+
+# Config files -----------------------------------------------------------------
+
+# Server config on install
+/src/server/installconfig.json
+
+
+# SDK --------------------------------------------------------------------------
+
+# The compiled form of the ParseJSON utility. We move the compiled files to its base dir it for convenience
+/src/SDK/Utilities/ParseJSON/ParseJSON
+/src/SDK/Utilities/ParseJSON/ParseJSON.exe
+/src/SDK/Utilities/ParseJSON/ParseJSON.deps.json
+/src/SDK/Utilities/ParseJSON/ParseJSON.dll
+/src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json
+/src/SDK/Utilities/ParseJSON/ParseJSON.xml
+
+# Module packages --------------------------------------------------------------
+
+# Generated exe packages
+/src/modules/*/*-[0-9]*.[0-9]*.[0-9]*.zip
+
+# Debug debris -----------------------------------------------------------------
+
+/src/modules/ALPR/plate.png
+/src/modules/ALPR-RKNN/plate.png
+/SDK

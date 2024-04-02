@@ -26,6 +26,8 @@ set pythonModules=ALPR ALPR-RKNN BackgroundRemover Cartooniser FaceProcessing Ll
                   ObjectDetectionCoral ObjectDetectionYOLOv5-3.1 ObjectDetectionYOLOv5-6.2    ^
                   ObjectDetectionYOLOv8 ObjectDetectionYoloRKNN TrainingObjectDetectionYOLOv5 ^
                   OCR SceneClassifier SoundClassifierTF SuperResolution TextSummary
+set dotNetDemoModules=DotNetLongProcess DotNetSimple
+set pythonDemoModules=PythonLongProcess PythonSimple
 
 if "%1" == "" (
     call "!sdkDir!\utils.bat" WriteLine "Solution Cleaner" "White"
@@ -100,8 +102,13 @@ if /i "%cleanBuild%" == "true" (
     for %%x in (!dotNetModules!) do (
         call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
         call :RemoveDir "!rootDir!\src\modules\%%x\obj\"
+        del "!rootDir!\src\modules\%%x\%%x-*"
     )
-    del "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\ObjectDetectionYOLOv5Net-*"
+    for %%x in (!dotNetDemoModules!) do (
+        call :RemoveDir "!rootDir!\demos\modules\%%x\bin\"
+        call :RemoveDir "!rootDir!\demos\modules\%%x\obj\"
+        del "!rootDir!\demos\modules\%%x\%%x-*"
+    )
 
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\bin\Debug\"
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\bin\Release\"
@@ -116,10 +123,10 @@ if /i "%cleanBuild%" == "true" (
     del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.runtimeconfig.json"
     del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.xml"
 
-    call :CleanSubDirs "!rootDir!\demos\"              "\bin\Debug\"
-    call :CleanSubDirs "!rootDir!\demos\"              "\bin\Release\"
-    call :CleanSubDirs "!rootDir!\demos\"              "\obj\Debug\"
-    call :CleanSubDirs "!rootDir!\demos\"              "\obj\Release\"
+    call :CleanSubDirs "!rootDir!\demos\clients\"      "\bin\Debug\"
+    call :CleanSubDirs "!rootDir!\demos\clients\"      "\bin\Release\"
+    call :CleanSubDirs "!rootDir!\demos\clients\"      "\obj\Debug\"
+    call :CleanSubDirs "!rootDir!\demos\clients\"      "\obj\Release\"
 
     call :RemoveDir "!rootDir!\tests\QueueServiceTests\bin\"
     call :RemoveDir "!rootDir!\tests\QueueServiceTests\obj\"
@@ -131,18 +138,15 @@ if /i "%cleanInstallCurrentOS%" == "true" (
     call "!sdkDir!\utils.bat" WriteLine "Cleaning Windows Install" "White" "Blue" !lineWidth!
     call "!sdkDir!\utils.bat" WriteLine 
 
-    REM Clean .NET build dirs
-    for %%x in (!dotNetModules!) do (
-        call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
-        call :RemoveDir "!rootDir!\src\modules\%%x\obj\"
-    )
-
     REM Clean shared python venvs
     call :RemoveDir "!rootDir!\src\runtimes\bin\windows" 
 
     REM Clean module python venvs
     for %%x in (!pythonModules!) do (
         call :RemoveDir "!rootDir!\src\modules\%%x\bin\windows"
+    )
+    for %%x in (!pythonDemoModules!) do (
+        call :RemoveDir "!rootDir!\demos\modules\%%x\bin\windows"
     )
 )
 
@@ -168,6 +172,9 @@ if /i "%cleanInstallAll%" == "true" (
     for %%x in (!pythonModules!) do (
         call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
     )
+    for %%x in (!pythonDemoModules!) do (
+        call :RemoveDir "!rootDir!\demos\modules\%%x\bin\"
+    )
 )
 
 if /i "%cleanAssets%" == "true" (
@@ -176,6 +183,7 @@ if /i "%cleanAssets%" == "true" (
     call "!sdkDir!\utils.bat" WriteLine "Cleaning Assets" "White" "Blue" !lineWidth!
     call "!sdkDir!\utils.bat" WriteLine 
 
+    REM Production modules
     call :RemoveDir "!rootDir!\src\modules\ALPR\paddleocr"
     call :RemoveDir "!rootDir!\src\modules\ALPR-RKNN\paddleocr"
     call :RemoveDir "!rootDir!\src\modules\BackgroundRemover\models"
@@ -198,10 +206,17 @@ if /i "%cleanAssets%" == "true" (
     call :RemoveDir "!rootDir!\src\modules\OCR\paddleocr"
     call :RemoveDir "!rootDir!\src\modules\SceneClassifier\assets"
     call :RemoveDir "!rootDir!\src\modules\SoundClassifierTF\data"
+    call :RemoveDir "!rootDir!\src\modules\Text2Image\assets"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\datasets"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\fiftyone"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\training"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\zoo"
+
+    REM Demo modules
+    call :RemoveDir "!rootDir!\demos\modules\DotNetLongProcess\assets"
+    call :RemoveDir "!rootDir!\demos\modules\DotNetSimple\assets"
+    call :RemoveDir "!rootDir!\demos\modules\PythonLongProcess\assets"
+    call :RemoveDir "!rootDir!\demos\modules\PythonSimple\assets"
 )
 
 if /i "%cleanDownloadCache%" == "true" (
@@ -212,11 +227,15 @@ if /i "%cleanDownloadCache%" == "true" (
 
     rem delete downloads for each module
     FOR /d %%a IN ("%rootDir%\src\downloads\*") DO (
-        IF /i NOT "%%~nxa"=="modules" call :RemoveDir "%%a"
+        IF /i NOT "%%~nxa"=="modules" IF /i NOT "%%~nxa"=="models" call :RemoveDir "%%a"
     )
     rem delete module packages downloads 
     FOR %%a IN ("%rootDir%\src\downloads\modules\*") DO (
         IF /i NOT "%%~nxa"=="readme.txt" call :RemoveFile "%%a"
+    )
+    rem delete model packages downloads 
+    FOR %%a IN ("%rootDir%\src\downloads\models\*") DO (
+        IF /i NOT "%%~nxa"=="models.json" call :RemoveFile "%%a"
     )
 )
 

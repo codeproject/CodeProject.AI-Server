@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>2022ed32-14c4-4ca6-aac3-d58d724805ed</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Text2Image.py</StartupFile>
+    <StartupFile>stable_diffusion_adapter.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,13 +22,18 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Text2Image.py" />
+    <Compile Include="stable_diffusion.py" />
+    <Compile Include="stable_diffusion_adapter.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="explore.html" />
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="modulesettings.json" />
+    <Content Include="requirements.cuda11.txt" />
+    <Content Include="requirements.cuda12.txt" />
+    <Content Include="requirements.macos.arm64.txt" />
+    <Content Include="requirements.macos.txt" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>

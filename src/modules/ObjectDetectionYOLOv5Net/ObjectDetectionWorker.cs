@@ -74,7 +74,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             UpdateGpuInfo(detector);
         }
 
-        protected override void InitModule()
+        protected override void Initialize()
         {
             // Logger.LogWarning("Please ensure you don't enable this module along side any other " +
             //                  "Object Detection module using the 'vision/detection' route and " +
@@ -89,7 +89,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
 #elif DirectML
             Console.WriteLine("ObjectDetection (.NET) built for DirectML");
 #endif
-            base.InitModule();
+            base.Initialize();
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         /// </summary>
         /// <param name="request">The request.</param>
         /// <returns>The response.</returns>
-        protected override ModuleResponse ProcessRequest(BackendRequest request)
+        protected override ModuleResponse Process(BackendRequest request)
         {
             ModuleResponse response;
 
@@ -187,16 +187,16 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         /// Returns an object containing current stats for this module
         /// </summary>
         /// <returns>An object</returns>
-        protected override ExpandoObject? Status()
+        protected override ExpandoObject? ModuleStatus()
         {
-            var status = base.Status();
-            if (status is not null)
-            {
-                status.histogram     = _histogram;
-                status.numItemsFound = _numItemsFound;
-            }
+            var status = base.ModuleStatus();
+            if (status is null)
+                status = new ExpandoObject();
 
-            return status;
+            return status.Merge(new {
+                Histogram     = _histogram,
+                NumItemsFound = _numItemsFound
+            }.ToExpando());
         }            
 
         /// <summary>
@@ -204,9 +204,11 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         /// and failed calls as well as average inference time.
         /// </summary>
         /// <param name="response"></param>
-        protected override void UpdateStatistics(ModuleResponse response)
+        protected override void UpdateStatistics(ModuleResponse? response)
         {
             base.UpdateStatistics(response);
+            if (response is null)
+                return;
 
             if (response.Success && response is ObjectDetectionResponse detectResponse &&
                 detectResponse.Predictions is not null)
@@ -235,7 +237,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
             payload.AddFile(Path.Combine(moduleDirPath!, "test/home-office.jpg"));
 
             var request = new BackendRequest(payload);
-            ModuleResponse response = ProcessRequest(request);
+            ModuleResponse response = Process(request);
 
             if (response.Success)
                 return 0;

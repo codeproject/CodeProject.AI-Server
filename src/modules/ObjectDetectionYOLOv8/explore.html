@@ -68,7 +68,7 @@ RULES AND CONVENTIONS
     <title>Object Detection (YOLOv8) Module Test</title>
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/dashboard.css?v=2.5.0.0">
+    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/server.css?v=2.5.0.0">
     <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
     <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
 
@@ -89,7 +89,13 @@ RULES AND CONVENTIONS
             <input id="_MID_image" class="col form-control btn-light" type="file" style="width:17rem"
                    onchange="return previewImage(this)" />
             <input id="_MID_things" class="form-control btn-success" type="button" value="Detect Objects"
-                   style="width:11rem" onclick="_MID_onDetectThings(_MID_image)"/>
+                   style="width:11rem" onclick="_MID_onDetectThings(_MID_image, _MID_do_segmentation.checked)"/>
+        </div>
+        <div class="form-group d-flex justify-content-end mt-2">
+            <div>
+                <label for="_MID_do_segmentation" class="col-form-label">Perform segmentation</label>
+                <input id="_MID_do_segmentation" class="col-form-check-input ms-1" type="checkbox" />
+            </div>
         </div>
 <hr>
         <div class="form-group row">
@@ -123,7 +129,7 @@ RULES AND CONVENTIONS
 
     <script type="text/javascript">
 // START EXPLORER SCRIPT
-		async function _MID_onDetectThings(fileChooser) {
+		async function _MID_onDetectThings(fileChooser, do_segmentation) {
 
 			clearImagePreview();
 
@@ -136,9 +142,13 @@ RULES AND CONVENTIONS
 			let images = [fileChooser.files[0]];
 
 			setResultsHtml("Detecting objects...");
-			let data = await submitRequest('vision', 'detection', images, null);
+            const operation = do_segmentation ? "segmentation" : "detection";
+			let data = await submitRequest('vision', operation, images, null);
             if (data) {
-				showResultsBoundingBoxes(data.predictions);
+                if (do_segmentation)
+    				showResultsMasks(data.predictions);
+                else
+    				showResultsBoundingBoxes(data.predictions);
 				showPredictionSummary(data)
 			};
 		}
@@ -155,7 +165,7 @@ RULES AND CONVENTIONS
 			showPreviewImage(fileChooser.files[0]);
 			let images = [fileChooser.files[0]];
 
-			setResultsHtml("Detecting objects using custom model...");
+			setResultsHtml(`Detecting objects using model ${model_name}...`);
 			let data = await submitRequest('vision', 'custom/' + model_name, images, null);
             if (data) {
 				showResultsBoundingBoxes(data.predictions);
@@ -168,7 +178,7 @@ RULES AND CONVENTIONS
             console.log("Getting custom list")
 
 			let data = await submitRequest('vision', 'custom/list', null, null);
-            if (data?.models) {
+            if (data?.models?.length) {
                 // console.log(`Got ${data.models.length} models`);
 
                 let options = [];

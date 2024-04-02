@@ -72,11 +72,6 @@ class TextSummary(ModuleRunner):
         return { "success": result['success'], "message": "Text summary test successful" }
 
 
-    def _status_summary(self):
-        summary  = "Inference Operations: " + str(self.success_inferences)  + "\n"
-        return summary
-
-
 if __name__ == "__main__":
     TextSummary().start_loop()
 

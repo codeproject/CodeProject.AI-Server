@@ -19,9 +19,14 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-if [ "${executionEnvironment}" = "Production" ]; then
-    writeLine "No custom setup steps for this module" "$color_info"
-else
+if [ "$os" = "macos" ]; then
+    dynlibFile="libtensorflow-cpu-darwin-x86_64-2.15.0.tar.gz"
+    wget -q --no-check-certificate "https://storage.googleapis.com/tensorflow/libtensorflow/${dynlibFile}"
+    sudo tar -C /usr/local -xzf "${dynlibFile}"
+    rm "${dynlibFile}"
+fi
+
+if [ "${executionEnvironment}" != "Production" ]; then
     pushd "$moduleDirPath" >/dev/null
     writeLine "Building project..." "$color_info"
     dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/net7.0" >/dev/null

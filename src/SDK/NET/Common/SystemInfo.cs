@@ -244,6 +244,7 @@ namespace CodeProject.AI.SDK.Common
         private static bool?         _hasNvidiaCard;
         private static string?       _cuDnnVersion;
         private static bool          _isWSL;
+        private static string?       _dockerContainerId;
         private static string?       _osVersion;
         private static string?       _osName;
         private static bool          _isSSH;
@@ -257,6 +258,8 @@ namespace CodeProject.AI.SDK.Common
         private static bool          _monitoringStartedWarningIssued;
         private static int           _cpuUsage;
         private static string?       _hardwareVendor;
+        private static string?       _edgeDevice;
+        private static string?       _jetsonComputeCapability;
 
         /// <summary>
         /// Gets the CPU properties for this system
@@ -386,49 +389,7 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
-        /// Returns OS[-architecture]. eg Windows, macOS, Linux-Arm64. Note that x64 won't have a
-        /// suffix.
-        /// </summary>
-        public static string OSAndArchitecture
-        {
-            get
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    return Architecture == "Arm64" ? "Windows-Arm64" : "Windows";
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    return Architecture == "Arm64" ? "macOS-Arm64" : "macOS";
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    return Architecture == "Arm64" ? "Linux-Arm64" : "Linux";
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
-                    return "FreeBSD";
-
-                return "Windows"; // Gotta be something...
-            }
-        }
-
-        /// <summary>
-        /// Gets the current platform name. This will be OS[-architecture]. eg Windows, macOS,
-        /// Linux-Arm64.  Note that x64 won't have a suffix.
-        /// </summary>
-        public static string Platform
-        {
-            get
-            {
-                if (HardwareVendor == "Raspberry Pi" || HardwareVendor == "Orange Pi")
-                    return HardwareVendor.Replace(" ", string.Empty);
-
-                if (HardwareVendor == "NVIDIA Jetson")
-                    return "Jetson";
-
-                return OSAndArchitecture;
-            }
-        }
-
-        /// <summary>
-        /// Gets the current Architecture. Supported architects are x64 and Arm64 only.
+        /// Gets the current Architecture (specifically x64, Arm or Arm64).
         /// </summary>
         public static string Architecture
         {
@@ -454,9 +415,55 @@ namespace CodeProject.AI.SDK.Common
                 return string.Empty;
             }
         }
+
         /// <summary>
-        /// Gets the name of the system under which we're running. Windows, WSL, macOS, Docker,
-        /// Raspberry Pi, Orange Pi, Jetson, Linux, macOS.
+        /// Returns OS[-architecture]. eg Windows, macOS, Linux-Arm64. Note that x64 won't have a
+        /// suffix.
+        /// </summary>
+        public static string OSAndArchitecture
+        {
+            get
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    return Architecture == "Arm64" ? "Windows-Arm64" : "Windows";
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    return Architecture == "Arm64" ? "macOS-Arm64" : "macOS";
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    return Architecture == "Arm64" ? "Linux-Arm64" : "Linux";
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+                    return "FreeBSD";
+
+                return "Windows"; // Gotta be something...
+            }
+        }
+
+        /// <summary>
+        /// Gets the current platform name. This will be OS[-architecture]. eg Windows, macOS,
+        /// Linux-Arm64, and for specific devices it will be the device name (RaspberryPi, OrangePi,
+        /// Jetson). Note that x64 won't have a suffix.
+        /// </summary>
+        public static string Platform
+        {
+            get
+            {
+                // NOTE: Docker running on RPi, Orange Pi etc will report EdgeDevice as Raspberry Pi,
+                //       Orange Pi etc.            
+                if (EdgeDevice != string.Empty)
+                    return EdgeDevice.Replace(" ", string.Empty);
+
+                return OSAndArchitecture;
+            }
+        }
+
+        /// <summary>
+        /// Gets the name of the "system" under which we're running. System is a very generic term
+        /// to reflect the sorts of things we need to know when a user has problems. "What system
+        /// are you running under" typically means we want to know if they are using Docker, running
+        /// Windows native, macOS on an M3 chip, or maybe they are on a Jetson. This is different 
+        /// from the underlying <see cref="OperatingSystem"> or <see cref="EdgeDevice"/>.
         /// </summary>
         public static string SystemName
         {
@@ -468,11 +475,10 @@ namespace CodeProject.AI.SDK.Common
                 if (IsWSL)
                     return $"WSL";
                    
-                if (HardwareVendor == "Raspberry Pi" || HardwareVendor == "Orange Pi")
-                    return HardwareVendor;
-
-                if (HardwareVendor == "NVIDIA Jetson")
-                    return "Jetson";
+                // NOTE: Docker running on RPi, Orange Pi etc will report EdgeDevice as Raspberry Pi,
+                // Orange Pi etc.
+                if (EdgeDevice != string.Empty)
+                    return EdgeDevice;
 
                 return OperatingSystem;
             }
@@ -487,6 +493,15 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
+        /// Gets the ID of the current docker container under which this app is running, or 
+        /// string.Empty if no container found.
+        /// </summary>
+        public static string DockerContainerId
+        {
+            get { return _dockerContainerId ?? string.Empty; }
+        }
+
+        /// <summary>
         /// Gets a value indicating whether we are currently running in an SSH shell.
         /// </summary>
         public static bool IsSSH
@@ -495,7 +510,44 @@ namespace CodeProject.AI.SDK.Common
         }
 
         /// <summary>
-        /// Gets the hardware vendor of the current system.
+        /// Gets the name of the edge device. Specifically, we get the name of the device if it is
+        /// a Raspberry Pi, Orange Pi or NVIDIA Jetson. All other devices (at this stage) will
+        /// return the empty string.
+        /// </summary>
+        public static string EdgeDevice
+        {
+            get
+            {
+                if (_edgeDevice is not null)
+                    return _edgeDevice;
+
+                _edgeDevice = string.Empty;
+
+                if (IsLinux)
+                {
+                    try
+                    {
+                        // NOTE: Docker will map the sys folder, so in Docker, Raspberry Pi etc will
+                        // be reported if running on an RPi (etc).
+
+                        string modelInfo = File.ReadAllText/*Async*/("/sys/firmware/devicetree/base/model");
+                        if (modelInfo.ContainsIgnoreCase("Raspberry Pi"))
+                            _edgeDevice = "Raspberry Pi";
+                        else if (modelInfo.ContainsIgnoreCase("Orange Pi"))
+                            _edgeDevice = "Orange Pi";
+                        else if (modelInfo.ContainsIgnoreCase("Jetson"))
+                            _edgeDevice = "Jetson";
+                    }
+                    catch {}
+                }
+
+                return _edgeDevice;
+            }
+        }
+
+        /// <summary>
+        /// Gets the hardware vendor of the current system. SPECIFICALLY: This is actually the
+        /// vendor who made the CPU, not the machine itself.
         /// </summary>
         public static string HardwareVendor
         {
@@ -511,25 +563,32 @@ namespace CodeProject.AI.SDK.Common
                 {
                     try
                     {
+                        // NOTE: Docker will map the sys folder, so in Docker, Raspberry Pi will be
+                        //       reported if running on an RPi.
+
                         // string cpuInfo = File.ReadAllText("/proc/cpuinfo"); - no good for Orange Pi
                         string cpuInfo = File.ReadAllText/*Async*/("/sys/firmware/devicetree/base/model");
                         if (cpuInfo.ContainsIgnoreCase("Raspberry Pi"))
                             _hardwareVendor = "Raspberry Pi";
                         else if (cpuInfo.ContainsIgnoreCase("Orange Pi"))
-                            _hardwareVendor = "Orange Pi";
+                            _hardwareVendor = "Rockchip";
+                        else if (cpuInfo.ContainsIgnoreCase("Jetson"))
+                            _hardwareVendor = "NVIDIA";
                     }
                     catch {}
 
+                    /*
                     if (_hardwareVendor is null)
                     {
                         try
                         {
                             string cpuInfo = File.ReadAllText("/proc/device-tree/model");
                             if (cpuInfo.Contains("Jetson"))
-                                _hardwareVendor = "NVIDIA Jetson";
+                                _hardwareVendor = "NVIDIA";
                         }
                         catch {}
                     }
+                    */
                 }
 
                 // Intel and AMD chips are generic, so just report them.
@@ -605,15 +664,13 @@ namespace CodeProject.AI.SDK.Common
         {
             get
             {
+                // WSL is Linux, so this isn't needed since the line below will handle it and do the
+                // same thing. However, it's here because we may want to report this differently.
                 if (IsWSL)
-                {
                     return $"{_osName} {_osVersion}";
-                }
 
                 if (IsLinux)
-                {
                     return $"{_osName} {_osVersion}";
-                }
 
                 // See https://github.com/getsentry/sentry-dotnet/issues/1484. 
                 // C'mon guys: technically the version may be 10.x, but stick to the branding that
@@ -632,7 +689,7 @@ namespace CodeProject.AI.SDK.Common
         /// </summary>
         public static string OperatingSystemVersion
         {
-            get { return Environment.OSVersion.Version.ToString(); }
+            get { return _osVersion ?? string.Empty; }
         }
 
         /// <summary>
@@ -667,6 +724,7 @@ namespace CodeProject.AI.SDK.Common
             await GetMemoryInfoAsync().ConfigureAwait(false);
             
             await CheckForWslAsync().ConfigureAwait(false);
+            await GetDockerContainerIdAsync().ConfigureAwait(false);
             await CheckOSVersionNameAsync().ConfigureAwait(false);
             await CheckForSshAsync().ConfigureAwait(false);
             await GetcuDNNVersionAsync().ConfigureAwait(false);
@@ -691,6 +749,8 @@ namespace CodeProject.AI.SDK.Common
 
             if (IsWSL)
                 info.AppendLine($"System:           {SystemName} ({RuntimeInformation.OSDescription})");
+            else if (IsDocker)
+                info.AppendLine($"System:           {SystemName} ({DockerContainerId})");
             else
                 info.AppendLine($"System:           {SystemName}");
 
@@ -748,7 +808,7 @@ namespace CodeProject.AI.SDK.Common
             info.AppendLine($"  Default Python:   {Runtimes.DefaultPython}");
             info.AppendLine($"  Go:               {Runtimes.Go}");
             info.AppendLine($"  NodeJS:           {Runtimes.NodeJS}");
-            // info.AppendLine($"  Rust:             {Runtimes.Rust}");
+            info.AppendLine($"  Rust:             {Runtimes.Rust}");
 
             return info.ToString().Trim();
         }
@@ -868,7 +928,7 @@ namespace CodeProject.AI.SDK.Common
 
                     usage = (int)utilization.Sum(x => x.NextValue());
                 }
-                else if (SystemName == "Raspberry Pi")
+                else if (EdgeDevice == "Raspberry Pi")
                 {
                     ulong maxFreq = 0;
                     ulong freq    = 0;
@@ -888,7 +948,7 @@ namespace CodeProject.AI.SDK.Common
                     if (maxFreq > 0)
                         usage = (int)(freq * 100 / maxFreq);
                 }
-                else if (HardwareVendor == "NVIDIA Jetson")
+                else if (EdgeDevice == "Jetson")
                 {
                     // NVIDIA card, so we won't even reach here
                 }
@@ -932,7 +992,7 @@ namespace CodeProject.AI.SDK.Common
                     gpuMemoryUsed = (ulong)counters.Sum(x => (long)x.NextValue());
                 }
 
-                else if (SystemName == "Raspberry Pi")
+                else if (EdgeDevice == "Raspberry Pi")
                 {
                     /*
                     vcgencmd get_mem <type>
@@ -951,7 +1011,7 @@ namespace CodeProject.AI.SDK.Common
                     if ((results?.Count ?? 0) > 0 && ulong.TryParse(results!["memused"], out ulong memUsed))
                         gpuMemoryUsed = memUsed * 1024 * 1024;
                 }
-                else if (SystemName == "NVIDIA Jetson")
+                else if (EdgeDevice == "Jetson")
                 {
                     // NVIDIA card, so we won't even reach here
                 }
@@ -1021,7 +1081,7 @@ namespace CodeProject.AI.SDK.Common
             while (true)
             {
                 GpuInfo? gpuInfo;
-                if (HardwareVendor == "NVIDIA Jetson")
+                if (EdgeDevice == "Jetson")
                     gpuInfo = await ParseJetsonTegraStatsAsync().ConfigureAwait(false);
                 else
                     gpuInfo = await ParseNvidiaSmiAsync().ConfigureAwait(false);
@@ -1081,7 +1141,7 @@ namespace CodeProject.AI.SDK.Common
                     await GetMemoryInfoAsync().ConfigureAwait(false);
                 }
             }
-            else if (HardwareVendor == "NVIDIA Jetson")
+            else if (EdgeDevice == "Jetson")
             {
                 // Jetson board is continuously monitored, so nothing to do here
             }
@@ -1211,14 +1271,14 @@ namespace CodeProject.AI.SDK.Common
                         Utilization           = gpuUsage,
                         MemoryUsed            = memoryUsedMiB * 1024UL * 1024UL,
                         TotalMemory           = totalMemoryMiB * 1024UL * 1024UL,
-                        ComputeCapability     = JetsonComputeCapability(HardwareVendor),
+                        ComputeCapability     = JetsonComputeCapability(),
                     };                    
                 }
             }
             catch (Exception ex)
             {
                 _hasNvidiaCard = false;
-                Debug.WriteLine("Error getting Jetson HW status: " + ex.ToString());
+                Debug.WriteLine("Error getting Jetson hardware status: " + ex.ToString());
                 return null;
             }
 
@@ -1245,7 +1305,7 @@ namespace CodeProject.AI.SDK.Common
                 return null;
 
             // Quick test for NVidia card
-            if (SystemName == "Raspberry Pi" || SystemName == "Orange Pi" || IsMacOS)
+            if (EdgeDevice == "Raspberry Pi" || EdgeDevice == "Orange Pi" || IsMacOS)
             {
                 _hasNvidiaCard = false;
                 return null;
@@ -1552,9 +1612,12 @@ namespace CodeProject.AI.SDK.Common
                         cpuInfo.HardwareVendor = "Intel";
                     else if (cpu.Name.Contains("AMD"))
                         cpuInfo.HardwareVendor = "AMD";
-                    else if (SystemName == "Orange Pi")
+                    // TO TEST: Does the CPU name actually contain Rockchip for Orange Pi?
+                    else if (cpu.Name.Contains("Rockchip"))
                         cpuInfo.HardwareVendor = "Rockchip";
-
+                    else if (EdgeDevice == "Orange Pi")
+                        cpuInfo.HardwareVendor = "Rockchip";
+    
                     cpus.Add(cpuInfo);
                 }
             }
@@ -1581,8 +1644,42 @@ namespace CodeProject.AI.SDK.Common
             }
         }
 
+        private async static Task GetDockerContainerIdAsync()
+        {
+            if (_dockerContainerId is not null)
+                return;
+
+            // Docker containers often have their container ID set as the hostname (which is the
+            // NETBIOS name which is returned as MachineName here). We'll start with this as a defualt.
+            _dockerContainerId = MachineName;
+
+            if (IsDocker)
+            {
+                try 
+                {
+                    // Linux "usually" has a "/proc/self/cgroup" file. Except when it doesn't. This
+                    // file allegedly contains the docker container ID
+                    const string idFile = "/proc/self/cgroup";
+                    if (File.Exists(idFile))
+                    {
+                        string dockerInfo = await File.ReadAllTextAsync(idFile);
+                        Match match = Regex.Match(dockerInfo, @"[0-9a-f]{64}");
+                        if (match.Success)
+                            _dockerContainerId = match.Value;
+                    }
+                }
+                catch
+                {
+                }
+            }
+        }
+
         private async static Task CheckOSVersionNameAsync()
         {
+            // Default fallback
+            _osName    = OperatingSystem;
+            _osVersion = Environment.OSVersion.Version.Major.ToString();
+
             if (IsLinux)
             {
                 // Output is in the form:
@@ -1598,12 +1695,8 @@ namespace CodeProject.AI.SDK.Common
             }
             else if (IsWindows)
             {
-                _osName = "Windows";
-                if (Environment.OSVersion.Version.Major >= 10 && 
-                    Environment.OSVersion.Version.Build >= 22000)
+                if (Environment.OSVersion.Version.Major >= 10 && Environment.OSVersion.Version.Build >= 22000)
                     _osVersion = "11";
-                else
-                    _osVersion = Environment.OSVersion.Version.Major.ToString();
             }
             else if (IsMacOS)
             {
@@ -1616,7 +1709,7 @@ namespace CodeProject.AI.SDK.Common
                 results = await GetProcessInfoAsync("/bin/bash", "-c \"sw_vers -productVersion\"", null)
                                                                                 .ConfigureAwait(false);
                 if (results is not null)
-                    _osName = results["output"];    // eg."11.1" for macOS Big Sur
+                    _osVersion = results["output"];    // eg."11.1" for macOS Big Sur
             }
         }
 
@@ -1673,35 +1766,49 @@ namespace CodeProject.AI.SDK.Common
 
         private async static Task GetRuntimesAsync()
         {
-            var pattern = "Microsoft.AspNetCore.App (?<version>\\d+\\.\\d+.\\d+)";
-            var options = RegexOptions.IgnoreCase;
-            var results = await GetProcessInfoAsync("dotnet", "--list-runtimes", pattern, options, true).ConfigureAwait(false);
-            if ((results?.Count ?? 0) > 0)
-                Runtimes.DotNetRuntime = results!["version"];
+            try
+            {
+                var pattern = "Microsoft.AspNetCore.App (?<version>\\d+\\.\\d+.\\d+)";
+                var options = RegexOptions.IgnoreCase;
+                var results = await GetProcessInfoAsync("dotnet", "--list-runtimes", pattern, options, true).ConfigureAwait(false);
+                if (results is not null && results.Count > 0 && results.ContainsKey("version"))
+                    Runtimes.DotNetRuntime = results!["version"];
 
-            pattern = "(?<version>\\d+\\.\\d+.\\d+)";
-            options = RegexOptions.IgnoreCase;
-            results = await GetProcessInfoAsync("dotnet", "--list-sdks", pattern, options, true).ConfigureAwait(false);
-            if ((results?.Count ?? 0) > 0)
-                Runtimes.DotNetSDK = results!["version"];
+                pattern = "(?<version>\\d+\\.\\d+.\\d+)";
+                options = RegexOptions.IgnoreCase;
+                results = await GetProcessInfoAsync("dotnet", "--list-sdks", pattern, options, true).ConfigureAwait(false);
+                if (results is not null && results.Count > 0 && results.ContainsKey("version"))
+                    Runtimes.DotNetSDK = results!["version"];
 
-            pattern = "python (?<version>\\d+\\.\\d+.\\d+)";
-            options = RegexOptions.IgnoreCase;
-            results = await GetProcessInfoAsync("python", "--version", pattern, options).ConfigureAwait(false);
-            if ((results?.Count ?? 0) > 0)
-                Runtimes.DefaultPython = results!["version"];
+                var pythonExe = IsWindows? "python" : "python3";
+                pattern = "Python (?<version>\\d+\\.\\d+.\\d+)";
+                options = RegexOptions.IgnoreCase;
+                results = await GetProcessInfoAsync(pythonExe, "--version", pattern, options).ConfigureAwait(false);
+                if (results is not null && results.Count > 0 && results.ContainsKey("version"))
+                    Runtimes.DefaultPython = results!["version"];
 
-            pattern = "go version go(?<version>\\d+\\.\\d+\\.\\d+)";
-            options = RegexOptions.IgnoreCase;
-            results = await GetProcessInfoAsync("go", "version", pattern, options).ConfigureAwait(false);
-            if ((results?.Count ?? 0) > 0)
-                Runtimes.Go = results!["version"];
+                pattern = "go version go(?<version>\\d+\\.\\d+\\.\\d+)";
+                options = RegexOptions.IgnoreCase;
+                results = await GetProcessInfoAsync("go", "version", pattern, options).ConfigureAwait(false);
+                if (results is not null && results.Count > 0 && results.ContainsKey("version"))
+                    Runtimes.Go = results!["version"];
 
-            pattern = "v(?<version>\\d+\\.\\d+\\.\\d+)";
-            options = RegexOptions.IgnoreCase;
-            results = await GetProcessInfoAsync("node", "-v", pattern, options).ConfigureAwait(false);
-            if ((results?.Count ?? 0) > 0)
-                Runtimes.NodeJS = results!["version"];
+                pattern = "v(?<version>\\d+\\.\\d+\\.\\d+)";
+                options = RegexOptions.IgnoreCase;
+                results = await GetProcessInfoAsync("node", "-v", pattern, options).ConfigureAwait(false);
+                if (results is not null && results.Count > 0 && results.ContainsKey("version"))
+                    Runtimes.NodeJS = results!["version"];
+
+                pattern = "rustc (?<version>\\d+\\.\\d+\\.\\d+)";
+                options = RegexOptions.IgnoreCase;
+                results = await GetProcessInfoAsync("rustc", "--version", pattern, options).ConfigureAwait(false);
+                if (results is not null && results.Count > 0 && results.ContainsKey("version"))
+                    Runtimes.Rust = results!["version"];
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Unable to get runtime version: " + ex);
+            }
         }
 
         private static void InitSummary()
@@ -1900,19 +2007,31 @@ namespace CodeProject.AI.SDK.Common
             }
         }
 
-        private static string JetsonComputeCapability(string hardwareName)
+        private static string JetsonComputeCapability()
         {
-            return hardwareName switch  
-            {  
-                "Jetson AGX Orin"   => "8.7",
-                "Jetson Orin NX"    => "8.7",
-                "Jetson Orin Nano"  => "8.7",
-                "Jetson AGX Xavier" => "7.2",
-                "Jetson Xavier NX"  => "7.2",
-                "Jetson TX2"        => "6.2",
-                "Jetson Nano"       => "5.3",
-                _ => "5.3"  
-            };  
+            if (_jetsonComputeCapability is not null)
+                return _jetsonComputeCapability;
+
+            _jetsonComputeCapability = string.Empty;
+
+            string modelInfo = File.ReadAllText/*Async*/("/sys/firmware/devicetree/base/model");
+            if (modelInfo.ContainsIgnoreCase("Jetson"))
+            {
+                if (modelInfo.ContainsIgnoreCase("Orin"))        // Jetson AGX Orin, Jetson Orin NX, Jetson Orin Nano
+                    _jetsonComputeCapability = "8.7";
+                else if (modelInfo.ContainsIgnoreCase("Xavier")) // Jetson AGX Xavier, Jetson Xavier NX
+                    _jetsonComputeCapability = "7.2";
+                else if (modelInfo.ContainsIgnoreCase("TX2"))    // Jetson TX2
+                    _jetsonComputeCapability = "6.2";
+                else if (modelInfo.ContainsIgnoreCase("TX1"))    // Jetson TX1
+                    _jetsonComputeCapability = "5.3";
+                else if (modelInfo.ContainsIgnoreCase("TK1"))    // Jetson TK1
+                    _jetsonComputeCapability = "3.2";
+                else if (modelInfo.ContainsIgnoreCase("Nano"))   // Jetson Nano
+                    _jetsonComputeCapability = "5.3";
+            }
+
+            return _jetsonComputeCapability;
         }
     }
 }

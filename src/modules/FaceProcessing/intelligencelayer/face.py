@@ -844,11 +844,5 @@ class Face_adapter(ModuleRunner):
         return output
 
 
-    def _status_summary(self):
-        summary  = "Inference Operations: " + str(self._success_inferences)  + "\n"
-        summary += "Items detected:       " + str(self._num_items_found) + "\n"
-        return summary
-
-
 if __name__ == "__main__":
     Face_adapter().start_loop()

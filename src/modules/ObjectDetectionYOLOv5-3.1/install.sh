@@ -23,7 +23,7 @@ fi
 
 # Ah, Jetson. You could have been so good. Yet here we are.
 # Thanks to https://www.hackster.io/spehj/deploy-yolov7-to-jetson-nano-for-object-detection-6728c3
-if [ "$systemName" = "Jetson" ]; then 
+if [ "$edgeDevice" = "Jetson" ]; then 
 
     pyNumber="${pythonVersion/./}"
 

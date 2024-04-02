@@ -19,7 +19,6 @@ from options import Options
 from paddleocr import PaddleOCR
 
 # Constants
-debug_image     = False
 debug_log       = False
 no_plate_found  = 'Characters Not Found'
 
@@ -30,11 +29,15 @@ prev_avg_char_height = None
 prev_avg_char_width  = None
 resize_width_factor  = None
 resize_height_factor = None
+remove_spaces        = False
+cropped_plate_dir    = None
+save_cropped_plate   = False
+
 
 
 def init_detect_platenumber(opts: Options) -> None:
 
-    global ocr, resize_width_factor, resize_height_factor
+    global ocr, resize_width_factor, resize_height_factor, remove_spaces, cropped_plate_dir, save_cropped_plate
 
     ocr = PaddleOCR(lang                = opts.language,
                     use_gpu             = opts.use_gpu,
@@ -50,6 +53,10 @@ def init_detect_platenumber(opts: Options) -> None:
 
     resize_width_factor  = opts.OCR_rescale_factor
     resize_height_factor = opts.OCR_rescale_factor
+    remove_spaces        = opts.remove_spaces
+    cropped_plate_dir    = opts.cropped_plate_dir
+    save_cropped_plate   = opts.save_cropped_plate
+    
 
 
 async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: Image) -> JSON:
@@ -61,6 +68,7 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
 
     global previous_label, prev_avg_char_width, prev_avg_char_height
     global resize_width_factor, resize_height_factor
+    global cropped_plate_dir, save_cropped_plate
     
     outputs      = []
     pillow_image = image
@@ -288,8 +296,8 @@ async def detect_platenumber(module_runner: ModuleRunner, opts: Options, image: 
             inferenceMs += plateInferenceMs
         """
 
-        if debug_image:
-            filename = "/Program Files/CodeProject/AI/Server/wwwroot/alpr.jpg"
+        if save_cropped_plate:
+            filename = f"{cropped_plate_dir}/alpr.jpg"
             cv2.imwrite(filename, numpy_plate)
 
         if label and confidence:
@@ -325,6 +333,7 @@ async def read_plate_chars_PaddleOCR(module_runner: ModuleRunner, image: Image) 
     Returns (plate label, confidence, avg char height (px), avg char width (px), inference time (ms))
     """
 
+    global remove_spaces
     inferenceTimeMs: int = 0
 
     try:
@@ -355,7 +364,7 @@ async def read_plate_chars_PaddleOCR(module_runner: ModuleRunner, image: Image) 
                 text_file.write(str(ocr_response) + "\n" + "\n")
 
         # Find the biggest textbox and assume that's the plate number
-        plate_label, plate_confidence, avg_char_width, avg_char_height = tool.merge_text_detections(detections)
+        plate_label, plate_confidence, avg_char_width, avg_char_height = tool.merge_text_detections(detections, remove_spaces)
 
         if not plate_label:
             return no_plate_found, 0, 0, 0, inferenceTimeMs

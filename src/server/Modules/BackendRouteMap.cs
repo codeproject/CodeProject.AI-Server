@@ -87,18 +87,30 @@ namespace CodeProject.AI.Server.Modules
     public struct ModuleRouteInfo
     {
         /// <summary>
+        /// This is an array of routes added by the system to each module to handle common requests
+        /// such as process_status or cancel_long_process.
+        /// </summary>
+        private static  ModuleRouteInfo[] _systemDefaultRouteMaps;
+
+        /// <summary>
         /// This is an array of outputs added by the system: some are added by the base module code
-        /// such as ModuleWorkerBase.s or module_runner.py (eg canUseGPU) and some is added by the
+        /// such as ModuleWorkerBase.s or module_runner.py (eg canUseGPU) and some are added by the
         /// proxy controller (eg analysisRoundTripMs). It would be best to have each party that is
         /// responsible for adding outputs do so by registering their outputs here, but for now
         /// we'll hardcode
         /// </summary>
-        private static RouteParameterInfo[] _systemOutputs;
+        private static RouteParameterInfo[] _systemAppendedOutputs;
 
         /// <summary>
         /// The module's explicit outputs plus the system outputs automatically added
         /// </summary>
         private RouteParameterInfo[]? _fullOutputs;
+
+        /// <summary>
+        /// Gets the array of routes added by the system to each module to handle common requests
+        /// such as process_status or cancel_long_process.
+        /// </summary>
+        public static ModuleRouteInfo[] SystemDefaultRouteMaps => _systemDefaultRouteMaps;
 
         /// <summary>
         /// Gets the name for this endpoint.
@@ -152,7 +164,7 @@ namespace CodeProject.AI.Server.Modules
             {
                 // Init _fullOutputs if need be, and if Outputs is null then easy peasy
                 if (_fullOutputs is null && Outputs is null)
-                    _fullOutputs = _systemOutputs;
+                    _fullOutputs = _systemAppendedOutputs;
 
                 if (_fullOutputs is null)
                 {
@@ -160,7 +172,7 @@ namespace CodeProject.AI.Server.Modules
                     List<RouteParameterInfo> fullSet = Outputs!.ToList();
 
                     // ...and tack on the system outputs *only* if we're not already returning them
-                    foreach (var param in _systemOutputs)
+                    foreach (var param in _systemAppendedOutputs)
                         if (!fullSet.Any(p => p.Name.EqualsIgnoreCase(param.Name)))
                             fullSet.Add(param);
 
@@ -176,8 +188,67 @@ namespace CodeProject.AI.Server.Modules
         /// </summary>
         static ModuleRouteInfo()
         {
-            // TODO: [Matthew] Add system routes for cancel_command and command_status
-            _systemOutputs = new RouteParameterInfo[]
+            // There are routes that are made available to all modules as part of status checks
+            _systemDefaultRouteMaps = new ModuleRouteInfo[]
+            {
+                new ModuleRouteInfo()
+                {
+                    Name        = "Get Long Process Status",
+                    Route       = "%MODULE_ID%/get_command_status",
+                    Method      = "POST",
+                    Command     = "get_command_status",
+                    MeshEnabled = false,
+                    Description = "Gets the status of a long running command.",
+                    Inputs      = new RouteParameterInfo[]
+                    {
+                        new RouteParameterInfo()
+                        {
+                            Name        = "commandId",
+                            Type        = "Text",
+                            Description = "The id of the command to get the result for."
+                        }
+                    },
+                    Outputs     = new RouteParameterInfo[]
+                    {
+                        new RouteParameterInfo()
+                        {
+                            Name        = "success",
+                            Type        = "Boolean",
+                            Description = "Whether or not the operation was successful"
+                        }
+                    }
+                },
+                new ModuleRouteInfo()
+                {
+                    Name        = "Cancel Long Process",
+                    Route       = "%MODULE_ID%/cancel_command",
+                    Method      = "POST",
+                    Command     = "cancel_command",
+                    MeshEnabled = false,
+                    Description = "Cancels a long running command.",
+                    Inputs      = new RouteParameterInfo[]
+                    {
+                        new RouteParameterInfo()
+                        {
+                            Name        = "commandId",
+                            Type        = "Text",
+                            Description = "The id of the command to cancel."
+                        }
+                    },
+                    Outputs     = new RouteParameterInfo[]
+                    {
+                        new RouteParameterInfo()
+                        {
+                            Name        = "success",
+                            Type        = "Boolean",
+                            Description = "Whether or not the operation was successful"
+                        }
+                    }
+                }
+            };
+
+            // There are outputs that are added by the system as part of routing
+            _systemAppendedOutputs = new RouteParameterInfo[]
             {
                 new RouteParameterInfo()
                 {
@@ -390,21 +461,35 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="method">The HTTP Method used to call the path/command</param>
         /// <param name="queueName">The name of the queue that the request will be associated with.</param>
         /// <param name="command">The command that will be passed with the payload.</param>
-        public void Register(string route, string method, string queueName, string command)
+        /// <param name="moduleId">The id of the module owning this route. Optional. If supplied, 
+        /// lowercase moduleId will replace all instances of %MODULE_ID% in route, method, queue
+        /// name and command</param> 
+        public void Register(string route, string method, string queueName, string command,
+                             string? moduleId = null)
         {
-            string key          = MakeKey(route, method);
-            var routeInfo       = new RouteQueueInfo(route, method, queueName, command);
+            string marker = "%MODULE_ID%";
+
+            string key    = MakeKey(route.Replace(marker, moduleId), method.Replace(marker, moduleId));
+            var routeInfo = new RouteQueueInfo(route.Replace(marker, moduleId),
+                                               method.Replace(marker, moduleId),
+                                               queueName.Replace(marker, moduleId),
+                                               command.Replace(marker, moduleId));
             _routeQueueMap[key] = routeInfo;
         }
 
         /// <summary>
         /// Associates a url and command with a queue.
         /// </summary>
-        /// <param name="info">A <see cref="ModuleRouteInfo" /> structure containing the info to register.</param>
-        /// <param name="queueName">The name of the queue that the request will be associated with.</param>
-        public void Register(ModuleRouteInfo info, string queueName)
+        /// <param name="info">A <see cref="ModuleRouteInfo" /> structure containing the info to 
+        /// register.</param>
+        /// <param name="queueName">The name of the queue that the request will be associated with.
+        /// </param>
+        /// <param name="moduleId">The id of the module owning this route. Optional. If supplied, 
+        /// lowercase moduleId will replace all instances of %MODULE_ID% in route, method, queue
+        /// name and command</param> 
+        public void Register(ModuleRouteInfo info, string queueName, string? moduleId = null)
         {
-            Register(info.Route, info.Method, queueName, info.Command);
+            Register(info.Route, info.Method, queueName, info.Command, moduleId);
         }
     }
 }
