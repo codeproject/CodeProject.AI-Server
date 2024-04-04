@@ -7,7 +7,7 @@ except ImportError:
     print("Unable to import ModuleOptions, running with defaults")
     class ModuleOptions:
         module_path = '.'
-        def getEnvVariable(self, a, b):
+        def getEnvVariable(a, b):
             return b
 
 class Settings:
@@ -169,7 +169,7 @@ class Options:
         # ----------------------------------------------------------------------
         # Setup values
 
-        self._show_env_variables = True
+        self._show_env_variables = False
 
         self.module_path    = ModuleOptions.module_path
         self.models_dir     = os.path.normpath(ModuleOptions.getEnvVariable("MODELS_DIR", f"{self.module_path}/assets"))

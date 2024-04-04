@@ -113,21 +113,25 @@ class DynamicInterpreter(object):
 
 
     def _interpreter_runner(self, seg_idx: int):
+        in_names  = [d['name']  for d in self.input_details ]
+        out_names = [d['name']  for d in self.output_details]
+        indices   = [d['index'] for d in self.output_details]
+        first_in_name = in_names.pop(0)
+
+        # Setup input/output queues
+        in_q = self.queues[seg_idx]
+        out_q = None
+        if len(self.queues) > seg_idx+1:
+            out_q = self.queues[seg_idx+1]
+
         # Input tensors for this interpreter
         input_tensors = {}
         for details in self.input_details:
             input_tensors[details['name']] = self.interpreter.tensor(details['index'])
-
-        # Setup input/output queues
-        in_q = self.queues[seg_idx]
-        if len(self.queues) > seg_idx+1:
-            out_q = self.queues[seg_idx+1]
-        else:
-            out_q = None
-
-        in_names  = [d['name']  for d in self.input_details ]
-        out_names = [d['name']  for d in self.output_details]
-        indices   = [d['index'] for d in self.output_details]
+        output_tensors = []
+        if not out_q:
+            for details in self.output_details:
+                output_tensors.append(self.interpreter.tensor(details['index']))
 
         expected_input_size = np.prod(self.input_details[0]['shape'])
         interpreter_handle = self.interpreter._native_handle()
@@ -149,19 +153,15 @@ class DynamicInterpreter(object):
 
             start_inference_time = time.perf_counter_ns()
 
-            if len(in_names) == 1:
-                # Invoke_with_membuffer() directly on numpy memory,
-                # but only works with a single input
-                edgetpu.invoke_with_membuffer(interpreter_handle,
-                                              working_tensors[0][in_names[0]].ctypes.data,
-                                              expected_input_size)
-            else:
-                # Set inputs
-                for name in in_names:
-                    input_tensors[name]()[0] = working_tensors[0][name]
+            # Set inputs beyond the first
+            for name in in_names:
+                input_tensors[name]()[0] = working_tensors[0][name]
 
-                # Run segment
-                self.interpreter.invoke()
+            # Invoke_with_membuffer() directly on numpy memory,
+            # but only works with a single input
+            edgetpu.invoke_with_membuffer(interpreter_handle,
+                                          working_tensors[0][first_in_name].ctypes.data,
+                                          expected_input_size)
 
             if out_q:
                 # Fetch results
@@ -171,9 +171,10 @@ class DynamicInterpreter(object):
                 # Deliver to next queue in pipeline
                 out_q.put(working_tensors)
             else:
-                # Fetch results
+                # Fetch pointer to results
+                # Copy and convert to float
                 # Deliver to final results queue
-                working_tensors[1].put([self.interpreter.get_tensor(index) for index in indices])
+                working_tensors[1].put([t().astype(np.float32) for t in output_tensors])
 
             # Convert elapsed time to double precision ms
             self.timings[seg_idx] += (time.perf_counter_ns() - start_inference_time) / (1000.0 * 1000.0)
@@ -474,9 +475,9 @@ class TPURunner(object):
                 ['usb:%d' % i for i in range(max(0, len(edge_tpus) - num_pci_devices))]
 
         if self.tpu_limit > 0:
-            return tpu_l[:self.tpu_limit]
+            return tpu_l[4:self.tpu_limit]
         else:
-            return tpu_l
+            return tpu_l[4:]
 
 
     def _get_model_filenames(self, options: Options, tpu_list: list) -> list:
@@ -526,7 +527,7 @@ class TPURunner(object):
 
 
     # Should be called while holding runner_lock (if called at run time)
-    def init_pipe(self, options: Options) -> tuple[str, str]:
+    def init_pipe(self, options: Options) -> tuple:
         """
         Initializes the pipe with the TFLite models.
         
@@ -599,7 +600,7 @@ class TPURunner(object):
 
 
     def _periodic_check(self, options: Options, force: bool = False,
-                        check_temp: bool = True, check_refresh: bool = True) -> tuple[bool, str]:
+                        check_temp: bool = True, check_refresh: bool = True) -> tuple:
         """
         Run a periodic check to ensure the temperatures are good and we don't
         need to (re)initialize the interpreters/workers/pipelines. The system
@@ -743,6 +744,9 @@ class TPURunner(object):
         - Remove duplicate results.
         - Return results as Objects.
         - Return inference timing.
+
+        Note that the image object is modified in place to resize it
+        for in input tensor.
         """
 
         all_objects = []
@@ -837,11 +841,11 @@ class TPURunner(object):
             # using a v8 or v5-based network.
             if j < k:
                 rs = self._yolov8_non_max_suppression(
-                    (dict_values.astype('float32') - output_zero) * output_scale,
+                    (dict_values - output_zero) * output_scale,
                     conf_thres=score_threshold)
             else:
                 rs = self._yolov5_non_max_suppression(
-                    (dict_values.astype('float32') - output_zero) * output_scale,
+                    (dict_values - output_zero) * output_scale,
                     conf_thres=score_threshold)
 
             for a in rs:
@@ -957,7 +961,6 @@ class TPURunner(object):
             if (time.time() - t) > time_limit:
                 logging.warning(f'NMS time limit {time_limit}s exceeded')
                 break  # time limit exceeded
-
         return output        
 
         
@@ -1145,26 +1148,29 @@ class TPURunner(object):
             self.printed_shape_map[key] = True
 
         # Chop & resize image piece
-        resamp_img = image.convert('RGB')
-        resamp_img.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        image.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
 
         # Do chunking
         tiles = []
         for x_off in range(0, resamp_x - options.tile_overlap, m_width - options.tile_overlap):
             for y_off in range(0, resamp_y - options.tile_overlap, m_height - options.tile_overlap):
-                cropped_arr = to_numpy(resamp_img.crop((x_off,
-                                                        y_off,
-                                                        x_off + m_width,
-                                                        y_off + m_height)), self.input_details['shape'][1:], np.uint8)
+                cropped_arr = to_numpy(image.crop((x_off,
+                                                   y_off,
+                                                   x_off + m_width,
+                                                   y_off + m_height)), self.input_details['shape'][1:], np.uint8)
 
                 logging.debug("Resampled image tile {} at offset {}, {}".format(cropped_arr.shape, x_off, y_off))
-                resamp_info = (x_off, y_off, i_width/resamp_img.width, i_height/resamp_img.height)
+                resamp_info = (x_off, y_off, i_width/image.width, i_height/image.height)
 
                 # Normalize from 8-bit image to whatever the input is
                 if self.input_details['dtype'] == np.int8:
                     tiles.append(((cropped_arr - 128).astype(np.int8), resamp_info))
                 else:
                     tiles.append((cropped_arr, resamp_info))
+
+                #Image.fromarray((tiles[-1][0] + 128).astype(np.uint8)).save("test.png")
         return tiles
 
 

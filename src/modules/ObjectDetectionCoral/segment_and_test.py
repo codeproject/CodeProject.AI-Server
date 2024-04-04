@@ -11,12 +11,12 @@ fn_list = [
     #'ssd_mobilenet_v1_coco_quant_postprocess',
     'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq',
     #'efficientdet_lite0_320_ptq',
-    'efficientdet_lite1_384_ptq',
+    #'efficientdet_lite1_384_ptq',
     'efficientdet_lite2_448_ptq',
     'efficientdet_lite3_512_ptq',
     'efficientdet_lite3x_640_ptq',
     #'yolov5n-int8',
-    'yolov5s-int8',
+    #'yolov5s-int8',
     'yolov5m-int8',
     'yolov5l-int8',
     #'yolov8n_416_640px', # lg 1st seg
@@ -192,7 +192,7 @@ def seg_exists(filename, segment_type, segment_count):
 
 MAX_TPU_COUNT = 8
 
-#'''
+'''
 # Generate segment files
 for sn in range(1,MAX_TPU_COUNT+1):
     for fn in fn_list:

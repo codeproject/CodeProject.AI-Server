@@ -238,7 +238,7 @@ def main():
         fs = [executor.submit(_tpu_runner.process_image, options, copy.copy(image), args.threshold)
               for i in range(min(thread_cnt*8, args.count-1 - chunk_i))]
         for f in concurrent.futures.as_completed(fs):
-          _, infr_time = f.result()
+          _, infr_time, _ = f.result()
           tot_infr_time += infr_time
         
         # Uncomment for testing
@@ -254,7 +254,7 @@ def main():
   #   print(stat)
 
   start_one = time.perf_counter()
-  objs, infr_time = _tpu_runner.process_image(options, image, args.threshold)
+  objs, infr_time, _ = _tpu_runner.process_image(options, copy.copy(image), args.threshold)
   tot_infr_time += infr_time
   wall_time = time.perf_counter() - start
   print('completed one run every %.2f ms for %d runs; %.2f ms wall time for a single run' %
