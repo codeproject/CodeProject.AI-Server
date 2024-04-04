@@ -25,7 +25,7 @@
         "RuntimeLocation": "Local",       // Can be Local, Shared or System
         "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
         "Queue": "objectdetection_queue", // We make all Object detectors use the same queue.
-        "Parallelism": 1                  // 0 = Default = number of CPUs / 2
+        "Parallelism": 16                 // 0 = Default = number of CPUs / 2
       },
 
       "ModelRequirements" : [{

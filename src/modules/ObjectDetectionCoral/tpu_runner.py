@@ -428,7 +428,9 @@ class TPURunner(object):
         self.temp_fname_format = None
         self.tpu_limit = tpu_limit
 
-        tpu_count = min(len(edgetpu.list_edge_tpus()), tpu_limit)
+        tpu_count = len(edgetpu.list_edge_tpus())
+        if tpu_limit >= 0:
+            tpu_count = min(tpu_count, tpu_limit)
 
         if platform.system() == "Linux":
             for fn in temp_fname_formats:
@@ -1139,6 +1141,11 @@ class TPURunner(object):
             if s < 0:
                 raise RuntimeError("encoder error %d in tobytes" % s)
             return data
+
+        # Chop & resize image piece
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        image.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
         
         # It'd be useful to print this once at the beginning of the run
         key = "{} {}".format(*image.size)
@@ -1146,11 +1153,6 @@ class TPURunner(object):
             logging.info(
                 "Mapping {} image to {}x{} tiles".format(image.size, tiles_x, tiles_y))
             self.printed_shape_map[key] = True
-
-        # Chop & resize image piece
-        if image.mode != 'RGB':
-            image = image.convert('RGB')
-        image.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
 
         # Do chunking
         tiles = []
