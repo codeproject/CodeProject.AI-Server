@@ -257,7 +257,7 @@ def main():
   objs, infr_time, _ = _tpu_runner.process_image(options, copy.copy(image), args.threshold)
   tot_infr_time += infr_time
   wall_time = time.perf_counter() - start
-  print('completed one run every %.2f ms for %d runs; %.2f ms wall time for a single run' %
+  print('completed one run every %.2fms for %d runs; %.2fms wall time for a single run' %
                             (wall_time * 1000 / args.count, args.count,
                             (time.perf_counter() - start_one) * 1000))
                             
@@ -265,7 +265,7 @@ def main():
   # lowest average time spent adjusted for number of TPUs used. At some point,
   # adding additional segments just removes from the pool of TPUs you can use
   # for parallelism.
-  print('%.2f ms avg time blocked across %d threads; %.2f avg TPU * ms / run' %
+  print('%.2fms avg time blocked across %d threads; %.2f avg TPU * ms / run' %
                             (tot_infr_time / args.count, thread_cnt,
                              len(_tpu_runner.pipe.tpu_list) * wall_time * 1000 / args.count))
 

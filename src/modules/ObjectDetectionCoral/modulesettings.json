@@ -25,7 +25,7 @@
         "RuntimeLocation": "Local",       // Can be Local, Shared or System
         "PostStartPauseSecs": 1,          // Generally 1 if using GPU, 0 for CPU
         "Queue": "objectdetection_queue", // We make all Object detectors use the same queue.
-        "Parallelism": 16                 // 0 = Default = number of CPUs / 2
+        "Parallelism": 16                 // Should probably be TPU count * 2; I don't see harm in overprovisioning threads
       },
 
       "ModelRequirements" : [{
@@ -36,7 +36,7 @@
 
       "EnvironmentVariables": {
         "CPAI_CORAL_MULTI_TPU":  "true",
-        "CPAI_CORAL_MODEL_NAME": "MobileNet SSD", // "MobileNet SSD", "EfficientDet-Lite", "YOLOv5"
+        "CPAI_CORAL_MODEL_NAME": "MobileNet SSD", // "MobileNet SSD", "EfficientDet-Lite", "YOLOv5", "YOLOv8"
 
         "MODELS_DIR": "%CURRENT_MODULE_PATH%/assets",
         "MODEL_SIZE": "Small"
@@ -85,15 +85,15 @@
         ],
         "DownloadableModels":[
 
-          { "Name": "EfficientDet Large",  "Filename": "objectdetection-efficientdet-large-edgetpu.zip",  "Folder": "assets", "Description": "EfficientDet object detection, Large",  "FileSizeKb": 275800, "PreInstall": false },
-          { "Name": "EfficientDet Medium", "Filename": "objectdetection-efficientdet-medium-edgetpu.zip", "Folder": "assets", "Description": "EfficientDet object detection, Medium", "FileSizeKb": 275800, "PreInstall": false },
-          { "Name": "EfficientDet Small",  "Filename": "objectdetection-efficientdet-small-edgetpu.zip",  "Folder": "assets", "Description": "EfficientDet object detection, Small",  "FileSizeKb": 275800, "PreInstall": false },
-          { "Name": "EfficientDet Tiny",   "Filename": "objectdetection-efficientdet-tiny-edgetpu.zip",   "Folder": "assets", "Description": "EfficientDet object detection, Tiny",   "FileSizeKb": 275800, "PreInstall": false },
-
           { "Name": "MobileNet Large",  "Filename": "objectdetection-mobilenet-large-edgetpu.zip",  "Folder": "assets", "Description": "MobileNet object detection, Large",  "FileSizeKb": 275800, "PreInstall": true },
           { "Name": "MobileNet Medium", "Filename": "objectdetection-mobilenet-medium-edgetpu.zip", "Folder": "assets", "Description": "MobileNet object detection, Medium", "FileSizeKb": 275800, "PreInstall": true },
           { "Name": "MobileNet Small",  "Filename": "objectdetection-mobilenet-small-edgetpu.zip",  "Folder": "assets", "Description": "MobileNet object detection, Small",  "FileSizeKb": 275800, "PreInstall": true },
           { "Name": "MobileNet Tiny",   "Filename": "objectdetection-mobilenet-tiny-edgetpu.zip",   "Folder": "assets", "Description": "MobileNet object detection, Tiny",   "FileSizeKb": 275800, "PreInstall": true },
+
+          { "Name": "EfficientDet Large",  "Filename": "objectdetection-efficientdet-large-edgetpu.zip",  "Folder": "assets", "Description": "EfficientDet object detection, Large",  "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "EfficientDet Medium", "Filename": "objectdetection-efficientdet-medium-edgetpu.zip", "Folder": "assets", "Description": "EfficientDet object detection, Medium", "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "EfficientDet Small",  "Filename": "objectdetection-efficientdet-small-edgetpu.zip",  "Folder": "assets", "Description": "EfficientDet object detection, Small",  "FileSizeKb": 275800, "PreInstall": false },
+          { "Name": "EfficientDet Tiny",   "Filename": "objectdetection-efficientdet-tiny-edgetpu.zip",   "Folder": "assets", "Description": "EfficientDet object detection, Tiny",   "FileSizeKb": 275800, "PreInstall": false },
 
           { "Name": "YOLOv5 Large",  "Filename": "objectdetection-yolov5-large-edgetpu.zip",  "Folder": "assets", "Description": "YOLOv5 object detection, Large",  "FileSizeKb": 275800, "PreInstall": false },
           { "Name": "YOLOv5 Medium", "Filename": "objectdetection-yolov5-medium-edgetpu.zip", "Folder": "assets", "Description": "YOLOv5 object detection, Medium", "FileSizeKb": 275800, "PreInstall": false },
@@ -112,9 +112,9 @@
           "Label": "Model",
           "Options": [
               { "Label": "MobileNet SSD",     "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "MobileNet SSD"     },
+              { "Label": "EfficientDet Lite", "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "EfficientDet-Lite" },
               { "Label": "YOLOv5",            "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "YOLOv5"            },
-              { "Label": "YOLOv8",            "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "YOLOv8"            },
-              { "Label": "EfficientDet Lite", "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "EfficientDet-Lite" }
+              { "Label": "YOLOv8",            "Setting": "CPAI_CORAL_MODEL_NAME", "Value": "YOLOv8"            }
           ]
         },
         {

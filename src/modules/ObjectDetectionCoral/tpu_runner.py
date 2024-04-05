@@ -185,6 +185,7 @@ class DynamicInterpreter(object):
         # Print performance info
         t_str = ""
         q_str = ""
+        c_str = ""
         for t, q, c in zip(self.timings, self.q_len, self.exec_count):
             if c > 0:
                 avg_time = t / c
@@ -194,7 +195,8 @@ class DynamicInterpreter(object):
                 avg_q = 0.0
             t_str += " {:5.1f}".format(avg_time)
             q_str += " {:5.1f}".format(avg_q)
-        logging.info(f"{self.tpu_name} per-segment timing (ms) & queue len:{t_str};{q_str}")
+            c_str += " {:5d}".format(c)
+        logging.info(f"{self.tpu_name} timing, queue len, & count:{t_str};{q_str};{c_str}")
 
         self.interpreter = None
         self.input_details = None
@@ -209,7 +211,6 @@ class DynamicPipeline(object):
         seg_count = len(fname_list)
         assert seg_count <= len(tpu_list), "seg_count: {} tpu_list: {}".format(seg_count, len(tpu_list))
 
-        self.max_idle_secs_before_recycle = MAX_WAIT_TIME
         self.max_pipeline_queue_length    = MAX_PIPELINE_QUEUE_LEN
         
         self.fname_list         = fname_list
@@ -237,19 +238,31 @@ class DynamicPipeline(object):
             with open(fname, "rb") as fd:
                 self.fbytes_list.append(fd.read())
 
+        self._init_interpreters()
+
+    def _init_interpreters(self):
+
+        start_boot_time = time.perf_counter_ns()
+
         # Fill TPUs with interpreters
         with self.balance_lock:
-            for i, tpu_name in enumerate(tpu_list):
-                seg_idx = i % len(fname_list)
+            for i, tpu_name in enumerate(self.tpu_list):
+                seg_idx = i % len(self.fname_list)
 
-                i = DynamicInterpreter(fname_list, tpu_name, self.queues, self.rebalancing_lock)
+                i = DynamicInterpreter(self.fname_list, tpu_name, self.queues, self.rebalancing_lock)
                 i.start(seg_idx, self.fbytes_list[seg_idx])
                 self.interpreters[seg_idx].append(i)
 
         self.first_name = self.interpreters[0][0].input_details[0]['name']
+        
+        boot_time = (time.perf_counter_ns() - start_boot_time) / (1000.0 * 1000.0)
+        logging.info(f"Initialized pipeline interpreters in {boot_time:.1f}ms")
 
 
     def enqueue(self, in_tensor, out_q: queue.Queue):
+        if not self.first_name:
+            self._init_interpreters()
+
         self.queues[0].put(({self.first_name: in_tensor}, out_q))
 
 
@@ -367,12 +380,13 @@ class DynamicPipeline(object):
         for interpreter in self.interpreters[seg_idx]:
             t = interpreter.thread
             logging.debug("Joining thread {} for DynamicPipeline.delete()".format(t.native_id))
-            t.join(timeout=self.max_idle_secs_before_recycle)
+            t.join(timeout=MAX_WAIT_TIME)
             if t.is_alive():
                 logging.warning("Pipe thread didn't join!")
 
 
     def delete(self):
+        # Kill interpreters. Maybe refresh later; maybe delete object.
         with self.balance_lock:
             # Insert EOF to each queue
             # Wait for threads to finish
@@ -384,7 +398,7 @@ class DynamicPipeline(object):
                 if self.interpreters and len(self.interpreters) > q_idx:
                     self.interpreters[q_idx] = []
 
-        self.fbytes_list = None
+        self.first_name = None
 
 
 class TPURunner(object):
@@ -396,8 +410,12 @@ class TPURunner(object):
         the registry.
         """
         
+        # Tricky because MAX_WAIT_TIME is intended to relatively quickly handle an error condition
+        # before there are significant user-facing problems, whereas idling for N seconds isn't an
+        # error condition.
+        self.max_idle_secs_before_recycle = MAX_WAIT_TIME * 20
         self.watchdog_idle_secs           = WATCHDOG_IDLE_SECS
-        self.max_idle_secs_before_recycle = MAX_WAIT_TIME
+
         self.pipe_lifespan_secs           = INTERPRETER_LIFESPAN_SECONDS
         self.warn_temperature_thresh_C    = WARN_TEMPERATURE_THRESHOLD_CELSIUS
 
@@ -446,12 +464,13 @@ class TPURunner(object):
         self.watchdog_time = time.time()
         while not self.watchdog_shutdown:
             if self.pipe and \
-               time.time() - self.watchdog_time > self.max_idle_secs_before_recycle*2:
-                 logging.warning("No work in {} seconds, watchdog shutting down TPUs.".format(self.max_idle_secs_before_recycle*2))
-                 self.runner_lock.acquire(timeout=self.max_idle_secs_before_recycle)
-                 self._delete()
-                 self.runner_lock.release()
-                 # Pipeline will reinitialize itself as needed
+                time.time() - self.watchdog_time > self.max_idle_secs_before_recycle:
+                logging.warning("No work in {} seconds, watchdog shutting down TPUs.".format(self.max_idle_secs_before_recycle))
+                self.runner_lock.acquire(timeout=MAX_WAIT_TIME)
+                if self.pipe:
+                    self.pipe.delete()
+                self.runner_lock.release()
+                # Pipeline will reinitialize itself as needed
             time.sleep(self.watchdog_idle_secs)
 
         logging.debug("Watchdog caught shutdown in {}".format(threading.get_ident()))
@@ -779,7 +798,7 @@ class TPURunner(object):
             # We may have to wait a few seconds at most, but I'd expect the
             # pipeline to clear fairly quickly.
             start_inference_time = time.perf_counter()
-            result = rs_queue.get(timeout=self.max_idle_secs_before_recycle)
+            result = rs_queue.get(timeout=MAX_WAIT_TIME)
             tot_inference_time += time.perf_counter() - start_inference_time
             assert result
 
