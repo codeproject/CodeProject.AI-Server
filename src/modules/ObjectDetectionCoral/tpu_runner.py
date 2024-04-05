@@ -25,7 +25,7 @@ import gc
 from datetime import datetime
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 
 try:
     from pycoral.utils.dataset import read_label_file
@@ -1145,30 +1145,15 @@ class TPURunner(object):
 
         logging.debug("Resizing to {} x {} for tiling".format(resamp_x, resamp_y))
 
-        # From: https://uploadcare.com/blog/fast-import-of-pillow-images-to-numpy-opencv-arrays/
-        def to_numpy(im, shape, typestr):
-            # unpack data
-            e = Image._getencoder(im.mode, 'raw', im.mode)
-            e.setimage(im.im)
-
-            # NumPy buffer for the result
-            data = np.empty(shape, dtype=typestr)
-            mem = data.data.cast('B', (data.data.nbytes,))
-
-            bufsize, s, offset = 65536, 0, 0
-            while not s:
-                l, s, d = e.encode(bufsize)
-                mem[offset:offset + len(d)] = d
-                offset += len(d)
-            if s < 0:
-                raise RuntimeError("encoder error %d in tobytes" % s)
-            return data
-
         # Chop & resize image piece
         if image.mode != 'RGB':
             image = image.convert('RGB')
         image.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
-        
+
+        # Rescale the input from uint8
+        input_zero = self.input_details['quantization'][1]
+        input_scale = 1.0 / (255.0 * self.input_details['quantization'][0])
+
         # It'd be useful to print this once at the beginning of the run
         key = "{} {}".format(*image.size)
         if key not in self.printed_shape_map:
@@ -1176,27 +1161,21 @@ class TPURunner(object):
                 "Mapping {} image to {}x{} tiles".format(image.size, tiles_x, tiles_y))
             self.printed_shape_map[key] = True
 
-        input_zero = self.input_details['quantization'][1]
-        input_scale = 1.0 / (256.0 * self.input_details['quantization'][0])
-
         # Do chunking
         tiles = []
         for x_off in range(0, resamp_x - options.tile_overlap, m_width - options.tile_overlap):
             for y_off in range(0, resamp_y - options.tile_overlap, m_height - options.tile_overlap):
-                cropped_arr = to_numpy(image.crop((x_off,
-                                                   y_off,
-                                                   x_off + m_width,
-                                                   y_off + m_height)), self.input_details['shape'][1:], np.uint8)
+                image_chunk = ImageOps.autocontrast(image.crop((x_off,
+                                                                y_off,
+                                                                x_off + m_width,
+                                                                y_off + m_height)), 1)
+                # Normalize to whatever the input is
+                cropped_arr = np.asarray(image_chunk, np.float32) * input_scale + input_zero
 
                 logging.debug("Resampled image tile {} at offset {}, {}".format(cropped_arr.shape, x_off, y_off))
                 resamp_info = (x_off, y_off, i_width/image.width, i_height/image.height)
 
-                # Normalize from 8-bit image to whatever the input is
-                if self.input_details['dtype'] == np.int8:
-                    cropped_arr = cropped_arr * input_scale + input_zero
-                    tiles.append((cropped_arr.astype(np.int8), resamp_info))
-                else:
-                    tiles.append((cropped_arr, resamp_info))
+                tiles.append((cropped_arr.astype(self.input_details['dtype']), resamp_info))
 
         return tiles
 
