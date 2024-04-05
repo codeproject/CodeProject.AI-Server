@@ -1151,7 +1151,7 @@ class TPURunner(object):
         image.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
 
         # Rescale the input from uint8
-        input_zero = self.input_details['quantization'][1]
+        input_zero = float(self.input_details['quantization'][1])
         input_scale = 1.0 / (255.0 * self.input_details['quantization'][0])
 
         # It'd be useful to print this once at the beginning of the run
