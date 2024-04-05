@@ -580,7 +580,7 @@ class TPURunner(object):
             self.pipe = None
             logging.warning(f"TPU Exception creating interpreter: {tpu_ex}")
             error = "Failed to create interpreter (Coral issue)"
-        except FileNotFoundError:
+        except FileNotFoundError as ex:
             self.pipe = None
             logging.warning(f"Model file not found: {ex}")
             error = "Model file not found. Please download the model if possible"
@@ -741,6 +741,9 @@ class TPURunner(object):
                       image: Image,
                       score_threshold: float) -> (list, int, str):
         while True:
+            # Sanity check
+            assert self.pipe, "No processing pipeline, have we been initialized?"
+
             try:
                 return self._process_image(options, image, score_threshold)
             except queue.Empty:
