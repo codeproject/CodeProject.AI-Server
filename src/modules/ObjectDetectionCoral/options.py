@@ -169,7 +169,7 @@ class Options:
         # ----------------------------------------------------------------------
         # Setup values
 
-        self._show_env_variables = False
+        self._show_env_variables = True
 
         self.module_path    = ModuleOptions.module_path
         self.models_dir     = os.path.normpath(ModuleOptions.getEnvVariable("MODELS_DIR", f"{self.module_path}/assets"))

@@ -195,8 +195,8 @@ class DynamicInterpreter(object):
                 avg_q = 0.0
             t_str += " {:5.1f}".format(avg_time)
             q_str += " {:5.1f}".format(avg_q)
-            c_str += " {:5d}".format(c)
-        logging.info(f"{self.tpu_name} timing, queue len, & count:{t_str};{q_str};{c_str}")
+            c_str += " {:7d}".format(c)
+        logging.info(f"{self.tpu_name} time, queue len, & count:{t_str};{q_str};{c_str}")
 
         self.interpreter = None
         self.input_details = None
@@ -496,9 +496,9 @@ class TPURunner(object):
                 ['usb:%d' % i for i in range(max(0, len(edge_tpus) - num_pci_devices))]
 
         if self.tpu_limit > 0:
-            return tpu_l[4:self.tpu_limit]
+            return tpu_l[:self.tpu_limit]
         else:
-            return tpu_l[4:]
+            return tpu_l
 
 
     def _get_model_filenames(self, options: Options, tpu_list: list) -> list:
@@ -1173,6 +1173,9 @@ class TPURunner(object):
                 "Mapping {} image to {}x{} tiles".format(image.size, tiles_x, tiles_y))
             self.printed_shape_map[key] = True
 
+        input_zero = self.input_details['quantization'][1]
+        input_scale = 1.0 / (256.0 * self.input_details['quantization'][0])
+
         # Do chunking
         tiles = []
         for x_off in range(0, resamp_x - options.tile_overlap, m_width - options.tile_overlap):
@@ -1187,11 +1190,11 @@ class TPURunner(object):
 
                 # Normalize from 8-bit image to whatever the input is
                 if self.input_details['dtype'] == np.int8:
-                    tiles.append(((cropped_arr - 128).astype(np.int8), resamp_info))
+                    cropped_arr = cropped_arr * input_scale + input_zero
+                    tiles.append((cropped_arr.astype(np.int8), resamp_info))
                 else:
                     tiles.append((cropped_arr, resamp_info))
 
-                #Image.fromarray((tiles[-1][0] + 128).astype(np.uint8)).save("test.png")
         return tiles
 
 
