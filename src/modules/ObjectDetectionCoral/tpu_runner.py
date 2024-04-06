@@ -90,7 +90,7 @@ class DynamicInterpreter(object):
 
 
     def start(self, seg_idx: int, fbytes: bytes):
-        logging.info(f"Loading into {self.tpu_name}: {self.fname_list[seg_idx]}")
+        logging.info(f"Loading {self.tpu_name}: {self.fname_list[seg_idx]}")
 
         try:
             self.interpreter = edgetpu.make_interpreter(fbytes, delegate=self.delegate)
@@ -1095,8 +1095,6 @@ class TPURunner(object):
                                m_width: int,
                                m_height: int):
         """
-        Run the image resizing in an independent process pool.
-        
         Image resizing is one of the more expensive things we're doing here.
         It's expensive enough that it may take as much CPU time as inference
         under some circumstances. The Lanczos resampling kernel in particular
@@ -1148,6 +1146,7 @@ class TPURunner(object):
         tiles = []
         for x_off in range(0, resamp_x - options.tile_overlap, m_width - options.tile_overlap):
             for y_off in range(0, resamp_y - options.tile_overlap, m_height - options.tile_overlap):
+                # Adjust contrast on a per-chunk basis; we will likely be quantizing the image during scaling
                 image_chunk = ImageOps.autocontrast(image.crop((x_off,
                                                                 y_off,
                                                                 x_off + m_width,
@@ -1159,6 +1158,10 @@ class TPURunner(object):
                 resamp_info = (x_off, y_off, i_width/image.width, i_height/image.height)
 
                 tiles.append((cropped_arr.astype(self.input_details['dtype']), resamp_info))
+
+                # Check again with various scales
+                #Image.fromarray((tiles[-1][0] + 128).astype(np.uint8)).save("test.png")
+
 
         return tiles
 

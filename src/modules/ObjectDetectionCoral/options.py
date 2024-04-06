@@ -163,7 +163,7 @@ class Options:
 
         self.MAX_PIPELINE_QUEUE_LEN             = 1000      # Multi-only
         self.TILE_OVERLAP                       = 15        # Multi-only.
-        self.DOWNSAMPLE_BY                      = 5.2       # Multi-only. Smaller number results in more tiles generated
+        self.DOWNSAMPLE_BY                      = 6.0       # Multi-only. Smaller number results in more tiles generated
         self.IOU_THRESHOLD                      = 0.1       # Multi-only
 
         # ----------------------------------------------------------------------
