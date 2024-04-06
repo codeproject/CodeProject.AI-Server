@@ -142,13 +142,12 @@ class DynamicInterpreter(object):
             working_tensors = in_q.get()
             
             # Exit if the pipeline is done
-            if not working_tensors:
+            if working_tensors is False:
                 logging.debug("Get EOF in tid {}".format(threading.get_ident()))
                 self.interpreter = None
                 self.input_details = None
                 self.output_details = None
-                if self.rebalancing_lock.locked():
-                    self.rebalancing_lock.release()
+                self.rebalancing_lock.release()
                 return
 
             start_inference_time = time.perf_counter_ns()
@@ -194,13 +193,11 @@ class DynamicInterpreter(object):
                 avg_time = 0.0
                 avg_q = 0.0
             t_str += " {:5.1f}".format(avg_time)
-            q_str += " {:5.1f}".format(avg_q)
+            q_str += " {:4.1f}".format(avg_q)
             c_str += " {:7d}".format(c)
-        logging.info(f"{self.tpu_name} time, queue len, & count:{t_str};{q_str};{c_str}")
+        logging.info(f"{self.tpu_name} time, queue len, & count:{t_str}|{q_str}|{c_str}")
 
         self.interpreter = None
-        self.input_details = None
-        self.output_details = None
         self.delegate = None
         self.queues = None
 
@@ -209,19 +206,21 @@ class DynamicPipeline(object):
     
     def __init__(self, tpu_list: list, fname_list: list):
         seg_count = len(fname_list)
-        assert seg_count <= len(tpu_list), "seg_count: {} tpu_list: {}".format(seg_count, len(tpu_list))
+        assert seg_count <= len(tpu_list), f"More segments than TPUs to run them! {seg_count} vs {len(tpu_list)}"
 
         self.max_pipeline_queue_length    = MAX_PIPELINE_QUEUE_LEN
         
         self.fname_list         = fname_list
         self.tpu_list           = tpu_list
+        self.interpreters       = [[]  for i in range(seg_count)]
 
-        # Input queues for each segment
+        # Input queues for each segment; if we go over maxsize, something went wrong
         self.queues = [queue.Queue(maxsize=self.max_pipeline_queue_length) for i in range(seg_count)]
 
-        self.interpreters       = [[]  for i in range(seg_count)]
-        self.moving_avg         = [0.0 for i in range(seg_count)]
+        # Lock for internal reorganization
         self.balance_lock       = threading.Lock()
+
+        # Lock for interpreter use
         self.rebalancing_lock   = threading.Lock()
 
         # Read file data
@@ -322,7 +321,7 @@ class DynamicPipeline(object):
             self.balance_lock.release()
             return
 
-        logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:5.2f} to {new_max:5.2f})")
+        logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:.2f} to {new_max:.2f})")
 
         # Sending False kills the processing loop
         self.rebalancing_lock.acquire()
@@ -712,38 +711,28 @@ class TPURunner(object):
 
         return (bool(self.pipe), error)
 
-
     def __del__(self):
         with self.runner_lock:
             self._delete()
         self.watchdog_shutdown = True
         self.watchdog_thread.join(timeout=self.watchdog_idle_secs*2)
 
-
     def _delete(self):
         # Close pipeline
         if self.pipe:
             self.pipe.delete()
             self.pipe = None
-        gc.collect()
-
 
     def pipeline_ok(self) -> bool:
         """ Check we have valid interpreters """
-        if self.pipe and any(self.pipe.interpreters):
-            return True
-        
-        return False
-
+        with self.runner_lock:
+            return self.pipe and any(self.pipe.interpreters)
 
     def process_image(self,
                       options:Options,
                       image: Image,
                       score_threshold: float) -> (list, int, str):
         while True:
-            # Sanity check
-            assert self.pipe, "No processing pipeline, have we been initialized?"
-
             try:
                 return self._process_image(options, image, score_threshold)
             except queue.Empty:
@@ -772,12 +761,9 @@ class TPURunner(object):
         Note that the image object is modified in place to resize it
         for in input tensor.
         """
-
         all_objects = []
         all_queues  = []
-
         _, m_height, m_width, _ = self.input_details['shape']
-        i_width, i_height = image.size
         
         # Potentially resize & pipeline a number of tiles
         for rs_image, rs_loc in self._get_tiles(options, image):
@@ -808,7 +794,7 @@ class TPURunner(object):
             boxes, class_ids, scores, count = self._decode_result(result, score_threshold)
             
             logging.debug("BBox scaling params: {}x{}, ({},{}), {:.2f}x{:.2f}".
-                format(m_width, m_height,*rs_loc))
+                format(m_width, m_height, *rs_loc))
 
             # Create Objects for each valid result
             for i in range(int(count[0])):
@@ -817,14 +803,11 @@ class TPURunner(object):
                     
                 ymin, xmin, ymax, xmax = boxes[0][i]
                 
-                bbox = detect.BBox(xmin=max(xmin, 0.0),
-                                   ymin=max(ymin, 0.0),
-                                   xmax=min(xmax, 1.0),
-                                   ymax=min(ymax, 1.0)).\
-                                    scale(m_width, m_height).\
-                                        translate(rs_loc[0], rs_loc[1]).\
-                                            scale(rs_loc[2], rs_loc[3])
-                                          
+                bbox = detect.BBox(xmin=(max(xmin, 0.0)*m_width  + rs_loc[0])*rs_loc[2],
+                                   ymin=(max(ymin, 0.0)*m_height + rs_loc[1])*rs_loc[3],
+                                   xmax=(min(xmax, 1.0)*m_width  + rs_loc[0])*rs_loc[2],
+                                   ymax=(min(ymax, 1.0)*m_height + rs_loc[1])*rs_loc[3])
+
                 all_objects.append(detect.Object(id=int(class_ids[0][i]),
                                                  score=float(scores[0][i]),
                                                  bbox=bbox.map(int)))
