@@ -474,8 +474,8 @@ class TPURunner(object):
 
         logging.debug("Watchdog caught shutdown in {}".format(threading.get_ident()))
 
-
-    def _get_tpu_devices(self):
+    @staticmethod
+    def get_tpu_devices(tpu_limit: int = -1):
         """Returns list of device names in usb:N or pci:N format.
 
         This function prefers returning PCI Edge TPU first.
@@ -494,8 +494,8 @@ class TPURunner(object):
         tpu_l = ['pci:%d' % i for i in range(min(len(edge_tpus), num_pci_devices))] + \
                 ['usb:%d' % i for i in range(max(0, len(edge_tpus) - num_pci_devices))]
 
-        if self.tpu_limit > 0:
-            return tpu_l[:self.tpu_limit]
+        if tpu_limit > 0:
+            return tpu_l[:tpu_limit]
         else:
             return tpu_l
 
@@ -560,7 +560,7 @@ class TPURunner(object):
 
         error = ""
 
-        tpu_list          = self._get_tpu_devices()
+        tpu_list          = TPURunner.get_tpu_devices(self.tpu_limit)
         self.model_name   = options.model_name
         self.model_size   = options.model_size
 
@@ -867,10 +867,10 @@ class TPURunner(object):
     def _xywh2xyxy(self, xywh):
         # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
         xyxy = np.copy(xywh)
-        xyxy[:, 1] = xywh[:, 0] - xywh[:, 2] / 2  # top left x
-        xyxy[:, 0] = xywh[:, 1] - xywh[:, 3] / 2  # top left y
-        xyxy[:, 3] = xywh[:, 0] + xywh[:, 2] / 2  # bottom right x
-        xyxy[:, 2] = xywh[:, 1] + xywh[:, 3] / 2  # bottom right y
+        xyxy[:, 1] = xywh[:, 0] - xywh[:, 2] * 0.5  # top left x
+        xyxy[:, 0] = xywh[:, 1] - xywh[:, 3] * 0.5  # top left y
+        xyxy[:, 3] = xywh[:, 0] + xywh[:, 2] * 0.5  # bottom right x
+        xyxy[:, 2] = xywh[:, 1] + xywh[:, 3] * 0.5  # bottom right y
         return xyxy
 
     
