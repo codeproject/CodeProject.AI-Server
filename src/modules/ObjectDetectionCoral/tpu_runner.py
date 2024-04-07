@@ -1120,16 +1120,15 @@ class TPURunner(object):
         tiles_y = int(max(1, round(i_height / (options.downsample_by * m_height))))
         logging.debug("Chunking to {} x {} tiles".format(tiles_x, tiles_y))
 
-        # Resample image to this size
+        # Fit image within target size
         resamp_x = int(m_width  + (tiles_x - 1) * (m_width  - options.tile_overlap))
         resamp_y = int(m_height + (tiles_y - 1) * (m_height - options.tile_overlap))
-
-        logging.debug("Resizing to {} x {} for tiling".format(resamp_x, resamp_y))
 
         # Chop & resize image piece
         if image.mode != 'RGB':
             image = image.convert('RGB')
         image.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
+        logging.debug("Resizing to {} x {} for tiling".format(image.width, image.height))
 
         # Rescale the input from uint8
         input_zero = float(self.input_details['quantization'][1])
@@ -1144,8 +1143,8 @@ class TPURunner(object):
 
         # Do chunking
         tiles = []
-        for x_off in range(0, resamp_x - options.tile_overlap, m_width - options.tile_overlap):
-            for y_off in range(0, resamp_y - options.tile_overlap, m_height - options.tile_overlap):
+        for x_off in range(0, image.width - options.tile_overlap, int(ceil((image.width - m_width)/tiles_x))):
+            for y_off in range(0, image.height - options.tile_overlap, int(ceil((image.height - m_height)/tiles_y))):
                 # Adjust contrast on a per-chunk basis; we will likely be quantizing the image during scaling
                 image_chunk = ImageOps.autocontrast(image.crop((x_off,
                                                                 y_off,
