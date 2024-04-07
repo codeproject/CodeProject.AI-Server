@@ -21,6 +21,7 @@ import time
 import logging
 import queue
 import gc
+import math
 
 from datetime import datetime
 
@@ -147,7 +148,8 @@ class DynamicInterpreter(object):
                 self.interpreter = None
                 self.input_details = None
                 self.output_details = None
-                self.rebalancing_lock.release()
+                if self.rebalancing_lock.locked():
+                    self.rebalancing_lock.release()
                 return
 
             start_inference_time = time.perf_counter_ns()
@@ -466,7 +468,7 @@ class TPURunner(object):
                 time.time() - self.watchdog_time > self.max_idle_secs_before_recycle:
                 logging.warning("No work in {} seconds, watchdog shutting down TPUs.".format(self.max_idle_secs_before_recycle))
                 self.runner_lock.acquire(timeout=MAX_WAIT_TIME)
-                if self.pipe:
+                if self.pipe.first_name:
                     self.pipe.delete()
                 self.runner_lock.release()
                 # Pipeline will reinitialize itself as needed
@@ -726,7 +728,7 @@ class TPURunner(object):
     def pipeline_ok(self) -> bool:
         """ Check we have valid interpreters """
         with self.runner_lock:
-            return self.pipe and any(self.pipe.interpreters)
+            return bool(self.pipe and any(self.pipe.interpreters))
 
     def process_image(self,
                       options:Options,
@@ -1142,9 +1144,17 @@ class TPURunner(object):
             self.printed_shape_map[key] = True
 
         # Do chunking
+        # Image will not be an even fit in at least one dimension; space tiles appropriately.
         tiles = []
-        for x_off in range(0, image.width - options.tile_overlap, int(ceil((image.width - m_width)/tiles_x))):
-            for y_off in range(0, image.height - options.tile_overlap, int(ceil((image.height - m_height)/tiles_y))):
+        step_x = 1
+        if tiles_x > 1:
+            step_x = int(math.ceil((image.width - m_width)/(tiles_x-1)))
+        step_y = 1
+        if tiles_y > 1:
+            step_y = int(math.ceil((image.height - m_height)/(tiles_y-1)))
+
+        for x_off in range(0, max(image.width - m_width, 0) + tiles_x, step_x):
+            for y_off in range(0, max(image.height - m_height, 0) + tiles_y, step_y):
                 # Adjust contrast on a per-chunk basis; we will likely be quantizing the image during scaling
                 image_chunk = ImageOps.autocontrast(image.crop((x_off,
                                                                 y_off,
@@ -1157,9 +1167,6 @@ class TPURunner(object):
                 resamp_info = (x_off, y_off, i_width/image.width, i_height/image.height)
 
                 tiles.append((cropped_arr.astype(self.input_details['dtype']), resamp_info))
-
-                # Check again with various scales
-                #Image.fromarray((tiles[-1][0] + 128).astype(np.uint8)).save("test.png")
 
 
         return tiles

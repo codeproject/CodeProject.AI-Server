@@ -231,7 +231,7 @@ def main():
   
   thread_cnt = 16
   tot_infr_time = 0 
-  half_wall_start = 0 
+  half_wall_start = None
   half_infr_count = 0 
   if args.count > 1:
     with concurrent.futures.ThreadPoolExecutor(max_workers=thread_cnt) as executor:
@@ -244,9 +244,9 @@ def main():
           tot_infr_time += infr_time
 
           # Start a timer for the last ~half of the run for more accurate benchmark
-          if chunk_i > (args.count-1 / 3):
+          if chunk_i > (args.count-1) / 3.0:
             half_infr_count += 1
-            if half_wall_start == 0:
+            if half_wall_start is None:
               half_wall_start = time.perf_counter()
         
         # Uncomment for testing
@@ -255,7 +255,6 @@ def main():
         # time.sleep(random.randint(0,INTERPRETER_LIFESPAN_SECONDS*3))
   else:
     start = time.perf_counter()
-    half_wall_start = time.perf_counter()
   
   # snapshot = tracemalloc.take_snapshot()
   # top_stats = snapshot.statistics('lineno')
@@ -267,7 +266,10 @@ def main():
   tot_infr_time += infr_time
   half_infr_count += 1
   wall_time = time.perf_counter() - start
-  half_wall_time = time.perf_counter() - half_wall_start
+
+  half_wall_time = 0.0
+  if half_wall_start is not None:
+    half_wall_time = time.perf_counter() - half_wall_start
   
   print('completed one run every %.2fms for %d runs; %.2fms wall time for a single run' %
                             (wall_time * 1000 / args.count, args.count,
@@ -275,7 +277,7 @@ def main():
                             
   print('%.2fms avg time blocked across %d threads; %.2fms ea for final %d inferences' %
                             (tot_infr_time / args.count, thread_cnt,
-                             half_wall_time * 1000 / half_infr_count, half_infr_count)
+                             half_wall_time * 1000 / half_infr_count, half_infr_count))
 
   print('-------RESULTS--------')
   if not objs:
