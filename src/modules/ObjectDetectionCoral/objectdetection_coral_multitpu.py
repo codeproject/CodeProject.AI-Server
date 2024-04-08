@@ -279,17 +279,17 @@ def main():
                             (tot_infr_time / args.count, thread_cnt,
                              half_wall_time * 1000 / half_infr_count, half_infr_count))
 
-  print('-------RESULTS--------')
+  logging.info('-------RESULTS--------')
   if not objs:
-    print('No objects detected')
+    logging.info('No objects detected')
     return
   
   if any(objs):
     for obj in objs:
-      print(_tpu_runner.labels.get(obj.id, obj.id))
-      print('  id:    ', obj.id)
-      print('  score: ', obj.score)
-      print('  bbox:  ', obj.bbox)
+      logging.info(_tpu_runner.labels.get(obj.id, obj.id))
+      logging.info(f'  id:    {obj.id}')
+      logging.info(f'  score: {obj.score}')
+      logging.info(f'  bbox:  {obj.bbox}')
   
   if args.output:
     image = image.convert('RGB')

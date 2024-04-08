@@ -517,10 +517,12 @@ class TPURunner(object):
         if not any(tpu_list):
             return []
 
+        device_count  = len(tpu_list)  # TPUs. We've at least found one
         self.device_type   = 'Multi-TPU'
+        if device_count == 1:
+            self.device_type   = 'TPU'
 
         # If TPU found then default is single TPU model file (no segments)
-        device_count  = len(tpu_list)  # TPUs. We've at least found one
         if not any(options.tpu_segments_lists) or device_count == 1:
             return [options.model_tpu_file]
             
