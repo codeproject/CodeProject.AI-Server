@@ -49,10 +49,10 @@ class Options:
                                      'yolov8l_448px_segment_2_of_3_edgetpu.tflite']]),
                 # 53.72 ms throughput / 762.86 ms inference
                 "medium": Settings('YOLOv8', 'yolov8m', \
-                                   'yolov8m-int8.tflite',                                      # 21Mb CPU
-                                   'yolov8m-int8_edgetpu.tflite',                              # 22Mb TPU
+                                   'yolov8m-416_640px.tflite',                                      # 21Mb CPU
+                                   'yolov8m-416_640px_edgetpu.tflite',                              # 22Mb TPU
                                    'coco_labels.txt',
-                                   [['yolov8m_416_640px_segment_0_of_2_edgetpu.tflite',
+                                   [['yolov8m__segment_0_of_2_edgetpu.tflite',
                                      'yolov8m_416_640px_segment_1_of_2_edgetpu.tflite'],
                                    # 39.59 ms throughput / 574.83 ms inference
                                     ['yolov8m_416_640px_segment_0_of_4_edgetpu.tflite',
