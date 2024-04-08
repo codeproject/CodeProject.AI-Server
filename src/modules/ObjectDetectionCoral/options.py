@@ -12,13 +12,152 @@ except ImportError:
 
 class Settings:
     def __init__(self, model_name: str, model_name_pattern: str, std_model_name: str, 
-                 tpu_model_name: str, labels_name: str, tpu_segments_lists):
+                 tpu_model_name: str, labels_name: str):
         self.model_name         = model_name
         self.model_name_pattern = model_name_pattern
         self.cpu_model_name     = std_model_name
         self.tpu_model_name     = tpu_model_name
         self.labels_name        = labels_name
-        self.tpu_segments_lists = tpu_segments_lists
+
+        self.MODEL_SEGMENTS = {
+            'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq': {
+                 #  104.2 ms per inference
+                 2: ['all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_0_of_2_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   67.5 ms per inference
+                 3: ['all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_0_of_3_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_1_of_3_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_2_of_3_edgetpu.tflite'],
+                 #   49.1 ms per inference
+                 4: ['all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_0_of_2_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   43.5 ms per inference
+                 5: ['all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_0_of_3_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_1_of_3_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_2_of_3_edgetpu.tflite'],
+                 #   37.0 ms per inference
+                 6: ['all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_0_of_3_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_1_of_3_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_2_of_3_edgetpu.tflite'],
+                 #   31.1 ms per inference
+                 7: ['all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_0_of_2_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   27.1 ms per inference
+                 8: ['all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_0_of_3_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_1_of_3_edgetpu.tflite', 'all_segments_tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_segment_2_of_3_edgetpu.tflite'],
+             },
+             'efficientdet_lite2_448_ptq': {
+                 #   32.1 ms per inference
+                 2: ['all_segments_efficientdet_lite2_448_ptq_segment_0_of_2_edgetpu.tflite', 'all_segments_efficientdet_lite2_448_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   19.5 ms per inference
+                 3: ['166x_first_seg_efficientdet_lite2_448_ptq_segment_0_of_2_edgetpu.tflite', '166x_first_seg_efficientdet_lite2_448_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   16.5 ms per inference
+                 4: ['15x_first_seg_efficientdet_lite2_448_ptq_segment_0_of_3_edgetpu.tflite', '15x_first_seg_efficientdet_lite2_448_ptq_segment_1_of_3_edgetpu.tflite', '15x_first_seg_efficientdet_lite2_448_ptq_segment_2_of_3_edgetpu.tflite'],
+                 #   13.6 ms per inference
+                 5: ['15x_first_seg_efficientdet_lite2_448_ptq_segment_0_of_2_edgetpu.tflite', '15x_first_seg_efficientdet_lite2_448_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   11.5 ms per inference
+                 7: ['166x_first_seg_efficientdet_lite2_448_ptq_segment_0_of_2_edgetpu.tflite', '166x_first_seg_efficientdet_lite2_448_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   11.3 ms per inference
+                 8: ['15x_first_seg_efficientdet_lite2_448_ptq_segment_0_of_2_edgetpu.tflite', '15x_first_seg_efficientdet_lite2_448_ptq_segment_1_of_2_edgetpu.tflite'],
+             },
+             'efficientdet_lite3_512_ptq': {
+                 #   20.9 ms per inference
+                 4: ['15x_last_seg_efficientdet_lite3_512_ptq_segment_0_of_2_edgetpu.tflite', '15x_last_seg_efficientdet_lite3_512_ptq_segment_1_of_2_edgetpu.tflite'],
+             },
+             'efficientdet_lite3x_640_ptq': {
+                 #   95.0 ms per inference
+                 2: ['all_segments_efficientdet_lite3x_640_ptq_segment_0_of_2_edgetpu.tflite', 'all_segments_efficientdet_lite3x_640_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   70.6 ms per inference
+                 3: ['all_segments_efficientdet_lite3x_640_ptq_segment_0_of_3_edgetpu.tflite', 'all_segments_efficientdet_lite3x_640_ptq_segment_1_of_3_edgetpu.tflite', 'all_segments_efficientdet_lite3x_640_ptq_segment_2_of_3_edgetpu.tflite'],
+                 #   47.9 ms per inference
+                 4: ['2x_first_seg_efficientdet_lite3x_640_ptq_segment_0_of_3_edgetpu.tflite', '2x_first_seg_efficientdet_lite3x_640_ptq_segment_1_of_3_edgetpu.tflite', '2x_first_seg_efficientdet_lite3x_640_ptq_segment_2_of_3_edgetpu.tflite'],
+                 #   38.7 ms per inference
+                 5: ['15x_first_seg_efficientdet_lite3x_640_ptq_segment_0_of_2_edgetpu.tflite', '15x_first_seg_efficientdet_lite3x_640_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   35.1 ms per inference
+                 6: ['all_segments_efficientdet_lite3x_640_ptq_segment_0_of_2_edgetpu.tflite', 'all_segments_efficientdet_lite3x_640_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   30.6 ms per inference
+                 7: ['all_segments_efficientdet_lite3x_640_ptq_segment_0_of_2_edgetpu.tflite', 'all_segments_efficientdet_lite3x_640_ptq_segment_1_of_2_edgetpu.tflite'],
+                 #   27.3 ms per inference
+                 8: ['all_segments_efficientdet_lite3x_640_ptq_segment_0_of_2_edgetpu.tflite', 'all_segments_efficientdet_lite3x_640_ptq_segment_1_of_2_edgetpu.tflite'],
+             },
+             'yolov5m-int8': {
+                 #   56.3 ms per inference
+                 2: ['all_segments_yolov5m-int8_segment_0_of_2_edgetpu.tflite', 'all_segments_yolov5m-int8_segment_1_of_2_edgetpu.tflite'],
+                 #   32.2 ms per inference
+                 3: ['15x_first_seg_yolov5m-int8_segment_0_of_2_edgetpu.tflite', '15x_first_seg_yolov5m-int8_segment_1_of_2_edgetpu.tflite'],
+                 #   25.9 ms per inference
+                 4: ['2x_last_seg_yolov5m-int8_segment_0_of_4_edgetpu.tflite', '2x_last_seg_yolov5m-int8_segment_1_of_4_edgetpu.tflite', '2x_last_seg_yolov5m-int8_segment_2_of_4_edgetpu.tflite', '2x_last_seg_yolov5m-int8_segment_3_of_4_edgetpu.tflite'],
+                 #   21.2 ms per inference
+                 5: ['all_segments_yolov5m-int8_segment_0_of_2_edgetpu.tflite', 'all_segments_yolov5m-int8_segment_1_of_2_edgetpu.tflite'],
+                 #   18.8 ms per inference
+                 6: ['15x_last_seg_yolov5m-int8_segment_0_of_3_edgetpu.tflite', '15x_last_seg_yolov5m-int8_segment_1_of_3_edgetpu.tflite', '15x_last_seg_yolov5m-int8_segment_2_of_3_edgetpu.tflite'],
+                 #   14.7 ms per inference
+                 7: ['all_segments_yolov5m-int8_segment_0_of_4_edgetpu.tflite', 'all_segments_yolov5m-int8_segment_1_of_4_edgetpu.tflite', 'all_segments_yolov5m-int8_segment_2_of_4_edgetpu.tflite', 'all_segments_yolov5m-int8_segment_3_of_4_edgetpu.tflite'],
+                 #   14.6 ms per inference
+                 8: ['all_segments_yolov5m-int8_segment_0_of_3_edgetpu.tflite', 'all_segments_yolov5m-int8_segment_1_of_3_edgetpu.tflite', 'all_segments_yolov5m-int8_segment_2_of_3_edgetpu.tflite'],
+             },
+             'yolov5l-int8': {
+                 #   61.1 ms per inference
+                 3: ['all_segments_yolov5l-int8_segment_0_of_3_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_1_of_3_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_2_of_3_edgetpu.tflite'],
+                 #   48.0 ms per inference
+                 4: ['all_segments_yolov5l-int8_segment_0_of_4_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_1_of_4_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_2_of_4_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_3_of_4_edgetpu.tflite'],
+                 #   39.0 ms per inference
+                 5: ['all_segments_yolov5l-int8_segment_0_of_5_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_1_of_5_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_2_of_5_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_3_of_5_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_4_of_5_edgetpu.tflite'],
+                 #   31.5 ms per inference
+                 6: ['all_segments_yolov5l-int8_segment_0_of_3_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_1_of_3_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_2_of_3_edgetpu.tflite'],
+                 #   26.7 ms per inference
+                 7: ['dumb_yolov5l-int8_segment_0_of_6_edgetpu.tflite', 'dumb_yolov5l-int8_segment_1_of_6_edgetpu.tflite', 'dumb_yolov5l-int8_segment_2_of_6_edgetpu.tflite', 'dumb_yolov5l-int8_segment_3_of_6_edgetpu.tflite', 'dumb_yolov5l-int8_segment_4_of_6_edgetpu.tflite', 'dumb_yolov5l-int8_segment_5_of_6_edgetpu.tflite'],
+                 #   24.4 ms per inference
+                 8: ['all_segments_yolov5l-int8_segment_0_of_4_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_1_of_4_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_2_of_4_edgetpu.tflite', 'all_segments_yolov5l-int8_segment_3_of_4_edgetpu.tflite'],
+             },
+             'yolov8s_416_640px': {
+                 #   25.6 ms per inference
+                 3: ['166x_first_seg_yolov8s_416_640px_segment_0_of_2_edgetpu.tflite', '166x_first_seg_yolov8s_416_640px_segment_1_of_2_edgetpu.tflite'],
+             },
+             'yolov8m_416_640px': {
+                 #  114.4 ms per inference
+                 2: ['all_segments_yolov8m_416_640px_segment_0_of_2_edgetpu.tflite', 'all_segments_yolov8m_416_640px_segment_1_of_2_edgetpu.tflite'],
+                 #   71.9 ms per inference
+                 3: ['all_segments_yolov8m_416_640px_segment_0_of_3_edgetpu.tflite', 'all_segments_yolov8m_416_640px_segment_1_of_3_edgetpu.tflite', 'all_segments_yolov8m_416_640px_segment_2_of_3_edgetpu.tflite'],
+                 #   53.0 ms per inference
+                 4: ['2x_first_seg_yolov8m_416_640px_segment_0_of_3_edgetpu.tflite', '2x_first_seg_yolov8m_416_640px_segment_1_of_3_edgetpu.tflite', '2x_first_seg_yolov8m_416_640px_segment_2_of_3_edgetpu.tflite'],
+                 #   43.5 ms per inference
+                 5: ['166x_first_seg_yolov8m_416_640px_segment_0_of_4_edgetpu.tflite', '166x_first_seg_yolov8m_416_640px_segment_1_of_4_edgetpu.tflite', '166x_first_seg_yolov8m_416_640px_segment_2_of_4_edgetpu.tflite', '166x_first_seg_yolov8m_416_640px_segment_3_of_4_edgetpu.tflite'],
+                 #   31.8 ms per inference
+                 6: ['2x_first_seg_yolov8m_416_640px_segment_0_of_5_edgetpu.tflite', '2x_first_seg_yolov8m_416_640px_segment_1_of_5_edgetpu.tflite', '2x_first_seg_yolov8m_416_640px_segment_2_of_5_edgetpu.tflite', '2x_first_seg_yolov8m_416_640px_segment_3_of_5_edgetpu.tflite', '2x_first_seg_yolov8m_416_640px_segment_4_of_5_edgetpu.tflite'],
+                 #   29.5 ms per inference
+                 7: ['all_segments_yolov8m_416_640px_segment_0_of_4_edgetpu.tflite', 'all_segments_yolov8m_416_640px_segment_1_of_4_edgetpu.tflite', 'all_segments_yolov8m_416_640px_segment_2_of_4_edgetpu.tflite', 'all_segments_yolov8m_416_640px_segment_3_of_4_edgetpu.tflite'],
+                 #   26.0 ms per inference
+                 8: ['all_segments_yolov8m_416_640px_segment_0_of_3_edgetpu.tflite', 'all_segments_yolov8m_416_640px_segment_1_of_3_edgetpu.tflite', 'all_segments_yolov8m_416_640px_segment_2_of_3_edgetpu.tflite'],
+             },
+             'yolov8l_416_640px': {
+                 #  169.6 ms per inference
+                 2: ['all_segments_yolov8l_416_640px_segment_0_of_2_edgetpu.tflite', 'all_segments_yolov8l_416_640px_segment_1_of_2_edgetpu.tflite'],
+                 #  115.8 ms per inference
+                 3: ['15x_first_seg_yolov8l_416_640px_segment_0_of_2_edgetpu.tflite', '15x_first_seg_yolov8l_416_640px_segment_1_of_2_edgetpu.tflite'],
+                 #   89.7 ms per inference
+                 4: ['all_segments_yolov8l_416_640px_segment_0_of_2_edgetpu.tflite', 'all_segments_yolov8l_416_640px_segment_1_of_2_edgetpu.tflite'],
+                 #   77.7 ms per inference
+                 5: ['4x_first_seg_yolov8l_416_640px_segment_0_of_2_edgetpu.tflite', '4x_first_seg_yolov8l_416_640px_segment_1_of_2_edgetpu.tflite'],
+                 #   64.2 ms per inference
+                 6: ['15x_first_seg_yolov8l_416_640px_segment_0_of_2_edgetpu.tflite', '15x_first_seg_yolov8l_416_640px_segment_1_of_2_edgetpu.tflite'],
+                 #   57.3 ms per inference
+                 7: ['3x_first_seg_yolov8l_416_640px_segment_0_of_3_edgetpu.tflite', '3x_first_seg_yolov8l_416_640px_segment_1_of_3_edgetpu.tflite', '3x_first_seg_yolov8l_416_640px_segment_2_of_3_edgetpu.tflite'],
+                 #   52.2 ms per inference
+                 8: ['166x_first_seg_yolov8l_416_640px_segment_0_of_3_edgetpu.tflite', '166x_first_seg_yolov8l_416_640px_segment_1_of_3_edgetpu.tflite', '166x_first_seg_yolov8l_416_640px_segment_2_of_3_edgetpu.tflite'],
+             },
+             'ipcam-general-v8': {
+                 #   53.4 ms per inference
+                 2: ['2x_last_seg_ipcam-general-v8_segment_0_of_2_edgetpu.tflite', '2x_last_seg_ipcam-general-v8_segment_1_of_2_edgetpu.tflite'],
+                 #   24.3 ms per inference
+                 3: ['all_segments_ipcam-general-v8_segment_0_of_2_edgetpu.tflite', 'all_segments_ipcam-general-v8_segment_1_of_2_edgetpu.tflite'],
+                 #   19.9 ms per inference
+                 4: ['15x_first_seg_ipcam-general-v8_segment_0_of_3_edgetpu.tflite', '15x_first_seg_ipcam-general-v8_segment_1_of_3_edgetpu.tflite', '15x_first_seg_ipcam-general-v8_segment_2_of_3_edgetpu.tflite'],
+                 #   15.6 ms per inference
+                 5: ['15x_last_seg_ipcam-general-v8_segment_0_of_3_edgetpu.tflite', '15x_last_seg_ipcam-general-v8_segment_1_of_3_edgetpu.tflite', '15x_last_seg_ipcam-general-v8_segment_2_of_3_edgetpu.tflite'],
+                 #   15.2 ms per inference
+                 6: ['15x_last_seg_ipcam-general-v8_segment_0_of_3_edgetpu.tflite', '15x_last_seg_ipcam-general-v8_segment_1_of_3_edgetpu.tflite', '15x_last_seg_ipcam-general-v8_segment_2_of_3_edgetpu.tflite'],
+                 #   12.3 ms per inference
+                 7: ['15x_first_seg_ipcam-general-v8_segment_0_of_3_edgetpu.tflite', '15x_first_seg_ipcam-general-v8_segment_1_of_3_edgetpu.tflite', '15x_first_seg_ipcam-general-v8_segment_2_of_3_edgetpu.tflite'],
+                 #   10.9 ms per inference
+                 8: ['2x_last_seg_ipcam-general-v8_segment_0_of_3_edgetpu.tflite', '2x_last_seg_ipcam-general-v8_segment_1_of_3_edgetpu.tflite', '2x_last_seg_ipcam-general-v8_segment_2_of_3_edgetpu.tflite'],
+             },
+        }        
+
+        self.tpu_segments_lists = {}
+        if model_name_pattern in self.MODEL_SEGMENTS:
+            self.tpu_segments_lists = self.MODEL_SEGMENTS[model_name_pattern]
+
 
 class Options:
 
@@ -36,122 +175,91 @@ class Options:
         self.MODEL_SETTINGS = {
             "yolov8": {
                 # 59.88 ms throughput / 855.40 ms inference
-                "large":  Settings('YOLOv8', 'yolov8l', \
+                "large":  Settings('YOLOv8', 'yolov8l_416_640px',
                                    'yolov8l_416_640px.tflite',                                 # 46Mb CPU
                                    'yolov8l_416_640px_edgetpu.tflite',                         # 48Mb TPU
-                                   'coco_labels.txt',
-                                   # 54.18 ms throughput / 754.56 ms inference
-                                   [['yolov8l_416_640px_segment_0_of_2_edgetpu.tflite',
-                                     'yolov8l_416_640px_segment_1_of_2_edgetpu.tflite'],
-                                   # 55.79 ms throughput / 824.09 ms inference
-                                    ['yolov8l_448px_segment_0_of_3_edgetpu.tflite',
-                                     'yolov8l_448px_segment_1_of_3_edgetpu.tflite',
-                                     'yolov8l_448px_segment_2_of_3_edgetpu.tflite']]),
+                                   'coco_labels.txt'),
                 # 53.72 ms throughput / 762.86 ms inference
-                "medium": Settings('YOLOv8', 'yolov8m', \
-                                   'yolov8m-416_640px.tflite',                                      # 21Mb CPU
-                                   'yolov8m-416_640px_edgetpu.tflite',                              # 22Mb TPU
-                                   'coco_labels.txt',
-                                   [['yolov8m__segment_0_of_2_edgetpu.tflite',
-                                     'yolov8m_416_640px_segment_1_of_2_edgetpu.tflite'],
-                                   # 39.59 ms throughput / 574.83 ms inference
-                                    ['yolov8m_416_640px_segment_0_of_4_edgetpu.tflite',
-                                     'yolov8m_416_640px_segment_1_of_4_edgetpu.tflite',
-                                     'yolov8m_416_640px_segment_2_of_4_edgetpu.tflite',
-                                     'yolov8m_416_640px_segment_3_of_4_edgetpu.tflite']]),
+                "medium": Settings('YOLOv8', 'yolov8m_416_640px', \
+                                   'yolov8m_416_640px.tflite',                                      # 21Mb CPU
+                                   'yolov8m_416_640px_edgetpu.tflite',                              # 22Mb TPU
+                                   'coco_labels.txt'),
                 # 21.52 ms throughput / 291.35 ms inference
-                "small":  Settings('YOLOv8', 'yolov8s', \
+                "small":  Settings('YOLOv8', 'yolov8s_416_640px',
                                    'yolov8s_416_640px.tflite',                                      # 11Mb CPU
                                    'yolov8s_416_640px_edgetpu.tflite',                              # 12Mb TPU
-                                   'coco_labels.txt', []),
+                                   'coco_labels.txt'),
                 # 10.35 ms throughput / 123.35 ms inference
-                "tiny":   Settings('YOLOv8', 'yolov8n',
+                "tiny":   Settings('YOLOv8', 'yolov8n_416_640px',
                                    'yolov8n_416_640px.tflite',                                      # 4Mb CPU
                                    'yolov8n_416_640px_edgetpu.tflite',                              # 3Mb TPU
-                                   'coco_labels.txt', [])
+                                   'coco_labels.txt')
             },
-
             "yolov5": {
-                "large":  Settings('YOLOv5', 'yolov5l', \
+                "large":  Settings('YOLOv5', 'yolov5l-int8',
                                    'yolov5l-int8.tflite',                                      # 46Mb CPU
                                    'yolov5l-int8_edgetpu.tflite',                              # 48Mb TPU
-                                   'coco_labels.txt',
-                                   [['yolov5l-int8_edgetpu_segment_0_of_7_edgetpu.tflite',
-                                     'yolov5l-int8_edgetpu_segment_1_of_7_edgetpu.tflite',
-                                     'yolov5l-int8_edgetpu_segment_2_of_7_edgetpu.tflite',
-                                     'yolov5l-int8_edgetpu_segment_3_of_7_edgetpu.tflite',
-                                     'yolov5l-int8_edgetpu_segment_4_of_7_edgetpu.tflite',
-                                     'yolov5l-int8_edgetpu_segment_5_of_7_edgetpu.tflite',
-                                     'yolov5l-int8_edgetpu_segment_6_of_7_edgetpu.tflite']]),
-                "medium": Settings('YOLOv5', 'yolov5m', \
+                                   'coco_labels.txt'),
+                "medium": Settings('YOLOv5', 'yolov5m-int8',
                                    'yolov5m-int8.tflite',                                      # 21Mb CPU
                                    'yolov5m-int8_edgetpu.tflite',                              # 22Mb TPU
-                                   'coco_labels.txt',
-                                   [['yolov5m-int8_edgetpu_segment_0_of_4_edgetpu.tflite',
-                                     'yolov5m-int8_edgetpu_segment_1_of_4_edgetpu.tflite',
-                                     'yolov5m-int8_edgetpu_segment_2_of_4_edgetpu.tflite',
-                                     'yolov5m-int8_edgetpu_segment_3_of_4_edgetpu.tflite']]),
-                "small":  Settings('YOLOv5', 'yolov5s', \
+                                   'coco_labels.txt'),
+                "small":  Settings('YOLOv5', 'yolov5s-int8',
                                    'yolov5s-int8.tflite',                                      # 7Mb CPU
                                    'yolov5s-int8_edgetpu.tflite',                              # 8Mb TPU
-                                   'coco_labels.txt', []),
-                "tiny":   Settings('YOLOv5', 'yolov5n', \
+                                   'coco_labels.txt'),
+                "tiny":   Settings('YOLOv5', 'yolov5n-int8',
                                    'yolov5n-int8.tflite',                                      # 2Mb CPU
                                    'yolov5n-int8_edgetpu.tflite',                              # 2Mb TPU
-                                   'coco_labels.txt', [])
+                                   'coco_labels.txt')
             },
-
             "efficientdet-lite": {
                 # Large: EfficientDet-Lite3x 90 objects COCO	640x640x3 	2 	197.0 ms 	43.9% mAP
-                "large":  Settings('EfficientDet-Lite', 'efficientdet_lite3x_640', \
+                "large":  Settings('EfficientDet-Lite', 'efficientdet_lite3x_640_ptq', \
                                    'efficientdet_lite3x_640_ptq.tflite',                       # 14Mb CPU
                                    'efficientdet_lite3x_640_ptq_edgetpu.tflite',               # 20Mb TPU
-                                   'coco_labels.txt',
-                                   [['efficientdet_lite3x_640_ptq_segment_0_of_3_edgetpu.tflite',
-                                     'efficientdet_lite3x_640_ptq_segment_1_of_3_edgetpu.tflite'
-                                     'efficientdet_lite3x_640_ptq_segment_2_of_3_edgetpu.tflite']]),
+                                   'coco_labels.txt'),
                 # Medium: EfficientDet-Lite3 90 objects	512x512x3 	2 	107.6 ms 	39.4% mAP
-                "medium": Settings('EfficientDet-Lite', 'efficientdet_lite3_512', \
+                "medium": Settings('EfficientDet-Lite', 'efficientdet_lite3_512_ptq', \
                                    'efficientdet_lite3_512_ptq.tflite',                        # CPU
                                    'efficientdet_lite3_512_ptq_edgetpu.tflite',                # TPU
-                                   'coco_labels.txt', []),
+                                   'coco_labels.txt'),
                 # Small: EfficientDet-Lite2 90 objects COCO	448x448x3 	2 	104.6 ms 	36.0% mAP
-                "small":  Settings('EfficientDet-Lite', 'efficientdet_lite2_448', \
+                "small":  Settings('EfficientDet-Lite', 'efficientdet_lite2_448_ptq', \
                                    'efficientdet_lite2_448_ptq.tflite',                        # 10Mb CPU
                                    'efficientdet_lite2_448_ptq_edgetpu.tflite',                # TPU
-                                   'coco_labels.txt',
-                                   [['efficientdet_lite2_448_ptq_segment_0_of_2_edgetpu.tflite',
-                                     'efficientdet_lite2_448_ptq_segment_1_of_2_edgetpu.tflite']]),
+                                   'coco_labels.txt'),
                 # Tiny: EfficientDet-Lite1 90 objects COCO	384x384x3 	2 	56.3 ms 	34.3% mAP
-                "tiny":   Settings('EfficientDet-Lite', 'efficientdet_lite1_384', \
+                "tiny":   Settings('EfficientDet-Lite', 'efficientdet_lite1_384_ptq', \
                                    'efficientdet_lite1_384_ptq.tflite',                        # 7Mb CPU
                                    'efficientdet_lite1_384_ptq_edgetpu.tflite',                # TPU
-                                   'coco_labels.txt', [])
+                                   'coco_labels.txt')
             },
             "mobilenet ssd": {
                 # Large: SSD/FPN MobileNet V1 90 objects, COCO 640x640x3    TF-lite v2    229.4 ms    31.1% mAP
-                "large":  Settings('MobileNet SSD', 'tf2_ssd_mobilenet_v1_fpn_640', \
+                "large":  Settings('MobileNet SSD', 'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq', \
                                    'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq.tflite',       # CPU
                                    'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq_edgetpu.tflite', # TPU
-                                   'coco_labels.txt', []),
+                                   'coco_labels.txt'),
                 # Medium: SSDLite MobileDet   90 objects, COCO 320x320x3    TF-lite v1    9.1 ms 	32.9% mAP
                 "medium": Settings('MobileNet SSD', 'ssdlite_mobiledet_coco_', \
                                    'ssdlite_mobiledet_coco_qat_postprocess.tflite',            # 5Mb CPU
                                    'ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite',    # TPU
-                                   'coco_labels.txt', []),
+                                   'coco_labels.txt'),
                 # Small: SSD MobileNet V2 90 objects, COCO 300x300x3    TF-lite v2    7.6 ms    22.4% mAP
                 "small":  Settings('MobileNet SSD', 'tf2_ssd_mobilenet_v2', \
                                    'tf2_ssd_mobilenet_v2_coco17_ptq.tflite',                   # 6.7Mb CPU
                                    'tf2_ssd_mobilenet_v2_coco17_ptq_edgetpu.tflite',           # TPU
-                                   'coco_labels.txt', []),
+                                   'coco_labels.txt'),
 
                 # Tiny: MobileNet V2 90 objects, COCO 300x300x3    TF-lite v2 Quant
                 "tiny":   Settings('MobileNet SSD', 'ssd_mobilenet_v2_coco_', \
                                    'ssd_mobilenet_v2_coco_quant_postprocess.tflite',           # 6.6Mb CPU
                                    'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite',   # TPU
-                                   'coco_labels.txt', [])
+                                   'coco_labels.txt')
             }
         }
+
 
         self.ENABLE_MULTI_TPU                   = True
         
@@ -221,7 +329,7 @@ class Options:
         
         # Normalise input
         self.model_name = model_name.lower()
-        if self.model_name not in [ "mobilenet ssd", "efficientdet-lite", "yolov5", "yolov8" ]: # 'yolov5' - no sense including v5 anymore
+        if self.model_name not in [ "mobilenet ssd", "efficientdet-lite", "yolov5", "yolov8"]: # 'yolov5' - no sense including v5 anymore
             self.model_name = "mobilenet ssd"
 
         self.model_size = self.model_size.lower()
@@ -254,5 +362,8 @@ class Options:
         self.model_cpu_file     = os.path.normpath(os.path.join(self.models_dir, self.cpu_model_name))
         self.model_tpu_file     = os.path.normpath(os.path.join(self.models_dir, self.tpu_model_name))
         self.label_file         = os.path.normpath(os.path.join(self.models_dir, self.labels_name))
-        self.tpu_segments_lists = [ [os.path.normpath(os.path.join(self.models_dir, name)) for name in name_list] \
-                                    for name_list in settings.tpu_segments_lists ]
+
+        self.tpu_segments_lists = {}
+        for tpu_cnt, name_list in settings.tpu_segments_lists.items():
+            self.tpu_segments_lists[tpu_cnt] = \
+                [os.path.normpath(os.path.join(self.models_dir, name)) for name in name_list]

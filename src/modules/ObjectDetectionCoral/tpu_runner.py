@@ -510,15 +510,10 @@ class TPURunner(object):
         more than one list of segment files then use the list of files that best
         matches the number of TPUs we have, otherwise use the single list we
         have. If all else fails return the single TPU filename as a list.
-        NOTE: This method also updates self.device_count and self.segment_count
-              based on the choice of whether it uses a single model or a set of
-              segment file names
         """
 
         # if TPU no-show then default is CPU
         self.device_type   = 'CPU'
-        device_count  = 1  # CPU. At this point we don't know if we have TPU
-        segment_count = 1  # Single CPU model file
         if not any(tpu_list):
             return []
 
@@ -526,22 +521,20 @@ class TPURunner(object):
 
         # If TPU found then default is single TPU model file (no segments)
         device_count  = len(tpu_list)  # TPUs. We've at least found one
-        segment_count = 1              # Single TPU model name at this point
-        if not any(options.tpu_segments_lists):
+        if not any(options.tpu_segments_lists) or device_count == 1:
             return [options.model_tpu_file]
             
         # We have a list of segment files
-        if isinstance(options.tpu_segments_lists[0], list):
+        if isinstance(options.tpu_segments_lists, dict):
             # Look for a good match between available TPUs and segment counts
-            # Prioritize first match
-            for fname_list in options.tpu_segments_lists:
-                segment_count = len(fname_list)
-                if segment_count <= device_count:
-                    return fname_list
+            # Prioritize first match. Note we have only tested up to 8 TPUs,
+            # so best performance above that can probably be had by extrapolation.
+            device_count = min(device_count, 8)
+            if device_count in options.tpu_segments_lists:
+                return options.tpu_segments_lists[device_count]
         else:
             # Only one list of segments; use it regardless of even match to TPU count
-            segment_count = len(options.tpu_segments_lists)
-            if segment_count <= device_count:
+            if len(options.tpu_segments_lists) <= device_count:
                 return options.tpu_segments_lists
 
         # Couldn't find a good fit, use single segment
