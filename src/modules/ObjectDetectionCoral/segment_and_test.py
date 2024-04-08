@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 import shutil
+import re
 
 #'''
 fn_list = [
@@ -11,12 +12,12 @@ fn_list = [
     #'ssd_mobilenet_v1_coco_quant_postprocess',
     'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq',
     #'efficientdet_lite0_320_ptq',
-    'efficientdet_lite1_384_ptq',
+    #'efficientdet_lite1_384_ptq',
     'efficientdet_lite2_448_ptq',
     'efficientdet_lite3_512_ptq',
     'efficientdet_lite3x_640_ptq',
     #'yolov5n-int8',
-    'yolov5s-int8',
+    #'yolov5s-int8',
     'yolov5m-int8',
     'yolov5l-int8',
     #'yolov8n_416_640px', # lg 1st seg
@@ -192,7 +193,7 @@ def seg_exists(filename, segment_type, segment_count):
 
 MAX_TPU_COUNT = 8
 
-#'''
+'''
 # Generate segment files
 for sn in range(1,MAX_TPU_COUNT+1):
     for fn in fn_list:
@@ -313,15 +314,12 @@ for fn in fn_list:
                       seg_list + ["--labels","coral/pycoral/test_data/coco_labels.txt","--input","/home/seth/coral/pycoral/test_data/grace_hopper.bmp",
                       "--count","1000","--num-tpus",str(num_tpus)]
                 print(cmd)
-                start_time = time.perf_counter()
-                subprocess.run(cmd)
-                timings.append(((time.perf_counter() - start_time), num_tpus, fn, seg_type, sn))
+                c = subprocess.run(cmd, capture_output=True)
+                print(c.stdout)
+                print(c.stderr)
+                ms_time = float(re.compile(r'threads; ([\d\.]+)ms ea').findall(c.stdout)[0])
+                timings.append((ms_time, num_tpus, fn, seg_type, sn))
 
-            # Find segment pipeline efficencies
-            #cmd = ["/home/seth/libcoral/out/k8/tools/model_pipelining_performance_analysis","--data_dir",seg_dir+seg_type,
-            #       "--model_list",fn,"--num_segments_list",','.join([str(i) for i in range(1,max_seg+1)])]
-            #print(cmd)
-            #subprocess.run(cmd)
         timings = sorted(timings, key=lambda t: t[0])
 
         # Print the top three

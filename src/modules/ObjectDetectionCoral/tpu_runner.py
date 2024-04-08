@@ -21,11 +21,12 @@ import time
 import logging
 import queue
 import gc
+import math
 
 from datetime import datetime
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 
 try:
     from pycoral.utils.dataset import read_label_file
@@ -90,7 +91,7 @@ class DynamicInterpreter(object):
 
 
     def start(self, seg_idx: int, fbytes: bytes):
-        logging.info(f"Loading into {self.tpu_name}: {self.fname_list[seg_idx]}")
+        logging.info(f"Loading {self.tpu_name}: {self.fname_list[seg_idx]}")
 
         try:
             self.interpreter = edgetpu.make_interpreter(fbytes, delegate=self.delegate)
@@ -113,21 +114,25 @@ class DynamicInterpreter(object):
 
 
     def _interpreter_runner(self, seg_idx: int):
+        in_names  = [d['name']  for d in self.input_details ]
+        out_names = [d['name']  for d in self.output_details]
+        indices   = [d['index'] for d in self.output_details]
+        first_in_name = in_names.pop(0)
+
+        # Setup input/output queues
+        in_q = self.queues[seg_idx]
+        out_q = None
+        if len(self.queues) > seg_idx+1:
+            out_q = self.queues[seg_idx+1]
+
         # Input tensors for this interpreter
         input_tensors = {}
         for details in self.input_details:
             input_tensors[details['name']] = self.interpreter.tensor(details['index'])
-
-        # Setup input/output queues
-        in_q = self.queues[seg_idx]
-        if len(self.queues) > seg_idx+1:
-            out_q = self.queues[seg_idx+1]
-        else:
-            out_q = None
-
-        in_names  = [d['name']  for d in self.input_details ]
-        out_names = [d['name']  for d in self.output_details]
-        indices   = [d['index'] for d in self.output_details]
+        output_tensors = []
+        if not out_q:
+            for details in self.output_details:
+                output_tensors.append(self.interpreter.tensor(details['index']))
 
         expected_input_size = np.prod(self.input_details[0]['shape'])
         interpreter_handle = self.interpreter._native_handle()
@@ -138,7 +143,7 @@ class DynamicInterpreter(object):
             working_tensors = in_q.get()
             
             # Exit if the pipeline is done
-            if not working_tensors:
+            if working_tensors is False:
                 logging.debug("Get EOF in tid {}".format(threading.get_ident()))
                 self.interpreter = None
                 self.input_details = None
@@ -149,19 +154,15 @@ class DynamicInterpreter(object):
 
             start_inference_time = time.perf_counter_ns()
 
-            if len(in_names) == 1:
-                # Invoke_with_membuffer() directly on numpy memory,
-                # but only works with a single input
-                edgetpu.invoke_with_membuffer(interpreter_handle,
-                                              working_tensors[0][in_names[0]].ctypes.data,
-                                              expected_input_size)
-            else:
-                # Set inputs
-                for name in in_names:
-                    input_tensors[name]()[0] = working_tensors[0][name]
+            # Set inputs beyond the first
+            for name in in_names:
+                input_tensors[name]()[0] = working_tensors[0][name]
 
-                # Run segment
-                self.interpreter.invoke()
+            # Invoke_with_membuffer() directly on numpy memory,
+            # but only works with a single input
+            edgetpu.invoke_with_membuffer(interpreter_handle,
+                                          working_tensors[0][first_in_name].ctypes.data,
+                                          expected_input_size)
 
             if out_q:
                 # Fetch results
@@ -171,9 +172,10 @@ class DynamicInterpreter(object):
                 # Deliver to next queue in pipeline
                 out_q.put(working_tensors)
             else:
-                # Fetch results
+                # Fetch pointer to results
+                # Copy and convert to float
                 # Deliver to final results queue
-                working_tensors[1].put([self.interpreter.get_tensor(index) for index in indices])
+                working_tensors[1].put([t().astype(np.float32) for t in output_tensors])
 
             # Convert elapsed time to double precision ms
             self.timings[seg_idx] += (time.perf_counter_ns() - start_inference_time) / (1000.0 * 1000.0)
@@ -184,6 +186,7 @@ class DynamicInterpreter(object):
         # Print performance info
         t_str = ""
         q_str = ""
+        c_str = ""
         for t, q, c in zip(self.timings, self.q_len, self.exec_count):
             if c > 0:
                 avg_time = t / c
@@ -192,12 +195,11 @@ class DynamicInterpreter(object):
                 avg_time = 0.0
                 avg_q = 0.0
             t_str += " {:5.1f}".format(avg_time)
-            q_str += " {:5.1f}".format(avg_q)
-        logging.info(f"{self.tpu_name} per-segment timing (ms) & queue len:{t_str};{q_str}")
+            q_str += " {:4.1f}".format(avg_q)
+            c_str += " {:7d}".format(c)
+        logging.info(f"{self.tpu_name} time, queue len, & count:{t_str}|{q_str}|{c_str}")
 
         self.interpreter = None
-        self.input_details = None
-        self.output_details = None
         self.delegate = None
         self.queues = None
 
@@ -206,20 +208,21 @@ class DynamicPipeline(object):
     
     def __init__(self, tpu_list: list, fname_list: list):
         seg_count = len(fname_list)
-        assert seg_count <= len(tpu_list), "seg_count: {} tpu_list: {}".format(seg_count, len(tpu_list))
+        assert seg_count <= len(tpu_list), f"More segments than TPUs to run them! {seg_count} vs {len(tpu_list)}"
 
-        self.max_idle_secs_before_recycle = MAX_WAIT_TIME
         self.max_pipeline_queue_length    = MAX_PIPELINE_QUEUE_LEN
         
         self.fname_list         = fname_list
         self.tpu_list           = tpu_list
+        self.interpreters       = [[]  for i in range(seg_count)]
 
-        # Input queues for each segment
+        # Input queues for each segment; if we go over maxsize, something went wrong
         self.queues = [queue.Queue(maxsize=self.max_pipeline_queue_length) for i in range(seg_count)]
 
-        self.interpreters       = [[]  for i in range(seg_count)]
-        self.moving_avg         = [0.0 for i in range(seg_count)]
+        # Lock for internal reorganization
         self.balance_lock       = threading.Lock()
+
+        # Lock for interpreter use
         self.rebalancing_lock   = threading.Lock()
 
         # Read file data
@@ -236,19 +239,31 @@ class DynamicPipeline(object):
             with open(fname, "rb") as fd:
                 self.fbytes_list.append(fd.read())
 
+        self._init_interpreters()
+
+    def _init_interpreters(self):
+
+        start_boot_time = time.perf_counter_ns()
+
         # Fill TPUs with interpreters
         with self.balance_lock:
-            for i, tpu_name in enumerate(tpu_list):
-                seg_idx = i % len(fname_list)
+            for i, tpu_name in enumerate(self.tpu_list):
+                seg_idx = i % len(self.fname_list)
 
-                i = DynamicInterpreter(fname_list, tpu_name, self.queues, self.rebalancing_lock)
+                i = DynamicInterpreter(self.fname_list, tpu_name, self.queues, self.rebalancing_lock)
                 i.start(seg_idx, self.fbytes_list[seg_idx])
                 self.interpreters[seg_idx].append(i)
 
         self.first_name = self.interpreters[0][0].input_details[0]['name']
+        
+        boot_time = (time.perf_counter_ns() - start_boot_time) / (1000.0 * 1000.0)
+        logging.info(f"Initialized pipeline interpreters in {boot_time:.1f}ms")
 
 
     def enqueue(self, in_tensor, out_q: queue.Queue):
+        if not self.first_name:
+            self._init_interpreters()
+
         self.queues[0].put(({self.first_name: in_tensor}, out_q))
 
 
@@ -308,7 +323,7 @@ class DynamicPipeline(object):
             self.balance_lock.release()
             return
 
-        logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:5.2f} to {new_max:5.2f})")
+        logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:.2f} to {new_max:.2f})")
 
         # Sending False kills the processing loop
         self.rebalancing_lock.acquire()
@@ -366,12 +381,13 @@ class DynamicPipeline(object):
         for interpreter in self.interpreters[seg_idx]:
             t = interpreter.thread
             logging.debug("Joining thread {} for DynamicPipeline.delete()".format(t.native_id))
-            t.join(timeout=self.max_idle_secs_before_recycle)
+            t.join(timeout=MAX_WAIT_TIME)
             if t.is_alive():
                 logging.warning("Pipe thread didn't join!")
 
 
     def delete(self):
+        # Kill interpreters. Maybe refresh later; maybe delete object.
         with self.balance_lock:
             # Insert EOF to each queue
             # Wait for threads to finish
@@ -383,7 +399,7 @@ class DynamicPipeline(object):
                 if self.interpreters and len(self.interpreters) > q_idx:
                     self.interpreters[q_idx] = []
 
-        self.fbytes_list = None
+        self.first_name = None
 
 
 class TPURunner(object):
@@ -395,8 +411,12 @@ class TPURunner(object):
         the registry.
         """
         
+        # Tricky because MAX_WAIT_TIME is intended to relatively quickly handle an error condition
+        # before there are significant user-facing problems, whereas idling for N seconds isn't an
+        # error condition.
+        self.max_idle_secs_before_recycle = MAX_WAIT_TIME * 20
         self.watchdog_idle_secs           = WATCHDOG_IDLE_SECS
-        self.max_idle_secs_before_recycle = MAX_WAIT_TIME
+
         self.pipe_lifespan_secs           = INTERPRETER_LIFESPAN_SECONDS
         self.warn_temperature_thresh_C    = WARN_TEMPERATURE_THRESHOLD_CELSIUS
 
@@ -427,7 +447,9 @@ class TPURunner(object):
         self.temp_fname_format = None
         self.tpu_limit = tpu_limit
 
-        tpu_count = min(len(edgetpu.list_edge_tpus()), tpu_limit)
+        tpu_count = len(edgetpu.list_edge_tpus())
+        if tpu_limit >= 0:
+            tpu_count = min(tpu_count, tpu_limit)
 
         if platform.system() == "Linux":
             for fn in temp_fname_formats:
@@ -443,18 +465,19 @@ class TPURunner(object):
         self.watchdog_time = time.time()
         while not self.watchdog_shutdown:
             if self.pipe and \
-               time.time() - self.watchdog_time > self.max_idle_secs_before_recycle*2:
-                 logging.warning("No work in {} seconds, watchdog shutting down TPUs.".format(self.max_idle_secs_before_recycle*2))
-                 self.runner_lock.acquire(timeout=self.max_idle_secs_before_recycle)
-                 self._delete()
-                 self.runner_lock.release()
-                 # Pipeline will reinitialize itself as needed
+                time.time() - self.watchdog_time > self.max_idle_secs_before_recycle:
+                logging.warning("No work in {} seconds, watchdog shutting down TPUs.".format(self.max_idle_secs_before_recycle))
+                self.runner_lock.acquire(timeout=MAX_WAIT_TIME)
+                if self.pipe.first_name:
+                    self.pipe.delete()
+                self.runner_lock.release()
+                # Pipeline will reinitialize itself as needed
             time.sleep(self.watchdog_idle_secs)
 
         logging.debug("Watchdog caught shutdown in {}".format(threading.get_ident()))
 
-
-    def _get_tpu_devices(self):
+    @staticmethod
+    def get_tpu_devices(tpu_limit: int = -1):
         """Returns list of device names in usb:N or pci:N format.
 
         This function prefers returning PCI Edge TPU first.
@@ -473,8 +496,8 @@ class TPURunner(object):
         tpu_l = ['pci:%d' % i for i in range(min(len(edge_tpus), num_pci_devices))] + \
                 ['usb:%d' % i for i in range(max(0, len(edge_tpus) - num_pci_devices))]
 
-        if self.tpu_limit > 0:
-            return tpu_l[:self.tpu_limit]
+        if tpu_limit > 0:
+            return tpu_l[:tpu_limit]
         else:
             return tpu_l
 
@@ -526,7 +549,7 @@ class TPURunner(object):
 
 
     # Should be called while holding runner_lock (if called at run time)
-    def init_pipe(self, options: Options) -> tuple[str, str]:
+    def init_pipe(self, options: Options) -> tuple:
         """
         Initializes the pipe with the TFLite models.
         
@@ -539,7 +562,7 @@ class TPURunner(object):
 
         error = ""
 
-        tpu_list          = self._get_tpu_devices()
+        tpu_list          = TPURunner.get_tpu_devices(self.tpu_limit)
         self.model_name   = options.model_name
         self.model_size   = options.model_size
 
@@ -558,7 +581,7 @@ class TPURunner(object):
             self.pipe = None
             logging.warning(f"TPU Exception creating interpreter: {tpu_ex}")
             error = "Failed to create interpreter (Coral issue)"
-        except FileNotFoundError:
+        except FileNotFoundError as ex:
             self.pipe = None
             logging.warning(f"Model file not found: {ex}")
             error = "Model file not found. Please download the model if possible"
@@ -599,7 +622,7 @@ class TPURunner(object):
 
 
     def _periodic_check(self, options: Options, force: bool = False,
-                        check_temp: bool = True, check_refresh: bool = True) -> tuple[bool, str]:
+                        check_temp: bool = True, check_refresh: bool = True) -> tuple:
         """
         Run a periodic check to ensure the temperatures are good and we don't
         need to (re)initialize the interpreters/workers/pipelines. The system
@@ -690,29 +713,22 @@ class TPURunner(object):
 
         return (bool(self.pipe), error)
 
-
     def __del__(self):
         with self.runner_lock:
             self._delete()
         self.watchdog_shutdown = True
         self.watchdog_thread.join(timeout=self.watchdog_idle_secs*2)
 
-
     def _delete(self):
         # Close pipeline
         if self.pipe:
             self.pipe.delete()
             self.pipe = None
-        gc.collect()
-
 
     def pipeline_ok(self) -> bool:
         """ Check we have valid interpreters """
-        if self.pipe and any(self.pipe.interpreters):
-            return True
-        
-        return False
-
+        with self.runner_lock:
+            return bool(self.pipe and any(self.pipe.interpreters))
 
     def process_image(self,
                       options:Options,
@@ -743,13 +759,13 @@ class TPURunner(object):
         - Remove duplicate results.
         - Return results as Objects.
         - Return inference timing.
-        """
 
+        Note that the image object is modified in place to resize it
+        for in input tensor.
+        """
         all_objects = []
         all_queues  = []
-
         _, m_height, m_width, _ = self.input_details['shape']
-        i_width, i_height = image.size
         
         # Potentially resize & pipeline a number of tiles
         for rs_image, rs_loc in self._get_tiles(options, image):
@@ -773,14 +789,14 @@ class TPURunner(object):
             # We may have to wait a few seconds at most, but I'd expect the
             # pipeline to clear fairly quickly.
             start_inference_time = time.perf_counter()
-            result = rs_queue.get(timeout=self.max_idle_secs_before_recycle)
+            result = rs_queue.get(timeout=MAX_WAIT_TIME)
             tot_inference_time += time.perf_counter() - start_inference_time
             assert result
 
             boxes, class_ids, scores, count = self._decode_result(result, score_threshold)
             
             logging.debug("BBox scaling params: {}x{}, ({},{}), {:.2f}x{:.2f}".
-                format(m_width, m_height,*rs_loc))
+                format(m_width, m_height, *rs_loc))
 
             # Create Objects for each valid result
             for i in range(int(count[0])):
@@ -789,14 +805,11 @@ class TPURunner(object):
                     
                 ymin, xmin, ymax, xmax = boxes[0][i]
                 
-                bbox = detect.BBox(xmin=max(xmin, 0.0),
-                                   ymin=max(ymin, 0.0),
-                                   xmax=min(xmax, 1.0),
-                                   ymax=min(ymax, 1.0)).\
-                                    scale(m_width, m_height).\
-                                        translate(rs_loc[0], rs_loc[1]).\
-                                            scale(rs_loc[2], rs_loc[3])
-                                          
+                bbox = detect.BBox(xmin=(max(xmin, 0.0)*m_width  + rs_loc[0])*rs_loc[2],
+                                   ymin=(max(ymin, 0.0)*m_height + rs_loc[1])*rs_loc[3],
+                                   xmax=(min(xmax, 1.0)*m_width  + rs_loc[0])*rs_loc[2],
+                                   ymax=(min(ymax, 1.0)*m_height + rs_loc[1])*rs_loc[3])
+
                 all_objects.append(detect.Object(id=int(class_ids[0][i]),
                                                  score=float(scores[0][i]),
                                                  bbox=bbox.map(int)))
@@ -837,11 +850,11 @@ class TPURunner(object):
             # using a v8 or v5-based network.
             if j < k:
                 rs = self._yolov8_non_max_suppression(
-                    (dict_values.astype('float32') - output_zero) * output_scale,
+                    (dict_values - output_zero) * output_scale,
                     conf_thres=score_threshold)
             else:
                 rs = self._yolov5_non_max_suppression(
-                    (dict_values.astype('float32') - output_zero) * output_scale,
+                    (dict_values - output_zero) * output_scale,
                     conf_thres=score_threshold)
 
             for a in rs:
@@ -856,10 +869,10 @@ class TPURunner(object):
     def _xywh2xyxy(self, xywh):
         # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
         xyxy = np.copy(xywh)
-        xyxy[:, 1] = xywh[:, 0] - xywh[:, 2] / 2  # top left x
-        xyxy[:, 0] = xywh[:, 1] - xywh[:, 3] / 2  # top left y
-        xyxy[:, 3] = xywh[:, 0] + xywh[:, 2] / 2  # bottom right x
-        xyxy[:, 2] = xywh[:, 1] + xywh[:, 3] / 2  # bottom right y
+        xyxy[:, 1] = xywh[:, 0] - xywh[:, 2] * 0.5  # top left x
+        xyxy[:, 0] = xywh[:, 1] - xywh[:, 3] * 0.5  # top left y
+        xyxy[:, 3] = xywh[:, 0] + xywh[:, 2] * 0.5  # bottom right x
+        xyxy[:, 2] = xywh[:, 1] + xywh[:, 3] * 0.5  # bottom right y
         return xyxy
 
     
@@ -957,7 +970,6 @@ class TPURunner(object):
             if (time.time() - t) > time_limit:
                 logging.warning(f'NMS time limit {time_limit}s exceeded')
                 break  # time limit exceeded
-
         return output        
 
         
@@ -1085,8 +1097,6 @@ class TPURunner(object):
                                m_width: int,
                                m_height: int):
         """
-        Run the image resizing in an independent process pool.
-        
         Image resizing is one of the more expensive things we're doing here.
         It's expensive enough that it may take as much CPU time as inference
         under some circumstances. The Lanczos resampling kernel in particular
@@ -1112,31 +1122,20 @@ class TPURunner(object):
         tiles_y = int(max(1, round(i_height / (options.downsample_by * m_height))))
         logging.debug("Chunking to {} x {} tiles".format(tiles_x, tiles_y))
 
-        # Resample image to this size
+        # Fit image within target size
         resamp_x = int(m_width  + (tiles_x - 1) * (m_width  - options.tile_overlap))
         resamp_y = int(m_height + (tiles_y - 1) * (m_height - options.tile_overlap))
 
-        logging.debug("Resizing to {} x {} for tiling".format(resamp_x, resamp_y))
+        # Chop & resize image piece
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        image.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
+        logging.debug("Resizing to {} x {} for tiling".format(image.width, image.height))
 
-        # From: https://uploadcare.com/blog/fast-import-of-pillow-images-to-numpy-opencv-arrays/
-        def to_numpy(im, shape, typestr):
-            # unpack data
-            e = Image._getencoder(im.mode, 'raw', im.mode)
-            e.setimage(im.im)
+        # Rescale the input from uint8
+        input_zero = float(self.input_details['quantization'][1])
+        input_scale = 1.0 / (255.0 * self.input_details['quantization'][0])
 
-            # NumPy buffer for the result
-            data = np.empty(shape, dtype=typestr)
-            mem = data.data.cast('B', (data.data.nbytes,))
-
-            bufsize, s, offset = 65536, 0, 0
-            while not s:
-                l, s, d = e.encode(bufsize)
-                mem[offset:offset + len(d)] = d
-                offset += len(d)
-            if s < 0:
-                raise RuntimeError("encoder error %d in tobytes" % s)
-            return data
-        
         # It'd be useful to print this once at the beginning of the run
         key = "{} {}".format(*image.size)
         if key not in self.printed_shape_map:
@@ -1144,27 +1143,32 @@ class TPURunner(object):
                 "Mapping {} image to {}x{} tiles".format(image.size, tiles_x, tiles_y))
             self.printed_shape_map[key] = True
 
-        # Chop & resize image piece
-        resamp_img = image.convert('RGB')
-        resamp_img.thumbnail((resamp_x, resamp_y), Image.LANCZOS)
-
         # Do chunking
+        # Image will not be an even fit in at least one dimension; space tiles appropriately.
         tiles = []
-        for x_off in range(0, resamp_x - options.tile_overlap, m_width - options.tile_overlap):
-            for y_off in range(0, resamp_y - options.tile_overlap, m_height - options.tile_overlap):
-                cropped_arr = to_numpy(resamp_img.crop((x_off,
-                                                        y_off,
-                                                        x_off + m_width,
-                                                        y_off + m_height)), self.input_details['shape'][1:], np.uint8)
+        step_x = 1
+        if tiles_x > 1:
+            step_x = int(math.ceil((image.width - m_width)/(tiles_x-1)))
+        step_y = 1
+        if tiles_y > 1:
+            step_y = int(math.ceil((image.height - m_height)/(tiles_y-1)))
+
+        for x_off in range(0, max(image.width - m_width, 0) + tiles_x, step_x):
+            for y_off in range(0, max(image.height - m_height, 0) + tiles_y, step_y):
+                # Adjust contrast on a per-chunk basis; we will likely be quantizing the image during scaling
+                image_chunk = ImageOps.autocontrast(image.crop((x_off,
+                                                                y_off,
+                                                                x_off + m_width,
+                                                                y_off + m_height)), 1)
+                # Normalize to whatever the input is
+                cropped_arr = np.asarray(image_chunk, np.float32) * input_scale + input_zero
 
                 logging.debug("Resampled image tile {} at offset {}, {}".format(cropped_arr.shape, x_off, y_off))
-                resamp_info = (x_off, y_off, i_width/resamp_img.width, i_height/resamp_img.height)
+                resamp_info = (x_off, y_off, i_width/image.width, i_height/image.height)
 
-                # Normalize from 8-bit image to whatever the input is
-                if self.input_details['dtype'] == np.int8:
-                    tiles.append(((cropped_arr - 128).astype(np.int8), resamp_info))
-                else:
-                    tiles.append((cropped_arr, resamp_info))
+                tiles.append((cropped_arr.astype(self.input_details['dtype']), resamp_info))
+
+
         return tiles
 
 

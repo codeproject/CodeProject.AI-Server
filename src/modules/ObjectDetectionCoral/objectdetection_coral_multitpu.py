@@ -231,6 +231,8 @@ def main():
   
   thread_cnt = 16
   tot_infr_time = 0 
+  half_wall_start = None
+  half_infr_count = 0 
   if args.count > 1:
     with concurrent.futures.ThreadPoolExecutor(max_workers=thread_cnt) as executor:
       start = time.perf_counter()
@@ -238,13 +240,19 @@ def main():
         fs = [executor.submit(_tpu_runner.process_image, options, copy.copy(image), args.threshold)
               for i in range(min(thread_cnt*8, args.count-1 - chunk_i))]
         for f in concurrent.futures.as_completed(fs):
-          _, infr_time = f.result()
+          _, infr_time, _ = f.result()
           tot_infr_time += infr_time
+
+          # Start a timer for the last ~half of the run for more accurate benchmark
+          if chunk_i > (args.count-1) / 3.0:
+            half_infr_count += 1
+            if half_wall_start is None:
+              half_wall_start = time.perf_counter()
         
         # Uncomment for testing
         # import random
         # logging.info("Pause")
-        # time.sleep(random.randint(0,INTERPRETER_LIFESPAN_SECONDS*2))
+        # time.sleep(random.randint(0,INTERPRETER_LIFESPAN_SECONDS*3))
   else:
     start = time.perf_counter()
   
@@ -254,20 +262,22 @@ def main():
   #   print(stat)
 
   start_one = time.perf_counter()
-  objs, infr_time = _tpu_runner.process_image(options, image, args.threshold)
+  objs, infr_time, _ = _tpu_runner.process_image(options, copy.copy(image), args.threshold)
   tot_infr_time += infr_time
+  half_infr_count += 1
   wall_time = time.perf_counter() - start
-  print('completed one run every %.2f ms for %d runs; %.2f ms wall time for a single run' %
+
+  half_wall_time = 0.0
+  if half_wall_start is not None:
+    half_wall_time = time.perf_counter() - half_wall_start
+  
+  print('completed one run every %.2fms for %d runs; %.2fms wall time for a single run' %
                             (wall_time * 1000 / args.count, args.count,
                             (time.perf_counter() - start_one) * 1000))
                             
-  # Optimizing the number of segments used for a model would result in the
-  # lowest average time spent adjusted for number of TPUs used. At some point,
-  # adding additional segments just removes from the pool of TPUs you can use
-  # for parallelism.
-  print('%.2f ms avg time blocked across %d threads; %.2f avg TPU * ms / run' %
+  print('%.2fms avg time blocked across %d threads; %.2fms ea for final %d inferences' %
                             (tot_infr_time / args.count, thread_cnt,
-                             len(_tpu_runner.pipe.tpu_list) * wall_time * 1000 / args.count))
+                             half_wall_time * 1000 / half_infr_count, half_infr_count))
 
   print('-------RESULTS--------')
   if not objs:
