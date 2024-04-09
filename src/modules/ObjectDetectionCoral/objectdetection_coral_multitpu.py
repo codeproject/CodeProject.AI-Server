@@ -275,7 +275,7 @@ def main():
                             (wall_time * 1000 / args.count, args.count,
                             (time.perf_counter() - start_one) * 1000))
                             
-  logging.info('%.2fms avg time blocked across %d threads; %.2fms ea for final %d inferences' %
+  logging.info('%.2fms avg time blocked across %d threads; %.3fms ea for final %d inferences' %
                             (tot_infr_time / args.count, thread_cnt,
                              half_wall_time * 1000 / half_infr_count, half_infr_count))
 

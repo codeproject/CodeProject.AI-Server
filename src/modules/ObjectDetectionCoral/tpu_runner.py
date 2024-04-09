@@ -269,8 +269,7 @@ class DynamicPipeline(object):
 
     def balance_queues(self):
         # Don't bother if someone else is working on balancing
-        if len(self.queues) <= 1 or len(self.tpu_list) <= 2 or \
-           len(self.queues) == len(self.tpu_list) or \
+        if len(self.queues) <= 1 or len(self.tpu_list) < 2 or \
            not self.balance_lock.acquire(blocking=False):
             return
 
@@ -278,22 +277,26 @@ class DynamicPipeline(object):
             # How much time are we allocating for each segment
             time_alloc = []
 
-            for idx in range(len(self.interpreters)):
+            for seg_i in range(len(self.interpreters)):
                 # Find average runtime for this segment
                 avg_times = []
                 for interpreters in self.interpreters:
-                    avg_times += [i.timings[idx] / i.exec_count[idx] for i in interpreters if i.exec_count[idx] != 0]
+                    avg_times += [i.timings[seg_i] / i.exec_count[seg_i] for i in interpreters if i.exec_count[seg_i] != 0]
 
                 if avg_times:
                     avg_time = sum(avg_times) / len(avg_times)
                 else:
-                    return 0, 0, 0.0
+                    return 0, 0, 0.0, None
 
                 # Adjust for number of TPUs allocated to it
-                time_alloc.append(avg_time / interpreter_counts[idx])
+                if interpreter_counts[seg_i] > 0:
+                    time_alloc.append(avg_time / interpreter_counts[seg_i])
+                else:
+                    # No interpreters result inf time
+                    time_alloc.append(float('inf'))
 
-            min_t = 100000000
-            min_i = -1
+            min_gt1_t = float('inf')
+            min_gt1_i = -1
             max_t = 0
             max_i = -1
 
@@ -306,28 +309,67 @@ class DynamicPipeline(object):
 
                 # Min time needs to be lengthened so rem an interpreter,
                 # but only if it has more than one interpreter
-                if t < min_t and len(self.interpreters[i]) > 1:
-                    min_t = t
-                    min_i = i
+                if t < min_gt1_t and len(self.interpreters[i]) > 1:
+                    min_gt1_t = t
+                    min_gt1_i = i
 
-            return min_i, max_i, max(time_alloc)
+            # See if we can do better than the current max timing
+            untried_candidates = []
+            for interp_i, interpreters in enumerate(self.interpreters):
+                # Doesn't make sense to pull a TPU from a queue just to re-add it.
+                if interp_i == max_i:
+                    continue
+                # If it hasn't yet been tried for this segment
+                # (or if it has already found to be faster on this segment)
+                if any([True for i in interpreters if i.exec_count[max_i] == 0 or max_t-1.0 > i.timings[max_i] / i.exec_count[max_i]]):
+                    untried_candidates.append(interp_i)
+
+            return min_gt1_i, max_i, max(time_alloc), untried_candidates[0] if len(untried_candidates) > 0 else None
 
         interpreter_counts = [len(i) for i in self.interpreters]
-        min_i, max_i, current_max = eval_timings(interpreter_counts)
+        min_i, max_i, current_max, min_untried_i = eval_timings(interpreter_counts)
         interpreter_counts[min_i] -= 1
         interpreter_counts[max_i] += 1
-        _, _, new_max = eval_timings(interpreter_counts)
+        _, _, new_max, _ = eval_timings(interpreter_counts)
 
-        # Return if we don't want to swap (+/- 1 ms)
+        # Return if we don't want to swap
         if new_max+1.0 >= current_max:
-            self.balance_lock.release()
-            return
+            if min_untried_i is None:
+                self.balance_lock.release()
+                return
 
-        logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:.2f} to {new_max:.2f})")
+            # Swap slow segments with faster ones to see if we can run them faster.
+            # It might be a good way to optimize for heterogenous hardware.
+            logging.info(f"Re-balancing between queues {min_untried_i} and {max_i}")
 
+            # Stop them
+            new_max_i         = self._rem_interpreter_from(min_untried_i)
+            new_min_untried_i = self._rem_interpreter_from(max_i)
+
+            # Swap them
+            new_max_i.start(max_i, self.fbytes_list[max_i])
+            self.interpreters[max_i].append(new_max_i)
+
+            new_min_untried_i.start(min_untried_i, self.fbytes_list[min_untried_i])
+            self.interpreters[min_untried_i].append(new_min_untried_i)
+
+        else:
+            logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:.2f} to {new_max:.2f})")
+
+            realloc_interp = self._rem_interpreter_from(min_i)
+
+            # Add to large (too-slow) queue
+            realloc_interp.start(max_i, self.fbytes_list[max_i])
+            self.interpreters[max_i].append(realloc_interp)
+
+        self.balance_lock.release()
+        self.print_queue_len()
+
+
+    def _rem_interpreter_from(self, interp_i):
         # Sending False kills the processing loop
         self.rebalancing_lock.acquire()
-        self.queues[min_i].put(False)
+        self.queues[interp_i].put(False)
 
         # This is ugly, but I can't think of something better
         # Threads are blocked by queues. Queues may not have a stream
@@ -338,21 +380,15 @@ class DynamicPipeline(object):
         # Block & wait
         realloc_interp = None
         with self.rebalancing_lock:
-            for idx, interpreter in enumerate(self.interpreters[min_i]):
+            for idx, interpreter in enumerate(self.interpreters[interp_i]):
                 if not interpreter.interpreter:
-                    realloc_interp = self.interpreters[min_i].pop(idx)
+                    realloc_interp = self.interpreters[interp_i].pop(idx)
                     break
+
         if not realloc_interp:
             logging.warning("Unable to find killed interpreter")
             self.balance_lock.release()
-            return
-
-        # Add to large (too-slow) queue
-        realloc_interp.start(max_i, self.fbytes_list[max_i])
-        self.interpreters[max_i].append(realloc_interp)
-
-        self.balance_lock.release()
-        self.print_queue_len()
+        return realloc_interp
 
 
     def print_queue_len(self):
