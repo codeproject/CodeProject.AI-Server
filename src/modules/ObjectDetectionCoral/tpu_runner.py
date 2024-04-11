@@ -212,18 +212,18 @@ class DynamicPipeline(object):
 
         self.max_pipeline_queue_length    = MAX_PIPELINE_QUEUE_LEN
         
-        self.fname_list         = fname_list
-        self.tpu_list           = tpu_list
-        self.interpreters       = [[]  for i in range(seg_count)]
+        self.fname_list   = fname_list
+        self.tpu_list     = tpu_list
+        self.interpreters = [[]  for i in range(seg_count)]
 
         # Input queues for each segment; if we go over maxsize, something went wrong
         self.queues = [queue.Queue(maxsize=self.max_pipeline_queue_length) for i in range(seg_count)]
 
         # Lock for internal reorganization
-        self.balance_lock       = threading.Lock()
+        self.balance_lock = threading.Lock()
 
         # Lock for interpreter use
-        self.rebalancing_lock   = threading.Lock()
+        self.rebalancing_lock = threading.Lock()
 
         # Read file data
         self.fbytes_list = []
@@ -244,6 +244,7 @@ class DynamicPipeline(object):
 
     def _init_interpreters(self):
 
+        self.balance_ttl  = len(self.tpu_list) * 2
         start_boot_time = time.perf_counter_ns()
 
         # Fill TPUs with interpreters
@@ -270,7 +271,7 @@ class DynamicPipeline(object):
 
     def balance_queues(self):
         # Don't bother if someone else is working on balancing
-        if len(self.queues) <= 1 or len(self.tpu_list) < 2 or \
+        if len(self.queues) <= 1 or len(self.tpu_list) < 2 or self.balance_ttl <= 0 or \
            not self.balance_lock.acquire(blocking=False):
             return
 
@@ -363,6 +364,7 @@ class DynamicPipeline(object):
             realloc_interp.start(max_i, self.fbytes_list[max_i])
             self.interpreters[max_i].append(realloc_interp)
 
+        self.balance_ttl -= 1
         self.balance_lock.release()
         self.print_queue_len()
 
