@@ -239,20 +239,20 @@ class DynamicPipeline(object):
             with open(fname, "rb") as fd:
                 self.fbytes_list.append(fd.read())
 
-        self._init_interpreters()
+        with self.balance_lock:
+            self._init_interpreters()
 
     def _init_interpreters(self):
 
         start_boot_time = time.perf_counter_ns()
 
         # Fill TPUs with interpreters
-        with self.balance_lock:
-            for i, tpu_name in enumerate(self.tpu_list):
-                seg_idx = i % len(self.fname_list)
+        for i, tpu_name in enumerate(self.tpu_list):
+            seg_idx = i % len(self.fname_list)
 
-                i = DynamicInterpreter(self.fname_list, tpu_name, self.queues, self.rebalancing_lock)
-                i.start(seg_idx, self.fbytes_list[seg_idx])
-                self.interpreters[seg_idx].append(i)
+            i = DynamicInterpreter(self.fname_list, tpu_name, self.queues, self.rebalancing_lock)
+            i.start(seg_idx, self.fbytes_list[seg_idx])
+            self.interpreters[seg_idx].append(i)
 
         self.first_name = self.interpreters[0][0].input_details[0]['name']
         
@@ -261,8 +261,9 @@ class DynamicPipeline(object):
 
 
     def enqueue(self, in_tensor, out_q: queue.Queue):
-        if not self.first_name:
-            self._init_interpreters()
+        with self.balance_lock:
+            if not self.first_name:
+                self._init_interpreters()
 
         self.queues[0].put(({self.first_name: in_tensor}, out_q))
 
@@ -500,11 +501,11 @@ class TPURunner(object):
     def _watchdog(self):
         self.watchdog_time = time.time()
         while not self.watchdog_shutdown:
-            if self.pipe and \
+            if self.pipe and self.pipe.first_name is None and \
                 time.time() - self.watchdog_time > self.max_idle_secs_before_recycle:
                 logging.warning("No work in {} seconds, watchdog shutting down TPUs.".format(self.max_idle_secs_before_recycle))
                 self.runner_lock.acquire(timeout=MAX_WAIT_TIME)
-                if self.pipe.first_name:
+                if self.pipe:
                     self.pipe.delete()
                 self.runner_lock.release()
                 # Pipeline will reinitialize itself as needed
