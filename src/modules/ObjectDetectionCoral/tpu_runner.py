@@ -323,7 +323,7 @@ class DynamicPipeline(object):
                     continue
                 # If it hasn't yet been tried for this segment
                 # (or if it has already found to be faster on this segment)
-                if any([True for i in interpreters if i.exec_count[max_i] == 0 or max_t-1.0 > i.timings[max_i] / i.exec_count[max_i]]):
+                if any([True for i in interpreters if i.exec_count[max_i] < 10 or max_t-0.1 > i.timings[max_i] / i.exec_count[max_i]]):
                     untried_candidates.append(interp_i)
 
             return min_gt1_i, max_i, max(time_alloc), untried_candidates[0] if len(untried_candidates) > 0 else None
@@ -334,12 +334,17 @@ class DynamicPipeline(object):
         interpreter_counts[max_i] += 1
         _, _, new_max, _ = eval_timings(interpreter_counts)
 
-        # Return if we don't want to swap
-        if new_max+1.0 >= current_max:
-            if min_untried_i is None:
-                self.balance_lock.release()
-                return
+        if new_max+1.0 < current_max:
+            # Allocate more TPUs to slow segments
+            logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:.2f} to {new_max:.2f})")
 
+            realloc_interp = self._rem_interpreter_from(min_i)
+
+            # Add to large (too-slow) queue
+            realloc_interp.start(max_i, self.fbytes_list[max_i])
+            self.interpreters[max_i].append(realloc_interp)
+
+        elif min_untried_i is not None:
             # Swap slow segments with faster ones to see if we can run them faster.
             # It might be a good way to optimize for heterogenous hardware.
             logging.info(f"Re-balancing between queues {min_untried_i} and {max_i}")
@@ -355,14 +360,12 @@ class DynamicPipeline(object):
             new_min_untried_i.start(min_untried_i, self.fbytes_list[min_untried_i])
             self.interpreters[min_untried_i].append(new_min_untried_i)
 
+            # FIXME: After we have TPUs evaluated and otherwise balanced, we could
+            # further optimize by ensuring the slowest segment doesn't contain any slow TPUs.
         else:
-            logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:.2f} to {new_max:.2f})")
-
-            realloc_interp = self._rem_interpreter_from(min_i)
-
-            # Add to large (too-slow) queue
-            realloc_interp.start(max_i, self.fbytes_list[max_i])
-            self.interpreters[max_i].append(realloc_interp)
+            # Return if we don't want to swap
+            self.balance_lock.release()
+            return
 
         self.balance_ttl -= 1
         self.balance_lock.release()
