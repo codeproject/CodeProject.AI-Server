@@ -244,7 +244,7 @@ def main():
           tot_infr_time += infr_time
 
           # Start a timer for the last ~half of the run for more accurate benchmark
-          if chunk_i > (args.count-1) / 3.0:
+          if chunk_i > (args.count-1) / 2.0:
             half_infr_count += 1
             if half_wall_start is None:
               half_wall_start = time.perf_counter()

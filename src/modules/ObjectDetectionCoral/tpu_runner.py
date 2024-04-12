@@ -243,7 +243,7 @@ class DynamicPipeline(object):
             self._init_interpreters()
 
     def _init_interpreters(self):
-        # Set a Time To Live for balancing so we don't swap for inf in corner cases
+        # Set a Time To Live for balancing so we don't thrash
         self.balance_ttl  = len(self.tpu_list) * 2
         start_boot_time = time.perf_counter_ns()
 
@@ -269,7 +269,7 @@ class DynamicPipeline(object):
         self.queues[0].put(({self.first_name: in_tensor}, out_q))
 
 
-    def _eval_timings(interpreter_counts):
+    def _eval_timings(self, interpreter_counts):
         # How much time are we allocating for each segment
         time_alloc = []
         VALID_CNT_THRESH = 50
@@ -310,12 +310,17 @@ class DynamicPipeline(object):
                 min_gt1_t = t
                 min_gt1_i = i
 
-        # Only eval swapping max segment if we have many samples
-        if VALID_CNT_THRESH > sum([i.exec_count[max_i] for i in self.interpreters[max_i]]):
-            return min_gt1_i, max_i, max(time_alloc), None
+        # Only eval swapping max time segment if we have many samples in the current setup
+        for i in self.interpreters[max_i]:
+            if i.exec_count[max_i] < VALID_CNT_THRESH:
+                return min_gt1_i, max_i, max(time_alloc), None
 
-        # See if we can do better than the current max timing with swapping
+        # Undo avg interp count adjustment for TPU-to-TPU comparisons
+        max_t = max([i.timings[max_i] / i.exec_count[max_i] for i in self.interpreters[max_i]])
+
+        # See if we can do better than the current max time by swapping segments between TPUs
         swap_i = None
+        swap_t = float('inf')
         for interp_i, interpreters in enumerate(self.interpreters):
             # Doesn't make sense to pull a TPU from a queue just to re-add it.
             if interp_i == max_i:
@@ -323,6 +328,10 @@ class DynamicPipeline(object):
 
             # Test all TPUs in this segment
             for i in interpreters:
+                # If TPU hasn't yet been tried for this segment or ...
+                if i.exec_count[max_i] < VALID_CNT_THRESH:
+                    return min_gt1_i, max_i, max(time_alloc), interp_i    
+
                 # Only calc valid time after a few runs
                 new_max_t = 0.0
                 if i.exec_count[max_i] > VALID_CNT_THRESH:
@@ -330,13 +339,13 @@ class DynamicPipeline(object):
                 new_swap_t = 0.0
                 if i.exec_count[interp_i] > VALID_CNT_THRESH:
                     new_swap_t = i.timings[interp_i] / i.exec_count[interp_i] 
-                    
-                # If it hasn't yet been tried for this segment or
-                # If it has already found to be faster on this segment
-                # and we aren't making the other segment the new worst.
-                if i.exec_count[max_i] < VALID_CNT_THRESH or (max_t > new_max_t and max_t > new_swap_t):
+
+                # If TPU has already found to be faster on this segment
+                # and we aren't making the other segment the new worst
+                # and we are choosing the best available candidate.
+                if max_t-0.5 > new_max_t and max_t > new_swap_t and swap_t > new_max_t:
                     swap_i = interp_i
-                    break
+                    swap_t = new_max_t 
 
         return min_gt1_i, max_i, max(time_alloc), swap_i    
 
@@ -367,7 +376,7 @@ class DynamicPipeline(object):
             # 2nd Priority: Swap slow segments with faster ones to see if we can
             # run them faster. Hopefully still a good way to optimize for
             # heterogenous hardware.
-            logging.info(f"Re-balancing between queues {swap_i} and {max_i}")
+            logging.info(f"Auto-tuning between queues {swap_i} and {max_i}")
 
             # Stop them
             new_max  = self._rem_interpreter_from(swap_i)
