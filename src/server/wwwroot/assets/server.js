@@ -13,7 +13,7 @@ if (!apiServiceProtocol || apiServiceProtocol === "file:")
     apiServiceProtocol = "http:"; // Needed if you launch this file from Finder
 
 const apiServiceHostname = window.location.hostname || "localhost";
-const apiServicePort     = ":" + (window.location.port || 32168);
+const apiServicePort     = window.location.port === "" ? "" : ":" + (window.location.port || 32168);
 const apiServiceUrl      = `${apiServiceProtocol}//${apiServiceHostname}${apiServicePort}`;
 
 // Private vars
