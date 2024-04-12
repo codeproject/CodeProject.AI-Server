@@ -272,12 +272,13 @@ class DynamicPipeline(object):
     def _eval_timings(interpreter_counts):
         # How much time are we allocating for each segment
         time_alloc = []
+        VALID_CNT_THRESH = 50
 
         for seg_i in range(len(self.interpreters)):
             # Find average runtime for this segment
             avg_times = []
             for interpreters in self.interpreters:
-                avg_times += [i.timings[seg_i] / i.exec_count[seg_i] for i in interpreters if i.exec_count[seg_i] != 0]
+                avg_times += [i.timings[seg_i] / i.exec_count[seg_i] for i in interpreters if i.exec_count[seg_i] > VALID_CNT_THRESH]
 
             if avg_times:
                 avg_time = sum(avg_times) / len(avg_times)
@@ -293,7 +294,7 @@ class DynamicPipeline(object):
 
         min_gt1_t = float('inf')
         min_gt1_i = -1
-        max_t = 0
+        max_t = 0.0
         max_i = -1
 
         # Find segments that maybe should swap
@@ -309,6 +310,10 @@ class DynamicPipeline(object):
                 min_gt1_t = t
                 min_gt1_i = i
 
+        # Only eval swapping max segment if we have many samples
+        if VALID_CNT_THRESH > sum([i.exec_count[max_i] for i in self.interpreters[max_i]]):
+            return min_gt1_i, max_i, max(time_alloc), None
+
         # See if we can do better than the current max timing with swapping
         swap_i = None
         for interp_i, interpreters in enumerate(self.interpreters):
@@ -319,17 +324,17 @@ class DynamicPipeline(object):
             # Test all TPUs in this segment
             for i in interpreters:
                 # Only calc valid time after a few runs
-                new_max_t = 0
-                if i.exec_count[max_i] > 10:
+                new_max_t = 0.0
+                if i.exec_count[max_i] > VALID_CNT_THRESH:
                     new_max_t = i.timings[max_i] / i.exec_count[max_i] 
-                new_swap_t = 0
-                if i.exec_count[interp_i] > 10:
+                new_swap_t = 0.0
+                if i.exec_count[interp_i] > VALID_CNT_THRESH:
                     new_swap_t = i.timings[interp_i] / i.exec_count[interp_i] 
                     
                 # If it hasn't yet been tried for this segment or
                 # If it has already found to be faster on this segment
                 # and we aren't making the other segment the new worst.
-                if i.exec_count[max_i] < 10 or (max_t > new_max_t and max_t > new_swap_t):
+                if i.exec_count[max_i] < VALID_CNT_THRESH or (max_t > new_max_t and max_t > new_swap_t):
                     swap_i = interp_i
                     break
 
