@@ -212,18 +212,18 @@ class DynamicPipeline(object):
 
         self.max_pipeline_queue_length    = MAX_PIPELINE_QUEUE_LEN
         
-        self.fname_list         = fname_list
-        self.tpu_list           = tpu_list
-        self.interpreters       = [[]  for i in range(seg_count)]
+        self.fname_list   = fname_list
+        self.tpu_list     = tpu_list
+        self.interpreters = [[]  for i in range(seg_count)]
 
         # Input queues for each segment; if we go over maxsize, something went wrong
         self.queues = [queue.Queue(maxsize=self.max_pipeline_queue_length) for i in range(seg_count)]
 
         # Lock for internal reorganization
-        self.balance_lock       = threading.Lock()
+        self.balance_lock = threading.Lock()
 
         # Lock for interpreter use
-        self.rebalancing_lock   = threading.Lock()
+        self.rebalancing_lock = threading.Lock()
 
         # Read file data
         self.fbytes_list = []
@@ -239,20 +239,21 @@ class DynamicPipeline(object):
             with open(fname, "rb") as fd:
                 self.fbytes_list.append(fd.read())
 
-        self._init_interpreters()
+        with self.balance_lock:
+            self._init_interpreters()
 
     def _init_interpreters(self):
-
+        # Set a Time To Live for balancing so we don't thrash
+        self.balance_ttl  = len(self.tpu_list) * 2
         start_boot_time = time.perf_counter_ns()
 
         # Fill TPUs with interpreters
-        with self.balance_lock:
-            for i, tpu_name in enumerate(self.tpu_list):
-                seg_idx = i % len(self.fname_list)
+        for i, tpu_name in enumerate(self.tpu_list):
+            seg_idx = i % len(self.fname_list)
 
-                i = DynamicInterpreter(self.fname_list, tpu_name, self.queues, self.rebalancing_lock)
-                i.start(seg_idx, self.fbytes_list[seg_idx])
-                self.interpreters[seg_idx].append(i)
+            i = DynamicInterpreter(self.fname_list, tpu_name, self.queues, self.rebalancing_lock)
+            i.start(seg_idx, self.fbytes_list[seg_idx])
+            self.interpreters[seg_idx].append(i)
 
         self.first_name = self.interpreters[0][0].input_details[0]['name']
         
@@ -261,73 +262,146 @@ class DynamicPipeline(object):
 
 
     def enqueue(self, in_tensor, out_q: queue.Queue):
-        if not self.first_name:
-            self._init_interpreters()
+        with self.balance_lock:
+            if not self.first_name:
+                self._init_interpreters()
 
         self.queues[0].put(({self.first_name: in_tensor}, out_q))
 
 
+    def _eval_timings(self, interpreter_counts):
+        # How much time are we allocating for each segment
+        time_alloc = []
+        VALID_CNT_THRESH = 50
+
+        for seg_i in range(len(self.interpreters)):
+            # Find average runtime for this segment
+            avg_times = []
+            for interpreters in self.interpreters:
+                avg_times += [i.timings[seg_i] / i.exec_count[seg_i] for i in interpreters if i.exec_count[seg_i] > VALID_CNT_THRESH]
+
+            if avg_times:
+                avg_time = sum(avg_times) / len(avg_times)
+            else:
+                return 0, 0, 0.0, None
+
+            # Adjust for number of TPUs allocated to it
+            if interpreter_counts[seg_i] > 0:
+                time_alloc.append(avg_time / interpreter_counts[seg_i])
+            else:
+                # No interpreters result inf time
+                time_alloc.append(float('inf'))
+
+        min_gt1_t = float('inf')
+        min_gt1_i = -1
+        max_t = 0.0
+        max_i = -1
+
+        # Find segments that maybe should swap
+        for i, t in enumerate(time_alloc):
+            # Max time needs to be shortened so add an interpreter.
+            if t > max_t:
+                max_t = t
+                max_i = i
+
+            # Min time needs to be lengthened so rem an interpreter,
+            # but only if it has more than one interpreter
+            if t < min_gt1_t and len(self.interpreters[i]) > 1:
+                min_gt1_t = t
+                min_gt1_i = i
+
+        # Only eval swapping max time segment if we have many samples in the current setup
+        for i in self.interpreters[max_i]:
+            if i.exec_count[max_i] < VALID_CNT_THRESH:
+                return min_gt1_i, max_i, max(time_alloc), None
+
+        # Undo avg interp count adjustment for TPU-to-TPU comparisons
+        max_t = max([i.timings[max_i] / i.exec_count[max_i] for i in self.interpreters[max_i]])
+
+        # See if we can do better than the current max time by swapping segments between TPUs
+        swap_i = None
+        swap_t = float('inf')
+        for interp_i, interpreters in enumerate(self.interpreters):
+            # Doesn't make sense to pull a TPU from a queue just to re-add it.
+            if interp_i == max_i:
+                continue
+
+            # Test all TPUs in this segment
+            for i in interpreters:
+                # If TPU hasn't yet been tried for this segment or ...
+                if i.exec_count[max_i] < VALID_CNT_THRESH:
+                    return min_gt1_i, max_i, max(time_alloc), interp_i    
+
+                # Only calc valid time after a few runs
+                new_max_t = 0.0
+                if i.exec_count[max_i] > VALID_CNT_THRESH:
+                    new_max_t = i.timings[max_i] / i.exec_count[max_i] 
+                new_swap_t = 0.0
+                if i.exec_count[interp_i] > VALID_CNT_THRESH:
+                    new_swap_t = i.timings[interp_i] / i.exec_count[interp_i] 
+
+                # If TPU has already found to be faster on this segment
+                # and we aren't making the other segment the new worst
+                # and we are choosing the best available candidate.
+                if max_t-0.5 > new_max_t and max_t > new_swap_t and swap_t > new_max_t:
+                    swap_i = interp_i
+                    swap_t = new_max_t 
+
+        return min_gt1_i, max_i, max(time_alloc), swap_i    
+
+    
     def balance_queues(self):
         # Don't bother if someone else is working on balancing
-        if len(self.queues) <= 1 or len(self.tpu_list) <= 2 or \
-           len(self.queues) == len(self.tpu_list) or \
+        if len(self.queues) <= 1 or len(self.tpu_list) < 2 or self.balance_ttl <= 0 or \
            not self.balance_lock.acquire(blocking=False):
             return
 
-        def eval_timings(interpreter_counts):
-            # How much time are we allocating for each segment
-            time_alloc = []
-
-            for idx in range(len(self.interpreters)):
-                # Find average runtime for this segment
-                avg_times = []
-                for interpreters in self.interpreters:
-                    avg_times += [i.timings[idx] / i.exec_count[idx] for i in interpreters if i.exec_count[idx] != 0]
-
-                if avg_times:
-                    avg_time = sum(avg_times) / len(avg_times)
-                else:
-                    return 0, 0, 0.0
-
-                # Adjust for number of TPUs allocated to it
-                time_alloc.append(avg_time / interpreter_counts[idx])
-
-            min_t = 100000000
-            min_i = -1
-            max_t = 0
-            max_i = -1
-
-            # Find segments that maybe should swap
-            for i, t in enumerate(time_alloc):
-                # Max time needs to be shortened so add an interpreter.
-                if t > max_t:
-                    max_t = t
-                    max_i = i
-
-                # Min time needs to be lengthened so rem an interpreter,
-                # but only if it has more than one interpreter
-                if t < min_t and len(self.interpreters[i]) > 1:
-                    min_t = t
-                    min_i = i
-
-            return min_i, max_i, max(time_alloc)
-
         interpreter_counts = [len(i) for i in self.interpreters]
-        min_i, max_i, current_max = eval_timings(interpreter_counts)
+        min_i, max_i, current_max, swap_i = self._eval_timings(interpreter_counts)
         interpreter_counts[min_i] -= 1
         interpreter_counts[max_i] += 1
-        _, _, new_max = eval_timings(interpreter_counts)
+        _, _, new_max, _ = self._eval_timings(interpreter_counts)
 
-        # Return if we don't want to swap (+/- 1 ms)
-        if new_max+1.0 >= current_max:
+        if new_max+1.0 < current_max:
+            # 1st Priority: Allocate more TPUs to slow segments
+            logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:.2f} to {new_max:.2f})")
+
+            realloc_interp = self._rem_interpreter_from(min_i)
+
+            # Add to large (too-slow) queue
+            realloc_interp.start(max_i, self.fbytes_list[max_i])
+            self.interpreters[max_i].append(realloc_interp)
+
+        elif swap_i is not None:
+            # 2nd Priority: Swap slow segments with faster ones to see if we can
+            # run them faster. Hopefully still a good way to optimize for
+            # heterogenous hardware.
+            logging.info(f"Auto-tuning between queues {swap_i} and {max_i}")
+
+            # Stop them
+            new_max  = self._rem_interpreter_from(swap_i)
+            new_swap = self._rem_interpreter_from(max_i)
+
+            # Swap them
+            new_max.start(max_i, self.fbytes_list[max_i])
+            self.interpreters[max_i].append(new_max)
+
+            new_swap.start(swap_i, self.fbytes_list[swap_i])
+            self.interpreters[swap_i].append(new_swap)
+        else:
+            # Return if we don't want to swap
             self.balance_lock.release()
             return
 
-        logging.info(f"Re-balancing from queue {min_i} to {max_i} (max from {current_max:.2f} to {new_max:.2f})")
+        self.balance_ttl -= 1
+        self.balance_lock.release()
+        self.print_queue_len()
 
+
+    def _rem_interpreter_from(self, interp_i):
         # Sending False kills the processing loop
         self.rebalancing_lock.acquire()
-        self.queues[min_i].put(False)
+        self.queues[interp_i].put(False)
 
         # This is ugly, but I can't think of something better
         # Threads are blocked by queues. Queues may not have a stream
@@ -338,21 +412,15 @@ class DynamicPipeline(object):
         # Block & wait
         realloc_interp = None
         with self.rebalancing_lock:
-            for idx, interpreter in enumerate(self.interpreters[min_i]):
+            for idx, interpreter in enumerate(self.interpreters[interp_i]):
                 if not interpreter.interpreter:
-                    realloc_interp = self.interpreters[min_i].pop(idx)
+                    realloc_interp = self.interpreters[interp_i].pop(idx)
                     break
+
         if not realloc_interp:
             logging.warning("Unable to find killed interpreter")
             self.balance_lock.release()
-            return
-
-        # Add to large (too-slow) queue
-        realloc_interp.start(max_i, self.fbytes_list[max_i])
-        self.interpreters[max_i].append(realloc_interp)
-
-        self.balance_lock.release()
-        self.print_queue_len()
+        return realloc_interp
 
 
     def print_queue_len(self):
@@ -464,11 +532,11 @@ class TPURunner(object):
     def _watchdog(self):
         self.watchdog_time = time.time()
         while not self.watchdog_shutdown:
-            if self.pipe and \
+            if self.pipe and self.pipe.first_name is None and \
                 time.time() - self.watchdog_time > self.max_idle_secs_before_recycle:
                 logging.warning("No work in {} seconds, watchdog shutting down TPUs.".format(self.max_idle_secs_before_recycle))
                 self.runner_lock.acquire(timeout=MAX_WAIT_TIME)
-                if self.pipe.first_name:
+                if self.pipe:
                     self.pipe.delete()
                 self.runner_lock.release()
                 # Pipeline will reinitialize itself as needed
@@ -510,38 +578,33 @@ class TPURunner(object):
         more than one list of segment files then use the list of files that best
         matches the number of TPUs we have, otherwise use the single list we
         have. If all else fails return the single TPU filename as a list.
-        NOTE: This method also updates self.device_count and self.segment_count
-              based on the choice of whether it uses a single model or a set of
-              segment file names
         """
 
         # if TPU no-show then default is CPU
         self.device_type   = 'CPU'
-        device_count  = 1  # CPU. At this point we don't know if we have TPU
-        segment_count = 1  # Single CPU model file
         if not any(tpu_list):
             return []
 
+        device_count  = len(tpu_list)  # TPUs. We've at least found one
         self.device_type   = 'Multi-TPU'
+        if device_count == 1:
+            self.device_type   = 'TPU'
 
         # If TPU found then default is single TPU model file (no segments)
-        device_count  = len(tpu_list)  # TPUs. We've at least found one
-        segment_count = 1              # Single TPU model name at this point
-        if not any(options.tpu_segments_lists):
+        if not any(options.tpu_segments_lists) or device_count == 1:
             return [options.model_tpu_file]
             
         # We have a list of segment files
-        if isinstance(options.tpu_segments_lists[0], list):
+        if isinstance(options.tpu_segments_lists, dict):
             # Look for a good match between available TPUs and segment counts
-            # Prioritize first match
-            for fname_list in options.tpu_segments_lists:
-                segment_count = len(fname_list)
-                if segment_count <= device_count:
-                    return fname_list
+            # Prioritize first match. Note we have only tested up to 8 TPUs,
+            # so best performance above that can probably be had by extrapolation.
+            device_count = min(device_count, 8)
+            if device_count in options.tpu_segments_lists:
+                return options.tpu_segments_lists[device_count]
         else:
             # Only one list of segments; use it regardless of even match to TPU count
-            segment_count = len(options.tpu_segments_lists)
-            if segment_count <= device_count:
+            if len(options.tpu_segments_lists) <= device_count:
                 return options.tpu_segments_lists
 
         # Couldn't find a good fit, use single segment

@@ -10,20 +10,24 @@ fn_list = [
     #'ssd_mobilenet_v2_coco_quant_postprocess',
     #'ssdlite_mobiledet_coco_qat_postprocess',
     #'ssd_mobilenet_v1_coco_quant_postprocess',
-    'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq',
+    #'tf2_ssd_mobilenet_v1_fpn_640x640_coco17_ptq',
     #'efficientdet_lite0_320_ptq',
     #'efficientdet_lite1_384_ptq',
-    'efficientdet_lite2_448_ptq',
-    'efficientdet_lite3_512_ptq',
-    'efficientdet_lite3x_640_ptq',
+    #'efficientdet_lite2_448_ptq',
+    #'efficientdet_lite3_512_ptq',
+    #'efficientdet_lite3x_640_ptq',
     #'yolov5n-int8',
     #'yolov5s-int8',
-    'yolov5m-int8',
-    'yolov5l-int8',
+    #'yolov5m-int8',
+    #'yolov5l-int8',
     #'yolov8n_416_640px', # lg 1st seg
-    'yolov8s_416_640px', # lg 1st seg
-    'yolov8m_416_640px', # lg 1st seg
-    'yolov8l_416_640px', # lg 1st seg
+    #'yolov8s_416_640px', # lg 1st seg
+    #'yolov8m_416_640px', # lg 1st seg
+    #'yolov8l_416_640px', # lg 1st seg
+    #'yolov8n_640px',
+    #'yolov8s_640px',
+    #'yolov8m_640px', # lg 1st seg
+    #'yolov8l_640px', # lg 1st seg
     'ipcam-general-v8']
 
 custom_args = {
@@ -178,7 +182,7 @@ custom_args = {
         8: ["--partition_search_step","5"]}}#'''
    
 seg_dir = "/media/seth/FAT_THUMB/all_segments/"
-seg_types = ['', '2x_first_seg/', '15x_first_seg/', '166x_first_seg/', '3x_first_seg/', '4x_first_seg/', '15x_last_seg/', '2x_last_seg/', 'dumb/']
+seg_types = ['', '2x_first_seg/', '15x_first_seg/', '166x_first_seg/', '3x_first_seg/', '4x_first_seg/', 'inc_seg/', 'dumb/']
 
 
 def seg_exists(filename, segment_type, segment_count):
@@ -191,7 +195,7 @@ def seg_exists(filename, segment_type, segment_count):
         seg_list = [seg_dir+segment_type+filename+'_segment_{}_of_{}_edgetpu.tflite'.format(i, segment_count) for i in range(segment_count)]
     return (seg_list, any([True for s in seg_list if not os.path.exists(s)]))
 
-MAX_TPU_COUNT = 8
+MAX_TPU_COUNT = 4
 
 '''
 # Generate segment files
@@ -251,6 +255,17 @@ for sn in range(1,MAX_TPU_COUNT+1):
                     #   for (auto latency : latencies) {
                     #
                     # sudo make DOCKER_IMAGE="ubuntu:20.04" DOCKER_CPUS="k8" DOCKER_TARGETS="tools" docker-build
+
+                    #// Encourage each segment slower than the previous to spread out the bottlenecks
+                    #double latency_adjust = 1.0;
+                    #for (int i = 1; i < num_segments_; ++i)
+                    #{
+                    #  if (latencies[i-1] < latencies[i])
+                    #    latency_adjust *= 0.97;
+                    #  latencies[i-1] *= latency_adjust;
+                    #}
+                    #latencies[num_segments_-1] *= latency_adjust;
+                    
                     partition_with_profiling_dir = "libcoral/tools.2"
                 elif '15x_first_seg' in seg_type:
                     partition_with_profiling_dir = "libcoral/tools.15"
@@ -266,6 +281,8 @@ for sn in range(1,MAX_TPU_COUNT+1):
                     partition_with_profiling_dir = "libcoral/tools.last15"
                 elif '2x_last_seg' in seg_type:
                     partition_with_profiling_dir = "libcoral/tools.last2"
+                elif 'inc_seg' == seg_type:
+                    partition_with_profiling_dir = "libcoral/tools.inc_seg"
                 else:
                     partition_with_profiling_dir = "libcoral/tools.orig"
 
@@ -281,7 +298,7 @@ for sn in range(1,MAX_TPU_COUNT+1):
             subprocess.run(cmd)#'''
            
 
-seg_types += ['133x_first_seg/']
+seg_types += ['133x_first_seg/', '15x_last_seg/', '2x_last_seg/']
 
 # Test timings
 fin_timings = {}
@@ -293,15 +310,12 @@ for fn in fn_list:
 
     for num_tpus in range(2,MAX_TPU_COUNT+1):
 
-        for seg_type in seg_types+['orig_code']:
+        for seg_type in seg_types:
             max_seg = 0
             for sn in range(1,num_tpus+1):
 
                 # Test against orig code
-                if seg_type == 'orig_code':
-                    exe_file = "/home/seth/CodeProject.AI-Server/src/modules/ObjectDetectionCoral/objectdetection_coral_multitpu.py"
-                else:
-                    exe_file = "/home/seth/Downloads/coral_module/objectdetection_coral_multitpu.py"
+                exe_file = "/home/seth/CodeProject.AI-Server/src/modules/ObjectDetectionCoral/objectdetection_coral_multitpu.py"
 
                 # Get file types
                 seg_list, file_missing = seg_exists(fn, seg_type, sn)
@@ -312,19 +326,19 @@ for fn in fn_list:
 
                 cmd = ["python3",exe_file,"--model"] + \
                       seg_list + ["--labels","coral/pycoral/test_data/coco_labels.txt","--input","/home/seth/coral/pycoral/test_data/grace_hopper.bmp",
-                      "--count","1000","--num-tpus",str(num_tpus)]
+                      "--count","2000","--num-tpus",str(num_tpus)]
                 print(cmd)
-                c = subprocess.run(cmd, capture_output=True)
+                c = subprocess.run(cmd, check=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 print(c.stdout)
                 print(c.stderr)
-                ms_time = float(re.compile(r'threads; ([\d\.]+)ms ea').findall(c.stdout)[0])
+                ms_time = float(re.compile(r'threads; ([\d\.]+)ms ea').findall(c.stderr)[0])
                 timings.append((ms_time, num_tpus, fn, seg_type, sn))
 
         timings = sorted(timings, key=lambda t: t[0])
 
         # Print the top three
         print(f"TIMINGS FOR {num_tpus} TPUs AND {fn} MODEL:")
-        for t in range(min(5,len(timings))):
+        for t in range(min(10,len(timings))):
             print(timings[t])
 
         # Get best segments, but
@@ -345,6 +359,12 @@ for fn in fn_list:
             shutil.copyfile(s, out_fname)
             fin_fnames[fn][num_tpus].append(out_fname)
 
+        # Create archive for this model / TPU count
+        if any(fin_fnames[fn][num_tpus]):
+            cmd = ['zip', '-9', f'objectdetection-{fn}-{num_tpus}-edgetpu.zip'] + fin_fnames[fn][num_tpus]
+            print(cmd)
+            subprocess.run(cmd)
+
 print(fin_timings)
 print(fin_fnames)
  
@@ -352,6 +372,6 @@ print(fin_fnames)
 for fn, v in fin_fnames.items():
     print("             '%s': {" % fn)
     for tpu_count, out_fnames in v.items():
-        print(f"                 # {fin_timings[fn][tpu_count][0]:6.1f} ms per inference") # assumes 1k test runs
+        print(f"                 # {fin_timings[fn][tpu_count][0]:6.1f} ms per inference")
         print(f"                 {tpu_count}: "+str(out_fnames)+",")
     print("             },")
