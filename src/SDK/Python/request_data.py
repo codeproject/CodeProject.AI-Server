@@ -1,6 +1,7 @@
 
 import base64
 import io
+import sys
 from io import BytesIO
 import wave
 import json
@@ -8,6 +9,12 @@ import json
 from PIL import Image
 from common import JSON
 # from logging import LogMethod
+
+try:
+    import cv2 as cv
+    import numpy as np
+except ImportError:
+    logging.debug("Unable to load OpenCV or numpy modules. Only using PIL.")
 
 class RequestData:
     """
@@ -135,11 +142,12 @@ class RequestData:
             return
         self.payload["files"].append({ "data": RequestData.encode_file_contents(file_name) })
 
-    def get_image(self, index : int) -> Image:
+    def get_image(self, index : int, module: str = 'pil'):
         """
         Gets an image from the requests 'files' array that was passed in as 
         part of a HTTP POST.
         Param: index - the index of the image to return
+        Param: module - type of import module to use 'pil' or 'opencv'
         Returns: An image if successful; None otherwise.
 
         NOTE: It's probably worth helping out users by sniffing EXIF data and
@@ -150,16 +158,19 @@ class RequestData:
         """
 
         try:
-            if self.files is None or len(self.files) <= index:
+            img_bytes = self.get_file_bytes(index)
+            if img_bytes is None:
                 return None
 
-            img_file    = self.files[index]
-            img_dataB64 = img_file["data"]
-            img_bytes   = base64.b64decode(img_dataB64)
-            
-            with io.BytesIO(img_bytes) as img_stream:
-                img = Image.open(img_stream).convert("RGB")
-                return img
+            if module == 'opencv':
+                assert 'cv' in sys.modules and 'np' in sys.modules
+                return cv.imdecode(np.frombuffer(img_stream, dtype=np.uint8), cv.IMREAD_COLOR)
+            else:
+                with io.BytesIO(img_bytes) as img_stream:
+                    img = Image.open(img_stream)
+                    # Only convert if it needs conversion
+                    return img if img.mode == 'RGB' else img.convert('RGB')
+                
 
         except Exception as ex:
 
@@ -210,7 +221,7 @@ class RequestData:
 
         except Exception as ex:
             if self._verbose_exceptions:
-                print(f"Error getting WAV file {index} from request")
+                print(f"Error getting file {index} from request")
             return None
 
     def get_value(self, key : str, defaultValue : str = None) -> str:
