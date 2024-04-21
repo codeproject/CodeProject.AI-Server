@@ -11,6 +11,7 @@ from common import JSON
 # from logging import LogMethod
 
 try:
+    # pip install opencv-python-headless recommended
     import cv2 as cv
     import numpy as np
 except ImportError:
