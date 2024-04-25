@@ -21,6 +21,7 @@ namespace CodeProject.AI.Server.Modules
         const string PreinstalledModulesDirPathMarker = "%PREINSTALLED_MODULES_PATH%";
         const string ModulesDirPathMarker             = "%MODULES_PATH%";
         const string DemoModulesDirPathMarker         = "%DEMO_MODULES_PATH%";
+        const string ExternalModulesDirPathMarker     = "%EXTERNAL_MODULES_PATH%";
         const string CurrentModuleDirPathMarker       = "%CURRENT_MODULE_PATH%";
         const string PlatformMarker                   = "%PLATFORM%";
         const string OSMarker                         = "%OS%";  
@@ -70,6 +71,12 @@ namespace CodeProject.AI.Server.Modules
         /// Gets the absolute path to the demo AI modules
         /// </summary>
         public string DemoModulesDirPath => _moduleOptions.DemoModulesDirPath!;
+
+        /// <summary>
+        /// Gets or sets the root directory that contains the external modules (modules that aren't
+        /// in this solution, but are in external solutions)
+        /// </summary>
+        public string ExternalModulesDirPath => _moduleOptions.ExternalModulesDirPath!;
 
         /// <summary>
         /// Gets the absolute path to the download modules zip packages that have been downloaded
@@ -145,7 +152,6 @@ namespace CodeProject.AI.Server.Modules
         public string GetFilePath(ModuleConfig module)
         {
             // Correcting for cross platform (win = \, linux = /)
-            // return Path.Combine(GetModuleDirPath(module), Text.FixSlashes(module.FilePath));
             return Path.Combine(module.ModuleDirPath, Text.FixSlashes(module.LaunchSettings!.FilePath));
         }
 
@@ -188,28 +194,28 @@ namespace CodeProject.AI.Server.Modules
                     if (SystemInfo.IsWindows)
                     {
                         if (module.ModuleDirPath.StartsWithIgnoreCase(PreInstalledModulesDirPath))
-                            module.LaunchSettings!.RuntimeLocation = "System";
+                            module.LaunchSettings!.RuntimeLocation = RuntimeLocation.System;
                     }
                     // Do a case-sensitive for Linux / macOS
                     else if (module.ModuleDirPath.StartsWith(PreInstalledModulesDirPath))
                     {
-                        module.LaunchSettings!.RuntimeLocation = "System";
+                        module.LaunchSettings!.RuntimeLocation = RuntimeLocation.System;
                     }
                 }
 
-                if (module.LaunchSettings!.RuntimeLocation == "System")
+                if (module.LaunchSettings!.RuntimeLocation == RuntimeLocation.System)
                     return runtime;
 
                 // In Docker we don't allow non-pre-installed modules to have shared venv's. Force
                 // to Local, because this is where the venv will have been setup by the setup script
-                if (SystemInfo.IsDocker && module.LaunchSettings!.RuntimeLocation == "Shared")
-                    module.LaunchSettings!.RuntimeLocation = "Local";
+                if (SystemInfo.IsDocker && module.LaunchSettings!.RuntimeLocation == RuntimeLocation.Shared)
+                    module.LaunchSettings!.RuntimeLocation = RuntimeLocation.Local;
 
                 string pythonName  = runtime.Replace(".", string.Empty).ToLower();
                 string commandPath = _moduleOptions.PythonRelativeInterpreterPath!
                                                    .Replace(PythonNameMarker, pythonName);
                 commandPath = commandPath.TrimStart('\\','/');
-                if (module.LaunchSettings!.RuntimeLocation == "Shared")
+                if (module.LaunchSettings!.RuntimeLocation == RuntimeLocation.Shared)
                 {
                     commandPath = Path.Combine(_moduleOptions.RuntimesDirPath!, commandPath);
                 }
@@ -280,6 +286,7 @@ namespace CodeProject.AI.Server.Modules
             _moduleOptions.ModulesDirPath                   = Path.GetFullPath(ExpandOption(_moduleOptions.ModulesDirPath)!);
             _moduleOptions.PreInstalledModulesDirPath       = Path.GetFullPath(ExpandOption(_moduleOptions.PreInstalledModulesDirPath)!);
             _moduleOptions.DemoModulesDirPath               = Path.GetFullPath(ExpandOption(_moduleOptions.DemoModulesDirPath)!);
+            _moduleOptions.ExternalModulesDirPath           = Path.GetFullPath(ExpandOption(_moduleOptions.ExternalModulesDirPath)!);
             _moduleOptions.DownloadedModulePackagesDirPath  = Path.GetFullPath(ExpandOption(_moduleOptions.DownloadedModulePackagesDirPath)!);
             _moduleOptions.DownloadedModelsPackagesDirPath  = Path.GetFullPath(ExpandOption(_moduleOptions.DownloadedModelsPackagesDirPath)!);
             _moduleOptions.ModuleInstallerScriptsDirPath    = Path.GetFullPath(ExpandOption(_moduleOptions.ModuleInstallerScriptsDirPath)!);
@@ -296,6 +303,7 @@ namespace CodeProject.AI.Server.Modules
             _moduleOptions.ModulesDirPath                   = Text.FixSlashes(_moduleOptions.ModulesDirPath);
             _moduleOptions.PreInstalledModulesDirPath       = Text.FixSlashes(_moduleOptions.PreInstalledModulesDirPath);
             _moduleOptions.DemoModulesDirPath               = Text.FixSlashes(_moduleOptions.DemoModulesDirPath);
+            _moduleOptions.ExternalModulesDirPath           = Text.FixSlashes(ExternalModulesDirPath);
             _moduleOptions.ModuleInstallerScriptsDirPath    = Text.FixSlashes(_moduleOptions.ModuleInstallerScriptsDirPath);
 
             // _moduleOptions.ModuleListUrl                 = Text.FixSlashes(_moduleOptions.ModuleListUrl); - Don't: it will kill "file://"
@@ -305,6 +313,7 @@ namespace CodeProject.AI.Server.Modules
             _logger.LogInformation($"RUNTIMES_PATH             = {_moduleOptions.RuntimesDirPath}");
             _logger.LogInformation($"PREINSTALLED_MODULES_PATH = {_moduleOptions.PreInstalledModulesDirPath}");
             _logger.LogInformation($"DEMO_MODULES_PATH         = {_moduleOptions.DemoModulesDirPath}");
+            _logger.LogInformation($"EXTERNAL_MODULES_PATH     = {_moduleOptions.ExternalModulesDirPath}");
             _logger.LogInformation($"MODULES_PATH              = {_moduleOptions.ModulesDirPath}");
             _logger.LogInformation($"PYTHON_PATH               = {_moduleOptions.PythonRelativeInterpreterPath}");
             _logger.LogInformation($"Data Dir                  = {_appDataDirectory}");
@@ -325,11 +334,13 @@ namespace CodeProject.AI.Server.Modules
             value = value.Replace(PreinstalledModulesDirPathMarker,  _moduleOptions.PreInstalledModulesDirPath);
             value = value.Replace(ModulesDirPathMarker,     _moduleOptions.ModulesDirPath);
             value = value.Replace(DemoModulesDirPathMarker, _moduleOptions.DemoModulesDirPath);
-            value = value.Replace(RootPathMarker,           Server.Program.ApplicationRootPath);
+            value = value.Replace(ExternalModulesDirPath,   _moduleOptions.ExternalModulesDirPath);
             value = value.Replace(PlatformMarker,           SystemInfo.Platform.ToLower());
             value = value.Replace(OSMarker,                 SystemInfo.OperatingSystem.ToLower());
             value = value.Replace(PythonPathMarker,         _moduleOptions.PythonRelativeInterpreterPath);
             value = value.Replace(DataDirMarker,            _appDataDirectory);
+            // Do this last in case other markers contains this marker
+            value = value.Replace(RootPathMarker,           Server.Program.ApplicationRootPath);
 
             if (!string.IsNullOrEmpty(currentModuleDirPath))
                 value = value.Replace(CurrentModuleDirPathMarker, currentModuleDirPath);

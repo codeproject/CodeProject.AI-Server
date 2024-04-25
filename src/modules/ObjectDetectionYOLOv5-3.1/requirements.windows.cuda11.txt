@@ -21,8 +21,4 @@ torchvision==0.14.0+cu117 # Installing TorchVision, for working with computer vi
 #  -f https://download.pytorch.org/whl/torch_stable.html
 # torchvision==0.11.2+cu111
 
-# CUDA 11 not supported. Reverting to CPU
-# -f https://download.pytorch.org/whl/torch_stable.html
-# torch==1.6.0+cpu        # Installing PyTorch, for Tensor computation and Deep neural networks
-# -f https://download.pytorch.org/whl/torch_stable.html
-# torchvision==0.7.0+cpu  # Installing TorchVision, for Computer Vision based AI
+# Last line empty

@@ -130,9 +130,6 @@ namespace CodeProject.AI.Server.Controllers
             var modules = _installedModules?.Values?
                             .Select(module => ModuleInstaller.ModuleDescriptionFromModuleConfig(module, true, 
                                                                                                 currentServerVersion))
-                                                                                                // _moduleSettings.ModulesDirPath,
-                                                                                                // _moduleSettings.PreInstalledModulesDirPath,
-                                                                                                // _moduleSettings.DemoModulesDirPath))
                             .ToList() ?? new List<ModuleDescription>();
 
             // Mark those modules that can't be downloaded
@@ -244,9 +241,6 @@ namespace CodeProject.AI.Server.Controllers
                 {
                     var description = ModuleInstaller.ModuleDescriptionFromModuleConfig(module, true,
                                                                                         currentServerVersion);
-                                                                                        // _moduleSettings.ModulesDirPath,
-                                                                                        // _moduleSettings.PreInstalledModulesDirPath,
-                                                                                        // _moduleSettings.DemoModulesDirPath);
                     description.IsDownloadable = false;  
                     installableModules.Add(description);
                 }

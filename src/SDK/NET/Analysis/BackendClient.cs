@@ -72,7 +72,8 @@ namespace CodeProject.AI.SDK
             BackendRequest? request = null;
             try
             {
-                HttpResponseMessage response = await _httpGetRequestClient!.GetAsync(requestUri, token);
+                // HttpResponseMessage is a disposable object, so make sure to dispose of it.
+                using HttpResponseMessage response = await _httpGetRequestClient!.GetAsync(requestUri, token);
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     request = await response.Content.ReadFromJsonAsync<BackendRequest>();
             }
@@ -134,8 +135,11 @@ namespace CodeProject.AI.SDK
         {
             try
             {
-                await _httpSendResponseClient!.PostAsync($"v1/queue/{reqid}", content, token)
-                                              .ConfigureAwait(false);
+                using (var response = await _httpSendResponseClient!.PostAsync($"v1/queue/{reqid}", content, token)
+                                              .ConfigureAwait(false))
+                {
+                    // We're not doing anything with the response, but we need to dispose of it.
+                }
             }
             catch 
             {
@@ -164,9 +168,12 @@ namespace CodeProject.AI.SDK
 
             try
             {
-                await _httpSendResponseClient!.PostAsync($"v1/queue/updatemodulestatus/{moduleId}",
+                using (var response = await _httpSendResponseClient!.PostAsync($"v1/queue/updatemodulestatus/{moduleId}",
                                                          content, token)
-                                              .ConfigureAwait(false);
+                                              .ConfigureAwait(false))
+                {
+                    // We're not doing anything with the response, but we need to dispose of it.
+                }
             }
             catch
             {
@@ -207,7 +214,11 @@ namespace CodeProject.AI.SDK
 
             try
             {
-                await _httpSendResponseClient!.PostAsync($"v1/log", form, token).ConfigureAwait(false);
+                using (var response = await _httpSendResponseClient!.PostAsync($"v1/log", form, token)
+                                     .ConfigureAwait(false))
+                {
+                       // We're not doing anything with the response, but we need to dispose of it.
+                }
             }
             catch
             {

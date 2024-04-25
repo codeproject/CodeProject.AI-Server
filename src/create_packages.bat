@@ -36,8 +36,11 @@ set srcDirName=src
 :: be downloaded
 set downloadDir=downloads
 
-:: The name of the dir holding the downloaded/sideloaded backend analysis services
+:: The name of the dir holding the downloaded/sideloaded modules
 set modulesDir=modules
+
+:: The name of the dir holding the external modules
+set externalModulesDir=CodeProject.AI-Modules
 
 set sdkPath=!appRootDirPath!SDK
 
@@ -102,6 +105,7 @@ set appRootDirPath=!setupScriptDirPath!
 
 :: The location of directories relative to the root of the solution directory
 set modulesDirPath=!appRootDirPath!!modulesDir!
+set externalModulesDirPath=!appRootDirPath!\..\!externalModulesDir!
 set downloadDirPath=!appRootDirPath!!downloadDir!
 
 :: Let's go
@@ -128,11 +132,12 @@ call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
 if /i "%verbosity%" neq "quiet" (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine 
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment = !executionEnvironment!" !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "appRootDirPath       = !appRootDirPath!"       !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath   = !setupScriptDirPath!"   !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath    = !sdkScriptsDirPath!"    !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath       = !modulesDirPath!"       !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment   = !executionEnvironment!"   !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "appRootDirPath         = !appRootDirPath!"         !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath     = !setupScriptDirPath!"     !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath      = !sdkScriptsDirPath!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath         = !modulesDirPath!"         !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "externalModulesDirPath = !externalModulesDirPath!" !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine
 )
 
@@ -150,11 +155,58 @@ popd
 REM  Walk through the modules directory and call the package script in each dir
 rem Make this just "for /d %%D in ("%modulesDirPath%") do ("
 
-for /f "delims=" %%a in ('dir /a:d /b "!modulesDirPath!"') do (
+for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
 
-    set packageModuleDirName=%%~nxa
-    set packageModuleId=!packageModuleDirName!
+    set packageModuleDirName=%%~nxD
     set packageModuleDirPath=!modulesDirPath!\!packageModuleDirName!
+
+    REM Bad assumption: A module's ID is same as the name of folder in which it lives.
+    REM set packageModuleId=!packageModuleDirName!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!packageModuleDirPath!\modulesettings.json"
+    set packageModuleId=!moduleSettingValue!
+
+    if "!packageModuleId!" neq "" (
+        call :DoModulePackage "!packageModuleId!" "!packageModuleDirName!" "!packageModuleDirPath!" errors
+        if "!moduleInstallErrors!" NEQ "" set success=false
+    )
+)
+
+for /f "delims=" %%D in ('dir /a:d /b "!externalModulesDirPath!"') do (
+
+    set packageModuleDirName=%%~nxD
+    set packageModuleDirPath=!modulesDirPath!\!packageModuleDirName!
+
+    REM Bad assumption: A module's ID is same as the name of folder in which it lives.
+    REM set packageModuleId=!packageModuleDirName!
+
+    call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!packageModuleDirPath!\modulesettings.json"
+    set packageModuleId=!moduleSettingValue!
+
+    if "!packageModuleId!" neq "" (
+        call :DoModulePackage "!packageModuleId!" "!packageModuleDirName!" "!packageModuleDirPath!" errors
+        if "!moduleInstallErrors!" NEQ "" set success=false
+    )
+)
+
+call "!sdkScriptsDirPath!\utils.bat" WriteLine
+call "!sdkScriptsDirPath!\utils.bat" WriteLine "                Modules packaging Complete" "White" "DarkGreen" !lineWidth!
+call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
+if /i "!success!" == "false" exit /b 1
+goto:eof
+
+
+REM ============================================================================
+
+REM Creates a package for a module 
+:DoModulePackage moduleDirName moduleDirPath errors
+
+    SetLocal EnableDelayedExpansion
+
+    set packageModuleId=%~1
+    set packageModuleDirName=%~2
+    set packageModuleDirPath=%~3
 
     if /i "%verbosity%" neq "quiet" (
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "packageModuleDirPath           = !packageModuleDirPath!" !color_mute!
@@ -209,10 +261,5 @@ for /f "delims=" %%a in ('dir /a:d /b "!modulesDirPath!"') do (
             popd
         )
     )
-)
 
-call "!sdkScriptsDirPath!\utils.bat" WriteLine
-call "!sdkScriptsDirPath!\utils.bat" WriteLine "                Modules packaging Complete" "White" "DarkGreen" !lineWidth!
-call "!sdkScriptsDirPath!\utils.bat" WriteLine
-
-if /i "!success!" == "false" exit /b 1
+    exit /b

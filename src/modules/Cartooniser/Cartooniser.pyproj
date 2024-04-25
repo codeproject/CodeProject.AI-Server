@@ -26,15 +26,6 @@
     <Content Include="install.bat" />
     <Content Include="install.sh" />
     <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.jetson.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.orangepi.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.raspberrypi.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
     <Content Include="modulesettings.windows.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>

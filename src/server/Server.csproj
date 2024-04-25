@@ -15,7 +15,7 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 		<Description>CodeProject.AI API Server provides a plug-in API for hosting AI inference and training modules, accessible via any language, any platform.</Description>
 		<Company>CodeProject</Company>
 		<Authors>CodeProject</Authors>
-		<Version>2.6.1</Version>
+		<Version>2.6.5</Version>
 	</PropertyGroup>
 
 	<!-- Build properties -->

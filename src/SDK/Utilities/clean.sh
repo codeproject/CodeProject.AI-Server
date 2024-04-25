@@ -166,15 +166,22 @@ pushd ../../.. >/dev/null
 rootDir="$(pwd)"
 popd >/dev/null
 
+externalModulesDir="${rootDir}/../CodeProject.AI-Modules"
+
+
 useColor=true
 doDebug=false
 lineWidth=70
 
 dotNetModules=( "ObjectDetectionYOLOv5Net" "PortraitFilter" "SentimentAnalysis" )
-pythonModules=( "ALPR" "ALPR"-RKNN "BackgroundRemover" "Cartooniser" "FaceProcessing" "LlamaChat" \
-                "ObjectDetectionCoral" "ObjectDetectionYOLOv5-3.1" "ObjectDetectionYOLOv5-6.2"    \
-                "ObjectDetectionYOLOv8" "ObjectDetectionYoloRKNN" "TrainingObjectDetectionYOLOv5" \
-                "OCR" "SceneClassifier" "SoundClassifierTF" "SuperResolution" "TextSummary")
+pythonModules=( "ALPR" "ALPR-RKNN" "BackgroundRemover" "Cartooniser" "FaceProcessing" \
+                "LlamaChat" "ObjectDetectionYOLOv5-3.1" "ObjectDetectionYOLOv5-6.2"   \
+                "ObjectDetectionYOLOv8" "TrainingObjectDetectionYOLOv5" "OCR"         \
+                "SceneClassifier" "SoundClassifierTF" "SuperResolution" "TextSummary" "Text2Image")
+dotNetExternalModules=()
+pythonExternalModules=( "CodeProject.AI-ALPR" "CodeProject.AI-ObjectDetectionCoral"   \
+                        "CodeProject.AI-ALPR-RKNN" "CodeProject.AI-ObjectDetectionYoloRKNN" )
+
 dotNetDemoModules=( "DotNetLongProcess" "DotNetSimple" )
 pythonDemoModules=( "PythonLongProcess" "PythonSimple" )
 
@@ -251,17 +258,23 @@ if [ "$cleanBuild" = true ]; then
     removeDir "${rootDir}/src/SDK/NET/bin/"
     removeDir "${rootDir}/src/SDK/NET/obj/"
 
-    for name in "${dotNetModules[@]}"
+    for dirName in "${dotNetModules[@]}"
     do
-        removeDir "${rootDir}/src/modules/${name}/bin/"
-        removeDir "${rootDir}/src/modules/${name}/obj/"
-        rm "${rootDir}/src/modules/${name}/${name}-*"
+        removeDir "${rootDir}/src/modules/${dirName}/bin/"
+        removeDir "${rootDir}/src/modules/${dirName}/obj/"
+        rm "${rootDir}/src/modules/${dirName}/${dirName}-*"
     done
-    for name in "${dotNetDemoModules[@]}"
+    for dirName in "${dotNetExternalModules[@]}"
     do
-        removeDir "${rootDir}/src/modules/${name}/bin/"
-        removeDir "${rootDir}/src/modules/${name}/obj/"
-        rm "${rootDir}/src/modules/${name}/${name}-*"
+        removeDir "${externalModulesDir}/${dirName}/bin/"
+        removeDir "${externalModulesDir}/${dirName}/obj/"
+        rm "${externalModulesDir}/${dirName}/${dirName}-*"
+    done
+    for dirName in "${dotNetDemoModules[@]}"
+    do
+        removeDir "${rootDir}/src/modules/${dirName}/bin/"
+        removeDir "${rootDir}/src/modules/${dirName}/obj/"
+        rm "${rootDir}/src/modules/${dirName}/${dirName}-*"
     done
 
     cleanSubDirs "${rootDir}/Installers/Windows" "bin/Debug/"
@@ -277,10 +290,10 @@ if [ "$cleanBuild" = true ]; then
     rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json"
     rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.xml"
 
-    cleanSubDirs "${rootDir}/demos/clients"      "bin/Debug/"
-    cleanSubDirs "${rootDir}/demos/clients"      "bin/Release/"
-    cleanSubDirs "${rootDir}/demos/clients"      "obj/Debug/"
-    cleanSubDirs "${rootDir}/demos/clients"      "obj/Release/"
+    cleanSubDirs "${rootDir}/src/demos/clients"      "bin/Debug/"
+    cleanSubDirs "${rootDir}/src/demos/clients"      "bin/Release/"
+    cleanSubDirs "${rootDir}/src/demos/clients"      "obj/Debug/"
+    cleanSubDirs "${rootDir}/src/demos/clients"      "obj/Release/"
 
     cleanSubDirs "${rootDir}/tests"              "bin/Debug/"
     cleanSubDirs "${rootDir}/tests"              "bin/Release/"
@@ -298,13 +311,17 @@ if [ "$cleanInstallCurrentOS" = true ]; then
     removeDir "${rootDir}/src/runtimes/bin/${os}/"
 
     # Clean module python venvs
-    for name in "${pythonModules[@]}"
+    for dirName in "${pythonModules[@]}"
     do
-        removeDir "${rootDir}/src/modules/${name}/bin/${os}/"
+        removeDir "${rootDir}/src/modules/${dirName}/bin/${os}/"
     done
-    for name in "${pythonDemoModules[@]}"
+    for dirName in "${pythonExternalModules[@]}"
     do
-        removeDir "${rootDir}/demos/modules/${name}/bin/${os}/"
+        removeDir "${externalModulesDir}/${dirName}/bin/${os}/"
+    done
+    for dirName in "${pythonDemoModules[@]}"
+    do
+        removeDir "${rootDir}/src/demos/modules/${dirName}/bin/${os}/"
     done
 fi
 
@@ -327,13 +344,17 @@ if [ "$cleanInstallAll" = true ]; then
     removeDir "${rootDir}/src/runtimes/bin"
 
     # Clean module python venvs
-    for name in "${pythonModules[@]}"
+    for dirName in "${pythonModules[@]}"
     do
-        removeDir "${rootDir}/src/modules/${name}/bin/"
+        removeDir "${rootDir}/src/modules/${dirName}/bin/"
     done
-    for name in "${pythonDemoModules[@]}"
+    for dirName in "${pythonExternalModules[@]}"
     do
-        removeDir "${rootDir}/demos/modules/${name}/bin/"
+        removeDir "${externalModulesDir}/${dirName}/bin/"
+    done
+    for dirName in "${pythonDemoModules[@]}"
+    do
+        removeDir "${rootDir}/src/demos/modules/${dirName}/bin/"
     done
 fi
 
@@ -343,38 +364,42 @@ if [ "$cleanAssets" = true ]; then
     writeLine "Cleaning assets" "White" "Blue" $lineWidth
     writeLine 
 
-    # Production modules
-    removeDir "${rootDir}/src/modules/ALPR/paddleocr"
-    removeDir "${rootDir}/src/modules/ALPR-RKNN/paddleocr"
+    # Internal modules
     removeDir "${rootDir}/src/modules/BackgroundRemover/models"
     removeDir "${rootDir}/src/modules/Cartooniser/weights"
     removeDir "${rootDir}/src/modules/FaceProcessing/assets"
     removeDir "${rootDir}/src/modules/LlamaChat/models"
-    removeDir "${rootDir}/src/modules/ObjectDetectionCoral/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionCoral/edgetpu_runtime"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/custom-models"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/LocalNugets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/assets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/custom-models"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/custom-models"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYoloRKNN/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYoloRKNN/custom-models"
     removeDir "${rootDir}/src/modules/OCR/paddleocr"
     removeDir "${rootDir}/src/modules/SceneClassifier/assets"
     removeDir "${rootDir}/src/modules/SoundClassifierTF/data"
     removeDir "${rootDir}/src/modules/Text2Image/assets"
+    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/assets"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/datasets"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/fiftyone"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/training"
     removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/zoo"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/custom-models"
+
+
+    # Esternal modules
+    removeDir "${rootDir}/src/modules/ALPR/paddleocr"
+    removeDir "${rootDir}/src/modules/ALPR-RKNN/paddleocr"
+    removeDir "${externalModulesDir}/ObjectDetectionCoral/assets"
+    removeDir "${externalModulesDir}/ObjectDetectionCoral/edgetpu_runtime"
+    removeDir "${externalModulesDir}/ObjectDetectionYoloRKNN/assets"
+    removeDir "${externalModulesDir}/ObjectDetectionYoloRKNN/custom-models"
 
     # Demo modules
-    removeDir "${rootDir}/demos/modules/DotNetLongProcess/assets"
-    removeDir "${rootDir}/demos/modules/DotNetSimple/assets"
-    removeDir "${rootDir}/demos/modules/PythonLongProcess/assets"
-    removeDir "${rootDir}/demos/modules/PythonSimple/assets"
+    removeDir "${rootDir}/src/demos/modules/DotNetLongProcess/assets"
+    removeDir "${rootDir}/src/demos/modules/DotNetSimple/assets"
+    removeDir "${rootDir}/src/demos/modules/PythonLongProcess/assets"
+    removeDir "${rootDir}/src/demos/modules/PythonSimple/assets"
 fi
 
 if [ "$cleanDownloadCache" = true ]; then

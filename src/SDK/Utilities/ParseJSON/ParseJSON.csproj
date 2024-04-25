@@ -45,10 +45,15 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<SelfContained>false</SelfContained>
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
   </PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\NET\NET.csproj" />
+	</ItemGroup>
 
 </Project>

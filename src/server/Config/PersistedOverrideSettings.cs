@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using CodeProject.AI.SDK.Common;
-using CodeProject.AI.Server.Modules;
+using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Server
 {
@@ -40,8 +40,7 @@ namespace CodeProject.AI.Server
             else
                 settingsFilePath = Path.Combine(_storagePath, Constants.ModuleSettingsFilename);
 
-            return await ModuleConfigExtensions.LoadSettings(settingsFilePath)
-                                               .ConfigureAwait(false);
+            return await JsonUtils.LoadJsonAsync(settingsFilePath).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -54,8 +53,7 @@ namespace CodeProject.AI.Server
                                     ? Path.Combine(_storagePath, Constants.DevModuleSettingsFilename)
                                     : Path.Combine(_storagePath, Constants.ModuleSettingsFilename);
 
-            return await ModuleConfigExtensions.SaveSettingsAsync(settings, settingsFilePath)
-                                               .ConfigureAwait(false);
+            return await JsonUtils.SaveJsonAsync(settings, settingsFilePath).ConfigureAwait(false);
         }
     }
 }

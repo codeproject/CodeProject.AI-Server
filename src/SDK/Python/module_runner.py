@@ -377,11 +377,7 @@ class ModuleRunner:
             })
 
             # NOTE: We need to await self.initialise in the asyncio loop. This
-            # means we can't just 'await self.initialise'. We also allow a
-            # choice between using initialise or initialize, so let's see which
-            # one has been overridden
-
-            # We allow 'initialize' and 'initialise'. Find which was overridden
+            # means we can't just 'await Chris Maunder on 4/20/2024, 10:56:22 AMinitialise'. Find which was overridden
             init_method = self.initialize
              # if self.initialize wasn't overridden, use self.initialise
             if self.initialize.__qualname__ == "ModuleRunner.initialize":
@@ -1263,7 +1259,7 @@ class ModuleRunner:
 
         # This is getting complicated. The order of priority for the requirements file is:
         #
-        #  requirements.device.txt                              (device = "raspberrypi", "orangepi" or "jetson" )
+        #  requirements.device.txt                              (device = "raspberrypi", "orangepi", "radxarock" or "jetson" )
         #  requirements.os.architecture.cuda.cuda_version.txt   (version is in form 11_7, 12_2 etc)
         #  requirements.os.architecture.cuda.cuda_major.txt     (major is in form 11, 12 etc)
         #  requirements.os.architecture.(cuda|rocm).txt
@@ -1292,11 +1288,18 @@ class ModuleRunner:
         elif self.system_info.system == 'Orange Pi':
             if os.path.exists(os.path.join(self.module_path, f"requirements.orangepi.txt")):
                 filename = f"requirements.orangepi.txt"
+        elif self.system_info.system == 'Radxa ROCK':
+            if os.path.exists(os.path.join(self.module_path, f"requirements.radxarock.txt")):
+                filename = f"requirements.radxarock.txt"
         elif self.system_info.system == 'Jetson':
             if os.path.exists(os.path.join(self.module_path, f"requirements.jetson.txt")):
                 filename = f"requirements.jetson.txt"
 
         if not filename and self.enable_GPU:
+            # TODO: Change this to system_info.hasCudaGpu, and add system_info.CudaVersion (major, minor)
+            # prop so we can do requirements.os.architecture.cuda.cuda_version.txt and
+            # requirements.os.architecture.cuda.cuda_major.txt
+
             if self.system_info.hasTorchCuda:
                 # TODO: Get the specific CUDA version and then add tests for .cudaMajor, .cudaMajor_Minor
                 if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.cuda.txt")):

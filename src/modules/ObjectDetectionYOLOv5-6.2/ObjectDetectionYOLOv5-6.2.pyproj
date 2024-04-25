@@ -59,6 +59,9 @@
     <Content Include="modulesettings.orangepi.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
+    <Content Include="modulesettings.radxarock.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
     <Content Include="modulesettings.jetson.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
@@ -99,6 +102,9 @@
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.orangepi.txt">
+      <DependentUpon>requirements.txt</DependentUpon>
+    </Content>
+    <Content Include="requirements.radxarock.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
     <Content Include="requirements.raspberrypi.txt">

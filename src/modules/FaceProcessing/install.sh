@@ -38,12 +38,18 @@ if [ "$edgeDevice" = "Jetson" ]; then
     
 fi
 
+# OpenCV needs a specific version for macOS 11
+# https://github.com/opencv/opencv-python/issues/777#issuecomment-1879553756
+if [ "$os_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
+    installPythonPackagesByName "opencv-python==4.6.0.66" "OpenCV 4.6.0.66 for macOS 11.x"
+fi
+
 # Download the models and store in /models
 getFromServer "models/" "models-face-pt.zip" "assets" "Downloading Face models..."
 
 # ... also needs SQLite
 if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
-   [ "${edgeDevice}" = "Jetson" ]; then
+   [ "${edgeDevice}" = "Radxa ROCK" ]   || [ "${edgeDevice}" = "Jetson" ]; then
     installAptPackages "sqlite3"
 fi
 

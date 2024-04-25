@@ -27,13 +27,14 @@
     <Compile Include="module_options.py" />
     <Compile Include="module_runner.py" />
     <Compile Include="request_data.py" />
+    <Compile Include="system_info.py" />
     <Compile Include="training\augmentation.py" />
     <Compile Include="utils\cpuinfo.py" />
     <Compile Include="utils\image_utils.py" />
     <Compile Include="utils\environment_check.py" />
-    <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="pyproject.toml" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>

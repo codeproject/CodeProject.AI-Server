@@ -19,8 +19,9 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Jetson" ]; then
-    module_install_errors="Unable to install on Pi or Jetson hardware."
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || 
+   [ "${edgeDevice}" = "Radxa ROCK"   ] || [ "${edgeDevice}" = "Jetson"    ]; then
+    module_install_errors="Unable to install on Pi, ROCK or Jetson hardware."
 fi
 
 # For Jetson, we need to install Torch before the other packages.
@@ -74,6 +75,12 @@ if [ "$module_install_errors" = "" ] && [ "$inDocker" != true ] && [ "$os" = "li
     #    spin $!
     #    writeLine "done" "$color_success"
     # fi
+fi
+
+# OpenCV needs a specific version for macOS 11
+# https://github.com/opencv/opencv-python/issues/777#issuecomment-1879553756
+if [ "$os_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
+    installPythonPackagesByName "opencv-python==4.6.0.66" "OpenCV 4.6.0.66 for macOS 11.x"
 fi
 
 # Download the models and store in /assets and /custom-models (already in place in docker)

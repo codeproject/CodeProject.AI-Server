@@ -13,13 +13,7 @@ Cython           # Installing the Cython compiler for C extensions for the Pytho
 tqdm             # Installing TDQM, the Fast, Extensible Progress Meter
 Matplotlib       # Installing Matplotlib, the Python plotting package
 
-## Bleeding edge versions of torch for Apple Silicon.
-## Bleeding edge versions of torch for Apple Silicon.
-#--pre
-#--extra-index-url https://download.pytorch.org/whl/nightly/cpu
 torch            # Installing PyTorch, for Tensor computation and Deep neural networks
-#--pre
-#--extra-index-url https://download.pytorch.org/whl/nightly/cpu
 torchvision      # Installing TorchVision, for Computer Vision based AI
 
 # We need this, but we don't need this.

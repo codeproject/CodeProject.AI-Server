@@ -1,0 +1,7 @@
+#! Python3.7
+# Requirements for Raspberry Pi (and related) (RPi is linux,Arm64, but no CUDA)
+
+# Specific version because we have a patch
+ultralytics==8.1.2              # Installing Ultralytics package for object detection in images
+
+# last line empty.

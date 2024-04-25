@@ -37,7 +37,7 @@
       },
 
       "InstallOptions" : {
-        "Platforms": [ "all", "!raspberrypi", "!orangepi", "!jetson"],
+        "Platforms": [ "all", "!raspberrypi", "!orangepi", "!radxarock", "!jetson"],
         "ModuleReleases": [               // Which server version is compatible with each version of this module.
           { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.1.10", "2.1.10" ], "ReleaseDate": "2022-08-02" },
           { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1.11", "2.1.12" ], "ReleaseDate": "2023-08-12", "ReleaseNotes": "Added 'patience', 'workers' as parameters" },
@@ -84,14 +84,14 @@
           "Name": "Create Custom Dataset",
           "Route": "train/create_dataset",
           "Method": "POST",
-          "Command": "create_dataset",
+          "Command": "create-dataset",
           "MeshEnabled": false,
           "Description": "Create a custom dataset from the Open Images repository.",
           "Inputs": [
             {
-              "Name": "name",
+              "Name": "dataset_name",
               "Type": "String",
-              "Description": "The name of the model."
+              "Description": "The name of the dataset."
             },
             {
               "Name": "classes",
@@ -120,7 +120,7 @@
           "Name": "Train Custom Model (YOLOv5 6.2)",
           "Route": "train/train_model",
           "Method": "POST",
-          "Command": "train_model",
+          "Command": "train-model",
           "MeshEnabled": false,
           "Description": "Create a custom model from a custom dataset.",
           "Inputs": [
@@ -184,89 +184,10 @@
         },
 
         {
-          "Name": "Training Status (YOLOv5 6.2)",
-          "Route": "train/get_status",
-          "Method": "POST",
-          "Command": "get_status",
-          "MeshEnabled": false,
-          "Description": "Gets the training status",
-          "Inputs": [
-          ],
-          "Outputs": [
-            {
-              "Name": "success",
-              "Type": "Boolean",
-              "Description": "True if successful."
-            },
-            {
-              "Name": "model_name",
-              "Type": "String",
-              "Description": "The name of the last model training or trained."
-            },
-            {
-              "Name": "dataset_name",
-              "Type": "String",
-              "Description": "The name of the dataset used."
-            },
-
-            // Idle - initial startup state
-            // CreatingDataset
-            // TrainingModel
-            // other actions to be determined
-            {
-              "Name": "action",
-              "Type": "String",
-              "Description": "The current action."
-            },
-
-            // Initializing
-            // Running
-            // Completed
-            // Cancelling
-            // Cancelled
-            // Failed
-            {
-              "Name": "state",
-              "Type": "String",
-              "Description": "The current state in the action processing."
-            },
-            {
-              "Name": "message",
-              "Type": "String",
-              "Description": "Any message, probably error, to display to the user."
-            },
-            
-            {
-              "Name": "progress",
-              "Type": "float",
-              "Description": "The percentage of completion of current state."
-            }
-          ]
-        },
-
-        {
-          "Name": "Cancel Dataset or Model creation",
-          "Route": "train/cancel",
-          "Method": "POST",
-          "Command": "cancel",
-          "MeshEnabled": false,
-          "Description": "Cancel the creation of Model or Dataset.",
-          "Inputs": [
-          ],
-          "Outputs": [
-            {
-              "Name": "success",
-              "Type": "Boolean",
-              "Description": "True if successful."
-            }
-          ]
-        },
-
-        {
           "Name": "Resume Training Model",
           "Route": "train/resume_training",
           "Method": "POST",
-          "Command": "resume_training",
+          "Command": "resume-training",
           "Description": "Resume training of a model.",
           
           "Inputs": [
@@ -289,7 +210,7 @@
           "Name": "Get Model information (YOLOv5 6.2)",
           "Route": "train/model_info",
           "Method": "POST",
-          "Command": "model_info",
+          "Command": "model-info",
           "MeshEnabled": false,
           "Description": "Gets info about the model.",
 
@@ -363,7 +284,7 @@
           "Name": "Get Dataset information (YOLOv5 6.2)",
           "Route": "train/dataset_info",
           "Method": "POST",
-          "Command": "dataset_info",
+          "Command": "dataset-info",
           "MeshEnabled": false,
           "Description": "Gets info about the dataset.",
           "Inputs": [
@@ -386,7 +307,27 @@
             }
             // other info TBD
           ]
+        },
+
+        {
+          "Name": "Get Available Classes)",
+          "Route": "train/list_classes",
+          "Method": "POST",
+          "Command": "list-classes",
+          "MeshEnabled": false,
+          "Description": "Gets list of classes available from which to create datasets.",
+          "Inputs": [
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            }
+            // other info TBD
+          ]
         }
+
       ]
     }
   }

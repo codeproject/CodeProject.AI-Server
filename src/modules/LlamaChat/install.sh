@@ -19,14 +19,15 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Jetson" ]; then
-    module_install_errors="Unable to install on Pi or Jetson hardware."
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || 
+   [ "${edgeDevice}" = "Radxa ROCK" ]   || [ "${edgeDevice}" = "Jetson" ]; then
+    module_install_errors="Unable to install on Pi, ROCK or Jetson hardware."
 fi
 
 if [ "$module_install_errors" = "" ]; then
 
-    # WSL - https://github.com/oobabooga/text-generation-webui/issues/1534
-    if [ "${os}" = "macos" ]; then # && [ "${architecture}" = "arm64" ]; then
+    # Disable this. req.txt should be good now
+    if [ "a" = "b" ] && [ "${os}" = "macos" ]; then # && [ "${architecture}" = "arm64" ]; then
 
         # Wouldn't it be nice if this just worked?
         # installPythonPackagesByName "llama-cpp-python" "Simple Python bindings for the llama.cpp library"

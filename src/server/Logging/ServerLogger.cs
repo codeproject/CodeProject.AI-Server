@@ -150,6 +150,11 @@ namespace CodeProject.AI.Server
             {
                 logLevel = LogLevel.Debug;
             }
+            // apt. Relax. It's OK. (This comes in as an error)
+            else if (message.Contains("WARNING: apt does not have a stable CLI interface"))
+            {
+                logLevel = LogLevel.Warning;
+            }
             // Pointless
             else if (message.Contains("Microsoft.Hosting.Lifetime[0]") || 
                      message.Contains("apt WARNING: does not have a stable CLI"))

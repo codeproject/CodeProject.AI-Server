@@ -3,7 +3,7 @@
 
     "SuperResolution": {
       "Name": "Super Resolution",
-      "Version": "1.9.1",
+      "Version": "2.0.0",
 
       "PublishingInfo" : {
         "Description": "Increases the resolution of an image using AI", 
@@ -60,7 +60,8 @@
           { "ModuleVersion": "1.8.2", "ServerVersionRange": [ "2.5.0-RC6", ""  ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
           { "ModuleVersion": "1.8.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Updated explorer" },
           { "ModuleVersion": "1.9.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
-          { "ModuleVersion": "1.9.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
+          { "ModuleVersion": "1.9.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
+          { "ModuleVersion": "2.0.0", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-04-03", "ReleaseNotes": "Added tiling for larger images" }
         ]
       },
       

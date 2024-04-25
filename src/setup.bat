@@ -11,9 +11,9 @@
 :: If called from within /src, then all analysis modules (in modules/ and
 :: modules/ dirs) will be setup in turn, as well as the main SDK and demos.
 ::
-:: If called from within a module's dir then we assume we're in the 
-:: /src/modules/ModuleId directory (or modules/ModuleId in Production) for the
-:: module "ModuleId". This script would typically be called via
+:: If this script is called from within a module's dir then we assume we're in 
+:: the /src/modules/my_module directory (or modules/my_module in Production) for
+:: the module "my_module". This script would typically be called via
 ::
 ::    ..\..\setup.bat
 :: 
@@ -108,6 +108,8 @@ set runtimesDir=runtimes
 
 :: The name of the dir holding the downloaded/sideloaded backend analysis services
 set modulesDir=modules
+set preInstalledModulesDir=preinstalled-modules
+set externalModulesDir=CodeProject.AI-Modules
 
 :: The name of the dir holding downloaded models for the modules. NOTE: this is 
 :: not currently used, but here for future-proofing
@@ -116,8 +118,12 @@ set modelsDir=models
 :: The location of directories relative to the root of the solution directory
 set sdkPath=!appRootDirPath!SDK
 set sdkScriptsDirPath=!sdkPath!\Scripts
+
 set runtimesDirPath=!appRootDirPath!!runtimesDir!
+
 set modulesDirPath=!appRootDirPath!!modulesDir!
+set preInstalledModulesDirPath=!appRootDirPath!!preInstalledModulesDir!
+set externalModulesDirPath=!appRootDirPath!..\!externalModulesDir!
 set modelsDirPath=!appRootDirPath!!modelsDir!
 set downloadDirPath=!appRootDirPath!!downloadDir!
 
@@ -184,10 +190,17 @@ set setupMode=SetupModule
 for /f "delims=\" %%a in ("%cd%") do @set CurrDirName=%%~nxa
 
 rem when executionEnvironment = "Development" this may be the case
-if /i "%CurrDirName%" == "%srcDirName%" set setupMode=SetupEverything
+if /i "%CurrDirName%" == "%srcDirName%" (
+    set setupMode=SetupEverything
+    REM HACK: We're one folder deeper than we need to be for referencing externalModulesDir
+    set externalModulesDirPath=!appRootDirPath!..\..\!externalModulesDir!
+)
 
 rem when executionEnvironment = "Production" this may be the case
-if /i "$CurrDirName" == "%appDirName%" set setupMode=SetupEverything
+if /i "$CurrDirName" == "%appDirName%" (
+    REM HACK: We're one folder deeper than we need to be for referencing externalModulesDir
+    set externalModulesDirPath=!appRootDirPath!..\..\!externalModulesDir!
+)
 
 :: In Development, this script is in the /src folder. In Production there is no
 :: /src folder; everything is in the root folder. So: go to the folder
@@ -216,7 +229,7 @@ set platform=windows
 set systemName=Windows
 
 :: Blank because we don't currently support an edge device running Windows. In
-:: Linux this could be Raspberry Pi, Orange Pi or Jetson
+:: Linux this could be Raspberry Pi, Orange Pi, Radxa ROCK or Jetson
 set edgeDevice=
 
 :: This can be x86 (32-bit), AMD64 (Intel/AMD 64bit), ARM64 (Arm 64bit)
@@ -271,18 +284,20 @@ call "!sdkScriptsDirPath!\utils.bat" WriteLine "!freeSpaceGb!.!freeSpaceGbfracti
 
 if /i "%verbosity%" neq "quiet" (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine 
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "os, arch             = !os! !architecture!"      !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "systemName, platform = !systemName!, !platform!" !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "edgeDevice           = !edgeDevice!"             !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupMode            = !setupMode!"              !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment = !executionEnvironment!"   !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath          = !rootDirPath!"            !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "appRootDirPath       = !appRootDirPath!"         !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath   = !setupScriptDirPath!"     !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath    = !sdkScriptsDirPath!"      !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtimesDirPath      = !runtimesDirPath!"        !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath       = !modulesDirPath!"         !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "downloadDirPath      = !downloadDirPath!"        !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "os, arch               = !os! !architecture!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "systemName, platform   = !systemName!, !platform!" !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "edgeDevice             = !edgeDevice!"             !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupMode              = !setupMode!"              !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "executionEnvironment   = !executionEnvironment!"   !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath            = !rootDirPath!"            !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "appRootDirPath         = !appRootDirPath!"         !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath     = !setupScriptDirPath!"     !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath      = !sdkScriptsDirPath!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtimesDirPath        = !runtimesDirPath!"        !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath         = !modulesDirPath!"         !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "externalModulesDirPath = !externalModulesDirPath!" !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "modelsDirPath          = !modelsDirPath!"          !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "downloadDirPath        = !downloadDirPath!"        !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine
 )
 
@@ -295,11 +310,11 @@ call "!sdkScriptsDirPath!\utils.bat" WriteLine
 :: Create some directories
 
 call "!sdkScriptsDirPath!\utils.bat" Write "Creating Directories..."
+if not exist "!runtimesDirPath!\" mkdir "!runtimesDirPath!"
 if not exist "!downloadDirPath!\" mkdir "!downloadDirPath!"
 if not exist "!downloadDirPath!\!modulesDir!\" mkdir "!downloadDirPath!\!modulesDir!\"
 if not exist "!downloadDirPath!\!modelsDir!\" mkdir "!downloadDirPath!\!modelsDir!\"
 
-if not exist "!runtimesDirPath!\" mkdir "!runtimesDirPath!"
 call "!sdkScriptsDirPath!\utils.bat" WriteLine "done" "Green"
 call "!sdkScriptsDirPath!\utils.bat" WriteLine ""
 
@@ -344,7 +359,7 @@ if /i "%hasROCm%" == "true" (
 
 REM quick detour to ensure ParseJSON is installed
 if /i "!executionEnvironment!" == "Development" (
-    pushd SDK\Utilities\ParseJSON
+    pushd !sdkPath!\Utilities\ParseJSON
     if not exist ParseJSON.exe (
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "Building ParseJSON"
         dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
@@ -372,6 +387,7 @@ if /i "!setupMode!" == "SetupEverything" (
         set moduleDirName=SDK
         set moduleDirPath=!appRootDirPath!!moduleDirName!
 
+        REM This will setup .NET since the SDK relies on it
         call "!moduleDirPath!\install.bat" install   
 
         if errorlevel 1 set success=false
@@ -400,12 +416,43 @@ if /i "!setupMode!" == "SetupEverything" (
     REM dir, as well as setting up the demos
 
     if /i "!setupServerOnly!" == "false" (
-    
+
+        REM Before we start, ensure we can read the modulesettings files        
+        call :SetupJSONParser
+   
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing Included CodeProject.AI Server Modules" "White" "DarkGreen" !lineWidth!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
         REM  TODO: This should be just a simple for /d %%D in ("!modulesDirPath!") do (
         for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
             set moduleDirName=%%~nxD
-            call :DoModuleInstall !moduleDirName! errors
+            set moduleDirPath=!modulesDirPath!\!moduleDirName!
+
+            call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
+            set moduleId=!moduleSettingValue!
+
+            call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
             if "!moduleInstallErrors!" NEQ "" set success=false
+        )
+
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" !lineWidth!
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine
+
+        if exist !externalModulesDirPath! (
+            for /f "delims=" %%D in ('dir /a:d /b "!externalModulesDirPath!"') do (
+                set moduleDirName=%%~nxD
+                set moduleDirPath=!externalModulesDirPath!\!moduleDirName!
+
+                call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
+                set moduleId=!moduleSettingValue!
+
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+                if "!moduleInstallErrors!" NEQ "" set success=false
+            )
+        ) else (
+            call "!sdkScriptsDirPath!\utils.bat" WriteLine "No external modules found" !color_mute!
         )
 
         call "!sdkScriptsDirPath!\utils.bat" WriteLine
@@ -419,7 +466,7 @@ if /i "!setupMode!" == "SetupEverything" (
 
             set currentDir=%cd%
             set moduleDirName=clients
-            set moduleDirPath=!rootDirPath!\demos\!moduleDirName!
+            set moduleDirPath=!rootDirPath!\src\demos\!moduleDirName!
             call "!moduleDirPath!\install.bat" install
 
             REM Don't really care about demos enough to fail the entire setup script
@@ -433,10 +480,16 @@ if /i "!setupMode!" == "SetupEverything" (
         call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
         set oldModulesDirPath=!modulesDirPath!
-        set modulesDirPath=!rootDirPath!\demos\modules\
+        set modulesDirPath=!rootDirPath!\src\demos\modules\
         for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
             set moduleDirName=%%~nxD
-            call :DoModuleInstall !moduleDirName! errors
+            set moduleDirPath=!modulesDirPath!\!moduleDirName!
+
+            call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
+            set moduleId=!moduleSettingValue!
+
+            call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+
             if "!moduleInstallErrors!" NEQ "" set success=false
         )
         set modulesDirPath=!oldModulesDirPath!
@@ -446,11 +499,18 @@ if /i "!setupMode!" == "SetupEverything" (
 
     if /i "!setupServerOnly!" == "false" (
 
+        REM Quick sanity check to ensure .NET is in place
+        call "%sdkScriptsDirPath%\utils.bat" SetupDotNet 7.0.405 SDK
+        
+        REM Before we start, ensure we can read the modulesettings files        
+        call :SetupJSONParser        
+
         REM Install an individual module
         
         for %%I in (.) do set moduleDirName=%%~nxI
 
         if /i "!moduleDirName!" == "server" (
+            REM Not a module. The server
             if /i "!selfTestOnly!" == "false" (
                 set moduleDirPath=!appRootDirPath!\!moduleDirName!
 
@@ -459,23 +519,51 @@ if /i "!setupMode!" == "SetupEverything" (
                 cd "!currentDir!"
             )
         ) else if /i "!moduleDirName!" == "clients" (
+            REM Not a module. The demo clients
             if /i "!selfTestOnly!" == "false" (
-                set moduleDirPath=!rootDirPath!\demos\!moduleDirName!
+                set moduleDirPath=!rootDirPath!\src\demos\!moduleDirName!
 
                 set currentDir=%cd%
                 call "!moduleDirPath!\install.bat" install
                 cd "!currentDir!"
             )
         ) else (
-            REM Quick check to see if we're in the demos folder
+
+            REM No need to check "$selfTestOnly" here because this check is done
+            REM in DoModuleInstall. We need to run doModuleInstall to have the
+            REM selftest called
+
+            for %%I in (..) do set parentDirName=%%~nxI
             for %%I in (..\..) do set parentParentDirName=%%~nxI
+
             if /i "!parentParentDirName!" == "demos" (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Demo module install" !color_info!
                 set oldModulesDirPath=!modulesDirPath!
-                set modulesDirPath=!rootDirPath!\demos\modules\
-                call :DoModuleInstall !moduleDirName! errors
+                set modulesDirPath=!rootDirPath!\src\demos\modules\
+
+                set moduleDirPath=!modulesDirPath!\!moduleDirName!
+                call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
+                set moduleId=!moduleSettingValue!
+
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+
                 set modulesDirPath=!oldModulesDirPath!
-            ) else (
-                call :DoModuleInstall !moduleDirName! errors
+            ) else if /i "!parentDirName!" == "!externalModulesDir!" (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "External module install" !color_info!
+
+                set moduleDirPath=%cd%
+
+                call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
+                set moduleId=!moduleSettingValue!
+
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+            ) else (                                                           REM Internal module
+                set moduleDirPath=!modulesDirPath!\!moduleDirName!
+
+                call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
+                set moduleId=!moduleSettingValue!
+
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
             )
             if "!moduleInstallErrors!" NEQ "" set success=false
         )
@@ -496,6 +584,18 @@ exit /b 0
 
 REM Pop over the DoModuleInstall definition and leave.
 goto:eof
+
+:SetupJSONParser
+
+    pushd !sdkPath!\Utilities\ParseJSON
+    if not exist ParseJSON.exe (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Building ParseJSON"
+        dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
+        if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
+    )
+    popd
+    exit /b
+
 
 :SetupPythonPaths
 
@@ -531,13 +631,13 @@ goto:eof
 
     exit /b
 
-REM Installs a module in the 'moduleDirName' directory, and returns success 
-:DoModuleInstall moduleDirName errors
+REM Installs a module in the module's directory, and returns success 
+:DoModuleInstall moduleId moduleDirPath errors
 
     SetLocal EnableDelayedExpansion
 
-    set moduleDirName=%~1
-    set moduleDirPath=!modulesDirPath!\!moduleDirName!
+    set moduleId=%~1
+    set moduleDirPath=%~2
 
     set moduleSetupStarttime=%time%
 
@@ -545,45 +645,49 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
     REM the modulesettings.
     
     call "!sdkScriptsDirPath!\utils.bat" WriteLine
-    call "!sdkScriptsDirPath!\utils.bat" Write "Reading !moduleDirName! settings" !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" Write "Reading !moduleId! settings" !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Name"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "Name"
     set moduleName=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "Version"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "Version"
     set moduleVersion=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "LaunchSettings.Runtime"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "LaunchSettings.Runtime"
     set runtime=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "LaunchSettings.RuntimeLocation"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "LaunchSettings.RuntimeLocation"
     set runtimeLocation=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "LaunchSettings.FilePath"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "LaunchSettings.FilePath"
     set moduleStartFilePath=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "GpuOptions.InstallGPU"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "GpuOptions.InstallGPU"
     set installGPU=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
-    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.Platforms"
+    call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "InstallOptions.Platforms"
     set platforms=!moduleSettingsFileValue!
     call "!sdkScriptsDirPath!\utils.bat" Write "." !color_mute!
 
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "done" !color_success!
 
-    if "!moduleName!" == "" set moduleName=!moduleDirName!
+    if "!moduleName!" == "" set moduleName=!moduleId!
 
     set announcement=Installing module !moduleName! !moduleVersion!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
     REM remove spaces and [,] from ends of platforms value
+    if /i "%verbosity%" == "loud" (
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Platform = !platform!, Platforms = !platforms!" !color_mute!
+    )
+
     set "platformArray=!platforms: =!"
     set "platformArray=!platformArray:~1,-1!"
 
@@ -600,6 +704,7 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
 
         REM Included?
         if /i "!item!" == "!platform!" set can_install=true
+        REM Maybe do a check for WindowsMajorVersion and WindowsMajorVersion-architecture
         if /i "!item!" == "all"        set can_install=true
     )
 :end_platform_loop
@@ -655,6 +760,7 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "!announcement!" "White" "Blue" !lineWidth!
         call "!sdkScriptsDirPath!\utils.bat" WriteLine
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleName          = !moduleName!"          "!color_info!"
+        call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleId            = !moduleId!"            "!color_info!"
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "moduleVersion       = !moduleVersion!"       "!color_info!"
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtime             = !runtime!"             "!color_info!"
         call "!sdkScriptsDirPath!\utils.bat" WriteLine "runtimeLocation     = !runtimeLocation!"     "!color_info!"
@@ -812,6 +918,6 @@ REM Installs a module in the 'moduleDirName' directory, and returns success
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "Module setup time !duration!" "!color_info!"
 
     REM return result
-    set %~2=!moduleInstallErrors!
+    set %~3=!moduleInstallErrors!
 
     exit /b

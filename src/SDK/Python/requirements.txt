@@ -1,6 +1,6 @@
 #! Python3
 
-## CodeProject.AI
+## CodeProject.AI SDK
 
 # pipdeptree                # Installing pipdeptree, a PIP dependency tree utility
 
@@ -11,6 +11,7 @@ charset-normalizer          # Installing Charset normalizer
 
 aiohttp                     # Installing aiohttp, the Async IO HTTP library
 aiofiles                    # Installing aiofiles, the Async IO Files library
+# GPUtil                    # Installing GPUtil to allow us to query GPU info
 py-cpuinfo                  # Installing py-cpuinfo to allow us to query CPU info
 requests                    # Installing Requests, the HTTP library
 

@@ -56,7 +56,7 @@ class cartooniser_adapter(ModuleRunner):
             }
 
         except Exception as ex:
-            self.report_error_async(ex, __file__)
+            self.report_error(ex, __file__)
             response = { "success": False, "error": "unable to process the image" }
 
         return response 

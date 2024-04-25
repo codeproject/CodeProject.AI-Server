@@ -1,0 +1,7 @@
+#! Python3
+
+## CodeProject.AI Demos
+Pillow>=10.3       # Installing Pillow, the Python image library
+imutils            # Installing imutils, the image utilities library
+opencv-python      # Installing OpenCV, the Computer Vision library for Python
+numpy              # Installing NumPy, a package for scientific computing

@@ -19,6 +19,13 @@ from module_options import ModuleOptions
 
 # print(torch.__version__)
 
+# Constants
+use_CUDA         = False
+model_resolution = 224
+debug_images     = False
+debug_process    = False
+
+
 # Super Resolution Model Definition in Pytorch. The model comes directly from 
 # PyTorch’s examples without modification:
 class SuperResolutionNet(nn.Module):
@@ -49,12 +56,11 @@ class SuperResolutionNet(nn.Module):
         init.orthogonal_(self.conv4.weight)
 
 
-# Create the super-resolution model by using the above model definition.
-assets_path = ""
-use_CUDA    = False
-torch_model = SuperResolutionNet(upscale_factor=3)
+assets_path            = ""
+current_upscale_factor = None
+torch_model            = None
 
-def init_superres(weights_path: str, use_CUDA_gpu: bool):
+def init_super_resolution(weights_path: str, use_CUDA_gpu: bool):
 
     global assets_path
     global use_CUDA
@@ -82,7 +88,7 @@ def export_pytorch_to_onnx():
     # dropout or batchnorm behave differently in inference and training mode.
     torch_model.eval()
     
-    x = torch.randn(1, 1, 224, 224, requires_grad=True)
+    x = torch.randn(1, 1, model_resolution, model_resolution, requires_grad=True)
     torch_model.eval()
 
     # Export the model
@@ -99,10 +105,13 @@ def export_pytorch_to_onnx():
 
 
 # Preprocessing Image
-def pre_process_image(orig_img: Image):
+def pre_process_image(orig_img: Image, resize: bool = True):
 
     #orig_img = Image.open("FILE_PATH_TO_IMAGE")
-    img = resizeimage.resize_cover(orig_img, [224,224], validate=False)
+    if resize:
+        img = resizeimage.resize_cover(orig_img, [model_resolution,model_resolution], validate=False)
+    else:
+        img = orig_img
     img_ycbcr = img.convert('YCbCr')
     img_y_0, img_cb, img_cr = img_ycbcr.split()
     img_ndarray = np.asarray(img_y_0)
@@ -132,7 +141,10 @@ def run_onnx(assets_path: str, processed_img: Image, use_CUDA: bool) -> any:
     #     ort_session = onnxruntime.InferenceSession(model_path, providers=['CUDAExecutionProvider'])
     # else:
     #     ort_session = onnxruntime.InferenceSession(model_path)
-    ort_session = onnxruntime.InferenceSession(model_path, providers=providers)
+
+    so = onnxruntime.SessionOptions()
+    so.log_severity_level = 3
+    ort_session = onnxruntime.InferenceSession(model_path, providers=providers, sess_options=so)
         
     ort_inputs  = {ort_session.get_inputs()[0].name: processed_img} 
     ort_outputs = ort_session.run(None, ort_inputs)   
@@ -157,14 +169,104 @@ def post_process_image(img_out_y: any, img_cb: any, img_cr: any) -> Image:
     return final_img
 
 
-def superresolution(img: Image) -> Tuple[any, int]: # Tuple[Image, int]
+def super_resolution(img: Image, resize: bool = True, upscale_factor: int = 3) -> Tuple[any, int]: # Tuple[Image, int]
 
-    (img_norm, img_cb, img_cr) = pre_process_image(img)
+    global torch_model
+    global current_upscale_factor
+
+    if not torch_model or not current_upscale_factor or upscale_factor != current_upscale_factor:
+        current_upscale_factor = upscale_factor
+        print(f"Creating torch model with scaling factor {upscale_factor}, model resolution {model_resolution}")
+        torch_model = SuperResolutionNet(upscale_factor=upscale_factor)
+
+    # Split image into Y, Cb, Cr components
+    (img_norm, img_cb, img_cr) = pre_process_image(img, resize)
 
     start_time = time.perf_counter()
+    # super-res just the Y (Luma) component
     output = run_onnx(assets_path, img_norm, use_CUDA)
     inferenceMs : int = int((time.perf_counter() - start_time) * 1000)
 
+    # resize the Cb,Cr (bue diff, red diff) components and then merge (apply) them
+    # to the now resized Y (luma) component to get the final image
     result = post_process_image(output, img_cb, img_cr)
 
     return result, inferenceMs
+
+
+def super_resolution_tile(img: Image, upscale_factor: int = 3) -> Tuple[any, int]: # Tuple[Image, int]
+
+    width, height = img.size
+
+    # Calculate the number of tiles needed horizontally and vertically
+    # Add model_resolution - 1 to include the last tile even if it's smaller than
+    # model_resolution
+    x_tiles = (width  + model_resolution - 1) // model_resolution
+    y_tiles = (height + model_resolution - 1) // model_resolution
+    if debug_process:
+        print(f"Image is {width}x{height}, so {x_tiles} x {y_tiles} tiles")
+
+    # Make an image that's a multiple of model_resolution. We do this so each tile
+    # we cut is exactly model_resolution x model_resolution and there's no resizing
+    # needing to be done on tiles
+    new_width, new_height = (x_tiles * model_resolution, y_tiles * model_resolution)
+    if debug_process:
+        print(f"Expanding source from {width}x{height} to {new_width}x{new_height}")
+    source_img = Image.new('RGB', (new_width, new_height))
+    source_img.paste(img, (0,0))
+
+    # Initialize a new blank image to hold the processed tiles (upscaled in size)
+    result = Image.new('RGB', (x_tiles * model_resolution * upscale_factor, \
+                               y_tiles * model_resolution * upscale_factor))
+
+    # Cut the image into tiles and process each tile
+    totalInferenceMs = 0
+    index = 1
+    for i in range(x_tiles):
+        for j in range(y_tiles):
+            
+            # Determine the dimensions of the tile
+            left  = i * model_resolution
+            upper = j * model_resolution
+            right = (i + 1) * model_resolution
+            lower = (j + 1) * model_resolution
+
+            box = (left, upper, right, lower)
+            if debug_process:
+                print(f"Processing tile ({i},{j}): ({left}, {upper}, {right}, {lower}) of ({width},{height})")
+
+            # Extract a tile
+            tile = source_img.crop(box)
+
+            # Process a tile
+            inferenceMs    = 0
+            processed_tile = None
+            try:
+                processed_tile, inferenceMs = super_resolution(tile, upscale_factor=upscale_factor, resize=False)
+                if debug_process:
+                    print(f"Dimensions of upscaled tile are {processed_tile.size[0]}x{processed_tile.size[1]}")
+                if debug_images:
+                    processed_tile.save(f"processed_tile-{index}.jpg")
+            except Exception as ex:
+                print(ex)
+                
+            totalInferenceMs += inferenceMs
+
+            if processed_tile:
+                try:
+                    # Paste the processed tile back, but only within the original image's dimensions
+                    if debug_process:
+                        print(f"Result image mode {result.mode}, tile mode {processed_tile.mode}")
+                    result.paste(processed_tile, (left * upscale_factor, upper * upscale_factor)) #, \
+                                                  # right * upscale_factor, lower * upscale_factor))
+                    if debug_images:
+                        result.save(f"result-{index}.jpg")
+                except Exception as ex:
+                    print(ex)
+
+            index += 1
+
+    # Crop the padded area if any
+    result = result.crop((0, 0, width * upscale_factor, height * upscale_factor))
+
+    return result, totalInferenceMs

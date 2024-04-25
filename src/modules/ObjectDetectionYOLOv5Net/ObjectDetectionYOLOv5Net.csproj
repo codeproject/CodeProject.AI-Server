@@ -61,7 +61,7 @@
 				<GpuType>CPU</GpuType>
 				<GpuType Condition="'$(IsWindows)'=='true'">DirectML</GpuType>						<!-- Windows -->
 				<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'!='true'">CUDA</GpuType>	<!-- Linux -->
-				<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'=='true'">CPU</GpuType>	<!-- Raspberry Pi, Orange Pi, Jetson -->
+				<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'=='true'">CPU</GpuType>	<!-- Raspberry Pi, Orange Pi, Radxa ROCK, Jetson -->
 				<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'!='true'">CPU</GpuType>		<!-- Mac Intel -->
 				<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'">MPS</GpuType>		<!-- Mac Apple Silicon -->
 			</PropertyGroup>

@@ -88,7 +88,7 @@ namespace CodeProject.AI.Server.Modules
         /// "Local" - the runtime is installed locally in this modules folder
         /// "System" - the runtime is installed in the system globally
         /// </summary>
-        public string RuntimeLocation  { get; set; } = "Local";
+        public RuntimeLocation RuntimeLocation  { get; set; } = RuntimeLocation.Local;
 
         /// <summary>
         /// Gets or sets the command to execute the file at FilePath. If set, this overrides Runtime.
@@ -278,21 +278,22 @@ namespace CodeProject.AI.Server.Modules
 
                 var summary = new StringBuilder();
                 summary.AppendLine($"Module '{Name}' {Version} (ID: {ModuleId})");
-                summary.AppendLine($"Valid:         {Valid}");
-                summary.AppendLine($"Module Path:   {path}");
-                summary.AppendLine($"AutoStart:     {LaunchSettings?.AutoStart}");
-                summary.AppendLine($"Queue:         {LaunchSettings?.Queue}");
-                summary.AppendLine($"Runtime:       {LaunchSettings?.Runtime}");
-                summary.AppendLine($"Runtime Loc:   {LaunchSettings?.RuntimeLocation}");
-                summary.AppendLine($"FilePath:      {LaunchSettings?.FilePath}");
-                summary.AppendLine($"Start pause:   {LaunchSettings?.PostStartPauseSecs} sec");
-                summary.AppendLine($"Parallelism:   {LaunchSettings?.Parallelism}");
-                summary.AppendLine($"LogVerbosity:  {LaunchSettings?.LogVerbosity}");
-                summary.AppendLine($"Platforms:     {string.Join(',', InstallOptions?.Platforms?? Array.Empty<string>())}");
-                summary.AppendLine($"GPU Libraries: {((GpuOptions?.InstallGPU == true)? "installed if available" : "not installed")}");
-                summary.AppendLine($"GPU Enabled:   {((GpuOptions?.EnableGPU == true)? "enabled" : "disabled")}");
-                summary.AppendLine($"Accelerator:   {GpuOptions?.AcceleratorDeviceName}");
-                summary.AppendLine($"Half Precis.:  {GpuOptions?.HalfPrecision}");
+                summary.AppendLine($"Valid:            {Valid}");
+                summary.AppendLine($"Module Path:      {path}");
+                summary.AppendLine($"Module Location:  {InstallOptions?.ModuleLocation}");
+                summary.AppendLine($"AutoStart:        {LaunchSettings?.AutoStart}");
+                summary.AppendLine($"Queue:            {LaunchSettings?.Queue}");
+                summary.AppendLine($"Runtime:          {LaunchSettings?.Runtime}");
+                summary.AppendLine($"Runtime Location: {LaunchSettings?.RuntimeLocation}");
+                summary.AppendLine($"FilePath:         {LaunchSettings?.FilePath}");
+                summary.AppendLine($"Start pause:      {LaunchSettings?.PostStartPauseSecs} sec");
+                summary.AppendLine($"Parallelism:      {LaunchSettings?.Parallelism}");
+                summary.AppendLine($"LogVerbosity:     {LaunchSettings?.LogVerbosity}");
+                summary.AppendLine($"Platforms:        {string.Join(',', InstallOptions?.Platforms?? Array.Empty<string>())}");
+                summary.AppendLine($"GPU Libraries:    {((GpuOptions?.InstallGPU == true)? "installed if available" : "not installed")}");
+                summary.AppendLine($"GPU Enabled:      {((GpuOptions?.EnableGPU == true)? "enabled" : "disabled")}");
+                summary.AppendLine($"Accelerator:      {GpuOptions?.AcceleratorDeviceName}");
+                summary.AppendLine($"Half Precision:   {GpuOptions?.HalfPrecision}");
                 summary.AppendLine($"Environment Variables");
 
                 if (EnvironmentVariables is not null)
@@ -331,6 +332,8 @@ namespace CodeProject.AI.Server.Modules
     /// </summary>
     public static class ModuleConfigExtensions
     {
+        private static Dictionary<string, string?> _modulePathModuleIdMap { get; set; } = new Dictionary<string, string?>();
+
         /// <summary>
         /// ModuleConfig objects are typically created by deserialising a JSON file so we don't get
         /// a chance at create time to supply supplementary information or adjust values that may
@@ -340,7 +343,10 @@ namespace CodeProject.AI.Server.Modules
         /// <param name="moduleId">The id of the module. This isn't included in the object in JSON
         /// file, instead, the moduleId is the key for the module's object in the JSON file</param>
         /// <param name="moduleDirPath">The path to the folder containing this module</param>
-        public static bool Initialise(this ModuleConfig module, string moduleId, string moduleDirPath)
+        /// <param name="moduleLocation">The location of this module</param>
+        /// <returns>True on success; false otherwise</returns>
+        public static bool Initialise(this ModuleConfig module, string moduleId,
+                                      string moduleDirPath, ModuleLocation moduleLocation)
         {
             if (module is null)
                 return false;
@@ -355,6 +361,8 @@ namespace CodeProject.AI.Server.Modules
 
             module.ModuleDirPath    = moduleDirPath;
             module.WorkingDirectory = module.ModuleDirPath; // This once was allowed to be different to moduleDirPath
+
+            module.InstallOptions!.ModuleLocation = moduleLocation;
 
             if (string.IsNullOrEmpty(module.LaunchSettings?.Queue))
                 module.LaunchSettings!.Queue = moduleId.ToLower() + "_queue";
@@ -518,8 +526,6 @@ namespace CodeProject.AI.Server.Modules
                         moduleSettings["LogVerbosity"] = verbosity.ToString();
                 }
 
-
-
                 else if (name.EqualsIgnoreCase("EnableGPU") ||
                          name.EqualsIgnoreCase("SupportGPU")) // Legacy from 9Oct2023
                 {
@@ -611,75 +617,21 @@ namespace CodeProject.AI.Server.Modules
         }
 
         /// <summary>
-        /// Loads the modulesettings into a JsonObject.
+        /// Gets a module's ID from their modulesettings.json file
         /// </summary>
-        /// <param name="path">The path to save</param>
-        /// <returns>A JSON object containing the settings from the settings file</returns>
-        public async static Task<JsonObject?> LoadSettings(string path)
+        /// <param name="directoryPath">The full path to the module's folder</param>
+        /// <returns>The module Id, or null if not successful</returns>
+        public static string? GetModuleIdFromModuleSettings(string directoryPath)
         {
-            if (string.IsNullOrWhiteSpace(path))
-                return new JsonObject();
-
-            if (!File.Exists(path))
-                return new JsonObject();
-
-            try
+            // Check the cache before doing the expensive operation
+            if (!_modulePathModuleIdMap.ContainsKey(directoryPath))
             {
-                string? dir = Path.GetDirectoryName(path);
-                if (string.IsNullOrWhiteSpace(dir))
-                    return new JsonObject();
-
-                string content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
-                // var settings = JsonSerializer.Deserialize<Dictionary<string, dynamic>>(content);
-
-                JsonSerializerOptions jsonSerializeOptions = new JsonSerializerOptions
-                {
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    AllowTrailingCommas = true,
-                    WriteIndented       = true
-                };
-                var settings = JsonSerializer.Deserialize<JsonObject>(content, jsonSerializeOptions);
-
-                return settings;
+                JsonObject? settings = JsonUtils.LoadJson($"{directoryPath}/modulesettings.json");
+                string? moduleId = JsonUtils.ExtractValue(settings, "$.Modules.#keys[0]")?.ToString();
+                _modulePathModuleIdMap.Add(directoryPath, moduleId);
             }
-            catch /*(Exception ex)*/
-            {
-                return new JsonObject();
-            }
-        }
 
-        /// <summary>
-        /// Saves the module configuration that is in the provided JsonObject to a file.
-        /// </summary>
-        /// <param name="settings">This set of module settings</param>
-        /// <param name="path">The path to save</param>
-        /// <returns>true on success; false otherwise</returns>
-        public async static Task<bool> SaveSettingsAsync(JsonObject? settings, string path)
-        {
-            if (settings is null || string.IsNullOrWhiteSpace(path))
-                return false;
-
-            try
-            {
-                string? dir = Path.GetDirectoryName(path);
-                if (string.IsNullOrWhiteSpace(dir))
-                    return false;
-
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                string configJson = JsonSerializer.Serialize(settings, options);
-
-                await File.WriteAllTextAsync(path, configJson).ConfigureAwait(false);
-
-                return true;
-            }
-            catch /*(Exception ex)*/
-            {
-                // _logger.LogError($"Exception saving module settings: {ex.Message}");
-                return false;
-            }
+            return _modulePathModuleIdMap[directoryPath];
         }
 
         /// <summary>
@@ -693,7 +645,13 @@ namespace CodeProject.AI.Server.Modules
         public static void RewriteOldModuleSettingsFile(string directoryPath)
         {
             var info = new DirectoryInfo(directoryPath);
-            string moduleId = info.Name;
+
+            // Bad assumption: A module's ID is same as the name of folder in which it lives.
+            // string moduleId = info.Name;
+
+            string? moduleId = GetModuleIdFromModuleSettings(directoryPath);
+            if (moduleId is null)
+                return;
 
             // Load up the modulesettings.*.json files
             var config = new ConfigurationBuilder();
@@ -738,8 +696,9 @@ namespace CodeProject.AI.Server.Modules
                 // schema if the (presumably old) module will work with this (presumably newer) 
                 // server. The one way to check that is to see if the module has a explore.html page.
                 // This server requires this file. Without it the module cannot run in the explorer.
+                bool moduleCompatibleWithNewServer = File.Exists(Path.Combine(directoryPath, "explore.html"));
 
-                if (File.Exists(Path.Combine(directoryPath, "explore.html")))
+                if (moduleCompatibleWithNewServer)
                 {
                     Console.WriteLine($"** Rebuilding modulesettings file for {moduleId}.");
 
@@ -754,13 +713,14 @@ namespace CodeProject.AI.Server.Modules
                     // 2. Convert old format to new format
                     moduleConfig = legacyModuleConfig.ToModuleConfig();
 
-                    // 3. Disable generation of summary, and convert to JSON
+                    // 3. HACK: We don't want to save the summary here, so we disable Summary 
+                    //    generation, then serialize
                     moduleConfig.NoSettingsSummary = true;
                     var options = new JsonSerializerOptions { WriteIndented = true };
                     string configJson = JsonSerializer.Serialize(moduleConfig, options);
                     moduleConfig.NoSettingsSummary = false;
 
-                    //    Wrap and indent correctly
+                    // 3a. Our settings need to be stored in dictionary form, so wrap (and indent)
                     configJson = configJson.Replace("\n", "\n    ");
                     configJson = "{\n  \"Modules\": {\n    \"" + moduleId + "\": " + configJson + "\n  }\n}";
 
@@ -1031,7 +991,8 @@ namespace CodeProject.AI.Server.Modules
                 };
 
                 var moduleList = modules.Values
-                                        .Where(m => !corrections.Any(c => c.NewModuleId == m.ModuleId)) // Don't do modules with new names yet
+                                        .Where(m => !corrections.Any(c => c.NewModuleId == m.ModuleId) &&   // Don't do modules with new names yet
+                                               m.InstallOptions!.ModuleLocation == ModuleLocation.Internal)
                                         .OrderBy(m => m.ModuleId)
                                         .Select(m => new {
                                             ModuleId       = m.ModuleId,
@@ -1118,7 +1079,8 @@ namespace CodeProject.AI.Server.Modules
         private static string CreateModulesListingHtml(ModuleCollection modules,
                                                        VersionInfo versionInfo)
         {
-            var moduleList = modules.Values.OrderBy(m => m.PublishingInfo!.Category)
+            var moduleList = modules.Values.Where(m => m.InstallOptions!.ModuleLocation == ModuleLocation.Internal)
+                                           .OrderBy(m => m.PublishingInfo!.Category)
                                            .ThenBy(m => m.Name);
 
             StringBuilder list;
@@ -1186,6 +1148,8 @@ namespace CodeProject.AI.Server.Modules
                 if (p.StartsWithIgnoreCase("macos"))       return suffix + "macOS";
                 if (p.StartsWithIgnoreCase("raspberrypi")) return suffix + "Raspberry Pi";
                 if (p.StartsWithIgnoreCase("orangepi"))    return suffix + "Orange Pi";
+                if (p.StartsWithIgnoreCase("radxarock"))   return suffix + "Radxa ROCK";
+                if (p.EqualsIgnoreCase("jetson"))          return suffix + "Jetson";
                 return suffix + string.Concat(char.ToUpper(p[0]), p[1..]);
             });
 

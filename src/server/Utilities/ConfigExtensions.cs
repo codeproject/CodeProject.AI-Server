@@ -34,27 +34,8 @@ namespace CodeProject.AI.SDK.Utils
                 return false;
 
             // If the file exists then test that it's actually well-formed and loadable.
-            if (fileExists)
-            {
-                // Test the file contents
-                try
-                {
-                    string contents = File.ReadAllText(settingsFile);
-
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                        ReadCommentHandling         = JsonCommentHandling.Skip,
-                        AllowTrailingCommas         = true
-                    };
-                    var settings = JsonSerializer.Deserialize<JsonObject>(contents, options);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error loading {settingsFile}: {ex.Message}");
-                    return false;
-                }
-            }
+            if (fileExists && !JsonUtils.IsJsonFileValid(settingsFile))
+                return false;
 
             // Either the file exists, or it doesn't exist but reloadOnChange=true so we need to
             // register it.

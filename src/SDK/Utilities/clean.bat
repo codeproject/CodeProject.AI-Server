@@ -17,6 +17,8 @@ pushd ..\..\..
 set rootDir=%cd%
 popd
 
+set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
+
 set useColor=true
 set doDebug=false
 set lineWidth=70
@@ -25,7 +27,12 @@ set dotNetModules=ObjectDetectionYOLOv5Net PortraitFilter SentimentAnalysis
 set pythonModules=ALPR ALPR-RKNN BackgroundRemover Cartooniser FaceProcessing LlamaChat       ^
                   ObjectDetectionCoral ObjectDetectionYOLOv5-3.1 ObjectDetectionYOLOv5-6.2    ^
                   ObjectDetectionYOLOv8 ObjectDetectionYoloRKNN TrainingObjectDetectionYOLOv5 ^
-                  OCR SceneClassifier SoundClassifierTF SuperResolution TextSummary
+                  OCR SceneClassifier SoundClassifierTF SuperResolution TextSummary Text2Image
+
+set dotNetExternalModules=
+set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ObjectDetectionCoral
+                          CodeProject.AI-ALPR-RKNN CodeProject.AI-ObjectDetectionYoloRKNN
+
 set dotNetDemoModules=DotNetLongProcess DotNetSimple
 set pythonDemoModules=PythonLongProcess PythonSimple
 
@@ -104,10 +111,15 @@ if /i "%cleanBuild%" == "true" (
         call :RemoveDir "!rootDir!\src\modules\%%x\obj\"
         del "!rootDir!\src\modules\%%x\%%x-*"
     )
+    for %%x in (!dotNetExternalModules!) do (
+        call :RemoveDir "!externalModulesDir!\%%x\bin\"
+        call :RemoveDir "!externalModulesDir!\%%x\obj\"
+        del "!rootDir!\src\modules\%%x\%%x-*"
+    )
     for %%x in (!dotNetDemoModules!) do (
-        call :RemoveDir "!rootDir!\demos\modules\%%x\bin\"
-        call :RemoveDir "!rootDir!\demos\modules\%%x\obj\"
-        del "!rootDir!\demos\modules\%%x\%%x-*"
+        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\"
+        call :RemoveDir "!rootDir!\src\demos\modules\%%x\obj\"
+        del "!rootDir!\src\demos\modules\%%x\%%x-*"
     )
 
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\bin\Debug\"
@@ -123,10 +135,10 @@ if /i "%cleanBuild%" == "true" (
     del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.runtimeconfig.json"
     del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.xml"
 
-    call :CleanSubDirs "!rootDir!\demos\clients\"      "\bin\Debug\"
-    call :CleanSubDirs "!rootDir!\demos\clients\"      "\bin\Release\"
-    call :CleanSubDirs "!rootDir!\demos\clients\"      "\obj\Debug\"
-    call :CleanSubDirs "!rootDir!\demos\clients\"      "\obj\Release\"
+    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\bin\Debug\"
+    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\bin\Release\"
+    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\obj\Debug\"
+    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\obj\Release\"
 
     call :RemoveDir "!rootDir!\tests\QueueServiceTests\bin\"
     call :RemoveDir "!rootDir!\tests\QueueServiceTests\obj\"
@@ -145,8 +157,11 @@ if /i "%cleanInstallCurrentOS%" == "true" (
     for %%x in (!pythonModules!) do (
         call :RemoveDir "!rootDir!\src\modules\%%x\bin\windows"
     )
+    for %%x in (!pythonExternalModules!) do (
+        call :RemoveDir "!externalModulesDir!\%%x\bin\windows"
+    )
     for %%x in (!pythonDemoModules!) do (
-        call :RemoveDir "!rootDir!\demos\modules\%%x\bin\windows"
+        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\windows"
     )
 )
 
@@ -172,8 +187,11 @@ if /i "%cleanInstallAll%" == "true" (
     for %%x in (!pythonModules!) do (
         call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
     )
+    for %%x in (!pythonExternalModules!) do (
+        call :RemoveDir "!externalModulesDir!\%%x\bin\"
+    )
     for %%x in (!pythonDemoModules!) do (
-        call :RemoveDir "!rootDir!\demos\modules\%%x\bin\"
+        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\"
     )
 )
 
@@ -184,14 +202,10 @@ if /i "%cleanAssets%" == "true" (
     call "!sdkDir!\utils.bat" WriteLine 
 
     REM Production modules
-    call :RemoveDir "!rootDir!\src\modules\ALPR\paddleocr"
-    call :RemoveDir "!rootDir!\src\modules\ALPR-RKNN\paddleocr"
     call :RemoveDir "!rootDir!\src\modules\BackgroundRemover\models"
     call :RemoveDir "!rootDir!\src\modules\Cartooniser\weights"
     call :RemoveDir "!rootDir!\src\modules\FaceProcessing\assets"
     call :RemoveDir "!rootDir!\src\modules\LlamaChat\models"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionCoral\assets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionCoral\edgetpu_runtime"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-3.1\assets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-3.1\custom-models"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-6.2\assets"
@@ -201,22 +215,29 @@ if /i "%cleanAssets%" == "true" (
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\assets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\custom-models"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\LocalNugets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYoloRKNN\assets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYoloRKNN\custom-models"
     call :RemoveDir "!rootDir!\src\modules\OCR\paddleocr"
     call :RemoveDir "!rootDir!\src\modules\SceneClassifier\assets"
     call :RemoveDir "!rootDir!\src\modules\SoundClassifierTF\data"
     call :RemoveDir "!rootDir!\src\modules\Text2Image\assets"
+    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\assets"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\datasets"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\fiftyone"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\training"
     call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\zoo"
 
+    REM External modules
+    call :RemoveDir "!externalModulesDir!\ALPR\paddleocr"
+    call :RemoveDir "!externalModulesDir!\ALPR-RKNN\paddleocr"
+    call :RemoveDir "!externalModulesDir!\ObjectDetectionCoral\assets"
+    call :RemoveDir "!externalModulesDir!\ObjectDetectionCoral\edgetpu_runtime"
+    call :RemoveDir "!externalModulesDir!\ObjectDetectionYoloRKNN\assets"
+    call :RemoveDir "!externalModulesDir!\ObjectDetectionYoloRKNN\custom-models"
+
     REM Demo modules
-    call :RemoveDir "!rootDir!\demos\modules\DotNetLongProcess\assets"
-    call :RemoveDir "!rootDir!\demos\modules\DotNetSimple\assets"
-    call :RemoveDir "!rootDir!\demos\modules\PythonLongProcess\assets"
-    call :RemoveDir "!rootDir!\demos\modules\PythonSimple\assets"
+    call :RemoveDir "!rootDir!\src\demos\modules\DotNetLongProcess\assets"
+    call :RemoveDir "!rootDir!\src\demos\modules\DotNetSimple\assets"
+    call :RemoveDir "!rootDir!\src\demos\modules\PythonLongProcess\assets"
+    call :RemoveDir "!rootDir!\src\demos\modules\PythonSimple\assets"
 )
 
 if /i "%cleanDownloadCache%" == "true" (

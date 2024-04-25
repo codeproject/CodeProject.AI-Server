@@ -15,7 +15,8 @@ from module_logging import LogMethod
 
 # Setup a global bucket of YOLO detectors. One for each model
 detectors   = {}  # We'll use this to cache the detectors based on models
-models_lock = Lock()
+models_lock  = Lock()
+predict_lock = Lock()
 
 def get_detector(module_runner, models_dir: str, model_name: str, resolution: int,
                  use_Cuda: bool, accel_device_name: int, use_MPS: bool,
@@ -144,9 +145,11 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
         start_inference_time = time.perf_counter()
 
         use_half_precision = half_precision == "true"
-        results            = detector.predict(img, imgsz=resolution, half=use_half_precision,
-                                                device=accel_device_name)
-        inferenceMs        = int((time.perf_counter() - start_inference_time) * 1000)
+        results = None
+        with predict_lock:
+            results = detector.predict(img, imgsz=resolution, half=use_half_precision,
+                                                  device=accel_device_name)
+        inferenceMs = int((time.perf_counter() - start_inference_time) * 1000)
 
         outputs = []
 
@@ -154,9 +157,10 @@ def do_detection(module_runner, models_dir: str, model_name: str, resolution: in
         for result in results:
             
             boxes     = result.boxes        # Boxes object for bbox outputs
-            masks     = result.masks        # Masks object for segmentation masks outputs
-            keypoints = result.keypoints    # Keypoints object for pose outputs
-            probs     = result.probs        # Probs object for classification outputs
+            if do_segmentation:
+                masks   = result.masks        # Masks object for segmentation masks outputs
+            # keypoints = result.keypoints    # Keypoints object for pose outputs
+            # probs     = result.probs        # Probs object for classification outputs
 
             # for *xyxy, conf, cls in reversed(boxes):
             # for xyxy, conf, cls in boxes:

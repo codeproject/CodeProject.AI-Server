@@ -79,6 +79,12 @@ namespace CodeProject.AI.Server
         public string? DemoModulesDirPath { get; set; }
 
         /// <summary>
+        /// Gets or sets the root directory that contains the external modules (modules that aren't
+        /// in this solution, but are in external solutions)
+        /// </summary>
+        public string? ExternalModulesDirPath  { get; set; }
+
+        /// <summary>
         /// Gets the absolute path to the download modules zip packages that have been downloaded
         /// from the modules registry
         /// </summary>
@@ -118,6 +124,11 @@ namespace CodeProject.AI.Server
         /// Gets or sets a value indicating whether to run initial installs concurrently.
         /// </summary>
         public bool ConcurrentInitialInstalls { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to install the initial modules.
+        /// </summary>
+        public bool InstallInitialModules { get; set; } = true;
 
         /// <summary>
         /// Gets a list of the initial modules to load.

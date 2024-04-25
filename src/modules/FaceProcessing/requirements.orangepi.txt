@@ -22,7 +22,7 @@ PyYAML                  # Installing PyYAML, a library for reading configuration
 -f https://download.pytorch.org/whl/torch_stable.html
 torch==1.8.0            # Installing PyTorch, for Tensor computation and Deep neural networks
 -f https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.9.1      # Installing TorchVision, for Computer Vision based AI
+torchvision==0.9.0      # Installing TorchVision, for Computer Vision based AI
 
 # We need this, but we don't need this.
 Seaborn                 # Installing Seaborn, a data visualization library based on matplotlib

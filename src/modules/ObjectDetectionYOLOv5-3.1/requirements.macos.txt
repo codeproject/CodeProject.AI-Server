@@ -1,17 +1,19 @@
-OpenCV-Python    # Installing OpenCV, the Open source Computer Vision library
-Cython           # Installing the Cython compiler for C extensions for the Python language.
-Pillow<10.0.0    # Installing Pillow, a Python Image Library
-SciPy            # Installing SciPy, a library for mathematics, science, and engineering
-PyYAML           # Installing PyYAML, a library for reading configuration files
+OpenCV-Python           # Installing OpenCV, the Open source Computer Vision library
+Cython                  # Installing the Cython compiler for C extensions for the Python language.
+Pillow<10.0.0           # Installing Pillow, a Python Image Library
+SciPy                   # Installing SciPy, a library for mathematics, science, and engineering
+PyYAML                  # Installing PyYAML, a library for reading configuration files
 
-tqdm             # Installing TDQM, the Fast, Extensible Progress Meter
-Matplotlib       # Installing Matplotlib, the Python plotting package
+tqdm                    # Installing TDQM, the Fast, Extensible Progress Meter
+Matplotlib              # Installing Matplotlib, the Python plotting package
 
 #-f https://download.pytorch.org/whl/torch_stable.html
-#torch==1.6.0          # Installing PyTorch, for Tensor computation and Deep neural networks
+#torch==1.6.0           # Installing PyTorch, for Tensor computation and Deep neural networks
 # See https://github.com/openai/DALL-E/issues/54#issuecomment-1092826376
-torch<=1.10.0            # Installing PyTorch, for Tensor computation and Deep neural networks
+torch<=1.10.0           # Installing PyTorch, for Tensor computation and Deep neural networks
 
 # -f https://download.pytorch.org/whl/torch_stable.html
 # torchvision==0.7.0    # Installing TorchVision, for Computer Vision based AI
 torchvision==0.11.0     # Installing TorchVision, for Computer Vision based AI
+
+# Last line empty

@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using CodeProject.AI.SDK.Common;
-
-using CodeProject.AI.SDK.Utils;
-using CodeProject.AI.Server.Models;
-using CodeProject.AI.Server.Utilities;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK.Utils;
+using CodeProject.AI.Server.Models;
+using CodeProject.AI.Server.Utilities;
 
 namespace CodeProject.AI.Server.Modules
 {
@@ -62,8 +62,8 @@ namespace CodeProject.AI.Server.Modules
                                 if (!Program.ModuleIdModuleDirMap.ContainsKey(moduleId))
                                     continue;
 
-                                string moduleDirPath = Program.ModuleIdModuleDirMap[moduleId];
-                                if (moduleConfig.Initialise(moduleId, moduleDirPath) && 
+                                (string moduleDirPath, ModuleLocation location) = Program.ModuleIdModuleDirMap[moduleId];
+                                if (moduleConfig.Initialise(moduleId, moduleDirPath, location) && 
                                     moduleConfig.Valid)
                                 {
                                     installedModules.TryAdd(moduleId, moduleConfig);
@@ -122,7 +122,7 @@ namespace CodeProject.AI.Server.Modules
             // modulesettings.os.architecture.development.json
             // modulesettings.docker.json
             // modulesettings.docker.development.json
-            // modulesettings.device_specifier.json     device_specifier = raspberrypi, orangepi, jetson
+            // modulesettings.device_specifier.json     device_specifier = raspberrypi, orangepi, radxarock, jetson
             // modulesettings.device_specifier.development.json
 
             string basename = Constants.ModulesSettingFilenameNoExt; // "modulesettings"

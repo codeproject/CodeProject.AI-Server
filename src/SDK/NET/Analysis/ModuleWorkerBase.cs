@@ -156,7 +156,7 @@ namespace CodeProject.AI.SDK
         protected virtual ExpandoObject? ModuleStatus()
         {
             ExpandoObject status = new {
-                InferenceDevice      = InferenceDevice,
+                inferenceDevice      = InferenceDevice,
                 inferenceLibrary     = InferenceLibrary,
                 canUseGPU            = CanUseGPU,
                 

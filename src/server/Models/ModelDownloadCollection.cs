@@ -57,8 +57,8 @@ namespace CodeProject.AI.Server.Models
         /// <summary>
         /// Add an array of ModelDownloads to the array of ModelDownloads for the given module Id 
         /// </summary>
-        /// <param name="moduleId"></param>
-        /// <param name="downloads"></param>
+        /// <param name="moduleId">The module Id</param>
+        /// <param name="downloads">The downloadable modules for the given module</param>
         /// <returns></returns>
         public bool Merge(string moduleId, ModelDownload[]? downloads)
         {

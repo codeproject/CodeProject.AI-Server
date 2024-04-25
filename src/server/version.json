@@ -3,12 +3,12 @@
     "versionInfo": {
       "Major": 2,
       "Minor": 6,
-      "Patch": 1,
+      "Patch": 5,
       "Build": 0,
       "PreRelease": "",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.6.1.zip",
-      "ReleaseNotes": "Added long-running process support for .NET. Refactoring and bug fixes."
+      "File": "CodeProject.AI-Server-win-x64-2.6.5.zip",
+      "ReleaseNotes": "Support for external modules."
     }
   }
 }

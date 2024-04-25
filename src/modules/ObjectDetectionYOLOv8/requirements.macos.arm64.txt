@@ -15,7 +15,7 @@
 # Specific version because we have a patch
 ultralytics==8.1.2              # Installing Ultralytics package for object detection in images
 
-# We need this, but we don't need this. // matplotlib may be needed for mac because of utils.py
+# We need this, but we don't need this. // matplotlib may be needed for macOS because of utils.py
 # Seaborn                       # Installing Seaborn, a data visualization library based on matplotlib
 # matplotlib                    # Installing matplotlib, the python plotting package
 

@@ -1,6 +1,4 @@
-
 using SkiaSharp;
-using SkiaSharp.Views.Desktop;
 
 namespace CodeProject.AI.SDK.Utils
 {
@@ -68,6 +66,14 @@ namespace CodeProject.AI.SDK.Utils
                 return null;
 
             return skiaImage; //.ToBitmap();
+        }
+    }
+
+    public static class SKRectExtensions
+    {
+        static public float Area(this SKRect rect)
+        {
+            return rect.Width * rect.Height;
         }
     }
 }
