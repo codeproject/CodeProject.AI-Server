@@ -1,7 +1,10 @@
 #! Python3
 
 ## CodeProject.AI Demos
-Pillow>=10.3       # Installing Pillow, the Python image library
-imutils            # Installing imutils, the image utilities library
-opencv-python      # Installing OpenCV, the Computer Vision library for Python
-numpy              # Installing NumPy, a package for scientific computing
+Pillow>=10.3                # Installing Pillow, the Python image library
+imutils                     # Installing imutils, the image utilities library
+opencv-python               # Installing OpenCV, the Computer Vision library for Python
+# opencv-python-headless    # OpenCV headless is a leaner version with no GUI. This will
+                            #   dramatically reduce the library size, but users must be aware
+                            #   that some GUI functionlity (eg imshow) will not be available.
+numpy                       # Installing NumPy, a package for scientific computing
