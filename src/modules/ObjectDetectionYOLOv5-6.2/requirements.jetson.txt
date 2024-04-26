@@ -28,4 +28,6 @@ TorchVision     # Installing TorchVision, for Computer Vision based AI
 # We need this, but we don't need this.
 Seaborn         # Installing Seaborn, a data visualization library based on matplotlib
 
+CodeProject-AI-SDK              # Installing the CodeProject.AI SDK
+
 # last line empty.

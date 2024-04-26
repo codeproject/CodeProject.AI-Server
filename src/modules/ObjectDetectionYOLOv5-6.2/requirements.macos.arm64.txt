@@ -18,4 +18,6 @@ yolov5==6.2.3           # Installing Ultralytics YoloV5 package for object detec
 Seaborn                 # Installing Seaborn, a data visualization library based on matplotlib
 # matplotlib            # Installing matplotlib, the python plotting package
 
+CodeProject-AI-SDK              # Installing the CodeProject.AI SDK
+
 # last line empty.

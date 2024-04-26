@@ -483,11 +483,12 @@ function doModuleInstall () {
                         module_install_errors="Unable to install Python packages for ${moduleName}"; 
                     fi
 
-                    writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
-                    installRequiredPythonPackages "${sdkPath}/Python"
-                    if [ $? -gt 0 ]; then 
-                        module_install_errors="Unable to install Python packages for CodeProject SDK"; 
-                    fi
+                    # With the move to having modules include our SDK PyPi, we no longer need this.
+                    # writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
+                    # installRequiredPythonPackages "${sdkPath}/Python"
+                    # if [ $? -gt 0 ]; then 
+                    #     module_install_errors="Unable to install Python packages for CodeProject SDK"; 
+                    # fi
                 fi
 
                 downloadModels

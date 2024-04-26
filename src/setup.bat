@@ -809,14 +809,19 @@ REM Installs a module in the module's directory, and returns success
                     call "!sdkScriptsDirPath!\utils.bat" WriteLine "Installing Python packages for !moduleName!"
 
                     call "!sdkScriptsDirPath!\utils.bat" Write "Installing GPU-enabled libraries: " $color_info
-                    if "!installGPU!" == "true" (call "!sdkScriptsDirPath!\utils.bat" WriteLine "If available" !color_success!) else (call "!sdkScriptsDirPath!\utils.bat" WriteLine "No" !color_warn!)
+                    if "!installGPU!" == "true" (
+                        call "!sdkScriptsDirPath!\utils.bat" WriteLine "If available" !color_success!
+                    ) else (
+                        call "!sdkScriptsDirPath!\utils.bat" WriteLine "No" !color_warn!
+                    )
 
                     call "!sdkScriptsDirPath!\utils.bat" InstallRequiredPythonPackages 
                     if errorlevel 1 set moduleInstallErrors=Unable to install Python packages for !moduleName!
 
-                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Installing Python packages for the CodeProject.AI Server SDK"
-                    call "!sdkScriptsDirPath!\utils.bat" InstallRequiredPythonPackages "%sdkPath%\Python"
-                    if errorlevel 1 set moduleInstallErrors=Unable to install Python packages for CodeProject SDK
+                    REM With the move to having modules include our SDK PyPi, we no longer need this.
+                    REM call "!sdkScriptsDirPath!\utils.bat" WriteLine "Installing Python packages for the CodeProject.AI Server SDK"
+                    REM call "!sdkScriptsDirPath!\utils.bat" InstallRequiredPythonPackages "%sdkPath%\Python"
+                    REM if errorlevel 1 set moduleInstallErrors=Unable to install Python packages for CodeProject SDK
                 )
 
                 call "!sdkScriptsDirPath!\utils.bat" downloadModels 

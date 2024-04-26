@@ -6,12 +6,17 @@ import time
 # For PyTorch on Apple silicon
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
-# Import the CodeProject.AI SDK. This will add to the PATH var for future imports
-sys.path.append("../../SDK/Python")
-from common import JSON
-from request_data import RequestData
-from module_runner import ModuleRunner
-from module_logging import LogMethod, LogVerbosity
+# Import the actual CodeProject.AI SDK source code. Note that if we do this we
+# also need to ensure we install the following packages:
+#     Pillow, aiohttp, aiofiles, py-cpuinfo, requests
+#
+# sys.path.append("../../SDK/Python")
+# from common import JSON
+# from request_data import RequestData
+# from module_runner import ModuleRunner
+# from module_logging import LogMethod, LogVerbosity
+
+from codeproject_ai_sdk import JSON, ModuleRunner, LogMethod, LogVerbosity, RequestData
 
 # Import the method of the module we're wrapping
 from PIL import Image

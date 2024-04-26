@@ -302,25 +302,6 @@ MigrationBackup/
 /demos/clients/Python/detected
 /demos/clients/Python/Vision/detected
 
-
-# Installers -------------------------------------------------------------------
-
-/Installers/macOS/application
-/Installers/macOS/build/
-/Installers/macOS/target
-/Installers/macOS/*.pkg
-/Installers/macOS/CodeProject.AI-Server_*_macOS_*.zip
-
-/Installers/Ubuntu/build/
-/Installers/Ubuntu/installer/
-/Installers/Ubuntu/*.deb
-/Installers/Ubuntu/codeproject.ai-server_*_Ubuntu_*.zip
-
-/Installers/Windows/Inno Setup/Output
-/Installers/Windows/Inno Setup/assets/dotnet-hosting-*.exe
-/Installers/Windows/WIX Toolset/CodeProjectAI.Server.Installer/ServerInstallFiles.wxs
-
-
 # Downloads --------------------------------------------------------------------
 
 # Linux utilities
@@ -366,6 +347,8 @@ wget-log*
 /src/SDK/Utilities/ParseJSON/ParseJSON.dll
 /src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json
 /src/SDK/Utilities/ParseJSON/ParseJSON.xml
+/src/SDK/Utilities/ParseJSON/*.dll
+
 
 # Module packages --------------------------------------------------------------
 

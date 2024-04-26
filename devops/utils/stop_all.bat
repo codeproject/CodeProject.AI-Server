@@ -1,12 +1,12 @@
 @echo off
 SetLocal EnableDelayedExpansion
 
-set pwd=%cd%
-pushd %pwd%\..\..\
-set srcDir=%cd%
-cd ..
+pushd ..\..
 set rootDir=%cd%
+cd src\SDK\Scripts
+set sdkDir=%cd%
 popd
+
 
 set srcDir=%srcDir:\=\\%
 set rootDir=%rootDir:\=\\%
