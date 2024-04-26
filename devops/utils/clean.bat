@@ -9,12 +9,10 @@
 cls
 setlocal enabledelayedexpansion
 
-set pwd=%cd%
-pushd ..\Scripts
-set sdkDir=%cd%
-popd
-pushd ..\..\..
+pushd ..\..
 set rootDir=%cd%
+cd src\SDK\Scripts
+set sdkDir=%cd%
 popd
 
 set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
@@ -23,18 +21,20 @@ set useColor=true
 set doDebug=false
 set lineWidth=70
 
-set dotNetModules=ObjectDetectionYOLOv5Net PortraitFilter SentimentAnalysis
-set pythonModules=ALPR ALPR-RKNN BackgroundRemover Cartooniser FaceProcessing LlamaChat       ^
-                  ObjectDetectionCoral ObjectDetectionYOLOv5-3.1 ObjectDetectionYOLOv5-6.2    ^
-                  ObjectDetectionYOLOv8 ObjectDetectionYoloRKNN TrainingObjectDetectionYOLOv5 ^
-                  OCR SceneClassifier SoundClassifierTF SuperResolution TextSummary Text2Image
+set dotNetModules=ObjectDetectionYOLOv5Net
+set pythonModules=ObjectDetectionYOLOv5-6.2
 
-set dotNetExternalModules=
-set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ObjectDetectionCoral
-                          CodeProject.AI-ALPR-RKNN CodeProject.AI-ObjectDetectionYoloRKNN
+set dotNetExternalModules=PortraitFilter SentimentAnalysis
+set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ALPR-RKNN CodeProject.AI-BackgroundRemover ^
+                          CodeProject.AI-Cartooniser CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
+                          CodeProject.AI-ObjectDetectionCoral CodeProject.AI-ObjectDetectionYOLOv5-3.1 ^
+                          CodeProject.AI-ObjectDetectionYOLOv8 CodeProject.AI-ObjectDetectionYoloRKNN ^
+                          CodeProject.AI-TrainingObjectDetectionYOLOv5 CodeProject.AI-OCR ^
+                          CodeProject.AI-SceneClassifier CodeProject.AI-SoundClassifierTF ^
+                          CodeProject.AI-SuperResolution CodeProject.AI-TextSummary CodeProject.AI-Text2Image
 
-set dotNetDemoModules=DotNetLongProcess DotNetSimple
-set pythonDemoModules=PythonLongProcess PythonSimple
+set dotNetDemoModules=DotNetLongProcess DotNetSimple DotNetLongProcess
+set pythonDemoModules=PythonLongProcess PythonSimple PythonLongProcess
 
 if "%1" == "" (
     call "!sdkDir!\utils.bat" WriteLine "Solution Cleaner" "White"
@@ -202,36 +202,36 @@ if /i "%cleanAssets%" == "true" (
     call "!sdkDir!\utils.bat" WriteLine 
 
     REM Production modules
-    call :RemoveDir "!rootDir!\src\modules\BackgroundRemover\models"
-    call :RemoveDir "!rootDir!\src\modules\Cartooniser\weights"
-    call :RemoveDir "!rootDir!\src\modules\FaceProcessing\assets"
-    call :RemoveDir "!rootDir!\src\modules\LlamaChat\models"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-3.1\assets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-3.1\custom-models"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-6.2\assets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-6.2\custom-models"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv8\assets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv8\custom-models"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\assets"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\custom-models"
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\LocalNugets"
-    call :RemoveDir "!rootDir!\src\modules\OCR\paddleocr"
-    call :RemoveDir "!rootDir!\src\modules\SceneClassifier\assets"
-    call :RemoveDir "!rootDir!\src\modules\SoundClassifierTF\data"
-    call :RemoveDir "!rootDir!\src\modules\Text2Image\assets"
-    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\assets"
-    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\datasets"
-    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\fiftyone"
-    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\training"
-    call :RemoveDir "!rootDir!\src\modules\TrainingObjectDetectionYOLOv5\zoo"
 
     REM External modules
-    call :RemoveDir "!externalModulesDir!\ALPR\paddleocr"
-    call :RemoveDir "!externalModulesDir!\ALPR-RKNN\paddleocr"
-    call :RemoveDir "!externalModulesDir!\ObjectDetectionCoral\assets"
-    call :RemoveDir "!externalModulesDir!\ObjectDetectionCoral\edgetpu_runtime"
-    call :RemoveDir "!externalModulesDir!\ObjectDetectionYoloRKNN\assets"
-    call :RemoveDir "!externalModulesDir!\ObjectDetectionYoloRKNN\custom-models"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ALPR\paddleocr"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ALPR-RKNN\paddleocr"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-BackgroundRemover\models"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-Cartooniser\weights"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-FaceProcessing\assets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-LlamaChat\models"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionYOLOv5-3.1\assets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionYOLOv5-3.1\custom-models"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionYOLOv8\assets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionYOLOv8\custom-models"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionCoral\assets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionCoral\edgetpu_runtime"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionYoloRKNN\assets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionYoloRKNN\custom-models"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-OCR\paddleocr"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-SceneClassifier\assets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-SoundClassifierTF\data"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-Text2Image\assets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-TrainingObjectDetectionYOLOv5\assets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-TrainingObjectDetectionYOLOv5\datasets"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-TrainingObjectDetectionYOLOv5\fiftyone"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-TrainingObjectDetectionYOLOv5\training"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-TrainingObjectDetectionYOLOv5\zoo"
 
     REM Demo modules
     call :RemoveDir "!rootDir!\src\demos\modules\DotNetLongProcess\assets"

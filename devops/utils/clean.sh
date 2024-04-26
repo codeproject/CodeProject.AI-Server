@@ -162,7 +162,7 @@ function cleanFiles() {
 clear
 
 installDir="$(pwd)"
-pushd ../../.. >/dev/null
+pushd ../.. >/dev/null
 rootDir="$(pwd)"
 popd >/dev/null
 
