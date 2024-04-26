@@ -1,0 +1,87 @@
+{
+	"folders": [
+		{
+			"name": "Server",
+			"path": "."
+		},
+		{
+			"name": "ALPR",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-ALPR"
+		},
+		{
+			"name": "ALPR (RKNN)",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-ALPR-RKNN"
+		},
+		{
+			"name": "Background Remover",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-BackgroundRemover"
+		},
+		{
+			"name": "Cartoonizer",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-Cartoonizer"
+		},
+		{
+			"name": "Face Processing",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-FaceProcessing"
+		},
+		{
+			"name": "Llama Chat",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-LlamaChat"
+		},
+		{
+			"name": "Object Detection (Coral)",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral"
+		},
+		{
+			"name": "Object Detection (YOLOv5 RKNN)",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYoloRKNN"
+		},
+		{
+			"name": "Object Detection (YOLOv5 3.1)",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv5-3.1"
+		},
+		{
+			"name": "Object Detection (YOLOv8)",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv8"
+		},
+		{
+			"name": "OCR",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-OCR"
+		},
+		{
+			"name": "Portrait Filter",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-PortraitFilter"
+		},
+		{
+			"name": "Scene Classifier",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-SceneClassifier"
+		},
+		{
+			"name": "Sentiment Analysis",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-SentimentAnalysis"
+		},
+		{
+			"name": "Sound Classifier (TF)",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-SoundClassifierTF"
+		},
+		{
+			"name": "Super Resolution",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-SuperResolution"
+		},
+		{
+			"name": "Text2Image",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-Text2Image"
+		},
+		{
+			"name": "Text Summary",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-TextSummary"
+		},
+		{
+			"name": "Object Detection Train (YOLOv5)",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-TrainingObjectDetectionYOLOv5"
+		}
+	],
+	"settings": {
+		"csharp.debug.logging.moduleLoad": false
+	}
+}
