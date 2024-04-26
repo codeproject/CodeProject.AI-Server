@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  CodeProjectAI:
+    image: codeproject/ai-server:rpi64
+    container_name: codeproject-ai-server-rpi
+    hostname: codeproject-ai-server
+    # working_dir: /app
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "32168:32168/tcp"
+      - "32168:32168/udp"
+    environment:
+      - TZ=America/Toronto
+    volumes:
+      # To enable USB devices (eg Coral.AI)
+      - '/dev/bus/usb:/dev/bus/usb'
+#     To map the modules folder in the docker container to /opt/codeproject/ai
+#     - '/opt/codeproject/ai:/app/modules'
+#     To map the modules folder in the docker container to a volume named codeproject_ai_modules
+#     - codeproject_ai_modules_gpu:/app/modules
+
+# If you wish to use named volumes, then under CodeProjectAI.volumes, add: 
+#
+#    volumes:
+#      - codeproject_ai_data:/etc/codeproject/ai
+#      - codeproject_ai_modules:/app/modules
+#
+# And at the root level add a volumes section with the corresponding volumes:
+# 
+#volumes:
+#  codeproject_ai_data:
+#  codeproject_ai_modules:

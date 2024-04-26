@@ -19,21 +19,18 @@ services:
 #     - '/Library/Application Support/CodeProject/AI/docker/modules:/app/modules' # macOS
 #     - 'C:\ProgramData\CodeProject\AI\docker\modules:/app/modules'   # Windows
 
-    # command:
-    #  - --Modules:BackgroundRemover:Activate=False
-    #  - --Modules:BackgroundRemoval:Activate=False
-    #  - --Modules:CustomDetection:Activate=False
-    #  - --Modules:CustomObjectDetection:Activate=False
-    #  - --Modules:PortraitFilter:Activate=False
-    #  - --Modules:SceneClassification:Activate=False
-    #  - --Modules:VisionObjectDetection:Activate=False
-    #  - --Modules:FaceProcessing:EnvironmentVariables:USE_CUDA=True
-
-# If you wish to use volumes, then:
-#    volumes:
-#      - codeproject_ai_data_gpu:/etc/codeproject/ai
-#      - codeproject_ai_modules_gpu:/app/modules
+# To pass command line (say, to not have a module auto-start)
+#  command:
+#     - --Modules:BackgroundRemover:LaunchSettings:AutoStart=False
 #
+# If you wish to use named volumes, then under CodeProjectAI.volumes, add: 
+#
+#    volumes:
+#      - codeproject_ai_data:/etc/codeproject/ai
+#      - codeproject_ai_modules:/app/modules
+#
+# And at the root level add a volumes section with the corresponding volumes:
+# 
 #volumes:
-#  codeproject_ai_data_gpu:
-#  codeproject_ai_modules_gpu:
+#  codeproject_ai_data:
+#  codeproject_ai_modules:

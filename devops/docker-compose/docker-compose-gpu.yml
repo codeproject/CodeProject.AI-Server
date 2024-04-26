@@ -24,21 +24,16 @@ services:
               count: 1
               capabilities: [gpu]
 
-    # command:
-    #  - --Modules:BackgroundRemover:Activate=False
-    #  - --Modules:BackgroundRemoval:Activate=False
-    #  - --Modules:CustomDetection:Activate=False
-    #  - --Modules:CustomObjectDetection:Activate=False
-    #  - --Modules:PortraitFilter:Activate=False
-    #  - --Modules:SceneClassification:Activate=False
-    #  - --Modules:VisionObjectDetection:Activate=False
-    #  - --Modules:FaceProcessing:EnvironmentVariables:USE_CUDA=True
-
-# If you wish to use volumes, then:
+# If you wish to use named volumes, then under CodeProjectAI.volumes, add GPU specific
+# volumes (note the _gpu in the names). This ensures that if you switch to a CPU container
+# then the modules (and the installed libraries) will be safely separated.
+#
 #    volumes:
 #      - codeproject_ai_data_gpu:/etc/codeproject/ai
 #      - codeproject_ai_modules_gpu:/app/modules
 #
+# And at the root level add a volumes section with the corresponding volumes:
+# 
 #volumes:
 #  codeproject_ai_data_gpu:
 #  codeproject_ai_modules_gpu:
