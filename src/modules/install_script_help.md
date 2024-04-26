@@ -11,7 +11,7 @@ The install scripts are call via the main `setup.sh`/`setup.bat` script.
 If `setup` is called from the `/src` folder then it runs in 'Development Environment setup' mode, 
 meaning it sets up the entire environment in preparation for coding and debugging. .NET is installed,
 folders are created, and every module in the /src/modules folder is setup by calling each module's 
-`install` script in turn. The demo modules in the /demos will then be setup.
+`install` script in turn. The demo modules in the /src/demos will then be setup.
 
 If the `setup` script is called from within a module's home directory (via `bash ../../setup.sh` or
 `..\..\setup.bat`) then the setup script operates in 'Install module' mode, meaning it will only run
@@ -53,7 +53,7 @@ OS, architecture, GPU type, and optionally CUDA library type.
 
 The order of preference for choosing a requirements file is as follows.
 
- - requirements.device.txt                            (device = raspberrypi, orangepi, jetson)
+ - requirements.device.txt                            (device = raspberrypi, orangepi, radxarock, jetson)
  - requirements.os.architecture.cudaMajor_Minor.txt   (eg cuda12_0)
  - requirements.os.architecture.cudaMajor.txt         (eg cuda12)
  - requirements.os.architecture.(cuda|rocm).txt
@@ -70,7 +70,7 @@ The order of preference for choosing a requirements file is as follows.
  - requirements.os.txt
  - requirements.txt
 
-"device" is one of "raspberrypi", "orangepi" or "jetson". "cudaMajor_Minor" is the major/minor version of CUDA currently installed (eg 12.2). "cudaMajor" is just the major version (eg 12). "rocm" refers to AMD ROCm GPU support, and "gpu" is a generic identifier meaning "use if GPU support is enabled, but no
+"device" is one of "raspberrypi", "orangepi", "radxarock" or "jetson". "cudaMajor_Minor" is the major/minor version of CUDA currently installed (eg 12.2). "cudaMajor" is just the major version (eg 12). "rocm" refers to AMD ROCm GPU support, and "gpu" is a generic identifier meaning "use if GPU support is enabled, but no
 CUDA or ROCm GPUs have been detected". This is great for packages that support
 multiple GPUs such as OpenVINO and DirectML.
 
@@ -83,8 +83,8 @@ As an example, `requirements.linux.arm64.cuda11_7.txt` would be a requirements f
 | `os`                | "linux", "macos" or "windows" |
 | `architecture`      | "x86_64" or "arm64" |
 | `platform`          | "linux", "linux-arm64", "macos" or "macos-arm64", "windows" or "windows-arm64" |
-| `systemName`        | General name for the system. Value can be one of: Windows, Linux, macOS, WSL, Raspberry Pi, Orange Pi, Jetson, or Docker |
-| `edgeDevice`        | Raspberry Pi, Orange PI, Jetson, or blank if none of these |
+| `systemName`        | General name for the system. Value can be one of: Windows, Linux, macOS, WSL, Raspberry Pi, Orange Pi, Radxa ROCK, Jetson, or Docker |
+| `edgeDevice`        | Raspberry Pi, Orange PI, Radxa ROCK, Jetson, or blank if none of these |
 |||
 | `rootDirPath`       | the root path of the installation (eg: ~/CodeProject/AI) |
 | `sdkScriptsDirPath` | the path to the installation utility scripts ($rootDirPath/SDK/Scripts) |

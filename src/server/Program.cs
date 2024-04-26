@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Backend;
@@ -42,7 +43,7 @@ namespace CodeProject.AI.Server
         /// <summary>
         /// Gets or sets the map of module Ids to module paths.
         /// </summary>
-        public static Dictionary<string, string> ModuleIdModuleDirMap { get; set; } = new Dictionary<string, string>();
+        public static Dictionary<string, (string, ModuleLocation)> ModuleIdModuleDirMap { get; set; } = new Dictionary<string, (string, ModuleLocation)>();
 
         /// <summary>
         /// The static constructor for the program
@@ -339,7 +340,6 @@ namespace CodeProject.AI.Server
                                 if (filename.EndsWith(InstallConfig.InstallCfgFilename, StringComparison.OrdinalIgnoreCase))
                                     File.Delete(Path.Combine(filename));
                         }
-                            Directory.Delete(applicationDataDir, true);
                     }
                     catch (Exception e)
                     {
@@ -430,7 +430,7 @@ namespace CodeProject.AI.Server
                 // appsettings.os.development.json
                 // appsettings.os.architecture.json
                 // appsettings.os.architecture.development.json
-                // appsettings.system.json              system = raspberrypi, orangepi, jetson, docker etc
+                // appsettings.device.json          device = raspberrypi, orangepi, radxarock, jetson, etc
                 // appsettings.system.development.json
 
                 AddConfigFileVariations("appsettings", os, architecture, edgeDevice, runtimeEnv, 
@@ -555,7 +555,8 @@ namespace CodeProject.AI.Server
 
             (var modulesDirPath, 
              var preInstalledModulesDirPath,
-             var demoModulesDirPath) = EnsureDirectories(configuration);
+             var demoModulesDirPath,
+             var externalModulesDirPath) = EnsureDirectories(configuration);
 
             // Scan the Modules' directories and add each modulesettings files to the config
             if (!string.IsNullOrWhiteSpace(modulesDirPath) && Directory.Exists(modulesDirPath))
@@ -563,14 +564,20 @@ namespace CodeProject.AI.Server
                 var directories = Directory.GetDirectories(modulesDirPath);
                 foreach (string? directory in directories)
                 {
+                    // Bad assumption: A module's ID is same as the name of folder in which it lives.
+                    // string? moduleId = new DirectoryInfo(directory).Name;
+
+                    string? moduleId = ModuleConfigExtensions.GetModuleIdFromModuleSettings(directory);
+                    if (moduleId is null || ModuleIdModuleDirMap.ContainsKey(moduleId))
+                        continue;
+
                     // Check the modulesettings file and, if necessary, reformat it
                     ModuleConfigExtensions.RewriteOldModuleSettingsFile(directory);
 
                     // Load up (existing, or potentially updated) settings
                     config.AddModuleSettingsConfigFiles(directory, reloadOnChange);
 
-                    string moduleId = new DirectoryInfo(directory).Name;
-                    ModuleIdModuleDirMap.Add(moduleId, directory);
+                    ModuleIdModuleDirMap.Add(moduleId, (directory, ModuleLocation.Internal));
                 }
             }
 
@@ -581,10 +588,34 @@ namespace CodeProject.AI.Server
                 var directories = Directory.GetDirectories(preInstalledModulesDirPath);
                 foreach (string? directory in directories)
                 {
-                    config.AddModuleSettingsConfigFiles(directory, reloadOnChange);
+                    // Bad assumption: A module's ID is same as the name of folder in which it lives.
+                    // string? moduleId = new DirectoryInfo(directory).Name;
 
-                    string moduleId = new DirectoryInfo(directory).Name;
-                    ModuleIdModuleDirMap.Add(moduleId, directory);
+                    string? moduleId = ModuleConfigExtensions.GetModuleIdFromModuleSettings(directory);
+                    if (moduleId is null || ModuleIdModuleDirMap.ContainsKey(moduleId))
+                        continue;
+
+                    config.AddModuleSettingsConfigFiles(directory, reloadOnChange);
+                    ModuleIdModuleDirMap.Add(moduleId, (directory, ModuleLocation.PreInstalled));
+                }
+            }
+
+            // Scan the external Modules' directories and add each modulesettings files
+            if (!string.IsNullOrWhiteSpace(externalModulesDirPath) && 
+                Directory.Exists(externalModulesDirPath))
+            {
+                var directories = Directory.GetDirectories(externalModulesDirPath);
+                foreach (string? directory in directories)
+                {
+                    // Bad assumption: A module's ID is same as the name of folder in which it lives.
+                    // string? moduleId = new DirectoryInfo(directory).Name;
+
+                    string? moduleId = ModuleConfigExtensions.GetModuleIdFromModuleSettings(directory);
+                    if (moduleId is null || ModuleIdModuleDirMap.ContainsKey(moduleId))
+                        continue;
+
+                    config.AddModuleSettingsConfigFiles(directory, reloadOnChange);
+                    ModuleIdModuleDirMap.Add(moduleId, (directory, ModuleLocation.External));
                 }
             }
 
@@ -594,27 +625,32 @@ namespace CodeProject.AI.Server
                 var directories = Directory.GetDirectories(demoModulesDirPath);
                 foreach (string? directory in directories)
                 {
-                    config.AddModuleSettingsConfigFiles(directory, reloadOnChange);
+                    // Bad assumption: A module's ID is same as the name of folder in which it lives.
+                    // string? moduleId = new DirectoryInfo(directory).Name;
 
-                    string moduleId = new DirectoryInfo(directory).Name;
-                    ModuleIdModuleDirMap.Add(moduleId, directory);
+                    string? moduleId = ModuleConfigExtensions.GetModuleIdFromModuleSettings(directory);
+                    if (moduleId is null || ModuleIdModuleDirMap.ContainsKey(moduleId))
+                        continue;
+
+                    config.AddModuleSettingsConfigFiles(directory, reloadOnChange);
+                    ModuleIdModuleDirMap.Add(moduleId, (directory, ModuleLocation.Demos));
                 }
             }
         }
 
-        private static (string?,string?, string?) EnsureDirectories(IConfiguration configuration)
+        private static (string?,string?, string?, string?) EnsureDirectories(IConfiguration configuration)
         {
             string rootPath = GetAppRootPath();
             if (string.IsNullOrWhiteSpace(rootPath))
             {
                 Console.WriteLine("No root path provided");
-                return (null, null, null);
+                return (null, null, null, null);
             }
 
             if (!Directory.Exists(rootPath))
             {
                 Console.WriteLine($"The provided root path '{rootPath}' doesn't exist");
-                return (null, null, null);
+                return (null, null, null, null);
             }
 
             var moduleOptions                     = configuration.GetSection("ModuleOptions");
@@ -622,6 +658,7 @@ namespace CodeProject.AI.Server
             string? modulesDirPath                = moduleOptions["modulesDirPath"];
             string? preInstalledModulesDirPath    = moduleOptions["PreInstalledModulesDirPath"];
             string? demoModulesDirPath            = moduleOptions["DemoModulesDirPath"];
+            string? externalModulesDirPath        = moduleOptions["ExternalModulesDirPath"];
             string? downloadedModulesDirPath      = moduleOptions["DownloadedModulePackagesDirPath"];
             string? downloadedModelsDirPath       = moduleOptions["DownloadedModelsPackagesDirPath"];
             string? moduleInstallerScriptsDirPath = moduleOptions["ModuleInstallerScriptsDirPath"];
@@ -630,31 +667,31 @@ namespace CodeProject.AI.Server
             if (string.IsNullOrWhiteSpace(runtimesDirPath))
             {
                 Console.WriteLine("No runtime path provided");
-                return (null, null, null);
+                return (null, null, null, null);
             }
 
             if (string.IsNullOrWhiteSpace(modulesDirPath))
             {
                 Console.WriteLine("No modules path provided");
-                return (null, null, null);
+                return (null, null, null, null);
             }
 
             if (string.IsNullOrWhiteSpace(downloadedModulesDirPath))
             {
                 Console.WriteLine("No downloaded module Packages path provided");
-                return (null, null, null);
+                return (null, null, null, null);
             }
 
             if (string.IsNullOrWhiteSpace(downloadedModelsDirPath))
             {
                 Console.WriteLine("No downloaded model Packages path provided");
-                return (null, null, null);
+                return (null, null, null, null);
             }
 
             if (string.IsNullOrWhiteSpace(moduleInstallerScriptsDirPath))
             {
                 Console.WriteLine("No modules Installer path provided");
-                return (null, null, null);
+                return (null, null, null, null);
             }
 
             // get the full paths
@@ -670,6 +707,8 @@ namespace CodeProject.AI.Server
             preInstalledModulesDirPath    = Path.GetFullPath(preInstalledModulesDirPath);
             demoModulesDirPath            = Text.FixSlashes(demoModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
             demoModulesDirPath            = Path.GetFullPath(demoModulesDirPath);
+            externalModulesDirPath        = Text.FixSlashes(externalModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
+            externalModulesDirPath        = Path.GetFullPath(externalModulesDirPath);
 
             // create the directories if the don't exist
             if (!Directory.Exists(runtimesDirPath))
@@ -714,7 +753,7 @@ namespace CodeProject.AI.Server
                 CopyDirectory(Path.Combine(srcPath, "SDK"),   Path.Combine(moduleInstallerScriptsDirPath, "SDK"), true);
             }
 
-            return (modulesDirPath, preInstalledModulesDirPath, demoModulesDirPath);
+            return (modulesDirPath, preInstalledModulesDirPath, demoModulesDirPath, externalModulesDirPath);
         }
 
         private static void CopyDirectory(string sourceDir, string destinationDir, bool recursive)

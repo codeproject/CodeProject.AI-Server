@@ -41,7 +41,7 @@
       },
 
       "InstallOptions" : {
-        "Platforms": [ "all", "!raspberrypi", "!orangepi", "!jetson" ], 
+        "Platforms": [ "all", "!raspberrypi", "!orangepi", "!radxarock", "!jetson" ], 
         "ModuleReleases": [               // Which server version is compatible with each version of this module.
           { "ModuleVersion": "1.0",   "ServerVersionRange": [ "2.1",   "2.1.6"  ], "ReleaseDate": "2023-03-28" },
           { "ModuleVersion": "1.1",   "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },

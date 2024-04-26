@@ -17,29 +17,28 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demos", "demos", "{7F18EB64
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Javascript", "Javascript", "{3A860CDD-94B9-4002-BA08-87E8822DDE50}"
 	ProjectSection(SolutionItems) = preProject
-		demos\Javascript\Vision.html = demos\Javascript\Vision.html
+		src\demos\Javascript\Vision.html = src\demos\Javascript\Vision.html
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".NET", ".NET", "{1912618E-7942-4BB0-BC2B-7F48A38D1049}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestData", "TestData", "{B10B59B5-9F63-41C2-BFBB-6C7311DC4E99}"
 	ProjectSection(SolutionItems) = preProject
-		demos\TestData\Readme.txt = demos\TestData\Readme.txt
+		src\demos\TestData\Readme.txt = src\demos\TestData\Readme.txt
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{CB26AB5B-DB85-4A59-A3AE-FA55A35D05B0}"
 	ProjectSection(SolutionItems) = preProject
-		demos\Javascript\assets\favicon-16x16.png = demos\Javascript\assets\favicon-16x16.png
-		demos\Javascript\assets\favicon-32x32.png = demos\Javascript\assets\favicon-32x32.png
-		demos\Javascript\assets\logo135-bg.gif = demos\Javascript\assets\logo135-bg.gif
-		demos\Javascript\assets\logo250x135.gif = demos\Javascript\assets\logo250x135.gif
-		demos\Javascript\assets\styles.css = demos\Javascript\assets\styles.css
+		src\demos\Javascript\assets\favicon-16x16.png = src\demos\Javascript\assets\favicon-16x16.png
+		src\demos\Javascript\assets\favicon-32x32.png = src\demos\Javascript\assets\favicon-32x32.png
+		src\demos\Javascript\assets\logo135-bg.gif = src\demos\Javascript\assets\logo135-bg.gif
+		src\demos\Javascript\assets\logo250x135.gif = src\demos\Javascript\assets\logo250x135.gif
+		src\demos\Javascript\assets\styles.css = src\demos\Javascript\assets\styles.css
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{460DB5C8-46F3-4407-A2DF-D9063D14493A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		global.json = global.json
 		LICENCE.md = LICENCE.md
 		README.md = README.md
 		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
@@ -49,99 +48,96 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{FF0C329F-41E
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "License plates", "License plates", "{D320EA6C-2388-41F7-A4D1-980192665A61}"
 	ProjectSection(SolutionItems) = preProject
-		demos\TestData\License plates\ABC123.PNG = demos\TestData\License plates\ABC123.PNG
-		demos\TestData\License plates\BC-Licence-Plate.jpg = demos\TestData\License plates\BC-Licence-Plate.jpg
-		demos\TestData\License plates\canadian-plates.jpg = demos\TestData\License plates\canadian-plates.jpg
-		demos\TestData\License plates\corvette-with-plate.jpg = demos\TestData\License plates\corvette-with-plate.jpg
-		demos\TestData\License plates\corvette-with-plate2.jpg = demos\TestData\License plates\corvette-with-plate2.jpg
-		demos\TestData\License plates\dense-text.gif = demos\TestData\License plates\dense-text.gif
-		demos\TestData\License plates\oh-canada.jpg = demos\TestData\License plates\oh-canada.jpg
-		demos\TestData\License plates\rv-with-plate.jpg = demos\TestData\License plates\rv-with-plate.jpg
-		demos\TestData\License plates\toyota-with-plate.jpg = demos\TestData\License plates\toyota-with-plate.jpg
-		demos\TestData\License plates\your-text.jpg = demos\TestData\License plates\your-text.jpg
+		src\demos\TestData\License plates\ABC123.PNG = src\demos\TestData\License plates\ABC123.PNG
+		src\demos\TestData\License plates\BC-Licence-Plate.jpg = src\demos\TestData\License plates\BC-Licence-Plate.jpg
+		src\demos\TestData\License plates\canadian-plates.jpg = src\demos\TestData\License plates\canadian-plates.jpg
+		src\demos\TestData\License plates\corvette-with-plate.jpg = src\demos\TestData\License plates\corvette-with-plate.jpg
+		src\demos\TestData\License plates\corvette-with-plate2.jpg = src\demos\TestData\License plates\corvette-with-plate2.jpg
+		src\demos\TestData\License plates\dense-text.gif = src\demos\TestData\License plates\dense-text.gif
+		src\demos\TestData\License plates\oh-canada.jpg = src\demos\TestData\License plates\oh-canada.jpg
+		src\demos\TestData\License plates\rv-with-plate.jpg = src\demos\TestData\License plates\rv-with-plate.jpg
+		src\demos\TestData\License plates\toyota-with-plate.jpg = src\demos\TestData\License plates\toyota-with-plate.jpg
+		src\demos\TestData\License plates\your-text.jpg = src\demos\TestData\License plates\your-text.jpg
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Logos", "Logos", "{C5CC1B6F-14B1-41C1-A2F3-164B37BDCC0C}"
 	ProjectSection(SolutionItems) = preProject
-		demos\TestData\Logos\fedex.jpg = demos\TestData\Logos\fedex.jpg
+		src\demos\TestData\Logos\fedex.jpg = src\demos\TestData\Logos\fedex.jpg
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Faces", "Faces", "{49530738-22E7-4D2C-88FD-B20B68BF3A75}"
 	ProjectSection(SolutionItems) = preProject
-		demos\TestData\Faces\chris-hemsworth-1.jpg = demos\TestData\Faces\chris-hemsworth-1.jpg
-		demos\TestData\Faces\chris-hemsworth-2.jpg = demos\TestData\Faces\chris-hemsworth-2.jpg
-		demos\TestData\Faces\chris-hemsworth-3.jpg = demos\TestData\Faces\chris-hemsworth-3.jpg
-		demos\TestData\Faces\crowd.jpg = demos\TestData\Faces\crowd.jpg
-		demos\TestData\Faces\family-on-couch.jpg = demos\TestData\Faces\family-on-couch.jpg
-		demos\TestData\Faces\robert-downey-Jr-1.jpg = demos\TestData\Faces\robert-downey-Jr-1.jpg
-		demos\TestData\Faces\robert-downey-Jr-2.jpg = demos\TestData\Faces\robert-downey-Jr-2.jpg
-		demos\TestData\Faces\robert-downey-Jr-3.jpg = demos\TestData\Faces\robert-downey-Jr-3.jpg
-		demos\TestData\Faces\sailors-all-hands-navy-military.jpg = demos\TestData\Faces\sailors-all-hands-navy-military.jpg
-		demos\TestData\Faces\scarlett-johanson-1.jpg = demos\TestData\Faces\scarlett-johanson-1.jpg
-		demos\TestData\Faces\scarlett-johanson-1.webp = demos\TestData\Faces\scarlett-johanson-1.webp
-		demos\TestData\Faces\scarlett-johanson-2.jpg = demos\TestData\Faces\scarlett-johanson-2.jpg
-		demos\TestData\Faces\scarlett-johanson-3.jpg = demos\TestData\Faces\scarlett-johanson-3.jpg
-		demos\TestData\Faces\two-people-depth-of-field.jpg = demos\TestData\Faces\two-people-depth-of-field.jpg
-		demos\TestData\Faces\two-people-selfie.jpg = demos\TestData\Faces\two-people-selfie.jpg
-		demos\TestData\Faces\woman-low-lighting.jpg = demos\TestData\Faces\woman-low-lighting.jpg
-		demos\TestData\Faces\woman-rainy-window.jpg = demos\TestData\Faces\woman-rainy-window.jpg
-		demos\TestData\Faces\woman-with-flowers.jpg = demos\TestData\Faces\woman-with-flowers.jpg
+		src\demos\TestData\Faces\chris-hemsworth-1.jpg = src\demos\TestData\Faces\chris-hemsworth-1.jpg
+		src\demos\TestData\Faces\chris-hemsworth-2.jpg = src\demos\TestData\Faces\chris-hemsworth-2.jpg
+		src\demos\TestData\Faces\chris-hemsworth-3.jpg = src\demos\TestData\Faces\chris-hemsworth-3.jpg
+		src\demos\TestData\Faces\crowd.jpg = src\demos\TestData\Faces\crowd.jpg
+		src\demos\TestData\Faces\family-on-couch.jpg = src\demos\TestData\Faces\family-on-couch.jpg
+		src\demos\TestData\Faces\kate-winslet-1.jpg = src\demos\TestData\Faces\kate-winslet-1.jpg
+		src\demos\TestData\Faces\robert-downey-Jr-1.jpg = src\demos\TestData\Faces\robert-downey-Jr-1.jpg
+		src\demos\TestData\Faces\robert-downey-Jr-2.jpg = src\demos\TestData\Faces\robert-downey-Jr-2.jpg
+		src\demos\TestData\Faces\robert-downey-Jr-3.jpg = src\demos\TestData\Faces\robert-downey-Jr-3.jpg
+		src\demos\TestData\Faces\sailors-all-hands-navy-military.jpg = src\demos\TestData\Faces\sailors-all-hands-navy-military.jpg
+		src\demos\TestData\Faces\scarlett-johanson-1.jpg = src\demos\TestData\Faces\scarlett-johanson-1.jpg
+		src\demos\TestData\Faces\scarlett-johanson-2.jpg = src\demos\TestData\Faces\scarlett-johanson-2.jpg
+		src\demos\TestData\Faces\two-people-depth-of-field.jpg = src\demos\TestData\Faces\two-people-depth-of-field.jpg
+		src\demos\TestData\Faces\two-people-selfie.jpg = src\demos\TestData\Faces\two-people-selfie.jpg
+		src\demos\TestData\Faces\woman-low-lighting.jpg = src\demos\TestData\Faces\woman-low-lighting.jpg
+		src\demos\TestData\Faces\woman-rainy-window.jpg = src\demos\TestData\Faces\woman-rainy-window.jpg
+		src\demos\TestData\Faces\woman-with-flowers.jpg = src\demos\TestData\Faces\woman-with-flowers.jpg
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "People and Actions", "People and Actions", "{FB31D291-AB9E-43E7-B92D-DBE33F6DD65A}"
 	ProjectSection(SolutionItems) = preProject
-		demos\TestData\People and actions\couple-at-sunset.jpg = demos\TestData\People and actions\couple-at-sunset.jpg
-		demos\TestData\People and actions\man-in-alley.jpg = demos\TestData\People and actions\man-in-alley.jpg
-		demos\TestData\People and actions\running.jpg = demos\TestData\People and actions\running.jpg
-		demos\TestData\People and actions\selfies-on-couch.jpg = demos\TestData\People and actions\selfies-on-couch.jpg
-		demos\TestData\People and actions\warehouse-cam-view-blurred.jpg = demos\TestData\People and actions\warehouse-cam-view-blurred.jpg
-		demos\TestData\People and actions\warehouse-security-cam-view.jpg = demos\TestData\People and actions\warehouse-security-cam-view.jpg
+		src\demos\TestData\People and actions\couple-at-sunset.jpg = src\demos\TestData\People and actions\couple-at-sunset.jpg
+		src\demos\TestData\People and actions\man-in-alley.jpg = src\demos\TestData\People and actions\man-in-alley.jpg
+		src\demos\TestData\People and actions\running.jpg = src\demos\TestData\People and actions\running.jpg
+		src\demos\TestData\People and actions\selfies-on-couch.jpg = src\demos\TestData\People and actions\selfies-on-couch.jpg
+		src\demos\TestData\People and actions\warehouse-cam-view-blurred.jpg = src\demos\TestData\People and actions\warehouse-cam-view-blurred.jpg
+		src\demos\TestData\People and actions\warehouse-security-cam-view.jpg = src\demos\TestData\People and actions\warehouse-security-cam-view.jpg
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scenes", "Scenes", "{C2EFFA0A-E8EA-4AFE-8599-FC28CB7864FB}"
 	ProjectSection(SolutionItems) = preProject
-		demos\TestData\Scenes\beach.jpg = demos\TestData\Scenes\beach.jpg
-		demos\TestData\Scenes\desert.jpg = demos\TestData\Scenes\desert.jpg
-		demos\TestData\Scenes\forest.jpg = demos\TestData\Scenes\forest.jpg
-		demos\TestData\Scenes\glacier-lake.jpg = demos\TestData\Scenes\glacier-lake.jpg
-		demos\TestData\Scenes\iceland-waterfall.jpg = demos\TestData\Scenes\iceland-waterfall.jpg
-		demos\TestData\Scenes\mountains-by-sea.jpg = demos\TestData\Scenes\mountains-by-sea.jpg
-		demos\TestData\Scenes\snowy-road.jpg = demos\TestData\Scenes\snowy-road.jpg
+		src\demos\TestData\Scenes\beach.jpg = src\demos\TestData\Scenes\beach.jpg
+		src\demos\TestData\Scenes\desert.jpg = src\demos\TestData\Scenes\desert.jpg
+		src\demos\TestData\Scenes\forest.jpg = src\demos\TestData\Scenes\forest.jpg
+		src\demos\TestData\Scenes\glacier-lake.jpg = src\demos\TestData\Scenes\glacier-lake.jpg
+		src\demos\TestData\Scenes\iceland-waterfall.jpg = src\demos\TestData\Scenes\iceland-waterfall.jpg
+		src\demos\TestData\Scenes\mountains-by-sea.jpg = src\demos\TestData\Scenes\mountains-by-sea.jpg
+		src\demos\TestData\Scenes\snowy-road.jpg = src\demos\TestData\Scenes\snowy-road.jpg
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Objects", "Objects", "{4ED567B5-C28D-48BB-AEDC-864E2B2C7204}"
 	ProjectSection(SolutionItems) = preProject
-		demos\TestData\Objects\cat-on-wall.jpg = demos\TestData\Objects\cat-on-wall.jpg
-		demos\TestData\Objects\intersection.jpg = demos\TestData\Objects\intersection.jpg
-		demos\TestData\Objects\is-it-a-dog.jpg = demos\TestData\Objects\is-it-a-dog.jpg
-		demos\TestData\Objects\kitchen.jpg = demos\TestData\Objects\kitchen.jpg
-		demos\TestData\Objects\living-room.jpg = demos\TestData\Objects\living-room.jpg
-		demos\TestData\Objects\man-at-desk.jpg = demos\TestData\Objects\man-at-desk.jpg
-		demos\TestData\Objects\menagerie.jpg = demos\TestData\Objects\menagerie.jpg
-		demos\TestData\Objects\office-presentation.jpg = demos\TestData\Objects\office-presentation.jpg
-		demos\TestData\Objects\parrot.jpg = demos\TestData\Objects\parrot.jpg
-		demos\TestData\Objects\quail.JPG = demos\TestData\Objects\quail.JPG
-		demos\TestData\Objects\street-at-night.jpg = demos\TestData\Objects\street-at-night.jpg
-		demos\TestData\Objects\study-group.jpg = demos\TestData\Objects\study-group.jpg
-		demos\TestData\Objects\traffic.jpeg = demos\TestData\Objects\traffic.jpeg
-		demos\TestData\Objects\traffic.jpg = demos\TestData\Objects\traffic.jpg
-		demos\TestData\Objects\traffic2.jpg = demos\TestData\Objects\traffic2.jpg
+		src\demos\TestData\Objects\cat-on-wall.jpg = src\demos\TestData\Objects\cat-on-wall.jpg
+		src\demos\TestData\Objects\intersection.jpg = src\demos\TestData\Objects\intersection.jpg
+		src\demos\TestData\Objects\is-it-a-dog.jpg = src\demos\TestData\Objects\is-it-a-dog.jpg
+		src\demos\TestData\Objects\kitchen.jpg = src\demos\TestData\Objects\kitchen.jpg
+		src\demos\TestData\Objects\living-room.jpg = src\demos\TestData\Objects\living-room.jpg
+		src\demos\TestData\Objects\man-at-desk.jpg = src\demos\TestData\Objects\man-at-desk.jpg
+		src\demos\TestData\Objects\menagerie.jpg = src\demos\TestData\Objects\menagerie.jpg
+		src\demos\TestData\Objects\office-presentation.jpg = src\demos\TestData\Objects\office-presentation.jpg
+		src\demos\TestData\Objects\parrot.jpg = src\demos\TestData\Objects\parrot.jpg
+		src\demos\TestData\Objects\quail.JPG = src\demos\TestData\Objects\quail.JPG
+		src\demos\TestData\Objects\street-at-night.jpg = src\demos\TestData\Objects\street-at-night.jpg
+		src\demos\TestData\Objects\study-group.jpg = src\demos\TestData\Objects\study-group.jpg
+		src\demos\TestData\Objects\traffic.jpeg = src\demos\TestData\Objects\traffic.jpeg
+		src\demos\TestData\Objects\traffic.jpg = src\demos\TestData\Objects\traffic.jpg
+		src\demos\TestData\Objects\traffic2.jpg = src\demos\TestData\Objects\traffic2.jpg
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.API.Server.Backend.Tests", "tests\QueueServiceTests\CodeProject.AI.API.Server.Backend.Tests.csproj", "{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Python", "Python", "{37533562-EC4C-4FB4-8C42-FE327D1D79BD}"
 	ProjectSection(SolutionItems) = preProject
-		demos\clients\Python\requirements.txt = demos\clients\Python\requirements.txt
-		demos\clients\Python\utils.py = demos\clients\Python\utils.py
+		src\demos\clients\Python\requirements.txt = src\demos\clients\Python\requirements.txt
+		src\demos\clients\Python\utils.py = src\demos\clients\Python\utils.py
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{1C7E0F81-1F4A-478B-80CE-4C41606DC087}"
 	ProjectSection(SolutionItems) = preProject
 		src\modules\readme.txt = src\modules\readme.txt
 	EndProjectSection
-EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ALPR", "src\modules\ALPR\ALPR.pyproj", "{6AE28B59-221B-4E3D-A66C-E255B26DAC82}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NET", "src\SDK\NET\NET.csproj", "{F7056ECA-1C9C-4544-99CA-731C944651D6}"
 EndProject
@@ -199,6 +195,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ",vscode", ",vscode", "{CA30
 		.vscode\tasks.json = .vscode\tasks.json
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker-compose", "docker-compose", "{2A2CB97D-0086-4891-AFA1-198F414E3562}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose\docker-compose-cpu.yml = docker-compose\docker-compose-cpu.yml
+		docker-compose\docker-compose-cuda-10.2.yml = docker-compose\docker-compose-cuda-10.2.yml
+		docker-compose\docker-compose-cuda-11.7.yml = docker-compose\docker-compose-cuda-11.7.yml
+		docker-compose\docker-compose-cuda-12.2.yml = docker-compose\docker-compose-cuda-12.2.yml
+		docker-compose\docker-compose-gpu.yml = docker-compose\docker-compose-gpu.yml
+		docker-compose\docker-compose-rpi.yml = docker-compose\docker-compose-rpi.yml
+	EndProjectSection
+EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ALPR-RKNN", "src\modules\ALPR-RKNN\ALPR-RKNN.pyproj", "{6AE28B59-221B-4E3D-A66C-E255B26DAF82}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{A04CA21C-39DF-4466-B48B-A08AA0A262BD}"
@@ -227,23 +233,25 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Text2Image", "src\modules\T
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{5FBE5A09-30BA-4697-8069-443BE5294424}"
 	ProjectSection(SolutionItems) = preProject
-		demos\clients\install.bat = demos\clients\install.bat
-		demos\clients\install.sh = demos\clients\install.sh
+		src\demos\clients\install.bat = src\demos\clients\install.bat
+		src\demos\clients\install.sh = src\demos\clients\install.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{7FA847EE-CB4B-4C79-A774-4FFDB7313638}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetLongProcess", "demos\modules\DotNetLongProcess\DotNetLongProcess.csproj", "{7CC816B7-8559-461D-A5E6-5CE1B6DCA9BC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetLongProcess", "src\demos\modules\DotNetLongProcess\DotNetLongProcess.csproj", "{7CC816B7-8559-461D-A5E6-5CE1B6DCA9BC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetSimple", "demos\modules\DotNetSimple\DotNetSimple.csproj", "{6329F2A4-CB21-42A2-B8EF-205A465D9377}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetSimple", "src\demos\modules\DotNetSimple\DotNetSimple.csproj", "{6329F2A4-CB21-42A2-B8EF-205A465D9377}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonSimple", "demos\modules\PythonSimple\PythonSimple.pyproj", "{6AE28B59-221B-4E3D-A66C-E255B26DAC92}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonSimple", "src\demos\modules\PythonSimple\PythonSimple.pyproj", "{6AE28B59-221B-4E3D-A66C-E255B26DAC92}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.Explorer", "demos\clients\dotNet\CodeProject.AI.Explorer\CodeProject.AI.Explorer.csproj", "{1DB03AEC-8318-4F36-9A4B-FCC5BE00A029}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.Explorer", "src\demos\clients\dotNet\CodeProject.AI.Explorer\CodeProject.AI.Explorer.csproj", "{1DB03AEC-8318-4F36-9A4B-FCC5BE00A029}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Face", "demos\clients\Python\Face\Face.pyproj", "{C2500118-FD99-49EF-B726-3E2A3B30A717}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Face", "src\demos\clients\Python\Face\Face.pyproj", "{C2500118-FD99-49EF-B726-3E2A3B30A717}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetect", "demos\clients\Python\ObjectDetect\ObjectDetect.pyproj", "{25750BF1-1502-4F65-8D69-CEA8C87D6446}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetect", "src\demos\clients\Python\ObjectDetect\ObjectDetect.pyproj", "{25750BF1-1502-4F65-8D69-CEA8C87D6446}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.SDK.Tests", "tests\CodeProject.AI.SDK.Tests\CodeProject.AI.SDK.Tests.csproj", "{534DE25D-0CDB-40FA-9FA5-915947FFC948}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -267,12 +275,6 @@ Global
 		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Release|ARM64.Build.0 = Release|ARM64
 		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Release|x86.ActiveCfg = Release|Any CPU
 		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B}.Release|x86.Build.0 = Release|Any CPU
-		{6AE28B59-221B-4E3D-A66C-E255B26DAC82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6AE28B59-221B-4E3D-A66C-E255B26DAC82}.Debug|ARM64.ActiveCfg = Debug|Any CPU
-		{6AE28B59-221B-4E3D-A66C-E255B26DAC82}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{6AE28B59-221B-4E3D-A66C-E255B26DAC82}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6AE28B59-221B-4E3D-A66C-E255B26DAC82}.Release|ARM64.ActiveCfg = Release|Any CPU
-		{6AE28B59-221B-4E3D-A66C-E255B26DAC82}.Release|x86.ActiveCfg = Release|Any CPU
 		{F7056ECA-1C9C-4544-99CA-731C944651D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F7056ECA-1C9C-4544-99CA-731C944651D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F7056ECA-1C9C-4544-99CA-731C944651D6}.Debug|ARM64.ActiveCfg = Debug|Any CPU
@@ -501,11 +503,24 @@ Global
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446}.Release|x86.ActiveCfg = Release|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Debug|x86.Build.0 = Debug|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Release|Any CPU.Build.0 = Release|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Release|ARM64.Build.0 = Release|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Release|x86.ActiveCfg = Release|Any CPU
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{7F18EB64-C857-49C4-9380-70D3CCE6242B} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
 		{3A860CDD-94B9-4002-BA08-87E8822DDE50} = {5FBE5A09-30BA-4697-8069-443BE5294424}
 		{1912618E-7942-4BB0-BC2B-7F48A38D1049} = {5FBE5A09-30BA-4697-8069-443BE5294424}
 		{B10B59B5-9F63-41C2-BFBB-6C7311DC4E99} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
@@ -520,7 +535,6 @@ Global
 		{031F17E0-BE84-42AF-B9FE-4F928CB03D1B} = {D982BD8C-2257-413B-8513-8043AB3035F3}
 		{37533562-EC4C-4FB4-8C42-FE327D1D79BD} = {5FBE5A09-30BA-4697-8069-443BE5294424}
 		{1C7E0F81-1F4A-478B-80CE-4C41606DC087} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
-		{6AE28B59-221B-4E3D-A66C-E255B26DAC82} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{F7056ECA-1C9C-4544-99CA-731C944651D6} = {FF0C329F-41E8-4540-BCDB-97690911077D}
 		{0690D5F7-864F-4347-8E20-FA9903CE56EB} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{B6A1D372-264E-4F66-B7FB-7FF19587476E} = {FF0C329F-41E8-4540-BCDB-97690911077D}
@@ -554,6 +568,7 @@ Global
 		{1DB03AEC-8318-4F36-9A4B-FCC5BE00A029} = {1912618E-7942-4BB0-BC2B-7F48A38D1049}
 		{C2500118-FD99-49EF-B726-3E2A3B30A717} = {37533562-EC4C-4FB4-8C42-FE327D1D79BD}
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446} = {37533562-EC4C-4FB4-8C42-FE327D1D79BD}
+		{534DE25D-0CDB-40FA-9FA5-915947FFC948} = {D982BD8C-2257-413B-8513-8043AB3035F3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

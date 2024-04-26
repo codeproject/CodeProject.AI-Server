@@ -2,7 +2,6 @@
 using System.Text.Json.Serialization;
 
 using CodeProject.AI.SDK.API;
-using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.SDK
 {
@@ -121,7 +120,7 @@ namespace CodeProject.AI.SDK
         /// with the current server. This value is not deserialised, but instead must be set by the
         /// server.
         /// </summary>
-        public ModuleRelease? LatestRelease { get; set; }
+        public ModuleRelease? LatestCompatibleRelease { get; set; }
 
         /// <summary>
         /// Gets or sets the Version of this module currently installed, or null of this module is
@@ -138,7 +137,7 @@ namespace CodeProject.AI.SDK
         {
             get 
             {
-                return VersionInfo.Compare(LatestRelease?.ModuleVersion, CurrentlyInstalled) > 0;
+                return VersionInfo.Compare(LatestCompatibleRelease?.ModuleVersion, CurrentlyInstalled) > 0;
             }
         }
 
@@ -170,8 +169,10 @@ namespace CodeProject.AI.SDK
         /// <param name="module">This module that requires initialisation</param>
         /// <param name="currentServerVersion">The current version of the server</param>
         /// <param name="moduleDirPath">The path to the folder containing this module</param>
+        /// <param name="moduleLocation">The location of this module</param>
+        /// <returns>True on success; false otherwise</returns>
         public static void Initialise(this ModuleDescription module, string currentServerVersion, 
-                                      string moduleDirPath)
+                                      string moduleDirPath, ModuleLocation moduleLocation)
         {           
             module.ModuleDirPath    = moduleDirPath;
             module.WorkingDirectory = module.ModuleDirPath; // This once was allowed to be different to moduleDirPath
@@ -180,15 +181,27 @@ namespace CodeProject.AI.SDK
             module.CheckVersionAgainstModuleReleases();
             SetLatestCompatibleVersion(module, currentServerVersion);
 
+            // REVIEW: [Chris] The module.IsCompatible() method is not used here because it doesn't check the
+            // LatestCompatibleRelease property. However, it there is a LatestCompatibleRelease, then the module
+            // is compatible. 
+
+            module.Status = module.LatestCompatibleRelease is not null 
+                            ? ModuleStatusType.Available : ModuleStatusType.NotAvailable;
+
             // Set the status of all entries based on availability on this platform
-            module.Status = string.IsNullOrWhiteSpace(module?.LatestRelease?.ModuleVersion) 
-                          || !module.IsCompatible(currentServerVersion)
-                          ? ModuleStatusType.NotAvailable : ModuleStatusType.Available;
+            //module.Status = string.IsNullOrWhiteSpace(module?.LatestCompatibleRelease?.ModuleVersion) 
+            //              || !module.IsCompatible(currentServerVersion)
+            //              ? ModuleStatusType.NotAvailable : ModuleStatusType.Available;
         }
 
         private static void SetLatestCompatibleVersion(ModuleDescription module, 
                                                        string currentServerVersion)
-        {
+        {   
+            if (module.InstallOptions is null || module.InstallOptions.ModuleReleases is null)
+                return;
+
+            module.LatestCompatibleRelease = null;
+
             foreach (ModuleRelease release in module!.InstallOptions!.ModuleReleases!)
             {
                 if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)
@@ -203,10 +216,10 @@ namespace CodeProject.AI.SDK
                 if (VersionInfo.Compare(minServerVersion, currentServerVersion) <= 0 &&
                     VersionInfo.Compare(maxServerVersion, currentServerVersion) >= 0)
                 {
-                    if (module.LatestRelease is null ||
-                        VersionInfo.Compare(module.LatestRelease.ModuleVersion, release.ModuleVersion) <= 0)
+                    if (module.LatestCompatibleRelease is null ||
+                        VersionInfo.Compare(module.LatestCompatibleRelease.ModuleVersion, release.ModuleVersion) <= 0)
                     {
-                        module.LatestRelease = release;
+                        module.LatestCompatibleRelease = release;
                     }
                 }
             }

@@ -7,6 +7,9 @@
 
 @echo off
 
+REM ☑ ✓ ✔ 🗸   ✅ 🗹
+REM ☒ ✗ ✘ 🗴 🗶 ❌ ⮽ 🗵 🗷
+
 set pipFlags=-q -q -q
 if /i "%verbosity%"=="info" set pipFlags=-q -q -q
 if /i "%verbosity%"=="loud" set pipFlags=
@@ -720,7 +723,7 @@ shift & goto :%~1
 
     REM This is getting complicated. The order of priority for the requirements file is:
     REM
-    REM  requirements.device.txt                            (device = "raspberrypi", "orangepi" or "jetson" )
+    REM  requirements.device.txt                            (device = "raspberrypi", "orangepi", "radxarock" or "jetson" )
     REM  requirements.os.architecture.cudaMajor_Minor.txt   (eg cuda12_0)
     REM  requirements.os.architecture.cudaMajor.txt         (eg cuda12)
     REM  requirements.os.architecture.(cuda|rocm).txt
@@ -937,10 +940,10 @@ shift & goto :%~1
                         REM set "module_version=%%b"
                         set "module_name=!module_name:==!"
                     )
-
                     "!venvPythonCmdPath!" -m pip show !module_name! >NUL 2>&1
                     if !errorlevel! == 0 (
-                        call :Write "(✅ checked) " !color_success!
+                        rem ✔ ✅ 🗹
+                        call :Write "(✔ checked) " !color_success!
                     ) else (
                         call :Write "(❌ failed check) " !color_error!
                     )
@@ -1163,6 +1166,8 @@ shift & goto :%~1
 
 :DownloadModels
     REM Downloads the models listed in a module's modulesettings file and marked as needing to be installed
+    REM ASSUMPTION: moduleId and moduleDirPath are set
+
     SetLocal EnableDelayedExpansion
 
     call :Write "Scanning modulesettings for downloadable models..."
@@ -1171,22 +1176,22 @@ shift & goto :%~1
 
     for /L %%i in (0,1,100) Do (
 
-        call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.DownloadableModels[%%i].Name"
+        call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "InstallOptions.DownloadableModels[%%i].Name"
         if /i "!moduleSettingsFileValue!" == "" (
             if /i "!foundModels!" == "false" call :WriteLine "No models specified" "!color_mute!"
             exit /b
         )
 
         set modelName=!moduleSettingsFileValue!
-        call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.DownloadableModels[%%i].PreInstall"
+        call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "InstallOptions.DownloadableModels[%%i].PreInstall"
         if /i "!moduleSettingsFileValue!" == "true" (
 
             if /i "!foundModels!" == "false" call :WriteLine "Processing model list"
             set foundModels=true
 
-            call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.DownloadableModels[%%i].Filename"
+            call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "InstallOptions.DownloadableModels[%%i].Filename"
             set modelFileName=!moduleSettingsFileValue!
-            call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleDirName!", "InstallOptions.DownloadableModels[%%i].Folder"
+            call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "InstallOptions.DownloadableModels[%%i].Folder"
             set modelFolderName=!moduleSettingsFileValue!
 
             call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "!modelFileName!" "!modelFolderName!" "Downloading !modelName!..."
@@ -1276,18 +1281,9 @@ shift & goto :%~1
     set moduleId=%~2
     set property=%~3
 
-    if /i "!useJq!" == "true" (
-        REM escape '-'s
-        if "!property:-=!" neq "!property!" set property="[""!property!""]"
-        if "!moduleId:-=!" neq "!moduleId!" set moduleId="[""!moduleId!""]"
-        set "key=.Modules.!moduleId:.=\.!.!property!"
-    ) else (
-        set "key=$.Modules.!moduleId:.=\.!.!property!"
-    )
-
     if "!debug_json_parse!" == "true" (
         if /i "%verbosity%" neq "quiet" (
-            call :WriteLine "Searching for '!key!' in a suitable modulesettings.json file in !moduleDirPath!" "!color_info!"
+            call :WriteLine "Searching for '!moduleId!.!property!' in a suitable modulesettings.json file in !moduleDirPath!" "!color_info!"
         )
     )
 
@@ -1302,42 +1298,42 @@ shift & goto :%~1
     REM   modulesettings.os.architecture.development.json
     REM   (not supported) modulesettings.docker.json
     REM   (not supported) modulesettings.docker.development.json
-    REM   (not needed yet) modulesettings.device.json (device = raspberrypi, orangepi, jetson)
+    REM   (not needed yet) modulesettings.device.json (device = raspberrypi, orangepi, radxarock, jetson)
     
     set moduleSettingValue=
     
     if "!moduleSettingValue!" == "" (
-        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.!architecture!.development.json", "!key!"
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.!architecture!.development.json", "!moduleId!", "!property!"
         if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
             call :WriteLine "Used modulesettings.windows.!architecture!.development.json to get value !moduleSettingValue!" "!color_info!"
         )
     )
     if "!moduleSettingValue!" == "" (
-        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.!architecture!.json", "!key!"
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.!architecture!.json", "!moduleId!", "!property!"
         if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
             call :WriteLine "Used modulesettings.windows.!architecture!.json to get value !moduleSettingValue!" "!color_info!"
         )
     )
     if "!moduleSettingValue!" == "" (
-        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.development.json", "!key!"
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.development.json", "!moduleId!", "!property!"
         if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
             call :WriteLine "Used modulesettings.windows.development.json to get value !moduleSettingValue!" "!color_info!"
         )
     )
     if "!moduleSettingValue!" == "" (
-        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.json", "!key!"
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.windows.json", "!moduleId!", "!property!"
         if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
             call :WriteLine "Used modulesettings.windows.json to get value !moduleSettingValue!" "!color_info!"
         )
     )
     if "!moduleSettingValue!" == "" (
-        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.development.json", "!key!"
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.development.json", "!moduleId!", "!property!"
         if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
             call :WriteLine "Used modulesettings.development.json to get value !moduleSettingValue!" "!color_info!"
         )
     )
     if "!moduleSettingValue!" == "" (
-        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.json", "!key!"
+        call :GetValueFromModuleSettings "!moduleDirPath!\modulesettings.json", "!moduleId!", "!property!"
         if /i "!verbosity!" neq "quiet" if "!moduleSettingValue!" NEQ "" (
             call :WriteLine "Used modulesettings.json to get value !moduleSettingValue!" "!color_info!"
         )
@@ -1345,9 +1341,9 @@ shift & goto :%~1
 
     if "!debug_json_parse!" == "true" (
         if "!moduleSettingValue!" == "" (
-            call :WriteLine "Cannot find !key! in modulesettings in !moduleDirPath!" "!color_info!"
+            call :WriteLine "Cannot find !moduleId!.!property! in any modulesettings in !moduleDirPath!" "!color_info!"
         ) else (
-            call :WriteLine "!key! is !moduleSettingValue! in modulesettings in !moduleDirPath!" "!color_info!"
+            call :WriteLine !moduleId!.!property! is !moduleSettingValue! in any modulesettings in !moduleDirPath!" "!color_info!"
         )
     )
 
@@ -1362,16 +1358,17 @@ REM Gets a value from the modulesettings.json file (any JSON file, really) based
 REM purely on the name of the propery. THIS METHOD DOES NOT TAKE INTO ACCOUNT THE
 REM DEPTH OF A PROPERTY. If the property is at the root level or 10 levels down,
 REM it's all the same. The extraction is done purely by grep/sed, so is very niaive. 
-:GetValueFromModuleSettings  jsonFilePath key returnValue
+:GetValueFromModuleSettings  jsonFilePath moduleId property returnValue
     set "moduleSettingValue="
     SetLocal EnableDelayedExpansion
 
     set jsonFilePath=%~1
-    set key=%~2
+    set moduleId=%~2
+    set property=%~3
 
     if "!debug_json_parse!" == "true" (
         if /i "!verbosity!" neq "quiet" (
-            call :WriteLine "Searching for '%key%' in '%jsonFilePath%'" "!color_info!"
+            call :WriteLine "Searching for '!moduleId!.!property!' in '%jsonFilePath%'" "!color_info!"
         )
     )
 
@@ -1395,12 +1392,18 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
     REM 'sed', which is what one would use if they have given up all hope for 
     REM humanity. jq is solid but doesn't do comments. See above. ParseJSON does
     REM some comments but not all, so not helpful enough for the overhead. 
+
     if /i "!useJq!" == "true" (
         set parse_mode=jq
+        REM escape '-'s
+        if "!property:-=!" neq "!property!" set property="[""!property!""]"
+        if "!moduleId:-=!" neq "!moduleId!" set moduleId="[""!moduleId!""]"
+        set "key=.Modules.!moduleId:.=\.!.!property!"
     ) else (
         set parse_mode=parsejson
+        set "key=$.Modules.!moduleId:.=\.!.!property!"
     )
-   
+  
     if /i "!parse_mode!" == "jq" (
 
         REM We have a problem with '!'. Because we're using delayed expansion, the ! gets stripped
@@ -1476,6 +1479,94 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
     EndLocal & set "moduleSettingValue=%jsonValue%"
 
     exit /b
+
+REM Gets the moduleID from a modulesettings.json file.  See above function for commentss
+:GetModuleIdFromModuleSettingsFile  jsonFilePath returnValue
+    set "moduleSettingValue="
+    SetLocal EnableDelayedExpansion
+
+    set jsonFilePath=%~1
+
+    if not exist "!jsonFilePath!" (
+        echo Cannot find file "!jsonFilePath!"
+        EndLocal & set "moduleSettingValue="
+        exit /b
+    )
+
+    if /i "!useJq!" == "true" (
+        set parse_mode=jq
+        set key=.Modules | keys[0]
+    ) else (
+        set parse_mode=parsejson
+        set key=$.Modules.#keys[0]
+    )
+   
+    if /i "!parse_mode!" == "jq" (
+
+        REM Step 1. Encode "!"
+        powershell -Command "(Get-Content '!jsonFilePath!') -replace '^!','^^^!' | Out-File -FilePath 'temp_settings1.json' -Force -Encoding utf8"
+
+        REM Step 2. Strip comments
+        call :StripJSONComments temp_settings1.json temp_settings2.json
+        del temp_settings1.json
+
+        REM And extract the property
+        set jsonValue=
+        for /f "usebackq delims=" %%j in (` type temp_settings2.json ^| "!sdkPath!\Utilities\jq-windows-amd64.exe" -r %key% `) do (
+            set "jsonValue=!jsonValue!%%j"
+        )
+        del temp_settings2.json
+
+        REM and thanks for this, jq...
+        if /i "!jsonValue!" == "null" set "jsonValue="
+
+    ) else if /i "!parse_mode!" == "parsejson" (     
+
+        REM Handling quotes and spaces inside a FOR loop is a PITA. Use this trick to get to the
+        REM directory containing the JSON file so we can skip quotes on !jsonFilePath!
+        pushd "!jsonFilePath!\.."
+
+		REM Extract the filename.ext from the json file since it's now in the current dir. This
+        REM allows us to parse the JSON file without quotes. ASSUMING jsonFile DOESN'T HAVE SPACES
+		for %%A in ("!jsonFilePath!") do set "jsonFileName=%%~nxA"
+        
+        REM Run the ParseJSON command on jsonFilePath, and collect ALL lines of output (eg arrays) 
+        REM into the jsonValue var. Note the quotes around ParseJSON, but not around key or jsonFileName
+
+        set "jsonValue="
+        for /f "usebackq tokens=*" %%i in (` "%sdkPath%\Utilities\ParseJSON\ParseJSON.exe" !key! !jsonFileName! `) do (
+            set jsonValue=!jsonValue!%%i
+        )
+
+        REM Go back from whence we came
+        popd
+
+    ) else (
+
+        REM or use inbuilt DOS commands. This will not allow JSON path searching so is very limited
+        set jsonValue=
+        for /f "usebackq tokens=2 delims=:," %%a in (`findstr /I /R /C:"\"!key!\"[^^{]*$" "!jsonFilePath!"`) do (
+            set "jsonValue=%%a"
+            set jsonValue=!jsonValue:"=!
+            set "jsonValue=!jsonValue: =!"
+        )
+    )
+
+    if "!debug_json_parse!" == "true" (
+        if "!jsonValue!" == "" (
+            call :WriteLine "Cannot find !key! in !jsonFilePath!" "!color_info!"
+        ) else (
+            call :WriteLine "** !key! is !jsonValue! in !jsonFilePath!" "!color_info!"
+        )
+    )
+
+    REM return value in 3rd parameter
+    REM EndLocal & set %~3=!jsonValue!
+    REM Or not...
+    EndLocal & set "moduleSettingValue=%jsonValue%"
+
+    exit /b
+
 
 REM Strips single line comments from a file and stores the cleaned contents in a new file
 :StripJSONComments

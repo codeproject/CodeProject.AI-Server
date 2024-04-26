@@ -175,6 +175,12 @@ if [ "$module_install_errors" = "" ] && [ "$edgeDevice" = "Jetson" ]; then
     fi
 fi
 
+# OpenCV needs a specific version for macOS 11
+# https://github.com/opencv/opencv-python/issues/777#issuecomment-1879553756
+if [ "$os_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
+    installPythonPackagesByName "opencv-python==4.6.0.66" "OpenCV 4.6.0.66 for macOS 11.x"
+fi
+
 # Install drivers for non Docker images
 if [ "$module_install_errors" = "" ] && [ "$inDocker" != true ] && [ "$os" = "linux" ] ; then
 

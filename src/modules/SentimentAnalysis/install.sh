@@ -19,7 +19,7 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
-if [ "$os" = "macos" ]; then
+if [ "$os" = "macos" ] && [ ! -d /usr/local/include/tensorflow ]; then
     dynlibFile="libtensorflow-cpu-darwin-x86_64-2.15.0.tar.gz"
     wget -q --no-check-certificate "https://storage.googleapis.com/tensorflow/libtensorflow/${dynlibFile}"
     sudo tar -C /usr/local -xzf "${dynlibFile}"

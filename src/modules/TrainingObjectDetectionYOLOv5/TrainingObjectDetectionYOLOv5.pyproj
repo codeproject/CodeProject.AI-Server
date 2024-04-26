@@ -4,9 +4,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>2dfda382-189b-45d1-94d5-3004d1aeb73c</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>TrainingObjectDetectionYOLOv5.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <StartupFile>training_objectdetection_YOLOv5_adapter.py</StartupFile>
+    <SearchPath>..\..\SDK\Python;bin\windows\python37\venv\Lib\site-packages</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>TrainingObjectDetectionYOLOv5</Name>
@@ -17,26 +16,24 @@
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
-  
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
-  
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
-
   <ItemGroup>
-    <Compile Include="training_objectdetection_YOLOv5.py" />
+    <Compile Include="fiftyone_dataset_creator.py" />
+    <Compile Include="utils.py" />
+    <Compile Include="YOLOV5_Trainer.py" />
     <Compile Include="training_objectdetection_YOLOv5_adapter.py" />
+    <Compile Include="training_objectdetection_YOLOv5_adapter_old.py" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="assets\" />
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="assets\yolov5l.pt" />
     <Content Include="assets\yolov5m.pt" />
@@ -50,7 +47,6 @@
     <Content Include="install.sh" />
     <Content Include="package.sh" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="modulesettings.macos.json">
       <DependentUpon>modulesettings.json</DependentUpon>
@@ -62,7 +58,6 @@
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="requirements.cuda11_5.txt">
       <DependentUpon>requirements.txt</DependentUpon>
@@ -84,7 +79,6 @@
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <Interpreter Include="bin\windows\python37\venv\">
       <Id>venv</Id>
@@ -96,7 +90,6 @@
       <Architecture>X64</Architecture>
     </Interpreter>
   </ItemGroup>
-
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
        Visual Studio and specify your pre- and post-build commands in

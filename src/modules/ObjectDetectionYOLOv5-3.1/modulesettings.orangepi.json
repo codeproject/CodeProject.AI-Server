@@ -1,0 +1,18 @@
+{
+  "Modules": {
+
+    "ObjectDetectionYOLOv5-3.1": {
+      "LaunchSettings": {
+        "AutoStart": true
+      },
+      "GpuOptions" : {
+        "InstallGPU": false
+      },
+
+      "EnvironmentVariables": {
+        "MODEL_SIZE": "Tiny", // tiny, small, medium, large
+        "USE_CUDA": "False"
+      }
+    }
+  }
+}

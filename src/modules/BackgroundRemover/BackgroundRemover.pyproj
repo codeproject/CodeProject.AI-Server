@@ -28,12 +28,6 @@
     <Content Include="models\u2net.onnx" />
     <Content Include="modulesettings.json">
     </Content>
-    <Content Include="modulesettings.orangepi.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.raspberrypi.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
     <Content Include="package.bat" />
     <Content Include="package.sh" />
     <Content Include="explore.html" />

@@ -3,7 +3,7 @@
 
     "ObjectDetectionYOLOv5Net": {
       "Name": "Object Detection (YOLOv5 .NET)",
-      "Version": "1.10.0",
+      "Version": "1.10.1",
 
       "PublishingInfo" : {
         "Description": "Provides Object Detection using YOLOv5 ONNX models with DirectML. This module is best for those on Windows and Linux without CUDA enabled GPUs", 
@@ -66,7 +66,8 @@
           { "ModuleVersion": "1.9.1", "ServerVersionRange": [ "2.5.0-RC6", ""   ], "ReleaseDate": "2024-01-23", "ReleaseNotes": "Adjusted timeouts to correct 'Lost contact' issue" },
           // { "ModuleVersion": "1.9.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-24", "ReleaseNotes": "Corrected issue with spurious timeout errors" },
           { "ModuleVersion": "1.9.3", "ServerVersionRange": [ "2.5.2", "2.6.0"  ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
-          { "ModuleVersion": "1.10.0", "ServerVersionRange": ["2.6.1", ""       ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updated for server 2.6" }
+          { "ModuleVersion": "1.10.0", "ServerVersionRange": ["2.6.1", "2.6.2"  ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updated for server 2.6" },
+          { "ModuleVersion": "1.10.1", "ServerVersionRange": ["2.6.3", ""       ], "ReleaseDate": "2024-04-05", "ReleaseNotes": "Corrected reported Inference device" }
         ]
       },
 

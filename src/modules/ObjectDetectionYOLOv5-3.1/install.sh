@@ -21,6 +21,12 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
+# OpenCV needs a specific version for macOS 11
+# https://github.com/opencv/opencv-python/issues/777#issuecomment-1879553756
+if [ "$os_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
+    installPythonPackagesByName "opencv-python==4.6.0.66" "OpenCV 4.6.0.66 for macOS 11.x"
+fi
+
 # Ah, Jetson. You could have been so good. Yet here we are.
 # Thanks to https://www.hackster.io/spehj/deploy-yolov7-to-jetson-nano-for-object-detection-6728c3
 if [ "$edgeDevice" = "Jetson" ]; then 
@@ -33,11 +39,6 @@ if [ "$edgeDevice" = "Jetson" ]; then
     if [ ! -e "${packagesDirPath}cv2.so" ]; then
         ln -s /usr/lib/python${pythonVersion}/dist-packages/cv2/python-${pythonVersion}/cv2.cpython-${pyNumber}m-aarch64-linux-gnu.so "${packagesDirPath}cv2.so"
     fi
-
-    # apt list opencv 2>/dev/null | grep installed >/dev/null 2>/dev/null
-    #if [ "$?" != "0" ]; then
-    #    opencv is installed
-    #fi
 
     if [ -d "/usr/local/lib/python3.8/dist-packages/torch/" ]; then
         writeLine "PyTorch is already installed." $color_info

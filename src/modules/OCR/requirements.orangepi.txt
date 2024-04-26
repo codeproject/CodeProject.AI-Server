@@ -1,0 +1,12 @@
+#! Python3.9
+
+#paddlepaddle==2.4.2            # Will install from QEngineering
+#paddleocr==2.6.0.1             # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+paddleocr==2.7.0.3              # Installing PaddleOCR, the OCR toolkit based on PaddlePaddle
+
+imutils                         # Installing imutils, the image utilities library
+Pillow<10.0.0                   # Installing Pillow, a Python Image Library
+#opencv-python>=4.2.0           # Will install >4.2 first in script
+numpy==1.23.3                   # Installing NumPy, a package for scientific computing
+
+# end of file

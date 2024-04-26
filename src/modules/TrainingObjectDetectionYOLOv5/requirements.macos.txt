@@ -2,8 +2,8 @@
 # Usage: pip install -r requirements.txt
 
 # Base ----------------------------------------
+opencv-python           # Installing OpenCV, the Open source Computer Vision library
 numpy>=1.18.5           # Installing NumPy, a package for scientific computing
-opencv-python>=4.1.1    # Installing OpenCV, the Open source Computer Vision library
 Pillow<10.0.0           # Installing Pillow, a Python Image Library
 PyYAML>=5.3.1           # Installing PyYAML, a library for reading configuration files
 requests>=2.23.0        # Installing request, the HTTP library

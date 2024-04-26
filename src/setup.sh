@@ -15,9 +15,9 @@
 # If called from within /src, then all analysis modules (in modules/ and
 # modules/ dirs) will be setup in turn, as well as the main SDK and demos.
 #
-# If called from within a module's dir then we assume we're in the 
-# /src/modules/ModuleId directory (or modules/ModuleId in Production) for the
-# module "ModuleId". This script would typically be called via
+# If this script is called from within a module's dir then we assume we're in 
+# the /src/modules/my_module directory (or modules/my_module in Production) for
+# the module "my_module". This script would typically be called via
 #
 #    bash ../../setup.sh
 #
@@ -123,7 +123,11 @@ downloadDir='downloads'
 runtimesDir='runtimes'
 
 # The name of the dir holding the downloaded/sideloaded backend analysis services
+# as well as the pre-installed (for Docker) and external (dev environment / 
+# external projects)
 modulesDir="modules"
+preInstalledModulesDir="preinstalled-modules"
+externalModulesDir="CodeProject.AI-Modules"
 
 # The name of the dir holding downloaded models for the modules. NOTE: this is 
 # not currently used, but here for future-proofing
@@ -131,12 +135,16 @@ modelsDir="models"
 
 
 # The location of directories relative to the root of the solution directory
-runtimesDirPath="${appRootDirPath}/${runtimesDir}"
-modulesDirPath="${appRootDirPath}/${modulesDir}"
-modelsDirPath="${appRootDirPath}/${modelsDir}"
-downloadDirPath="${appRootDirPath}/${downloadDir}"
 sdkPath="${appRootDirPath}/SDK"
 sdkScriptsDirPath="${sdkPath}/Scripts"
+
+runtimesDirPath="${appRootDirPath}/${runtimesDir}"
+
+modulesDirPath="${appRootDirPath}/${modulesDir}"
+preInstalledModulesDirPath="${appRootDirPath}/${preInstalledModulesDir}"
+externalModulesDirPath="${appRootDirPath}/../${externalModulesDir}"
+downloadDirPath="${appRootDirPath}/${downloadDir}"
+modelsDirPath="${appRootDirPath}/${modelsDir}"
 
 # Who launched this script? user or server?
 launchedBy="user"
@@ -230,18 +238,31 @@ exec 3>&1
 # Execution environment, setup mode and Paths ::::::::::::::::::::::::::::::::
 
 # If we're calling this script from the /src folder directly (and the /src
-# folder actually exists) then we're Setting up the dev environment. Otherwise
-# we're installing a module.
+# folder actually exists) then we're Setting up everything, and doing so in the
+# dev environment.
 setupMode='SetupModule'
 currentDirName=$(basename "$(pwd)")     # Get current dir name (not full path)
 currentDirName=${currentDirName:-/} # correct for the case where pwd=/
 
 # when executionEnvironment = "Development" this may be the case
-if [ "$currentDirName" = "$srcDirName" ]; then setupMode='SetupEverything'; fi
+if [ "$currentDirName" = "$srcDirName" ]; then 
+    setupMode='SetupEverything'
+    # HACK: We're one folder deeper than we need to be for referencing externalModulesDir
+    externalModulesDirPath="${appRootDirPath}/../../${externalModulesDir}"
+fi
 
-# when executionEnvironment = "Production" this may be the case
-if [ "$currentDirName" = "$appDirName" ]; then setupMode='SetupEverything'; fi
+# Let's see if we're in the "app" folder (ie Docker)
+if [ "$currentDirName" = "$appDirName" ]; then 
+    setupMode='SetupEverything'
+    # HACK: We're one folder deeper than we need to be for referencing externalModulesDir
+    externalModulesDirPath="${appRootDirPath}/../../${externalModulesDir}"
+fi
 
+# Finally, test if this script is being run from within the directory holding
+# this script, meaning the root folder. It's not /src since we tested that, so
+# being in the root folder that isn't src/, isn't app/, means we're in the root
+# folder of a native install
+if [ "$(pwd)" = "$appRootDirPath" ]; then setupMode='SetupEverything'; fi
 
 # In Development, this script is in the /src folder. In Production there is no
 # /src folder; everything is in the root folder. So: go to the folder
@@ -303,8 +324,8 @@ function setupPythonPaths () {
 
 function doModuleInstall () {
 
-    moduleDirName="$1"
-    moduleDirPath="${modulesDirPath}/${moduleDirName}"
+    moduleId="$1"
+    moduleDirPath="$2"
 
     # Get the module name, version, runtime location and python version from the
     # modulesettings.
@@ -313,26 +334,26 @@ function doModuleInstall () {
 
     writeLine
     write "Reading module settings" $color_mute
-    moduleName=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "Name")
+    moduleName=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleId}" "Name")
     write "." $color_mute
-    moduleVersion=$(getValueFromModuleSettingsFile       "${moduleDirPath}" "${moduleDirName}" "Version" )
+    moduleVersion=$(getValueFromModuleSettingsFile       "${moduleDirPath}" "${moduleId}" "Version" )
     write "." $color_mute
-    runtime=$(getValueFromModuleSettingsFile             "${moduleDirPath}" "${moduleDirName}" "LaunchSettings.Runtime")
+    runtime=$(getValueFromModuleSettingsFile             "${moduleDirPath}" "${moduleId}" "LaunchSettings.Runtime")
     write "." $color_mute
-    runtimeLocation=$(getValueFromModuleSettingsFile     "${moduleDirPath}" "${moduleDirName}" "LaunchSettings.RuntimeLocation")
+    runtimeLocation=$(getValueFromModuleSettingsFile     "${moduleDirPath}" "${moduleId}" "LaunchSettings.RuntimeLocation")
     write "." $color_mute
-    moduleStartFilePath=$(getValueFromModuleSettingsFile "${moduleDirPath}" "${moduleDirName}" "LaunchSettings.FilePath")
+    moduleStartFilePath=$(getValueFromModuleSettingsFile "${moduleDirPath}" "${moduleId}" "LaunchSettings.FilePath")
     write "." $color_mute
-    installGPU=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleDirName}" "GpuOptions.InstallGPU")
+    installGPU=$(getValueFromModuleSettingsFile          "${moduleDirPath}" "${moduleId}" "GpuOptions.InstallGPU")
     write "." $color_mute
-    platforms=$(getValueFromModuleSettingsFile           "${moduleDirPath}" "${moduleDirName}" "InstallOptions.Platforms")
+    platforms=$(getValueFromModuleSettingsFile           "${moduleDirPath}" "${moduleId}" "InstallOptions.Platforms")
     write "." $color_mute
     writeLine "done" $color_success
     
-    if [ "$moduleName" = "" ]; then moduleName="$moduleDirName"; fi
+    if [ "$moduleName" = "" ]; then moduleName="$moduleId"; fi
 
     # writeLine
-    writeLine "Processing module ${moduleDirName} ${moduleVersion}" "White" "Blue" $lineWidth
+    writeLine "Processing module ${moduleId} ${moduleVersion}" "White" "Blue" $lineWidth
     writeLine
 
     # Convert brackets, quotes, commas and newlines to spaces
@@ -348,9 +369,14 @@ function doModuleInstall () {
             can_install=false
             break
         fi
+
+        # Maybe do a check for !OSMajorVersion and !OSMajorVersion-architecture
+
+        # Maybe also do a check for OSMajorVersion and OSMajorVersion-architecture
         if [ "$item" = "all" ] || [ "$item" = "$platform" ]; then
             can_install=true
         fi
+
     done
 
     if [ "$can_install" = false ]; then
@@ -400,6 +426,7 @@ function doModuleInstall () {
 
     if [ "$verbosity" != "quiet" ]; then
         writeLine "moduleName        = $moduleName"        $color_info
+        writeLine "moduleId          = $moduleId"          $color_info
         writeLine "moduleVersion     = $moduleVersion"     $color_info
         writeLine "runtime           = $runtime"           $color_info
         writeLine "runtimeLocation   = $runtimeLocation"   $color_info
@@ -687,19 +714,20 @@ writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${system
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "os, arch             = ${os} ${architecture}"      $color_mute
-    writeLine "systemName, platform = ${systemName}, ${platform}" $color_mute
-    writeLine "edgeDevice           = ${edgeDevice}"              $color_mute
-    writeLine "SSH                  = ${inSSH}"                   $color_mute
-    writeLine "setupMode            = ${setupMode}"               $color_mute
-    writeLine "executionEnvironment = ${executionEnvironment}"    $color_mute
-    writeLine "rootDirPath          = ${rootDirPath}"             $color_mute
-    writeLine "appRootDirPath       = ${appRootDirPath}"          $color_mute
-    writeLine "setupScriptDirPath   = ${setupScriptDirPath}"      $color_mute
-    writeLine "sdkScriptsDirPath    = ${sdkScriptsDirPath}"       $color_mute
-    writeLine "runtimesDirPath      = ${runtimesDirPath}"         $color_mute
-    writeLine "modulesDirPath       = ${modulesDirPath}"          $color_mute
-    writeLine "downloadDirPath      = ${downloadDirPath}"         $color_mute
+    writeLine "os, arch               = ${os} ${architecture}"      $color_mute
+    writeLine "systemName, platform   = ${systemName}, ${platform}" $color_mute
+    writeLine "edgeDevice             = ${edgeDevice}"              $color_mute
+    writeLine "SSH                    = ${inSSH}"                   $color_mute
+    writeLine "setupMode              = ${setupMode}"               $color_mute
+    writeLine "executionEnvironment   = ${executionEnvironment}"    $color_mute
+    writeLine "rootDirPath            = ${rootDirPath}"             $color_mute
+    writeLine "appRootDirPath         = ${appRootDirPath}"          $color_mute
+    writeLine "setupScriptDirPath     = ${setupScriptDirPath}"      $color_mute
+    writeLine "sdkScriptsDirPath      = ${sdkScriptsDirPath}"       $color_mute
+    writeLine "runtimesDirPath        = ${runtimesDirPath}"         $color_mute
+    writeLine "modulesDirPath         = ${modulesDirPath}"          $color_mute
+    writeLine "externalModulesDirPath = ${externalModulesDirPath}"  $color_mute
+    writeLine "downloadDirPath        = ${downloadDirPath}"         $color_mute
     writeLine 
 fi
 
@@ -716,6 +744,7 @@ fi
 # Install tools that we know are available via apt-get or brew
 if [ "$os" = "linux" ]; then 
     checkForTool curl
+    checkForTool pstree
     checkForTool xz-utils
 fi
 checkForTool wget
@@ -733,10 +762,10 @@ writeLine
 
 # Create some directories (run under a subshell, all with sudo)
 
+CreateWriteableDir "${runtimesDirPath}"   "runtimes"
 CreateWriteableDir "${downloadDirPath}"   "downloads"
 CreateWriteableDir "${modulesDirPath}"    "modules download"
 CreateWriteableDir "${modelsDirPath}"     "models download"
-CreateWriteableDir "${runtimesDirPath}"   "runtimes"
 CreateWriteableDir "${commonDataDirPath}" "persisted data"
 
 writeLine
@@ -761,7 +790,7 @@ elif [ "${edgeDevice}" = "Jetson" ]; then
     hasCUDA=true
     cuda_version=$(getCudaVersion)
     cuDNN_version=$(getcuDNNVersion)
-elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ]; then
+elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then
     cuda_version=""
 else 
     cuda_version=$(getCudaVersion)
@@ -823,7 +852,8 @@ fi
 write "ROCm (AMD) Present:    "
 
 hasROCm=false
-if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Jetson" ]; then
+if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
+   [ "${edgeDevice}" = "Radxa ROCK"   ] || [ "${edgeDevice}" = "Jetson"    ]; then
     hasROCm=false
 elif [ "$os" = "linux" ]; then 
     if [ ! -x "$(command -v rocminfo)" ]; then
@@ -879,20 +909,26 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         currentDir="$(pwd)"
         moduleDirName="server"
         moduleDirPath="${appRootDirPath}/${moduleDirName}"
-        
+
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
         if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi
         cd "$currentDir" >/dev/null
     fi
 
-    # Walk through the modules directory and call the setup script in each dir,
-    # as well as setting up the demos
+    # Walk through the modules directory and call the setup script in each dir
+
+    writeLine
+    writeLine "Processing Included CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
+    writeLine
 
     for d in ${modulesDirPath}/*/ ; do
         moduleDirName=$(basename "$d")
+        moduleDirPath="${modulesDirPath}/${moduleDirName}"
+        moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
         currentDir="$(pwd)"
-        doModuleInstall "${moduleDirName}"
+        doModuleInstall "${moduleId}" "${moduleDirPath}"
         cd "$currentDir" >/dev/null
 
         if [ "${module_install_errors}" != "" ]; then
@@ -901,19 +937,46 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         fi
     done
 
+    # Walk through the modules directoorym for modules that live in the external 
+    # folder. For isntance modules that are in extenal Git repos / projects
+
+    writeLine
+    writeLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
+    writeLine
+
+    if [ -d "$externalModulesDirPath" ]; then
+        for d in ${externalModulesDirPath}/*/ ; do
+            moduleDirName=$(basename "$d")
+            moduleDirPath="${externalModulesDirPath}/${moduleDirName}"
+            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
+            writeLine "External module install" "$color_info"
+            currentDir="$(pwd)"
+            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            cd "$currentDir" >/dev/null
+
+            if [ "${module_install_errors}" != "" ]; then
+                success=false
+                writeLine "Install failed: ${module_install_errors}" "$color_error"
+            fi
+        done
+    else
+        writeLine "No external modules found" "$color_mute"
+    fi
+
     writeLine
     writeLine "Module setup Complete" $color_success
     writeLine
 
     # Setup Demos
-    if [ "$selfTestOnly" = false ]; then
+    if [ "$selfTestOnly" = false ] && [ "$executionEnvironment" = "Development" ]; then
 
         writeLine
         writeLine "Processing demo clients" "White" "Blue" $lineWidth
         writeLine
 
         moduleDirName="clients"
-        moduleDirPath="${rootDirPath}/demos/${moduleDirName}"
+        moduleDirPath="${rootDirPath}/src/demos/${moduleDirName}"
 
         currentDir="$(pwd)"
         correctLineEndings "${moduleDirPath}/install.sh"
@@ -925,27 +988,31 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         writeLine "done" $color_success
     fi
 
-    writeLine
-    writeLine "Processing demo modules" "White" "Blue" $lineWidth
-    writeLine
+    if [ "$executionEnvironment" = "Development" ]; then
+        writeLine
+        writeLine "Processing demo modules" "White" "Blue" $lineWidth
+        writeLine
 
-    oldModulesDirPath="${modulesDirPath}"
-    modulesDirPath="${rootDirPath}/demos/modules/"
-    for d in ${modulesDirPath}/*/ ; do
-        moduleDirName=$(basename "$d")
-        currentDir="$(pwd)"
-        doModuleInstall "${moduleDirName}"
-        cd "$currentDir" >/dev/null
+        oldModulesDirPath="${modulesDirPath}"
+        modulesDirPath="${rootDirPath}/src/demos/modules/"
+        for d in ${modulesDirPath}/*/ ; do
+            moduleDirName=$(basename "$d")
+            moduleDirPath="${modulesDirPath}/${moduleDirName}"
+            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-        if [ "${module_install_errors}" != "" ]; then
-            success=false
-            writeLine "Install failed: ${module_install_errors}" "$color_error"
-        fi
-    done
-    modulesDirPath="${oldModulesDirPath}"
+            currentDir="$(pwd)"
+            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            cd "$currentDir" >/dev/null
 
-    writeLine "done" $color_success
-    
+            if [ "${module_install_errors}" != "" ]; then
+                success=false
+                writeLine "Install failed: ${module_install_errors}" "$color_error"
+            fi
+        done
+        modulesDirPath="${oldModulesDirPath}"
+
+        writeLine "done" $color_success
+    fi
 else
 
     # Install an individual module
@@ -956,7 +1023,7 @@ else
     fi
     moduleDirName=$(basename "${moduleDirPath}")
 
-    if [ "$moduleDirName" = "server" ]; then
+    if [ "$moduleDirName" = "server" ]; then        # Not a module. The server
         if [ "$selfTestOnly" = false ]; then
             moduleDirPath="${appRootDirPath}/${moduleDirName}"
             
@@ -965,9 +1032,9 @@ else
             source "${moduleDirPath}/install.sh" "install"
             cd "$currentDir" >/dev/null
         fi
-    elif [ "$moduleDirName" = "clients" ]; then
+    elif [ "$moduleDirName" = "clients" ]; then     # Not a module. The demo clients
         if [ "$selfTestOnly" = false ]; then
-            moduleDirPath="${rootDirPath}/demos/${moduleDirName}"
+            moduleDirPath="${rootDirPath}/src/demos/${moduleDirName}"
             
             currentDir="$(pwd)"
             correctLineEndings "${moduleDirPath}/install.sh"
@@ -976,18 +1043,45 @@ else
         fi
     else
 
-        pushd "../.." >/dev/null
+        # No need to check "$selfTestOnly" here because this check is done in
+        # doModuleInstall. We need to run doModuleInstall to have the selftest
+        # called
+
+        pushd ".." >/dev/null
+        parentPath=$(pwd)
+        pushd ".." >/dev/null
         parentParentPath=$(pwd)
         popd >/dev/null
+        popd >/dev/null
+        parentDirName=$(basename "$parentPath")
         parentParentDirName=$(basename "$parentParentPath")
 
-        if [ "$parentParentDirName" = "demos" ]; then
+        # echo "$parentDirName"
+        # echo "$parentParentDirName"
+
+        if [ "$parentParentDirName" = "demos" ]; then                   # demo module
+            writeLine "Demo module install" "$color_info"
+
             oldModulesDirPath="$modulesDirPath"
-            modulesDirPath="${rootDirPath}/demos/modules/"
-            doModuleInstall "${moduleDirName}"
+    
+            modulesDirPath="${rootDirPath}/src/demos/modules/"
+            moduleDirPath="${modulesDirPath}/${moduleDirName}"
+            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
+            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            
             modulesDirPath="$oldModulesDirPath"
-        else
-            doModuleInstall "${moduleDirName}"
+        elif [ "$parentDirName" = "$externalModulesDir" ]; then   # External module
+            writeLine "External module install" "$color_info"
+            moduleDirPath=$(pwd)
+            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
+            doModuleInstall "${moduleId}" "${moduleDirPath}"
+        else                                                            # Internal module
+            moduleDirPath="${modulesDirPath}/${moduleDirName}"
+            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
+            doModuleInstall "${moduleId}" "${moduleDirPath}"
         fi
     fi
 

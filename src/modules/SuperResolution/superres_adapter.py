@@ -17,7 +17,7 @@ from threading import Lock
 from PIL import Image
 
 # Import the method of the module we're wrapping
-from superresolution import superresolution, init_superres
+from superresolution import init_super_resolution, super_resolution, super_resolution_tile
 
 class SuperRes_adapter(ModuleRunner):
 
@@ -29,7 +29,7 @@ class SuperRes_adapter(ModuleRunner):
         self.can_use_GPU = False # We need to sniff ONNX providers to be able to
                                  # do this. Code sketched out but not complete
 
-        init_superres(assets_path, self.enable_GPU and self.can_use_GPU)
+        init_super_resolution(assets_path, self.enable_GPU and self.can_use_GPU)
         if self.enable_GPU and self.can_use_GPU:
             self.inference_device  = "GPU"
             self.inference_library = "CUDA"
@@ -37,11 +37,14 @@ class SuperRes_adapter(ModuleRunner):
 
     def process(self, data: RequestData) -> JSON:
         try:
-            img: Image = data.get_image(0)
+            img: Image     = data.get_image(0)
+            # upscale_factor = data.get_int("upscale_factor", 3)
+            upscale_factor = 3 # The model only supports x3
 
             start_time = time.perf_counter()
 
-            (out_img, inferenceMs) = superresolution(img)
+            # (out_img, inferenceMs) = super_resolution(img, upscale_factor)
+            (out_img, inferenceMs) = super_resolution_tile(img, upscale_factor)
 
             response = {
                 "success": True,

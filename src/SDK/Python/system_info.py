@@ -60,6 +60,8 @@ class SystemInfo:
                         self.system = 'Raspberry Pi'
                     elif 'orange pi' in model_info:
                         self.system = 'Orange Pi'
+                    elif 'radxa rock' in model_info:
+                        self.system = 'Radxa ROCK'
             except Exception: 
                 pass
 
@@ -96,6 +98,7 @@ class SystemInfo:
                 self.cpu_arch   = 'arm64'
             elif self.cpu_brand.find("Intel(R)") != -1:
                 self.cpu_vendor = 'Intel'
+                
 
     @property
     def osVersion(self) -> str:
@@ -122,6 +125,33 @@ class SystemInfo:
         
         return self._osVersion
 
+
+    @property
+    def getCudaVersion(self) -> "tuple[int, int]":
+        try:
+            import subprocess
+            output = subprocess.check_output(["nvcc", "--version"]).decode('utf-8')
+        
+            version_line = [line for line in output.split('\n') if 'release' in line][0]
+            version = version_line.split(' ')[-1]
+            major, minor = version.split('.')[:2]
+            return int(major), int(minor)
+        
+        except Exception:
+            try:
+                output = subprocess.check_output(["nvidia-smi"]).decode('utf-8')
+                version_line = [line for line in output.split('\n') if 'CUDA Version' in line][0]
+                version = version_line.split(' ')[-1]
+                major, minor = version.split('.')[:2]
+                return int(major), int(minor)
+            
+            except Exception:
+                return (None, None)
+
+    @property
+    def hasNvidiaGPU(self) -> bool:
+        """ Returns True if a CUDA enabled GPU is present and available """
+        return self.getCudaVersion is not None
 
     @property
     def hasTorchCuda(self) -> bool:

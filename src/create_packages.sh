@@ -16,6 +16,9 @@ verbosity="quiet"
 # Show output in wild, crazy colours
 useColor=true
 
+# Whether or not to use the jq utility for JSON parsing
+useJq=true
+
 # Set this to false (or call script with --no-dotnet) to exclude .NET packages
 # This saves time to allow for quick packaging of the easier, non-compiled modules
 includeDotNet=true
@@ -39,6 +42,9 @@ downloadDir='downloads'
 
 # The name of the dir holding the downloaded/sideloaded backend analysis services
 modulesDir="modules"
+
+# The name of the dir holding the external modules
+externalModulesDir="CodeProject.AI-Modules"
 
 
 # Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
@@ -73,6 +79,11 @@ popd >/dev/null
 
 appRootDirPath="${setupScriptDirPath}"
 
+# Standard output may be used as a return value in the functions. Expose stream
+# 3 so we can do 'echo "Hello, World!" >&3' within these functions for debugging
+# without interfering with return values.
+exec 3>&1
+
 # import the utilities :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 # A necessary evil due to cross platform editors and source control playing
@@ -99,46 +110,13 @@ correctLineEndings ${sdkScriptsDirPath}/utils.sh
 # "platform" will be set by this script
 source ${sdkScriptsDirPath}/utils.sh
 
+# Helper method ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-# Platform can define where things are located :::::::::::::::::::::::::::::::
+function doModulePackage () {
 
-# The location of directories relative to the root of the solution directory
-modulesDirPath="${appRootDirPath}/${modulesDir}"
-downloadDirPath="${appRootDirPath}/${downloadDir}"
-
-# Let's go
-
-scriptTitle='          Creating CodeProject.AI Module Downloads'
-writeLine 
-writeLine "$scriptTitle" 'DarkCyan' 'Default' $lineWidth
-writeLine 
-writeLine '======================================================================' 'DarkGreen'
-writeLine 
-writeLine '                   CodeProject.AI Packager                           ' 'DarkGreen'
-writeLine 
-writeLine '======================================================================' 'DarkGreen'
-writeLine 
-
-
-if [ "$verbosity" != "quiet" ]; then 
-    writeLine 
-    writeLine "executionEnvironment = ${executionEnvironment}" $color_mute
-    writeLine "appRootDirPath       = ${appRootDirPath}"       $color_mute
-    writeLine "setupScriptDirPath   = ${setupScriptDirPath}"   $color_mute
-    writeLine "sdkScriptsDirPath    = ${sdkScriptsDirPath}"    $color_mute
-    writeLine "modulesDirPath       = ${modulesDirPath}"       $color_mute
-    writeLine
-fi
-
-# And off we go...
-success='true'
-
-# Walk through the modules directory and call the setup script in each dir
-for d in ${modulesDirPath}/*/ ; do
-
-    packageModuleDirName="$(basename $d)"
-    packageModuleId=$packageModuleDirName
-    packageModuleDirPath=$d
+    packageModuleId="$1"
+    packageModuleDirName="$2"
+    packageModuleDirPath="$3"
 
     if [ "${packageModuleDirPath: -1}" == "/" ]; then
         packageModuleDirPath="${packageModuleDirPath:0:${#packageModuleDirPath}-1}"
@@ -166,7 +144,7 @@ for d in ${modulesDirPath}/*/ ; do
 
             # Read the version from the modulesettings.json file and then pass this 
             # version to the package.bat file.
-            packageVersion=$(getValueFromModuleSettings "modulesettings.json" "Version")
+            packageVersion=$(getValueFromModuleSettings "modulesettings.json" "${packageModuleId}" "Version")
 
             write "Packaging module ${packageModuleId} ${packageVersion}..." "White"
 
@@ -191,7 +169,75 @@ for d in ${modulesDirPath}/*/ ; do
             fi
         fi
     fi
+
+}
+
+
+# Platform can define where things are located :::::::::::::::::::::::::::::::
+
+# The location of directories relative to the root of the solution directory
+modulesDirPath="${appRootDirPath}/${modulesDir}"
+externalModulesDirPath="${appRootDirPath}/../../${externalModulesDir}"
+downloadDirPath="${appRootDirPath}/${downloadDir}"
+
+# Let's go
+
+scriptTitle='          Creating CodeProject.AI Module Downloads'
+writeLine 
+writeLine "$scriptTitle" 'DarkCyan' 'Default' $lineWidth
+writeLine 
+writeLine '======================================================================' 'DarkGreen'
+writeLine 
+writeLine '                   CodeProject.AI Packager                           ' 'DarkGreen'
+writeLine 
+writeLine '======================================================================' 'DarkGreen'
+writeLine 
+
+
+if [ "$verbosity" != "quiet" ]; then 
+    writeLine 
+    writeLine "executionEnvironment   = ${executionEnvironment}"   $color_mute
+    writeLine "appRootDirPath         = ${appRootDirPath}"         $color_mute
+    writeLine "setupScriptDirPath     = ${setupScriptDirPath}"     $color_mute
+    writeLine "sdkScriptsDirPath      = ${sdkScriptsDirPath}"      $color_mute
+    writeLine "modulesDirPath         = ${modulesDirPath}"         $color_mute
+    writeLine "externalModulesDirPath = ${externalModulesDirPath}" $color_mute
+    writeLine
+fi
+
+# And off we go...
+success='true'
+
+# Walk through the internal modules directory and call the setup script in each dir
+for d in ${modulesDirPath}/*/ ; do
+    packageModuleDirPath=$d
+    packageModuleDirName="$(basename $d)"
+
+    # Bad assumption: A module's ID is same as the name of folder in which it lives.
+    # packageModuleId=$packageModuleDirName
+
+    packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
+    if [ "${packageModuleId}" == "" ]; then continue; fi
+    # echo "packageModuleId = ${packageModuleId}"
+
+    doModulePackage "$packageModuleId" "$packageModuleDirName" "$packageModuleDirPath"
 done
+
+# Walk through the external modules directory and call the setup script in each dir
+for d in ${externalModulesDirPath}/*/ ; do
+    packageModuleDirName="$(basename $d)"
+    packageModuleDirPath=$d
+
+    # Bad assumption: A module's ID is same as the name of folder in which it lives.
+    # packageModuleId=$packageModuleDirName
+
+    packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
+    if [ "${packageModuleId}" == "" ]; then continue; fi
+    # echo "packageModuleId = ${packageModuleId}"
+
+    #doModulePackage "$packageModuleId" "$packageModuleDirName" "$packageModuleDirPath"
+done
+
 
 writeLine
 writeLine "                Modules packaging Complete" "White" "DarkGreen" $lineWidth

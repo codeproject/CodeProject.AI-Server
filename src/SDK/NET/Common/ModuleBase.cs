@@ -99,11 +99,18 @@ namespace CodeProject.AI.SDK
     public class InstallOptions
     {
         /// <summary>
+        /// Gets or sets the logging noise level. Quiet = only essentials, Info = anything meaningful,
+        /// Loud = the kitchen sink. Default is Info. Note that this value is only effective if 
+        /// implemented by the module itself
+        /// </summary>
+        public ModuleLocation ModuleLocation { get; set; } = ModuleLocation.Internal;
+
+        /// <summary>
         /// Gets or sets the platforms on which this module is supported. Options include: windows,
-        /// windows-arm64, linux, linux-arm64, macos, macos-arm64, raspberrypi, orangepi, jetson.
-        /// If any of these is preceded by a "!" then that platform is specifically not supported.
-        /// This allows options such as "linux-arm64, !jetson" to mean all Linux arm64 platforms
-        /// except NVIDIA Jetson.
+        /// windows-arm64, linux, linux-arm64, macos, macos-arm64, raspberrypi, orangepi, radxarock,
+        /// jetson. If any of these is preceded by a "!" then that platform is specifically not
+        /// supported. This allows options such as "linux-arm64, !jetson" to mean all Linux arm64
+        /// platforms except NVIDIA Jetson.
         /// </summary>
         public string[] Platforms { get; set; } = Array.Empty<string>();
 
@@ -240,12 +247,17 @@ namespace CodeProject.AI.SDK
             if (module is null || !module.Valid)
                 return false;
 
-            bool versionOK = !string.IsNullOrWhiteSpace(currentServerVersion);
+            bool available = true;  // Let's be optimistic
 
-            // First check: Does this module's version encompass a range of server versions that are
-            // compatible with the current server?
-            if (versionOK)
+            if (string.IsNullOrWhiteSpace(currentServerVersion))
+                available = false;
+
+            string device = SystemInfo.EdgeDevice.Replace(" ", string.Empty);
+
+            // Check Server Version: Check module ModuleReleases list against current server version
+            if (available)
             {
+                bool versionOK = false;
                 if (module.InstallOptions?.ModuleReleases?.Any() ?? false)
                 {
                     foreach (ModuleRelease release in module.InstallOptions.ModuleReleases)
@@ -268,26 +280,52 @@ namespace CodeProject.AI.SDK
                         }
                     }
                 }
+
+                available = versionOK;
             }
 
-            // Second check: Is this module included in available platforms?
-            bool available  = versionOK &&
-                             ( module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase("all")) ||
-                               module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase(SystemInfo.Platform)) );
+            // Check module available Platforms unless available platforms has "All"
+            if (available && !module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase("all")))
+            {
+                bool platformOK = false;
 
-            // Third check. In the second check we've checked directly against the current platform.
-            // For any non Pi, non-Jetson device, SystemInfo.Platform is windows, mac or linux,
-            // possibly with -arm64 appended. For Pi's or Jetson, platform is RaspberryPi, OrangePi
-            // or Jetson. But if these aren't specified in the "Platforms" list then this module
-            // will be marked as not compatible, so we do a fall-back test based on OS and
-            // architecture. If a module is not meant to work for a given OS/architecture then it
-            // should include "!Platform" (eg !Jetson) in the Platforms list.
-            if (!available && !SystemInfo.Platform.EqualsIgnoreCase(SystemInfo.OSAndArchitecture))
-                available = module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase(SystemInfo.OSAndArchitecture));
+                // Check if edge device name appears in list of supported platforms (eg raspberrypi)
+                if (!string.IsNullOrWhiteSpace(device) && module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase(device)))
+                    platformOK = true;
+
+                // Check if OS and architecture appears in list of supported platforms (eg macos-arm64)
+                if (module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase(SystemInfo.OSAndArchitecture))) 
+                    platformOK = true;
+
+                // POTENTIAL Check if OS and architecture appears in list of supported platforms (eg macos14-arm64)
+                // if (module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase(SystemInfo.OSMajorVersionAndArchitecture))) 
+                //    platformOK = true;
+
+                available = platformOK;
+            }
+
+            // Now check for exclusions (ie a "!platform" entry in list of available platforms)
+            if (available)
+            {
+                bool platformOK = true;
+
+                // Check if !(edge device) appears in list of supported platforms (eg !raspberrypi)
+                if (!string.IsNullOrWhiteSpace(device) && module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase($"!{device}")))
+                    platformOK = false;
+
+                // Check if !(OS and architecture) appears in list of supported platforms (eg !macos-arm64)
+                if (module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase($"!{SystemInfo.OSAndArchitecture}")))
+                    platformOK = false;
+
+                // POTENTIAL Check if OS and architecture appears in list of supported platforms (eg (eg !macos14-arm64))
+                // if (module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase($"!{SystemInfo.OSMajorVersionAndArchitecture}"))) 
+                //    platformOK = false;
+
+                available = platformOK;
+            }
 
             // Final check: is the module specifically excluded from the current platform?
-            return available && 
-                   !module!.InstallOptions!.Platforms!.Any(p => p.EqualsIgnoreCase($"!{SystemInfo.Platform}"));
+            return available;
         }
     }
 }

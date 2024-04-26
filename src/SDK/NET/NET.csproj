@@ -12,6 +12,10 @@
 		<Platform>AnyCPU</Platform>
 		<TargetFramework>net7.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>CodeProject.AI Module SDK</Title>
+		<Description>Support for creating CodeProject.AI Server Modules in .NET</Description>
+		<PackageProjectUrl>https://www.codeproject.com/AI</PackageProjectUrl>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->

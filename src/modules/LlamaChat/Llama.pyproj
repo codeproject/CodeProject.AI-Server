@@ -57,7 +57,7 @@
     <Content Include="requirements.cuda12_2.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
-    <Content Include="requirements.macos.arm64.txt">
+    <Content Include="requirements.macos.txt">
       <DependentUpon>requirements.txt</DependentUpon>
     </Content>
   </ItemGroup>

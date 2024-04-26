@@ -157,6 +157,80 @@
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
             }
           ]
+        },
+
+
+        {
+          "Name": "Custom Object Detector (YOLOv5 3.1)",
+          "Route": "vision/custom",
+          "Method": "POST",
+          "Command": "custom",
+          "Description": "Detects objects based on YOLO PyTorch models. Models are stored as .pt files in the /ObjectDetectionYOLOv5-3.1/custom-models directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's .pt file",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "message",
+              "Type": "String",
+              "Description": "A summary of the inference operation."
+            },
+            {
+              "Name": "error",
+              "Type": "String",
+              "Description": "(Optional) An description of the error if success was false."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object[]",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            }
+          ]
+        },
+
+        {
+          "Name": "Object Detector List Custom Models (YOLOv5 3.1)",
+          "Route": "vision/custom/list",
+          "Method": "POST",
+          "Command": "list-custom",
+          "Description": "Returns a list of models available.",
+          "Inputs": [],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "models",
+              "Type": "String",
+              "Description": "An array of strings containing the names of the models installed."
+            }
+          ]
         }
       ]
     }

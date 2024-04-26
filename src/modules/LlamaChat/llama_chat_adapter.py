@@ -13,7 +13,6 @@ from module_runner import ModuleRunner
 from module_options import ModuleOptions
 from module_logging import LogMethod, LogVerbosity
 
-# Import the method of the module we're wrapping
 from llama_chat import LlamaChat
 
 class LlamaChat_adapter(ModuleRunner):
@@ -29,6 +28,21 @@ class LlamaChat_adapter(ModuleRunner):
         # fallback loading via Llama()
         self.model_filename  = ModuleOptions.getEnvVariable("CPAI_MODULE_LLAMA_MODEL_FILENAME", "mistral-7b-instruct-v0.2.Q4_K_M.gguf")
 
+        # llama-cpp-python packages that we are using will use GPU when it can.
+        # But Llama doesn't report this, so we have to make our best guess:
+        #  - on Windows and Linux, it will use CUDA 11.6+ if possible, else CPU
+        #  - on macOS, "Metal" is always used, meaning always GPU
+        # There is support for ROCm for when we add the appropriate requirements files.
+        self.inference_device = "CPU"
+        if self.system_info.os == "macOS":
+            self.inference_device  = "GPU"
+            self.inference_library = "Metal"
+        else:
+            (cuda_major, cuda_minor) = self.system_info.getCudaVersion
+            if cuda_major and (cuda_major > 11 or (cuda_major == 11 and cuda_minor >= 6)):
+                self.inference_device  = "GPU"
+                self.inference_library = "CUDA"
+                          
         verbose = self.log_verbosity != LogVerbosity.Quiet
         self.llama_chat = LlamaChat(repo_id=self.model_repo,
                                     fileglob=self.models_fileglob,

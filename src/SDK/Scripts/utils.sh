@@ -323,7 +323,9 @@ function checkForAdminRights () {
     if [[ $EUID = 0 ]]; then isAdmin=true; fi
 
     # On RPi, you get root access
-    if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ]; then isAdmin=true; fi
+    if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then 
+        isAdmin=true;
+    fi
 
     # In Docker you have admin rights
     if [ "${systemName}" = "Docker" ]; then isAdmin=true; fi
@@ -444,12 +446,13 @@ function checkForTool () {
                 brew install ${name} > /dev/null
             fi
         else
-            checkForAdminAndWarn "sudo apt update -y && sudo apt install ${name} -y"
+            checkForAdminAndWarn "sudo apt-get update -y && sudo apt-get install ${name} -y"
 
             if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
                 writeLine "Installing ${name}..." $color_info
-                sudo apt update -y > /dev/null & sudo apt install ${name} -y > /dev/null
-                stty sane > /dev/null
+                sudo apt-get update -y > /dev/null & sudo apt-get install ${name} -y > /dev/null
+                # Reset TTY. apt-get update can leave the console in a bad state
+                stty sane > /dev/null 2>&1
             fi
         fi
 
@@ -477,7 +480,7 @@ function checkForTool () {
                 quit 4 # required tool missing, needs installing
             fi
         else
-            writeLine "       Please run 'sudo apt install ${name}'" $color_error
+            writeLine "       Please run 'sudo apt-get install ${name}'" $color_error
         fi
 
         writeLine
@@ -735,13 +738,13 @@ function setupDotNet () {
         if [ "$os" = "linux" ]; then
             writeLine ".NET was not installed correctly. You may need to run the following:" $color_error
             echo "# Remove all .NET packages"
-            echo "sudo apt remove 'dotnet*'"
-            echo "sudo apt remove 'aspnetcore*'"
+            echo "sudo apt-get remove 'dotnet*'"
+            echo "sudo apt-get remove 'aspnetcore*'"
             echo "# Delete PMC repository from APT, by deleting the repo .list file"
             echo "sudo rm /etc/apt/sources.list.d/microsoft-prod.list"
-            echo "sudo apt update"
+            echo "sudo apt-get update"
             echo "# Install .NET SDK"
-            echo "sudo apt install dotnet-sdk-${requestedNetVersion}"
+            echo "sudo apt-get install dotnet-sdk-${requestedNetVersion}"
         else
             writeLine ".NET was not installed correctly. You may need to install .NET manually"       $color_error
             writeLine "See https://learn.microsoft.com/en-us/dotnet/core/install/macos for downloads" $color_error
@@ -948,7 +951,8 @@ function setupPython () {
         # macOS: With my M1 chip and Rosetta I make installing Python a real PITA.
         # Raspberry Pi: Hold my beer 
         elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
-             [ "${edgeDevice}" = "Jetson" ] || [ "$os_name" = "debian" ]; then
+             [ "${edgeDevice}" = "Radxa ROCK"   ] || [ "${edgeDevice}" = "Jetson"    ] || \
+             [ "$os_name" = "debian" ]; then
 
             # ensure gcc is installed
             if [ "$os_name" == "debian" ]; then 
@@ -996,9 +1000,9 @@ function setupPython () {
             esac
 
             # install the pre-requisites
-            checkForAdminAndWarn "sudo apt-get update -y && sudo apt --yes --force-yes upgrade"
+            checkForAdminAndWarn "sudo apt-get update -y && sudo apt-get upgrade -y"
             if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
-                sudo apt-get update -y && sudo apt --yes --force-yes upgrade >/dev/null
+                sudo apt-get update -y >/dev/null && sudo apt-get upgrade -y >/dev/null
             fi
 
             # Build tools
@@ -1067,7 +1071,7 @@ function setupPython () {
                     # to just what's needed, but for now we'll just throw everything at the problem
                     # until we find a solution to the "SSLError("Can't connect to HTTPS URL because 
                     # the SSL module is not available.")' issue
-                    sudo apt install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev
+                    sudo apt-get install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev
                     sudo ./configure --enable-optimizations 
                     make
                     sudo make install
@@ -1124,7 +1128,7 @@ function setupPython () {
                 sudo apt-get update -y 
                 
                 writeLine "Installing software-properties-common" $color_info
-                sudo apt install software-properties-common -y
+                sudo apt-get install software-properties-common -y
                 
                 writeLine "Adding deadsnakes as a Python install source (PPA)" $color_info
                 apt policy | grep deadsnakes/ppa > /dev/null
@@ -1134,14 +1138,11 @@ function setupPython () {
                     writeLine "(Already added)" $color_success
                 fi
 
-                writeLine "Updating apt" $color_info
-                sudo apt update -y
+                writeLine "Updating and upgrading apt-get" $color_info
+                sudo apt-get update -y && sudo apt-get upgrade -y
                 
-                writeLine "Upgrading apt" $color_info
-                sudo apt upgrade -y
-
                 write "Installing Python ${pythonVersion} library..." $color_primary
-                sudo apt install python${pythonVersion} -y
+                sudo apt-get install python${pythonVersion} -y
                 writeLine "done" $color_success
 
             elif [ "${verbosity}" = "info" ]; then           
@@ -1152,7 +1153,7 @@ function setupPython () {
                 writeLine "done" $color_success
 
                 write "Installing software-properties-common " $color_info
-                sudo apt install software-properties-common -y >/dev/null &
+                sudo apt-get install software-properties-common -y >/dev/null &
                 spin $!
                 writeLine "done" $color_success
 
@@ -1166,18 +1167,18 @@ function setupPython () {
                     writeLine "Already added" $color_success
                 fi
 
-                write "Updating apt " $color_info
-                sudo apt update -y >/dev/null &
+                write "Updating apt-get " $color_info
+                sudo apt-get update -y >/dev/null &
                 spin $!
                 writeLine "done" $color_success
 
                 write "Upgrading apt " $color_info
-                sudo apt upgrade  -y >/dev/null  &
+                sudo apt-get upgrade  -y >/dev/null  &
                 spin $!
                 writeLine "done" $color_success
 
                 write "Installing Python Library ${pythonVersion} " $color_info
-                sudo apt install python${pythonVersion} -y >/dev/null  &
+                sudo apt-get install python${pythonVersion} -y >/dev/null  &
                 spin $!
                 writeLine "done" $color_success
 
@@ -1188,7 +1189,7 @@ function setupPython () {
                 sudo apt-get update -y >/dev/null 2>/dev/null &
                 spin $!
 
-                sudo apt install software-properties-common -y >/dev/null 2>/dev/null &
+                sudo apt-get install software-properties-common -y >/dev/null 2>/dev/null &
                 spin $!
 
                 apt policy | grep deadsnakes/ppa >/dev/null 2>/dev/null
@@ -1197,13 +1198,13 @@ function setupPython () {
                     spin $!
                 fi
 
-                sudo apt update -y >/dev/null 2>/dev/null &
+                sudo apt-get update -y >/dev/null 2>/dev/null &
                 spin $!
 
-                sudo apt upgrade  -y >/dev/null 2>/dev/null &
+                sudo apt-get upgrade  -y >/dev/null 2>/dev/null &
                 spin $!
 
-                sudo apt install python${pythonVersion} -y >/dev/null 2>/dev/null &
+                sudo apt-get install python${pythonVersion} -y >/dev/null 2>/dev/null &
                 spin $!
 
                 writeLine "done" $color_success
@@ -1277,12 +1278,12 @@ function setupPython () {
 
         if [ "$os" = "macos" ]; then
             if [ "${verbosity}" = "quiet" ]; then
-                write "Installing Virtual Environment tools for mac..." $color_primary
+                write "Installing Virtual Environment tools for macOS..." $color_primary
                 "${basePythonCmdPath}" -m pip $pipFlags install setuptools virtualenv virtualenvwrapper >/dev/null 2>/dev/null &
                 spin $!
                 writeLine "done" $color_success
             else
-                writeLine "Installing Virtual Environment tools for mac..." $color_primary
+                writeLine "Installing Virtual Environment tools for macOS..." $color_primary
                 "${basePythonCmdPath}" -m pip $pipFlags install setuptools virtualenv virtualenvwrapper
 
                 # regarding the warning: See https://github.com/Homebrew/homebrew-core/issues/76621
@@ -1374,7 +1375,7 @@ function installPythonPackagesByName () {
 
     if ! command -v "${venvPythonCmdPath}" > /dev/null; then
         writeLine "Virtual Environment was not created successfully." $color_error
-        writeLine "You may need to run 'sudo dpkg --configure -a' to correct apt errors" $color_warn
+        writeLine "You may need to run 'sudo dpkg --configure -a' to correct apt-get errors" $color_warn
         return 1
     fi
 
@@ -1520,7 +1521,7 @@ function installRequiredPythonPackages () {
 
     if ! command -v "${venvPythonCmdPath}" > /dev/null; then
         writeLine "Virtual Environment was not created successfully." $color_error
-        writeLine "You may need to run 'sudo dpkg --configure -a' to correct apt errors" $color_warn
+        writeLine "You may need to run 'sudo dpkg --configure -a' to correct apt-get errors" $color_warn
         return 1
     fi
 
@@ -1576,7 +1577,7 @@ function installRequiredPythonPackages () {
 
     # This is getting complicated. The order of priority for the requirements file is:
     #
-    #  requirements.device.txt                            (device = "raspberrypi", "orangepi" or "jetson" )
+    #  requirements.device.txt                            (device = "raspberrypi", "orangepi", "radxarock" or "jetson" )
     #  requirements.os.architecture.cudaMajor_Minor.txt   (eg cuda12_0)
     #  requirements.os.architecture.cudaMajor.txt         (eg cuda12)
     #  requirements.os.architecture.(cuda|rocm).txt
@@ -1601,8 +1602,9 @@ function installRequiredPythonPackages () {
 
     requirementsFilename=""
 
-    if [ "$edgeDevice" != "" ] && [ -f "${requirementsDir}/requirements.${edgeDevice}.txt" ]; then
-        requirementsFilename="requirements.${edgeDevice}.txt"
+    # NOTE: edgeDevice would be "Raspberry Pi" (or blank if non-edge) and platform would be "raspberrypi"
+    if [ "$edgeDevice" != "" ] && [ -f "${requirementsDir}/requirements.${platform}.txt" ]; then
+        requirementsFilename="requirements.${platform}.txt"
     fi
 
     if [ "$requirementsFilename" = "" ]; then
@@ -1904,9 +1906,13 @@ function installAptPackages () {
             writeLine "All dependencies already installed." $color_success
         fi
     fi
+
+    # Reset TTY. apt update can leave the console in a bad state
+    stty sane > /dev/null 2>&1
 }
 
 function downloadModels () {
+    # ASSUMPTION: moduleId and moduleDirPath are set
 
     write "Scanning modulesettings for downloadable models..."
 
@@ -1914,17 +1920,17 @@ function downloadModels () {
 
     index=0
     while [ true ]; do
-        modelName=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleDirName" "InstallOptions.DownloadableModels[${index}].Name")
+        modelName=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleId" "InstallOptions.DownloadableModels[${index}].Name")
         if [ "$modelName" = "" ]; then break; fi
     
-        preinstall=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleDirName" "InstallOptions.DownloadableModels[${index}].PreInstall")
+        preinstall=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleId" "InstallOptions.DownloadableModels[${index}].PreInstall")
         if [ "$preinstall" = true ]; then
 
             if [ "$foundModels" = false ]; then writeLine "Processing model list"; fi
             foundModels=true
 
-            modelFileName=$(getValueFromModuleSettingsFile   "$moduleDirPath" "$moduleDirName" "InstallOptions.DownloadableModels[${index}].Filename")
-            modelFolderName=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleDirName" "InstallOptions.DownloadableModels[${index}].Folder")
+            modelFileName=$(getValueFromModuleSettingsFile   "$moduleDirPath" "$moduleId" "InstallOptions.DownloadableModels[${index}].Filename")
+            modelFolderName=$(getValueFromModuleSettingsFile "$moduleDirPath" "$moduleId" "InstallOptions.DownloadableModels[${index}].Folder")
             
             getFromServer "models/" "$modelFileName" "$modelFolderName" "Downloading ${modelName}..."
         fi
@@ -2078,7 +2084,7 @@ function downloadAndExtract () {
     write 'Expanding...' $color_info
 
     pushd "${downloadToDir}" >/dev/null
-  
+    
     if [ $verbosity = "quiet" ]; then 
         if [ "${extension}" = ".gz" ]; then
             tar $tarFlags "${fileToGet}" --directory ${dirToExtract} >/dev/null &  # execute and continue
@@ -2191,16 +2197,6 @@ function getValueFromModuleSettingsFile () {
     #    echo "Searching for '${property}' in a suitable modulesettings.json file in ${moduleDirPath}" >&3
     # fi
 
-    # escape '-'s
-    if [[ $property == *-* ]]; then property="\"${property}\""; fi
-    if [[ $moduleId == *-* ]]; then moduleId="\"${moduleId}\""; fi
-
-    if [ "${useJq}" = true ]; then
-        key=".Modules.${moduleId}.${property}"
-    else
-        key=$".Modules.${moduleId}.${property}"
-    fi
-
     # Module settings files are loaded in this order. Each file will overwrite (but not delete)
     # settings of the previous file. Becuase of this, we're going to search the files in REVERSE
     # order until we find the first value based on the most specific to least specific file.
@@ -2212,7 +2208,7 @@ function getValueFromModuleSettingsFile () {
     #   modulesettings.os.architecture.development.json
     #   (not searched) modulesettings.docker.json
     #   (not searched) modulesettings.docker.development.json
-    #   modulesettings.device.json (device = raspberrypi, orangepi, jetson)
+    #   modulesettings.device.json (device = raspberrypi, orangepi, radxarock, jetson)
     #   modulesettings.device.development.json
     # So we need to check each modulesettings file in reverse order until we find a value for 'key'
     
@@ -2222,43 +2218,43 @@ function getValueFromModuleSettingsFile () {
     settings_file_used=""
 
     if [ "$edgeDevice" != "" ] && [ "$dev_specifier" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${edgeDevice}.${dev_specifier}.json" "${key}")
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${edgeDevice}.${dev_specifier}.json" "${moduleId}" "${property}")
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${edgeDevice}.${dev_specifier}.json"; fi
     fi
     if [ "$edgeDevice" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${edgeDevice}.json" "${key}")
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${edgeDevice}.json" "${moduleId}" "${property}")
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${edgeDevice}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ] && [ "$dev_specifier" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.${dev_specifier}.json" "${key}")
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.${dev_specifier}.json" "${moduleId}" "${property}")
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${os}.${architecture}.${dev_specifier}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.json" "${key}")
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.json" "${moduleId}" "${property}")
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${os}.${architecture}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ] && [ "$dev_specifier" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${dev_specifier}.json" "${key}")
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${dev_specifier}.json" "${moduleId}" "${property}")
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${os}.${dev_specifier}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.json" "${key}")
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.json" "${moduleId}" "${property}")
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${os}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ] && [ "$dev_specifier" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${dev_specifier}.json" "${key}")
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${dev_specifier}.json" "${moduleId}" "${property}")
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${dev_specifier}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.json" "${key}")
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.json" "${moduleId}" "${property}")
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.json"; fi
     fi
 
     if [ false ] && [ "$verbosity" = "loud" ]; then
        if [ "${moduleSettingValue}" = "" ]; then
-           echo "Cannot find ${key} in modulesettings in ${moduleDirPath}" >&3
+           echo "Cannot find ${moduleId}.${property} in modulesettings in ${moduleDirPath}" >&3
        else
-           echo "${key} is ${moduleSettingValue//[$'\r\n']/ } in ${settings_file_used}" >&3
+           echo "${moduleId}.${property} is ${moduleSettingValue//[$'\r\n']/ } in ${settings_file_used}" >&3
        fi
     fi
 
@@ -2276,8 +2272,14 @@ function getValueFromModuleSettingsFile () {
 function getValueFromModuleSettings () { 
 
     local json_file=$1
-    local key=$2
+    local moduleId=$2
+    local property=$3
 
+    # escape '-'s
+    if [[ $property == *-* ]]; then property="\"${property}\""; fi
+    if [[ $moduleId == *-* ]]; then moduleId="\"${moduleId}\""; fi
+
+    # Correct path
     json_file=${json_file//\\//}
     
     # RANT: Douglas Crockford decided that people were abusing the comment 
@@ -2288,14 +2290,17 @@ function getValueFromModuleSettings () {
     # Javascript. The Industry needs to stop honouring a pointless short-sighted
     # decision and standardise Javascript-style comments in JSON. 
 
-    # Options are 'jq' for the jq utility, 'parsejson' for our .NET utility, or
+    # parse_mode can be 'jq' for the jq utility, 'parsejson' for our .NET utility, or
     # 'sed', which is what one would use if they have given up all hope for 
     # humanity. jq is solid but doesn't do comments. See above. ParseJSON does
-    # some comments but not all, so not helpful enough for the overhead. 
+    # some comments but not all, so not helpful enough for the overhead. So we'll
+    # use jq and strip comments. What a waste of time.
     if [ "${useJq}" = true ]; then
         parse_mode='jq' 
+        key=".Modules.${moduleId}.${property}"
     else
         parse_mode='parsejson' 
+        key=$".Modules.${moduleId}.${property}"
     fi
 
     # echo jsonFile is $json_file >&3
@@ -2315,32 +2320,31 @@ function getValueFromModuleSettings () {
             # //[^\n]* matches // and any following characters until the end of the line.
             # The replacement part {$1} ensures that only the first pattern (double-quoted strings) 
             # is kept, while occurrences of // outside quotes are removed.
-            # The g modifier allows the regex to match multiple times, the e modifier enables the 
-            # replacement to be an expression, and the x modifier improves readability by allowing
-            # whitespace and comments in the pattern.
+            # g = all occurrences, e = replacement is an expression, x = ignore whitespace in pattern
 
+            # Remove single line comments
             file_contents=$(perl -0777 -pe 's{ ( " (?: \\. | [^"\\] )* " ) | // [^\n]* }{$1}gex' "$json_file")
             # echo "file_contents = $file_contents" >&3
-          
-            # now remove /* ...*/ multiline comments. (split to make debug easier)
+
+            # Remove /* ...*/ multiline comments. (split to make debug easier)
             file_contents=$(echo "$file_contents" | perl -0777 -pe 's#/\*.*?\*/|##gs')
             # echo "file_contents = $file_contents" >&3
 
+            # Do the extraction
             jsonValue=$(echo "$file_contents" | jq -r "$key")
             # echo "jsonValue = $jsonValue" >&3
             # quit
 
-        elif ["$parse_mode" = "parsejson" ]; then
+        elif [ "$parse_mode" = "parsejson" ]; then
 
-            # Let's back in this huge earth mover to plant my flower pots.
-            # Added bonus: System.Text.Json.JsonSerializer.Deserialize will handle
+            # Let's back in this huge earth mover to plant my flower pots. Even
+            # more fun: System.Text.Json.JsonSerializer.Deserialize will handle
             # comments when deserialising a strongly typed object, but (at least
             # in Linux) it can't deal with "//" comments when deserialising to
-            # a JsonNode object. Yay!
+            # a JsonNode object. See also:  monumental waste of dev's time.
 
             # remove single line comments from the file text
             file_contents=$(cat "$json_file" | sed -e 's|//[^"]*||')
-
             jsonValue=$(echo "${file_contents}" | dotnet "${sdkPath}/Utilities/ParseJSON/ParseJSON.dll" "$key")
 
         else # I have given up all hope. I will use regex and abandon myself to the fates. May God have mercy on my soul
@@ -2368,6 +2372,49 @@ function getValueFromModuleSettings () {
     echo $jsonValue
 }
 
+# Gets the module ID value from the given modulesettings.json file.
+# See comments from above method.
+function getModuleIdFromModuleSettings () { 
+
+    local json_file=$1
+    json_file=${json_file//\\//}
+
+    if [ "${useJq}" = true ]; then
+        parse_mode='jq' 
+        key=".Modules | keys[0]"
+    else
+        parse_mode='parsejson' 
+        key=$".Modules.#keys[0]"
+    fi
+  
+    if [ -f "$json_file" ]; then
+        if [ "$parse_mode" = "jq" ]; then
+
+            # jq can't deal with comments so let's strip singleline comments then multiline.
+            file_contents=$(perl -0777 -pe 's{ ( " (?: \\. | [^"\\] )* " ) | // [^\n]* }{$1}gex' "$json_file")
+            file_contents=$(echo "$file_contents" | perl -0777 -pe 's#/\*.*?\*/|##gs')
+            jsonValue=$(echo "$file_contents" | jq -r "$key")
+
+        else # [ "$parse_mode" = "parsejson" ]; then
+
+            # Strip comments
+            file_contents=$(cat "$json_file" | sed -e 's|//[^"]*||')
+            jsonValue=$(echo "${file_contents}" | dotnet "${sdkPath}/Utilities/ParseJSON/ParseJSON.dll" "$key")
+        fi
+    else
+        jsonValue=""
+    fi
+
+    # Really?? A literal "null"?
+    if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
+
+    # debug
+    # if [ "$verbosity" = "loud" ]; then echo "${key} = $jsonValue" >&3; fi
+
+    echo $jsonValue
+}
+
+
 # Call this, then test: if [ $online -eq 0 ]; then echo 'online'; fi
 function checkForInternet () {
     nc -w 2 -z 8.8.8.8 53  >/dev/null 2>&1
@@ -2381,7 +2428,7 @@ function checkForInternet () {
 #         $1 > $2 ->  1
 versionCompare () {
  
-      # trivial equal case
+    # trivial equal case
     if [[ $1 == $2 ]]; then
         echo "0"
         return 0
@@ -2572,6 +2619,10 @@ else
         systemName='Orange Pi'
         edgeDevice='Orange Pi'
         platform='orangepi'
+    elif [[ "${modelInfo}" == *"Radxa ROCK"* ]]; then
+        systemName='Radxa ROCK'
+        edgeDevice='Radxa ROCK'
+        platform='radxarock'        
     elif [[ "${modelInfo}" == *"NVIDIA Jetson"* ]]; then    # elif [ $(uname -n) = "nano" ]; then
         systemName='Jetson'
         edgeDevice='Jetson'
@@ -2613,7 +2664,7 @@ if [ "$os" = "macos" ]; then
     fi
 else
     darkmode=true
-    terminalBg=$(gsettings get org.gnome.desktop.background primary-color)
+    terminalBg=$(gsettings get org.gnome.desktop.background primary-color 2>/dev/null)
 
     if [ "${terminalBg}" != "no schemas installed" ] && [ "${terminalBg}" != "" ]; then
         terminalBg="${terminalBg%\'}"                               # remove first '

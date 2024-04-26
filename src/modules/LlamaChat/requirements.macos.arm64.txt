@@ -1,5 +1,0 @@
-#! Python3.7
-
-huggingface_hub     # Installing the huggingface hub
-
-# last line empty

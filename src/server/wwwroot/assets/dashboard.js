@@ -178,8 +178,9 @@ async function getModulesStatuses() {
             let menus            = moduleInfo.menus;
             let models           = moduleInfo.downloadableModels;
             let status           = moduleInfo.status;
-            let numInferences    = moduleInfo.statusData?.numInferences    || 0;
-            let inferenceDevice  = moduleInfo.statusData?.inferenceDevice  || '';
+            let numInferences    = moduleInfo.statusData?.numInferences || 0;
+
+            let inferenceDevice = moduleInfo.statusData?.inferenceDevice || '';
             let inferenceLibrary = moduleInfo.statusData?.inferenceLibrary || '';
             let canUseGPU        = moduleInfo.statusData?.canUseGPU        || false;
 
@@ -841,9 +842,9 @@ async function getDownloadableModules() {
             let basedOnUrl         = moduleInfo.publishingInfo.basedOnUrl || '';
 
             let currentlyInstalled = moduleInfo.currentlyInstalled           || '';
-            let latestVersion      = moduleInfo.latestRelease?.moduleVersion || '';
-            let latestReleased     = moduleInfo.latestRelease?.releaseDate   || '';
-            let importance         = moduleInfo.latestRelease?.importance    || '';
+            let latestVersion      = moduleInfo.latestCompatibleRelease?.moduleVersion || '';
+            let latestReleased     = moduleInfo.latestCompatibleRelease?.releaseDate   || '';
+            let importance         = moduleInfo.latestCompatibleRelease?.importance    || '';
             let updateAvailable    = moduleInfo.updateAvailable;
             let status             = moduleInfo.status;
 
@@ -857,8 +858,8 @@ async function getDownloadableModules() {
                 if (importance)
                     updateDesc += ` (${importance})`;
                 updateDesc += `: ${latestVersion} released ${latestReleased}`;
-                if (moduleInfo.latestRelease.releaseNotes)
-                    updateDesc += ". " + moduleInfo.latestRelease.releaseNotes;
+                if (moduleInfo.latestCompatibleRelease.releaseNotes)
+                    updateDesc += ". " + moduleInfo.latestCompatibleRelease.releaseNotes;
 
                 importance = importance.toLowerCase();
                 if (importance == "minor")

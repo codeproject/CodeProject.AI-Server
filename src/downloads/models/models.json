@@ -1,0 +1,7 @@
+{
+    "ObjectDetectionYOLOv8": [
+          { "Name": "YOLOv8 Object Detection all sizes",    "Filename": "objectdetection-coco-yolov8-pt-nsmlx.zip",    "Folder": "assets", "Description": "YOLOv8 object detection using the COCO dataset. Sizes N(ano), S, M, L, XL", "FileSizeKb": 275800, "PreInstall": true },
+          { "Name": "YOLOv8 Object Segmentation all sizes", "Filename": "objectsegmentation-coco-yolov8-pt-nsmlx.zip", "Folder": "assets", "Description": "YOLOv8 object segmentation the COCO dataset. Sizes N(ano), S, M, L, XL",    "FileSizeKb": 291400, "PreInstall": true },
+          { "Name": "YOLOv8 Object Custom models",          "Filename": "objectdetection-custom-yolov8-pt-m.zip",      "Folder": "custom-models", "Description": "YOLOv8 custom object detection: General IPCam, License plate",       "FileSizeKb": 40300,  "PreInstall": true }
+    ]
+}

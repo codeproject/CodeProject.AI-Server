@@ -138,6 +138,7 @@ class SoundClassification_adapter(ModuleRunner):
                 # cmap='spectral' - boring
                 cmap='hsv'
                 cmap='hot'
+                cmap='jet'
                 plt.specgram(data[:, channel], Fs=sample_rate, NFFT=1024, cmap=cmap)
                 plt.ylabel(f'Channel {channel + 1}')
 

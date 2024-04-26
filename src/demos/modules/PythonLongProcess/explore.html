@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<!--
+CODEPROJECT.AI SERVER MODULE EXPLORER
+
+This page provides the means to test this module using the same infrastructure as
+the CodeProject.AI Server explorer. This page also provides the UI elements that
+the explorer will parse and use to build up the UI of the main explorer itself.
+
+RULES AND CONVENTIONS
+
+1. This page should provide sufficient functionality to test and explore this
+   module.
+
+2. This page should use the functionality in the explorer.js file so that when
+   the elements of this page are inserted into the main explorer, it all works
+   seamlessly. Specifically, you will probably use
+
+   - clearImagePreview:         Clears the image preview area.
+   - previewImage:              Displays an image in the shared image preview area and takes a
+                                input[type=file] as parameter.
+   - submitRequest:             Sends a request to the AI server.
+   - setResultsHtml:            Sets the HTML in the shared 'results' element. Parameter is the HTML
+                                to display.
+   - getProcessingMetadataHtml: Gets HTML representing the common data returned from a call to a
+                                module.
+   - displayBaseResults:        Displays the common data returned from a call to a module.
+   - showPredictionSummary:     Displays in the shared HTML results pane the list of predictions 
+                                returned from an inference operation.
+   - clearImageResult:          Clears the image result area 
+   - showResultsImageData:      Displays an image in the shared image results area using the data
+                                returned from a call to a module, and overlays bounding boxes if
+                                present in the data
+   - showResultsBoundingBoxes:  Displays bounding boxes on the shared image results area based on
+                                the boxes returned in the predictions parameter. The first param is
+                                an array of predictions returned from a computer vision operation.
+
+3. There are 3 parts of this page that will be pulled into the main explorer
+   during runtime: The HTML, the script, and the CSS. These sections are bounded by
+
+    - HTML:   START EXPLORER MARKUP / END EXPLORER MARKUP pair, each within HTML comment brackets
+    - Script: START EXPLORER SCRIPT / END EXPLORER SCRIPT pair, each as a // comment on its own line
+    - CSS:    START EXPLORER STYLE  / END EXPLORER STYLE pair, each inside /* ... */ comments
+
+   These delimiters should be on a line by themselves
+
+4. **Please provide output elements to display the results of operations** if
+   you wish to use the standard HTML / Image results elements in the main explorer
+   
+   - For HTML output, include a DIV with id 'results'
+   - For Image preview, include an IMG element with id imgPreview
+   - For image results, include an IMG with element imgPreview and a DIV with
+     id 'imageMask'.
+   - You can use a single image for both preview and results if you wish by only
+     including a imgPreview image. Make sure you have the imageMask DIV though.
+   - For Sound preview, include an AUDIO element with id 'snd' that contains a
+     SOURCE tag
+
+5. When this file is parsed and injected into the larger explorer, the HTML is
+   injected first, then the script, then the CSS.
+
+6. **To ensure uniqueness of elements** you can include the _MID_ macro in any
+   name. This will be expanded to be [ModuleId]_ where [ModuleId] is the literal
+   ID of this module. For instance <div id="_MID_TextBox"> becomes <div id="MyModuleId_TextBox">
+-->
+<head>
+    <meta charset="utf-8" />
+    <title>Python Long Process demo module</title>
+
+    <link id="bootstrapCss" rel="stylesheet" type="text/css" href="http://localhost:32168/assets/bootstrap-dark.min.css">
+    <link rel="stylesheet" type="text/css" href="http://localhost:32168/assets/server.css?v=2.6.1.0">
+    <script type="text/javascript" src="http://localhost:32168/assets/server.js"></script>
+    <script type="text/javascript" src="http://localhost:32168/assets/explorer.js"></script>
+
+    <style>
+/* START EXPLORER STYLE */
+/* END EXPLORER STYLE */
+    </style>
+
+</head>
+<body class="dark-mode">
+<div class="mx-auto" style="max-width: 800px;">
+    <h2 class="mb-3">Python Long Process demo module</h2>
+    <form method="post" action="" enctype="multipart/form-data" id="myform">
+
+<!-- START EXPLORER MARKUP -->
+        <div class="form-group row g-0">
+            <input id="_MID_things" class="form-control btn-success" type="button" value="Start long process"
+                   style="width:9rem" onclick="_MID_onLongProcess()"/>
+            <input id="_MID_cancel" class="form-control btn-warn" type="button" value="Cancel"
+                   style="width:5rem" onclick="_MID_onCancel()"/>
+        </div>
+<!-- END EXPLORER MARKUP -->
+
+        <div>
+            <h2>Results</h2>
+            <div id="results" name="results" class="bg-light p-3" style="min-height: 100px;"></div>
+        </div>
+
+    </form>
+
+    <script type="text/javascript">
+// START EXPLORER SCRIPT
+
+        let _MID_params = null;
+
+		async function _MID_onLongProcess() {
+
+            if (_MID_params) {
+			    setResultsHtml("Process already running. Cancel first to start a new process");
+                return;
+            }
+
+			setResultsHtml("Starting long process...");
+			let data = await submitRequest('pythonlongprocess/long-process', 'command', null, null);
+            if (data) {
+
+                _MID_params = [['commandId', data.commandId], ['moduleId', data.moduleId]];
+
+                let done       = false;
+                let loopCount  = 0;
+                let spinner    = "|/-\\";
+
+                while (!done) {
+                    
+                    await delay(1000);
+
+                    if (!_MID_params)    // may have been cancelled
+                        break;
+
+                    let results = await submitRequest('pythonlongprocess', 'get_command_status', null, _MID_params);
+                    if (results && results.success) {
+
+                        if (results.commandStatus == "failed") {
+                            done = true;
+                            setResultsHtml(results?.error || "Unknown error");
+                        } 
+                        else {
+                            let message = results.result;
+                            if (results.commandStatus == "completed")
+                                done = true;
+
+                            setResultsHtml(message);
+                        }
+                    }
+                    else {
+                        done = true;
+                        setResultsHtml(results?.error || "No response from server");
+                    }
+                }
+
+                _MID_params = null;
+			};
+		}
+
+        async function _MID_onCancel() {
+            if (!_MID_params)
+                return;
+
+			let moduleId = _MID_params[1][1];
+            let result = await submitRequest(moduleId, 'cancel_command', null, _MID_params);
+            if (result.success) {
+                _MID_params = null;
+                setResultsHtml("Command stopped");
+            }
+        }
+
+        // =====================================================================
+        // Startup        
+
+// END EXPLORER SCRIPT
+    </script>
+</div>
+</body>
+</html>

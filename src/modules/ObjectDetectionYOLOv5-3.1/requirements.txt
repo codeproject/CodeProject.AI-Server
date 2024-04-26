@@ -12,3 +12,5 @@ torch==1.6.0+cpu        # Installing PyTorch, for Tensor computation and Deep ne
 
 -f https://download.pytorch.org/whl/torch_stable.html
 torchvision==0.7.0+cpu  # Installing TorchVision, for Computer Vision based AI
+
+# Last line empty

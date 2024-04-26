@@ -443,7 +443,7 @@ namespace CodeProject.AI.SDK.Common
         /// <summary>
         /// Gets the current platform name. This will be OS[-architecture]. eg Windows, macOS,
         /// Linux-Arm64, and for specific devices it will be the device name (RaspberryPi, OrangePi,
-        /// Jetson). Note that x64 won't have a suffix.
+        /// RadxaROCK, Jetson). Note that x64 won't have a suffix.
         /// </summary>
         public static string Platform
         {
@@ -535,6 +535,8 @@ namespace CodeProject.AI.SDK.Common
                             _edgeDevice = "Raspberry Pi";
                         else if (modelInfo.ContainsIgnoreCase("Orange Pi"))
                             _edgeDevice = "Orange Pi";
+                        else if (modelInfo.ContainsIgnoreCase("Radxa ROCK"))
+                            _edgeDevice = "Radxa ROCK";
                         else if (modelInfo.ContainsIgnoreCase("Jetson"))
                             _edgeDevice = "Jetson";
                     }
@@ -571,6 +573,8 @@ namespace CodeProject.AI.SDK.Common
                         if (cpuInfo.ContainsIgnoreCase("Raspberry Pi"))
                             _hardwareVendor = "Raspberry Pi";
                         else if (cpuInfo.ContainsIgnoreCase("Orange Pi"))
+                            _hardwareVendor = "Rockchip";
+                        else if (cpuInfo.ContainsIgnoreCase("Radxa ROCK"))
                             _hardwareVendor = "Rockchip";
                         else if (cpuInfo.ContainsIgnoreCase("Jetson"))
                             _hardwareVendor = "NVIDIA";
@@ -1305,7 +1309,8 @@ namespace CodeProject.AI.SDK.Common
                 return null;
 
             // Quick test for NVidia card
-            if (EdgeDevice == "Raspberry Pi" || EdgeDevice == "Orange Pi" || IsMacOS)
+            if (EdgeDevice == "Raspberry Pi" || EdgeDevice == "Orange Pi" || 
+                EdgeDevice == "Radxa ROCK" || IsMacOS)
             {
                 _hasNvidiaCard = false;
                 return null;
@@ -1616,6 +1621,8 @@ namespace CodeProject.AI.SDK.Common
                     else if (cpu.Name.Contains("Rockchip"))
                         cpuInfo.HardwareVendor = "Rockchip";
                     else if (EdgeDevice == "Orange Pi")
+                        cpuInfo.HardwareVendor = "Rockchip";
+                    else if (EdgeDevice == "Radxa ROCK")
                         cpuInfo.HardwareVendor = "Rockchip";
     
                     cpus.Add(cpuInfo);

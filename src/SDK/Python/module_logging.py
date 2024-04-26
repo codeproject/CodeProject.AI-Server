@@ -132,8 +132,10 @@ class ModuleLogger():
         # so we have basic logging before main loop starts
         if not self.logging_loop_started:
             message = data.get("message", "")
-            if message and isinstance(message, str):
-                print(message)
+            try:
+                if message and isinstance(message, str):
+                    print(message)
+            except: pass
         else:
             # Being really paranoid. The documentation suggests the Queue is not
             # thread safe but it appears to be ok without. Just to be safe ...    

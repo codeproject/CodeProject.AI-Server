@@ -143,12 +143,12 @@ namespace CodeProject.AI.Server.Controllers
                 if (await _moduleProcessServices.RestartProcess(module).ConfigureAwait(false))
                 {
                     var settingStore = new PersistedOverrideSettings(_storagePath);
-                    var overrideSettings = await settingStore.LoadSettings().ConfigureAwait(false);
+                    var currentUserSettings = await settingStore.LoadSettings().ConfigureAwait(false);
 
-                    if (ModuleConfigExtensions.UpsertSettings(overrideSettings, module.ModuleId!,
+                    if (ModuleConfigExtensions.UpsertSettings(currentUserSettings, module.ModuleId!,
                                                               settings.Name, settings.Value))
                     {
-                        success = await settingStore.SaveSettingsAsync(overrideSettings)
+                        success = await settingStore.SaveSettingsAsync(currentUserSettings)
                                                     .ConfigureAwait(false);
                     }
                 }
@@ -176,7 +176,7 @@ namespace CodeProject.AI.Server.Controllers
             // Load up the current persisted settings so we can update and re-save them
 
             var settingStore = new PersistedOverrideSettings(_storagePath);
-            var overrideSettings = await settingStore.LoadSettings().ConfigureAwait(false);
+            var currentUserSettings = await settingStore.LoadSettings().ConfigureAwait(false);
 
             // Keep tabs on which modules need to be restarted
             List<string>? moduleIdsToRestart = new();
@@ -192,7 +192,7 @@ namespace CodeProject.AI.Server.Controllers
                     // list of affected modules that need restarting.
                     Dictionary<string, string> globalSettings = moduleSetting.Value;
                     moduleIdsToRestart = LegacyParams.UpdateSettings(globalSettings, _installedModules,
-                                                                     overrideSettings);
+                                                                     currentUserSettings);
 
                     continue;
                 }
@@ -209,7 +209,7 @@ namespace CodeProject.AI.Server.Controllers
 
                     // Add this setting to the persisted override settings (settings will maintain
                     // after server restart)
-                    ModuleConfigExtensions.UpsertSettings(overrideSettings, module.ModuleId!,
+                    ModuleConfigExtensions.UpsertSettings(currentUserSettings, module.ModuleId!,
                                                           setting.Key, setting.Value);
                 }
 
@@ -229,7 +229,7 @@ namespace CodeProject.AI.Server.Controllers
             }
 
             // Only persist these override settings if all modules restarted successfully
-            bool success = restartSuccess && await settingStore.SaveSettingsAsync(overrideSettings)
+            bool success = restartSuccess && await settingStore.SaveSettingsAsync(currentUserSettings)
                                                                .ConfigureAwait(false);
 
             return new ServerResponse { Success = success };

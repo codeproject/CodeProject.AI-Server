@@ -1020,21 +1020,6 @@
             }
         },
 
-        {
-            "presentation": {
-                "group": "6 Utilities",
-                "hidden": true
-            },
-
-            "name": "InnoSetup",
-            "type": "python", 
-            "code": "#",  // dummy command
-            "console": "internalConsole",
-            "request": "launch",
-            "preLaunchTask": "Inno Setup: Compile Script",
-            // "cwd": "${workspaceFolder}/src/",
-        },
-
         // disabled for now...--------------------------------------------------
 
         // See https://code.visualstudio.com/docs/editor/variables-reference#_settings-command-variables-and-input-variables

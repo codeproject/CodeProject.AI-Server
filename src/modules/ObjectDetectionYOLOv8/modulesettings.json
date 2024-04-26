@@ -3,7 +3,7 @@
 
     "ObjectDetectionYOLOv8": {
       "Name": "Object Detection (YOLOv8)",
-      "Version": "1.4.2",
+      "Version": "1.4.3",
 
       "PublishingInfo" : {
         "Description" : "Provides Object Detection in Python>=3.8 using YOLOv8. Great for newer NVIDIA GPUs",
@@ -22,7 +22,7 @@
         "AutoStart"          : false,
         "FilePath"           : "detect_adapter.py",
         "Runtime"            : "python3.8",
-        "RuntimeLocation"    : "Shared",                // Uses common packages. Let's be efficient
+        "RuntimeLocation"    : "Local",                 // Local, not shared, because previous YOLO may be in shared
         "PostStartPauseSecs" : 1,                       // Generally 1 if using GPU, 0 for CPU
         "Queue"              : "objectdetection_queue", // We make all Object detectors use the same queue.
         "Parallelism"        : 0                        // 0 = Default (number of CPUs - 1)
@@ -60,7 +60,8 @@
           { "ModuleVersion": "1.3.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
           { "ModuleVersion": "1.3.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
           { "ModuleVersion": "1.4.1", "ServerVersionRange": [ "2.5.7", ""     ], "ReleaseDate": "2024-03-03", "ReleaseNotes": "Added object segmentation support" },
-          { "ModuleVersion": "1.4.2", "ServerVersionRange": [ "2.6.0", ""     ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updated for server 2.6" }
+          { "ModuleVersion": "1.4.2", "ServerVersionRange": [ "2.6.0", ""     ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updated for server 2.6" },
+          { "ModuleVersion": "1.4.3", "ServerVersionRange": [ "2.6.0", ""     ], "ReleaseDate": "2024-04-07", "ReleaseNotes": "Added thread lock to address multi-threaded issue" }
         ],
         "DownloadableModels":[
           { "Name": "YOLOv8 Object Detection all sizes",    "Filename": "objectdetection-coco-yolov8-pt-nsmlx.zip",    "Folder": "assets", "Description": "YOLOv8 object detection using the COCO dataset. Sizes N(ano), S, M, L, XL", "FileSizeKb": 275800, "PreInstall": true },

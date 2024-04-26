@@ -1,0 +1,16 @@
+{
+  "Modules": {
+
+    "ObjectDetectionYOLOv8": {
+      "LaunchSettings": {
+        "AutoStart": false,
+        "Runtime": "python3.8"
+      },
+
+      "EnvironmentVariables": {
+        "MODEL_SIZE": "Tiny", // tiny, small, medium, large
+        "USE_CUDA": "False"
+      }
+    }
+  }
+}

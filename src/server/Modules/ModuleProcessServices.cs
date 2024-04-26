@@ -790,7 +790,11 @@ namespace CodeProject.AI.Server.Modules
             if (sender is Process process)
             {
                 string directory = process.StartInfo.WorkingDirectory;
-                string? moduleId = new DirectoryInfo(directory).Name;
+
+                // Bad assumption: A module's ID is same as the name of folder in which it lives.
+                // string? moduleId = new DirectoryInfo(directory).Name;
+
+                string? moduleId = ModuleConfigExtensions.GetModuleIdFromModuleSettings(directory);
                 if (moduleId is null)
                 {
                     _logger.LogError($"Module in {directory} has shutdown, but can't find the module itself");

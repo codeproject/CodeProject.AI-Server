@@ -1,0 +1,148 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
+	<Import Project="../../../SDK/NET/Common.targets" />
+
+	<!-- Common properties -->
+	<PropertyGroup>
+		<Name>ObjectDetection (YOLO .Net)</Name>
+		<RootNamespace>CodeProject.AI.Modules.DotNetSimple</RootNamespace>
+		<AssemblyName>DotNetSimple</AssemblyName>
+		<Version>1.0</Version>
+		<Authors>CodeProject</Authors>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<TargetFramework>net7.0</TargetFramework>
+		<!-- <Platform>AnyCPU</Platform> - this is set below -->
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
+
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<SelfContained>True</SelfContained>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+	    <DefineConstants>$(DefineConstants);</DefineConstants>
+	</PropertyGroup>
+
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	    <DefineConstants>$(DefineConstants);</DefineConstants>
+	</PropertyGroup>
+
+	<!-- We will make a best guess as to what type of GPU support is possible here -->
+	<PropertyGroup>
+		<GpuType>CPU</GpuType>
+		<GpuType Condition="'$(IsWindows)'=='true'">DirectML</GpuType>						<!-- Windows -->
+		<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'!='true'">CUDA</GpuType>	<!-- Linux -->
+		<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'=='true'">CPU</GpuType>	<!-- Raspberry Pi, Orange Pi, Radxa ROCK, Jetson -->
+		<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'!='true'">CPU</GpuType>		<!-- Mac Intel -->
+		<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'">MPS</GpuType>		<!-- Mac Apple Silicon -->
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Common packages required on all GPU types -->
+		<PackageReference Include="Yolov8.Net" Version="1.1.4" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
+		<PackageReference Include="SkiaSharp" Version="2.88.6" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
+
+		<!-- Hardware Specific packages. Note that for CUDA, even if there may not be any actual
+		     CUDA hardware available, the package will still run fine. It's big, but if it does
+			 find CUDA on the machine then it's worth it. -->
+		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.3" Condition="'$(GpuType)'=='CPU'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.16.3" Condition="'$(GpuType)'=='CUDA'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.3" Condition="'$(GpuType)'=='MPS'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.16.3" Condition="'$(GpuType)'=='DirectML'" />
+		<!-- https://github.com/microsoft/onnxruntime/issues/12677#issuecomment-1443802719 -->
+		<PackageReference Include="Microsoft.AI.DirectML" Version="1.13.0" Condition="'$(GpuType)'=='DirectML'" />
+
+	</ItemGroup>
+
+	<!-- Output the settings based on what we've determined above -->
+	<Target Name="SettingsCheck" AfterTargets="BeforeBuild">
+		<Message Importance="High" Text="       $(Name): Building for hardware $(GpuType)" />
+	</Target>
+
+	<PropertyGroup>
+		<DefineConstants Condition="'$(GpuType)'=='CPU'">CPU</DefineConstants>
+		<DefineConstants Condition="'$(GpuType)'=='CUDA'">CUDA</DefineConstants>
+		<DefineConstants Condition="'$(GpuType)'=='MPS'">MPS</DefineConstants>
+		<DefineConstants Condition="'$(GpuType)'=='DirectML'">DirectML</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PlatformTarget Condition="'$(GpuType)'=='CPU'">AnyCPU</PlatformTarget>
+		<PlatformTarget Condition="'$(GpuType)'=='CUDA'">AnyCPU</PlatformTarget>
+		<PlatformTarget Condition="'$(GpuType)'=='MPS'">ARM64</PlatformTarget>
+		<PlatformTarget Condition="'$(GpuType)'=='DirectML'">x64</PlatformTarget>
+		<FileVersion>2.1.5</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Include="favicon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\SDK\NET\NET.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="explore.html">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+	<!-- These make the downloadable exe's huge. The installers will pull down
+	     these files from S3, so this isn't needed
+		 
+	<ItemGroup>
+	  <None Update="assets\yolov5l.onnx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="assets\yolov5m.onnx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="assets\yolov5n.onnx">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="assets\yolov5s.onnx">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="custom-models\ipcam-animal.onnx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="custom-models\ipcam-combined.onnx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="custom-models\ipcam-dark.onnx">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="custom-models\ipcam-general.onnx">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="custom-models\ipcam-plate.onnx">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+	-->
+
+	<!--
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)'== 'Release'">
+	  <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net7.0&#xD;&#xA;cd $(ProjectDir)" />
+	</Target>
+	-->
+
+</Project>

@@ -470,10 +470,11 @@ namespace CodeProject.AI.Server.Modules
             string marker = "%MODULE_ID%";
 
             string key    = MakeKey(route.Replace(marker, moduleId), method.Replace(marker, moduleId));
-            var routeInfo = new RouteQueueInfo(route.Replace(marker, moduleId),
-                                               method.Replace(marker, moduleId),
+            
+            var routeInfo = new RouteQueueInfo(route.Replace(marker,     moduleId),
+                                               method.Replace(marker,    moduleId),
                                                queueName.Replace(marker, moduleId),
-                                               command.Replace(marker, moduleId));
+                                               command.Replace(marker,   moduleId));
             _routeQueueMap[key] = routeInfo;
         }
 

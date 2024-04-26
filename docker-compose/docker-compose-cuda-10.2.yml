@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  CodeProjectAI:
+    image: codeproject/ai-server:cuda10_2
+    container_name: "codeproject-ai-server-cuda"
+    restart: unless-stopped
+    ports:
+      - "32168:32168/tcp"
+      - "32168:32168/udp"
+    environment:
+      - TZ=America/Toronto
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

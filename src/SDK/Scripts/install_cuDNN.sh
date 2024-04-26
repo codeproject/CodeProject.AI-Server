@@ -77,6 +77,8 @@ if [[ $(type -t writeLine) != function ]]; then
         systemName='Raspberry Pi'
     elif [[ "${modelInfo}" == *"Orange Pi"* ]]; then        # elif [ $(uname -n) = "orangepi5" ]; then
         systemName='Orange Pi'
+    elif [[ "${modelInfo}" == *"Radxa ROCK"* ]]; then
+        systemName='Radxa ROCK'
     elif [[ "${modelInfo}" == *"NVIDIA Jetson"* ]]; then    # elif [ $(uname -n) = "nano" ]; then
         systemName='Jetson'
     elif [ "$inDocker" = true ]; then 

@@ -82,10 +82,10 @@ namespace CodeProject.AI.Server.Modules
 
         /// <summary>
         /// Gets or sets the platforms on which this module is supported. Options include: windows,
-        /// windows-arm64, linux, linux-arm64, macos, macos-arm64, raspberrypi, orangepi, jetson.
-        /// If any of these is preceded by a "!" then that platform is specifically not supported.
-        /// This allows options such as "linux-arm64, !jetson" to mean all Linux arm64 platforms
-        /// except NVIDIA Jetson.
+        /// windows-arm64, linux, linux-arm64, macos, macos-arm64, raspberrypi, orangepi, radxarock,
+        /// jetson. If any of these is preceded by a "!" then that platform is specifically not
+        /// supported. This allows options such as "linux-arm64, !jetson" to mean all Linux arm64
+        /// platforms except NVIDIA Jetson.
         /// </summary>
         public string[] Platforms { get; set; } = Array.Empty<string>();
 
@@ -137,7 +137,7 @@ namespace CodeProject.AI.Server.Modules
         /// "Local"  - the runtime is installed locally in this modules folder
         /// "System" - the runtime is installed in the system globally
         /// </summary>
-        public string RuntimeLocation  { get; set; } = "Local";
+        public RuntimeLocation RuntimeLocation  { get; set; } = RuntimeLocation.Local;
 
         /// <summary>
         /// Gets or sets the command to execute the file at FilePath. If set, this overrides Runtime.
