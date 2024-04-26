@@ -143,7 +143,7 @@ class RequestData:
             return
         self.payload["files"].append({ "data": RequestData.encode_file_contents(file_name) })
 
-    def get_image(self, index : int, module: str = 'pil'):
+    def get_image(self, index : int, module: str = 'pil') -> Union[Image, numpy.ndarray]:
         """
         Gets an image from the requests 'files' array that was passed in as 
         part of a HTTP POST.
@@ -165,7 +165,7 @@ class RequestData:
 
             if module == 'opencv':
                 assert 'cv' in sys.modules and 'np' in sys.modules
-                return cv.imdecode(np.frombuffer(img_stream, dtype=np.uint8), cv.IMREAD_COLOR)
+                return cv.imdecode(np.frombuffer(img_bytes, dtype=np.uint8), cv.IMREAD_COLOR)
             else:
                 with io.BytesIO(img_bytes) as img_stream:
                     img = Image.open(img_stream)
