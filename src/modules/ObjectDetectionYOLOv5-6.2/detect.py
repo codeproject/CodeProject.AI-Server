@@ -8,8 +8,7 @@ import torch
 from yolov5.models.common import DetectMultiBackend, AutoShape
 from PIL import UnidentifiedImageError
 
-from module_logging import LogMethod
-from options import Options
+from codeproject_ai_sdk import LogMethod
 
 
 # Setup a global bucket of YOLO detectors. One for each model
