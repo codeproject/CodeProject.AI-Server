@@ -270,27 +270,6 @@
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
-        },
-        
-        {
-          "label": "Inno Setup: Compile Script",
-          "type": "process",
-          "command": "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
-          "args": [
-            "${file}"
-          ],
-          "dependsOrder": "sequence",
-          "dependsOn": [
-            "build-server-release"
-          ],
-          "presentation": {
-            "reveal": "always",
-            "echo": false
-          },
-          "group": {
-            "kind": "build",
-            "isDefault": true
-          }
         }
     ]
 }
