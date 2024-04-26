@@ -302,25 +302,6 @@ MigrationBackup/
 /demos/clients/Python/detected
 /demos/clients/Python/Vision/detected
 
-
-# Installers -------------------------------------------------------------------
-
-/Installers/macOS/application
-/Installers/macOS/build/
-/Installers/macOS/target
-/Installers/macOS/*.pkg
-/Installers/macOS/CodeProject.AI-Server_*_macOS_*.zip
-
-/Installers/Ubuntu/build/
-/Installers/Ubuntu/installer/
-/Installers/Ubuntu/*.deb
-/Installers/Ubuntu/codeproject.ai-server_*_Ubuntu_*.zip
-
-/Installers/Windows/Inno Setup/Output
-/Installers/Windows/Inno Setup/assets/dotnet-hosting-*.exe
-/Installers/Windows/WIX Toolset/CodeProjectAI.Server.Installer/ServerInstallFiles.wxs
-
-
 # Downloads --------------------------------------------------------------------
 
 # Linux utilities
@@ -340,41 +321,16 @@ wget-log*
 
 
 # Downloaded assets and libraries for modules
-/src/modules/ALPR/paddleocr
-/src/modules/ALPR-RKNN/paddleocr
-/src/modules/BackgroundRemover/models
-/src/modules/Cartooniser/weights
-/src/modules/FaceProcessing/assets
-/src/modules/FaceProcessing/datastore/
-/src/modules/LlamaChat/models/
-/src/modules/ObjectDetectionCoral/assets
-src/modules/ObjectDetectionCoral/edgetpu_runtime
-src/modules/ObjectDetectionYoloRKNN/assets
-src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/modules/ObjectDetectionYOLOv5Net/assets/
 /src/modules/ObjectDetectionYOLOv5Net/custom-models
 /src/modules/ObjectDetectionYOLOv5Net/LocalNugets
-/src/modules/ObjectDetectionYOLOv5-3.1/custom-models
-/src/modules/ObjectDetectionYOLOv5-3.1/assets
 /src/modules/ObjectDetectionYOLOv5-6.2/assets
 /src/modules/ObjectDetectionYOLOv5-6.2/custom-models
-/src/modules/ObjectDetectionYOLOv8/assets
-/src/modules/ObjectDetectionYOLOv8/custom-models
-/src/modules/OCR/paddleocr
-/src/modules/SceneClassifier/assets
-/src/modules/SoundClassifierTF/data/
-/src/modules/Text2Image/assets
-/src/modules/TrainingObjectDetectionYOLOv5/assets
-/src/modules/TrainingObjectDetectionYOLOv5/datasets
-/src/modules/TrainingObjectDetectionYOLOv5/fiftyone
-/src/modules/TrainingObjectDetectionYOLOv5/training
-/src/modules/TrainingObjectDetectionYOLOv5/train
-/src/modules/TrainingObjectDetectionYOLOv5/zoo
 
-/demos/modules/DotNetLongProcess/assets/
-/demos/modules/DotNetSimple/assets/
-/demos/modules/PythonLongProcess/assets
-/demos/modules/PythonSimple/assets
+/src/demos/modules/DotNetLongProcess/assets/
+/src/demos/modules/DotNetSimple/assets/
+/src/demos/modules/PythonLongProcess/assets
+/src/demos/modules/PythonSimple/assets
 
 # Config files -----------------------------------------------------------------
 
@@ -391,7 +347,6 @@ src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/SDK/Utilities/ParseJSON/ParseJSON.dll
 /src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json
 /src/SDK/Utilities/ParseJSON/ParseJSON.xml
-
 /src/SDK/Utilities/ParseJSON/*.dll
 
 
