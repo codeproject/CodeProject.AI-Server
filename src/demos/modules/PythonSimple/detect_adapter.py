@@ -2,17 +2,8 @@
 import os
 import sys
 
-# Import the CodeProject.AI SDK. This will add to the PATH var for future imports
-sys.path.append("../../SDK/Python")
-
-# HACK: For a module in the demos/modules folder we need to add this search path
-sys.path.append("../../../SDK/Python")
-
-from common import JSON
-from request_data import RequestData
-from module_options import ModuleOptions
-from module_runner import ModuleRunner
-from module_logging import LogMethod
+# Import CodeProject.AI SDK
+from codeproject_ai_sdk import LogMethod, RequestData, ModuleOptions, ModuleRunner, JSON
 
 # Import necessary modules we've installed 
 from PIL import Image
