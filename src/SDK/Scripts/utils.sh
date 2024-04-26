@@ -1456,7 +1456,7 @@ function installPythonPackagesByName () {
             fi
         
             # echo "[DEBUG] '${venvPythonCmdPath}' -m pip install ${pipFlags} '${package_name}' --target '${packagesDirPath}' ${pip_options}" 
-            if [ "${os}" = "linux" ]; then
+            if [ "${os}" = "linux" ] || [ "${os}" = "macos" ]; then
                 if [ "${verbosity}" = "loud" ]; then
                     eval "$venvPythonCmdPath" -m pip install "${package_name}" --target "${packagesDirPath}" ${pip_options} ${pipFlags} 
                 else
@@ -1774,7 +1774,7 @@ function installRequiredPythonPackages () {
                         if [ "${verbosity}" != "quiet" ]; then write "Installing ${package_name}..." $color_info; fi
 
                         # echo "[DEBUG] '${venvPythonCmdPath}' -m pip install '${package_name}' --target '${packagesDirPath}' ${currentOption} ${pipFlags}"
-                        if [ "${os}" = "linux" ]; then
+                        if [ "${os}" = "linux" ] || [ "${os}" = "macos" ]; then
                             # No, I don't know why eval is needed in Linux but not elsewhere
                             if [ "${verbosity}" = "loud" ]; then
                                 eval "${venvPythonCmdPath}" -m pip install "${package_name}" --target "${packagesDirPath}" ${currentOption} ${pipFlags}
