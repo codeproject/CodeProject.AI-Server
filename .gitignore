@@ -392,6 +392,9 @@ src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json
 /src/SDK/Utilities/ParseJSON/ParseJSON.xml
 
+/src/SDK/Utilities/ParseJSON/*.dll
+
+
 # Module packages --------------------------------------------------------------
 
 # Generated exe packages
