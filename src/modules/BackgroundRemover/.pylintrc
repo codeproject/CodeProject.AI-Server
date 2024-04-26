@@ -1,3 +1,0 @@
-[MAIN]
-source-roots = ('..\..\SDK\Python', 'bin\windows\python39\venv\Lib\site-packages', '.')
-recursive = True
