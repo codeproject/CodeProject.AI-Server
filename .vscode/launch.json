@@ -286,12 +286,12 @@
             },
             "name": "ALPR",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/ALPR/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "ALPR_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/ALPR",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -300,13 +300,13 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/ALPR/bin/windows/python39/venv/Scripts/python"
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/ALPR/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/ALPR/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -317,12 +317,12 @@
             },
             "name": "Background Remover",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-BackgroundRemover/bin/linux/python39/venv/bin/python",
             "request": "launch",
             "program": "rembg_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/BackgroundRemover",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-BackgroundRemover",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -330,16 +330,16 @@
                 // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
 
-                "U2NET_HOME": "${workspaceFolder}/src/modules/BackgroundRemover/models"
+                "U2NET_HOME": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-BackgroundRemover/models"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/windows/python39/venv/Scripts/python.exe",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-BackgroundRemover/bin/windows/python39/venv/Scripts/python.exe",
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/linux/python39/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-BackgroundRemover/bin/linux/python39/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/BackgroundRemover/bin/macos/python39/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-BackgroundRemover/bin/macos/python39/venv/bin/python",
             }
         },
 
@@ -348,14 +348,14 @@
                 "group": "5 Launch Individual",
                 "hidden": false
             },
-            "name": "Cartooniser",
+            "name": "Cartoonizer",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/Cartooniser/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}\\..\\CodeProject.AI-Modules\\CodeProject.AI-Cartoonizer\\bin\\windows\\python39\\venv\\Scripts\\python.exe",
             "request": "launch",
-            "program": "cartooniser_adapter.py",
+            "program": "cartoonizer_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/Cartooniser",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Cartoonizer",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -363,17 +363,17 @@
                 // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
 
-                "WEIGHTS_FOLDER": "${workspaceFolder}/src/modules/Cartooniser/weights",
+                "WEIGHTS_FOLDER": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Cartoonizer/weights",
                 // "LD_LIBRARY_PATH": "%CURRENT_MODULE_PATH%/bin/%OS%/python39/venv/lib/python3.9/site-packages/nvidia/cudnn/lib/"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/Cartooniser/bin/windows/python39/venv/Scripts/python"
+                "python": "${workspaceFolder}\\..\\CodeProject.AI-Modules\\CodeProject.AI-Cartoonizer\\bin\\windows\\python39\\venv\\Scripts\\python",
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/Cartooniser/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Cartoonizer/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/Cartooniser/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Cartoonizer/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -384,12 +384,12 @@
             },
             "name": "Llama Chat",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/LlamaChat/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-LlamaChat/bin/linux/python39/venv/bin/python",
             "request": "launch",
             "program": "llama_chat_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/LlamaChat",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-LlamaChat",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -397,16 +397,16 @@
                 // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
 
-                "MODELS_FOLDER": "${workspaceFolder}/src/modules/LlamaChat/models"
+                "MODELS_FOLDER": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-LlamaChat/models"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/LlamaChat/bin/windows/python39/venv/Scripts/python"
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-LlamaChat/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/LlamaChat/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-LlamaChat/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/LlamaChat/bin/macos/python310/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-LlamaChat/bin/macos/python310/venv/bin/python",
             }
         },
 
@@ -422,7 +422,7 @@
             "program": "intelligencelayer/face.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/FaceProcessing/",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-FaceProcessing/",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -448,12 +448,12 @@
             },
             "name": "Object Detect Coral",
             "type": "python",
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
             "request": "launch",
             "program": "objectdetection_coral_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionCoral",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -478,13 +478,13 @@
                 // "MODEL_SIZE": "Medium"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/linux/python39/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral/bin/linux/python39/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionCoral/bin/macos/python39/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral/bin/macos/python39/venv/bin/python",
             }
         },
 
@@ -524,12 +524,12 @@
             },
             "name": "Object Detect YOLO RKNN",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN/bin/windows/python39/venv/Scripts/python.exe",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYoloRKNN/bin/windows/python39/venv/Scripts/python.exe",
             "request": "launch",
             "program": "objectdetection_fd_rknn_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYoloRKNN",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -539,13 +539,13 @@
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN/bin/windows/python39/venv/Scripts/python.exe",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYoloRKNN/bin/windows/python39/venv/Scripts/python.exe",
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN/bin/linux/python39/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYoloRKNN/bin/linux/python39/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionYoloRKNN/bin/macos/python39/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYoloRKNN/bin/macos/python39/venv/bin/python",
             }
         },
 
@@ -556,12 +556,12 @@
             },
             "name": "Object Detect YOLOv5 3.1",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "detect_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv5-3.1",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -572,13 +572,13 @@
                 "MODEL_SIZE": "Small"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1/bin/windows/python37/venv/Scripts/python"
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv5-3.1/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv5-3.1/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -589,12 +589,12 @@
             },
             "name": "Object Detect YOLOv5 3.1 Jetson",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv5-3.1/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "detect_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-3.1",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv5-3.1",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -654,7 +654,7 @@
             "request": "launch",
             "program": "detect_adapter.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv8",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionYOLOv8",
             "justMyCode": false,
             // "args": [ "--selftest" ],
             "env": {
@@ -684,12 +684,12 @@
             },
             "name": "OCR",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python39/venv/Scripts/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-OCR/bin/windows/python39/venv/Scripts/python",
             "request": "launch",
             "program": "OCR_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/OCR",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-OCR",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -698,13 +698,13 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/OCR/bin/windows/python39/venv/Scripts/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-OCR/bin/windows/python39/venv/Scripts/python",
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/OCR/bin/linux/python38/venv/bin/python3.8",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-OCR/bin/linux/python38/venv/bin/python3.8",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/OCR/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-OCR/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -717,9 +717,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-portraitfilter",
-            "program": "${workspaceFolder}/src/modules/PortraitFilter/bin/Debug/net7.0/PortraitFilter",
+            "program": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-PortraitFilter/bin/Debug/net7.0/PortraitFilter",
             // "args": [ "--selftest" ],
-            "cwd": "${workspaceFolder}/src/modules/PortraitFilter",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-PortraitFilter",
             "stopAtEntry": false,
             "console": "internalConsole",
             "requireExactSource": false,
@@ -743,7 +743,7 @@
             "program": "scene_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/SceneClassifier",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SceneClassifier",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -769,12 +769,12 @@
             },
             "name": "Sound Classifier",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/linux/python39/venv/bin/python3",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SoundClassifierTF/bin/linux/python39/venv/bin/python3",
             "request": "launch",
             "program": "sound_classification_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/SoundClassifierTF",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SoundClassifierTF",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -785,16 +785,16 @@
                 "TF_ENABLE_ONEDNN_OPTS" : "0",  // Turn of oneDNN custom ops
                 "TF_CPP_MIN_LOG_LEVEL" : "2",   // 1 = no info, 2 = no info,warn, 3 = nothing
 
-                "MODELS_DIR": "${workspaceFolder}/src/modules/SoundClassifierTF/assets"
+                "MODELS_DIR": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SoundClassifierTF/assets"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/windows/python39/venv/Scripts/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SoundClassifierTF/bin/windows/python39/venv/Scripts/python",
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/linux/python39/venv/bin/python3",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SoundClassifierTF/bin/linux/python39/venv/bin/python3",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/SoundClassifierTF/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SoundClassifierTF/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -805,12 +805,12 @@
             },
             "name": "Super Resolution",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/SuperResolution/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SuperResolution/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "superres_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/SuperResolution",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SuperResolution",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -819,13 +819,13 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/SuperResolution/bin/windows/python39/venv/Scripts/python"
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SuperResolution/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/SuperResolution/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SuperResolution/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/SuperResolution/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SuperResolution/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -838,10 +838,10 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-sentimentanalysis",
-            "program": "${workspaceFolder}/src/modules/SentimentAnalysis/bin/Debug/net7.0/SentimentAnalysis",
+            "program": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SentimentAnalysis/bin/Debug/net7.0/SentimentAnalysis",
             // "args": [ "--selftest" ],
             "cwd": "${workspaceFolder}",
-            // "cwd": "${workspaceFolder}/src/modules/SentimentAnalysis", - causes an exception. WTF. See HACK.
+            // "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SentimentAnalysis", - causes an exception. WTF. See HACK.
             "stopAtEntry": false,
             "console": "internalConsole",
             "requireExactSource": false,
@@ -850,7 +850,7 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
                 "DOTNET_NOLOGO": "true",
-                "MODELS_DIR": "${workspaceFolder}/src/modules/SentimentAnalysis/sentiment_model",
+                "MODELS_DIR": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SentimentAnalysis/sentiment_model",
             }
         },
 
@@ -861,12 +861,12 @@
             },
             "name": "Text2Image",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/Text2Image/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Text2Image/bin/linux/python39/venv/bin/python",
             "request": "launch",
             "program": "stable_diffusion_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/Text2Image",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Text2Image",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -875,13 +875,13 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/Text2Image/bin/windows/python39/venv/Scripts/python.exe"
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Text2Image/bin/windows/python39/venv/Scripts/python.exe"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/Text2Image/bin/linux/python39/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Text2Image/bin/linux/python39/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/Text2Image/bin/macos/python39/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-Text2Image/bin/macos/python39/venv/bin/python",
             }
         },
 
@@ -892,12 +892,12 @@
             },
             "name": "TextSummary",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/TextSummary/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TextSummary/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "summary_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/TextSummary",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TextSummary",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -905,16 +905,16 @@
                 // "CPAI_LOG_VERBOSITY": "Loud",
                 "CPAI_PORT": "32168",
                 
-                "NLTK_DATA": "${workspaceFolder}/src/modules/TextSummary/nltk_data"
+                "NLTK_DATA": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TextSummary/nltk_data"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/TextSummary/bin/windows/python37/venv/Scripts/python.exe"
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TextSummary/bin/windows/python37/venv/Scripts/python.exe"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/TextSummary/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TextSummary/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/TextSummary/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TextSummary/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -925,11 +925,11 @@
             },
             "name": "Training YOLOv5",
             "type": "python",
-            "python": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5/bin/macos/python38/venv/bin/python",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TrainingObjectDetectionYOLOv5/bin/macos/python38/venv/bin/python",
             "request": "launch",
             "program": "training_objectdetection_YOLOv5_adapter.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5",
+            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TrainingObjectDetectionYOLOv5",
             // "args": [ "--selftest" ],
             "justMyCode": false,
             "env": {
@@ -950,13 +950,13 @@
                 "FIFTYONE_DATABASE_DIRNAME": "fiftyone"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5/bin/windows/python37/venv/Scripts/python.exe"
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TrainingObjectDetectionYOLOv5/bin/windows/python37/venv/Scripts/python.exe"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TrainingObjectDetectionYOLOv5/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/modules/TrainingObjectDetectionYOLOv5/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-TrainingObjectDetectionYOLOv5/bin/macos/python38/venv/bin/python",
                 "env": {
                     "DEBUG_IN_VSCODE": "True",
                     "RUNNING_IN_VSCODE": "True",
