@@ -190,7 +190,7 @@ pythonModules=( "ObjectDetectionYOLOv5-6.2" )
 
 dotNetExternalModules=( "CodeProject.AI-PortraitFilter" "CodeProject.AI-SentimentAnalysis")
 pythonExternalModules=( "CodeProject.AI-ALPR" "CodeProject.AI-ALPR-RKNN" "CodeProject.AI-BackgroundRemover" \
-                        "CodeProject.AI-Cartooniser" "CodeProject.AI-FaceProcessing" \
+                        "CodeProject.AI-Cartoonizer" "CodeProject.AI-FaceProcessing" \
                         "CodeProject.AI-LlamaChat" "CodeProject.AI-ObjectDetectionCoral" \
                         "CodeProject.AI-ObjectDetectionYOLOv5-3.1" "CodeProject.AI-ObjectDetectionYOLOv8"  \
                         "CodeProject.AI-ObjectDetectionYoloRKNN" "CodeProject.AI-TrainingObjectDetectionYOLOv5" \
@@ -391,7 +391,7 @@ if [ "$cleanAssets" = true ]; then
     removeDir "${externalModulesDir}/CodeProject.AI-ALPR/paddleocr"
     removeDir "${externalModulesDir}/ACodeProject.AI-LPR-RKNN/paddleocr"
     removeDir "${externalModulesDir}/CodeProject.AI-BackgroundRemover/models"
-    removeDir "${externalModulesDir}/CodeProject.AI-Cartooniser/weights"
+    removeDir "${externalModulesDir}/CodeProject.AI-Cartoonizer/weights"
     removeDir "${externalModulesDir}/CodeProject.AI-FaceProcessing/assets"
     removeDir "${externalModulesDir}/CodeProject.AI-LlamaChat/models"
     removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYOLOv5-3.1/assets"

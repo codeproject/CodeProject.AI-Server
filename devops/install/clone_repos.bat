@@ -8,7 +8,7 @@ setlocal enabledelayedexpansion
 
 set dotNetExternalModules=CodeProject.AI-PortraitFilter CodeProject.AI-SentimentAnalysis
 set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ALPR-RKNN CodeProject.AI-BackgroundRemover ^
-                          CodeProject.AI-Cartooniser CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
+                          CodeProject.AI-Cartoonizer CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
                           CodeProject.AI-ObjectDetectionCoral CodeProject.AI-ObjectDetectionYOLOv5-3.1 ^
                           CodeProject.AI-ObjectDetectionYOLOv8 CodeProject.AI-ObjectDetectionYoloRKNN ^
                           CodeProject.AI-TrainingObjectDetectionYOLOv5 CodeProject.AI-OCR ^
