@@ -212,14 +212,10 @@ success='true'
 for d in ${modulesDirPath}/*/ ; do
     packageModuleDirPath=$d
     packageModuleDirName="$(basename $d)"
-
-    # Bad assumption: A module's ID is same as the name of folder in which it lives.
-    # packageModuleId=$packageModuleDirName
-
     packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
-    if [ "${packageModuleId}" == "" ]; then continue; fi
-    # echo "packageModuleId = ${packageModuleId}"
 
+    if [ "${packageModuleId}" == "" ]; then continue; fi
+    
     doModulePackage "$packageModuleId" "$packageModuleDirName" "$packageModuleDirPath"
 done
 
@@ -228,14 +224,10 @@ for d in ${externalModulesDirPath}/*/ ; do
     packageModuleDirName="$(basename $d)"
     packageModuleDirPath=$d
 
-    # Bad assumption: A module's ID is same as the name of folder in which it lives.
-    # packageModuleId=$packageModuleDirName
-
     packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
     if [ "${packageModuleId}" == "" ]; then continue; fi
-    # echo "packageModuleId = ${packageModuleId}"
 
-    #doModulePackage "$packageModuleId" "$packageModuleDirName" "$packageModuleDirPath"
+    doModulePackage "$packageModuleId" "$packageModuleDirName" "$packageModuleDirPath"
 done
 
 
