@@ -21,8 +21,8 @@ thisScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 pushd "${thisScriptDirPath}/../.." >/dev/null
 rootDirPath="$(pwd)"
 popd >/dev/null
-sdkDirPath="${rootDirPath}/${srcDirName}/${sdkDir}"
-sdkScriptsDirPath="${sdkDirPath}/Scripts"
+sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
+sdkScriptsDirPath="${sdkPath}/Scripts"
 
 # import the utilities. This sets os, platform and architecture
 source "${sdkScriptsDirPath}/utils.sh"

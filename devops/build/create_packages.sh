@@ -54,8 +54,8 @@ thisScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 pushd "${thisScriptDirPath}/../.." >/dev/null
 rootDirPath="$(pwd)"
 popd >/dev/null
-sdkDirPath="${rootDirPath}/${srcDirName}/${sdkDir}"
-sdkScriptsDirPath="${sdkDirPath}/Scripts"
+sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
+sdkScriptsDirPath="${sdkPath}/Scripts"
 
 # Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
 

@@ -26,6 +26,8 @@ set includeDotNet=true
 :: Width of lines
 set lineWidth=70
 
+::set debug_json_parse=true
+
 
 :: Basic locations
 
@@ -53,32 +55,41 @@ set thisScriptDirPath=%~dp0
 pushd %thisScriptDirPath%..\..
 set rootDirPath=%cd%
 popd
-set sdkDirPath=%rootDirPath%\%srcDir%\%sdkDir%
-set sdkScriptsDirPath=%sdkDirPath%\Scripts
-
+set sdkPath=%rootDirPath%\%srcDir%\%sdkDir%
+set sdkScriptsDirPath=%sdkPath%\Scripts
 
 :: Override some values via parameters ::::::::::::::::::::::::::::::::::::::::
 
 :param_loop
-    set arg_name=%~1
-    set arg_value=%~2
-    if not "!arg_name!" == "" (
-        if not "!arg_name:--no-color=!" == "!arg_name!" set useColor=false
-        if not "!arg_name:--no-dotnet=!" == "!arg_name!" set includeDotNet=false
-
-        REM No longer supporting this scenario
-        REM if not "!arg_name:--path-to-setup=!" == "!arg_name!" (
-        REM     set setupScriptDirPath=!arg_value!
-        REM     shift
-        REM )
-
-        if not "!arg_name:--verbosity=!" == "!arg_name!" (
-            set verbosity=!arg_value!
-            shift
+    if "%~1"=="" goto :end_param_loop
+    if "%~1"=="--verbosity" (
+        set "verbosity=%~2"
+        if /i "!verbosity!" neq "loud" if /i "!verbosity!" neq "info" if /i "!verbosity!" neq "quiet" (
+            set verbosity=quiet
         )
+        shift
+        shift
+        goto :param_loop
     )
+    if "%~1"=="--no-dotnet" (
+        set includeDotNet=false
+        shift
+        goto :param_loop
+    )
+    if "%~1"=="--no-color" (
+        set useColor=false
+        shift
+        goto :param_loop
+    )
+    REM No longer supporting this scenario
+    REM if "%~1"=="--path-to-setup" (
+    REM     set "setupScriptDirPath=%~2"
+    REM     shift
+    REM     shift
+    REM     goto :param_loop
+    REM )
     shift
-if not "!arg_name!"=="" goto param_loop
+:end_param_loop
 
 
 :: The location of directories relative to the root of the solution directory
@@ -104,8 +115,9 @@ call "!sdkScriptsDirPath!\utils.bat" WriteLine
 
 if /i "%verbosity%" neq "quiet" (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine 
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath            = !rootDirPath!"         !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "setupScriptDirPath     = !setupScriptDirPath!"     !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath            = !rootDirPath!"            !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "thisScriptDirPath      = !thisScriptDirPath!"      !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkPath             = !sdkPath!"             !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath      = !sdkScriptsDirPath!"      !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath         = !modulesDirPath!"         !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "externalModulesDirPath = !externalModulesDirPath!" !color_mute!
@@ -116,7 +128,7 @@ if /i "%verbosity%" neq "quiet" (
 
 set success=true
 
-pushd %sdkDirPath%\Utilities\ParseJSON
+pushd %sdkPath%\Utilities\ParseJSON
 if not exist ParseJSON.exe (
     dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
     if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
@@ -131,11 +143,10 @@ for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
     set packageModuleDirName=%%~nxD
     set packageModuleDirPath=!modulesDirPath!\!packageModuleDirName!
 
-    REM Bad assumption: A module's ID is same as the name of folder in which it lives.
-    REM set packageModuleId=!packageModuleDirName!
-
     call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!packageModuleDirPath!\modulesettings.json"
     set packageModuleId=!moduleSettingValue!
+
+    if /i "%verbosity%" neq "quiet" call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing !packageModuleDirName! (!packageModuleId!)"
 
     if "!packageModuleId!" neq "" (
         call :DoModulePackage "!packageModuleId!" "!packageModuleDirName!" "!packageModuleDirPath!" errors
@@ -146,13 +157,12 @@ for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
 for /f "delims=" %%D in ('dir /a:d /b "!externalModulesDirPath!"') do (
 
     set packageModuleDirName=%%~nxD
-    set packageModuleDirPath=!modulesDirPath!\!packageModuleDirName!
-
-    REM Bad assumption: A module's ID is same as the name of folder in which it lives.
-    REM set packageModuleId=!packageModuleDirName!
+    set packageModuleDirPath=!externalModulesDirPath!\!packageModuleDirName!
 
     call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!packageModuleDirPath!\modulesettings.json"
     set packageModuleId=!moduleSettingValue!
+
+    if /i "%verbosity%" neq "quiet" call "!sdkScriptsDirPath!\utils.bat" WriteLine "Processing !packageModuleDirName! (!packageModuleId!)"
 
     if "!packageModuleId!" neq "" (
         call :DoModulePackage "!packageModuleId!" "!packageModuleDirName!" "!packageModuleDirPath!" errors
@@ -199,38 +209,38 @@ REM Creates a package for a module
             call "!sdkScriptsDirPath!\utils.bat" Write "Preparing !packageModuleId!..."
             call "!sdkScriptsDirPath!\utils.bat" GetValueFromModuleSettingsFile "!packageModuleDirPath!", "!packageModuleId!", "Version"
             set packageVersion=!moduleSettingsFileValue!
-        )
 
-        if "!packageVersion!" == "" (
-            call "!sdkScriptsDirPath!\utils.bat" WriteLine "Unable to read version from modulesettings file. Skipping" "Red"
-        ) else if "!doPackage!" == "true" (
-
-            pushd "!packageModuleDirPath!" 
-            if /i "%verbosity%" == "loud" cd
-
-            rem Create module download package
-            if exist package.bat (
-                call "!sdkScriptsDirPath!\utils.bat" Write "Packaging !packageModuleId! !packageVersion!..." "White"
-                call package.bat !packageModuleId! !packageVersion!
-                if errorlevel 1 call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error in package.bat for !packageModuleDirName!" "Red"
-
-                rem Move package into modules download cache
-
-                rem echo Moving !packageModuleDirPath!\!packageModuleId!-!version!.zip to !downloadDirPath!\!modulesDir!\
-                move /Y !packageModuleDirPath!\!packageModuleId!-!packageVersion!.zip !downloadDirPath!\!modulesDir!\  >NUL
-
-                if errorlevel 1 (
-                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error" "Red"
-                    set success=false
-                ) else (
-                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "done" "DarkGreen"
-                )
+            if "!packageVersion!" == "" (
+                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Unable to read version from modulesettings file. Skipping" "Red"
             ) else (
-                call "!sdkScriptsDirPath!\utils.bat" WriteLine "No package.bat file found..." "Red"
-            )
 
-            popd
-        )
+                pushd "!packageModuleDirPath!" 
+                if /i "%verbosity%" == "loud" cd
+
+                rem Create module download package
+                if exist package.bat (
+                    call "!sdkScriptsDirPath!\utils.bat" Write "Packaging !packageModuleId! !packageVersion!..." "White"
+                    call package.bat !packageModuleId! !packageVersion!
+                    if errorlevel 1 call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error in package.bat for !packageModuleDirName!" "Red"
+
+                    rem Move package into modules download cache
+
+                    rem echo Moving !packageModuleDirPath!\!packageModuleId!-!version!.zip to !downloadDirPath!\!modulesDir!\
+                    move /Y !packageModuleDirPath!\!packageModuleId!-!packageVersion!.zip !downloadDirPath!\!modulesDir!\  >NUL
+
+                    if errorlevel 1 (
+                        call "!sdkScriptsDirPath!\utils.bat" WriteLine "Error" "Red"
+                        set success=false
+                    ) else (
+                        call "!sdkScriptsDirPath!\utils.bat" WriteLine "done" "DarkGreen"
+                    )
+                ) else (
+                    call "!sdkScriptsDirPath!\utils.bat" WriteLine "No package.bat file found..." "Red"
+                )
+
+                popd
+            )
+        )        
     )
 
     exit /b
