@@ -87,8 +87,8 @@ As an example, `requirements.linux.arm64.cuda11_7.txt` would be a requirements f
 | `edgeDevice`        | Raspberry Pi, Orange PI, Radxa ROCK, Jetson, or blank if none of these |
 |||
 | `rootDirPath`       | the root path of the installation (eg: ~/CodeProject/AI) |
-| `sdkScriptsDirPath` | the path to the installation utility scripts ($rootDirPath/SDK/Scripts) |
-| `downloadDirPath`   | the path to where downloads will be stored ($sdkScriptsDirPath/downloads) |
+| `sdkScriptsDirPath` | the path to the installation utility scripts ($rootDirPath/src/SDK/Scripts) |
+| `downloadDirPath`   | the path to where downloads will be stored (/downloads) |
 | `runtimesDirPath`   | the path to the installed runtimes ($rootDirPath/src/runtimes) |
 | `modulesDirPath`    | the path to all the AI modules ($rootDirPath/src/modules) |
 |||

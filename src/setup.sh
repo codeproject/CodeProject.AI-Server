@@ -143,7 +143,6 @@ runtimesDirPath="${appRootDirPath}/${runtimesDir}"
 modulesDirPath="${appRootDirPath}/${modulesDir}"
 preInstalledModulesDirPath="${appRootDirPath}/${preInstalledModulesDir}"
 externalModulesDirPath="${appRootDirPath}/../${externalModulesDir}"
-downloadDirPath="${appRootDirPath}/${downloadDir}"
 modelsDirPath="${appRootDirPath}/${modelsDir}"
 
 # Who launched this script? user or server?
@@ -159,10 +158,7 @@ launchedBy="user"
 # Override some values via parameters :::::::::::::::::::::::::::::::::::::::::
 
 while [[ $# -gt 0 ]]; do
-    # echo "There are $# parameters"
     param=$(echo $1 | tr '[:upper:]' '[:lower:]')
-    # echo "Parm is $1 -> ${param}"
-
     if [ "$param" = "--launcher" ]; then
         shift
         if [[ $# -gt 0 ]]; then
@@ -283,6 +279,8 @@ pushd "$setupScriptDirPath" >/dev/null
 if [ "$executionEnvironment" = 'Development' ]; then cd ..; fi
 rootDirPath="$(pwd)"
 popd >/dev/null
+
+downloadDirPath="${rootDirPath}/${downloadDir}"
 
 # Check if we're in a SSH session. If so it means we need to avoid anything GUI
 inSSH=false

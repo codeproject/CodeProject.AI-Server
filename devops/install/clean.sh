@@ -7,8 +7,25 @@
 #
 # We assume we're in the /src directory
 
+# The name of the source directory (in development)
+srcDirName='src'
+
+# The name of the dir holing the SDK
+sdkDir='SDK'
+
+# The path to the directory containing this script
+#thisScriptDirPath=$(dirname "$0")
+thisScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+# We're assuming this script lives in /devops/build
+pushd "${thisScriptDirPath}/../.." >/dev/null
+rootDirPath="$(pwd)"
+popd >/dev/null
+sdkDirPath="${rootDirPath}/${srcDirName}/${sdkDir}"
+sdkScriptsDirPath="${sdkDirPath}/Scripts"
+
 # import the utilities. This sets os, platform and architecture
-source "$(dirname "$0")/../Scripts/utils.sh"
+source "${sdkScriptsDirPath}/utils.sh"
 
 function removeFile() {
     local filePath=$1
@@ -161,26 +178,24 @@ function cleanFiles() {
 
 clear
 
-installDir="$(pwd)"
-pushd ../.. >/dev/null
-rootDir="$(pwd)"
-popd >/dev/null
-
-externalModulesDir="${rootDir}/../CodeProject.AI-Modules"
+externalModulesDir="${rootDirPath}/../CodeProject.AI-Modules"
 
 
 useColor=true
 doDebug=false
 lineWidth=70
 
-dotNetModules=( "ObjectDetectionYOLOv5Net" "PortraitFilter" "SentimentAnalysis" )
-pythonModules=( "ALPR" "ALPR-RKNN" "BackgroundRemover" "Cartooniser" "FaceProcessing" \
-                "LlamaChat" "ObjectDetectionYOLOv5-3.1" "ObjectDetectionYOLOv5-6.2"   \
-                "ObjectDetectionYOLOv8" "TrainingObjectDetectionYOLOv5" "OCR"         \
-                "SceneClassifier" "SoundClassifierTF" "SuperResolution" "TextSummary" "Text2Image")
-dotNetExternalModules=()
-pythonExternalModules=( "CodeProject.AI-ALPR" "CodeProject.AI-ObjectDetectionCoral"   \
-                        "CodeProject.AI-ALPR-RKNN" "CodeProject.AI-ObjectDetectionYoloRKNN" )
+dotNetModules=( "ObjectDetectionYOLOv5Net"  )
+pythonModules=( "ObjectDetectionYOLOv5-6.2" )
+
+dotNetExternalModules=( "PortraitFilter" "SentimentAnalysis")
+pythonExternalModules=( "CodeProject.AI-ALPR" "CodeProject.AI-ALPR-RKNN" "CodeProject.AI-BackgroundRemover" \
+                        "CodeProject.AI-Cartooniser" "CodeProject.AI-FaceProcessing" \
+                        "CodeProject.AI-LlamaChat" "CodeProject.AI-ObjectDetectionCoral" \
+                        "CodeProject.AI-ObjectDetectionYOLOv5-3.1" "CodeProject.AI-ObjectDetectionYOLOv8"  \
+                        "CodeProject.AI-ObjectDetectionYoloRKNN" "CodeProject.AI-TrainingObjectDetectionYOLOv5" \
+                        "CodeProject.AI-OCR" "CodeProject.AI-SceneClassifier" "CodeProject.AI-SoundClassifierTF" \
+                        "CodeProject.AI-SuperResolution" "CodeProject.AI-TextSummary" "CodeProject.AI-Text2Image")
 
 dotNetDemoModules=( "DotNetLongProcess" "DotNetSimple" )
 pythonDemoModules=( "PythonLongProcess" "PythonSimple" )
@@ -272,9 +287,9 @@ if [ "$cleanBuild" = true ]; then
     done
     for dirName in "${dotNetDemoModules[@]}"
     do
-        removeDir "${rootDir}/src/modules/${dirName}/bin/"
-        removeDir "${rootDir}/src/modules/${dirName}/obj/"
-        rm "${rootDir}/src/modules/${dirName}/${dirName}-*"
+        removeDir "${rootDir}/src/demos/modules/${dirName}/bin/"
+        removeDir "${rootDir}/src/demos/modules/${dirName}/obj/"
+        rm "${rootDir}/src/demos/modules/${dirName}/${dirName}-*"
     done
 
     cleanSubDirs "${rootDir}/Installers/Windows" "bin/Debug/"
@@ -331,7 +346,7 @@ if [ "$cleanUserData" = true ]; then
     writeLine "Cleaning User data" "White" "Blue" $lineWidth
     writeLine 
 
-    removeDir "${rootDir}/src/modules/FaceProcessing/datastore/"
+    removeDir "${externalModulesDir}/CodeProject.AI-FaceProcessing/datastore/"
 fi
 
 if [ "$cleanInstallAll" = true ]; then
@@ -365,35 +380,35 @@ if [ "$cleanAssets" = true ]; then
     writeLine 
 
     # Internal modules
-    removeDir "${rootDir}/src/modules/BackgroundRemover/models"
-    removeDir "${rootDir}/src/modules/Cartooniser/weights"
-    removeDir "${rootDir}/src/modules/FaceProcessing/assets"
-    removeDir "${rootDir}/src/modules/LlamaChat/models"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/custom-models"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/LocalNugets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-3.1/custom-models"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/assets"
     removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/custom-models"
-    removeDir "${rootDir}/src/modules/OCR/paddleocr"
-    removeDir "${rootDir}/src/modules/SceneClassifier/assets"
-    removeDir "${rootDir}/src/modules/SoundClassifierTF/data"
-    removeDir "${rootDir}/src/modules/Text2Image/assets"
-    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/assets"
-    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/datasets"
-    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/fiftyone"
-    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/training"
-    removeDir "${rootDir}/src/modules/TrainingObjectDetectionYOLOv5/zoo"
 
 
     # Esternal modules
-    removeDir "${rootDir}/src/modules/ALPR/paddleocr"
-    removeDir "${rootDir}/src/modules/ALPR-RKNN/paddleocr"
-    removeDir "${externalModulesDir}/ObjectDetectionCoral/assets"
-    removeDir "${externalModulesDir}/ObjectDetectionCoral/edgetpu_runtime"
-    removeDir "${externalModulesDir}/ObjectDetectionYoloRKNN/assets"
-    removeDir "${externalModulesDir}/ObjectDetectionYoloRKNN/custom-models"
+    removeDir "${externalModulesDir}/CodeProject.AI-ALPR/paddleocr"
+    removeDir "${externalModulesDir}/ACodeProject.AI-LPR-RKNN/paddleocr"
+    removeDir "${externalModulesDir}/CodeProject.AI-BackgroundRemover/models"
+    removeDir "${externalModulesDir}/CodeProject.AI-Cartooniser/weights"
+    removeDir "${externalModulesDir}/CodeProject.AI-FaceProcessing/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-LlamaChat/models"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYOLOv5-3.1/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYOLOv5-3.1/custom-models"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionCoral/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionCoral/edgetpu_runtime"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYoloRKNN/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYoloRKNN/custom-models"
+    removeDir "${externalModulesDir}/CodeProject.AI-OCR/paddleocr"
+    removeDir "${externalModulesDir}/CodeProject.AI-SceneClassifier/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-SoundClassifierTF/data"
+    removeDir "${externalModulesDir}/CodeProject.AI-Text2Image/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/datasets"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/fiftyone"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/training"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/zoo"
 
     # Demo modules
     removeDir "${rootDir}/src/demos/modules/DotNetLongProcess/assets"
@@ -408,19 +423,19 @@ if [ "$cleanDownloadCache" = true ]; then
     writeLine "Cleaning download cache" "White" "Blue" $lineWidth
     writeLine 
 
-    for path in ${rootDir}/src/downloads/* ; do
-        if [ -d "$path" ] && [ "$path" != "${rootDir}/src/downloads/modules" ] && [ "$path" != "${rootDir}/src/downloads/models" ]; then
+    for path in ${rootDir}/downloads/* ; do
+        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/modules" ] && [ "$path" != "${rootDir}/downloads/models" ]; then
             removeDir "${path}"
         fi
     done
 
-    for path in ${rootDir}/src/downloads/modules/* ; do
-        if [ -d "$path" ] && [ "$path" != "${rootDir}/src/downloads/modules/readme.txt" ]; then
+    for path in ${rootDir}/downloads/modules/* ; do
+        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/modules/readme.txt" ]; then
             removeFile "${path}"
         fi
     done
-    for path in ${rootDir}/src/downloads/models/* ; do
-        if [ -d "$path" ] && [ "$path" != "${rootDir}/src/downloads/models/models.json" ]; then
+    for path in ${rootDir}/downloads/models/* ; do
+        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/models/models.json" ]; then
             removeFile "${path}"
         fi
     done

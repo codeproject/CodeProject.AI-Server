@@ -125,7 +125,6 @@ set modulesDirPath=!appRootDirPath!!modulesDir!
 set preInstalledModulesDirPath=!appRootDirPath!!preInstalledModulesDir!
 set externalModulesDirPath=!appRootDirPath!..\!externalModulesDir!
 set modelsDirPath=!appRootDirPath!!modelsDir!
-set downloadDirPath=!appRootDirPath!!downloadDir!
 
 :: Who launched this script? user or server?
 set launchedBy=user
@@ -218,6 +217,9 @@ pushd "!setupScriptDirPath!"
 if /i "%executionEnvironment%" == "Development" cd ..
 set rootDirPath=%cd%
 popd
+
+set downloadDirPath=!rootDirPath!\!downloadDir!
+
 
 :: Helper vars for OS, Platform (see note below), and system name. systemName is
 :: a no-op here because nothing exciting happens on Windows. In the corresponding

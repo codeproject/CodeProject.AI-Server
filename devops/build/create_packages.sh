@@ -29,16 +29,15 @@ lineWidth=70
 
 # Basic locations
 
-# The path to the directory containing the setup scripts
-#setupScriptDirPath=$(dirname "$0")
-setupScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+# The name of the dir, within the current directory, where install assets will
+# be downloaded
+downloadDir='downloads'
 
 # The name of the source directory (in development)
 srcDirName='src'
 
-# The name of the dir, within the current directory, where install assets will
-# be downloaded
-downloadDir='downloads'
+# The name of the dir holing the SDK
+sdkDir='SDK'
 
 # The name of the dir holding the downloaded/sideloaded backend analysis services
 modulesDir="modules"
@@ -47,37 +46,41 @@ modulesDir="modules"
 externalModulesDir="CodeProject.AI-Modules"
 
 
-# Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
-for i in "$@"; do
-  case $i in
-    --no-dotnet) includeDotNet=false ;;
-    --no-color)  useColor=false ;;
-    -*|--*)      echo "Unknown option $i" ;;
-    *) ;;
-  esac
-done
+# The path to the directory containing this script
+#thisScriptDirPath=$(dirname "$0")
+thisScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-# In Development, this script is in the /src folder. In Production there is no
-# /src folder; everything is in the root folder. So: go to the folder
-# containing this script and check the name of the parent folder to see if
-# we're in dev or production.
-pushd "$setupScriptDirPath" >/dev/null
-setupScriptDirName="$(basename ${setupScriptDirPath})"
-setupScriptDirName=${setupScriptDirName:-/} # correct for the case where pwd=/
-popd >/dev/null
-
-executionEnvironment='Production'
-if [ "$setupScriptDirName" == "$srcDirName" ]; then executionEnvironment='Development'; fi
-
-# The absolute path to the installer script and the root directory. Note that
-# this script (and the SDK folder) is either in the /src dir or the root dir
-sdkScriptsDirPath="${setupScriptDirPath}/SDK/Scripts"
-pushd "$setupScriptDirPath" >/dev/null
-if [ "$executionEnvironment" == 'Development' ]; then cd ..; fi
+# We're assuming this script lives in /devops/build
+pushd "${thisScriptDirPath}/../.." >/dev/null
 rootDirPath="$(pwd)"
 popd >/dev/null
+sdkDirPath="${rootDirPath}/${srcDirName}/${sdkDir}"
+sdkScriptsDirPath="${sdkDirPath}/Scripts"
 
-appRootDirPath="${setupScriptDirPath}"
+# Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
+
+while [[ $# -gt 0 ]]; do
+    param=$(echo $1 | tr '[:upper:]' '[:lower:]')
+
+    if [ "$param" = "--no-dotnet" ]; then includeDotNet=false; fi
+    if [ "$param" = "--no-color" ]; then useColor=false; fi
+    if [ "$param" = "--verbosity" ]; then
+        shift
+        if [[ $# -gt 0 ]]; then
+            param_value=$(echo $1 | tr '[:upper:]' '[:lower:]')
+            if [[ "$param_value" =~ ^(quiet|info|loud)$ ]]; then
+                # echo "Verbosity is $1 -> ${param_value}"
+                verbosity="$param_value"
+                echo "Setting verbosity to ${verbosity}"
+            else
+                echo "No Verbosity value provided"
+            fi
+        else
+            echo "Verbosity does not match the expected values quiet|info|loud"
+        fi
+    fi
+    shift
+done
 
 # Standard output may be used as a return value in the functions. Expose stream
 # 3 so we can do 'echo "Hello, World!" >&3' within these functions for debugging
@@ -173,12 +176,10 @@ function doModulePackage () {
 }
 
 
-# Platform can define where things are located :::::::::::::::::::::::::::::::
-
 # The location of directories relative to the root of the solution directory
-modulesDirPath="${appRootDirPath}/${modulesDir}"
-externalModulesDirPath="${appRootDirPath}/../../${externalModulesDir}"
-downloadDirPath="${appRootDirPath}/${downloadDir}"
+modulesDirPath="${rootDirPath}/${srcDirName}/${modulesDir}"
+externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
+downloadDirPath="${rootDirPath}/${downloadDir}"
 
 # Let's go
 
@@ -196,9 +197,8 @@ writeLine
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "executionEnvironment   = ${executionEnvironment}"   $color_mute
-    writeLine "appRootDirPath         = ${appRootDirPath}"         $color_mute
-    writeLine "setupScriptDirPath     = ${setupScriptDirPath}"     $color_mute
+    writeLine "rootDirPath            = ${rootDirPath}"            $color_mute
+    writeLine "thisScriptDirPath      = ${thisScriptDirPath}"      $color_mute
     writeLine "sdkScriptsDirPath      = ${sdkScriptsDirPath}"      $color_mute
     writeLine "modulesDirPath         = ${modulesDirPath}"         $color_mute
     writeLine "externalModulesDirPath = ${externalModulesDirPath}" $color_mute

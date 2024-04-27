@@ -171,7 +171,7 @@ if /i "%cleanUserData%" == "true" (
     call "!sdkDir!\utils.bat" WriteLine "Cleaning User data" "White" "Blue" !lineWidth!
     call "!sdkDir!\utils.bat" WriteLine 
 
-    call :RemoveDir "!rootDir!\src\modules\FaceProcessing\datastore"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-FaceProcessing\datastore"
 )
 
 if /i "%cleanInstallAll%" == "true" (
@@ -247,15 +247,15 @@ if /i "%cleanDownloadCache%" == "true" (
     call "!sdkDir!\utils.bat" WriteLine 
 
     rem delete downloads for each module
-    FOR /d %%a IN ("%rootDir%\src\downloads\*") DO (
+    FOR /d %%a IN ("%rootDir%\downloads\*") DO (
         IF /i NOT "%%~nxa"=="modules" IF /i NOT "%%~nxa"=="models" call :RemoveDir "%%a"
     )
     rem delete module packages downloads 
-    FOR %%a IN ("%rootDir%\src\downloads\modules\*") DO (
+    FOR %%a IN ("%rootDir%\downloads\modules\*") DO (
         IF /i NOT "%%~nxa"=="readme.txt" call :RemoveFile "%%a"
     )
     rem delete model packages downloads 
-    FOR %%a IN ("%rootDir%\src\downloads\models\*") DO (
+    FOR %%a IN ("%rootDir%\downloads\models\*") DO (
         IF /i NOT "%%~nxa"=="models.json" call :RemoveFile "%%a"
     )
 )

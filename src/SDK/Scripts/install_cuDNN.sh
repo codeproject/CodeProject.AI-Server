@@ -66,7 +66,7 @@ if [[ $(type -t writeLine) != function ]]; then
         architecture='x86_64'
     fi
 
-    downloadDirPath=../../downloads
+    downloadDirPath=../../../downloads
 
     modelInfo=""
     if [ -f "/sys/firmware/devicetree/base/model" ]; then

@@ -308,16 +308,16 @@ MigrationBackup/
 wget-log*
 
 # keep the folder structure but don't git commit the cached downloads
-!/src/downloads
-/src/downloads/*
+!/downloads
+/downloads/*
 
-!/src/downloads/modules
-/src/downloads/modules/*
-!/src/downloads/modules/readme.txt
+!/downloads/modules
+/downloads/modules/*
+!/downloads/modules/readme.txt
 
-!/src/downloads/models
-/src/downloads/models/*
-!/src/downloads/models/models.json
+!/downloads/models
+/downloads/models/*
+!/downloads/models/models.json
 
 
 # Downloaded assets and libraries for modules
