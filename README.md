@@ -38,10 +38,11 @@ transfer, and is easy to use.
 
 ### 2: Running and debugging the code
 
-1. Clone the CodeProject.AI repository.
+1. Clone the CodeProject.AI-Server repository.
 2. Make sure you have Visual Studio Code or Visual Studio 2019+ installed.
-3. Run the setup script in /Installers/Dev
-4. Debug the front-end server application (see notes below, but it's easy)
+3. Run the setup script in /devops/install
+4. Optionally pull all CodeProject.AI Modules by running the clone_repos script in /devops/install
+5. Debug the front-end server application (see notes below, but it's easy)
 
 
 ## How do I use it in my application?

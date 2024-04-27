@@ -3,7 +3,7 @@
 :: Usage:
 ::   clean [build | install | installall | downloads | all]
 ::
-:: We assume we're in the /Installers/Dev directory
+:: We assume we're in the /devops/install directory
 
 @echo off
 cls
@@ -24,7 +24,7 @@ set lineWidth=70
 set dotNetModules=ObjectDetectionYOLOv5Net
 set pythonModules=ObjectDetectionYOLOv5-6.2
 
-set dotNetExternalModules=PortraitFilter SentimentAnalysis
+set dotNetExternalModules=CodeProject.AI-PortraitFilter CodeProject.AI-SentimentAnalysis
 set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ALPR-RKNN CodeProject.AI-BackgroundRemover ^
                           CodeProject.AI-Cartooniser CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
                           CodeProject.AI-ObjectDetectionCoral CodeProject.AI-ObjectDetectionYOLOv5-3.1 ^

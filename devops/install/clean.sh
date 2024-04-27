@@ -188,7 +188,7 @@ lineWidth=70
 dotNetModules=( "ObjectDetectionYOLOv5Net"  )
 pythonModules=( "ObjectDetectionYOLOv5-6.2" )
 
-dotNetExternalModules=( "PortraitFilter" "SentimentAnalysis")
+dotNetExternalModules=( "CodeProject.AI-PortraitFilter" "CodeProject.AI-SentimentAnalysis")
 pythonExternalModules=( "CodeProject.AI-ALPR" "CodeProject.AI-ALPR-RKNN" "CodeProject.AI-BackgroundRemover" \
                         "CodeProject.AI-Cartooniser" "CodeProject.AI-FaceProcessing" \
                         "CodeProject.AI-LlamaChat" "CodeProject.AI-ObjectDetectionCoral" \

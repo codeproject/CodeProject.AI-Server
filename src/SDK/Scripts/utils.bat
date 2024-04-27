@@ -2,8 +2,6 @@
 ::
 :: Utilities for use with Windows Development Environment install scripts
 ::
-:: We assume we're in the source code /Installers/Dev directory.
-::
 
 @echo off
 
