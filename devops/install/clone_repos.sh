@@ -4,7 +4,7 @@
 
 dotNetExternalModules=( "CodeProject.AI-PortraitFilter" "CodeProject.AI-SentimentAnalysis")
 pythonExternalModules=( "CodeProject.AI-ALPR" "CodeProject.AI-ALPR-RKNN" "CodeProject.AI-BackgroundRemover" \
-                        "CodeProject.AI-Cartooniser" "CodeProject.AI-FaceProcessing" \
+                        "CodeProject.AI-Cartoonizer" "CodeProject.AI-FaceProcessing" \
                         "CodeProject.AI-LlamaChat" "CodeProject.AI-ObjectDetectionCoral" \
                         "CodeProject.AI-ObjectDetectionYOLOv5-3.1" "CodeProject.AI-ObjectDetectionYOLOv8"  \
                         "CodeProject.AI-ObjectDetectionYoloRKNN" "CodeProject.AI-TrainingObjectDetectionYOLOv5" \

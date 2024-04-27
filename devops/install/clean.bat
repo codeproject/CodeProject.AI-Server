@@ -26,7 +26,7 @@ set pythonModules=ObjectDetectionYOLOv5-6.2
 
 set dotNetExternalModules=CodeProject.AI-PortraitFilter CodeProject.AI-SentimentAnalysis
 set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ALPR-RKNN CodeProject.AI-BackgroundRemover ^
-                          CodeProject.AI-Cartooniser CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
+                          CodeProject.AI-Cartoonizer CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
                           CodeProject.AI-ObjectDetectionCoral CodeProject.AI-ObjectDetectionYOLOv5-3.1 ^
                           CodeProject.AI-ObjectDetectionYOLOv8 CodeProject.AI-ObjectDetectionYoloRKNN ^
                           CodeProject.AI-TrainingObjectDetectionYOLOv5 CodeProject.AI-OCR ^
@@ -212,7 +212,7 @@ if /i "%cleanAssets%" == "true" (
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-ALPR\paddleocr"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-ALPR-RKNN\paddleocr"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-BackgroundRemover\models"
-    call :RemoveDir "!externalModulesDir!\CodeProject.AI-Cartooniser\weights"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-Cartoonizer\weights"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-FaceProcessing\assets"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-LlamaChat\models"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionYOLOv5-3.1\assets"
