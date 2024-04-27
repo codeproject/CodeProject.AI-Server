@@ -324,6 +324,7 @@ function doModuleInstall () {
 
     moduleId="$1"
     moduleDirPath="$2"
+    moduleType="$3"
 
     # Get the module name, version, runtime location and python version from the
     # modulesettings.
@@ -436,6 +437,8 @@ function doModuleInstall () {
     fi
 
     module_install_errors=""
+
+    writeLine "${moduleType} module install" "$color_info"
 
     if [ -f "${moduleDirPath}/install.sh" ]; then
        
@@ -927,7 +930,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
         currentDir="$(pwd)"
-        doModuleInstall "${moduleId}" "${moduleDirPath}"
+        doModuleInstall "${moduleId}" "${moduleDirPath}" "Internal"
         cd "$currentDir" >/dev/null
 
         if [ "${module_install_errors}" != "" ]; then
@@ -949,9 +952,8 @@ if [ "$setupMode" = 'SetupEverything' ]; then
             moduleDirPath="${externalModulesDirPath}/${moduleDirName}"
             moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-            writeLine "External module install" "$color_info"
             currentDir="$(pwd)"
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            doModuleInstall "${moduleId}" "${moduleDirPath}" "External"
             cd "$currentDir" >/dev/null
 
             if [ "${module_install_errors}" != "" ]; then
@@ -1000,7 +1002,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
             moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
             currentDir="$(pwd)"
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            doModuleInstall "${moduleId}" "${moduleDirPath}" "Demo"
             cd "$currentDir" >/dev/null
 
             if [ "${module_install_errors}" != "" ]; then
@@ -1059,28 +1061,25 @@ else
         # echo "$parentParentDirName"
 
         if [ "$parentParentDirName" = "demos" ]; then                   # demo module
-            writeLine "Demo module install" "$color_info"
-
             oldModulesDirPath="$modulesDirPath"
     
             modulesDirPath="${rootDirPath}/src/demos/modules/"
             moduleDirPath="${modulesDirPath}/${moduleDirName}"
             moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            doModuleInstall "${moduleId}" "${moduleDirPath}" "Demo"
             
             modulesDirPath="$oldModulesDirPath"
         elif [ "$parentDirName" = "$externalModulesDir" ]; then   # External module
-            writeLine "External module install" "$color_info"
             moduleDirPath=$(pwd)
             moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            doModuleInstall "${moduleId}" "${moduleDirPath}" "External"
         else                                                            # Internal module
             moduleDirPath="${modulesDirPath}/${moduleDirName}"
             moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            doModuleInstall "${moduleId}" "${moduleDirPath}" "Internal"
         fi
     fi
 
