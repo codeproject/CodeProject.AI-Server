@@ -15,6 +15,9 @@ cd src\SDK\Scripts
 set sdkDir=%cd%
 popd
 
+set installScriptsDirPath=!rootDirPath!\devops\install
+set utilsScript=!utilsScriptsDirPath!\utils.bat
+
 set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
 
 set useColor=true
@@ -37,18 +40,18 @@ set dotNetDemoModules=DotNetLongProcess DotNetSimple DotNetLongProcess
 set pythonDemoModules=PythonLongProcess PythonSimple PythonLongProcess
 
 if "%1" == "" (
-    call "!sdkDir!\utils.bat" WriteLine "Solution Cleaner" "White"
-    call "!sdkDir!\utils.bat" WriteLine 
-    call "!sdkDir!\utils.bat" WriteLine "clean [build : assets : install : installall : downloads : all]"
-    call "!sdkDir!\utils.bat" WriteLine 
-    call "!sdkDir!\utils.bat" WriteLine "  build          - cleans build output (bin / obj)"
-    call "!sdkDir!\utils.bat" WriteLine "  install        - removes installation stuff, current OS (Python, PIPs, downloads etc)"
-    call "!sdkDir!\utils.bat" WriteLine "  installall     - removes installation stuff for all OSs"
-    call "!sdkDir!\utils.bat" WriteLine "  assets         - removes assets that were downloaded and moved into place"
-    call "!sdkDir!\utils.bat" WriteLine "  data           - removes user data stored by modules"
-    call "!sdkDir!\utils.bat" WriteLine "  download-cache - removes download cache to force re-download"
-    call "!sdkDir!\utils.bat" WriteLine "  all            - removes build and installation stuff for all OSs"
-    call "!sdkDir!\utils.bat" WriteLine 
+    call "!utilsScript!" WriteLine "Solution Cleaner" "White"
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "clean [build : assets : install : installall : downloads : all]"
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "  build          - cleans build output (bin / obj)"
+    call "!utilsScript!" WriteLine "  install        - removes installation stuff, current OS (Python, PIPs, downloads etc)"
+    call "!utilsScript!" WriteLine "  installall     - removes installation stuff for all OSs"
+    call "!utilsScript!" WriteLine "  assets         - removes assets that were downloaded and moved into place"
+    call "!utilsScript!" WriteLine "  data           - removes user data stored by modules"
+    call "!utilsScript!" WriteLine "  download-cache - removes download cache to force re-download"
+    call "!utilsScript!" WriteLine "  all            - removes build and installation stuff for all OSs"
+    call "!utilsScript!" WriteLine 
     exit /b
 )
 
@@ -96,9 +99,9 @@ if /i "!cleanInstallAll!" == "true" (
 
 if /i "%cleanBuild%" == "true" (
        
-    call "!sdkDir!\utils.bat" WriteLine 
-    call "!sdkDir!\utils.bat" WriteLine "Cleaning Build" "White" "Blue" !lineWidth!
-    call "!sdkDir!\utils.bat" WriteLine 
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning Build" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
 
     call :RemoveDir "!rootDir!\src\server\bin\"
     call :RemoveDir "!rootDir!\src\server\obj"
@@ -146,9 +149,9 @@ if /i "%cleanBuild%" == "true" (
 
 if /i "%cleanInstallCurrentOS%" == "true" (
 
-    call "!sdkDir!\utils.bat" WriteLine 
-    call "!sdkDir!\utils.bat" WriteLine "Cleaning Windows Install" "White" "Blue" !lineWidth!
-    call "!sdkDir!\utils.bat" WriteLine 
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning Windows Install" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
 
     REM Clean shared python venvs
     call :RemoveDir "!rootDir!\src\runtimes\bin\windows" 
@@ -167,18 +170,18 @@ if /i "%cleanInstallCurrentOS%" == "true" (
 
 if /i "%cleanUserData%" == "true" (
 
-    call "!sdkDir!\utils.bat" WriteLine 
-    call "!sdkDir!\utils.bat" WriteLine "Cleaning User data" "White" "Blue" !lineWidth!
-    call "!sdkDir!\utils.bat" WriteLine 
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning User data" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
 
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-FaceProcessing\datastore"
 )
 
 if /i "%cleanInstallAll%" == "true" (
 
-    call "!sdkDir!\utils.bat" WriteLine 
-    call "!sdkDir!\utils.bat" WriteLine "Cleaning install for other platforms" "White" "Blue" !lineWidth!
-    call "!sdkDir!\utils.bat" WriteLine 
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning install for other platforms" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
 
     REM Clean shared python installs and venvs
     call :RemoveDir "!rootDir!\src\runtimes\bin\" 
@@ -197,9 +200,9 @@ if /i "%cleanInstallAll%" == "true" (
 
 if /i "%cleanAssets%" == "true" (
 
-    call "!sdkDir!\utils.bat" WriteLine 
-    call "!sdkDir!\utils.bat" WriteLine "Cleaning Assets" "White" "Blue" !lineWidth!
-    call "!sdkDir!\utils.bat" WriteLine 
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning Assets" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
 
     REM Production modules
     call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-6.2\assets"
@@ -242,9 +245,9 @@ if /i "%cleanAssets%" == "true" (
 
 if /i "%cleanDownloadCache%" == "true" (
 
-    call "!sdkDir!\utils.bat" WriteLine 
-    call "!sdkDir!\utils.bat" WriteLine "Cleaning Downloads" "White" "Blue" !lineWidth!
-    call "!sdkDir!\utils.bat" WriteLine 
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning Downloads" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
 
     rem delete downloads for each module
     FOR /d %%a IN ("%rootDir%\downloads\*") DO (
@@ -268,13 +271,13 @@ goto:eof
     set filePath=%~1
 
     if /i "!doDebug!" == "true" (
-        call "!sdkDir!\utils.bat" WriteLine "Marked for removal: !filePath!" "!color_error!"
+        call "!utilsScript!" WriteLine "Marked for removal: !filePath!" "!color_error!"
     ) else (
         if exist "!filePath!" (
             del "!filePath!"
-            call "!sdkDir!\utils.bat" WriteLine "Removed !dirPath!" "!color_success!"
+            call "!utilsScript!" WriteLine "Removed !dirPath!" "!color_success!"
         ) else (
-            call "!sdkDir!\utils.bat" WriteLine "Not Removing !filePath! (it doesn't exist)" "!color_mute!"
+            call "!utilsScript!" WriteLine "Not Removing !filePath! (it doesn't exist)" "!color_mute!"
         )
     )
 
@@ -285,13 +288,13 @@ goto:eof
     set dirPath=%~1
 
     if /i "!doDebug!" == "true" (
-        call "!sdkDir!\utils.bat" WriteLine "Marked for removal: !dirPath!" "!color_error!"
+        call "!utilsScript!" WriteLine "Marked for removal: !dirPath!" "!color_error!"
     ) else (
         if exist "!dirPath!" (
             rmdir /s /q "!dirPath!";
-            call "!sdkDir!\utils.bat" WriteLine "Removed !dirPath!" "!color_success!"
+            call "!utilsScript!" WriteLine "Removed !dirPath!" "!color_success!"
         ) else (
-            call "!sdkDir!\utils.bat" WriteLine "Not Removing !dirPath! (it doesn't exist)" "!color_mute!"
+            call "!utilsScript!" WriteLine "Not Removing !dirPath! (it doesn't exist)" "!color_mute!"
         )
     )
 
@@ -312,15 +315,15 @@ goto:eof
 
     if /i "%doDebug%" == "true" (
         if "!ExcludeDirFragment!" == "" (
-            call "!sdkDir!\utils.bat" WriteLine "Removing folders in !BasePath! that match !DirToFind!" "!color_info!"
+            call "!utilsScript!" WriteLine "Removing folders in !BasePath! that match !DirToFind!" "!color_info!"
         ) else (
-            call "!sdkDir!\utils.bat" WriteLine "Removing folders in !BasePath! that match !DirToFind! without !ExcludeDirFragment!" "!color_info!"
+            call "!utilsScript!" WriteLine "Removing folders in !BasePath! that match !DirToFind! without !ExcludeDirFragment!" "!color_info!"
         )
     )
 
     pushd "!BasePath!"
     if not errorlevel 0 (
-        call "!sdkDir!\utils.bat" WriteLine "Can't navigate to !BasePath! (but this is probably OK)" "!color_warn!"
+        call "!utilsScript!" WriteLine "Can't navigate to !BasePath! (but this is probably OK)" "!color_warn!"
         exit /b
     )
 
@@ -374,28 +377,28 @@ goto:eof
                 set previousRemovedDir=%%i
 
                 if /i "!doDebug!" == "true" (
-                    call "!sdkDir!\utils.bat" WriteLine "Marked for removal: !dirName!" "!color_error!"
+                    call "!utilsScript!" WriteLine "Marked for removal: !dirName!" "!color_error!"
                 ) else (
                     rmdir /s /q "!dirName!";
                 
                     if exist "!dirName!" (
-                        call "!sdkDir!\utils.bat" WriteLine "Unable to remove !dirName!"  "!color_error!"
+                        call "!utilsScript!" WriteLine "Unable to remove !dirName!"  "!color_error!"
                     ) else (
-                        call "!sdkDir!\utils.bat" WriteLine "Removed !dirName!" "!color_success!"
+                        call "!utilsScript!" WriteLine "Removed !dirName!" "!color_success!"
                     )
                 )
             ) else (
                 if /i "!doDebug!" == "true" (                
-                    call "!sdkDir!\utils.bat" WriteLine "Not deleting !dirName!" "!color_success!"
-                    REM call "!sdkDir!\utils.bat" Write "Not deleting !dirName:~-40!" "!color_success!"
-                    REM call "!sdkDir!\utils.bat" Write "%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%"
+                    call "!utilsScript!" WriteLine "Not deleting !dirName!" "!color_success!"
+                    REM call "!utilsScript!" Write "Not deleting !dirName:~-40!" "!color_success!"
+                    REM call "!utilsScript!" Write "%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%"
                 )
             )
         ) else (
             if /i "!doDebug!" == "true" (
-                call "!sdkDir!\utils.bat" WriteLine "Skipping !dirName!" "!color_mute!"
-                REM call "!sdkDir!\utils.bat" Write "Skipping !dirName:~-40!" "!color_mute!"
-                REM call "!sdkDir!\utils.bat" Write "%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%"
+                call "!utilsScript!" WriteLine "Skipping !dirName!" "!color_mute!"
+                REM call "!utilsScript!" Write "Skipping !dirName:~-40!" "!color_mute!"
+                REM call "!utilsScript!" Write "%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%%BS%"
             )
         )
 
@@ -413,15 +416,15 @@ goto:eof
 
     if /i "%doDebug%" == "true" (
         if "!ExcludeDirFragment!" == "" (
-            call "!sdkDir!\utils.bat" WriteLine "Removing folders in !BasePath! that match !DirToFind!" "!color_info!"
+            call "!utilsScript!" WriteLine "Removing folders in !BasePath! that match !DirToFind!" "!color_info!"
         ) else (
-            call "!sdkDir!\utils.bat" WriteLine "Removing folders in !BasePath! that match !DirToFind! without !ExcludeDirFragment!" "!color_info!"
+            call "!utilsScript!" WriteLine "Removing folders in !BasePath! that match !DirToFind! without !ExcludeDirFragment!" "!color_info!"
         )
     )
 
     pushd "!BasePath!"  >nul 2>nul
     if not errorlevel 0 (
-        call "!sdkDir!\utils.bat" WriteLine "Can't navigate to !BasePath! (but this is probably OK)" "!color_warn!"
+        call "!utilsScript!" WriteLine "Can't navigate to !BasePath! (but this is probably OK)" "!color_warn!"
         exit /b
     )
     
@@ -446,19 +449,19 @@ goto:eof
         if /i "!fileMatched!" == "true" (
 
             if /i "!doDebug!" == "true" (
-                call "!sdkDir!\utils.bat" WriteLine "Marked for removal: !fileName!" !color_error!
+                call "!utilsScript!" WriteLine "Marked for removal: !fileName!" !color_error!
             ) else (
                 del /q "!fileName!";
             
                 if exist "!fileName!" (
-                    call "!sdkDir!\utils.bat" WriteLine "Unable to remove !fileName!"  !color_error!
+                    call "!utilsScript!" WriteLine "Unable to remove !fileName!"  !color_error!
                 ) else (
-                    call "!sdkDir!\utils.bat" WriteLine "Removed !fileName!" !color_success!
+                    call "!utilsScript!" WriteLine "Removed !fileName!" !color_success!
                 )
             )
         ) else (
             if /i "!doDebug!" == "true" (
-                call "!sdkDir!\utils.bat" WriteLine "Not deleting !fileName!" !color_success!
+                call "!utilsScript!" WriteLine "Not deleting !fileName!" !color_success!
             )
         )
     )

@@ -649,9 +649,9 @@ function setupDotNet () {
 
         # output a warning message if no admin rights and instruct user on manual steps
         if [ "$architecture" = 'arm64' ]; then
-            install_instructions="sudo bash '${sdkScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
+            install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
         else
-            install_instructions="sudo bash '${sdkScriptsDirPath}/dotnet-install.sh' --channel $requestedNetMajorMinorVersion --runtime $requestedType"
+            install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install.sh' --channel $requestedNetMajorMinorVersion --runtime $requestedType"
         fi
         checkForAdminAndWarn "$install_instructions"
 
@@ -672,23 +672,23 @@ function setupDotNet () {
                 else
                     if [ "$architecture" = 'arm64' ]; then
                         if [ $verbosity = "quiet" ]; then
-                            sudo bash "${sdkScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType" "quiet"
+                            sudo bash "${installScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType" "quiet"
                         else
-                            sudo bash "${sdkScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType"
+                            sudo bash "${installScriptsDirPath}/dotnet-install-arm.sh" "$requestedNetMajorMinorVersion" "$requestedType"
                         fi               
                     else
                         if [ $verbosity = "quiet" ]; then
-                            sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
+                            sudo bash "${installScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
                         else
-                            sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
+                            sudo bash "${installScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
                         fi
                     fi
                 fi
             else
                 if [ $verbosity = "quiet" ]; then
-                    sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
+                    sudo bash "${installScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
                 else
-                    sudo bash "${sdkScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
+                    sudo bash "${installScriptsDirPath}/dotnet-install.sh" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
                 fi
             fi
         fi
@@ -2626,8 +2626,8 @@ else
         edgeDevice='Jetson'
         platform='jetson'
         # Get the good stuff
-        source "${sdkScriptsDirPath}/jetson_libraries.sh"
-        source "${sdkScriptsDirPath}/jetson_variables.sh"
+        source "${installScriptsDirPath}/jetson_libraries.sh"
+        source "${installScriptsDirPath}/jetson_variables.sh"
     elif [ "$inDocker" = true ]; then 
         systemName='Docker'
     elif [[ $(uname -a) =~ microsoft-standard-WSL ]]; then

@@ -44,5 +44,5 @@ REM ============================================================================
 
 
 :: the Python Demo is in <root>\src\demos\clients\Python
-call "%sdkScriptsDirPath%\utils.bat" SetupPython
-call "%sdkScriptsDirPath%\utils.bat" InstallRequiredPythonPackages "%moduleDirPath%\Python"
+call "%utilsScript%" SetupPython
+call "%utilsScript%" InstallRequiredPythonPackages "%moduleDirPath%\Python"

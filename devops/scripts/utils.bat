@@ -589,9 +589,9 @@ shift & goto :%~1
             call :WriteLine "Current version is !currentDotNetVersion!. Installing newer version." %color_warn%
             if /i "!architecture!" == "arm64" (
                 if /i "!requestedType!" == "SDK" (
-                    powershell -NoProfile -ExecutionPolicy unrestricted -File "!sdkScriptsDirPath!\dotnet-install.ps1" --Version !requestedNetVersion!
+                    powershell -NoProfile -ExecutionPolicy unrestricted -File "!installScriptsDirPath!\dotnet-install.ps1" --Version !requestedNetVersion!
                 ) else (
-                    powershell -NoProfile -ExecutionPolicy unrestricted  -File "!sdkScriptsDirPath!\dotnet-install.ps1" --Runtime aspnetcore --Version !requestedNetVersion!
+                    powershell -NoProfile -ExecutionPolicy unrestricted  -File "!installScriptsDirPath!\dotnet-install.ps1" --Runtime aspnetcore --Version !requestedNetVersion!
                 )
                 if "%DOTNET_ROOT%" == "" (
                     SET "DOTNET_ROOT=%LOCALAPPDATA%\Microsoft\dotnet"
@@ -1192,7 +1192,7 @@ shift & goto :%~1
             call :GetValueFromModuleSettingsFile "!moduleDirPath!", "!moduleId!", "InstallOptions.DownloadableModels[%%i].Folder"
             set modelFolderName=!moduleSettingsFileValue!
 
-            call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "!modelFileName!" "!modelFolderName!" "Downloading !modelName!..."
+            call "%utilsScript%" GetFromServer "models/" "!modelFileName!" "!modelFolderName!" "Downloading !modelName!..."
         )
     )
 

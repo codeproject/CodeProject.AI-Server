@@ -14,7 +14,7 @@
 )
 
 :: Download the models from CodeProject's models folder and store in /assets
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "models-yolo8-pt.zip"        "assets" "Downloading Standard YOLO models..."
+call "%utilsScript%" GetFromServer "models/" "models-yolo8-pt.zip"        "assets" "Downloading Standard YOLO models..."
 
 REM TODO: Check assets created and has files
 REM set moduleInstallErrors=...

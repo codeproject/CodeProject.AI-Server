@@ -23,9 +23,10 @@ rootDirPath="$(pwd)"
 popd >/dev/null
 sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
 sdkScriptsDirPath="${sdkPath}/Scripts"
+utilsScriptsDirPath="${rootDirPath}/devops/scripts"
 
 # import the utilities. This sets os, platform and architecture
-source "${sdkScriptsDirPath}/utils.sh"
+source "${utilsScriptsDirPath}/utils.sh"
 
 function removeFile() {
     local filePath=$1
@@ -323,7 +324,7 @@ if [ "$cleanInstallCurrentOS" = true ]; then
     writeLine 
 
     # Clean shared python venvs
-    removeDir "${rootDir}/src/runtimes/bin/${os}/"
+    removeDir "${rootDir}/runtimes/bin/${os}/"
 
     # Clean module python venvs
     for dirName in "${pythonModules[@]}"
@@ -356,7 +357,7 @@ if [ "$cleanInstallAll" = true ]; then
     writeLine 
 
     # Clean shared python installs and venvs
-    removeDir "${rootDir}/src/runtimes/bin"
+    removeDir "${rootDir}/runtimes/bin"
 
     # Clean module python venvs
     for dirName in "${pythonModules[@]}"

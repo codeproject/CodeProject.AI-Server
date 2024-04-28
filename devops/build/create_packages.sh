@@ -56,6 +56,7 @@ rootDirPath="$(pwd)"
 popd >/dev/null
 sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
 sdkScriptsDirPath="${sdkPath}/Scripts"
+utilsScriptsDirPath="${rootDirPath}/devops/scripts"
 
 # Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
 
@@ -108,10 +109,10 @@ function correctLineEndings () {
     fi
 }
 
-correctLineEndings ${sdkScriptsDirPath}/utils.sh
+correctLineEndings ${utilsScriptsDirPath}/utils.sh
 
 # "platform" will be set by this script
-source ${sdkScriptsDirPath}/utils.sh
+source ${utilsScriptsDirPath}/utils.sh
 
 # Helper method ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -199,7 +200,7 @@ if [ "$verbosity" != "quiet" ]; then
     writeLine 
     writeLine "rootDirPath            = ${rootDirPath}"            $color_mute
     writeLine "thisScriptDirPath      = ${thisScriptDirPath}"      $color_mute
-    writeLine "sdkScriptsDirPath      = ${sdkScriptsDirPath}"      $color_mute
+    writeLine "utilsScriptsDirPath    = ${utilsScriptsDirPath}"    $color_mute
     writeLine "modulesDirPath         = ${modulesDirPath}"         $color_mute
     writeLine "externalModulesDirPath = ${externalModulesDirPath}" $color_mute
     writeLine
