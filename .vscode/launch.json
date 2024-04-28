@@ -285,8 +285,8 @@
                 "hidden": false
             },
             "name": "ALPR",
-            "type": "python",
-            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/linux/python38/venv/bin/python",
+            "type": "debugpy",
+            "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/windows/python39/venv/Scripts/python.exe",
             "request": "launch",
             "program": "ALPR_adapter.py",
             // "args": [ "--selftest" ],
@@ -300,7 +300,7 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/windows/python39/venv/Scripts/python"
+                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/windows/python39/venv/Scripts/python.exe"
             },
             "linux": {
                 "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ALPR/bin/linux/python38/venv/bin/python",
@@ -447,13 +447,14 @@
                 "hidden": false
             },
             "name": "Object Detect Coral",
-            "type": "python",
-                "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
+            "type": "debugpy",
+            // "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
+            "python": "${workspaceFolder}/bin/windows/python39/venv/Scripts/python.exe",
             "request": "launch",
             "program": "objectdetection_coral_adapter.py",
             // "args": [ "--selftest" ],
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral",
+            "cwd": "${workspaceFolder}",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -476,7 +477,7 @@
                 // "CPAI_CORAL_MULTI_TPU": "true",
                 // "CPAI_CORAL_MODEL_NAME": "EfficientDet-Lite",
                 // "MODEL_SIZE": "Medium"
-            },
+            }/*,
             "windows": {
                 "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral/bin/windows/python39/venv/Scripts/python.exe",
             },
@@ -485,7 +486,7 @@
             },
             "osx": {
                 "python": "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral/bin/macos/python39/venv/bin/python",
-            }
+            }*/
         },
 
         {
