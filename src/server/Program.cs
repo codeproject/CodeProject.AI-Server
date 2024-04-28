@@ -365,8 +365,7 @@ namespace CodeProject.AI.Server
                 return;
                 
             string baseDir      = GetAppRootPath();
-            string offsetDir    = SystemInfo.IsDevelopmentCode? "src/" : string.Empty;
-            string utilitiesDir = Path.Combine(baseDir, offsetDir, "SDK/Utilities/");
+            string scriptsDir = Path.Combine(baseDir, "devops/scripts/");
 
             try
             {
@@ -374,14 +373,14 @@ namespace CodeProject.AI.Server
 
                 ProcessStartInfo procStartInfo;
                 if (SystemInfo.IsWindows)
-                    procStartInfo = new ProcessStartInfo(Path.Combine(utilitiesDir, "stop_all.bat"));
+                    procStartInfo = new ProcessStartInfo(Path.Combine(scriptsDir, "stop_all.bat"));
                 else if (SystemInfo.IsMacOS)
-                    procStartInfo = new ProcessStartInfo("bash", '"' + Path.Combine(utilitiesDir, "stop_all.sh") + '"');
+                    procStartInfo = new ProcessStartInfo("bash", '"' + Path.Combine(scriptsDir, "stop_all.sh") + '"');
                 else
-                    procStartInfo = new ProcessStartInfo("bash", Path.Combine(utilitiesDir, "stop_all.sh"));
+                    procStartInfo = new ProcessStartInfo("bash", Path.Combine(scriptsDir, "stop_all.sh"));
 
                 procStartInfo.UseShellExecute  = false;
-                procStartInfo.WorkingDirectory = Path.GetDirectoryName(utilitiesDir);
+                procStartInfo.WorkingDirectory = Path.GetDirectoryName(scriptsDir);
                 procStartInfo.CreateNoWindow   = false;
                 procStartInfo.WindowStyle      = ProcessWindowStyle.Hidden;
 

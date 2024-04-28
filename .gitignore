@@ -320,6 +320,7 @@ wget-log*
 /downloads/models/*
 !/downloads/models/models.json
 
+/runtimes
 
 # Downloaded assets and libraries for modules
 /src/modules/ObjectDetectionYOLOv5Net/assets/
@@ -339,16 +340,15 @@ wget-log*
 /src/server/installconfig.json
 
 
-# SDK --------------------------------------------------------------------------
+# Utils --------------------------------------------------------------------------
 
 # The compiled form of the ParseJSON utility. We move the compiled files to its base dir it for convenience
-/src/SDK/Utilities/ParseJSON/ParseJSON
-/src/SDK/Utilities/ParseJSON/ParseJSON.exe
-/src/SDK/Utilities/ParseJSON/ParseJSON.deps.json
-/src/SDK/Utilities/ParseJSON/ParseJSON.dll
-/src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json
-/src/SDK/Utilities/ParseJSON/ParseJSON.xml
-/src/SDK/Utilities/ParseJSON/*.dll
+/utils/ParseJSON/ParseJSON
+/utils/ParseJSON/ParseJSON.exe
+/utils/ParseJSON/ParseJSON.deps.json
+/utils/ParseJSON/ParseJSON.runtimeconfig.json
+/utils/ParseJSON/ParseJSON.xml
+/utils/ParseJSON/*.dll
 
 # Module packages --------------------------------------------------------------
 
@@ -358,3 +358,4 @@ wget-log*
 # Debug debris -----------------------------------------------------------------
 
 /SDK
+/debug

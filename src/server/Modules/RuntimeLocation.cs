@@ -16,7 +16,7 @@
         Local,
 
         /// <summary>
-        /// The runtime is installed in a shared location, typically /src/runtimes or app/runtimes.
+        /// The runtime is installed in a shared location, typically /runtimes or app/runtimes.
         /// Folder name is given by AppSettings.RuntimesDirPath.
         /// </summary>
         Shared,

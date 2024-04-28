@@ -417,7 +417,7 @@
             },
             "name": "Face Processing",
             "type": "python",
-            "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "intelligencelayer/face.py",
             // "args": [ "--selftest" ],
@@ -431,13 +431,13 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/runtimes/bin/windows/python37/venv/Scripts/python"
+                "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -616,7 +616,7 @@
             },
             "name": "Object Detect YOLOv5 6.2",
             "type": "python",
-            "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "detect_adapter.py",
             "console": "integratedTerminal",
@@ -634,13 +634,13 @@
                 "MODEL_SIZE": "Tiny"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/runtimes/bin/windows/python37/venv/Scripts/python"
+                "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -651,7 +651,7 @@
             },
             "name": "Object Detect YOLOv8",
             "type": "python",
-            "python": "${workspaceFolder}/src/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
             "request": "launch",
             "program": "detect_adapter.py",
             "console": "integratedTerminal",
@@ -668,13 +668,13 @@
                 "MODEL_SIZE": "Tiny"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python"
+                "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -739,7 +739,7 @@
             },
             "name": "Scene Classifier",
             "type": "python",
-            "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "scene_adapter.py",
             // "args": [ "--selftest" ],
@@ -753,13 +753,13 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/runtimes/bin/windows/python37/venv/Scripts/python"
+                "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -1089,7 +1089,7 @@
             },
             "name": "Racoon detector",
             "type": "python",
-            "python": "${workspaceFolder}/src/runtimes/bin/windows/python38/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python38/venv/bin/python",
             "request": "launch",
             "program": "racoon_detect.py",
             "console": "integratedTerminal",
@@ -1102,13 +1102,13 @@
                 "CPAI_PORT": "32168"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python.exe"
+                "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python.exe"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
             }
         },
 
@@ -1122,7 +1122,7 @@
 
             "name": "Python Simple Module",
             "type": "python",
-            "python": "${workspaceFolder}/src/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
             "request": "launch",
             // "program": "detect.py",
             "program": "detect_adapter.py",
@@ -1142,13 +1142,13 @@
                 "MODEL_SIZE": "Tiny"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python"
+                "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
             }
         },
         {
@@ -1158,7 +1158,7 @@
 
             "name": "Python Long Process Module",
             "type": "python",
-            "python": "${workspaceFolder}/src/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
             "request": "launch",
             "program": "long_process_demo_adapter.py",
             "console": "integratedTerminal",
@@ -1174,13 +1174,13 @@
                 "MODEL_SIZE": "Tiny"
             },
             "windows": {
-                "python": "${workspaceFolder}/src/runtimes/bin/windows/python39/venv/Scripts/python"
+                "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/src/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             },
             "osx": {
-                "python": "${workspaceFolder}/src/runtimes/bin/macos/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
             }
         },
 
