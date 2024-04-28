@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
-	<Import Project="../../NET/Common.targets" />
+	<Import Project="../../src/SDK/NET/Common.targets" />
 
 	<!-- Meta data -->
 	<PropertyGroup>
@@ -53,7 +53,7 @@
   </PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\NET\NET.csproj" />
+	  <ProjectReference Include="..\..\src\SDK\NET\NET.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -107,7 +107,7 @@
              "command": "dotnet",
              "args": [
                 "build",
-                "${workspaceFolder}/src/SDK/Utilities/ParseJSON",
+                "${workspaceFolder}/utils/ParseJSON",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

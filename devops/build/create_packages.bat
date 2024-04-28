@@ -117,7 +117,7 @@ if /i "%verbosity%" neq "quiet" (
     call "!sdkScriptsDirPath!\utils.bat" WriteLine 
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "rootDirPath            = !rootDirPath!"            !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "thisScriptDirPath      = !thisScriptDirPath!"      !color_mute!
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkPath             = !sdkPath!"             !color_mute!
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkPath                = !sdkPath!"                !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "sdkScriptsDirPath      = !sdkScriptsDirPath!"      !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "modulesDirPath         = !modulesDirPath!"         !color_mute!
     call "!sdkScriptsDirPath!\utils.bat" WriteLine "externalModulesDirPath = !externalModulesDirPath!" !color_mute!
@@ -128,10 +128,16 @@ if /i "%verbosity%" neq "quiet" (
 
 set success=true
 
-pushd %sdkPath%\Utilities\ParseJSON
+pushd "!rootDirPath!\utils\ParseJSON"
+cd
 if not exist ParseJSON.exe (
-    dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
-    if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
+    if /i "%verbosity%" neq "quiet" (
+        dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release
+        if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* .
+    ) else (
+        dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
+        if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
+    )
 )
 popd
 

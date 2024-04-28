@@ -991,7 +991,7 @@
             "console": "internalConsole",
             "request": "launch",
             "preLaunchTask": "build-parsejson",
-            "cwd": "${workspaceFolder}/src/SDK/Utilities/ParseJSON/",
+            "cwd": "${workspaceFolder}/utils/ParseJSON/",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
@@ -1006,12 +1006,12 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-parsejson",
-            "program": "${workspaceFolder}/src/SDK/Utilities/ParseJSON/bin/Debug/net7.0/ParseJSON",
+            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net7.0/ParseJSON",
             "linux": {
-                "program": "${workspaceFolder}/src/SDK/Utilities/ParseJSON/bin/Debug/net7.0/ParseJSON.dll",
+                "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net7.0/ParseJSON.dll",
             },
             "args": [ "$.Modules.ALPR.Platforms", "test.json" ],
-            "cwd": "${workspaceFolder}/src/SDK/Utilities/ParseJSON/",
+            "cwd": "${workspaceFolder}/utils/ParseJSON/",
             "stopAtEntry": false,
             "requireExactSource": false,
             "env": {
