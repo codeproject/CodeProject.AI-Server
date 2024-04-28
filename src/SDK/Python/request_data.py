@@ -174,9 +174,11 @@ class RequestData:
                 return cv.imdecode(np.frombuffer(img_bytes, dtype=np.uint8), cv.IMREAD_COLOR)
 
             with io.BytesIO(img_bytes) as img_stream:
+                # return Image.open(img_stream).convert("RGB")
+            
                 img = Image.open(img_stream)
-                # Only convert if it needs conversion
-                return img if img.mode == 'RGB' else img.convert('RGB')
+                # Only convert if it needs conversion. Otherwise we need to return a copy
+                return img.copy() if img.mode == 'RGB' else img.convert('RGB')
                 
 
         except Exception as ex:
