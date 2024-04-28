@@ -34,11 +34,9 @@
     <Compile Include="utils\environment_check.py" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="pyproject.toml" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="analysis\" />
     <Folder Include="training\" />
     <Folder Include="utils\" />
   </ItemGroup>
