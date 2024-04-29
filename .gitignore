@@ -323,11 +323,11 @@ wget-log*
 /runtimes
 
 # Downloaded assets and libraries for modules
-/src/modules/ObjectDetectionYOLOv5Net/assets/
-/src/modules/ObjectDetectionYOLOv5Net/custom-models
-/src/modules/ObjectDetectionYOLOv5Net/LocalNugets
-/src/modules/ObjectDetectionYOLOv5-6.2/assets
-/src/modules/ObjectDetectionYOLOv5-6.2/custom-models
+/modules/ObjectDetectionYOLOv5Net/assets/
+/modules/ObjectDetectionYOLOv5Net/custom-models
+/modules/ObjectDetectionYOLOv5Net/LocalNugets
+/modules/ObjectDetectionYOLOv5-6.2/assets
+/modules/ObjectDetectionYOLOv5-6.2/custom-models
 
 /src/demos/modules/DotNetLongProcess/assets/
 /src/demos/modules/DotNetSimple/assets/

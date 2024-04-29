@@ -39,12 +39,17 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{460DB5C8-46F3-4407-A2DF-D9063D14493A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		CodeProject.AI-Server.code-workspace = CodeProject.AI-Server.code-workspace
 		LICENCE.md = LICENCE.md
 		README.md = README.md
 		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{FF0C329F-41E8-4540-BCDB-97690911077D}"
+	ProjectSection(SolutionItems) = preProject
+		src\SDK\install.bat = src\SDK\install.bat
+		src\SDK\install.sh = src\SDK\install.sh
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "License plates", "License plates", "{D320EA6C-2388-41F7-A4D1-980192665A61}"
 	ProjectSection(SolutionItems) = preProject
@@ -143,16 +148,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NET", "src\SDK\NET\NET.cspr
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Python", "src\SDK\Python\Python.pyproj", "{B6A1D372-264E-4F66-B7FB-7FF19587476E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{95BF276E-3D5E-4CB2-9FEB-A77AF0C2728C}"
-	ProjectSection(SolutionItems) = preProject
-		src\SDK\Scripts\dotnet-install-arm.sh = src\SDK\Scripts\dotnet-install-arm.sh
-		src\SDK\Scripts\dotnet-install.ps1 = src\SDK\Scripts\dotnet-install.ps1
-		src\SDK\Scripts\dotnet-install.sh = src\SDK\Scripts\dotnet-install.sh
-		src\SDK\Scripts\install_CUDnn.bat = src\SDK\Scripts\install_CUDnn.bat
-		src\SDK\Scripts\utils.bat = src\SDK\Scripts\utils.bat
-		src\SDK\Scripts\utils.sh = src\SDK\Scripts\utils.sh
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetectionYOLOv5Net", "src\modules\ObjectDetectionYOLOv5Net\ObjectDetectionYOLOv5Net.csproj", "{F682C5F9-854F-4B4E-A7DE-33329F51A26B}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetectionYOLOv5-6.2", "src\modules\ObjectDetectionYOLOv5-6.2\ObjectDetectionYOLOv5-6.2.pyproj", "{B6A1D372-264E-4F66-B7FB-7FF19587476F}"
@@ -171,28 +166,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ",vscode", ",vscode", "{CA30
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker-compose", "docker-compose", "{2A2CB97D-0086-4891-AFA1-198F414E3562}"
 	ProjectSection(SolutionItems) = preProject
-		docker-compose\docker-compose-cpu.yml = docker-compose\docker-compose-cpu.yml
-		docker-compose\docker-compose-cuda-10.2.yml = docker-compose\docker-compose-cuda-10.2.yml
-		docker-compose\docker-compose-cuda-11.7.yml = docker-compose\docker-compose-cuda-11.7.yml
-		docker-compose\docker-compose-cuda-12.2.yml = docker-compose\docker-compose-cuda-12.2.yml
-		docker-compose\docker-compose-gpu.yml = docker-compose\docker-compose-gpu.yml
-		docker-compose\docker-compose-rpi.yml = docker-compose\docker-compose-rpi.yml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{A04CA21C-39DF-4466-B48B-A08AA0A262BD}"
-	ProjectSection(SolutionItems) = preProject
-		src\SDK\Utilities\clean.bat = src\SDK\Utilities\clean.bat
-		src\SDK\Utilities\clean.sh = src\SDK\Utilities\clean.sh
-		src\SDK\Utilities\Cleanup-InstalledApp.ps1 = src\SDK\Utilities\Cleanup-InstalledApp.ps1
-		src\SDK\Utilities\endtimer.bat = src\SDK\Utilities\endtimer.bat
-		src\SDK\Utilities\fix_localhost_issue_wsl.sh = src\SDK\Utilities\fix_localhost_issue_wsl.sh
-		src\SDK\Utilities\HardStop.ps1 = src\SDK\Utilities\HardStop.ps1
-		src\SDK\Utilities\hardware_info.vbs = src\SDK\Utilities\hardware_info.vbs
-		src\SDK\Utilities\Setup-WSL.bat = src\SDK\Utilities\Setup-WSL.bat
-		src\SDK\Utilities\Setup-WSL.ps1 = src\SDK\Utilities\Setup-WSL.ps1
-		src\SDK\Utilities\starttimer.bat = src\SDK\Utilities\starttimer.bat
-		src\SDK\Utilities\stop_all.bat = src\SDK\Utilities\stop_all.bat
-		src\SDK\Utilities\stop_all.sh = src\SDK\Utilities\stop_all.sh
+		devops\docker-compose\docker-compose-cpu.yml = devops\docker-compose\docker-compose-cpu.yml
+		devops\docker-compose\docker-compose-cuda-10.2.yml = devops\docker-compose\docker-compose-cuda-10.2.yml
+		devops\docker-compose\docker-compose-cuda-11.7.yml = devops\docker-compose\docker-compose-cuda-11.7.yml
+		devops\docker-compose\docker-compose-cuda-12.2.yml = devops\docker-compose\docker-compose-cuda-12.2.yml
+		devops\docker-compose\docker-compose-gpu.yml = devops\docker-compose\docker-compose-gpu.yml
+		devops\docker-compose\docker-compose-rpi.yml = devops\docker-compose\docker-compose-rpi.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParseJSON", "utils\ParseJSON\ParseJSON.csproj", "{AF84AA51-8718-40EC-B5D7-281799A7B07C}"
@@ -218,6 +197,62 @@ EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetect", "src\demos\clients\Python\ObjectDetect\ObjectDetect.pyproj", "{25750BF1-1502-4F65-8D69-CEA8C87D6446}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.SDK.Tests", "tests\CodeProject.AI.SDK.Tests\CodeProject.AI.SDK.Tests.csproj", "{534DE25D-0CDB-40FA-9FA5-915947FFC948}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "downloads", "downloads", "{03695052-B42B-4672-801E-8DA4A2DA121D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "models", "models", "{BB5A0479-7ED8-4348-9C84-A712692E98DB}"
+	ProjectSection(SolutionItems) = preProject
+		downloads\models\models.json = downloads\models\models.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{A80A9448-3DF5-4FDA-8D12-5B2A8ECDC482}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devops", "devops", "{50CC79E9-A9D5-4A10-AA2F-4FE588BA26F5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{14F997E3-5D56-4610-AC3D-7838DCB3B2AB}"
+	ProjectSection(SolutionItems) = preProject
+		devops\build\create_packages.bat = devops\build\create_packages.bat
+		devops\build\create_packages.sh = devops\build\create_packages.sh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "install", "install", "{10FEC849-0DE2-45A1-BA63-C3CD0AA7DD2A}"
+	ProjectSection(SolutionItems) = preProject
+		devops\install\clean.bat = devops\install\clean.bat
+		devops\install\clean.sh = devops\install\clean.sh
+		devops\install\clone_repos.bat = devops\install\clone_repos.bat
+		devops\install\clone_repos.sh = devops\install\clone_repos.sh
+		devops\install\dotnet-install-arm.sh = devops\install\dotnet-install-arm.sh
+		devops\install\dotnet-install.ps1 = devops\install\dotnet-install.ps1
+		devops\install\dotnet-install.sh = devops\install\dotnet-install.sh
+		devops\install\install_CUDnn.bat = devops\install\install_CUDnn.bat
+		devops\install\install_cuDNN.sh = devops\install\install_cuDNN.sh
+		devops\install\jetson_libraries.sh = devops\install\jetson_libraries.sh
+		devops\install\jetson_variables.sh = devops\install\jetson_variables.sh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{6BB8FD23-9042-4E05-AF31-D8C167EEEFD3}"
+	ProjectSection(SolutionItems) = preProject
+		devops\scripts\Cleanup-InstalledApp.ps1 = devops\scripts\Cleanup-InstalledApp.ps1
+		devops\scripts\endtimer.bat = devops\scripts\endtimer.bat
+		devops\scripts\fix_localhost_issue_wsl.sh = devops\scripts\fix_localhost_issue_wsl.sh
+		devops\scripts\hardware_info.vbs = devops\scripts\hardware_info.vbs
+		devops\scripts\inotify_consumers.sh = devops\scripts\inotify_consumers.sh
+		devops\scripts\setSwapMemorySize.sh = devops\scripts\setSwapMemorySize.sh
+		devops\scripts\Setup-WSL.bat = devops\scripts\Setup-WSL.bat
+		devops\scripts\Setup-WSL.ps1 = devops\scripts\Setup-WSL.ps1
+		devops\scripts\starttimer.bat = devops\scripts\starttimer.bat
+		devops\scripts\stop_all.bat = devops\scripts\stop_all.bat
+		devops\scripts\stop_all.sh = devops\scripts\stop_all.sh
+		devops\scripts\utils.bat = devops\scripts\utils.bat
+		devops\scripts\utils.sh = devops\scripts\utils.sh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "utils", "utils", "{6E979D95-48F4-4902-A708-9C9AFC3430BD}"
+	ProjectSection(SolutionItems) = preProject
+		utils\jq-windows-amd64.exe = utils\jq-windows-amd64.exe
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "internal-modules", "internal-modules", "{B2C2865A-1A91-4B5C-83F5-BFC967F49773}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -389,12 +424,11 @@ Global
 		{1C7E0F81-1F4A-478B-80CE-4C41606DC087} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
 		{F7056ECA-1C9C-4544-99CA-731C944651D6} = {FF0C329F-41E8-4540-BCDB-97690911077D}
 		{B6A1D372-264E-4F66-B7FB-7FF19587476E} = {FF0C329F-41E8-4540-BCDB-97690911077D}
-		{95BF276E-3D5E-4CB2-9FEB-A77AF0C2728C} = {FF0C329F-41E8-4540-BCDB-97690911077D}
 		{F682C5F9-854F-4B4E-A7DE-33329F51A26B} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{B6A1D372-264E-4F66-B7FB-7FF19587476F} = {1C7E0F81-1F4A-478B-80CE-4C41606DC087}
 		{BFB8AD18-8C6E-4B25-B4AA-1AAB90ADA843} = {A8B76501-496A-4011-9C37-8308A1EBDFA7}
-		{A04CA21C-39DF-4466-B48B-A08AA0A262BD} = {FF0C329F-41E8-4540-BCDB-97690911077D}
-		{AF84AA51-8718-40EC-B5D7-281799A7B07C} = {A04CA21C-39DF-4466-B48B-A08AA0A262BD}
+		{2A2CB97D-0086-4891-AFA1-198F414E3562} = {50CC79E9-A9D5-4A10-AA2F-4FE588BA26F5}
+		{AF84AA51-8718-40EC-B5D7-281799A7B07C} = {6E979D95-48F4-4902-A708-9C9AFC3430BD}
 		{5FBE5A09-30BA-4697-8069-443BE5294424} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
 		{7FA847EE-CB4B-4C79-A774-4FFDB7313638} = {7F18EB64-C857-49C4-9380-70D3CCE6242B}
 		{7CC816B7-8559-461D-A5E6-5CE1B6DCA9BC} = {7FA847EE-CB4B-4C79-A774-4FFDB7313638}
@@ -404,6 +438,11 @@ Global
 		{C2500118-FD99-49EF-B726-3E2A3B30A717} = {37533562-EC4C-4FB4-8C42-FE327D1D79BD}
 		{25750BF1-1502-4F65-8D69-CEA8C87D6446} = {37533562-EC4C-4FB4-8C42-FE327D1D79BD}
 		{534DE25D-0CDB-40FA-9FA5-915947FFC948} = {D982BD8C-2257-413B-8513-8043AB3035F3}
+		{BB5A0479-7ED8-4348-9C84-A712692E98DB} = {03695052-B42B-4672-801E-8DA4A2DA121D}
+		{A80A9448-3DF5-4FDA-8D12-5B2A8ECDC482} = {03695052-B42B-4672-801E-8DA4A2DA121D}
+		{14F997E3-5D56-4610-AC3D-7838DCB3B2AB} = {50CC79E9-A9D5-4A10-AA2F-4FE588BA26F5}
+		{10FEC849-0DE2-45A1-BA63-C3CD0AA7DD2A} = {50CC79E9-A9D5-4A10-AA2F-4FE588BA26F5}
+		{6BB8FD23-9042-4E05-AF31-D8C167EEEFD3} = {50CC79E9-A9D5-4A10-AA2F-4FE588BA26F5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}

@@ -80,32 +80,32 @@ As an example, `requirements.linux.arm64.cuda11_7.txt` would be a requirements f
 
 | Variable | Description |
 |---|---|
-| `os`                | "linux", "macos" or "windows" |
-| `architecture`      | "x86_64" or "arm64" |
-| `platform`          | "linux", "linux-arm64", "macos" or "macos-arm64", "windows" or "windows-arm64" |
-| `systemName`        | General name for the system. Value can be one of: Windows, Linux, macOS, WSL, Raspberry Pi, Orange Pi, Radxa ROCK, Jetson, or Docker |
-| `edgeDevice`        | Raspberry Pi, Orange PI, Radxa ROCK, Jetson, or blank if none of these |
+| `os`                  | "linux", "macos" or "windows" |
+| `architecture`        | "x86_64" or "arm64" |
+| `platform`            | "linux", "linux-arm64", "macos" or "macos-arm64", "windows" or "windows-arm64" |
+| `systemName`          | General name for the system. Value can be one of: Windows, Linux, macOS, WSL, Raspberry Pi, Orange Pi, Radxa ROCK, Jetson, or Docker |
+| `edgeDevice`          | Raspberry Pi, Orange PI, Radxa ROCK, Jetson, or blank if none of these |
 |||
-| `rootDirPath`       | the root path of the installation (eg: ~/CodeProject/AI) |
-| `sdkScriptsDirPath` | the path to the installation utility scripts ($rootDirPath/src/SDK/Scripts) |
-| `downloadDirPath`   | the path to where downloads will be stored (/downloads) |
-| `runtimesDirPath`   | the path to the installed runtimes ($rootDirPath/src/runtimes) |
-| `modulesDirPath`    | the path to all the AI modules ($rootDirPath/src/modules) |
+| `rootDirPath`         | the root path of the installation (eg: ~/CodeProject/AI) |
+| `utilsScriptsDirPath` | the path to the installation utility scripts ($rootDirPath/devops/scripts) |
+| `utilsScript`         | the path to the utilities script that contains functionality used by other scripts |
+| `downloadDirPath`     | the path to where downloads will be stored (/downloads) |
+| `runtimesDirPath`     | the path to the installed runtimes ($rootDirPath/runtimes) |
+| `modulesDirPath`      | the path to all the AI modules ($rootDirPath/src/modules) |
 |||
-| `moduleName`        | the name of the current module |
-| `moduleVersion`     | the version of the current module |
-| `moduleDirName`     | the name of the directory containing this module |
-| `moduleDirPath`     | the path to this module ($modulesDirPath/$moduleDirName) |
-| `runtime`           | The runtime this module uses. Either dotnet, pythonX.Y |
-| `runtimeLocation`   | The location of the virtual environment for this module. It can either be 'Local' meaning it's sandboxed within the module itself, or 'Shared' meaning the venv in use will be used by other modules |
-| `pythonVersion`     | The version of python used for this module on the current system |
-| `virtualEnvDirPath` | The path to the virtual environment for this module |
-| `venvPythonCmdPath` | The path to the python executable for the venv for this module |
-| `packagesDirPath`   | The path to the python packages installed for this module |
+| `moduleName`          | the name of the current module |
+| `moduleVersion`       | the version of the current module |
+| `moduleDirName`       | the name of the directory containing this module |
+| `moduleDirPath`       | the path to this module ($modulesDirPath/$moduleDirName) |
+| `runtime`             | The runtime this module uses. Either dotnet, pythonX.Y |
+| `runtimeLocation`     | The location of the virtual environment for this module. It can either be 'Local' meaning it's sandboxed within the module itself, or 'Shared' meaning the venv in use will be used by other modules |
+| `pythonVersion`       | The version of python used for this module on the current system |
+| `virtualEnvDirPath`   | The path to the virtual environment for this module |
+| `venvPythonCmdPath`   | The path to the python executable for the venv for this module |
+| `packagesDirPath`     | The path to the python packages installed for this module |
 |||
-| `verbosity`       | quiet, info or loud. Use this to determines the noise level of output.
-| `forceOverwrite`  | if true then ensure you force a re-download and re-copy of downloads. `getFromServer` will honour this value. Make sure to honour this value if you are calling `downloadAndExtract` directly |
-
+| `verbosity`           | quiet, info or loud. Use this to determines the noise level of output.
+| `forceOverwrite`      | if true then ensure you force a re-download and re-copy of downloads. `getFromServer` will honour this value. Make sure to honour this value if you are calling `downloadAndExtract` directly |
 
 
 ## Methods available
@@ -124,4 +124,4 @@ As an example, `requirements.linux.arm64.cuda11_7.txt` would be a requirements f
 | `setupPython` | (Never called directly) Installs the version of python given in `pythonVersion` and sets up a virtual environment in the location set by `runtimeLocation` |
 | `installRequiredPythonPackages` | (Never called directly) Installs the python packages included in the appropriate requirements.txt file in the current module into the current virtual environment for this module<br>`requirements-file-directory` - an optional parameter specifying the directory containing the requirements.txt file |
 
-To call a method in a Linux/macOS install script, use `method parameters` (eg writeLine "Hello, World!"). To call a method in a Windows install script, use call `"%sdkScriptsDirPath%\utils.bat" method params` (eg %sdkScriptsDirPath%\utils.bat WriteLine "Hello, World!").
+To call a method in a Linux/macOS install script, use `method parameters` (eg writeLine "Hello, World!"). To call a method in a Windows install script, use call `"%utilsScript%" method params` (eg %utilsScript% WriteLine "Hello, World!").

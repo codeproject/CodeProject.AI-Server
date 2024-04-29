@@ -27,20 +27,20 @@ if /i "!installBinaries!" == "true" (
         REM if /i "!hasCUDA!" == "true" set imageName=ObjectDetectionYOLOv5Net-CUDA-!moduleVersion!.zip
     )
 
-    call "%sdkScriptsDirPath%\utils.bat" GetFromServer "binaries/" "!imageName!" "bin" "Downloading !imageName!..."
+    call "%utilsScript%" GetFromServer "binaries/" "!imageName!" "bin" "Downloading !imageName!..."
 ) else (
-    call "%sdkScriptsDirPath%\utils.bat" GetFromServer "libraries/" "ObjectDetectionYOLOv5NetNugets.zip" "LocalNugets" "Downloading Nuget packages..."
+    call "%utilsScript%" GetFromServer "libraries/" "ObjectDetectionYOLOv5NetNugets.zip" "LocalNugets" "Downloading Nuget packages..."
 
     :: If we're in dev-setup mode we'll build the module now so the self-test will work
     pushd "!moduleDirPath!"
-    call "!sdkScriptsDirPath!\utils.bat" WriteLine "Building project..." "!color_info!"
+    call "!utilsScript!" WriteLine "Building project..." "!color_info!"
     dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/net7.0" >NUL
     popd
 )
 
 :: Download the YOLO models and store in /assets
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "yolonet-models.zip"        "assets" "Downloading YOLO ONNX models..."
-call "%sdkScriptsDirPath%\utils.bat" GetFromServer "models/" "yolonet-custom-models.zip" "custom-models" "Downloading Custom YOLO ONNX models..."
+call "%utilsScript%" GetFromServer "models/" "yolonet-models.zip"        "assets" "Downloading YOLO ONNX models..."
+call "%utilsScript%" GetFromServer "models/" "yolonet-custom-models.zip" "custom-models" "Downloading Custom YOLO ONNX models..."
 
 REM TODO: Check assets created and has files
 REM set moduleInstallErrors=...

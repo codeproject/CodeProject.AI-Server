@@ -138,13 +138,6 @@ modelsDir="models"
 sdkPath="${appRootDirPath}/SDK"
 sdkScriptsDirPath="${sdkPath}/Scripts"
 
-runtimesDirPath="${appRootDirPath}/${runtimesDir}"
-
-modulesDirPath="${appRootDirPath}/${modulesDir}"
-preInstalledModulesDirPath="${appRootDirPath}/${preInstalledModulesDir}"
-externalModulesDirPath="${appRootDirPath}/../${externalModulesDir}"
-modelsDirPath="${appRootDirPath}/${modelsDir}"
-
 # Who launched this script? user or server?
 launchedBy="user"
 
@@ -281,6 +274,13 @@ rootDirPath="$(pwd)"
 popd >/dev/null
 
 downloadDirPath="${rootDirPath}/${downloadDir}"
+utilsScriptsDirPath="${rootDirPath}\devops\scripts"
+installScriptsDirPath="${rootDirPath}\devops\install"
+runtimesDirPath="${rootDirPath}/${runtimesDir}"
+modulesDirPath="${rootDirPath}/${modulesDir}"
+preInstalledModulesDirPath="${rootDirPath}/${preInstalledModulesDir}"
+externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
+modelsDirPath="${rootDirPath}/${modelsDir}"
 
 # Check if we're in a SSH session. If so it means we need to avoid anything GUI
 inSSH=false
@@ -438,7 +438,7 @@ function doModuleInstall () {
 
     module_install_errors=""
 
-    writeLine "${moduleType} module install" "$color_info"
+    writeLine "${moduleType} module install" "$color_mute"
 
     if [ -f "${moduleDirPath}/install.sh" ]; then
        
@@ -618,8 +618,8 @@ function correctLineEndings () {
 }
 
 # $os, $platform and $architecture, edgeDevice and $systemName will be set by this script
-correctLineEndings "${sdkScriptsDirPath}/utils.sh"
-source "${sdkScriptsDirPath}/utils.sh"
+correctLineEndings "${utilsScriptsDirPath}/utils.sh"
+source "${utilsScriptsDirPath}/utils.sh"
 
 # Create directories for persisted application data
 if [ "$os" = "macos" ]; then 
@@ -725,7 +725,7 @@ if [ "$verbosity" != "quiet" ]; then
     writeLine "rootDirPath            = ${rootDirPath}"             $color_mute
     writeLine "appRootDirPath         = ${appRootDirPath}"          $color_mute
     writeLine "setupScriptDirPath     = ${setupScriptDirPath}"      $color_mute
-    writeLine "sdkScriptsDirPath      = ${sdkScriptsDirPath}"       $color_mute
+    writeLine "utilsScriptsDirPath    = ${utilsScriptsDirPath}"     $color_mute
     writeLine "runtimesDirPath        = ${runtimesDirPath}"         $color_mute
     writeLine "modulesDirPath         = ${modulesDirPath}"          $color_mute
     writeLine "externalModulesDirPath = ${externalModulesDirPath}"  $color_mute
@@ -820,8 +820,8 @@ else
                 if [ "$cuda_comparison" = "-1" ]; then
                     writeLine "Upgrading WSL's CUDA install to 11.8" $color_info
                     currentDir="$(pwd)"
-                    correctLineEndings "${sdkScriptsDirPath}/install_cuDNN.sh"
-                    source "${sdkScriptsDirPath}/install_cuDNN.sh" 11.8
+                    correctLineEndings "${installScriptsDirPath}/install_cuDNN.sh"
+                    source "${installScriptsDirPath}/install_cuDNN.sh" 11.8
                     cd "$currentDir" >/dev/null
                 fi
             fi
