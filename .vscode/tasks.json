@@ -135,7 +135,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/demos/modules/DotNetLongProcess",
+                "${workspaceFolder}/src/demos/modules/DotNetLongProcess",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -149,7 +149,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/demos/modules/DotNetSimple",
+                "${workspaceFolder}/src/demos/modules/DotNetSimple",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -163,7 +163,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/modules/PortraitFilter",
+                "${workspaceFolder}/../CodeProject.AI-Modules/PortraitFilter",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -177,7 +177,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/modules/SentimentAnalysis",
+                "${workspaceFolder}/../CodeProject.AI-Modules/SentimentAnalysis",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -191,7 +191,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/demos/clients/dotNet/CodeProject.AI.Explorer",
+                "${workspaceFolder}/src/demos/clients/dotNet/CodeProject.AI.Explorer",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -228,7 +228,7 @@
             "label": "start-explorer",        // Starts the Explorer Windows form app. No building or launching of API server done.
             "group": "none",
             // Windows form apps only work in Windows
-            "command": "${workspaceFolder}/demos/clients/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/win-x64/",
+            "command": "${workspaceFolder}/src/demos/clients/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/win-x64/",
             "args": [],
             "type": "process"
         },
