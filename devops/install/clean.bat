@@ -11,14 +11,18 @@ setlocal enabledelayedexpansion
 
 pushd ..\..
 set rootDir=%cd%
-cd src\SDK\Scripts
-set sdkDir=%cd%
 popd
 
-set installScriptsDirPath=!rootDirPath!\devops\install
+set installScriptsDirPath=!rootDir!\devops\install
+set utilsScriptsDirPath=!rootDir!\devops\scripts
 set utilsScript=!utilsScriptsDirPath!\utils.bat
 
 set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
+
+echo rootdir = !rootdir!
+echo installScriptDirPath = !installScriptsDirPath!
+echo utilsScriptsDirPath = !utilsScriptsDirPath!
+echo utilsScript = !utilsScript!
 
 set useColor=true
 set doDebug=false
