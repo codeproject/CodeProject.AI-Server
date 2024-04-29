@@ -21,6 +21,7 @@ thisScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 pushd "${thisScriptDirPath}/../.." >/dev/null
 rootDirPath="$(pwd)"
 popd >/dev/null
+
 sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
 sdkScriptsDirPath="${sdkPath}/Scripts"
 utilsScriptsDirPath="${rootDirPath}/devops/scripts"

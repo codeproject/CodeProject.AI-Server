@@ -19,10 +19,10 @@ set utilsScript=!utilsScriptsDirPath!\utils.bat
 
 set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
 
-echo rootdir = !rootdir!
-echo installScriptDirPath = !installScriptsDirPath!
-echo utilsScriptsDirPath = !utilsScriptsDirPath!
-echo utilsScript = !utilsScript!
+REM echo rootdir = !rootdir!
+REM echo installScriptDirPath = !installScriptsDirPath!
+REM echo utilsScriptsDirPath = !utilsScriptsDirPath!
+REM echo utilsScript = !utilsScript!
 
 set useColor=true
 set doDebug=false
