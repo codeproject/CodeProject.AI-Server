@@ -274,8 +274,8 @@ rootDirPath="$(pwd)"
 popd >/dev/null
 
 downloadDirPath="${rootDirPath}/${downloadDir}"
-utilsScriptsDirPath="${rootDirPath}\devops\scripts"
-installScriptsDirPath="${rootDirPath}\devops\install"
+utilsScriptsDirPath="${rootDirPath}/devops/scripts"
+installScriptsDirPath="${rootDirPath}/devops/install"
 runtimesDirPath="${rootDirPath}/${runtimesDir}"
 modulesDirPath="${rootDirPath}/${modulesDir}"
 preInstalledModulesDirPath="${rootDirPath}/${preInstalledModulesDir}"
