@@ -223,17 +223,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "install", "install", "{10FE
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{6BB8FD23-9042-4E05-AF31-D8C167EEEFD3}"
 	ProjectSection(SolutionItems) = preProject
-		devops\scripts\Cleanup-InstalledApp.ps1 = devops\scripts\Cleanup-InstalledApp.ps1
-		devops\scripts\endtimer.bat = devops\scripts\endtimer.bat
-		devops\scripts\fix_localhost_issue_wsl.sh = devops\scripts\fix_localhost_issue_wsl.sh
-		devops\scripts\hardware_info.vbs = devops\scripts\hardware_info.vbs
-		devops\scripts\inotify_consumers.sh = devops\scripts\inotify_consumers.sh
-		devops\scripts\setSwapMemorySize.sh = devops\scripts\setSwapMemorySize.sh
-		devops\scripts\Setup-WSL.bat = devops\scripts\Setup-WSL.bat
-		devops\scripts\Setup-WSL.ps1 = devops\scripts\Setup-WSL.ps1
-		devops\scripts\starttimer.bat = devops\scripts\starttimer.bat
-		devops\scripts\stop_all.bat = devops\scripts\stop_all.bat
-		devops\scripts\stop_all.sh = devops\scripts\stop_all.sh
 		devops\scripts\utils.bat = devops\scripts\utils.bat
 		devops\scripts\utils.sh = devops\scripts\utils.sh
 	EndProjectSection
@@ -252,6 +241,21 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectDetectionYOLOv5Net", "modules\ObjectDetectionYOLOv5Net\ObjectDetectionYOLOv5Net.csproj", "{3A3ED766-0691-4A21-99E9-D619950C94B9}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ObjectDetectionYOLOv5-6.2", "modules\ObjectDetectionYOLOv5-6.2\ObjectDetectionYOLOv5-6.2.pyproj", "{B6A1D372-264E-4F66-B7FB-7FF19587476F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "utils", "utils", "{B2D0FCB2-77A7-49EC-98CF-4B12FED9A9BF}"
+	ProjectSection(SolutionItems) = preProject
+		devops\utils\Cleanup-InstalledApp.ps1 = devops\utils\Cleanup-InstalledApp.ps1
+		devops\utils\endtimer.bat = devops\utils\endtimer.bat
+		devops\utils\fix_localhost_issue_wsl.sh = devops\utils\fix_localhost_issue_wsl.sh
+		devops\utils\hardware_info.vbs = devops\utils\hardware_info.vbs
+		devops\utils\inotify_consumers.sh = devops\utils\inotify_consumers.sh
+		devops\utils\setSwapMemorySize.sh = devops\utils\setSwapMemorySize.sh
+		devops\utils\Setup-WSL.bat = devops\utils\Setup-WSL.bat
+		devops\utils\Setup-WSL.ps1 = devops\utils\Setup-WSL.ps1
+		devops\utils\starttimer.bat = devops\utils\starttimer.bat
+		devops\utils\stop_all.bat = devops\utils\stop_all.bat
+		devops\utils\stop_all.sh = devops\utils\stop_all.sh
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -441,6 +445,7 @@ Global
 		{6BB8FD23-9042-4E05-AF31-D8C167EEEFD3} = {50CC79E9-A9D5-4A10-AA2F-4FE588BA26F5}
 		{3A3ED766-0691-4A21-99E9-D619950C94B9} = {A8C08D74-0A9D-4747-9DF1-C8D9DEA47C67}
 		{B6A1D372-264E-4F66-B7FB-7FF19587476F} = {A8C08D74-0A9D-4747-9DF1-C8D9DEA47C67}
+		{B2D0FCB2-77A7-49EC-98CF-4B12FED9A9BF} = {50CC79E9-A9D5-4A10-AA2F-4FE588BA26F5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83740BD9-AEEF-49C7-A722-D7703D3A38CB}
