@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
 	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
-	<Import Project="../../SDK/NET/Common.targets" />
+	<Import Project="../../src/SDK/NET/Common.targets" />
 
 	<!-- Common properties -->
 	<PropertyGroup>
