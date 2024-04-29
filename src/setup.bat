@@ -434,7 +434,7 @@ if /i "!setupMode!" == "SetupEverything" (
             call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
             set moduleId=!moduleSettingValue!
 
-            call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+            call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Internal" errors
             if "!moduleInstallErrors!" NEQ "" set success=false
         )
 
@@ -450,7 +450,7 @@ if /i "!setupMode!" == "SetupEverything" (
                 call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
                 set moduleId=!moduleSettingValue!
 
-                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Esternal" errors
                 if "!moduleInstallErrors!" NEQ "" set success=false
             )
         ) else (
@@ -490,7 +490,7 @@ if /i "!setupMode!" == "SetupEverything" (
             call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
             set moduleId=!moduleSettingValue!
 
-            call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+            call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Demo" errors
 
             if "!moduleInstallErrors!" NEQ "" set success=false
         )
@@ -539,7 +539,6 @@ if /i "!setupMode!" == "SetupEverything" (
             for %%I in (..\..) do set parentParentDirName=%%~nxI
 
             if /i "!parentParentDirName!" == "demos" (
-                call "!sdkScriptsDirPath!\utils.bat" WriteLine "Demo module install" !color_info!
                 set oldModulesDirPath=!modulesDirPath!
                 set modulesDirPath=!rootDirPath!\src\demos\modules\
 
@@ -547,25 +546,23 @@ if /i "!setupMode!" == "SetupEverything" (
                 call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
                 set moduleId=!moduleSettingValue!
 
-                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Demo" errors
 
                 set modulesDirPath=!oldModulesDirPath!
             ) else if /i "!parentDirName!" == "!externalModulesDir!" (
-                call "!sdkScriptsDirPath!\utils.bat" WriteLine "External module install" !color_info!
 
                 set moduleDirPath=%cd%
-
                 call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
                 set moduleId=!moduleSettingValue!
 
-                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "External" errors
             ) else (                                                           REM Internal module
-                set moduleDirPath=!modulesDirPath!\!moduleDirName!
 
+                set moduleDirPath=!modulesDirPath!\!moduleDirName!
                 call "!sdkScriptsDirPath!\utils.bat" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
                 set moduleId=!moduleSettingValue!
 
-                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" errors
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Internal" errors
             )
             if "!moduleInstallErrors!" NEQ "" set success=false
         )
@@ -634,12 +631,13 @@ goto:eof
     exit /b
 
 REM Installs a module in the module's directory, and returns success 
-:DoModuleInstall moduleId moduleDirPath errors
+:DoModuleInstall moduleId moduleDirPath ModuleType errors
 
     SetLocal EnableDelayedExpansion
 
     set moduleId=%~1
     set moduleDirPath=%~2
+    set moduleType=%~3
 
     set moduleSetupStarttime=%time%
 
@@ -776,6 +774,8 @@ REM Installs a module in the module's directory, and returns success
 
     REM Set the global error message value
     set moduleInstallErrors=
+
+    call "!sdkScriptsDirPath!\utils.bat" WriteLine "!moduleType! module install" !color_info!
 
     if exist "!moduleDirPath!\install.bat" (
 

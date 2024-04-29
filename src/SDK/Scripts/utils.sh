@@ -6,8 +6,6 @@
 #
 # Utilities for use with Linux/macOS Development Environment install scripts
 # 
-# We assume we're in the source code /Installers/Dev directory.
-# 
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 newline=$'\n'

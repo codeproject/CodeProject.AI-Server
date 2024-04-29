@@ -6,11 +6,8 @@ from module_logging import LogVerbosity
 
 def _get_env_var(name: str, default: any = "") -> any:
     value = os.getenv(name, "")
-    # print(f"_get_env_var: {name} = {value}. default = {default}")
     if value == "" and default != "":
         value = default
-        # print(f"Debug: {name} not found. Setting to default {str(default)}")
-
     return value
 
 class ModuleOptions:
@@ -30,10 +27,6 @@ class ModuleOptions:
         return _get_env_var(name, default)
     
 
-    # Needed in a moment...
-    current_working_dir = os.getcwd()
-    current_dir_name    = os.path.basename(current_working_dir)
-
     # Settings
 
     # Was this module launched by the server or launched externally (eg by a debugger)
@@ -43,18 +36,50 @@ class ModuleOptions:
     python_dir          = os.path.dirname(sys.executable)
 
     # Path to the current module
-    module_path         = os.path.normpath(_get_env_var("CPAI_MODULE_PATH", current_working_dir))
+    current_file_path   = os.path.dirname(__file__)
+    module_path         = os.path.normpath(_get_env_var("CPAI_MODULE_PATH", os.getcwd()))
 
     # These can be read from the modulesettings.json file if we're keen
-    module_id           = _get_env_var("CPAI_MODULE_ID",          current_dir_name)
-    module_name         = _get_env_var("CPAI_MODULE_NAME",        module_id)
+    module_id           = _get_env_var("CPAI_MODULE_ID",          None)
+    module_name         = _get_env_var("CPAI_MODULE_NAME",        None)
+
+    # If module ID and name weren't set, get it from the modulesettings file
+    if not module_id or not module_name:
+        try:
+            with open(os.path.join(module_path, "modulesettings.json")) as json_file:
+                # data = json.load(json_file)
+                file_data = json_file.read()
+                import commentjson
+                data = commentjson.loads(file_data)
+
+                module_id   = list(data["Modules"].keys())[0]
+                module_name = list(data["Modules"].values())[0]["Name"]
+        except Exception as ex:
+            print(f"Unable to read module info in {module_path}")
+            module_id   = os.path.basename(module_path)
+            module_name = module_id
+
     queue_name          = _get_env_var("CPAI_MODULE_QUEUENAME",   module_id.lower() + "_queue")
 
     # Port the server listens on, both for clients and for backend modules
     port                = _get_env_var("CPAI_PORT",               "32168")
 
     # The path to the root folder containing the application
-    server_root_path    = _get_env_var("CPAI_APPROOTPATH",        os.path.normpath(os.path.join(os.path.dirname(__file__), "../../..")))
+    server_root_path    = _get_env_var("CPAI_APPROOTPATH", None)
+
+    # If path root not set, we start taking wild guesses
+    if not server_root_path:
+        root_path = os.path.normpath(os.path.join(module_path, "../../..")) # root/src/modules/module
+        if root_path.lower().endswith("codeproject.ai-server"):
+            server_root_path = root_path
+        else:
+            root_path = os.path.normpath(os.path.join(module_path, "../..")) # root/modules/module
+            if root_path.lower().endswith("codeproject.ai-server"):
+                server_root_path = root_path
+            else:
+                root_path = os.path.normpath(os.path.join(module_path, "..")) # CodeProject.AI-Modules/module
+                if root_path.lower().endswith("codeproject.ai-modules"):
+                    server_root_path = os.path.normpath(os.path.join(module_path, "../../CodeProject.AI-Server"))
 
     # How many tasks to spin up for a module
     parallelism         = _get_env_var("CPAI_MODULE_PARALLELISM", "0");

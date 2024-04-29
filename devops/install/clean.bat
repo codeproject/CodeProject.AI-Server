@@ -3,7 +3,7 @@
 :: Usage:
 ::   clean [build | install | installall | downloads | all]
 ::
-:: We assume we're in the /Installers/Dev directory
+:: We assume we're in the /devops/install directory
 
 @echo off
 cls
@@ -24,9 +24,9 @@ set lineWidth=70
 set dotNetModules=ObjectDetectionYOLOv5Net
 set pythonModules=ObjectDetectionYOLOv5-6.2
 
-set dotNetExternalModules=PortraitFilter SentimentAnalysis
+set dotNetExternalModules=CodeProject.AI-PortraitFilter CodeProject.AI-SentimentAnalysis
 set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ALPR-RKNN CodeProject.AI-BackgroundRemover ^
-                          CodeProject.AI-Cartooniser CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
+                          CodeProject.AI-Cartoonizer CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
                           CodeProject.AI-ObjectDetectionCoral CodeProject.AI-ObjectDetectionYOLOv5-3.1 ^
                           CodeProject.AI-ObjectDetectionYOLOv8 CodeProject.AI-ObjectDetectionYoloRKNN ^
                           CodeProject.AI-TrainingObjectDetectionYOLOv5 CodeProject.AI-OCR ^
@@ -127,13 +127,13 @@ if /i "%cleanBuild%" == "true" (
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\obj\Debug\"
     call :CleanSubDirs "!rootDir!\Installers\Windows\" "\obj\Release\"
 
-    call :RemoveDir "!rootDir!\src\SDK\Utilities\ParseJSON\bin"
-    call :RemoveDir "!rootDir!\src\SDK\Utilities\ParseJSON\obj"
-    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.deps.json"
-    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.dll"
-    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.exe"
-    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.runtimeconfig.json"
-    del "!rootDir!\src\SDK\Utilities\ParseJSON\ParseJSON.xml"
+    call :RemoveDir "!rootDir!\utils\ParseJSON\bin"
+    call :RemoveDir "!rootDir!\utils\ParseJSON\obj"
+    del "!rootDir!\utils\ParseJSON\ParseJSON.deps.json"
+    del "!rootDir!\utils\ParseJSON\*.dll"
+    del "!rootDir!\utils\ParseJSON\ParseJSON.exe"
+    del "!rootDir!\utils\ParseJSON\ParseJSON.runtimeconfig.json"
+    del "!rootDir!\utils\ParseJSON\ParseJSON.xml"
 
     call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\bin\Debug\"
     call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\bin\Release\"
@@ -212,7 +212,7 @@ if /i "%cleanAssets%" == "true" (
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-ALPR\paddleocr"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-ALPR-RKNN\paddleocr"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-BackgroundRemover\models"
-    call :RemoveDir "!externalModulesDir!\CodeProject.AI-Cartooniser\weights"
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-Cartoonizer\weights"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-FaceProcessing\assets"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-LlamaChat\models"
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-ObjectDetectionYOLOv5-3.1\assets"

@@ -2,8 +2,6 @@
 ::
 :: Utilities for use with Windows Development Environment install scripts
 ::
-:: We assume we're in the source code /Installers/Dev directory.
-::
 
 @echo off
 
@@ -1447,7 +1445,7 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
         REM Run the ParseJSON command on jsonFilePath, and collect ALL lines of output (eg arrays) 
         REM into the jsonValue var. Note the quotes around ParseJSON, but not around key or jsonFileName
         set "jsonValue="
-        for /f "usebackq tokens=*" %%i in (` "%sdkPath%\Utilities\ParseJSON\ParseJSON.exe" !key! !jsonFileName! `) do (
+        for /f "usebackq tokens=*" %%i in (` "%rootDirPath%\utils\ParseJSON\ParseJSON.exe" !key! !jsonFileName! `) do (
             set jsonValue=!jsonValue!%%i
         )
 
@@ -1534,7 +1532,7 @@ REM Gets the moduleID from a modulesettings.json file.  See above function for c
         REM into the jsonValue var. Note the quotes around ParseJSON, but not around key or jsonFileName
 
         set "jsonValue="
-        for /f "usebackq tokens=*" %%i in (` "%sdkPath%\Utilities\ParseJSON\ParseJSON.exe" !key! !jsonFileName! `) do (
+        for /f "usebackq tokens=*" %%i in (` "%rootDirPath%\utils\ParseJSON\ParseJSON.exe" !key! !jsonFileName! `) do (
             set jsonValue=!jsonValue!%%i
         )
 

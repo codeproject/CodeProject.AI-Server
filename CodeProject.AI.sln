@@ -195,7 +195,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 		src\SDK\Utilities\stop_all.sh = src\SDK\Utilities\stop_all.sh
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParseJSON", "src\SDK\Utilities\ParseJSON\ParseJSON.csproj", "{AF84AA51-8718-40EC-B5D7-281799A7B07C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParseJSON", "utils\ParseJSON\ParseJSON.csproj", "{AF84AA51-8718-40EC-B5D7-281799A7B07C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{5FBE5A09-30BA-4697-8069-443BE5294424}"
 	ProjectSection(SolutionItems) = preProject
