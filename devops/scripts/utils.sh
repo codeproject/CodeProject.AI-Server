@@ -1752,7 +1752,7 @@ function installRequiredPythonPackages () {
                     # If the module specifier isn't a URL or .whl then extract the package's name
                     module_name=""
                     if [ "${package_name:0:4}" != "http" ] && [ "${package_name:(-4)}" != ".whl" ]; then
-                        module_name=$(echo "$package_name" | sed 's/[<=>].*//g')
+                        module_name=$(echo "$package_name" | sed 's/[<=>,~].*//g')
                         # Now remove any string from [ onwards to get 'module' from module[variant]
                         module_name=${module_name%%[*}
                     fi
