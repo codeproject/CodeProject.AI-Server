@@ -22,7 +22,6 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="common.py" />
     <Compile Include="src\codeproject_ai_sdk\common.py" />
     <Compile Include="src\codeproject_ai_sdk\module_logging.py" />
     <Compile Include="src\codeproject_ai_sdk\module_options.py" />
@@ -36,6 +35,7 @@
     <Compile Include="src\codeproject_ai_sdk\__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="readme.md" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
