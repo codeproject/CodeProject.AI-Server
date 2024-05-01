@@ -1338,12 +1338,12 @@ function setupPython () {
     writeLine 'done' $color_success
 
     #hack
-    if [ "$os" = "linux" ]; then
+    #if [ "$os" = "linux" ]; then
         write 'Installing updated setuptools in venv...' $color_primary
         "$venvPythonCmdPath" -m pip install -U setuptools >/dev/null 2>/dev/null &
         spin $!
         writeLine "done" $color_success
-    fi
+    #fi
 
     return 0
 }
