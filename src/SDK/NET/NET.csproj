@@ -6,7 +6,7 @@
 	<PropertyGroup>
 		<Name>CodeProject.AI SDK</Name>
 		<RootNamespace>CodeProject.AI.SDK</RootNamespace>
-		<AssemblyName>CodeProject.AI.SDK</AssemblyName>
+		<AssemblyName>CodeProject.AI.Module.SDK</AssemblyName>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<Platform>AnyCPU</Platform>
@@ -14,8 +14,17 @@
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>CodeProject.AI Module SDK</Title>
-		<Description>Support for creating CodeProject.AI Server Modules in .NET</Description>
+		<Description>SDK for creating CodeProject.AI Server Modules in .NET</Description>
 		<PackageProjectUrl>https://www.codeproject.com/AI</PackageProjectUrl>
+		<Authors>CodeProject</Authors>
+		<Company />
+		<Copyright>CodeProject 2024</Copyright>
+		<RepositoryUrl>https://www.github.com/CodeProject/CodeProject.AI-Server</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>CodeProject.AI; AI;</PackageTags>
+		<Version>1.0.1</Version>
+		<PackageLicenseFile>license.md</PackageLicenseFile>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<!-- Common Release properties -->
@@ -50,6 +59,17 @@
 		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.6" />
 		<PackageReference Include="System.Management" Version="7.0.0" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="7.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="license.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Update="readme.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 </Project>

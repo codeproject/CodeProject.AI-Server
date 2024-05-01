@@ -51,6 +51,7 @@
 
 	<ItemGroup>
 		<!-- Common packages required on all GPU types -->
+		<PackageReference Include="CodeProject.AI.Module.SDK" Version="1.0.1" />
 		<PackageReference Include="Yolov8.Net" Version="1.1.4" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
 		<PackageReference Include="SkiaSharp" Version="2.88.6" />
@@ -90,10 +91,6 @@
 
 	<ItemGroup>
 	  <Content Include="favicon.ico" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\..\..\SDK\NET\NET.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
