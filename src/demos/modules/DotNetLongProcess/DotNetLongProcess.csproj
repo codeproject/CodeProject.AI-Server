@@ -60,7 +60,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CodeProject.AI.Module.SDK" Version="1.0.1" />
 		<PackageReference Include="SkiaSharp" Version="2.88.6" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
 	</ItemGroup>
@@ -88,6 +87,10 @@
 
 	<ItemGroup>
 	  <Content Include="favicon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\SDK\NET\NET.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
