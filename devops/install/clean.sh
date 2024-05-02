@@ -5,29 +5,46 @@
 # Usage:
 #   bash clean.sh  [build | install | installall | downloads | all]
 #
-# We assume we're in the /src directory
+# We assume we're in the /devops/install directory
 
-# The name of the source directory (in development)
-srcDirName='src'
+useColor=true
+doDebug=false
+lineWidth=70
 
-# The name of the dir holing the SDK
-sdkDir='SDK'
+# List of modules we'll look after =======================++====================
+
+dotNetModules=( "ObjectDetectionYOLOv5Net"  )
+pythonModules=( "ObjectDetectionYOLOv5-6.2" )
+
+dotNetExternalModules=( "CodeProject.AI-PortraitFilter" "CodeProject.AI-SentimentAnalysis")
+pythonExternalModules=( "CodeProject.AI-ALPR" "CodeProject.AI-ALPR-RKNN" "CodeProject.AI-BackgroundRemover" \
+                        "CodeProject.AI-Cartoonizer" "CodeProject.AI-FaceProcessing" \
+                        "CodeProject.AI-LlamaChat" "CodeProject.AI-ObjectDetectionCoral" \
+                        "CodeProject.AI-ObjectDetectionYOLOv5-3.1" "CodeProject.AI-ObjectDetectionYOLOv8"  \
+                        "CodeProject.AI-ObjectDetectionYoloRKNN" "CodeProject.AI-TrainingObjectDetectionYOLOv5" \
+                        "CodeProject.AI-OCR" "CodeProject.AI-SceneClassifier" "CodeProject.AI-SoundClassifierTF" \
+                        "CodeProject.AI-SuperResolution" "CodeProject.AI-TextSummary" "CodeProject.AI-Text2Image")
+
+dotNetDemoModules=( "DotNetLongProcess" "DotNetSimple" )
+pythonDemoModules=( "PythonLongProcess" "PythonSimple" )
+
+# Setup ========================================================================
 
 # The path to the directory containing this script
-#thisScriptDirPath=$(dirname "$0")
 thisScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-
 # We're assuming this script lives in /devops/build
 pushd "${thisScriptDirPath}/../.." >/dev/null
-rootDirPath="$(pwd)"
+rootDir="$(pwd)"
 popd >/dev/null
 
-sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
-sdkScriptsDirPath="${sdkPath}/Scripts"
-utilsScriptsDirPath="${rootDirPath}/devops/scripts"
+utilsScriptsDirPath="${rootDir}/devops/scripts"
+externalModulesDir="${rootDir}/../CodeProject.AI-Modules"
 
 # import the utilities. This sets os, platform and architecture
 source "${utilsScriptsDirPath}/utils.sh"
+
+
+# Functions ====================================================================
 
 function removeFile() {
     local filePath=$1
@@ -41,6 +58,17 @@ function removeFile() {
         else
             writeLine "Not Removing ${filePath} (it doesn't exist)" "$color_mute"
         fi
+    fi
+}
+
+function delPattern() {
+    local pathPattern=$1
+
+    if [ "$doDebug" = true ]; then
+        writeLine "Marked for removal: ${pathPattern}" "$color_error"
+    else
+        rm -rf '${pathPattern}'
+        writeLine "Removed ${pathPattern}" "$color_success"
     fi
 }
 
@@ -180,87 +208,134 @@ function cleanFiles() {
 
 clear
 
-externalModulesDir="${rootDirPath}/../CodeProject.AI-Modules"
-
-
-useColor=true
-doDebug=false
-lineWidth=70
-
-dotNetModules=( "ObjectDetectionYOLOv5Net"  )
-pythonModules=( "ObjectDetectionYOLOv5-6.2" )
-
-dotNetExternalModules=( "CodeProject.AI-PortraitFilter" "CodeProject.AI-SentimentAnalysis")
-pythonExternalModules=( "CodeProject.AI-ALPR" "CodeProject.AI-ALPR-RKNN" "CodeProject.AI-BackgroundRemover" \
-                        "CodeProject.AI-Cartoonizer" "CodeProject.AI-FaceProcessing" \
-                        "CodeProject.AI-LlamaChat" "CodeProject.AI-ObjectDetectionCoral" \
-                        "CodeProject.AI-ObjectDetectionYOLOv5-3.1" "CodeProject.AI-ObjectDetectionYOLOv8"  \
-                        "CodeProject.AI-ObjectDetectionYoloRKNN" "CodeProject.AI-TrainingObjectDetectionYOLOv5" \
-                        "CodeProject.AI-OCR" "CodeProject.AI-SceneClassifier" "CodeProject.AI-SoundClassifierTF" \
-                        "CodeProject.AI-SuperResolution" "CodeProject.AI-TextSummary" "CodeProject.AI-Text2Image")
-
-dotNetDemoModules=( "DotNetLongProcess" "DotNetSimple" )
-pythonDemoModules=( "PythonLongProcess" "PythonSimple" )
-
+# Output usage =================================================================
 
 if [ "$1" = "" ]; then
     writeLine 'Solution Cleaner' 'White'
     writeLine
-    writeLine  'clean.sh [build : install : installall : all]'
+    writeLine  'clean.sh option'
     writeLine  
-    writeLine  '  build      - cleans build output (bin / obj)'
-    writeLine  '  install    - removes current OS installation stuff (PIPs, downloads etc)'
-    writeLine  '  installall - removes installation stuff for all platforms'
-    writeLine  '  assets     - removes assets to force re-copy of downloads'
-    writeLine  '  data       - removes user data stored by modules'
-    writeLine  '  downloads  - removes downloads to force re-download'
-    writeLine  '  all        - removes build and installation stuff for all platforms'
+    writeLine  ' where option is one of:'
+    writeLine  
+    writeLine  '  assets        - removes assets to force re-copy of downloads'
+    writeLine  '  build         - cleans build output (bin / obj)'
+    writeLine  '  data          - removes user data stored by modules'
+    writeLine  '  downloads     - removes downloads to force re-download'
+    writeLine  '  install       - removes current OS installation stuff (PIPs, downloads etc)'
+    writeLine  '  install-all   - removes installation stuff for all platforms'
+    writeLine  '  libraries     - removes installed libraries (PIPs), current OS'
+    writeLine  '  libraries-all - removes installed libraries (PIPs), all OSs'
+    writeLine  '  all           - removes build and installation stuff for all platforms'
     
     if [ "$os" = "macos" ]; then
         writeLine
-        writeLine  '  tools      - removes xcode GCC tools'
-        writeLine  '  runtimes   - removes installed runtimes (Python only)'
+        writeLine  '  tools         - removes xcode GCC tools'
+        writeLine  '  runtimes      - removes installed runtimes (Python only)'
     fi
     
     writeLine
     exit
 fi
 
-cleanBuild=false
-cleanInstallCurrentOS=false
-cleanInstallAll=false
+# Param checks =================================================================
+
 cleanAssets=false
+cleanBuild=false
 cleanUserData=false
 cleanDownloadCache=false
-cleanAll=false
+cleanInstallCurrentOS=false
+cleanInstallAll=false
+cleanLibraries=false
+cleanLibrariesAll=false
 
 cleanTools=false
 cleanRuntimes=false
 
+cleanAll=false
+
 if [ "$1" = "build" ]; then          cleanBuild=true; fi
 if [ "$1" = "install" ]; then        cleanInstallCurrentOS=true; fi
-if [ "$1" = "installall" ]; then     cleanInstallAll=true; fi
+if [ "$1" = "install-all" ]; then    cleanInstallAll=true; fi
 if [ "$1" = "assets" ]; then         cleanAssets=true; fi
 if [ "$1" = "data" ]; then           cleanUserData=true; fi
 if [ "$1" = "download-cache" ]; then cleanDownloadCache=true; fi
+if [ "$1" = "libraries" ]; then      cleanLibraries=true; fi
+if [ "$1" = "libraries-all" ]; then  cleanLibrariesAll=true; fi
 if [ "$1" = "all" ]; then            cleanAll=true; fi
 
 # not covered by "all"
-if [ "$1" = "tools" ]; then      cleanTools=true; fi
-if [ "$1" = "runtimes" ]; then   cleanRuntimes=true; fi
+if [ "$1" = "runtimes" ]; then       cleanRuntimes=true; fi
+if [ "$1" = "tools" ]; then          cleanTools=true; fi
+
+# Set directing variables ======================================================
 
 if [ "$cleanAll" = true ]; then
-    cleanInstallAll=true
-    cleanBuild=true
-    cleanUserData=true
     cleanAssets=true
+    cleanBuild=true
     cleanDownloadCache=true
+    cleanInstallAll=true
+    cleanLibrariesAll=true
+    cleanUserData=true
 fi
 
-if [ "$cleanInstallCurrentOS" = true ] || [ "$cleanInstallAll" = true ]; then
+if [ "$cleanInstallCurrentOS" = true ]; then
     cleanBuild=true
     cleanAssets=true
+    cleanLibraries=true
     cleanUserData=true
+fi
+
+if [ "$cleanInstallAll" = true ]; then
+    cleanBuild=true
+    cleanAssets=true
+    cleanLibrariesAll=true
+    cleanUserData=true
+fi
+
+# Start cleaning ===============================================================
+
+if [ "$cleanAssets" = true ]; then
+
+    writeLine 
+    writeLine "Cleaning assets" "White" "Blue" $lineWidth
+    writeLine 
+
+    # Internal modules
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/assets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/custom-models"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/LocalNugets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/assets"
+    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/custom-models"
+
+
+    # Esternal modules
+    removeDir "${externalModulesDir}/CodeProject.AI-ALPR/paddleocr"
+    removeDir "${externalModulesDir}/ACodeProject.AI-LPR-RKNN/paddleocr"
+    removeDir "${externalModulesDir}/CodeProject.AI-BackgroundRemover/models"
+    removeDir "${externalModulesDir}/CodeProject.AI-Cartoonizer/weights"
+    removeDir "${externalModulesDir}/CodeProject.AI-FaceProcessing/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-LlamaChat/models"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYOLOv5-3.1/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYOLOv5-3.1/custom-models"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionCoral/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionCoral/edgetpu_runtime"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYoloRKNN/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYoloRKNN/custom-models"
+    removeDir "${externalModulesDir}/CodeProject.AI-OCR/paddleocr"
+    removeDir "${externalModulesDir}/CodeProject.AI-SceneClassifier/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-SoundClassifierTF/data"
+    removeDir "${externalModulesDir}/CodeProject.AI-Text2Image/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/assets"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/datasets"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/fiftyone"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/training"
+    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/zoo"
+
+    # Demo modules
+    removeDir "${rootDir}/src/demos/modules/DotNetLongProcess/assets"
+    removeDir "${rootDir}/src/demos/modules/DotNetSimple/assets"
+    removeDir "${rootDir}/src/demos/modules/PythonLongProcess/assets"
+    removeDir "${rootDir}/src/demos/modules/PythonSimple/assets"
 fi
 
 if [ "$cleanBuild" = true ]; then
@@ -318,6 +393,30 @@ if [ "$cleanBuild" = true ]; then
     cleanSubDirs "${rootDir}/tests"              "obj/Release/"
 fi
 
+if [ "$cleanDownloadCache" = true ]; then
+
+    writeLine 
+    writeLine "Cleaning download cache" "White" "Blue" $lineWidth
+    writeLine 
+
+    for path in ${rootDir}/downloads/* ; do
+        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/modules" ] && [ "$path" != "${rootDir}/downloads/models" ]; then
+            removeDir "${path}"
+        fi
+    done
+
+    for path in ${rootDir}/downloads/modules/* ; do
+        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/modules/readme.txt" ]; then
+            removeFile "${path}"
+        fi
+    done
+    for path in ${rootDir}/downloads/models/* ; do
+        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/models/models.json" ]; then
+            removeFile "${path}"
+        fi
+    done
+fi
+
 if [ "$cleanInstallCurrentOS" = true ]; then
 
     writeLine 
@@ -340,15 +439,6 @@ if [ "$cleanInstallCurrentOS" = true ]; then
     do
         removeDir "${rootDir}/src/demos/modules/${dirName}/bin/${os}/"
     done
-fi
-
-if [ "$cleanUserData" = true ]; then
-
-    writeLine 
-    writeLine "Cleaning User data" "White" "Blue" $lineWidth
-    writeLine 
-
-    removeDir "${externalModulesDir}/CodeProject.AI-FaceProcessing/datastore/"
 fi
 
 if [ "$cleanInstallAll" = true ]; then
@@ -375,72 +465,61 @@ if [ "$cleanInstallAll" = true ]; then
     done
 fi
 
-if [ "$cleanAssets" = true ]; then
+if [ "$cleanLibraries" = true ]; then
 
     writeLine 
-    writeLine "Cleaning assets" "White" "Blue" $lineWidth
+    writeLine "Cleaning ${platform} Libraries" "White" "Blue" $lineWidth
     writeLine 
 
-    # Internal modules
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/custom-models"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/LocalNugets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/custom-models"
+    # Clean shared python venvs
+    delPattern "${rootDir}/runtimes/bin/${os}/python*/venv/lib/python*/site-packages/*"
 
-
-    # Esternal modules
-    removeDir "${externalModulesDir}/CodeProject.AI-ALPR/paddleocr"
-    removeDir "${externalModulesDir}/ACodeProject.AI-LPR-RKNN/paddleocr"
-    removeDir "${externalModulesDir}/CodeProject.AI-BackgroundRemover/models"
-    removeDir "${externalModulesDir}/CodeProject.AI-Cartoonizer/weights"
-    removeDir "${externalModulesDir}/CodeProject.AI-FaceProcessing/assets"
-    removeDir "${externalModulesDir}/CodeProject.AI-LlamaChat/models"
-    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYOLOv5-3.1/assets"
-    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYOLOv5-3.1/custom-models"
-    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionCoral/assets"
-    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionCoral/edgetpu_runtime"
-    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYoloRKNN/assets"
-    removeDir "${externalModulesDir}/CodeProject.AI-ObjectDetectionYoloRKNN/custom-models"
-    removeDir "${externalModulesDir}/CodeProject.AI-OCR/paddleocr"
-    removeDir "${externalModulesDir}/CodeProject.AI-SceneClassifier/assets"
-    removeDir "${externalModulesDir}/CodeProject.AI-SoundClassifierTF/data"
-    removeDir "${externalModulesDir}/CodeProject.AI-Text2Image/assets"
-    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/assets"
-    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/datasets"
-    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/fiftyone"
-    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/training"
-    removeDir "${externalModulesDir}/CodeProject.AI-TrainingObjectDetectionYOLOv5/zoo"
-
-    # Demo modules
-    removeDir "${rootDir}/src/demos/modules/DotNetLongProcess/assets"
-    removeDir "${rootDir}/src/demos/modules/DotNetSimple/assets"
-    removeDir "${rootDir}/src/demos/modules/PythonLongProcess/assets"
-    removeDir "${rootDir}/src/demos/modules/PythonSimple/assets"
+    # Clean module python venvs
+    for dirName in "${pythonModules[@]}"
+    do
+        delPattern "${rootDir}/modules/${dirName}/bin/${os}/python*/venv/lib/python*/site-packages/*"
+    done
+    for dirName in "${pythonExternalModules[@]}"
+    do
+        delPattern "${externalModulesDir}/${dirName}/bin/${os}/python*/venv/lib/python*/site-packages/*"
+    done
+    for dirName in "${pythonDemoModules[@]}"
+    do
+        delPattern "${rootDir}/src/demos/modules/${dirName}/bin/${os}/python*/venv/lib/python*/site-packages/*"
+    done
 fi
 
-if [ "$cleanDownloadCache" = true ]; then
+if [ "$cleanLibrariesAll" = true ]; then
 
     writeLine 
-    writeLine "Cleaning download cache" "White" "Blue" $lineWidth
+    writeLine "Cleaning ${platform} Libraries" "White" "Blue" $lineWidth
     writeLine 
 
-    for path in ${rootDir}/downloads/* ; do
-        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/modules" ] && [ "$path" != "${rootDir}/downloads/models" ]; then
-            removeDir "${path}"
-        fi
-    done
+    # Clean shared python venvs
+    delPattern "${rootDir}/runtimes/bin/*/python*/venv/lib/python*/site-packages/*"
 
-    for path in ${rootDir}/downloads/modules/* ; do
-        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/modules/readme.txt" ]; then
-            removeFile "${path}"
-        fi
+    # Clean module python venvs
+    for dirName in "${pythonModules[@]}"
+    do
+        delPattern "${rootDir}/modules/${dirName}/bin/*/python*/venv/lib/python*/site-packages/*"
     done
-    for path in ${rootDir}/downloads/models/* ; do
-        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/models/models.json" ]; then
-            removeFile "${path}"
-        fi
+    for dirName in "${pythonExternalModules[@]}"
+    do
+        delPattern "${externalModulesDir}/${dirName}/bin/*/python*/venv/lib/python*/site-packages/*"
     done
+    for dirName in "${pythonDemoModules[@]}"
+    do
+        delPattern "${rootDir}/src/demos/modules/${dirName}/bin/*/python*/venv/lib/python*/site-packages/*"
+    done
+fi
+
+if [ "$cleanUserData" = true ]; then
+
+    writeLine 
+    writeLine "Cleaning User data" "White" "Blue" $lineWidth
+    writeLine 
+
+    removeDir "${externalModulesDir}/CodeProject.AI-FaceProcessing/datastore/"
 fi
 
 if [ "$os" = "macos" ]; then
