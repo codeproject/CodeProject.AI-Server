@@ -67,7 +67,7 @@ function delPattern() {
     if [ "$doDebug" = true ]; then
         writeLine "Marked for removal: ${pathPattern}" "$color_error"
     else
-        rm -rf '${pathPattern}'
+        rm -rf ${pathPattern}
         writeLine "Removed ${pathPattern}" "$color_success"
     fi
 }
