@@ -22,23 +22,26 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="common.py" />
-    <Compile Include="module_logging.py" />
-    <Compile Include="module_options.py" />
-    <Compile Include="module_runner.py" />
-    <Compile Include="request_data.py" />
-    <Compile Include="system_info.py" />
-    <Compile Include="training\augmentation.py" />
-    <Compile Include="utils\cpuinfo.py" />
-    <Compile Include="utils\image_utils.py" />
-    <Compile Include="utils\environment_check.py" />
+    <Compile Include="src\codeproject_ai_sdk\common.py" />
+    <Compile Include="src\codeproject_ai_sdk\module_logging.py" />
+    <Compile Include="src\codeproject_ai_sdk\module_options.py" />
+    <Compile Include="src\codeproject_ai_sdk\module_runner.py" />
+    <Compile Include="src\codeproject_ai_sdk\request_data.py" />
+    <Compile Include="src\codeproject_ai_sdk\system_info.py" />
+    <Compile Include="src\codeproject_ai_sdk\utils\cpuinfo.py" />
+    <Compile Include="src\codeproject_ai_sdk\utils\environment_check.py" />
+    <Compile Include="src\codeproject_ai_sdk\utils\image_utils.py" />
+    <Compile Include="src\codeproject_ai_sdk\utils\__init__.py" />
+    <Compile Include="src\codeproject_ai_sdk\__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="readme.md" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="training\" />
-    <Folder Include="utils\" />
+    <Folder Include="src\" />
+    <Folder Include="src\codeproject_ai_sdk\" />
+    <Folder Include="src\codeproject_ai_sdk\utils\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

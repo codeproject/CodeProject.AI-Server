@@ -2,7 +2,7 @@
 import os
 import sys
 
-from module_logging import LogVerbosity
+from .module_logging import LogVerbosity
 
 def _get_env_var(name: str, default: any = "") -> any:
     value = os.getenv(name, "")

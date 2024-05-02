@@ -5,11 +5,12 @@ import os
 import sys
 from threading import Lock
 
-from common import JSON
 import asyncio
 from asyncio import Queue
 import aiohttp
 import aiofiles
+
+from .common import JSON
 
 
 class LogVerbosity(Enum):

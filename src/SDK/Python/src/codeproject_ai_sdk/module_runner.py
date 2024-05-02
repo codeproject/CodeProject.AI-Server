@@ -30,11 +30,11 @@ if current_python_dir:
 import aiohttp
 
 # Import the CodeProject.AI SDK as the last step
-from common import JSON
-from system_info    import SystemInfo
-from module_logging import LogMethod, ModuleLogger, LogVerbosity
-from request_data   import RequestData
-from module_options import ModuleOptions
+from .common import JSON
+from .system_info    import SystemInfo
+from .module_logging import LogMethod, ModuleLogger, LogVerbosity
+from .request_data   import RequestData
+from .module_options import ModuleOptions
 # from utils.environment_check import check_requirements
 
 

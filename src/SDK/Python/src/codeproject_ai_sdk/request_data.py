@@ -7,7 +7,7 @@ import wave
 import json
 
 from PIL import Image
-from common import JSON
+from .common import JSON
 # from logging import LogMethod
 
 try:
@@ -15,7 +15,7 @@ try:
     import cv2 as cv
     import numpy as np
 except ImportError:
-    logging.debug("Unable to load OpenCV or numpy modules. Only using PIL.")
+    print("Unable to load OpenCV or numpy modules. Only using PIL.")
 
 class RequestData:
     """
