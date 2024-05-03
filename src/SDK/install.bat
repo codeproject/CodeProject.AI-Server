@@ -44,7 +44,7 @@ if /i "!useJq!" == "false" (
     dotnet build "!sdkPath!\Utilities\ParseJSON" /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
     if exist "!sdkPath!\Utilities\ParseJSON\bin\Release\net7.0\" (
         pushd "!sdkPath!\Utilities\ParseJSON\bin\Release\net7.0\"
-        move * ..\..\..\ > /dev/null
+        move * ..\..\..\ >NUL
         popd
     )
 )
