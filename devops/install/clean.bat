@@ -9,24 +9,11 @@
 cls
 setlocal enabledelayedexpansion
 
-pushd ..\..
-set rootDir=%cd%
-popd
-
-set installScriptsDirPath=!rootDir!\devops\install
-set utilsScriptsDirPath=!rootDir!\devops\scripts
-set utilsScript=!utilsScriptsDirPath!\utils.bat
-
-set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
-
-REM echo rootdir = !rootdir!
-REM echo installScriptDirPath = !installScriptsDirPath!
-REM echo utilsScriptsDirPath = !utilsScriptsDirPath!
-REM echo utilsScript = !utilsScript!
-
 set useColor=true
 set doDebug=false
 set lineWidth=70
+
+REM List of modules we'll look after ===========================================
 
 set dotNetModules=ObjectDetectionYOLOv5Net
 set pythonModules=ObjectDetectionYOLOv5-6.2
@@ -43,164 +30,88 @@ set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ALPR-RKNN CodeProje
 set dotNetDemoModules=DotNetLongProcess DotNetSimple DotNetLongProcess
 set pythonDemoModules=PythonLongProcess PythonSimple PythonLongProcess
 
+REM Setup ======================================================================
+
+pushd ..\..
+set rootDir=%cd%
+popd
+
+set installScriptsDirPath=!rootDir!\devops\install
+set utilsScriptsDirPath=!rootDir!\devops\scripts
+set utilsScript=!utilsScriptsDirPath!\utils.bat
+set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
+
+REM Output usage ===============================================================
+
 if "%1" == "" (
     call "!utilsScript!" WriteLine "Solution Cleaner" "White"
     call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "clean [build : assets : install : installall : downloads : all]"
+    call "!utilsScript!" WriteLine "clean option"
     call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "  build          - cleans build output (bin / obj)"
-    call "!utilsScript!" WriteLine "  install        - removes installation stuff, current OS (Python, PIPs, downloads etc)"
-    call "!utilsScript!" WriteLine "  installall     - removes installation stuff for all OSs"
+    call "!utilsScript!" WriteLine " where 'option' is one of:"
+    call "!utilsScript!" WriteLine 
     call "!utilsScript!" WriteLine "  assets         - removes assets that were downloaded and moved into place"
+    call "!utilsScript!" WriteLine "  build          - cleans build output (bin / obj)"
     call "!utilsScript!" WriteLine "  data           - removes user data stored by modules"
     call "!utilsScript!" WriteLine "  download-cache - removes download cache to force re-download"
+    call "!utilsScript!" WriteLine "  install        - removes installation stuff, current OS (Python, PIPs, downloads etc)"
+    call "!utilsScript!" WriteLine "  install-all    - removes installation stuff for all OSs"
+    call "!utilsScript!" WriteLine "  libraries      - removes installed libraries (PIPs), current OS"
+    call "!utilsScript!" WriteLine "  libraries-all  - removes installed libraries (PIPs), all OSs"
     call "!utilsScript!" WriteLine "  all            - removes build and installation stuff for all OSs"
     call "!utilsScript!" WriteLine 
     exit /b
 )
 
+REM Param checks ===============================================================
 
-set cleanBuild=false
 set cleanAssets=false
+set cleanBuild=false
 set cleanUserData=false
 set cleanDownloadCache=false
 set cleanInstallCurrentOS=false
 set cleanInstallAll=false
+set cleanLibraries=false
+set cleanLibrariesAll=false
+
 set cleanAll=false
 
-if /i "%1" == "build"          set cleanBuild=true
-if /i "%1" == "install"        set cleanInstallCurrentOS=true
-if /i "%1" == "installall"     set cleanInstallAll=true
 if /i "%1" == "assets"         set cleanAssets=true
+if /i "%1" == "build"          set cleanBuild=true
 if /i "%1" == "data"           set cleanUserData=true
 if /i "%1" == "download-cache" set cleanDownloadCache=true
+if /i "%1" == "install"        set cleanInstallCurrentOS=true
+if /i "%1" == "install-all"    set cleanInstallAll=true
+if /i "%1" == "libraries"      set cleanLibraries=true
+if /i "%1" == "libraries-all"  set cleanLibrariesAll=true
 if /i "%1" == "all"            set cleanAll=true
 
-REM if /i "!cleanAll!" == "true"          set cleanInstallAll=true
-REM if /i "!cleanInstallAll!" == "true"   set cleanInstallCurrentOS=true
-REM if /i "!cleanInstallCurrentOS!" == "true" set cleanBuild=true
+REM Set directing variables ====================================================
 
 if /i "!cleanAll!" == "true" (
-    set cleanInstallAll=true
-    set cleanBuild=true
-    set cleanUserData=true
     set cleanAssets=true
+    set cleanBuild=true
     set cleanDownloadCache=true
+    set cleanInstallAll=true
+    set cleanLibrariesAll=true
+    set cleanUserData=true
 )
 
 if /i "!cleanInstallCurrentOS!" == "true" (
-    set cleanBuild=true
     set cleanAssets=true
+    set cleanBuild=true
+    set cleanLibraries=true
     set cleanUserData=true
 )
 
 if /i "!cleanInstallAll!" == "true" (
-    set cleanBuild=true
     set cleanAssets=true
+    set cleanBuild=true
+    set cleanLibrariesAll=true
     set cleanUserData=true
 )
 
-
-if /i "%cleanBuild%" == "true" (
-       
-    call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "Cleaning Build" "White" "Blue" !lineWidth!
-    call "!utilsScript!" WriteLine 
-
-    call :RemoveDir "!rootDir!\src\server\bin\"
-    call :RemoveDir "!rootDir!\src\server\obj"
-
-    call :RemoveDir "!rootDir!\src\SDK\NET\bin\"
-    call :RemoveDir "!rootDir!\src\SDK\NET\obj"
-
-    for %%x in (!dotNetModules!) do (
-        call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
-        call :RemoveDir "!rootDir!\src\modules\%%x\obj\"
-        del "!rootDir!\src\modules\%%x\%%x-*"
-    )
-    for %%x in (!dotNetExternalModules!) do (
-        call :RemoveDir "!externalModulesDir!\%%x\bin\"
-        call :RemoveDir "!externalModulesDir!\%%x\obj\"
-        del "!rootDir!\src\modules\%%x\%%x-*"
-    )
-    for %%x in (!dotNetDemoModules!) do (
-        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\"
-        call :RemoveDir "!rootDir!\src\demos\modules\%%x\obj\"
-        del "!rootDir!\src\demos\modules\%%x\%%x-*"
-    )
-
-    call :CleanSubDirs "!rootDir!\Installers\Windows\" "\bin\Debug\"
-    call :CleanSubDirs "!rootDir!\Installers\Windows\" "\bin\Release\"
-    call :CleanSubDirs "!rootDir!\Installers\Windows\" "\obj\Debug\"
-    call :CleanSubDirs "!rootDir!\Installers\Windows\" "\obj\Release\"
-
-    call :RemoveDir "!rootDir!\utils\ParseJSON\bin"
-    call :RemoveDir "!rootDir!\utils\ParseJSON\obj"
-    del "!rootDir!\utils\ParseJSON\ParseJSON.deps.json"
-    del "!rootDir!\utils\ParseJSON\*.dll"
-    del "!rootDir!\utils\ParseJSON\ParseJSON.exe"
-    del "!rootDir!\utils\ParseJSON\ParseJSON.runtimeconfig.json"
-    del "!rootDir!\utils\ParseJSON\ParseJSON.xml"
-
-    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\bin\Debug\"
-    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\bin\Release\"
-    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\obj\Debug\"
-    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\obj\Release\"
-
-    call :RemoveDir "!rootDir!\tests\QueueServiceTests\bin\"
-    call :RemoveDir "!rootDir!\tests\QueueServiceTests\obj\"
-)
-
-if /i "%cleanInstallCurrentOS%" == "true" (
-
-    call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "Cleaning Windows Install" "White" "Blue" !lineWidth!
-    call "!utilsScript!" WriteLine 
-
-    REM Clean shared python venvs
-    call :RemoveDir "!rootDir!\src\runtimes\bin\windows" 
-
-    REM Clean module python venvs
-    for %%x in (!pythonModules!) do (
-        call :RemoveDir "!rootDir!\src\modules\%%x\bin\windows"
-    )
-    for %%x in (!pythonExternalModules!) do (
-        call :RemoveDir "!externalModulesDir!\%%x\bin\windows"
-    )
-    for %%x in (!pythonDemoModules!) do (
-        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\windows"
-    )
-)
-
-if /i "%cleanUserData%" == "true" (
-
-    call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "Cleaning User data" "White" "Blue" !lineWidth!
-    call "!utilsScript!" WriteLine 
-
-    call :RemoveDir "!externalModulesDir!\CodeProject.AI-FaceProcessing\datastore"
-)
-
-if /i "%cleanInstallAll%" == "true" (
-
-    call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "Cleaning install for other platforms" "White" "Blue" !lineWidth!
-    call "!utilsScript!" WriteLine 
-
-    REM Clean shared python installs and venvs
-    call :RemoveDir "!rootDir!\src\runtimes\bin\" 
-
-    REM Clean module python venvs
-    for %%x in (!pythonModules!) do (
-        call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
-    )
-    for %%x in (!pythonExternalModules!) do (
-        call :RemoveDir "!externalModulesDir!\%%x\bin\"
-    )
-    for %%x in (!pythonDemoModules!) do (
-        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\"
-    )
-)
+REM Start cleaning =============================================================
 
 if /i "%cleanAssets%" == "true" (
 
@@ -247,6 +158,51 @@ if /i "%cleanAssets%" == "true" (
     call :RemoveDir "!rootDir!\src\demos\modules\PythonSimple\assets"
 )
 
+if /i "%cleanBuild%" == "true" (
+       
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning Build" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
+
+    call :RemoveDir "!rootDir!\src\server\bin\"
+    call :RemoveDir "!rootDir!\src\server\obj"
+
+    call :RemoveDir "!rootDir!\src\SDK\NET\bin\"
+    call :RemoveDir "!rootDir!\src\SDK\NET\obj"
+
+    for %%x in (!dotNetModules!) do (
+        call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
+        call :RemoveDir "!rootDir!\src\modules\%%x\obj\"
+        call :DelDirPattern "!rootDir!\src\modules\%%x\%%x-*"
+    )
+    for %%x in (!dotNetExternalModules!) do (
+        call :RemoveDir "!externalModulesDir!\%%x\bin\"
+        call :RemoveDir "!externalModulesDir!\%%x\obj\"
+        call :DelDirPattern "!rootDir!\src\modules\%%x\%%x-*"
+    )
+    for %%x in (!dotNetDemoModules!) do (
+        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\"
+        call :RemoveDir "!rootDir!\src\demos\modules\%%x\obj\"
+        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\%%x-*"
+    )
+
+    call :RemoveDir "!rootDir!\utils\ParseJSON\bin"
+    call :RemoveDir "!rootDir!\utils\ParseJSON\obj"
+    del "!rootDir!\utils\ParseJSON\ParseJSON.deps.json"
+    del "!rootDir!\utils\ParseJSON\*.dll"
+    del "!rootDir!\utils\ParseJSON\ParseJSON.exe"
+    del "!rootDir!\utils\ParseJSON\ParseJSON.runtimeconfig.json"
+    del "!rootDir!\utils\ParseJSON\ParseJSON.xml"
+
+    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\bin\Debug\"
+    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\bin\Release\"
+    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\obj\Debug\"
+    call :CleanSubDirs "!rootDir!\src\demos\clients\"      "\obj\Release\"
+
+    call :RemoveDir "!rootDir!\tests\QueueServiceTests\bin\"
+    call :RemoveDir "!rootDir!\tests\QueueServiceTests\obj\"
+)
+
 if /i "%cleanDownloadCache%" == "true" (
 
     call "!utilsScript!" WriteLine 
@@ -267,7 +223,99 @@ if /i "%cleanDownloadCache%" == "true" (
     )
 )
 
+if /i "%cleanInstallCurrentOS%" == "true" (
+
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning Windows Install" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
+
+    REM Clean shared python venvs
+    call :RemoveDir "!rootDir!\src\runtimes\bin\windows" 
+
+    REM Clean module python venvs
+    for %%x in (!pythonModules!) do (
+        call :RemoveDir "!rootDir!\src\modules\%%x\bin\windows"
+    )
+    for %%x in (!pythonExternalModules!) do (
+        call :RemoveDir "!externalModulesDir!\%%x\bin\windows"
+    )
+    for %%x in (!pythonDemoModules!) do (
+        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\windows"
+    )
+)
+
+if /i "%cleanInstallAll%" == "true" (
+
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning install for other platforms" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
+
+    REM Clean shared python installs and venvs
+    call :RemoveDir "!rootDir!\src\runtimes\bin\" 
+
+    REM Clean module python venvs
+    for %%x in (!pythonModules!) do (
+        call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
+    )
+    for %%x in (!pythonExternalModules!) do (
+        call :RemoveDir "!externalModulesDir!\%%x\bin\"
+    )
+    for %%x in (!pythonDemoModules!) do (
+        call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\"
+    )
+)
+
+if /i "%cleanLibraries%" == "true" (
+
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning Libraries, current OS" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
+
+    call :DelDirPattern "!rootDir!\runtimes\bin\windows\python*\venv\Lib\site-packages\*"
+
+    REM Clean module python venvs
+    for %%x in (!pythonModules!) do (
+        call :DelDirPattern "!rootDir!\modules\%%x\bin\windows\python*\venv\Lib\site-packages\*"
+    )
+    for %%x in (!pythonExternalModules!) do (
+        call :DelDirPattern "!externalModulesDir!\%%x\bin\windows\python*\venv\Lib\site-packages\*"
+    )
+    for %%x in (!pythonDemoModules!) do (
+        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\bin\windows\python*\venv\Lib\site-packages\*"
+    )
+)
+
+if /i "%cleanLibrariesAll%" == "true" (
+
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning Libraries, all OSs" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
+
+    REM Clean module python venvs
+    for %%x in (!pythonModules!) do (
+        call :DelDirPattern "!rootDir!\modules\%%x\bin\*"
+    )
+    for %%x in (!pythonExternalModules!) do (
+        call :DelDirPattern "!externalModulesDir!\%%x\bin\*"
+    )
+    for %%x in (!pythonDemoModules!) do (
+        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\bin\*"
+    )
+)
+
+if /i "%cleanUserData%" == "true" (
+
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "Cleaning User data" "White" "Blue" !lineWidth!
+    call "!utilsScript!" WriteLine 
+
+    call :RemoveDir "!externalModulesDir!\CodeProject.AI-FaceProcessing\datastore"
+)
+
 goto:eof
+
+
+REM Functions ==================================================================
 
 :RemoveFile
     SetLocal EnableDelayedExpansion
@@ -285,6 +333,17 @@ goto:eof
         )
     )
 
+:DelDirPattern
+    SetLocal EnableDelayedExpansion
+
+    set pathPattern=%~1
+
+    if /i "!doDebug!" == "true" (
+        call "!utilsScript!" WriteLine "Marked for removal: !pathPattern!" "!color_error!"
+    ) else (
+        del "!pathPattern!"
+        call "!utilsScript!" WriteLine "Removed !pathPattern!" "!color_success!"
+    )
 
 :RemoveDir
     SetLocal EnableDelayedExpansion
