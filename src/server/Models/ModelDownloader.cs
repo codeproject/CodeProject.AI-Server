@@ -269,7 +269,7 @@ namespace CodeProject.AI.Server.Models
             downloadDirPath = Path.Combine(downloadDirPath, moduleId, filename);
 
             // Console.WriteLine("Setting ModuleStatusType.Downloading");
-            _logger.LogInformation($"Downloading module '{filename}' to '{downloadDirPath}'");
+            _logger.LogInformation($"Downloading model '{filename}' to '{downloadDirPath}'");
 
             bool downloaded = false;
             string error = string.Empty;
