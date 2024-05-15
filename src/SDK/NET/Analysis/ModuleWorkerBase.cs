@@ -268,19 +268,15 @@ namespace CodeProject.AI.SDK
 
                     // Special shutdown request
                     string? requestModuleId = request.payload?.GetValue("moduleId");
-                    if (command =="quit" &&
-                        requestModuleId?.EqualsIgnoreCase(_moduleId) == true)
+                    if (command == "quit" && requestModuleId?.EqualsIgnoreCase(_moduleId) == true)
                     {
                         await ShutDown(0);
                         return;
                     }
 
-                    ExpandoObject response;
-
                     Stopwatch stopWatch = Stopwatch.StartNew();
 
-                    // the switch statement is easier to read than a series of if/else statements
-                    response = command switch
+                    ExpandoObject response = command switch
                     {
                         "get_module_status"  => GetModuleStatus(request),
                         "get_command_status" => await GetCommandStatus(request).ConfigureAwait(false),
