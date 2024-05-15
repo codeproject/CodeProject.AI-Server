@@ -197,7 +197,7 @@ if [ "$launchedBy" = "server" ]; then attemptSudoWithoutAdminRights=false; fi
 # scripts won't simply fail. For Docker and macOS we create a no-op proxy. For
 # others, we install the Real Deal
 if ! command -v sudo &> /dev/null; then
-    if [ "$inDocker" = true ] || [ "$os" = "macos" ]; then 
+    if [ "$inDocker" = true ] || [[ $OSTYPE == 'darwin'* ]]; then 
         cat > "/usr/sbin/sudo" <<EOF
 #!/bin/sh
 \${@}
@@ -603,7 +603,8 @@ function correctLineEndings () {
 
     local filePath="$1"
 
-    # Force correct BOM and CRLF issues in the script. Just in case
+    # Force correct BOM and CRLF issues in the script. Just in case. We don't
+    # use the $os var here because it may not have been set yet
     if [[ $OSTYPE == 'darwin'* ]]; then           # macOS.
         darwinVersion=$(echo "$OSTYPE" | cut -d '.' -f 1)
         if [[ ${darwinVersion} -ge 13 ]]; then    # Sonoma 14.3 is 'darwin23.2.1' -> '23'
