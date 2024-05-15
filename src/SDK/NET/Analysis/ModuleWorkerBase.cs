@@ -74,9 +74,10 @@ namespace CodeProject.AI.SDK
         public string? InferenceDevice { get; set; } = "CPU";
 
         /// <summary>
-        /// Gets or sets the name of the hardware acceleration execution provider
+        /// Gets or sets the name of the hardware acceleration execution provider (meaning the
+        /// library being used to power the GPU, such as DirectML, Torch, TF etc)
         /// </summary>
-        public string? InferenceLibrary { get; set; } = "CPU";
+        public string? InferenceLibrary { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets the logger instance.
