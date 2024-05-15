@@ -9,6 +9,7 @@
 		<OutputType>WinExe</OutputType>
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 		<SelfContained>false</SelfContained>
 		<PublishSingleFile>false</PublishSingleFile>

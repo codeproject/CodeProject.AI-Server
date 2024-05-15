@@ -1,7 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Name>CodeProject.AI SDK</Name>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{b6a1d372-264e-4f66-b7fb-7ff19587476e}</ProjectGuid>
     <ProjectHome />
@@ -11,16 +16,12 @@
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
-    <Name>CodeProject.AI SDK</Name>
     <IsWindowsApplication>False</IsWindowsApplication>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
-  <PropertyGroup>
-    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
-  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Include="src\codeproject_ai_sdk\common.py" />
     <Compile Include="src\codeproject_ai_sdk\module_logging.py" />
@@ -34,14 +35,16 @@
     <Compile Include="src\codeproject_ai_sdk\utils\__init__.py" />
     <Compile Include="src\codeproject_ai_sdk\__init__.py" />
   </ItemGroup>
+
   <ItemGroup>
-    <Content Include="readme.md" />
     <Content Include="requirements.txt" />
   </ItemGroup>
+
   <ItemGroup>
     <Folder Include="src\" />
     <Folder Include="src\codeproject_ai_sdk\" />
     <Folder Include="src\codeproject_ai_sdk\utils\" />
   </ItemGroup>
+
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>
