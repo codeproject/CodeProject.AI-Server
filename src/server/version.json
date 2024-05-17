@@ -2,13 +2,13 @@
   "versionSection": {
     "versionInfo": {
       "Major": 2,
-      "Minor": 7,
-      "Patch": 0,
+      "Minor": 6,
+      "Patch": 5,
       "Build": 0,
       "PreRelease": "",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.7.0.zip",
-      "ReleaseNotes": "Support for external modules."
+      "File": "CodeProject.AI-Server-win-x64-2.6.5.zip",
+      "ReleaseNotes": "Various bug fixes."
     }
   }
 }
