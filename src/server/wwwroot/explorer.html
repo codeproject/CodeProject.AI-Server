@@ -151,6 +151,9 @@
 					<div style="width:600px">
 
 						<ul class="nav nav-tabs d-flex" id="DemoTabs" role="tablist">
+							<li class="nav-item d-none" id="generative-tab-listitem" data-category="Generative AI">
+								<button class="nav-link" id="generative-tab" data-bs-toggle="tab" data-bs-target="#generative-panel" type="button" role="tab" aria-controls="generative" aria-selected="true">Generative AI</button>
+							</li>
 							<li class="nav-item d-none" id="vision-tab-listitem" data-category="Computer Vision">
 								<button class="nav-link active" id="vision-tab" data-bs-toggle="tab" data-bs-target="#vision-panel" type="button" role="tab" aria-controls="vision" aria-selected="true">Vision</button>
 							</li>
@@ -165,9 +168,6 @@
 							</li>
 							<li class="nav-item d-none" id="text-tab-listitem" data-category="Natural Language">
 								<button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-panel" type="button" role="tab" aria-controls="text" aria-selected="false">Text</button>
-							</li>
-							<li class="nav-item d-none" id="generative-tab-listitem" data-category="Generative AI">
-								<button class="nav-link" id="generative-tab" data-bs-toggle="tab" data-bs-target="#generative-panel" type="button" role="tab" aria-controls="generative" aria-selected="true">Generative AI</button>
 							</li>
 							<li class="nav-item d-none" id="other-tab-listitem" data-category="Other">
 								<button class="nav-link" id="other-tab" data-bs-toggle="tab" data-bs-target="#other-panel" type="button" role="tab" aria-controls="other" aria-selected="true">Other</button>
@@ -188,6 +188,9 @@
 
 						<div class="tab-content" id="DemoTabsContent">
 
+							<div class="tab-pane fade show" id="generative-panel" data-category="Generative AI" role="tabpanel" aria-labelledby="generative-tab">
+							</div>
+
 							<div class="tab-pane fade show active" id="vision-panel" data-category="Computer Vision" role="tabpanel" aria-labelledby="vision-tab">
 							</div>
 
@@ -201,9 +204,6 @@
 							</div>
 
 							<div class="tab-pane fade show" id="text-panel" data-category="Natural Language" role="tabpanel" aria-labelledby="text-tab">
-							</div>
-
-							<div class="tab-pane fade show" id="generative-panel" data-category="Generative AI" role="tabpanel" aria-labelledby="generative-tab">
 							</div>
 
 							<div class="tab-pane fade show" id="other-panel" data-category="Other" role="tabpanel" aria-labelledby="other-tab">
