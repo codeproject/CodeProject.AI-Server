@@ -48,6 +48,9 @@ set allowSharedPythonInstallsForModules=true
 
 :: Debug flags for downloads and installs
 
+:: If you wish to allow external modules
+set installExternalModules=false
+
 :: Setup only the server, nothing else
 set setupServerOnly=false
 
@@ -363,7 +366,11 @@ if /i "!executionEnvironment!" == "Development" (
     pushd !rootDirPath!\utils\ParseJSON
     if not exist ParseJSON.exe (
         call "!utilsScript!" WriteLine "Building ParseJSON"
-        dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
+        if /i "!verbosity!" == "quiet" (
+            dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
+        ) else (
+            dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release
+        )
         if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
     )
     popd
@@ -437,25 +444,27 @@ if /i "!setupMode!" == "SetupEverything" (
             if "!moduleInstallErrors!" NEQ "" set success=false
         )
 
-        call "!utilsScript!" WriteLine
-        call "!utilsScript!" WriteLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" !lineWidth!
-        call "!utilsScript!" WriteLine
+        if /i "!installExternalModules!" == "true" (
+            call "!utilsScript!" WriteLine
+            call "!utilsScript!" WriteLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" !lineWidth!
+            call "!utilsScript!" WriteLine
 
-        if exist !externalModulesDirPath! (
-            for /f "delims=" %%D in ('dir /a:d /b "!externalModulesDirPath!"') do (
-                set moduleDirName=%%~nxD
-                set moduleDirPath=!externalModulesDirPath!\!moduleDirName!
+            if exist !externalModulesDirPath! (
+                for /f "delims=" %%D in ('dir /a:d /b "!externalModulesDirPath!"') do (
+                    set moduleDirName=%%~nxD
+                    set moduleDirPath=!externalModulesDirPath!\!moduleDirName!
 
-                call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
-                set moduleId=!moduleSettingValue!
+                    call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
+                    set moduleId=!moduleSettingValue!
 
-                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Esternal" errors
-                if "!moduleInstallErrors!" NEQ "" set success=false
+                    call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Esternal" errors
+                    if "!moduleInstallErrors!" NEQ "" set success=false
+                )
+            ) else (
+                call "!utilsScript!" WriteLine "No external modules found" !color_mute!
             )
-        ) else (
-            call "!utilsScript!" WriteLine "No external modules found" !color_mute!
         )
-
+        
         call "!utilsScript!" WriteLine
         call "!utilsScript!" WriteLine "Module setup Complete" "Green"
 

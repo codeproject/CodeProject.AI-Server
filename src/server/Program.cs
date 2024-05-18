@@ -707,7 +707,8 @@ namespace CodeProject.AI.Server
             demoModulesDirPath            = Text.FixSlashes(demoModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
             demoModulesDirPath            = Path.GetFullPath(demoModulesDirPath);
             externalModulesDirPath        = Text.FixSlashes(externalModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
-            externalModulesDirPath        = Path.GetFullPath(externalModulesDirPath);
+            if (!string.IsNullOrWhiteSpace(externalModulesDirPath))
+                externalModulesDirPath    = Path.GetFullPath(externalModulesDirPath);
 
             // create the directories if the don't exist
             if (!Directory.Exists(runtimesDirPath))
