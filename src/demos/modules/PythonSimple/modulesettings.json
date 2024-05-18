@@ -6,7 +6,7 @@
 
       "PublishingInfo": {
         "Description": "Provides a simple Python Module example that does Object Detection in Python>=3.8 using YOLOv8.",
-        "Category":    "Computer Vision",
+        "Category":    "Demo Modules",
         "Stack":       "Python, PyTorch, YOLO",
         "License":     "AGPL-3.0",
         "LicenseUrl":  "https://www.gnu.org/licenses/agpl-3.0.en.html",
