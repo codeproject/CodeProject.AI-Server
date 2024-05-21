@@ -23,9 +23,9 @@ fi
 # We need to work around this - except this lib is tied hard to the OS. Most likely
 # solution is we use the standard FastDeploy libs for non-RockNPU hardware
 
-if [ "${edgeDevice}" != "Orange Pi" ]; then
+if [ "${edgeDevice}" != "Orange Pi" ] && [ "${systemName}" != "Radxa ROCK" ]; then
     # writeLine "ObjectDetection (Fast Deploy RKNN) can only be installed on Orange Pi devices" "$color_error"
-    module_install_errors="Unable to install on non-Orange Pi hardware."
+    module_install_errors="Unable to install on non-Rockchip hardware."
 else
     # Download the models and store in /assets and /custom-models
     getFromServer "models/" "objectdetect-rknn-models.zip"        "assets" "Downloading Standard YOLOv5 RKNN models..."

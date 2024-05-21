@@ -71,6 +71,9 @@
     <Content Include="modulesettings.orangepi.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>
+    <Content Include="modulesettings.radxarock.json">
+      <DependentUpon>modulesettings.json</DependentUpon>
+    </Content>
     <Content Include="modulesettings.docker.build.json">
       <DependentUpon>modulesettings.json</DependentUpon>
     </Content>

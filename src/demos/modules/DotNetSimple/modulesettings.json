@@ -7,7 +7,7 @@
 
       "PublishingInfo" : {
         "Description": "Provides Object Detection in .NET using YOLOv8.",
-        "Category": "Computer Vision",
+        "Category": "Demo Module",
         "Stack": "C#, ONNX, DirectML, YOLO",
         "License": "MIT",
         "LicenseUrl": "https://opensource.org/licenses/MIT",

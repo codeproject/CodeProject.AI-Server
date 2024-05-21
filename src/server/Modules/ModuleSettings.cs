@@ -286,7 +286,8 @@ namespace CodeProject.AI.Server.Modules
             _moduleOptions.ModulesDirPath                   = Path.GetFullPath(ExpandOption(_moduleOptions.ModulesDirPath)!);
             _moduleOptions.PreInstalledModulesDirPath       = Path.GetFullPath(ExpandOption(_moduleOptions.PreInstalledModulesDirPath)!);
             _moduleOptions.DemoModulesDirPath               = Path.GetFullPath(ExpandOption(_moduleOptions.DemoModulesDirPath)!);
-            _moduleOptions.ExternalModulesDirPath           = Path.GetFullPath(ExpandOption(_moduleOptions.ExternalModulesDirPath)!);
+            if (!string.IsNullOrWhiteSpace(_moduleOptions.ExternalModulesDirPath))
+                _moduleOptions.ExternalModulesDirPath       = Path.GetFullPath(ExpandOption(_moduleOptions.ExternalModulesDirPath)!);
             _moduleOptions.DownloadedModulePackagesDirPath  = Path.GetFullPath(ExpandOption(_moduleOptions.DownloadedModulePackagesDirPath)!);
             _moduleOptions.DownloadedModelsPackagesDirPath  = Path.GetFullPath(ExpandOption(_moduleOptions.DownloadedModelsPackagesDirPath)!);
             _moduleOptions.ModuleInstallerScriptsDirPath    = Path.GetFullPath(ExpandOption(_moduleOptions.ModuleInstallerScriptsDirPath)!);
@@ -334,7 +335,8 @@ namespace CodeProject.AI.Server.Modules
             value = value.Replace(PreinstalledModulesDirPathMarker,  _moduleOptions.PreInstalledModulesDirPath);
             value = value.Replace(ModulesDirPathMarker,     _moduleOptions.ModulesDirPath);
             value = value.Replace(DemoModulesDirPathMarker, _moduleOptions.DemoModulesDirPath);
-            value = value.Replace(ExternalModulesDirPath,   _moduleOptions.ExternalModulesDirPath);
+            if (!string.IsNullOrWhiteSpace(_moduleOptions.ExternalModulesDirPath))
+                value = value.Replace(ExternalModulesDirPath,   _moduleOptions.ExternalModulesDirPath);
             value = value.Replace(PlatformMarker,           SystemInfo.Platform.ToLower());
             value = value.Replace(OSMarker,                 SystemInfo.OperatingSystem.ToLower());
             value = value.Replace(PythonPathMarker,         _moduleOptions.PythonRelativeInterpreterPath);

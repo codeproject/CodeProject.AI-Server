@@ -79,6 +79,13 @@ fi
 #    installPythonPackagesByName "torch-directml" "PyTorch DirectML plugin"
 # fi
 
+if [ "$module_install_errors" = "" ] && [ "$os" = "macos" ]; then
+    write 'Installing updated setuptools in venv...' $color_primary
+    "$venvPythonCmdPath" -m pip install -U setuptools >/dev/null 2>/dev/null &
+    spin $!
+    writeLine "done" $color_success
+fi
+
 # OpenCV needs a specific version for macOS 11
 # https://github.com/opencv/opencv-python/issues/777#issuecomment-1879553756
 if [ "$os_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x

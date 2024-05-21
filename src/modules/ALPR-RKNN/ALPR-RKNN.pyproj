@@ -26,7 +26,7 @@
     <Content Include="explore.html" />
     <Content Include="options.py" />
     <Content Include="ALPR_adapter.py" />
-    <Content Include="requirements.orangepi.txt" />
+    <Content Include="requirements.txt" />
     <Content Include="utils\tools.py" />
     <Content Include="install.sh" />
     <Content Include="install.bat" />
@@ -35,24 +35,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="modulesettings.json" />
-    <Content Include="modulesettings.linux.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.macos.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.raspberrypi.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.orangepi.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.windows.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
-    <Content Include="modulesettings.jetson.json">
-      <DependentUpon>modulesettings.json</DependentUpon>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="paddleocr\" />

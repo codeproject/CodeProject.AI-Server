@@ -371,10 +371,10 @@ src/modules/ObjectDetectionYoloRKNN/custom-models
 /src/modules/TrainingObjectDetectionYOLOv5/train
 /src/modules/TrainingObjectDetectionYOLOv5/zoo
 
-/demos/modules/DotNetLongProcess/assets/
-/demos/modules/DotNetSimple/assets/
-/demos/modules/PythonLongProcess/assets
-/demos/modules/PythonSimple/assets
+src/demos/modules/DotNetLongProcess/assets/
+src/demos/modules/DotNetSimple/assets/
+src/demos/modules/PythonLongProcess/assets
+src/demos/modules/PythonSimple/assets
 
 # Config files -----------------------------------------------------------------
 

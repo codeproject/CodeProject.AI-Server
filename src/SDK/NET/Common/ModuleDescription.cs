@@ -181,9 +181,9 @@ namespace CodeProject.AI.SDK
             module.CheckVersionAgainstModuleReleases();
             SetLatestCompatibleVersion(module, currentServerVersion);
 
-            // REVIEW: [Chris] The module.IsCompatible() method is not used here because it doesn't check the
-            // LatestCompatibleRelease property. However, it there is a LatestCompatibleRelease, then the module
-            // is compatible. 
+            // The module.IsCompatible() method is not used here because it doesn't check the
+            // LatestCompatibleRelease property. However, it there is a LatestCompatibleRelease,
+            // then the module is compatible. 
 
             module.Status = module.LatestCompatibleRelease is not null 
                             ? ModuleStatusType.Available : ModuleStatusType.NotAvailable;

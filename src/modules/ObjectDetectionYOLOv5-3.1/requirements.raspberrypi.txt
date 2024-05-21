@@ -13,6 +13,6 @@ Matplotlib                  # Installing Matplotlib, the Python plotting package
 https://files.pythonhosted.org/packages/45/9f/bcac9748e0cc21980d4f8718c37e47ce110ebb463812c1f88fa69cf02745/torch-1.8.0-cp38-cp38-manylinux2014_aarch64.whl # Installing PyTorch 1.8.0, for Tensor computation and Deep neural networks
 
 #-f https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.9.0          # Installing TorchVision, for Computer Vision based AI
+torchvision==0.9.1          # Installing TorchVision, for Computer Vision based AI
 
 # Last line empty

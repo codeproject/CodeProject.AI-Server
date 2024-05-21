@@ -14,13 +14,12 @@
     <Name>CodeProject.AI SDK</Name>
     <IsWindowsApplication>False</IsWindowsApplication>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
-    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
-    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+
   <PropertyGroup>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="common.py" />
     <Compile Include="module_logging.py" />
@@ -33,14 +32,16 @@
     <Compile Include="utils\image_utils.py" />
     <Compile Include="utils\environment_check.py" />
   </ItemGroup>
+
   <ItemGroup>
-    <Content Include="pyproject.toml" />
     <Content Include="requirements.txt" />
   </ItemGroup>
+
   <ItemGroup>
     <Folder Include="analysis\" />
     <Folder Include="training\" />
     <Folder Include="utils\" />
   </ItemGroup>
+
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

@@ -291,7 +291,7 @@ namespace CodeProject.AI.Server.Modules
                 summary.AppendLine($"LogVerbosity:     {LaunchSettings?.LogVerbosity}");
                 summary.AppendLine($"Platforms:        {string.Join(',', InstallOptions?.Platforms?? Array.Empty<string>())}");
                 summary.AppendLine($"GPU Libraries:    {((GpuOptions?.InstallGPU == true)? "installed if available" : "not installed")}");
-                summary.AppendLine($"GPU Enabled:      {((GpuOptions?.EnableGPU == true)? "enabled" : "disabled")}");
+                summary.AppendLine($"GPU:              {((GpuOptions?.EnableGPU == true)?  "use if supported" : "do not use")}");
                 summary.AppendLine($"Accelerator:      {GpuOptions?.AcceleratorDeviceName}");
                 summary.AppendLine($"Half Precision:   {GpuOptions?.HalfPrecision}");
                 summary.AppendLine($"Environment Variables");

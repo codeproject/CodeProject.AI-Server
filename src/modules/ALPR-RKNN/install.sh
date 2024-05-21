@@ -16,8 +16,8 @@ fi
 
 module_install_errors=""
 
-if [ "${edgeDevice}" != "Orange Pi" ]; then
-    module_install_errors="Unable to install on non-Orange Pi hardware."
+if [ "${edgeDevice}" != "Orange Pi" ] && [ "${edgeDevice}" != "Radxa ROCK" ]; then
+    module_install_errors="Unable to install on non-Rockchip hardware."
 else
     # Download the OCR models and store in /paddleocr
     getFromServer "models/" "paddleocr-rknn-models.zip" "paddleocr" "Downloading Plate and OCR models..."

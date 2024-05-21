@@ -1,0 +1,14 @@
+{
+  "Modules": {
+
+    "ALPR": {
+      "LaunchSettings": {
+        "AutoStart": false,
+        "Runtime": "python3.9"  // needs to be 3.9 to match the wheel from QEngineering
+      },
+      "GpuOptions" : {
+        "InstallGPU": false     // PaddlePaddle-GPU not supported on Orange Pi
+      }
+    }
+  }
+}

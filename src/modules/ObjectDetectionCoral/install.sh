@@ -33,7 +33,7 @@ if [ "$2" = "max" ]; then tpu_speed="max"; fi
 checkForAdminRights
 
 if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
-   [ "${edgeDevice}" = "Jetson" ]; then
+   [ "${systemName}" = "Radxa ROCK"   ] || [ "${edgeDevice}" = "Jetson" ]; then
 
     if [ "$isAdmin" = false ]; then
     
@@ -212,16 +212,14 @@ elif [ "$os" = "macos" ]; then
         
         # Install Tensorflow-Lite runtime. See https://google-coral.github.io/py-repo/tflite-runtime/
         # for all available versions
-        package="tflite-runtime==2.5.0.post1"
-        package_desc="Tensorflow Lite for Coral"
         pip_options="--extra-index-url https://google-coral.github.io/py-repo/"
 
         if [ "$os_name" = "Big Sur" ] && [ "$architecture" = "x86_64" ]; then   # macOS 11.x on Intel, kernal 20.x
-            installPythonPackagesByName "$package" "$package_desc" "$pip_options"
-            installPythonPackagesByName "pycoral"
+            installPythonPackagesByName "tflite-runtime==2.5.0.post1" "Tensorflow Lite for Coral" "$pip_options"
+            installPythonPackagesByName "pycoral"                     "Coral.AI for Python"       "$pip_options"
         elif [ "$os_name" = "Monterey" ] && [ "$architecture" = "arm64" ]; then # macOS 12.x on Apple Silicon, , kernal 21.x
-            installPythonPackagesByName "$package" "$package_desc" "$pip_options"
-            installPythonPackagesByName "pycoral"
+            installPythonPackagesByName "tflite-runtime==2.5.0.post1" "Tensorflow Lite for Coral" "$pip_options"
+            installPythonPackagesByName "pycoral"                     "Coral.AI for Python"       "$pip_options"
         else
             # At this point we don't actually have a supported pre-built package,
             # but we can still install and run, albeit without Coral hardware.

@@ -3,7 +3,7 @@
 
     "ObjectDetectionCoral": {
       "Name": "Object Detection (Coral)",
-      "Version": "2.2.0",
+      "Version": "2.2.2",
       
       "PublishingInfo" : {
         "Description": "The object detection module uses the Coral TPU to locate and classify the objects the models have been trained on.",
@@ -81,7 +81,9 @@
           { "ModuleVersion": "2.1.4", "ServerVersionRange": [ "2.5.2", ""       ], "ReleaseDate": "2024-02-18", "ReleaseNotes": "Added dashboard menu to allow model selection" },
           { "ModuleVersion": "2.1.5", "ServerVersionRange": [ "2.5.2", ""       ], "ReleaseDate": "2024-03-12", "ReleaseNotes": "Bug fix for Multi-TPU." },
           { "ModuleVersion": "2.1.6", "ServerVersionRange": [ "2.5.2", "2.6.0"  ], "ReleaseDate": "2024-03-12", "ReleaseNotes": "Improvements to Multi-TPU error handling, added YOLOv5 models." },
-          { "ModuleVersion": "2.2.0", "ServerVersionRange": [ "2.6.1", ""       ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Improvements to pipelining and error handling" }
+          { "ModuleVersion": "2.2.0", "ServerVersionRange": [ "2.6.1", ""       ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Improvements to pipelining and error handling" },
+          { "ModuleVersion": "2.2.1", "ServerVersionRange": [ "2.6.1", ""       ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Improvements" },
+          { "ModuleVersion": "2.2.2", "ServerVersionRange": [ "2.6.1", ""       ], "ReleaseDate": "2024-04-15", "ReleaseNotes": "Corrections to macOS 11/12 install, plus custom model list command added" }
         ],
         "DownloadableModels":[
 
@@ -192,6 +194,79 @@
               "Name": "processMs",
               "Type": "Integer",
               "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            }
+          ]
+        },
+
+        {
+          "Name": "Custom Object Detector (Coral)",
+          "Route": "vision/custom",
+          "Method": "POST",
+          "Command": "custom",
+          "Description": "Detects objects based on YOLO PyTorch models. Models are stored in the /ObjectDetectionCoral/assets directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's file",
+          "Inputs": [
+            {
+              "Name": "image",
+              "Type": "File",
+              "Description": "The HTTP file object (image) to be analyzed."
+            },
+            {
+              "Name": "min_confidence",
+              "Type": "Float",
+              "Description": "The minimum confidence level for an object will be detected. In the range 0.0 to 1.0. Default 0.4."
+            }
+          ],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "message",
+              "Type": "String",
+              "Description": "A summary of the inference operation."
+            },
+            {
+              "Name": "error",
+              "Type": "String",
+              "Description": "(Optional) An description of the error if success was false."
+            },
+            {
+              "Name": "predictions",
+              "Type": "Object[]",
+              "Description": "An array of objects with the x_max, x_min, max, y_min, label and confidence."
+            },
+            {
+              "Name": "inferenceMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to perform the AI inference."
+            },
+            {
+              "Name": "processMs",
+              "Type": "Integer",
+              "Description": "The time (ms) to process the image (includes inference and image manipulation operations)."
+            }
+          ]
+        },
+
+        {
+          "Name": "Object Detector List Custom Models (Coral)",
+          "Route": "vision/custom/list",
+          "Method": "POST",
+          "Command": "list-custom",
+          "Description": "Returns a list of models available.",
+          "Inputs": [],
+          "Outputs": [
+            {
+              "Name": "success",
+              "Type": "Boolean",
+              "Description": "True if successful."
+            },
+            {
+              "Name": "models",
+              "Type": "String",
+              "Description": "An array of strings containing the names of the models installed."
             }
           ]
         }

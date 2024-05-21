@@ -7,7 +7,7 @@
 
       "PublishingInfo" : {
         "Description": "Provides a template for a .NET module that runs a long process.",
-        "Category": "Computer Vision",
+        "Category": "Demo Module",
         "Stack": "C#",
         "License": "MIT",
         "LicenseUrl": "https://opensource.org/licenses/MIT",

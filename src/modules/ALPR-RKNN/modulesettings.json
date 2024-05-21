@@ -3,7 +3,7 @@
 
     "ALPR-RKNN": {
       "Name": "License Plate Reader (RKNN)",
-      "Version": "1.3.0",
+      "Version": "1.3.1",
 
       "PublishingInfo" : {
         "Description": "Detects and readers single-line and multi-line licence plates. This module only works with Rockchip RK3588/RK3588S NPUs like the Orange Pi 5/5B/5 Plus.",
@@ -46,7 +46,7 @@
       },
 
       "InstallOptions" : {
-        "Platforms":      [ "orangepi" ], // The platforms this module can and cannot be installed on
+        "Platforms":      [ "orangepi", "radxarock" ], // The platforms this module can and cannot be installed on
         "ModuleReleases": [               // Which server version is compatible with each version of this module.
           { "ModuleVersion": "1.0.1", "ServerVersionRange": [ "2.3.1", "2.4.0" ], "ReleaseDate": "2023-11-06", "ReleaseNotes": "Updated to match new installer SDK." },
           { "ModuleVersion": "1.0.2", "ServerVersionRange": [ "2.4.1", "2.4.1" ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema, new route"},
@@ -58,7 +58,8 @@
           { "ModuleVersion": "1.2.0", "ServerVersionRange": [ "2.5.0-RC6", ""  ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
           { "ModuleVersion": "1.2.1", "ServerVersionRange": [ "2.5.2", ""      ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
           { "ModuleVersion": "1.2.2", "ServerVersionRange": [ "2.5.2", "2.6.0" ], "ReleaseDate": "2024-02-18", "ReleaseNotes": "Added dashboard menu to set plate confidence, auto-rotate and OCR optimisation", "Importance": "Minor" },
-          { "ModuleVersion": "1.3.0", "ServerVersionRange": [ "2.6.1", ""      ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updated for server 2.6" }
+          { "ModuleVersion": "1.3.0", "ServerVersionRange": [ "2.6.1", ""      ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updated for server 2.6" },
+          { "ModuleVersion": "1.3.1", "ServerVersionRange": [ "2.6.1", ""      ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Support for Radxa ROCK hardware" }
         ]
       },
 

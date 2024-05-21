@@ -633,7 +633,10 @@ class TPURunner(object):
         tpu_model_files   = self._get_model_filenames(options, tpu_list)
         
         # Read labels
-        self.labels       = read_label_file(options.label_file) if options.label_file else {}
+        try:
+            self.labels   = read_label_file(options.label_file) if options.label_file else {}
+        except:
+            labels = {}
 
         # Initialize EdgeTPU pipe.
         self.device_type = "Multi-TPU"

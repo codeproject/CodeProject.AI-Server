@@ -262,7 +262,9 @@ class Options:
 
 
         self.ENABLE_MULTI_TPU                   = True
-        
+        if platform.system() == 'Darwin':
+            self.ENABLE_MULTI_TPU = False
+
         self.MIN_CONFIDENCE                     = 0.5
         self.INTERPRETER_LIFESPAN_SECONDS       = 3600.0
         self.WATCHDOG_IDLE_SECS                 = 5.0       # To be added to non-multi code
@@ -302,13 +304,6 @@ class Options:
         self.max_idle_secs_before_recycle = float(ModuleOptions.getEnvVariable("CPAI_CORAL_MAX_IDLE_SECS_BEFORE_RECYCLE", self.MAX_IDLE_SECS_BEFORE_RECYCLE))
         self.max_pipeline_queue_length    = int(ModuleOptions.getEnvVariable("CPAI_CORAL_MAX_PIPELINE_QUEUE_LEN",         self.MAX_PIPELINE_QUEUE_LEN))
         self.warn_temperature_thresh_C    = int(ModuleOptions.getEnvVariable("CPAI_CORAL_WARN_TEMPERATURE_THRESHOLD_CELSIUS", self.WARN_TEMPERATURE_THRESHOLD_CELSIUS))
-
-
-        # finalise settings
-        if platform.system() == 'Darwin':
-            self.ENABLE_MULTI_TPU = False
-        else:
-            self.ENABLE_MULTI_TPU = True
 
         self.set_model(self.model_name)
 

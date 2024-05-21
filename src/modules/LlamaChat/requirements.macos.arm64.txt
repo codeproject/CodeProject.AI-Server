@@ -1,0 +1,13 @@
+#! Python3.7
+
+huggingface_hub     # Installing the huggingface hub
+
+diskcache>=5.6.1    # Installing disckcache for Disk and file backed persistent cache
+numpy>=1.20.0       # Installing NumPy, a package for scientific computing
+
+# "Illegal instruction: 4" on M1 mac
+# --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu/
+# --prefer-binary
+# llama-cpp-python    # Installing simple Python bindings for the llama.cpp library
+
+# last line empty

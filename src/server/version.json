@@ -8,7 +8,7 @@
       "PreRelease": "",
       "SecurityUpdate": false,
       "File": "CodeProject.AI-Server-win-x64-2.6.5.zip",
-      "ReleaseNotes": "Various bug fixes."
+      "ReleaseNotes": "Support for external modules."
     }
   }
 }

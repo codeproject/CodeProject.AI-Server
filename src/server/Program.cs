@@ -90,7 +90,8 @@ namespace CodeProject.AI.Server
 
             // GetProcessStatus a directory for the given platform that allows modules to store persisted data
             string programDataDir     = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-            string applicationDataDir = $"{programDataDir}\\{companyName}\\{productCat}".Replace('\\', Path.DirectorySeparatorChar);
+            string applicationDataDir = programDataDir + "/" + companyName + "/" + productCat;
+            applicationDataDir = applicationDataDir.Replace('/', Path.DirectorySeparatorChar);
 
             // .NET's suggestion for macOS and Linux aren't great. Let's do something different.
             if (SystemInfo.IsMacOS)
@@ -708,7 +709,8 @@ namespace CodeProject.AI.Server
             demoModulesDirPath            = Text.FixSlashes(demoModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
             demoModulesDirPath            = Path.GetFullPath(demoModulesDirPath);
             externalModulesDirPath        = Text.FixSlashes(externalModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
-            externalModulesDirPath        = Path.GetFullPath(externalModulesDirPath);
+            if (!string.IsNullOrWhiteSpace(externalModulesDirPath))
+                externalModulesDirPath    = Path.GetFullPath(externalModulesDirPath);
 
             // create the directories if the don't exist
             if (!Directory.Exists(runtimesDirPath))

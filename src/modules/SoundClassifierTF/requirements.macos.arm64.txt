@@ -1,10 +1,10 @@
 #! Python3.7
 
 tensorflow-macos==2.9.2         # Installing Tensorflow for macOS
-# tensorflow-metal==0.5.1         # Installing Tensorflow Metal support for macOS
+# tensorflow-metal==0.5.1       # Installing Tensorflow Metal support for macOS
 tf_slim                         # Installing TF-Slim, the lightweight library for defining, training and evaluating complex models in TensorFlow
 
-SciPy==1.7.3                    # Installing SciPy, a library for mathematics, science, and engineering
+SciPy                           # Installing SciPy, a library for mathematics, science, and engineering
 numpy>=1.16.5                   # Installing NumPy, a package for scientific computing
 Pillow>=4.0.0,<10.0             # Installing Pillow, a Python Image Library
 

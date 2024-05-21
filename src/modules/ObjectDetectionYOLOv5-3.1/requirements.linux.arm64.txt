@@ -13,6 +13,6 @@ https://files.pythonhosted.org/packages/45/9f/bcac9748e0cc21980d4f8718c37e47ce11
 # torch==1.8.0      # Installing PyTorch, for Tensor computation and Deep neural networks
 
 #-f https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.9.0  # Installing TorchVision, for Computer Vision based AI
+torchvision==0.9.1  # Installing TorchVision, for Computer Vision based AI
 
 # Last line empty

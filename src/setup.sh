@@ -64,6 +64,9 @@ attemptSudoWithoutAdminRights=true
 
 # Debug flags for downloads and installs
 
+# IF you wish to allow external modules
+installExternalModules=false
+
 # Perform *only* the post install self tests
 selfTestOnly=false
 
@@ -937,31 +940,33 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         fi
     done
 
-    # Walk through the modules directoorym for modules that live in the external 
-    # folder. For isntance modules that are in extenal Git repos / projects
+    if [ "$installExternalModules" == "true" ]; then
+        # Walk through the modules directoorym for modules that live in the external 
+        # folder. For isntance modules that are in extenal Git repos / projects
 
-    writeLine
-    writeLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
-    writeLine
+        writeLine
+        writeLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
+        writeLine
 
-    if [ -d "$externalModulesDirPath" ]; then
-        for d in ${externalModulesDirPath}/*/ ; do
-            moduleDirName=$(basename "$d")
-            moduleDirPath="${externalModulesDirPath}/${moduleDirName}"
-            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+        if [ -d "$externalModulesDirPath" ]; then
+            for d in ${externalModulesDirPath}/*/ ; do
+                moduleDirName=$(basename "$d")
+                moduleDirPath="${externalModulesDirPath}/${moduleDirName}"
+                moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-            writeLine "External module install" "$color_info"
-            currentDir="$(pwd)"
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
-            cd "$currentDir" >/dev/null
+                writeLine "External module install" "$color_info"
+                currentDir="$(pwd)"
+                doModuleInstall "${moduleId}" "${moduleDirPath}"
+                cd "$currentDir" >/dev/null
 
-            if [ "${module_install_errors}" != "" ]; then
-                success=false
-                writeLine "Install failed: ${module_install_errors}" "$color_error"
-            fi
-        done
-    else
-        writeLine "No external modules found" "$color_mute"
+                if [ "${module_install_errors}" != "" ]; then
+                    success=false
+                    writeLine "Install failed: ${module_install_errors}" "$color_error"
+                fi
+            done
+        else
+            writeLine "No external modules found" "$color_mute"
+        fi
     fi
 
     writeLine

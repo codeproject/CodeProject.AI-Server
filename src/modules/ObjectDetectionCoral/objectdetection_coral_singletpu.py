@@ -47,6 +47,18 @@ import time
 import numpy as np
 from PIL import Image
 
+# Make sure we can find the coral libraries
+import platform
+if platform.system() == "Darwin": # or platform.system() == "Linux"
+    search_path = ''
+    if platform.uname()[4] == 'x86_64' and platform.release()[:2] != '20':   # macOS 11 / Big Sur on Intel can install pycoral PIP
+       search_path = f"./pycoral_simplified/"    # macOS will use the simplified library
+    elif platform.uname()[4] == 'arm64' and platform.release()[:2] != '21':  # macOS 12 / Monterey on arm64 can install pycoral PIP
+       search_path = f"./pycoral_simplified/"    # macOS will use the simplified library
+    if search_path:
+        import sys
+        sys.path.insert(0, search_path)
+
 from pycoral.adapters import common
 from pycoral.adapters import detect
 from pycoral.utils.dataset import read_label_file
@@ -87,7 +99,10 @@ def init_detect(options: Options) -> str:
     # model_file = options.model_tpu_file if edge_tpu else options.model_cpu_file
    
     # Read labels
-    labels = read_label_file(options.label_file) if options.label_file else {}
+    try:
+        labels = read_label_file(options.label_file) if options.label_file else {}
+    except:
+        labels = {}
 
     # Initialize TF-Lite interpreter.
     device = ""
@@ -96,7 +111,8 @@ def init_detect(options: Options) -> str:
         if os.path.exists(options.model_tpu_file):
             interpreter = make_interpreter(options.model_tpu_file, device=None, delegate=None)
         if not interpreter:
-            device      = "CPU"
+            print("Info: Unable to use TPU (make_interpreter faileD). Falling back to CPU")
+            device = "CPU"
             if os.path.exists(options.model_cpu_file):
                 interpreter = make_interpreter(options.model_cpu_file, device="cpu", delegate=None)
             else:
@@ -119,7 +135,11 @@ def init_detect(options: Options) -> str:
         except Exception as ex:
             error = "Error creating interpreter (Coral issue)"
             print("Error creating interpreter: " + str(ex))
-            interpreter = None
+            try:
+                interpreter = None
+            except: 
+                # __del__ can throw here.
+                pass
 
     if not interpreter:
         device = ""
@@ -162,10 +182,11 @@ def list_models(options:Options):
             for model_name in supported_models:
                 model_index = model_name.lower()
                 pattern     = options.MODEL_SETTINGS[model_index][options.model_size].model_name_pattern
-                for file in os.listdir(options.models_dir):
-                    if fnmatch.fnmatch(file, '*' + pattern + '*'):
-                        model_list.append(model_name)
-                        break
+                if os.path.exists(options.models_dir):
+                    for file in os.listdir(options.models_dir):
+                        if fnmatch.fnmatch(file, '*' + pattern + '*'):
+                            model_list.append(model_name)
+                            break
 
     return {
         "success": True,
