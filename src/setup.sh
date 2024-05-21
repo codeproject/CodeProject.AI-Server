@@ -95,7 +95,7 @@ oneStepPIP=false
 
 # Whether or not to use the jq utility for JSON parsing
 useJq=true
-
+debug_json_parse=false
 
 # Basic locations
 
@@ -717,20 +717,20 @@ writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${system
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "os, arch               = ${os} ${architecture}"      $color_mute
-    writeLine "systemName, platform   = ${systemName}, ${platform}" $color_mute
-    writeLine "edgeDevice             = ${edgeDevice}"              $color_mute
-    writeLine "SSH                    = ${inSSH}"                   $color_mute
-    writeLine "setupMode              = ${setupMode}"               $color_mute
-    writeLine "executionEnvironment   = ${executionEnvironment}"    $color_mute
-    writeLine "rootDirPath            = ${rootDirPath}"             $color_mute
-    writeLine "appRootDirPath         = ${appRootDirPath}"          $color_mute
-    writeLine "setupScriptDirPath     = ${setupScriptDirPath}"      $color_mute
-    writeLine "sdkScriptsDirPath      = ${sdkScriptsDirPath}"       $color_mute
-    writeLine "runtimesDirPath        = ${runtimesDirPath}"         $color_mute
-    writeLine "modulesDirPath         = ${modulesDirPath}"          $color_mute
-    writeLine "externalModulesDirPath = ${externalModulesDirPath}"  $color_mute
-    writeLine "downloadDirPath        = ${downloadDirPath}"         $color_mute
+    writeLine "os, name, arch         = ${os} ${os_name} ${architecture}" $color_mute
+    writeLine "systemName, platform   = ${systemName}, ${platform}"       $color_mute
+    writeLine "edgeDevice             = ${edgeDevice}"                    $color_mute
+    writeLine "SSH                    = ${inSSH}"                         $color_mute
+    writeLine "setupMode              = ${setupMode}"                     $color_mute
+    writeLine "executionEnvironment   = ${executionEnvironment}"          $color_mute
+    writeLine "rootDirPath            = ${rootDirPath}"                   $color_mute
+    writeLine "appRootDirPath         = ${appRootDirPath}"                $color_mute
+    writeLine "setupScriptDirPath     = ${setupScriptDirPath}"            $color_mute
+    writeLine "sdkScriptsDirPath      = ${sdkScriptsDirPath}"             $color_mute
+    writeLine "runtimesDirPath        = ${runtimesDirPath}"               $color_mute
+    writeLine "modulesDirPath         = ${modulesDirPath}"                $color_mute
+    writeLine "externalModulesDirPath = ${externalModulesDirPath}"        $color_mute
+    writeLine "downloadDirPath        = ${downloadDirPath}"               $color_mute
     writeLine 
 fi
 
@@ -925,20 +925,23 @@ if [ "$setupMode" = 'SetupEverything' ]; then
     writeLine "Processing Included CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
     writeLine
 
-    for d in ${modulesDirPath}/*/ ; do
-        moduleDirName=$(basename "$d")
-        moduleDirPath="${modulesDirPath}/${moduleDirName}"
-        moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+    if [ -d "$modulesDirPath" ]; then
+        for d in "${modulesDirPath}/"*/ ; do  # Note the " placement here
 
-        currentDir="$(pwd)"
-        doModuleInstall "${moduleId}" "${moduleDirPath}"
-        cd "$currentDir" >/dev/null
+            moduleDirName=$(basename "$d")
+            moduleDirPath="${modulesDirPath}/${moduleDirName}"
+            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-        if [ "${module_install_errors}" != "" ]; then
-            success=false
-            writeLine "Install failed: ${module_install_errors}" "$color_error"
-        fi
-    done
+            currentDir="$(pwd)"
+            doModuleInstall "${moduleId}" "${moduleDirPath}"
+            cd "$currentDir" >/dev/null
+
+            if [ "${module_install_errors}" != "" ]; then
+                success=false
+                writeLine "Install failed: ${module_install_errors}" "$color_error"
+            fi
+        done
+    fi
 
     if [ "$installExternalModules" == "true" ]; then
         # Walk through the modules directoorym for modules that live in the external 
@@ -949,7 +952,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         writeLine
 
         if [ -d "$externalModulesDirPath" ]; then
-            for d in ${externalModulesDirPath}/*/ ; do
+            for d in "${externalModulesDirPath}/"*/ ; do  # Note the " placement here
                 moduleDirName=$(basename "$d")
                 moduleDirPath="${externalModulesDirPath}/${moduleDirName}"
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")

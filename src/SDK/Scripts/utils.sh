@@ -286,7 +286,11 @@ function CreateWriteableDir () {
     if [ ! -d "${path}" ]; then
         write "Creating ${desc} folder..." $color_primary
         #sudo 
-        mkdir -p "${path}" >/dev/null 2>/dev/null
+        if [ "${verbosity}" = "loud" ]; then
+            mkdir -p "${path}"
+        else
+            mkdir -p "${path}" >/dev/null 2>/dev/null
+        fi
         if [ $? -eq 0 ]; then 
             writeLine "done" $color_success
         else
@@ -1701,9 +1705,9 @@ function installRequiredPythonPackages () {
         # writeLine "${venvPythonCmdPath} -m pip install $pipFlags -r ${requirementsPath} --target ${packagesDirPath}" $color_info
         write 'Installing Packages into Virtual Environment...' $color_primary
         if [ "${verbosity}" = "loud" ]; then
-            "$venvPythonCmdPath" -m pip install $pipFlags -r "${requirementsPath}" --target ${packagesDirPath}
+            "$venvPythonCmdPath" -m pip install $pipFlags -r "${requirementsPath}" --target "${packagesDirPath}"
         else
-            "$venvPythonCmdPath" -m pip install $pipFlags -r "${requirementsPath}" --target ${packagesDirPath} > /dev/null &
+            "$venvPythonCmdPath" -m pip install $pipFlags -r "${requirementsPath}" --target "${packagesDirPath}" > /dev/null &
             spin $!
         fi
         writeLine 'Success' $color_success
@@ -1777,9 +1781,9 @@ function installRequiredPythonPackages () {
                         if [ "${os}" = "linux" ] || [ "${os}" = "macos" ]; then
                             # No, I don't know why eval is needed in Linux but not elsewhere
                             if [ "${verbosity}" = "loud" ]; then
-                                eval "${venvPythonCmdPath}" -m pip install "${package_name}" --target "${packagesDirPath}" ${currentOption} ${pipFlags}
+                                eval "\${venvPythonCmdPath}" -m pip install "${package_name}" --target "\${packagesDirPath}" ${currentOption} ${pipFlags}
                             else
-                                eval "${venvPythonCmdPath}" -m pip install "${package_name}" --target "${packagesDirPath}" ${currentOption} ${pipFlags} >/dev/null 2>/dev/null &
+                                eval "\${venvPythonCmdPath}" -m pip install "${package_name}" --target "\${packagesDirPath}" ${currentOption} ${pipFlags} >/dev/null 2>/dev/null &
                                 spin $!
                             fi
                         else
@@ -2193,9 +2197,9 @@ function getValueFromModuleSettingsFile () {
     local moduleId=$2
     local property=$3
 
-    # if [ "$verbosity" = "loud" ]; then
-    #    echo "Searching for '${property}' in a suitable modulesettings.json file in ${moduleDirPath}" >&3
-    # fi
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+       echo "Searching for '${property}' in a suitable modulesettings.json file in ${moduleDirPath}" >&3
+    fi
 
     # Module settings files are loaded in this order. Each file will overwrite (but not delete)
     # settings of the previous file. Becuase of this, we're going to search the files in REVERSE
@@ -2250,7 +2254,7 @@ function getValueFromModuleSettingsFile () {
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.json"; fi
     fi
 
-    if [ false ] && [ "$verbosity" = "loud" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
        if [ "${moduleSettingValue}" = "" ]; then
            echo "Cannot find ${moduleId}.${property} in modulesettings in ${moduleDirPath}" >&3
        else
@@ -2303,7 +2307,10 @@ function getValueFromModuleSettings () {
         key=$".Modules.${moduleId}.${property}"
     fi
 
-    # echo jsonFile is $json_file >&3
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+        echo jsonFile is $json_file >&3
+        echo parse_mode is $parse_mode >&3
+    fi
 
     if [ -f "$json_file" ]; then
         if [ "$parse_mode" = "jq" ]; then
@@ -2332,9 +2339,7 @@ function getValueFromModuleSettings () {
 
             # Do the extraction
             jsonValue=$(echo "$file_contents" | jq -r "$key")
-            # echo "jsonValue = $jsonValue" >&3
-            # quit
-
+            
         elif [ "$parse_mode" = "parsejson" ]; then
 
             # Let's back in this huge earth mover to plant my flower pots. Even
@@ -2366,9 +2371,10 @@ function getValueFromModuleSettings () {
     # Really?? 
     if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
 
-    # debug
-    # if [ "$verbosity" = "loud" ]; then echo "${key} = $jsonValue" >&3; fi
-
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+        echo "${key} = $jsonValue" >&3;
+    fi
+    
     echo $jsonValue
 }
 
@@ -2517,22 +2523,33 @@ function displayMacOSDirCreatePermissionError () {
         haveDisplayedMacOSDirCreatePermissionError=true
 
         writeLine ''
+        writeLine ''
         writeLine 'We may be able to suggest something:'  $color_info
 
-        # Note that  will appear as the Apple symbol on macOS, but probably not on Windows or Linux
-        writeLine '1. Pull down the  Apple menu and choose "System Preferences"'
-        writeLine '2. Choose “Security & Privacy” control panel'
-        writeLine '3. Now select the “Privacy” tab, then from the left-side menu select'
-        writeLine '   “Full Disk Access”'
-        writeLine '4. Click the lock icon in the lower left corner of the preference '
-        writeLine '   panel and authenticate with an admin level login'
-        writeLine '5. Now click the [+] plus button so we can full disk access to Terminal'
-        writeLine "6. Navigate to the /Applications/Utilities/ folder and choose 'Terminal'"
-        writeLine '   to grant Terminal Full Disk Access privileges'
-        writeLine '7. Relaunch Terminal, the “Operation not permitted” error messages should'
-        writeLine '   be gone'
-        writeLine
-        writeLine 'Thanks to https://osxdaily.com/2018/10/09/fix-operation-not-permitted-terminal-error-macos/'
+        if [ "$os_name" = "Sonoma" ]; then   # macOS 14 / Kernal 23
+            # Note that  will appear as the Apple symbol on macOS, but probably not on Windows or Linux
+            writeLine '1. Pull down the  Apple menu and choose "System Settings"'
+            writeLine '2. Choose “Privacy & Security"'
+            writeLine '3. Scroll down to “Full Disk Access” and click the right arrow >'
+            writeLine '4. Click the [+] plus button, and in the popup, navigate to the'
+            writeLine '   /Applications/Utilities/ folder and choose "Terminal"'
+            writeLine '5. Relaunch Terminal. The “Operation not permitted” error messages should'
+            writeLine '   be gone'
+        else
+            writeLine '1. Pull down the  Apple menu and choose "System Preferences"'
+            writeLine '2. Choose “Security & Privacy” control panel'
+            writeLine '3. Now select the “Privacy” tab, then from the left-side menu select'
+            writeLine '   “Full Disk Access”'
+            writeLine '4. Click the lock icon in the lower left corner of the preference '
+            writeLine '   panel and authenticate with an admin level login'
+            writeLine '5. Now click the [+] plus button so we can full disk access to Terminal'
+            writeLine "6. Navigate to the /Applications/Utilities/ folder and choose 'Terminal'"
+            writeLine '   to grant Terminal Full Disk Access privileges'
+            writeLine '7. Relaunch Terminal, the “Operation not permitted” error messages should'
+            writeLine '   be gone'
+        fi
+        
+        writeLine ''
     fi
 
     # quit 8 # unable to create file or directory
