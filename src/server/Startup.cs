@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Prometheus;
 
 /*
 #if Windows
@@ -175,9 +176,16 @@ namespace CodeProject.AI.Server
 
             app.UseRouting();
 
+            app.UseHttpMetrics();
+
             app.UseCors("allowAllOrigins");
 
             app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapMetrics();
+            });
 
             app.UseEndpoints(endpoints =>
             {
