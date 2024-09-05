@@ -16,7 +16,7 @@ version=$2
 # and OS.
 
 configuration="Release"
-target="net7.0"
+target="$dotNetTarget"
 
 declare -a gpuTypes
 gpuTypes[0]="GPU_NONE"
@@ -41,7 +41,7 @@ for (( index=0; index<${length}; index++ )); do
    
     # Build
     echo " - Building ObjectDetection (.Net) for ${gpuType}"
-    dotnet build -c ${configuration} --no-self-contained /p:DefineConstants=${gpuType} >/dev/null 2>/dev/null
+    dotnet build -c ${configuration} --no-self-contained /p:DefineConstants=${gpuType} >/dev/null # 2>/dev/null
 
     if [ ! $? -eq 0 ]; then
         echo "BUILD FAILED. Cancelling"
@@ -52,7 +52,7 @@ for (( index=0; index<${length}; index++ )); do
     # pull them down separately
     pushd ./bin/${configuration}/${target}/  >/dev/null 2>/dev/null
 
-    tar -a -cf ../../../${moduleId}-${fileSuffix}-${version}.zip \
+    tar -a -cf ../../${moduleId}-${fileSuffix}-${version}.zip \
         --exclude=*.development.* --exclude=*.docker.build.* *.*
 
     popd >/dev/null 2>/dev/null

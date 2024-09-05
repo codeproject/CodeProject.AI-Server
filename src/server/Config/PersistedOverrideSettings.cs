@@ -23,7 +23,8 @@ namespace CodeProject.AI.Server
         }
 
         /// <summary>
-        /// Loads a file containing the persisted override settings of the current setup
+        /// Loads a file containing the persisted override settings of the current setup. If no
+        /// setup file was able to be loaded then an empty settings object is returned.
         /// </summary>
         /// <returns>A JsonObject containing the settings</returns>
         public async Task<JsonObject?> LoadSettings()
@@ -40,7 +41,12 @@ namespace CodeProject.AI.Server
             else
                 settingsFilePath = Path.Combine(_storagePath, Constants.ModuleSettingsFilename);
 
-            return await JsonUtils.LoadJsonAsync(settingsFilePath).ConfigureAwait(false);
+            JsonObject? settings = await JsonUtils.LoadJsonAsync(settingsFilePath).ConfigureAwait(false);
+
+            if (settings is null)
+                settings = JsonUtils.DeserializeJson("{ \"Modules\": {} }");
+
+            return settings;
         }
 
         /// <summary>

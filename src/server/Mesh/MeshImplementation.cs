@@ -5,10 +5,9 @@ using System.Linq;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.Server.Modules;
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
+using CodeProject.AI.SDK.Modules;
 
 // -------------------------------------------------------------------------------------------------
 // This file implements the BaseMeshMonitor class and the IMeshServerBroadcastBuilder interface.

@@ -1,18 +1,11 @@
-﻿using System;
+﻿// #define USE_SWAGGER  // Ensure you reference Swashbuckle.AspNetCore in the .csproj file
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 
-/*
-#if Windows
-using System.Security.Principal;
-using System.Security.AccessControl;
-#else
-using System.Diagnostics;
-#endif
-*/
-
-#if DEBUG
-using System.Reflection;
+#if USE_SWAGGER
+// using System.Reflection;
 using Microsoft.OpenApi.Models;
 #endif
 
@@ -27,6 +20,7 @@ using Microsoft.Extensions.Options;
 using CodeProject.AI.Server.Modules;
 using CodeProject.AI.Server.Backend;
 using CodeProject.AI.Server.Mesh;
+using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Server
 {
@@ -72,7 +66,7 @@ namespace CodeProject.AI.Server
 
             services.AddControllers();
 
-#if DEBUG
+#if USE_SWAGGER
             // http://localhost:32168/swagger/index.html
             services.AddSwaggerGen(c =>
             {
@@ -146,7 +140,7 @@ namespace CodeProject.AI.Server
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-#if DEBUG                
+#if USE_SWAGGER
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CodeProject.AI API v1"));
 #endif
@@ -199,10 +193,22 @@ namespace CodeProject.AI.Server
             if (string.IsNullOrEmpty(_installConfig.Version) ||
                 File.Exists(ModuleInstaller.InstallModulesFileName))
             {
+                _logger?.LogDebug($"Initial module install list exists (or no initial install version)");
                 ModuleInstaller.QueueInitialModulesInstallation();
             }
 
             _installConfig.Version = _versionConfig?.VersionInfo?.Version ?? string.Empty;
+
+            // If we are running in a Docker container and the container ID has changed,
+            // then we need to reinstall the modules.
+            if (SystemInfo.IsDocker && 
+                (string.IsNullOrEmpty(_installConfig.DockerContainerId) ||
+                _installConfig.DockerContainerId != SystemInfo.DockerContainerId))
+            {
+                _installConfig.DockerContainerId = SystemInfo.DockerContainerId;
+                ModuleInstaller.QueueReinstallModules();
+            }
+
 
             var configValues      = new { install = _installConfig };
             string appDataDir     = Configuration["ApplicationDataDir"] 

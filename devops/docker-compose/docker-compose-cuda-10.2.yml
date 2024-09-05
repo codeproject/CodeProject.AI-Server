@@ -10,6 +10,9 @@ services:
       - "32168:32168/udp"
     environment:
       - TZ=America/Toronto
+    volumes:
+      - codeproject_ai_data_cuda10_2:/etc/codeproject/ai
+      - codeproject_ai_modules_cuda10_2:/app/modules
     deploy:
       resources:
         reservations:
@@ -17,3 +20,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+volumes:
+  codeproject_ai_data_cuda10_2:
+  codeproject_ai_modules_cuda10_2:
+

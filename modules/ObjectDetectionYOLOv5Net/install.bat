@@ -2,16 +2,19 @@
 ::
 ::                           .NET YOLO Object Detection
 ::
-:: This script is only called from ..\..\setup.bat 
+:: This script is only called from ..\..\src\setup.bat 
 ::
 :: For help with install scripts, notes on variables and methods available, tips,
 :: and explanations, see /src/modules/install_script_help.md
 
 @if "%1" NEQ "install" (
-    echo This script is only called from ..\..\setup.bat
+    echo This script is only called from ..\..\src\setup.bat
     @pause
     @goto:eof
 ) 
+
+REM Backwards compatibility with Server 2.6.5
+if "!utilsScript!" == "" if "!sdkScriptsDirPath!" NEQ "" set utilsScript=%sdkScriptsDirPath%\utils.bat
 
 set installBinaries=false
 if /i "!executionEnvironment!" == "Production" set installBinaries=true
@@ -34,7 +37,7 @@ if /i "!installBinaries!" == "true" (
     :: If we're in dev-setup mode we'll build the module now so the self-test will work
     pushd "!moduleDirPath!"
     call "!utilsScript!" WriteLine "Building project..." "!color_info!"
-    dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/net7.0" >NUL
+    dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/!dotNetTarget!" >NUL
     popd
 )
 

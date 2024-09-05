@@ -20,6 +20,8 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
+writeLine "Nothing to do here." "$color_mute"
+
 # Nothing to be done here...
 
-# module_install_errors=...
+# moduleInstallErrors=...

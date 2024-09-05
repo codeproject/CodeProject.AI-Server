@@ -24,8 +24,9 @@ if /i "!installBinaries!" == "true" (
 ) else (
     :: If we're in dev-setup mode we'll build the module now so the self-test will work
     pushd "!moduleDirPath!"
-    call "!utilsScript!" WriteLine "Building project..." "!color_info!"
-    dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/net7.0" >NUL
+    call "!utilsScript!" Write "Building project..." "!color_info!"
+    dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/!dotNetTarget!" >NUL
+    call "!utilsScript!" WriteLine "Done" "!color_info!"
     popd
 )
 

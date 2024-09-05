@@ -12,11 +12,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Models;
+using CodeProject.AI.SDK.Server;
+using CodeProject.AI.SDK.Modules;
 
 namespace CodeProject.AI.Server.Modules
 {
@@ -992,7 +993,8 @@ namespace CodeProject.AI.Server.Modules
 
                 var moduleList = modules.Values
                                         .Where(m => !corrections.Any(c => c.NewModuleId == m.ModuleId) &&   // Don't do modules with new names yet
-                                               m.InstallOptions!.ModuleLocation == ModuleLocation.Internal)
+                                               (m.InstallOptions!.ModuleLocation == ModuleLocation.Internal ||
+                                                m.InstallOptions!.ModuleLocation == ModuleLocation.External))
                                         .OrderBy(m => m.ModuleId)
                                         .Select(m => new {
                                             ModuleId       = m.ModuleId,
@@ -1079,7 +1081,8 @@ namespace CodeProject.AI.Server.Modules
         private static string CreateModulesListingHtml(ModuleCollection modules,
                                                        VersionInfo versionInfo)
         {
-            var moduleList = modules.Values.Where(m => m.InstallOptions!.ModuleLocation == ModuleLocation.Internal)
+            var moduleList = modules.Values.Where(m => m.InstallOptions!.ModuleLocation == ModuleLocation.Internal ||
+                                                        m.InstallOptions!.ModuleLocation == ModuleLocation.External)
                                            .OrderBy(m => m.PublishingInfo!.Category)
                                            .ThenBy(m => m.Name);
 

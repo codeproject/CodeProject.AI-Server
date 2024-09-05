@@ -1,5 +1,5 @@
 ﻿
-using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.Server
 {

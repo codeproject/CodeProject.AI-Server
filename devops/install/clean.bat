@@ -37,7 +37,7 @@ set rootDir=%cd%
 popd
 
 set installScriptsDirPath=!rootDir!\devops\install
-set utilsScriptsDirPath=!rootDir!\devops\scripts
+set utilsScriptsDirPath=!rootDir!\src\scripts
 set utilsScript=!utilsScriptsDirPath!\utils.bat
 set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
 
@@ -120,11 +120,11 @@ if /i "%cleanAssets%" == "true" (
     call "!utilsScript!" WriteLine 
 
     REM Production modules
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-6.2\assets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5-6.2\custom-models"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\assets"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\custom-models"
-    call :RemoveDir "!rootDir!\src\modules\ObjectDetectionYOLOv5Net\LocalNugets"
+    call :RemoveDir "!rootDir!\modules\ObjectDetectionYOLOv5-6.2\assets"
+    call :RemoveDir "!rootDir!\modules\ObjectDetectionYOLOv5-6.2\custom-models"
+    call :RemoveDir "!rootDir!\modules\ObjectDetectionYOLOv5Net\assets"
+    call :RemoveDir "!rootDir!\modules\ObjectDetectionYOLOv5Net\custom-models"
+    call :RemoveDir "!rootDir!\modules\ObjectDetectionYOLOv5Net\LocalNugets"
 
     REM External modules
     call :RemoveDir "!externalModulesDir!\CodeProject.AI-ALPR\paddleocr"
@@ -171,19 +171,19 @@ if /i "%cleanBuild%" == "true" (
     call :RemoveDir "!rootDir!\src\SDK\NET\obj"
 
     for %%x in (!dotNetModules!) do (
-        call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
-        call :RemoveDir "!rootDir!\src\modules\%%x\obj\"
-        call :DelDirPattern "!rootDir!\src\modules\%%x\%%x-*"
+        call :RemoveDir "!rootDir!\modules\%%x\bin\"
+        call :RemoveDir "!rootDir!\modules\%%x\obj\"
+        call :DelDirPattern "!rootDir!\modules\%%x\" "\\%%x-*.zip"
     )
     for %%x in (!dotNetExternalModules!) do (
         call :RemoveDir "!externalModulesDir!\%%x\bin\"
         call :RemoveDir "!externalModulesDir!\%%x\obj\"
-        call :DelDirPattern "!rootDir!\src\modules\%%x\%%x-*"
+        call :DelDirPattern "!externalModulesDir!\%%x\" "\\%%x-*.zip"
     )
     for %%x in (!dotNetDemoModules!) do (
         call :RemoveDir "!rootDir!\src\demos\modules\%%x\bin\"
         call :RemoveDir "!rootDir!\src\demos\modules\%%x\obj\"
-        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\%%x-*"
+        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\" "\\%%x-*.zip"
     )
 
     call :RemoveDir "!rootDir!\utils\ParseJSON\bin"
@@ -230,11 +230,11 @@ if /i "%cleanInstallCurrentOS%" == "true" (
     call "!utilsScript!" WriteLine 
 
     REM Clean shared python venvs
-    call :RemoveDir "!rootDir!\src\runtimes\bin\windows" 
+    call :RemoveDir "!rootDir!\runtimes\bin\windows" 
 
     REM Clean module python venvs
     for %%x in (!pythonModules!) do (
-        call :RemoveDir "!rootDir!\src\modules\%%x\bin\windows"
+        call :RemoveDir "!rootDir!\modules\%%x\bin\windows"
     )
     for %%x in (!pythonExternalModules!) do (
         call :RemoveDir "!externalModulesDir!\%%x\bin\windows"
@@ -251,11 +251,11 @@ if /i "%cleanInstallAll%" == "true" (
     call "!utilsScript!" WriteLine 
 
     REM Clean shared python installs and venvs
-    call :RemoveDir "!rootDir!\src\runtimes\bin\" 
+    call :RemoveDir "!rootDir!\runtimes\bin\" 
 
     REM Clean module python venvs
     for %%x in (!pythonModules!) do (
-        call :RemoveDir "!rootDir!\src\modules\%%x\bin\"
+        call :RemoveDir "!rootDir!\modules\%%x\bin\"
     )
     for %%x in (!pythonExternalModules!) do (
         call :RemoveDir "!externalModulesDir!\%%x\bin\"
@@ -271,17 +271,17 @@ if /i "%cleanLibraries%" == "true" (
     call "!utilsScript!" WriteLine "Cleaning Libraries, current OS" "White" "Blue" !lineWidth!
     call "!utilsScript!" WriteLine 
 
-    call :DelDirPattern "!rootDir!\runtimes\bin\windows\python*\venv\Lib\site-packages\*"
+    call :DelDirPattern "!rootDir!\runtimes\bin\windows\" "\\python[0-9]*\\venv\\Lib\\site-packages$"
 
     REM Clean module python venvs
     for %%x in (!pythonModules!) do (
-        call :DelDirPattern "!rootDir!\modules\%%x\bin\windows\python*\venv\Lib\site-packages\*"
+        call :DelDirPattern "!rootDir!\modules\%%x\bin\windows\" "\\python[0-9]*\\venv\\Lib\\site-packages$"
     )
     for %%x in (!pythonExternalModules!) do (
-        call :DelDirPattern "!externalModulesDir!\%%x\bin\windows\python*\venv\Lib\site-packages\*"
+        call :DelDirPattern "!externalModulesDir!\%%x\bin\windows\" "\\python[0-9]*\\venv\\Lib\\site-packages$"
     )
     for %%x in (!pythonDemoModules!) do (
-        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\bin\windows\python*\venv\Lib\site-packages\*"
+        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\bin\windows\" "\\python[0-9]*\\venv\\Lib\\site-packages$"
     )
 )
 
@@ -292,14 +292,14 @@ if /i "%cleanLibrariesAll%" == "true" (
     call "!utilsScript!" WriteLine 
 
     REM Clean module python venvs
-    for %%x in (!pythonModules!) do (
-        call :DelDirPattern "!rootDir!\modules\%%x\bin\*"
+    for %%x in (!pythonModules!) do ( 
+        call :DelDirPattern "!rootDir!\modules\%%x\" "\\bin$"
     )
     for %%x in (!pythonExternalModules!) do (
-        call :DelDirPattern "!externalModulesDir!\%%x\bin\*"
+        call :DelDirPattern "!externalModulesDir!\%%x\" "\\bin$"
     )
     for %%x in (!pythonDemoModules!) do (
-        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\bin\*"
+        call :DelDirPattern "!rootDir!\src\demos\modules\%%x\" "\\bin$"
     )
 )
 
@@ -333,17 +333,35 @@ REM Functions ==================================================================
         )
     )
 
+    exit /b
+
+
 :DelDirPattern
     SetLocal EnableDelayedExpansion
 
-    set pathPattern=%~1
+    set rootFolder=%~1
+    set pathPattern=%~2
 
     if /i "!doDebug!" == "true" (
-        call "!utilsScript!" WriteLine "Marked for removal: !pathPattern!" "!color_error!"
+        call "!utilsScript!" WriteLine "Marked for removal: !rootFolder!!pathPattern!" "!color_error!"
     ) else (
-        del "!pathPattern!"
-        call "!utilsScript!" WriteLine "Removed !pathPattern!" "!color_success!"
+
+        for /f "delims=" %%i in ('dir /s /b /ad "!rootFolder!" 2^>NUL ^| findstr /r /c:"!pathPattern!"') do (
+            rmdir /s /q "%%i"
+            call "!utilsScript!" WriteLine "Removed folder %%i" "!color_success!"
+        )
+
+        :: Find all files matching the pattern
+        for /f "delims=" %%i in ('dir /s /b /a-d "!rootFolder!" 2^>NUL ^| findstr /r /c:"!pathPattern!"') do (
+            del /f /q "%%i"
+            call "!utilsScript!" WriteLine "Removed file %%i" "!color_success!"
+        )
+
+        REM call "!utilsScript!" WriteLine "Removed !rootFolder!!pathPattern!" "!color_success!"
     )
+
+    exit /b
+
 
 :RemoveDir
     SetLocal EnableDelayedExpansion

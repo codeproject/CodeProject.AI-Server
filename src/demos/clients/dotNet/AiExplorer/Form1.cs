@@ -7,8 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using CodeProject.AI.API;
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Server;
 using CodeProject.AI.SDK.Utils;
 
 using SkiaSharp.Views.Desktop;
@@ -23,18 +23,18 @@ namespace CodeProject.AI.Demo.Explorer
         const int _pingFrequency = 2;    // seconds
         const int _apiServerPort = 32168; // be default
 
-        private readonly ServerClient _serverClient           = new(_apiServerPort);
-        private bool                  _serverLive             = false;    
-        private string                _imageFileName          = string.Empty;
-        private string                _faceImageFileName1     = string.Empty;
-        private string                _faceImageFileName2     = string.Empty;
-        private string                _recognizeImageFileName = string.Empty;
-        private string                _benchmarkFileName      = string.Empty;
-        private readonly List<string> _registerFileNames      = new();
+        private readonly FrontEndClient _serverClient           = new(_apiServerPort);
+        private bool                    _serverLive             = false;    
+        private string                  _imageFileName          = string.Empty;
+        private string                  _faceImageFileName1     = string.Empty;
+        private string                  _faceImageFileName2     = string.Empty;
+        private string                  _recognizeImageFileName = string.Empty;
+        private string                  _benchmarkFileName      = string.Empty;
+        private readonly List<string>   _registerFileNames      = new();
 
-        private readonly Font         _textFont               = new("Arial", 7);
-        private readonly SolidBrush   _textBrush              = new(Color.White);
-        private readonly Pen          _boundingBoxPen         = new(Color.Yellow, 2);
+        private readonly Font           _textFont               = new("Arial", 7);
+        private readonly SolidBrush     _textBrush              = new(Color.White);
+        private readonly Pen            _boundingBoxPen         = new(Color.Yellow, 2);
 
         public Form1()
         {

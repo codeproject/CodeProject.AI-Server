@@ -6,20 +6,30 @@
 cls
 setlocal enabledelayedexpansion
 
-set dotNetExternalModules=CodeProject.AI-PortraitFilter CodeProject.AI-SentimentAnalysis
-set pythonExternalModules=CodeProject.AI-ALPR CodeProject.AI-ALPR-RKNN CodeProject.AI-BackgroundRemover ^
-                          CodeProject.AI-Cartoonizer CodeProject.AI-FaceProcessing CodeProject.AI-LlamaChat ^
-                          CodeProject.AI-ObjectDetectionCoral CodeProject.AI-ObjectDetectionYOLOv5-3.1 ^
-                          CodeProject.AI-ObjectDetectionYOLOv8 CodeProject.AI-ObjectDetectionYoloRKNN ^
-                          CodeProject.AI-TrainingObjectDetectionYOLOv5 CodeProject.AI-OCR ^
-                          CodeProject.AI-SceneClassifier CodeProject.AI-SoundClassifierTF ^
-                          CodeProject.AI-SuperResolution CodeProject.AI-TextSummary CodeProject.AI-Text2Image
+set modules=CodeProject.AI-ALPR                          ^
+            CodeProject.AI-ALPR-RKNN                     ^
+            CodeProject.AI-BackgroundRemover             ^
+            CodeProject.AI-Cartoonizer                   ^
+            CodeProject.AI-FaceProcessing                ^
+            CodeProject.AI-LlamaChat                     ^
+            CodeProject.AI-MultiModeLLM                  ^
+            CodeProject.AI-ObjectDetectionCoral          ^
+            CodeProject.AI-ObjectDetectionYOLOv5-3.1     ^
+            CodeProject.AI-ObjectDetectionYOLOv8         ^
+            CodeProject.AI-ObjectDetectionYoloRKNN       ^
+            CodeProject.AI-TrainingObjectDetectionYOLOv5 ^
+            CodeProject.AI-OCR                           ^
+            CodeProject.AI-PortraitFilter                ^
+            CodeProject.AI-SceneClassifier               ^
+            CodeProject.AI-SentimentAnalysis             ^
+            CodeProject.AI-SoundClassifierTF             ^
+            CodeProject.AI-SuperResolution               ^
+            CodeProject.AI-TextSummary                   ^
+            CodeProject.AI-Text2Image
 
 
 pushd ..\..
 set rootDir=%cd%
-cd src\SDK\Scripts
-set sdkDir=%cd%
 popd
 
 set externalModulesDir=!rootDir!\..\CodeProject.AI-Modules
@@ -33,12 +43,12 @@ if not exist !externalModulesDir! (
 if exist !externalModulesDir! (
     pushd !externalModulesDir!
 
-    for %%x in (!pythonExternalModules!) do (
+    echo.
+    echo Cloning all missing CodeProject.AI module projects
+    for %%x in (!modules!) do (
         if not exist %%x git clone https://github.com/codeproject/%%x
     )
-    for %%x in (!dotNetExternalModules!) do (
-        if not exist %%x git clone https://github.com/codeproject/%%x
-    )
-
+    echo.
+    echo Done
     popd
 )

@@ -11,10 +11,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using CodeProject.AI.SDK;
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Backend;
 using CodeProject.AI.Server.Models;
+using CodeProject.AI.SDK.Modules;
 
 namespace CodeProject.AI.Server.Modules
 {
@@ -291,6 +291,8 @@ namespace CodeProject.AI.Server.Modules
                                                       new BackendRequest(payload))
                                     .ConfigureAwait(false);
 
+                _logger.LogInformation($"Shutdown request for {process.ProcessName}/{module.ModuleId} complete: Waiting for cleanup...");
+
                 int shutdownServerDelaySecs = _moduleSettings.DelayAfterStoppingModulesSecs;
                 if (shutdownServerDelaySecs > 0)
                 {
@@ -316,7 +318,7 @@ namespace CodeProject.AI.Server.Modules
                     else
                     {
                         hasExited = true;
-                        _logger.LogInformation($"{module.ModuleId} went quietly");
+                        _logger.LogInformation($"{module.ModuleId} shut down correctly");
                     }
                 }
                 catch(Exception ex)

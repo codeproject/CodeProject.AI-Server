@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using CodeProject.AI.SDK.Utils;
+using CodeProject.AI.SDK.Modules;
 using CodeProject.AI.Server.Modules;
 using CodeProject.AI.Server.Utilities;
-using CodeProject.AI.SDK;
-using CodeProject.AI.SDK.Common;
-using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Server.Models
 {
@@ -282,7 +281,7 @@ namespace CodeProject.AI.Server.Models
             else
             {
                 string downloadUrl = filename.StartsWithIgnoreCase("http") 
-                                   ? filename : _moduleOptions.ModelStorageUrl + filename;
+                                   ? filename : _moduleOptions.AssetStorageUrl + "models/" + filename;
                 (downloaded, error) = await _packageDownloader.DownloadFileAsync(downloadUrl, downloadDirPath, true)
                                                               .ConfigureAwait(false);
             }

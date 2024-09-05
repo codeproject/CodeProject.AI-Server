@@ -16,7 +16,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
 		<BaseOutputPath></BaseOutputPath>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
@@ -48,7 +48,7 @@
 
 	<PropertyGroup>
 		<GpuType>CPU</GpuType>
-		<GpuType Condition="'$(IsWindows)'=='true'">DirectML</GpuType>						<!-- Windows -->
+        <GpuType Condition="'$(IsWindows)'=='true' And '$(IsArm64)'!='true'">DirectML</GpuType>	<!-- Windows x64   -->
 		<GpuType Condition="'$(IsLinux)'=='true'">GPU</GpuType>	                            <!-- Linux -->
 		<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'=='true'">CPU</GpuType>	<!-- Raspberry Pi, Orange Pi, Radxa ROCK, Jetson -->
 		<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'!='true'">CPU</GpuType>		<!-- Mac Intel -->
@@ -61,7 +61,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="SkiaSharp" Version="2.88.6" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
 	</ItemGroup>
 
 	<!-- Output the settings based on what we've determined above -->
@@ -101,7 +101,7 @@
 
 	<!--
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)'== 'Release'">
-	  <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net7.0&#xD;&#xA;cd $(ProjectDir)" />
+	  <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net8.0&#xD;&#xA;cd $(ProjectDir)" />
 	</Target>
 	-->
 

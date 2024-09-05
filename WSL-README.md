@@ -94,12 +94,12 @@ To free up space you can use the clean.bat/clean.sh scripts under
 
 For Windows
 ```cmd 
-cd src\SDK\Utilities
+cd devops\install
 clean all
 ```
 For Linux/macOS
 ```cmd 
-cd src/SDK/Utilities
+cd devops/install
 bash clean.sh all
 ```
 

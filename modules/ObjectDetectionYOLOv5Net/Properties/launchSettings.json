@@ -6,6 +6,7 @@
         "DOTNET_ENVIRONMENT": "Development",
         "CPAI_MODULE_ENABLE_GPU": "true",
         "CPAI_MODULE_PARALLELISM": "0",
+        "CPAI_MODULE_ID": "ObjectDetectionYOLOv5Net",
         "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
       },
       "dotnetRunMessages": "true"

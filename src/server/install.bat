@@ -17,6 +17,6 @@
     @goto:eof
 )
 
-REM Nothing to be done here...
+call "!utilsScript!" WriteLine "Nothing to do here" "!color_mute!"
 
 REM set moduleInstallErrors=...

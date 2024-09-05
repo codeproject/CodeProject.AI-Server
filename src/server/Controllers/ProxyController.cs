@@ -23,6 +23,7 @@ using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Modules;
 using CodeProject.AI.Server.Mesh;
+using System.IO.Pipes;
 
 namespace CodeProject.AI.Server.Controllers
 {
@@ -195,7 +196,7 @@ namespace CodeProject.AI.Server.Controllers
             if (string.IsNullOrEmpty(queue))
                 return BadRequest("Module does not have a queue");
 
-            var payload = CreatePayload("",
+            var payload = await CreatePayload("",
                 new RouteQueueInfo("", "POST", queue, command));
 
             var response = await _dispatcher.SendRequestAsync(queue, payload).ConfigureAwait(false);
@@ -244,7 +245,9 @@ namespace CodeProject.AI.Server.Controllers
             StringBuilder summary = new StringBuilder();
 
             IOrderedEnumerable<ModuleConfig> moduleList = _installedModules.Values
-                                              .Where(module => module.RouteMaps?.Length > 0)
+                                              .Where(module => module.RouteMaps?.Length > 0 
+                                                            && (module.InstallOptions?.ModuleLocation == SDK.Modules.ModuleLocation.External ||
+                                                                module.InstallOptions?.ModuleLocation == SDK.Modules.ModuleLocation.Internal))
                                               .OrderBy(module => module.PublishingInfo!.Category)
                                               .ThenBy(module => module.Name)
                                               .ThenBy(module => module.RouteMaps[0].Route);
@@ -450,7 +453,7 @@ namespace CodeProject.AI.Server.Controllers
         {
             // TODO: We have enough info in the routeInfo object to be able to validate that the
             //       request by checking that all the required values are present. Let's do that.
-            RequestPayload payload = CreatePayload(pathSuffix, routeInfo!);
+            RequestPayload payload = await CreatePayload(pathSuffix, routeInfo!);
 
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -528,30 +531,11 @@ namespace CodeProject.AI.Server.Controllers
                 hostname = server.EndPointIPAddress;
 
             string url = $"http://{hostname}{portString}{originalRequest.Path}{queryString}";
-            Uri targetUri = new Uri(url);
-
-            // Create a MultipartFormDataContent object from the original request's form data,
-            // including both form data and files
-            MultipartFormDataContent multipartContent = new MultipartFormDataContent();
-
-            // Add form data to the multipart content
-            foreach (string key in Request.Form.Keys)
-            {
-                multipartContent.Add(new StringContent(originalRequest.Form[key].ToString()), key);
-            }
-
-            // Add files from the request to the multipart content
-            foreach (IFormFile? file in Request.Form.Files)
-            {
-                Stream stream             = file.OpenReadStream();
-                StreamContent fileContent = new StreamContent(stream);
-                multipartContent.Add(fileContent, "image", file.FileName);
-            }
 
             // Create a new request with the same method, headers and content as the original request
-            HttpRequestMessage newRequest = new HttpRequestMessage(new HttpMethod(originalRequest.Method), targetUri)
+            HttpRequestMessage newRequest = new HttpRequestMessage(HttpMethod.Post, url)
             {
-                Content = multipartContent
+                Content = new StreamContent(originalRequest.Body)
             };
 
             foreach (KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues> header in originalRequest.Headers)
@@ -565,7 +549,7 @@ namespace CodeProject.AI.Server.Controllers
             return response;
         }
 
-        private RequestPayload CreatePayload(string pathSuffix, RouteQueueInfo routeInfo)
+        private async Task<RequestPayload> CreatePayload(string pathSuffix, RouteQueueInfo routeInfo)
         {
             // TODO: Add Segment list (string[]) and params (map of name/value)
             string endOfUrl = pathSuffix.Remove(0, routeInfo.Route.Length);
@@ -589,10 +573,23 @@ namespace CodeProject.AI.Server.Controllers
                     queryParams.Add(new KeyValuePair<string, string?[]>(param.Key, param.Value.ToArray()));
             }
 
+            // REVIEW: [Chris] This is where we would need to handle a JSON request body. We would
+            //         need to read the request body and parse it as JSON. We would then need to
+            //         use the JSON object to populate the payload.
+
             // The HasFormContentType check should be sufficient and checks for multipart/form-data,
             // and application/x-www-form-urlencoded. There should be no need to use a try/catch
             // here either, but the GetFileData() method might throw if the moon is in the wrong phase.
-            if (Request.HasFormContentType && Request.Form is not null)
+            if (Request.HasJsonContentType() && Request.ContentLength > 0)
+            {
+                var payload = await Request.ReadFromJsonAsync<RequestPayload>() ?? new RequestPayload();
+                payload.urlSegments = segments.ToArray();
+                payload.command = routeInfo.Command;
+
+                return payload;
+
+            }
+            else if (Request.HasFormContentType && Request.Form is not null)
             {
                 try // if there are no Form values, then Request.Form throws.
                 {
@@ -615,17 +612,23 @@ namespace CodeProject.AI.Server.Controllers
                 {
                     // nothing to do here, just no Form available
                 }
+
+                RequestPayload payload = new RequestPayload
+                {
+                    urlSegments = segments.ToArray(),
+                    command     = routeInfo.Command,
+                    values      = queryParams,
+                    files       = formFiles
+                };
+
+                return payload;
             }
 
-            RequestPayload payload = new RequestPayload
+            return new RequestPayload
             {
                 urlSegments = segments.ToArray(),
-                command     = routeInfo.Command,
-                values      = queryParams,
-                files       = formFiles
+                command = routeInfo.Command,
             };
-
-            return payload;
         }
 
         private byte[] GetFileData(IFormFile x)

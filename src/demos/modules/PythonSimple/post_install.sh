@@ -8,7 +8,7 @@
 
 if [ "$1" != "post-install" ]; then
     echo
-    read -t 3 -p "This script is only called from: bash ../../setup.sh"
+    read -t 3 -p "This script is only called from: bash ../../../setup.sh"
     echo
     exit 1 
 fi

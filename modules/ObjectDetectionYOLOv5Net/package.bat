@@ -19,7 +19,7 @@ REM S3. The install script simply pulls down and unpacks the correct version
 REM based on the Hardware and OS.
 
 set Configuration=Release
-set Target=net7.0
+set Target=!dotNetTarget!
 
 set GpuTypes[0]=CPU
 set GpuTypes[1]=GPU_CUDA
@@ -70,7 +70,7 @@ set "index=0"
     if /I "%Method%" == "build" (
         tar -caf ObjectDetectionYOLOv5Net-%FileSuffix%-%version%.zip --exclude=assets --exclude=custom-models -C .\bin\%Configuration%\%FileSuffix%\ *
     ) else (
-        tar -caf ObjectDetectionYOLOv5Net-%FileSuffix%-%version%.zip --exclude=assets --exclude=custom-models -C .\bin\%Configuration%\%Target%publish *
+        tar -caf ObjectDetectionYOLOv5Net-%FileSuffix%-%version%.zip --exclude=assets --exclude=custom-models -C .\bin\%Configuration%\%Target%\publish *
     )
     
     rem Cleanup

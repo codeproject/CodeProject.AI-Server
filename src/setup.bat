@@ -1,42 +1,64 @@
+:: =============================================================================
+::
 :: CodeProject.AI Server 
 ::
 :: Install script for Windows
 ::
 :: This script can be called in 2 ways:
 ::
-::   1. From within the / root directory in order to setup the Development
-::      environment.
-::   2. From within an analysis module directory to setup just that module.
+::  1. From within the \src (or the root directory of the installation) in
+::     order to setup the full system, including serer, SDKs, demos and modules.
+::     This method is typically used for setting up the Developmnent environment.
 ::
-:: If called from /, then all analysis modules (in modules/ and modules/ dirs) 
-:: will be setup in turn, as well as the main SDK and demos.
+::  2. From within a module's directory (or demo or server folder) to setup just
+::     that module, demo or the server
 ::
-:: If this script is called from within a module's dir then we assume we're in 
-:: the /modules/my_module directory (or modules/my_module in Production) for
-:: the module "my_module". This script would typically be called via
+:: If this script is called from within the folder containing this script (that
+:: is, the script is called as `setup.bat` and not from outside the script's
+:: folder using `..\..\setup.bat`) then all modules (internal, external, and
+:: demo) will be setup in turn, as well as the main SDK, server and demos clients.
+::
+:: If this script is called from within a module's dir then this script will work
+:: out if it's being called from \modules\my_module, 
+:: ..\..\CodeProject.AI-Modules\my_module, \src\demos\modules\my_demo (we ignore
+:: pre-installed modules). This script would typically be called via
 ::
 ::    ..\..\setup.bat
-:: 
-:: This script will look for a install.bat script in the directory from whence
-:: it was called, and execute that script. The install.bat script is
-:: responsible for everything needed to ensure the module is ready to run.
 ::
-:: HOW DOES THE SCRIPT KNOW WHICH MODE IT'S IN?
-:: If the parent dir of directory from where this script was called is "src"
-:: then we know we're in development mode, and we know we're not in the modules
-:: or anaylysislayer folder, so we must be calling it to setup the main dev env.
-
+:: This script will look for a module's `install.bat` install script in the
+:: directory from whence it was called, and execute that script. The install.bat
+:: script is responsible for everything needed to ensure the module is ready to
+:: run. Note that the server and SDK also have their own install.bat scripts.
+::
+:: Parameters:
+::
+::    --no-color          - Do not use color when outputting text. 
+::    --selftest-only     - Only perform self-test calls on modules. No setup.
+::    --no-selftest       - Do not perform self-test calls on modules after setup
+::    --modules-only      - Only install modules, not server, SDK or demos
+::    --server-only       - Only install the server, not modules, SDK or demos
+::    --verbosity option  - 'option' is quiet, info or loud.
+::
+:: =============================================================================
 
 @echo off
 REM cls
+
 setlocal enabledelayedexpansion
+
 REM Set CodePage UTF-8 for our emojis
 chcp 65001 >NUL
 
-:: verbosity can be: quiet | info | loud
+:: verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 set verbosity=quiet
 
-:: Show output in wild, crazy colours
+:: The .NET version to use for the server. NOTE: Only major version matters unless we use manual
+:: install scripts, in which case we need to specify version. Choose version that works for SDK and
+:: runtime, since the versions of these are not in sync (currently RT is 8.0.5, SDK is 8.0.3)
+set serverDotNetVersion=8.0.3
+set dotNetTarget=net8.0
+
+:: Show output in wild, crazy colours. Use --no-color to not use colour
 set useColor=true
 
 :: Width of lines
@@ -45,19 +67,19 @@ set lineWidth=70
 :: Whether or not modules can have their Python setup installed in the shared area
 set allowSharedPythonInstallsForModules=true
 
-
-:: Debug flags for downloads and installs
-
 :: If you wish to allow external modules
-set installExternalModules=false
+set installExternalModules=true
 
-:: Setup only the server, nothing else
+:: Setup only the server, nothing else. Use --server-only
 set setupServerOnly=false
 
-:: Perform *only* the post install self tests
+:: If true, only install modules, not server, SDKs, or demos. Use --modules-only
+set setupModulesOnly=false
+
+:: Perform *only* the post install self tests. Use --selftest-only
 set selfTestOnly=false
 
-:: Perform self-tests unless this is false
+:: Perform self-tests unless this is false. Use --no-selftest
 set noSelfTest=false
 
 :: If files are already present, then don't overwrite if this is false
@@ -72,12 +94,15 @@ set offlineInstall=false
 set skipPipInstall=false
 
 :: Whether or not to install all python packages in one step (-r requirements.txt)
-:: or step by step. Doing this allows the PIP manager to handle incompatibilities 
-:: better.
-:: ** WARNING ** There is a big tradeoff on keeping the users informed and speed/
-:: reliability. Generally one-step shouldn't be needed. But it often is. And it
-:: often doesn't actually solve problems either. Overall it's safer, but not a 
-:: panacea
+:: or step by step. Installing pips in one step allows the PIP manager to handle
+:: incompatibilities better, but if one thing fails, the whole things fails.
+:: Further: one-step means if you re-run the installer, the entire req file is
+:: always re-processed, whereas if oneStep is false, each package is checked for
+:: existence before running pip, speeding re-installs dramatically.
+:: Finally: one-step is an awful user experience. Everyghing hangs for minutes.
+:: Setting it to false provides far better (but maybe slower) feedback mechanism.
+:: FOR PIP INCOMPATIBILITY ISSUES: Set this to true and verbisity to loud to get
+:: excellent debug feedback from pip.
 set oneStepPIP=false
 
 :: Whether or not to use the jq utility for JSON parsing. If false, use ParseJSON
@@ -89,12 +114,13 @@ set debug_json_parse=false
 :: The path to the directory containing this setup script. Will end in "\"
 set setupScriptDirPath=%~dp0
 
-:: The path to the application root dir. This is 'src' in dev, or / in production
+:: The path to the application root dir. This is 'src' in dev, or \ in production
 :: This setup script always lives in the app root
 set appRootDirPath=!setupScriptDirPath!
 
-:: The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
-set storageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/
+:: The location of large packages that need to be downloaded (eg an AWS S3 bucket
+:: name). This will be overwritten using the value from appsettings.json
+set assetStorageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/
 
 :: The name of the source directory (in development)
 set srcDirName=src
@@ -120,7 +146,6 @@ set modelsDir=models
 
 :: The location of directories relative to the root of the solution directory
 set sdkPath=!appRootDirPath!SDK
-set sdkScriptsDirPath=!sdkPath!\Scripts
 
 :: Who launched this script? user or server?
 set launchedBy=user
@@ -157,6 +182,11 @@ set launchedBy=user
         shift
         goto :param_loop
     )
+    if "%~1"=="--modules-only" (
+        set setupModulesOnly=true
+        shift
+        goto :param_loop
+    )
     if "%~1"=="--server-only" (
         set setupServerOnly=true
         shift
@@ -172,6 +202,11 @@ set launchedBy=user
 
 :: Pre-setup ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+:: Assign a line feed to a var. KEEP THE EMPTY LINE EMPTY
+(set LF=^
+
+)
+
 :: If offline then force the system to use pre-downloaded files
 if /i "%offlineInstall%" == "true" set forceOverwrite=false
 
@@ -182,28 +217,30 @@ if /i "%offlineInstall%" == "true" set forceOverwrite=false
 :: folder actually exists) then we're Setting up the dev environment. Otherwise
 :: we're installing a module.
 set setupMode=SetupModule
-for /f "delims=\" %%a in ("%cd%") do @set CurrDirName=%%~nxa
+for /f "delims=\" %%a in ("%cd%") do @set currentDirName=%%~nxa
 
-rem when executionEnvironment = "Development" this may be the case
-if /i "%CurrDirName%" == "%srcDirName%" (
-    set setupMode=SetupEverything
-    REM HACK: We're one folder deeper than we need to be for referencing externalModulesDir
-)
+:: Are we in \src? When executionEnvironment = "Development" this may be the case
+if /i "%currentDirName%" == "%srcDirName%" set setupMode=SetupEverything
 
-rem when executionEnvironment = "Production" this may be the case
-if /i "$CurrDirName" == "%appDirName%" (
-    REM HACK: We're one folder deeper than we need to be for referencing externalModulesDir
-)
+:: Are we in \app? (ie Docker)
+if /i "%currentDirName%" == "%appDirName%" set setupMode=SetupEverything
+
+:: Finally, test if this script is being run from within the directory holding
+:: this script, meaning the root folder. It's not \src since we tested that, so
+:: being in the root folder that isn't \src and isn't \app means we're in the root
+:: folder of a native install
+if /i "%cd%" == "%appRootDirPath%" set setupMode=SetupEverything
 
 :: In Development, this script is in the /src folder. In Production there is no
 :: /src folder; everything is in the root folder. So: go to the folder
 :: containing this script and check the name of the parent folder to see if
 :: we're in dev or production.
 pushd "!setupScriptDirPath!"
-for /f "delims=\" %%a in ("%cd%") do @set CurrDirName=%%~nxa
+for /f "delims=\" %%a in ("%cd%") do @set currentDirName=%%~nxa
 popd
+
 set executionEnvironment=Production
-if /i "%CurrDirName%" == "%srcDirName%" set executionEnvironment=Development
+if /i "%currentDirName%" == "%srcDirName%" set executionEnvironment=Development
 
 :: The absolute path to the installer script and the root directory. Note that
 :: this script (and the SDK folder) is either in the /src dir or the root dir
@@ -218,10 +255,9 @@ set preInstalledModulesDirPath=!rootDirPath!\!preInstalledModulesDir!
 set externalModulesDirPath=!rootDirPath!\..\!externalModulesDir!
 set modelsDirPath=!rootDirPath!\!modelsDir!
 set downloadDirPath=!rootDirPath!\!downloadDir!
-set utilsScriptsDirPath=!rootDirPath!\devops\scripts
+set utilsScriptsDirPath=!appRootDirPath!\scripts
 set installScriptsDirPath=!rootDirPath!\devops\install
 set utilsScript=!utilsScriptsDirPath!\utils.bat
-
 
 :: Helper vars for OS, Platform (see note below), and system name. systemName is
 :: a no-op here because nothing exciting happens on Windows. In the corresponding
@@ -229,8 +265,12 @@ set utilsScript=!utilsScriptsDirPath!\utils.bat
 :: things. It's here to just make switching between .bat and .sh scripts consistent
 
 set os=windows
+set os_name=Windows
 set platform=windows
 set systemName=Windows
+
+:: Get the full OS name
+call "!utilsScript!" getWindowsOSName os_name
 
 :: Blank because we don't currently support an edge device running Windows. In
 :: Linux this could be Raspberry Pi, Orange Pi, Radxa ROCK or Jetson
@@ -244,11 +284,12 @@ set architecture=%PROCESSOR_ARCHITECTURE%
 :: of abbreviating this to "x64" when used in conjuntion with OS. So windows-x64
 :: rather than windows-x86_64. To simplify further, if the platform value doesn't
 :: have a suffix then it's assumed to be -x64. This may change in the future.
-if /i "!architecture!" == "amd64" set architecture=x86_64
-if /i "!architecture!" == "ARM64" (
+if /i "!architecture!" == "arm64" (
     set architecture=arm64
     set platform=windows-arm64
 )
+:: Hack for AMD
+if /i "!architecture!" == "amd64" set architecture=x86_64
 
 :: Let's go
 if /i "!useColor!" == "true" call "!utilsScript!" setESC
@@ -270,46 +311,54 @@ call "!utilsScript!" WriteLine
 
 set mainSetupStarttime=%time%
 
-REM Report disk space available
-for /f "tokens=1,2 delims== " %%a in ('wmic logicaldisk where "DeviceID='%cd:~0,2%'" get FreeSpace^,Size^,VolumeName /format:list') do (
-    if "%%a"=="FreeSpace"  set freespacebytes=%%b
-    if "%%a"=="Size"       set totalspacebytes=%%b
-    if "%%a"=="VolumeName" set volumename=%%b
+REM Commented: WMIC not always available
+:: REM Report disk space available
+:: for /f "tokens=1,2 delims== " %%a in ('wmic logicaldisk where "DeviceID='%cd:~0,2%'" get FreeSpace^,Size^,VolumeName /format:list') do (
+::     if "%%a"=="FreeSpace"  set freespacebytes=%%b
+::     if "%%a"=="Size"       set totalspacebytes=%%b
+::     if "%%a"=="VolumeName" set volumename=%%b
+:: )
+:: REM Anything over 2Gb kills this
+:: REM set /a freeSpaceGb=!freespacebytes! / 1073741824
+:: REM set /a freeSpaceGbfraction=!freespacebytes! %% 1073741824 * 10 / 1073741824
+:: set /a freeSpaceGb=!freespacebytes:~0,-4! / 1048576
+:: set /a freeSpaceGbfraction=!freespacebytes:~0,-4! %% 1048576 * 10 / 1048576
+:: set /a totalSpaceGb=!totalspacebytes:~0,-4! / 1048576
+
+for /f "tokens=6*" %%A in ('vol') do set volumename=%%A
+set driveRoot=%CD:~0,3%
+for /f "usebackq" %%A in (`powershell -NoProfile -Command "(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -eq '!driveRoot!' }).Free + (Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -eq '!driveRoot!' }).Used"`) do (
+    set totalspacebytes=%%A
 )
-REM Anything ove 2Gb kills this
-REM set /a freeSpaceGb=!freespacebytes! / 1073741824
-REM set /a freeSpaceGbfraction=!freespacebytes! %% 1073741824 * 10 / 1073741824
-set /a freeSpaceGb=!freespacebytes:~0,-4! / 1048576
-set /a freeSpaceGbfraction=!freespacebytes:~0,-4! %% 1048576 * 10 / 1048576
-set /a totalSpaceGb=!totalspacebytes:~0,-4! / 1048576
+REM chop off last 3 digits (divide by 1000) then divide by 1024^2 to get Gb. This
+REM is to avoid numerical overflow but results in bad maths.
+set /a totalSpaceGb=!totalspacebytes:~0,-3! / 1048576
 
-call "!utilsScript!" WriteLine "!freeSpaceGb!.!freeSpaceGbfraction!Gb of !totalSpaceGb!Gb available on !VolumeName!" !color_mute!
+for /f "tokens=3" %%A in ('dir !driveRoot!') do set freespacebytes=%%A
+set freespacebytes=!freespacebytes:,=!
+set /a freeSpaceGb=!freespacebytes:~0,-3! / 1048576
+set /a freeSpaceGbfraction=!freespacebytes:~0,-3! %% 1048576 * 10 / 1048576
+
+if "!volumename!" == "" set volumename=(No label)
 
 
-if /i "%verbosity%" neq "quiet" (
-    call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "os, arch               = !os! !architecture!"      !color_mute!
-    call "!utilsScript!" WriteLine "systemName, platform   = !systemName!, !platform!" !color_mute!
-    call "!utilsScript!" WriteLine "edgeDevice             = !edgeDevice!"             !color_mute!
-    call "!utilsScript!" WriteLine "setupMode              = !setupMode!"              !color_mute!
-    call "!utilsScript!" WriteLine "executionEnvironment   = !executionEnvironment!"   !color_mute!
-    call "!utilsScript!" WriteLine "rootDirPath            = !rootDirPath!"            !color_mute!
-    call "!utilsScript!" WriteLine "appRootDirPath         = !appRootDirPath!"         !color_mute!
-    call "!utilsScript!" WriteLine "setupScriptDirPath     = !setupScriptDirPath!"     !color_mute!
-    call "!utilsScript!" WriteLine "utilsScriptsDirPath    = !utilsScriptsDirPath!"    !color_mute!
-    call "!utilsScript!" WriteLine "runtimesDirPath        = !runtimesDirPath!"        !color_mute!
-    call "!utilsScript!" WriteLine "modulesDirPath         = !modulesDirPath!"         !color_mute!
-    call "!utilsScript!" WriteLine "externalModulesDirPath = !externalModulesDirPath!" !color_mute!
-    call "!utilsScript!" WriteLine "modelsDirPath          = !modelsDirPath!"          !color_mute!
-    call "!utilsScript!" WriteLine "downloadDirPath        = !downloadDirPath!"        !color_mute!
-    call "!utilsScript!" WriteLine
-)
+REM call "!utilsScript!" WriteLine "!freespacebytes! of !totalspacebytes! available on !VolumeName! (!os_name! !architecture! - !platform!)" !color_mute!
+call "!utilsScript!" WriteLine "!freeSpaceGb!.!freeSpaceGbfraction!Gb of !totalSpaceGb!Gb available on !VolumeName! (!os_name! !architecture! - !platform!)" !color_mute!
+
 
 :: Ensure directories are created and download required assets.
 
 call "!utilsScript!" WriteLine
 call "!utilsScript!" WriteLine "General CodeProject.AI setup" "White" "Blue" !lineWidth!
 call "!utilsScript!" WriteLine
+
+:: Before we start, ensure we can read the JSON config files        
+call :SetupJSONParser
+if errorlevel 1 goto:eof
+
+:: Get assets endpoint
+call "!utilsScript!" GetValueFromJsonFile "!appRootDirPath!server\appsettings.json" ".ModuleOptions.AssetStorageUrl"
+if "!jsonFileValue!" NEQ "" set assetStorageUrl=!jsonFileValue!
 
 :: Create some directories
 
@@ -321,6 +370,27 @@ if not exist "!downloadDirPath!\!modelsDir!\" mkdir "!downloadDirPath!\!modelsDi
 
 call "!utilsScript!" WriteLine "done" "Green"
 call "!utilsScript!" WriteLine ""
+
+:: Output settings
+if /i "%verbosity%" neq "quiet" (
+    call "!utilsScript!" WriteLine 
+    call "!utilsScript!" WriteLine "os, name, arch         = !os! !os_name! !architecture!" !color_mute!
+    call "!utilsScript!" WriteLine "systemName, platform   = !systemName!, !platform!"      !color_mute!
+    call "!utilsScript!" WriteLine "edgeDevice             = !edgeDevice!"                  !color_mute!
+    call "!utilsScript!" WriteLine "setupMode              = !setupMode!"                   !color_mute!
+    call "!utilsScript!" WriteLine "executionEnvironment   = !executionEnvironment!"        !color_mute!
+    call "!utilsScript!" WriteLine "rootDirPath            = !rootDirPath!"                 !color_mute!
+    call "!utilsScript!" WriteLine "appRootDirPath         = !appRootDirPath!"              !color_mute!
+    call "!utilsScript!" WriteLine "setupScriptDirPath     = !setupScriptDirPath!"          !color_mute!
+    call "!utilsScript!" WriteLine "utilsScriptsDirPath    = !utilsScriptsDirPath!"         !color_mute!
+    call "!utilsScript!" WriteLine "runtimesDirPath        = !runtimesDirPath!"             !color_mute!
+    call "!utilsScript!" WriteLine "modulesDirPath         = !modulesDirPath!"              !color_mute!
+    call "!utilsScript!" WriteLine "externalModulesDirPath = !externalModulesDirPath!"      !color_mute!
+    call "!utilsScript!" WriteLine "modelsDirPath          = !modelsDirPath!"               !color_mute!
+    call "!utilsScript!" WriteLine "downloadDirPath        = !downloadDirPath!"             !color_mute!
+    call "!utilsScript!" WriteLine "assetStorageUrl        = !assetStorageUrl!"             !color_mute!
+    call "!utilsScript!" WriteLine
+)
 
 :: Report on GPU ability
 
@@ -361,73 +431,56 @@ if /i "%hasROCm%" == "true" (
     call "!utilsScript!" WriteLine "No" !color_warn!
 )
 
-REM quick detour to ensure ParseJSON is installed
-if /i "!executionEnvironment!" == "Development" (
-    pushd !rootDirPath!\utils\ParseJSON
-    if not exist ParseJSON.exe (
-        call "!utilsScript!" WriteLine "Building ParseJSON"
-        if /i "!verbosity!" == "quiet" (
-            dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
-        ) else (
-            dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release
-        )
-        if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
-    )
-    popd
-)
-
 
 :: And off we go...
 
-set success=true
+set "setupErrors="
+set "moduleInstallErrors="
 
 if /i "!setupMode!" == "SetupEverything" (
 
     REM Start with the CodeProject.AI SDK and Server
-
-    if /i "!selfTestOnly!" == "false" (
+    if /i "!setupModulesOnly!" == "false" if /i "!selfTestOnly!" == "false" (
 
         call "!utilsScript!" WriteLine
         call "!utilsScript!" WriteLine "Processing CodeProject.AI SDK" "White" "DarkGreen" !lineWidth!
         call "!utilsScript!" WriteLine
 
-        set currentDir=%cd%
         set moduleDirName=SDK
         set moduleDirPath=!appRootDirPath!!moduleDirName!
+        set "moduleInstallErrors="
 
-        REM This will setup .NET since the SDK relies on it
+        REM Note that the SDK install will setup .NET since the SDK relies on it
+
+        call :SaveState
         call "!moduleDirPath!\install.bat" install   
+        if errorlevel 1 if "!moduleInstallErrors!" == "" set moduleInstallErrors=CodeProject.AI SDK install failed
+        call :RestoreState
 
-        if errorlevel 1 set success=false
-        if "!moduleInstallErrors!" NEQ "" set success=false
-        if "!moduleInstallErrors!" == "" if /i "!success!" == "false" set moduleInstallErrors=CodeProject.AI SDK install failed
-        cd "!currentDir!"
+        if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [SDK] !moduleInstallErrors!!LF!
 
 
         call "!utilsScript!" WriteLine
         call "!utilsScript!" WriteLine "Processing CodeProject.AI Server" "White" "DarkGreen" !lineWidth!
         call "!utilsScript!" WriteLine
 
-        set currentDir=%cd%
         set moduleDirName=server
         set moduleDirPath=!appRootDirPath!!moduleDirName!
+        set "moduleInstallErrors="
 
-        call "!moduleDirPath!\install.bat" install   
+        call :SaveState
+        call "!moduleDirPath!\install.bat" install
+        if errorlevel 1 if "!moduleInstallErrors!" == "" set moduleInstallErrors=CodeProject.AI Server install failed
+        call :RestoreState
 
-        if errorlevel 1 set success=false
-        if "!moduleInstallErrors!" NEQ "" set success=false
-        if "!moduleInstallErrors!" == "" if /i "!success!" == "false" set moduleInstallErrors=CodeProject.AI Server install failed
-        cd "!currentDir!"
+        if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [Server] !moduleInstallErrors!!LF!
     )
 
-    REM Walk through the modules directory and call the setup script in each
-    REM dir, as well as setting up the demos
+    REM Walk through the modules directory and call the setup script in each dir,
+    REM as well as setting up the demos
 
     if /i "!setupServerOnly!" == "false" (
-
-        REM Before we start, ensure we can read the modulesettings files        
-        call :SetupJSONParser
-   
+ 
         call "!utilsScript!" WriteLine
         call "!utilsScript!" WriteLine "Processing Included CodeProject.AI Server Modules" "White" "DarkGreen" !lineWidth!
         call "!utilsScript!" WriteLine
@@ -441,7 +494,7 @@ if /i "!setupMode!" == "SetupEverything" (
             set moduleId=!moduleSettingValue!
 
             call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Internal" errors
-            if "!moduleInstallErrors!" NEQ "" set success=false
+            if "!errors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleId!] !errors!!LF!
         )
 
         if /i "!installExternalModules!" == "true" (
@@ -457,85 +510,100 @@ if /i "!setupMode!" == "SetupEverything" (
                     call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
                     set moduleId=!moduleSettingValue!
 
-                    call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Esternal" errors
-                    if "!moduleInstallErrors!" NEQ "" set success=false
+                    call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "External" errors
+                    if "!errors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleId!] !errors!!LF!
                 )
             ) else (
                 call "!utilsScript!" WriteLine "No external modules found" !color_mute!
             )
         )
-        
+
         call "!utilsScript!" WriteLine
-        call "!utilsScript!" WriteLine "Module setup Complete" "Green"
+        call "!utilsScript!" WriteLine "Module setup Complete" "!color_success!"
 
         REM Install Demo clients
-        if /i "!selfTestOnly!" == "false" (
-            call "!utilsScript!" WriteLine
-            call "!utilsScript!" WriteLine "Processing Demo clients" "White" "Blue" !lineWidth!
-            call "!utilsScript!" WriteLine
+        if /i "!selfTestOnly!" == "false" if /i "!setupModulesOnly!" == "false" (
+            if /i "!executionEnvironment!" == "Development" (
+                call "!utilsScript!" WriteLine
+                call "!utilsScript!" WriteLine "Processing Demo clients" "White" "Blue" !lineWidth!
+                call "!utilsScript!" WriteLine
 
-            set currentDir=%cd%
-            set moduleDirName=clients
-            set moduleDirPath=!rootDirPath!\src\demos\!moduleDirName!
-            call "!moduleDirPath!\install.bat" install
+                set moduleDirName=clients
+                set moduleDirPath=!rootDirPath!\src\demos\!moduleDirName!
+                set "moduleInstallErrors="
 
-            REM Don't really care about demos enough to fail the entire setup script
-            REM if errorlevel 1 set success=false
-            cd "!currentDir!"
+                call :SaveState
+                call "!moduleDirPath!\install.bat" install
+                if errorlevel 1 if "!moduleInstallErrors!" == "" set moduleInstallErrors=failed to install
+                call :RestoreState
+
+                if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [Demo clients] !moduleInstallErrors!!LF!
+            )
         )
 
         REM Install Demo modules
-        call "!utilsScript!" WriteLine
-        call "!utilsScript!" WriteLine "Processing Demo Modules" "White" "Blue" !lineWidth!
-        call "!utilsScript!" WriteLine
+        if /i "!executionEnvironment!" == "Development" (
+            call "!utilsScript!" WriteLine
+            call "!utilsScript!" WriteLine "Processing Demo Modules" "White" "Blue" !lineWidth!
+            call "!utilsScript!" WriteLine
 
-        set oldModulesDirPath=!modulesDirPath!
-        set modulesDirPath=!rootDirPath!\src\demos\modules\
-        for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
-            set moduleDirName=%%~nxD
-            set moduleDirPath=!modulesDirPath!\!moduleDirName!
+            set oldModulesDirPath=!modulesDirPath!
+            set modulesDirPath=!rootDirPath!\src\demos\modules\
+            for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
+                set moduleDirName=%%~nxD
+                set moduleDirPath=!modulesDirPath!\!moduleDirName!
 
-            call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
-            set moduleId=!moduleSettingValue!
+                call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
+                set moduleId=!moduleSettingValue!
 
-            call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Demo" errors
-
-            if "!moduleInstallErrors!" NEQ "" set success=false
+                call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Demo" errors
+                if "!errors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleId!] !errors!!LF!
+            )
+            set modulesDirPath=!oldModulesDirPath!
         )
-        set modulesDirPath=!oldModulesDirPath!
     )
 
 ) else (
 
     if /i "!setupServerOnly!" == "false" (
 
-        REM Quick sanity check to ensure .NET is in place
-        call "%utilsScript%" SetupDotNet 7.0.405 SDK
-        
-        REM Before we start, ensure we can read the modulesettings files        
-        call :SetupJSONParser        
-
+        REM Quick sanity check to ensure .NET is in place. .NET install is done
+        REM in the SDK setup, but we do it here too since it's a null-op if it's
+        REM in place already, and the SDK setup may not always be called.
+        call "%utilsScript%" SetupDotNet !serverDotNetVersion! aspnetcore
+        if /i "!executionEnvironment!" == "Development" (
+            call "%utilsScript%" SetupDotNet !serverDotNetVersion! SDK
+        )
+            
         REM Install an individual module
         
         for %%I in (.) do set moduleDirName=%%~nxI
 
-        if /i "!moduleDirName!" == "server" (
-            REM Not a module. The server
-            if /i "!selfTestOnly!" == "false" (
+        if /i "!moduleDirName!" == "server" (       REM Not a module. The server
+
+            if /i "!setupModulesOnly!" == "false" if /i "!selfTestOnly!" == "false" (
                 set moduleDirPath=!appRootDirPath!\!moduleDirName!
+                set "moduleInstallErrors="
 
-                set currentDir=%cd%
+                call :SaveState
                 call "!moduleDirPath!\install.bat" install
-                cd "!currentDir!"
+                if errorlevel 1 if "!moduleInstallErrors!" == "" set moduleInstallErrors=failed to install
+                call :RestoreState
+
+                if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [Server] !moduleInstallErrors!!LF!
             )
-        ) else if /i "!moduleDirName!" == "clients" (
-            REM Not a module. The demo clients
-            if /i "!selfTestOnly!" == "false" (
-                set moduleDirPath=!rootDirPath!\src\demos\!moduleDirName!
+        ) else if /i "!moduleDirName!" == "clients" (   REM Not a module. The demo clients
 
-                set currentDir=%cd%
+            if /i "!setupModulesOnly!" == "false" if /i "!selfTestOnly!" == "false" (
+                set moduleDirPath=!rootDirPath!\src\demos\!moduleDirName!
+                set "moduleInstallErrors="
+
+                call :SaveState
                 call "!moduleDirPath!\install.bat" install
-                cd "!currentDir!"
+                if errorlevel 1 if "!moduleInstallErrors!" == "" set moduleInstallErrors=failed to install
+                call :RestoreState
+
+                if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [Demo clients] !moduleInstallErrors!!LF!
             )
         ) else (
 
@@ -546,7 +614,8 @@ if /i "!setupMode!" == "SetupEverything" (
             for %%I in (..) do set parentDirName=%%~nxI
             for %%I in (..\..) do set parentParentDirName=%%~nxI
 
-            if /i "!parentParentDirName!" == "demos" (
+            if /i "!parentParentDirName!" == "demos" (                       REM Demo module
+
                 set oldModulesDirPath=!modulesDirPath!
                 set modulesDirPath=!rootDirPath!\src\demos\modules\
 
@@ -555,51 +624,78 @@ if /i "!setupMode!" == "SetupEverything" (
                 set moduleId=!moduleSettingValue!
 
                 call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Demo" errors
+                if "!errors!" NEQ "" set setupErrors=!setupErrors!!LF! - [Demo modules] !errors!!LF!
 
                 set modulesDirPath=!oldModulesDirPath!
-            ) else if /i "!parentDirName!" == "!externalModulesDir!" (
+
+            ) else if /i "!parentDirName!" == "!externalModulesDir!" (       REM External module
 
                 set moduleDirPath=%cd%
                 call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
                 set moduleId=!moduleSettingValue!
 
                 call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "External" errors
-            ) else (                                                           REM Internal module
+                if "!errors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleId!] !errors!!LF!
+
+            ) else (                                                         REM Internal module
 
                 set moduleDirPath=!modulesDirPath!\!moduleDirName!
                 call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!moduleDirPath!\modulesettings.json"
                 set moduleId=!moduleSettingValue!
 
                 call :DoModuleInstall "!moduleId!" "!moduleDirPath!" "Internal" errors
+                if "!errors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleId!] !errors!!LF!
             )
-            if "!moduleInstallErrors!" NEQ "" set success=false
         )
     )
 )
 
+:: =============================================================================
+:: ...and we're done.
+
 call "!utilsScript!" WriteLine
 call "!utilsScript!" WriteLine "Setup complete" "White" "DarkGreen" !lineWidth!
 call "!utilsScript!" WriteLine
-
 call "!utilsScript!" timeSince "!mainSetupStarttime!" duration
 call "!utilsScript!" WriteLine "Total setup time !duration!" "!color_info!"
 
-if /i "!success!" == "false" exit /b 1
+if "!setupErrors!" == "" (
+    exit /b 0
+) else (
 
-exit /b 0
+    call "!utilsScript!" WriteLine
+    call "!utilsScript!" WriteLine "SETUP FAILED:" "!color_warn!"
+    rem call "!utilsScript!" WriteLine "!setupErrors!" "!color_error!"
+    echo !setupErrors!
+    
+    exit /b 1
+)
 
-
-REM Pop over the DoModuleInstall definition and leave.
+REM Pop over the subroutine definitions and leave.
 goto:eof
+
 
 :SetupJSONParser
 
     pushd !rootDirPath!\utils\ParseJSON
     if not exist ParseJSON.exe (
-        call "!utilsScript!" WriteLine "Building ParseJSON"
-        dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
-        if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
+        call "!utilsScript!" Write "Building ParseJSON..."
+        if /i "!verbosity!" == "quiet" (
+            dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
+        ) else (
+            dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release
+        )
+        if exist .\bin\Release\!dotNetTarget!\ move .\bin\Release\!dotNetTarget!\* . >nul
+
+        if exist ParseJSON.exe (
+            call "!utilsScript!" WriteLine "Success." !color_success!
+        ) else (
+            call "!utilsScript!" WriteLine "Failed. Exiting setup" !color_error!
+            popd
+            exit /b 1
+        )
     )
+
     popd
     exit /b
 
@@ -638,6 +734,7 @@ goto:eof
 
     exit /b
 
+
 REM Installs a module in the module's directory, and returns success 
 :DoModuleInstall moduleId moduleDirPath ModuleType errors
 
@@ -648,6 +745,9 @@ REM Installs a module in the module's directory, and returns success
     set moduleType=%~3
 
     set moduleSetupStarttime=%time%
+
+    REM Set the error message value for this module install operation
+    set "moduleInstallErrors="
 
     REM Get the module name, version, runtime location and python version from
     REM the modulesettings.
@@ -706,6 +806,14 @@ REM Installs a module in the module's directory, and returns success
 
         REM Excluded?
         if /i "!item!" == "^!!platform!" (
+            REM echo Negative match of !platform! against !item!
+            set can_install=false
+            goto :end_platform_loop
+        )
+
+        REM alternative excluded. "ǃ" here is U+01c3, not the usual U+0021
+        if /i "!item!" == "ǃ!platform!" (
+            REM echo Negative match of !platform! against !item!
             set can_install=false
             goto :end_platform_loop
         )
@@ -719,8 +827,10 @@ REM Installs a module in the module's directory, and returns success
 
     if /i "!can_install!" == "false" (
         call "!utilsScript!" WriteLine "This module cannot be installed on this system" !color_warn!
-        exit /b 1
+        exit /b
     )
+
+    call :SaveState
 
     if /i "!allowSharedPythonInstallsForModules!" == "false" (
         REM if moduleDirPath contains '/modules/' and runtimeLocation != 'Local'
@@ -763,9 +873,8 @@ REM Installs a module in the module's directory, and returns success
     call :SetupPythonPaths "!runtimeLocation!" !pythonVersion!
 
     if /i "!verbosity!" neq "quiet" (
-        set announcement=Variable Dump
         call "!utilsScript!" WriteLine
-        call "!utilsScript!" WriteLine "!announcement!" "White" "Blue" !lineWidth!
+        call "!utilsScript!" WriteLine "Variable Dump" "White" "Blue" !lineWidth!
         call "!utilsScript!" WriteLine
         call "!utilsScript!" WriteLine "moduleName          = !moduleName!"          "!color_info!"
         call "!utilsScript!" WriteLine "moduleId            = !moduleId!"            "!color_info!"
@@ -780,9 +889,6 @@ REM Installs a module in the module's directory, and returns success
         call "!utilsScript!" WriteLine "moduleStartFilePath = !moduleStartFilePath!" "!color_info!"
     )
 
-    REM Set the global error message value
-    set moduleInstallErrors=
-
     call "!utilsScript!" WriteLine "!moduleType! module install" !color_mute!
 
     if exist "!moduleDirPath!\install.bat" (
@@ -795,18 +901,18 @@ REM Installs a module in the module's directory, and returns success
                 call "!utilsScript!" WriteLine "Installing Python !pythonVersion!"
                 call "%utilsScript%" SetupPython
                 if errorlevel 1 set moduleInstallErrors=Unable to install Python !pythonVersion!
+                if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - !moduleInstallErrors!!LF!
             )
         )
 
         REM Install the module, but only if there were no issues installing
         REM python (or a python install wasn't needed)
         if /i "!moduleInstallErrors!" == "" if /i "!selfTestOnly!" == "false" (
-            set currentDir=%cd%
+
             call "!moduleDirPath!\install.bat" install
-            REM if errorlevel 1 if "!moduleInstallErrors!" == "" (
-            REM    set moduleInstallErrors=!moduleName! failed to install
-            REM )
-            cd "!currentDir!"
+            if errorlevel 1 if "!moduleInstallErrors!" == "" set moduleInstallErrors=failed to install
+
+            if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleName!] !moduleInstallErrors!!LF!
         )
 
         REM If a python version has been specified then we'll automatically
@@ -826,12 +932,14 @@ REM Installs a module in the module's directory, and returns success
                     )
 
                     call "!utilsScript!" InstallRequiredPythonPackages 
-                    if errorlevel 1 set moduleInstallErrors=Unable to install Python packages for !moduleName!
+                    if errorlevel 1 set moduleInstallErrors=Unable to install Python packages
+                    if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleName!] !moduleInstallErrors!!LF!
 
                     REM With the move to having modules include our SDK PyPi, we no longer need this.
                     REM call "!utilsScript!" WriteLine "Installing Python packages for the CodeProject.AI Server SDK"
                     REM call "!utilsScript!" InstallRequiredPythonPackages "%sdkPath%\Python"
                     REM if errorlevel 1 set moduleInstallErrors=Unable to install Python packages for CodeProject SDK
+                    REM if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleName!] !moduleInstallErrors!!LF!
                 )
 
                 call "!utilsScript!" downloadModels 
@@ -846,15 +954,18 @@ REM Installs a module in the module's directory, and returns success
             if /i "!moduleInstallErrors!" == "" (
                 if /i "!selfTestOnly!" == "false" (
                     call "!utilsScript!" WriteLine "Executing post-install script for !moduleName!"
-                    set currentDir=%cd%
+
                     call "!moduleDirPath!\post_install.bat" post-install
-                    if errorlevel 1 set moduleInstallErrors=Error running post-install script
-                    cd "!currentDir!"
+                    if errorlevel 1 if "!moduleInstallErrors!" == "" set moduleInstallErrors=Error running post-install script
+
+                    if "!moduleInstallErrors!" NEQ "" set setupErrors=!setupErrors!!LF! - [!moduleName!] !moduleInstallErrors!!LF!
                 )
             ) else (
-                call "!utilsScript!" WriteLine "Skipping post install due to install error (!moduleInstallErrors!)" !color_warn!
+                call "!utilsScript!" WriteLine "Skipping post install due to install error" !color_warn!
             )
         )
+
+        if "!moduleInstallErrors!" NEQ "" call "!utilsScript!" WriteLine "Install failed: !moduleInstallErrors!" "!color_error!"
 
         REM Perform a self-test
         if /i "!noSelfTest!" == "false" if "!moduleInstallErrors!" == "" (
@@ -889,7 +1000,7 @@ REM Installs a module in the module's directory, and returns success
                 REM   !Runtime! "!moduleStartFilePath!" --selftest
 
                 set "exePath=.\"
-                REM if /i "!executionEnvironment!" == "Development" set "exePath=.\bin\Debug\net7.0\"
+                REM if /i "!executionEnvironment!" == "Development" set "exePath=.\bin\Debug\!dotNetTarget!\"
 
                 if exist "!exePath!!moduleStartFilePath!" (
                     set testRun=true
@@ -905,17 +1016,17 @@ REM Installs a module in the module's directory, and returns success
                 ) else (
                     call "!utilsScript!" WriteLine  "!exePath!!moduleStartFilePath! does not exist" !color_error!
                 )
-
             )
 
-            if "%errorlevel%" == "0" (
+            if errorlevel 1 (
+                set "moduleInstallErrors=Self test failed"
+                call "!utilsScript!" WriteLine "Self-test failed" !color_error!
+            ) else (
                 if /i "!testRun!" == "true" (
                     call "!utilsScript!" WriteLine "Self-test passed" !color_success!
                 ) else (
                     call "!utilsScript!" WriteLine "No self-test available" !color_warn!
                 )
-            ) else (
-                call "!utilsScript!" WriteLine "Self-test failed" !color_error!
             )
             
             if /i "%verbosity%" NEQ "quiet" (
@@ -929,10 +1040,31 @@ REM Installs a module in the module's directory, and returns success
         call "!utilsScript!" WriteLine "No install.bat present for !moduleName!" "!color_warn!"
     )
 
+    call :RestoreState
+
     call "!utilsScript!" timeSince "!moduleSetupStarttime!" duration
     call "!utilsScript!" WriteLine "Module setup time !duration!" "!color_info!"
 
     REM return result
-    set %~3=!moduleInstallErrors!
+    EndLocal & set "%~4=%moduleInstallErrors%"
+
+    exit /b
+
+
+REM Saves the state of the installation environment 
+:SaveState
+
+    set stateCurrentDir=%cd%
+    set stateVerbosity=!verbosity!
+    set stateOneStepPIP=!oneStepPIP!
+
+    exit /b
+
+REM Restores the state of the installation environment 
+:RestoreState
+
+    cd "!stateCurrentDir!"
+    set verbosity=!stateVerbosity!
+    set oneStepPIP=!stateOneStepPIP!
 
     exit /b

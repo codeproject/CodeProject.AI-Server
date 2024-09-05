@@ -6,27 +6,27 @@
 #
 # This script is called from the ObjectDetectionYOLOv5-6.2 directory using: 
 #
-#    bash ../../setup.sh
+#    bash ../../src/setup.sh
 #
 # The setup.sh script will find this install.sh file and execute it.
 #
 # For help with install scripts, notes on variables and methods available, tips,
-# and explanations, see /src/modules/install_script_help.md
+# and explanations, see /modules/install_script_help.md
 
 if [ "$1" != "install" ]; then
-    read -t 3 -p "This script is only called from: bash ../../setup.sh"
+    read -t 3 -p "This script is only called from: bash ../../src/setup.sh"
     echo
     exit 1 
 fi
 
 if [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || 
    [ "${edgeDevice}" = "Radxa ROCK"   ] || [ "${edgeDevice}" = "Jetson"    ]; then
-    module_install_errors="Unable to install on Pi, ROCK or Jetson hardware."
+    moduleInstallErrors="Unable to install on Pi, ROCK or Jetson hardware."
 fi
 
 # For Jetson, we need to install Torch before the other packages.
 # A huge thanks to QEngineering: https://qengineering.eu/install-pytorch-on-jetson-nano.html
-if [ "$module_install_errors" = "" ] && [ "$edgeDevice" = "Jetson" ]; then 
+if [ "$moduleInstallErrors" = "" ] && [ "$edgeDevice" = "Jetson" ]; then 
 
     # NOTE: Pytorch 2.0 and above uses CUDA 11. The Jetson Nano has CUDA 10.2.
     # Due to low-level GPU incompatibility, installing CUDA 11 on your Nano is 
@@ -52,7 +52,7 @@ if [ "$module_install_errors" = "" ] && [ "$edgeDevice" = "Jetson" ]; then
 fi
 
 # Install drivers for non Docker images
-if [ "$module_install_errors" = "" ] && [ "$inDocker" != true ] && [ "$os" = "linux" ] ; then
+if [ "$moduleInstallErrors" = "" ] && [ "$inDocker" != true ] && [ "$os" = "linux" ] ; then
 
     echo
 
@@ -84,10 +84,10 @@ if [ "$os_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
 fi
 
 # Download the models and store in /assets and /custom-models (already in place in docker)
-if [ "$module_install_errors" = "" ]; then
+if [ "$moduleInstallErrors" = "" ]; then
     getFromServer "models/" "models-yolo5-pt.zip"        "assets" "Downloading Standard YOLO models..."
     getFromServer "models/" "custom-models-yolo5-pt.zip" "custom-models" "Downloading Custom YOLO models..."
 fi
 
 # TODO: Check assets created and has files
-# module_install_errors=...
+# moduleInstallErrors=...

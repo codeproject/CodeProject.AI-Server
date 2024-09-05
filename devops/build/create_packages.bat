@@ -26,7 +26,13 @@ set includeDotNet=true
 :: Width of lines
 set lineWidth=70
 
+:: Set this to true to create packages for modules in the ..\CodeProject.AI-Modules
+:: folder
+set createExternalModulePackages=true
+
 ::set debug_json_parse=true
+
+set dotNetTarget=net8.0
 
 
 :: Basic locations
@@ -56,8 +62,7 @@ pushd %thisScriptDirPath%..\..
 set rootDirPath=%cd%
 popd
 set sdkPath=%rootDirPath%\%srcDir%\%sdkDir%
-set sdkScriptsDirPath=%sdkPath%\Scripts
-set utilsScriptsDirPath=%rootDirPath%\devops\scripts
+set utilsScriptsDirPath=%rootDirPath%\%srcDir%\scripts
 set utilsScript=!utilsScriptsDirPath!\utils.bat
 
 :: Override some values via parameters ::::::::::::::::::::::::::::::::::::::::
@@ -95,7 +100,7 @@ set utilsScript=!utilsScriptsDirPath!\utils.bat
 
 
 :: The location of directories relative to the root of the solution directory
-set modulesDirPath=!rootDirPath!\%srcDir%\!modulesDir!
+set modulesDirPath=!rootDirPath!\!modulesDir!
 set externalModulesDirPath=!rootDirPath!\..\!externalModulesDir!
 set downloadDirPath=!rootDirPath!\!downloadDir!
 
@@ -131,15 +136,16 @@ if /i "%verbosity%" neq "quiet" (
 set success=true
 
 pushd "!rootDirPath!\utils\ParseJSON"
-cd
 if not exist ParseJSON.exe (
     if /i "%verbosity%" neq "quiet" (
         dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release
-        if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* .
+        if exist .\bin\Release\!dotNetTarget!\ move .\bin\Release\!dotNetTarget!\* .
     ) else (
         dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
-        if exist .\bin\Release\net7.0\ move .\bin\Release\net7.0\* . >nul
+        if exist .\bin\Release\!dotNetTarget!\ move .\bin\Release\!dotNetTarget!\* . >nul
     )
+) else (
+    REM call "!utilsScript!" WriteLine "ParseJSON present"
 )
 popd
 
@@ -162,19 +168,21 @@ for /f "delims=" %%D in ('dir /a:d /b "!modulesDirPath!"') do (
     )
 )
 
-for /f "delims=" %%D in ('dir /a:d /b "!externalModulesDirPath!"') do (
+if /i "!createExternalModulePackages!" == "true" (
+    for /f "delims=" %%D in ('dir /a:d /b "!externalModulesDirPath!"') do (
 
-    set packageModuleDirName=%%~nxD
-    set packageModuleDirPath=!externalModulesDirPath!\!packageModuleDirName!
+        set packageModuleDirName=%%~nxD
+        set packageModuleDirPath=!externalModulesDirPath!\!packageModuleDirName!
 
-    call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!packageModuleDirPath!\modulesettings.json"
-    set packageModuleId=!moduleSettingValue!
+        call "!utilsScript!" GetModuleIdFromModuleSettingsFile "!packageModuleDirPath!\modulesettings.json"
+        set packageModuleId=!moduleSettingValue!
 
-    if /i "%verbosity%" neq "quiet" call "!utilsScript!" WriteLine "Processing !packageModuleDirName! (!packageModuleId!)"
+        if /i "%verbosity%" neq "quiet" call "!utilsScript!" WriteLine "Processing !packageModuleDirName! (!packageModuleId!)"
 
-    if "!packageModuleId!" neq "" (
-        call :DoModulePackage "!packageModuleId!" "!packageModuleDirName!" "!packageModuleDirPath!" errors
-        if "!moduleInstallErrors!" NEQ "" set success=false
+        if "!packageModuleId!" neq "" (
+            call :DoModulePackage "!packageModuleId!" "!packageModuleDirName!" "!packageModuleDirPath!" errors
+            if "!moduleInstallErrors!" NEQ "" set success=false
+        )
     )
 )
 
@@ -210,7 +218,7 @@ REM Creates a package for a module
         if "!includeDotNet!" == "false" if /i "!packageModuleId!" == "SentimentAnalysis"        set doPackage=false
 
         if "!doPackage!" == "false" (
-            call "!utilsScript!" WriteLine "Skipping packaging module !packageModuleId!..." "DarkRed"
+            call "!utilsScript!" WriteLine "Skipping packaging .NET module !packageModuleId!..." "Gray"
         ) else (
             REM Read the version from the modulesettings.json file and then pass this 
             REM version to the package.bat file.

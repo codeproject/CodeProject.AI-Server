@@ -3,7 +3,7 @@
 
     "ObjectDetectionYOLOv5-6.2": {
       "Name": "Object Detection (YOLOv5 6.2)",
-      "Version": "1.9.1",
+      "Version": "1.10.0",
 
       "PublishingInfo" : {
         "Description": "Provides Object Detection using YOLOv5 6.2 targeting CUDA 11.5+, PyTorch < 2.0 for newer GPUs.",
@@ -48,25 +48,27 @@
       "InstallOptions" : {
         "Platforms": [ "all", "!raspberrypi", "!jetson" ],
         "ModuleReleases": [               // Which server version is compatible with each version of this module.
-          { "ModuleVersion": "1.0",   "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-03-01" },
-          { "ModuleVersion": "1.2",   "ServerVersionRange": [ "2.1.0", "2.1.6"  ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
-          { "ModuleVersion": "1.3",   "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
-          { "ModuleVersion": "1.4",   "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-08-12", "ReleaseNotes": "PyTorch version downgrade" },
-          { "ModuleVersion": "1.5",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
-          { "ModuleVersion": "1.6",   "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" },
-          { "ModuleVersion": "1.6.1", "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-17", "ReleaseNotes": "Install for Linux" },
-          { "ModuleVersion": "1.7",   "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
-          { "ModuleVersion": "1.7.1", "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
-          { "ModuleVersion": "1.7.2", "ServerVersionRange": [ "2.3.5", "2.3.5"  ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Removing Raspberry Pi / Jetson support.", "Importance": "Minor" },
-          { "ModuleVersion": "1.7.3", "ServerVersionRange": [ "2.4.0", "2.4.0"  ], "ReleaseDate": "2023-12-03", "ReleaseNotes": "Installer updates for arm64, Mesh support." },
-          { "ModuleVersion": "1.7.4", "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
-          { "ModuleVersion": "1.7.5", "ServerVersionRange": [ "2.4.2", "2.4.7"  ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
-          { "ModuleVersion": "1.8.0", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
-          { "ModuleVersion": "1.8.1", "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC1" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
-          { "ModuleVersion": "1.8.2", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
-          { "ModuleVersion": "1.8.3", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Correction to module settings" },
-          { "ModuleVersion": "1.9.0", "ServerVersionRange": [ "2.5.0-RC6", "" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
-          { "ModuleVersion": "1.9.1", "ServerVersionRange": [ "2.5.2", ""     ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" }
+          { "ModuleVersion": "1.0",    "ServerVersionRange": [ "1.0",   "2.0.8"  ], "ReleaseDate": "2022-03-01" },
+          { "ModuleVersion": "1.2",    "ServerVersionRange": [ "2.1.0", "2.1.6"  ], "ReleaseDate": "2023-03-20", "ReleaseNotes": "Updated for CodeProject.AI Server 2.1" },
+          { "ModuleVersion": "1.3",    "ServerVersionRange": [ "2.1.7", "2.1.12" ], "ReleaseDate": "2023-04-29", "ReleaseNotes": "Updated module settings", "Importance": "Minor" },
+          { "ModuleVersion": "1.4",    "ServerVersionRange": [ "2.1",   "2.1.12" ], "ReleaseDate": "2023-08-12", "ReleaseNotes": "PyTorch version downgrade" },
+          { "ModuleVersion": "1.5",    "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-09", "ReleaseNotes": "Updated installer" },
+          { "ModuleVersion": "1.6",    "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-16", "ReleaseNotes": "Updates to help Blue Iris users" },
+          { "ModuleVersion": "1.6.1",  "ServerVersionRange": [ "2.2",   "2.2.4"  ], "ReleaseDate": "2023-09-17", "ReleaseNotes": "Install for Linux" },
+          { "ModuleVersion": "1.7",    "ServerVersionRange": [ "2.3.0", "2.3.0"  ], "ReleaseDate": "2023-10-01", "ReleaseNotes": "Updated to match new installer SDK." },
+          { "ModuleVersion": "1.7.1",  "ServerVersionRange": [ "2.3.1", "2.3.5"  ], "ReleaseDate": "2023-10-10", "ReleaseNotes": "Updated to match new installer SDK." },
+          { "ModuleVersion": "1.7.2",  "ServerVersionRange": [ "2.3.5", "2.3.5"  ], "ReleaseDate": "2023-11-10", "ReleaseNotes": "Removing Raspberry Pi / Jetson support.", "Importance": "Minor" },
+          { "ModuleVersion": "1.7.3",  "ServerVersionRange": [ "2.4.0", "2.4.0"  ], "ReleaseDate": "2023-12-03", "ReleaseNotes": "Installer updates for arm64, Mesh support." },
+          { "ModuleVersion": "1.7.4",  "ServerVersionRange": [ "2.4.1", "2.4.1"  ], "ReleaseDate": "2023-12-06", "ReleaseNotes": "Updated modulesettings schema", "Importance": "Minor" },
+          { "ModuleVersion": "1.7.5",  "ServerVersionRange": [ "2.4.2", "2.4.7"  ], "ReleaseDate": "2023-12-09", "ReleaseNotes": "Installer updates", "Importance": "Minor" },
+          { "ModuleVersion": "1.8.0",  "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC5" ], "ReleaseDate": "2024-01-06", "ReleaseNotes": "Additions for dynamic explorer UI" },
+          { "ModuleVersion": "1.8.1",  "ServerVersionRange": [ "2.5.0-RC1", "2.5.0-RC1" ], "ReleaseDate": "2024-01-13", "ReleaseNotes": "Changes to SDK" },
+          { "ModuleVersion": "1.8.2",  "ServerVersionRange": [ "2.5.0-RC6", "2.7.0" ], "ReleaseDate": "2024-01-16", "ReleaseNotes": "Updated modulesettings schema" },
+          { "ModuleVersion": "1.8.3",  "ServerVersionRange": [ "2.5.0-RC6", "2.7.0" ], "ReleaseDate": "2024-01-18", "ReleaseNotes": "Correction to module settings" },
+          { "ModuleVersion": "1.9.0",  "ServerVersionRange": [ "2.5.0-RC6", "2.7.0" ], "ReleaseDate": "2024-01-21", "ReleaseNotes": "Module performance statistics added" },
+          { "ModuleVersion": "1.9.1",  "ServerVersionRange": [ "2.5.2", "2.7.0"  ], "ReleaseDate": "2024-02-08", "ReleaseNotes": "Support for CodeProject.AI Server 2.5.2" },
+          { "ModuleVersion": "1.9.2",  "ServerVersionRange": [ "2.5.2", "2.7.0"  ], "ReleaseDate": "2024-02-26", "ReleaseNotes": "Corrections for backwards compatibility for 2.6.5" },
+          { "ModuleVersion": "1.10.0", "ServerVersionRange": [ "2.8.0", ""       ], "ReleaseDate": "2024-08-02", "ReleaseNotes": "Updated for server 2.8" }
         ]
       },
 

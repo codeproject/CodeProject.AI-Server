@@ -300,16 +300,33 @@ get_machine_architecture() {
     if command -v uname > /dev/null; then
         CPUName=$(uname -m)
         case $CPUName in
+        armv1*|armv2*|armv3*|armv4*|armv5*|armv6*)
+            echo "armv6-or-below"
+            return 0
+            ;;
         armv*l)
             echo "arm"
             return 0
             ;;
         aarch64|arm64)
+            if [ "$(getconf LONG_BIT)" -lt 64 ]; then
+                # This is 32-bit OS running on 64-bit CPU (for example Raspberry Pi OS)
+                echo "arm"
+                return 0
+            fi
             echo "arm64"
             return 0
             ;;
         s390x)
             echo "s390x"
+            return 0
+            ;;
+        ppc64le)
+            echo "ppc64le"
+            return 0
+            ;;
+        loongarch64)
+            echo "loongarch64"
             return 0
             ;;
         esac
@@ -328,7 +345,13 @@ get_normalized_architecture_from_architecture() {
     local architecture="$(to_lowercase "$1")"
 
     if [[ $architecture == \<auto\> ]]; then
-        echo "$(get_machine_architecture)"
+        machine_architecture="$(get_machine_architecture)"
+        if [[ "$machine_architecture" == "armv6-or-below" ]]; then
+            say_err "Architecture \`$machine_architecture\` not supported. If you think this is a bug, report it at https://github.com/dotnet/install-scripts/issues"
+            return 1
+        fi
+
+        echo $machine_architecture
         return 0
     fi
 
@@ -347,6 +370,14 @@ get_normalized_architecture_from_architecture() {
             ;;
         s390x)
             echo "s390x"
+            return 0
+            ;;
+        ppc64le)
+            echo "ppc64le"
+            return 0
+            ;;
+        loongarch64)
+            echo "loongarch64"
             return 0
             ;;
     esac
@@ -409,8 +440,13 @@ get_normalized_os() {
                 echo "$osname"
                 return 0
                 ;;
+            macos)
+                osname='osx'
+                echo "$osname"
+                return 0
+                ;;
             *)
-                say_err "'$user_defined_os' is not a supported value for --os option, supported values are: osx, linux, linux-musl, freebsd, rhel.6. If you think this is a bug, report it at https://github.com/dotnet/install-scripts/issues."
+                say_err "'$user_defined_os' is not a supported value for --os option, supported values are: osx, macos, linux, linux-musl, freebsd, rhel.6. If you think this is a bug, report it at https://github.com/dotnet/install-scripts/issues."
                 return 1
                 ;;
         esac
@@ -535,11 +571,47 @@ is_dotnet_package_installed() {
     local dotnet_package_path="$(combine_paths "$(combine_paths "$install_root" "$relative_path_to_package")" "$specific_version")"
     say_verbose "is_dotnet_package_installed: dotnet_package_path=$dotnet_package_path"
 
-    if [ -d "$dotnet_package_path" ]; then
-        return 0
-    else
+    if [ ! -d "$dotnet_package_path" ]; then
+        # say_err "$dotnet_package_path does not exist"
         return 1
+    else
+        # say_err "$dotnet_package_path exists"
+        return 0
     fi
+}
+
+# args:
+# downloaded file - $1
+# remote_file_size - $2
+validate_remote_local_file_sizes() 
+{
+    eval $invocation
+
+    local downloaded_file="$1"
+    local remote_file_size="$2"
+    local file_size=''
+
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        file_size="$(stat -c '%s' "$downloaded_file")"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        # hardcode in order to avoid conflicts with GNU stat
+        file_size="$(/usr/bin/stat -f '%z' "$downloaded_file")"
+    fi  
+    
+    if [ -n "$file_size" ]; then
+        say "Downloaded file size is $file_size bytes."
+
+        if [ -n "$remote_file_size" ] && [ -n "$file_size" ]; then
+            if [ "$remote_file_size" -ne "$file_size" ]; then
+                say "The remote and local file sizes are not equal. The remote file size is $remote_file_size bytes and the local size is $file_size bytes. The local package may be corrupted."
+            else
+                say "The remote and local file sizes are equal."
+            fi
+        fi
+        
+    else
+        say "Either downloaded or local package size can not be measured. One of them may be corrupted."      
+    fi 
 }
 
 # args:
@@ -663,13 +735,13 @@ construct_download_link() {
     local osname="$5"
 
     local download_link=null
-    if [[ "$runtime" == "dotnet" ]]; then
+    if [[ "$runtime" == "dotnet" ]] || [[ "$runtime" == "runtime" ]]; then
         download_link="$azure_feed/Runtime/$specific_version/dotnet-runtime-$specific_product_version-$osname-$normalized_architecture.tar.gz"
     elif [[ "$runtime" == "aspnetcore" ]]; then
         download_link="$azure_feed/aspnetcore/Runtime/$specific_version/aspnetcore-runtime-$specific_product_version-$osname-$normalized_architecture.tar.gz"
     elif [[ "$runtime" == "sdk" ]]; then
         download_link="$azure_feed/Sdk/$specific_version/dotnet-sdk-$specific_product_version-$osname-$normalized_architecture.tar.gz"
-    elif [[ "$runtime" == "aspnetcore" ]]; then
+    elif [ -z "$runtime" ]; then
         download_link="$azure_feed/Sdk/$specific_version/dotnet-sdk-$specific_product_version-$osname-$normalized_architecture.tar.gz"
     else
         return 1
@@ -921,25 +993,62 @@ copy_files_or_dirs_from_list() {
 }
 
 # args:
+# zip_uri - $1
+get_remote_file_size() {
+    local zip_uri="$1"
+
+    if machine_has "curl"; then
+        file_size=$(curl -sI  "$zip_uri" | grep -i content-length | awk '{ num = $2 + 0; print num }')
+    elif machine_has "wget"; then
+        file_size=$(wget --spider --server-response -O /dev/null "$zip_uri" 2>&1 | grep -i 'Content-Length:' | awk '{ num = $2 + 0; print num }')
+    else
+        say "Neither curl nor wget is available on this system."
+        return
+    fi
+
+    if [ -n "$file_size" ]; then
+        say "Remote file $zip_uri size is $file_size bytes."
+        echo "$file_size"
+    else
+        say_verbose "Content-Length header was not extracted for $zip_uri."
+        echo ""
+    fi
+}
+
+# args:
 # zip_path - $1
 # out_path - $2
+# remote_file_size - $3
 extract_dotnet_package() {
     eval $invocation
 
     local zip_path="$1"
     local out_path="$2"
+    local remote_file_size="$3"
 
     local temp_out_path="$(mktemp -d "$temporary_file_template")"
 
+    say "extract_dotnet_package: zip_path=$zip_path, temp_out_path=$temp_out_path, out_path=$out_path"
+
+    if [ ! -d "$temp_out_path" ]; then mkdir "$temp_out_path"; fi
+    
     local failed=false
-    tar -xzf "$zip_path" -C "$temp_out_path" > /dev/null || failed=true
+    if [ "$quiet" != true ]; then
+        tar -xzf "$zip_path" -C "$temp_out_path" > /dev/null || failed=true
+    else
+        tar -xzf "$zip_path" -C "$temp_out_path" || failed=true
+    fi
 
     local folders_with_version_regex='^.*/[0-9]+\.[0-9]+[^/]+/'
     find "$temp_out_path" -type f | grep -Eo "$folders_with_version_regex" | sort | copy_files_or_dirs_from_list "$temp_out_path" "$out_path" false
     find "$temp_out_path" -type f | grep -Ev "$folders_with_version_regex" | copy_files_or_dirs_from_list "$temp_out_path" "$out_path" "$override_non_versioned_files"
-
-    rm -rf "$temp_out_path"
-    rm -f "$zip_path" && say_verbose "Temporary zip file $zip_path was removed"
+    
+    validate_remote_local_file_sizes "$zip_path" "$remote_file_size"
+    
+    # rm -rf "$temp_out_path"
+    if [ -z ${keep_zip+x} ]; then
+        rm -f "$zip_path" && say_verbose "Temporary archive file $zip_path was removed"
+    fi
 
     if [ "$failed" = true ]; then
         say_err "Extraction failed"
@@ -1186,6 +1295,12 @@ get_download_link_from_aka_ms() {
     http_codes=$( echo "$response" | awk '$1 ~ /^HTTP/ {print $2}' )
     # They all need to be 301, otherwise some links are broken (except for the last, which is not a redirect but 200 or 404).
     broken_redirects=$( echo "$http_codes" | sed '$d' | grep -v '301' )
+    # The response may end without final code 2xx/4xx/5xx somehow, e.g. network restrictions on www.bing.com causes redirecting to bing.com fails with connection refused.
+    # In this case it should not exclude the last.
+    last_http_code=$(  echo "$http_codes" | tail -n 1 )
+    if ! [[ $last_http_code =~ ^(2|4|5)[0-9][0-9]$ ]]; then
+        broken_redirects=$( echo "$http_codes" | grep -v '301' )
+    fi
 
     # All HTTP codes are 301 (Moved Permanently), the redirect link exists.
     if [[ -z "$broken_redirects" ]]; then
@@ -1289,7 +1404,7 @@ generate_akams_links() {
         count=${#pathElems[@]}
         specific_version="${pathElems[count-2]}"
         unset IFS;
-        say_verbose ".NET Version: '$specific_version'."
+        say_verbose "Version: '$specific_version'."
 
         #Retrieve effective version
         effective_version="$(get_specific_product_version "$azure_feed" "$specific_version" "$download_link")"
@@ -1302,7 +1417,7 @@ generate_akams_links() {
 
         #  Check if the SDK version is already installed.
         if [[ "$dry_run" != true ]] && is_dotnet_package_installed "$install_root" "$asset_relative_path" "$effective_version"; then
-            say "$asset_name with version '$effective_version' is already installed."
+            say "gen akams links: $asset_name with version '$effective_version' is already installed."
             exit 0
         fi
 
@@ -1360,7 +1475,7 @@ generate_regular_links() {
 
     #  Check if the SDK version is already installed.
     if [[ "$dry_run" != true ]] && is_dotnet_package_installed "$install_root" "$asset_relative_path" "$effective_version"; then
-        say "$asset_name with version '$effective_version' is already installed."
+        say "gen reg links: $asset_name with version '$effective_version' is already installed."
         exit 0
     fi
 }
@@ -1438,10 +1553,11 @@ install_dotnet() {
     eval $invocation
     local download_failed=false
     local download_completed=false
+    local remote_file_size=0
 
     mkdir -p "$install_root"
-    zip_path="$(mktemp "$temporary_file_template")"
-    say_verbose "Zip path: $zip_path"
+    zip_path="${zip_path:-$(mktemp "$temporary_file_template")}"
+    say_verbose "Archive path: $zip_path"
 
     for link_index in "${!download_links[@]}"
     do
@@ -1465,7 +1581,7 @@ install_dotnet() {
                 say "Failed to download $link_type link '$download_link': $download_error_msg"
                 ;;
             esac
-            rm -f "$zip_path" 2>&1 && say_verbose "Temporary zip file $zip_path was removed"
+            rm -f "$zip_path" 2>&1 && say_verbose "Temporary archive file $zip_path was removed"
         else
             download_completed=true
             break
@@ -1478,8 +1594,10 @@ install_dotnet() {
         return 1
     fi
 
-    say "Extracting zip from $download_link"
-    extract_dotnet_package "$zip_path" "$install_root" || return 1
+    remote_file_size="$(get_remote_file_size "$download_link")"
+
+    say "Extracting archive from $download_link"
+    extract_dotnet_package "$zip_path" "$install_root" "$remote_file_size" || return 1
 
     #  Check if the SDK version is installed; if not, fail the installation.
     # if the version contains "RTM" or "servicing"; check if a 'release-type' SDK version is installed.
@@ -1488,7 +1606,7 @@ install_dotnet() {
         read -ra verArr <<< "$specific_version"
         release_version="${verArr[0]}"
         unset IFS;
-        say_verbose "Checking installation: version = $release_version"
+        say_verbose "Checking installation: looking for RTM/Service version = $release_version"
         if is_dotnet_package_installed "$install_root" "$asset_relative_path" "$release_version"; then
             say "Installed version is $effective_version"
             return 0
@@ -1496,7 +1614,7 @@ install_dotnet() {
     fi
 
     #  Check if the standard SDK version is installed.
-    say_verbose "Checking installation: version = $effective_version"
+    say_verbose "Checking installation: looking for version = $effective_version"
     if is_dotnet_package_installed "$install_root" "$asset_relative_path" "$effective_version"; then
         say "Installed version is $effective_version"
         return 0
@@ -1634,13 +1752,29 @@ do
             override_non_versioned_files=false
             non_dynamic_parameters+=" $name"
             ;;
+        --keep-zip|-[Kk]eep[Zz]ip)
+            keep_zip=true
+            non_dynamic_parameters+=" $name"
+            ;;
+        --zip-path|-[Zz]ip[Pp]ath)
+            shift
+            zip_path="$1"
+            ;;
         -?|--?|-h|--help|-[Hh]elp)
             script_name="$(basename "$0")"
             echo ".NET Tools Installer"
-            echo "Usage: $script_name [-c|--channel <CHANNEL>] [-v|--version <VERSION>] [-p|--prefix <DESTINATION>]"
+            echo "Usage:"
+            echo "       # Install a .NET SDK of a given Quality from a given Channel"
+            echo "       $script_name [-c|--channel <CHANNEL>] [-q|--quality <QUALITY>]"
+            echo "       # Install a .NET SDK of a specific public version"
+            echo "       $script_name [-v|--version <VERSION>]"
             echo "       $script_name -h|-?|--help"
             echo ""
             echo "$script_name is a simple command line interface for obtaining dotnet cli."
+            echo "    Note that the intended use of this script is for Continuous Integration (CI) scenarios, where:"
+            echo "    - The SDK needs to be installed without user interaction and without admin rights."
+            echo "    - The SDK installation doesn't need to persist across multiple CI runs."
+            echo "    To set up a development environment or to run apps, use installers rather than this script. Visit https://dotnet.microsoft.com/download to get the installer."
             echo ""
             echo "Options:"
             echo "  -c,--channel <CHANNEL>         Download from the channel specified, Defaults to \`$channel\`."
@@ -1675,7 +1809,7 @@ do
             echo "      -InstallDir"
             echo "  --architecture <ARCHITECTURE>      Architecture of dotnet binaries to be installed, Defaults to \`$architecture\`."
             echo "      --arch,-Architecture,-Arch"
-            echo "          Possible values: x64, arm, arm64 and s390x"
+            echo "          Possible values: x64, arm, arm64, s390x, ppc64le and loongarch64"
             echo "  --os <system>                    Specifies operating system to be used when selecting the installer."
             echo "          Overrides the OS determination approach used by the script. Supported values: osx, linux, linux-musl, freebsd, rhel.6."
             echo "          In case any other value is provided, the platform will be determined by the script based on machine configuration."
@@ -1701,6 +1835,8 @@ do
             echo "  --no-cdn,-NoCdn                    Disable downloading from the Azure CDN, and use the uncached feed directly."
             echo "  --jsonfile <JSONFILE>              Determines the SDK version from a user specified global.json file."
             echo "                                     Note: global.json must have a value for 'SDK:Version'"
+            echo "  --keep-zip,-KeepZip                If set, downloaded file is kept."
+            echo "  --zip-path, -ZipPath               If set, downloaded file is stored at the specified path."
             echo "  -?,--?,-h,--help,-Help             Shows this help message"
             echo ""
             echo "Install Location:"
@@ -1719,6 +1855,10 @@ do
     shift
 done
 
+say_verbose "Note that the intended use of this script is for Continuous Integration (CI) scenarios, where:"
+say_verbose "- The SDK needs to be installed without user interaction and without admin rights."
+say_verbose "- The SDK installation doesn't need to persist across multiple CI runs."
+say_verbose "To set up a development environment or to run apps, use installers rather than this script. Visit https://dotnet.microsoft.com/download to get the installer.\n"
 
 if [ "$internal" = true ] && [ -z "$(echo $feed_credential)" ]; then
     message="Provide credentials via --feed-credential parameter."
@@ -1734,11 +1874,6 @@ check_min_reqs
 calculate_vars
 # generate_regular_links call below will 'exit' if the determined version is already installed.
 generate_download_links
-
-say "Note that the intended use of this script is for Continuous Integration (CI) scenarios, where:"
-say "- The SDK needs to be installed without user interaction and without admin rights."
-say "- The SDK installation doesn't need to persist across multiple CI runs."
-say "To set up a development environment or to run apps, use installers rather than this script. Visit https://dotnet.microsoft.com/download to get the installer.\n"
 
 if [[ "$dry_run" = true ]]; then
     print_dry_run

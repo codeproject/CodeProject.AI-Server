@@ -1,5 +1,7 @@
 #! Python3.8
 
+numpy<2                         # Installing NumPy, a package for scientific computing
+
 # CPU specific Torch 1.13.0. Size ~830Mb
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==1.13.0+cpu               # Installing PyTorch, for Tensor computation and Deep neural networks
@@ -9,6 +11,6 @@ torchvision==0.14.0+cpu         # Installing TorchVision, for Computer Vision ba
 # Specific version because we have a patch
 ultralytics==8.1.2              # Installing Ultralytics package for object detection in images
 
-CodeProject-AI-SDK          # Installing the CodeProject.AI SDK
+CodeProject-AI-SDK              # Installing the CodeProject.AI SDK
 
 # last line empty.

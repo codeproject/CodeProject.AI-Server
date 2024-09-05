@@ -15,6 +15,9 @@ services:
       - TZ=America/Toronto
     volumes:
       - '/dev/bus/usb:/dev/bus/usb'                                   # Enable Coral USB
+      - codeproject_ai_data_cpu:/etc/codeproject/ai
+      - codeproject_ai_modules_cpu:/app/modules
+
 #     - '/opt/codeproject/ai:/app/modules'                            # Linux
 #     - '/Library/Application Support/CodeProject/AI/docker/modules:/app/modules' # macOS
 #     - 'C:\ProgramData\CodeProject\AI\docker\modules:/app/modules'   # Windows
@@ -31,6 +34,6 @@ services:
 #
 # And at the root level add a volumes section with the corresponding volumes:
 # 
-#volumes:
-#  codeproject_ai_data:
-#  codeproject_ai_modules:
+volumes:
+ codeproject_ai_data_cpu:
+ codeproject_ai_modules_cpu:

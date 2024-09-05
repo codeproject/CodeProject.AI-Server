@@ -37,7 +37,7 @@ pushd "${thisScriptDirPath}/../.." >/dev/null
 rootDir="$(pwd)"
 popd >/dev/null
 
-utilsScriptsDirPath="${rootDir}/devops/scripts"
+utilsScriptsDirPath="${rootDir}/src/scripts"
 externalModulesDir="${rootDir}/../CodeProject.AI-Modules"
 
 # import the utilities. This sets os, platform and architecture
@@ -301,14 +301,14 @@ if [ "$cleanAssets" = true ]; then
     writeLine 
 
     # Internal modules
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/custom-models"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5Net/LocalNugets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/assets"
-    removeDir "${rootDir}/src/modules/ObjectDetectionYOLOv5-6.2/custom-models"
+    removeDir "${rootDir}/modules/ObjectDetectionYOLOv5Net/assets"
+    removeDir "${rootDir}/modules/ObjectDetectionYOLOv5Net/custom-models"
+    removeDir "${rootDir}/modules/ObjectDetectionYOLOv5Net/LocalNugets"
+    removeDir "${rootDir}/modules/ObjectDetectionYOLOv5-6.2/assets"
+    removeDir "${rootDir}/modules/ObjectDetectionYOLOv5-6.2/custom-models"
 
 
-    # Esternal modules
+    # External modules
     removeDir "${externalModulesDir}/CodeProject.AI-ALPR/paddleocr"
     removeDir "${externalModulesDir}/ACodeProject.AI-LPR-RKNN/paddleocr"
     removeDir "${externalModulesDir}/CodeProject.AI-BackgroundRemover/models"
@@ -352,9 +352,9 @@ if [ "$cleanBuild" = true ]; then
 
     for dirName in "${dotNetModules[@]}"
     do
-        removeDir "${rootDir}/src/modules/${dirName}/bin/"
-        removeDir "${rootDir}/src/modules/${dirName}/obj/"
-        rm "${rootDir}/src/modules/${dirName}/${dirName}-*"
+        removeDir "${rootDir}/modules/${dirName}/bin/"
+        removeDir "${rootDir}/modules/${dirName}/obj/"
+        rm "${rootDir}/modules/${dirName}/${dirName}-*"
     done
     for dirName in "${dotNetExternalModules[@]}"
     do
@@ -374,13 +374,13 @@ if [ "$cleanBuild" = true ]; then
     cleanSubDirs "${rootDir}/Installers/Windows" "obj/Debug/"
     cleanSubDirs "${rootDir}/Installers/Windows" "obj/Release/"
 
-    removeDir "${rootDir}/src/SDK/Utilities/ParseJSON/bin"
-    removeDir "${rootDir}/src/SDK/Utilities/ParseJSON/obj"
-    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.deps.json"
-    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.dll"
-    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.exe"
-    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json"
-    rm "${rootDir}/src/SDK/Utilities/ParseJSON/ParseJSON.xml"
+    removeDir "${rootDir}/utils/ParseJSON/bin"
+    removeDir "${rootDir}/utils/ParseJSON/obj"
+    rm "${rootDir}/utils/ParseJSON/ParseJSON.deps.json"
+    rm "${rootDir}/utils/ParseJSON/ParseJSON.dll"
+    rm "${rootDir}/utils/ParseJSON/ParseJSON.exe"
+    rm "${rootDir}/utils/ParseJSON/ParseJSON.runtimeconfig.json"
+    rm "${rootDir}/utils/ParseJSON/ParseJSON.xml"
 
     cleanSubDirs "${rootDir}/src/demos/clients"      "bin/Debug/"
     cleanSubDirs "${rootDir}/src/demos/clients"      "bin/Release/"
@@ -429,7 +429,7 @@ if [ "$cleanInstallCurrentOS" = true ]; then
     # Clean module python venvs
     for dirName in "${pythonModules[@]}"
     do
-        removeDir "${rootDir}/src/modules/${dirName}/bin/${os}/"
+        removeDir "${rootDir}/modules/${dirName}/bin/${os}/"
     done
     for dirName in "${pythonExternalModules[@]}"
     do
@@ -453,7 +453,7 @@ if [ "$cleanInstallAll" = true ]; then
     # Clean module python venvs
     for dirName in "${pythonModules[@]}"
     do
-        removeDir "${rootDir}/src/modules/${dirName}/bin/"
+        removeDir "${rootDir}/modules/${dirName}/bin/"
     done
     for dirName in "${pythonExternalModules[@]}"
     do

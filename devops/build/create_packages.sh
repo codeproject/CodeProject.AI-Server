@@ -26,6 +26,12 @@ includeDotNet=true
 # Width of lines
 lineWidth=70
 
+# Set this to true to create packages for modules in the ..\CodeProject.AI-Modules
+# folder
+createExternalModulePackages=true
+
+dotNetTarget="net8.0"
+
 
 # Basic locations
 
@@ -55,8 +61,7 @@ pushd "${thisScriptDirPath}/../.." >/dev/null
 rootDirPath="$(pwd)"
 popd >/dev/null
 sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
-sdkScriptsDirPath="${sdkPath}/Scripts"
-utilsScriptsDirPath="${rootDirPath}/devops/scripts"
+utilsScriptsDirPath="${rootDirPath}/src/scripts"
 
 # Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
 
@@ -178,7 +183,7 @@ function doModulePackage () {
 
 
 # The location of directories relative to the root of the solution directory
-modulesDirPath="${rootDirPath}/${srcDirName}/${modulesDir}"
+modulesDirPath="${rootDirPath}//${modulesDir}"
 externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
 downloadDirPath="${rootDirPath}/${downloadDir}"
 
@@ -190,7 +195,7 @@ writeLine "$scriptTitle" 'DarkCyan' 'Default' $lineWidth
 writeLine 
 writeLine '======================================================================' 'DarkGreen'
 writeLine 
-writeLine '                   CodeProject.AI Packager                           ' 'DarkGreen'
+writeLine '                   CodeProject.AI Packager                            ' 'DarkGreen'
 writeLine 
 writeLine '======================================================================' 'DarkGreen'
 writeLine 
@@ -210,7 +215,7 @@ fi
 success='true'
 
 # Walk through the internal modules directory and call the setup script in each dir
-for d in ${modulesDirPath}/*/ ; do
+for d in "${modulesDirPath}/"*/ ; do
     packageModuleDirPath=$d
     packageModuleDirName="$(basename $d)"
     packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
@@ -220,17 +225,18 @@ for d in ${modulesDirPath}/*/ ; do
     doModulePackage "$packageModuleId" "$packageModuleDirName" "$packageModuleDirPath"
 done
 
-# Walk through the external modules directory and call the setup script in each dir
-for d in ${externalModulesDirPath}/*/ ; do
-    packageModuleDirName="$(basename $d)"
-    packageModuleDirPath=$d
+if [ "$createExternalModulePackages" == "true" ]; then
+    # Walk through the external modules directory and call the setup script in each dir
+    for d in "${externalModulesDirPath}/"*/ ; do
+        packageModuleDirName="$(basename $d)"
+        packageModuleDirPath=$d
 
-    packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
-    if [ "${packageModuleId}" == "" ]; then continue; fi
+        packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
+        if [ "${packageModuleId}" == "" ]; then continue; fi
 
-    doModulePackage "$packageModuleId" "$packageModuleDirName" "$packageModuleDirPath"
-done
-
+        doModulePackage "$packageModuleId" "$packageModuleDirName" "$packageModuleDirPath"
+    done
+fi
 
 writeLine
 writeLine "                Modules packaging Complete" "White" "DarkGreen" $lineWidth

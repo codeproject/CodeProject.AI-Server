@@ -8,7 +8,7 @@
 :: and explanations, see /src/modules/install_script_help.md
 
 @if "%1" NEQ "post-install" (
-    echo This script is only called from ..\..\setup.bat
+    echo This script is only called from ..\..\..\setup.bat
     @pause
     @goto:eof
 )

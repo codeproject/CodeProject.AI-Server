@@ -24,8 +24,12 @@ download() {
     [[ $downloadspage =~ $1 ]]
     linkpage=$(wget -qO - https://dotnet.microsoft.com${BASH_REMATCH[1]})
 
+    # echo "REMATCH: ${BASH_REMATCH[1]}"
+
     matchdl='id="directLink" href="([^"]*)"'
     [[ $linkpage =~ $matchdl ]]
+
+    # echo "REMATCH 2: ${BASH_REMATCH[1]}"
     wget -O $2 "${BASH_REMATCH[1]}"
 }
 

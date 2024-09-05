@@ -144,7 +144,7 @@ namespace CodeProject.AI.Server.Models
         /// Gets or sets the download URL of the model package file.
         /// </summary>
         /// <remarks>POST-LOAD: This needs to be set in a post-load step.</remarks>
-        public string? PackageDownloadUrl { get; set; } // => StorageUrl + PackageFilename;
+        public string? PackageDownloadUrl { get; set; } // => AssetStorageUrl + PackageFilename;
 
         /// <summary>
         /// Gets or sets the size of the model package file in bytes.

@@ -6,15 +6,15 @@
 #
 # This script is called from the ObjectDetectionYOLOv5Net directory using: 
 #
-#    bash ../../setup.sh
+#    bash ../../src/setup.sh
 #
 # The setup.sh script will find this install.sh file and execute it.
 #
 # For help with install scripts, notes on variables and methods available, tips,
-# and explanations, see /src/modules/install_script_help.md
+# and explanations, see /modules/install_script_help.md
 
 if [ "$1" != "install" ]; then
-    read -t 3 -p "This script is only called from: bash ../../setup.sh"
+    read -t 3 -p "This script is only called from: bash ../../src/setup.sh"
     echo
     exit 1 
 fi
@@ -33,7 +33,7 @@ if [ "${executionEnvironment}" = "Production" ] || [ "${launchedBy}" = "server" 
 else
     pushd "$moduleDirPath" >/dev/null
     writeLine "Building project..." "$color_info"
-    dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/net7.0" >/dev/null
+    dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/${dotNetTarget}" >/dev/null
     popd >/dev/null
 
     getFromServer "libraries/" "ObjectDetectionYOLOv5NetNugets.zip" "LocalNugets" "Downloading Nuget packages..."
@@ -71,4 +71,4 @@ if [ "$os" = "macos" ]; then
 fi
 
 # TODO: Check assets created and has files
-# module_install_errors=...
+# moduleInstallErrors=...

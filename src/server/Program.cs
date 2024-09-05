@@ -17,8 +17,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK.Modules;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Backend;
 using CodeProject.AI.Server.Modules;
@@ -51,6 +51,8 @@ namespace CodeProject.AI.Server
         static Program()
         {
             ApplicationRootPath = GetAppRootPath();
+            // I also need this in the ModuleInstaller class.
+            ModuleInstaller.ApplicationRootPath = ApplicationRootPath;
         }
 
         /// <summary>
@@ -85,7 +87,7 @@ namespace CodeProject.AI.Server
             string  os           = SystemInfo.OperatingSystem.ToLower();
             string  architecture = SystemInfo.Architecture.ToLower();
             string  edgeDevice   = SystemInfo.EdgeDevice.ToLower().Replace(" ", string.Empty);
-            string? runtimeEnv   = SystemInfo.RuntimeEnvironment == SDK.Common.RuntimeEnvironment.Development
+            string? runtimeEnv   = SystemInfo.RuntimeEnvironment == SDK.Utils.RuntimeEnvironment.Development
                                  ? Constants.Development : string.Empty;
 
             // GetProcessStatus a directory for the given platform that allows modules to store persisted data
@@ -185,9 +187,6 @@ namespace CodeProject.AI.Server
                 _logger = host.Services.GetService<ILogger<Program>>();
                 if (_logger != null)
                 {
-                    string installModulesFile = ModuleInstaller.InstallModulesFileName;
-                    _logger.LogDebug($"Settings file: {installModulesFile} exists: {File.Exists(installModulesFile)}");
-
                     string systemInfo = SystemInfo.GetSystemInfo();
                     foreach (string line in systemInfo.Split('\n'))
                         _logger.LogInformation("** " + line.TrimEnd());
@@ -257,7 +256,7 @@ namespace CodeProject.AI.Server
             // Start from this assembly. We'll work our way up
             string rootPath = AppContext.BaseDirectory;
 
-            // The server (this program) is under /src/server/bin/Debug/net7.0 while debugging, or
+            // The server (this program) is under /src/server/bin/Debug/net8.0 while debugging, or
             // maybe under Release, but when deployed it's simply under /server. 
             // ASSUMPTION: There is no folder called "server" between /server and this assembly.
             // ASSUMPTION: This application was not installed in a folder named 'src'.
@@ -294,7 +293,7 @@ namespace CodeProject.AI.Server
             string offsetDir = SystemInfo.IsDevelopmentCode? "src/" : string.Empty;
             
             // Let's not do this for dev
-            if (SystemInfo.RuntimeEnvironment == CodeProject.AI.SDK.Common.RuntimeEnvironment.Development)
+            if (SystemInfo.RuntimeEnvironment == CodeProject.AI.SDK.Utils.RuntimeEnvironment.Development)
                 return;
 
             if (SystemInfo.IsWindows)
@@ -364,8 +363,8 @@ namespace CodeProject.AI.Server
             if (!SystemInfo.IsWindows)
                 return;
                 
-            string baseDir      = GetAppRootPath();
-            string scriptsDir = Path.Combine(baseDir, "devops/scripts/");
+            string baseDir         = GetAppRootPath();
+            string utilsScriptsDir = Path.Combine(baseDir, "devops/utils/");
 
             try
             {
@@ -373,14 +372,14 @@ namespace CodeProject.AI.Server
 
                 ProcessStartInfo procStartInfo;
                 if (SystemInfo.IsWindows)
-                    procStartInfo = new ProcessStartInfo(Path.Combine(scriptsDir, "stop_all.bat"));
+                    procStartInfo = new ProcessStartInfo(Path.Combine(utilsScriptsDir, "stop_all.bat"));
                 else if (SystemInfo.IsMacOS)
-                    procStartInfo = new ProcessStartInfo("bash", '"' + Path.Combine(scriptsDir, "stop_all.sh") + '"');
+                    procStartInfo = new ProcessStartInfo("bash", '"' + Path.Combine(utilsScriptsDir, "stop_all.sh") + '"');
                 else
-                    procStartInfo = new ProcessStartInfo("bash", Path.Combine(scriptsDir, "stop_all.sh"));
+                    procStartInfo = new ProcessStartInfo("bash", Path.Combine(utilsScriptsDir, "stop_all.sh"));
 
                 procStartInfo.UseShellExecute  = false;
-                procStartInfo.WorkingDirectory = Path.GetDirectoryName(scriptsDir);
+                procStartInfo.WorkingDirectory = Path.GetDirectoryName(utilsScriptsDir);
                 procStartInfo.CreateNoWindow   = false;
                 procStartInfo.WindowStyle      = ProcessWindowStyle.Hidden;
 
@@ -707,8 +706,7 @@ namespace CodeProject.AI.Server
             demoModulesDirPath            = Text.FixSlashes(demoModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
             demoModulesDirPath            = Path.GetFullPath(demoModulesDirPath);
             externalModulesDirPath        = Text.FixSlashes(externalModulesDirPath?.Replace("%ROOT_PATH%", rootPath));
-            if (!string.IsNullOrWhiteSpace(externalModulesDirPath))
-                externalModulesDirPath    = Path.GetFullPath(externalModulesDirPath);
+            externalModulesDirPath        = Path.GetFullPath(externalModulesDirPath);
 
             // create the directories if the don't exist
             if (!Directory.Exists(runtimesDirPath))

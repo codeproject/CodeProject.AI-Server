@@ -14,7 +14,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<!-- <Platform>AnyCPU</Platform> - this is set below -->
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
@@ -41,21 +41,21 @@
 
 	<!-- We will make a best guess as to what type of GPU support is possible here -->
 	<PropertyGroup>
-		<GpuType>CPU</GpuType>
-		<GpuType Condition="'$(IsWindows)'=='true'">DirectML</GpuType>						<!-- Windows -->
-		<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'!='true'">CUDA</GpuType>	<!-- Linux -->
-		<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'=='true'">CPU</GpuType>	<!-- Raspberry Pi, Orange Pi, Radxa ROCK, Jetson -->
-		<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'!='true'">CPU</GpuType>		<!-- Mac Intel -->
-		<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'">MPS</GpuType>		<!-- Mac Apple Silicon -->
+		<GpuType>CPU</GpuType>                                                                  <!-- Windows arm64 -->
+		<GpuType Condition="'$(IsWindows)'=='true' And '$(IsArm64)'!='true'">DirectML</GpuType>	<!-- Windows x64   -->
+		<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'!='true'">CUDA</GpuType>	    <!-- Linux         -->
+		<GpuType Condition="'$(IsLinux)'=='true' And '$(IsArm64)'=='true'">CPU</GpuType>	    <!-- Raspberry Pi, Orange Pi, Radxa ROCK, Jetson -->
+		<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'!='true'">CPU</GpuType>		    <!-- Mac Intel     -->
+		<GpuType Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'">MPS</GpuType>		    <!-- Mac Apple Silicon -->
 	</PropertyGroup>
 
 	<ItemGroup>
 		<!-- Common packages required on all GPU types -->
 		<PackageReference Include="CodeProject.AI.Module.SDK" Version="1.0.1" />
 		<PackageReference Include="Yolov8.Net" Version="1.1.4" />
-		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
 		<PackageReference Include="SkiaSharp" Version="2.88.6" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
 
 		<!-- Hardware Specific packages. Note that for CUDA, even if there may not be any actual
 		     CUDA hardware available, the package will still run fine. It's big, but if it does
@@ -63,9 +63,9 @@
 		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.3" Condition="'$(GpuType)'=='CPU'" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.16.3" Condition="'$(GpuType)'=='CUDA'" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.3" Condition="'$(GpuType)'=='MPS'" />
-		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.16.3" Condition="'$(GpuType)'=='DirectML'" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.18.1" Condition="'$(GpuType)'=='DirectML'" />
 		<!-- https://github.com/microsoft/onnxruntime/issues/12677#issuecomment-1443802719 -->
-		<PackageReference Include="Microsoft.AI.DirectML" Version="1.13.0" Condition="'$(GpuType)'=='DirectML'" />
+		<PackageReference Include="Microsoft.AI.DirectML" Version="1.15.0" Condition="'$(GpuType)'=='DirectML'" />
 
 	</ItemGroup>
 
@@ -138,7 +138,7 @@
 
 	<!--
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)'== 'Release'">
-	  <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net7.0&#xD;&#xA;cd $(ProjectDir)" />
+	  <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net8.0&#xD;&#xA;cd $(ProjectDir)" />
 	</Target>
 	-->
 

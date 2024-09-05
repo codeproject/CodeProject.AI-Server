@@ -7,4 +7,4 @@ opencv-python               # Installing OpenCV, the Computer Vision library for
 # opencv-python-headless    # OpenCV headless is a leaner version with no GUI. This will
                             #   dramatically reduce the library size, but users must be aware
                             #   that some GUI functionlity (eg imshow) will not be available.
-numpy                       # Installing NumPy, a package for scientific computing
+numpy<2.0                   # Installing NumPy, a package for scientific computing

@@ -13,19 +13,21 @@
             "request": "launch",
             "preLaunchTask": "build-server",
             // "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
+            /*
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "pattern": "\\blistening on port: (\\d+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
+            */
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -71,26 +73,28 @@
 
         {
             "presentation": {
-                "group": "1 Build x64"
+                "group": "1 Build"
             },
-            "name": "Build All & Launch Server x64",
+            "name": "Build All & Launch Server",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-all",
             // "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
+            /*
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "pattern": "\\blistening on port: (\\d+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
+            */
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -106,12 +110,12 @@
         },        
         {
             "presentation": {
-                "group": "1 Build x64"
+                "group": "1 Build"
             },
-            "name": "Build All for x64",
+            "name": "Build All",
 
             "type": "python", 
-            "code":"#",  // dummy command
+            "code": "#",  // dummy command
             "console": "internalConsole",
             "request": "launch",
 
@@ -126,7 +130,7 @@
             }
         },
 
-
+        /*
         // Build Arm64 --------------------------------------------------------------
 
         {
@@ -138,19 +142,21 @@
             "request": "launch",
             "preLaunchTask": "build-all-arm64",
             // "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
+            / *
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "pattern": "\\blistening on port: (\\d+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
+            * /
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -184,7 +190,7 @@
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
         },
-
+        */
 
         // Launch -------------------------------------------------------------
         
@@ -196,19 +202,21 @@
             "name": "Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
+            /*
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "pattern": "\\blistening on port: (\\d+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
+            */
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -250,20 +258,22 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-server",
-            "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.exe",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server.exe",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net7.0/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server.dll",
             },
             "args": [
                 "--ModuleOptions:LaunchModules=false"
             ],
-            "cwd": "${workspaceFolder}/src/server/bin/Debug/net7.0/",
+            "cwd": "${workspaceFolder}/src/server/bin/Debug/net8.0/",
             "stopAtEntry": false,
+            /*
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "pattern": "\\blistening on port: (\\d+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
+            */
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -289,13 +299,13 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-yolo-net",
-            "program": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5Net/bin/Debug/net7.0/ObjectDetectionYOLOv5Net",
+            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net8.0/ObjectDetectionYOLOv5Net",
             "linux": {
-                "program": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5Net/bin/Debug/net7.0/ObjectDetectionYOLOv5Net.dll",
+                "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net8.0/ObjectDetectionYOLOv5Net.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5Net", 
+            "cwd": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net", 
             "stopAtEntry": false,
             "console": "internalConsole",
             "requireExactSource": false,
@@ -315,12 +325,12 @@
                 "hidden": false
             },
             "name": "Object Detect YOLOv5 6.2",
-            "type": "python",
+            "type": "debugpy",
             "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
             "request": "launch",
             "program": "detect_adapter.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src/modules/ObjectDetectionYOLOv5-6.2",
+            "cwd": "${workspaceFolder}/modules/ObjectDetectionYOLOv5-6.2",
             "justMyCode": false,
             // "args": [ "--selftest" ],
             "env": {
@@ -366,6 +376,24 @@
 
         {
             "presentation": {
+                "group": "6 Utilities"
+            },
+
+            "name": "Build ParseJSON Release",
+
+            "type": "python", 
+            "code": "#",  // dummy command
+            "console": "internalConsole",
+            "request": "launch",
+            "preLaunchTask": "build-parsejson-release",
+            "cwd": "${workspaceFolder}/utils/ParseJSON/",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+
+        {
+            "presentation": {
                 "group": "6 Utilities",
                 "hidden": false
             },
@@ -373,9 +401,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-parsejson",
-            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net7.0/ParseJSON",
+            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net8.0/ParseJSON",
             "linux": {
-                "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net7.0/ParseJSON.dll",
+                "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net8.0/ParseJSON.dll",
             },
             "args": [ "$.Modules.ALPR.Platforms", "test.json" ],
             "cwd": "${workspaceFolder}/utils/ParseJSON/",
@@ -411,6 +439,62 @@
                 "group": "9 Demo clients",
                 // "order": 90
             },
+            "name": "Golang demo",
+            "type": "go", 
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/src/demos/clients/Go/object-detect.go",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/demos/clients/Go/",
+            "preLaunchTask": "build-demo-go",
+            "env": {
+                "RUNNING_IN_VSCODE": "true"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "9 Demo clients",
+                // "order": 90
+            },
+            "name": "Node.js Demo",
+            "type": "node",
+            "request": "launch",
+            "skipFiles": ["<node_internals>/**"],
+            "program": "${workspaceFolder}/src/demos/clients/Node/object-detect/app.js",
+            "preLaunchTask": "build-demo-node",
+            "cwd": "${workspaceFolder}/src/demos/clients/Node/object-detect/",
+            "outFiles": ["${workspaceFolder}/src/demos/clients/Node/object-detect/*.js"],
+            "env": {
+                "RUNNING_IN_VSCODE": "true"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "9 Demo clients",
+                // "order": 90
+            },
+            "name": "Rust Demo",
+            "type": "python", 
+            "code": "#",  // dummy command
+            "console": "internalConsole",
+            "request": "launch",
+            "program": "object-detect.exe",
+            "args": [ "run" ],
+            "cwd": "${workspaceFolder}/src/demos/clients/Rust/object-detect/target/debug",
+            "preLaunchTask": "build-deno-rust",
+            "stopOnEntry": false,
+            "env": {
+                "RUNNING_IN_VSCODE": "true"
+            }
+        },
+
+        {
+            "presentation": {
+                "group": "9 Demo clients",
+                // "order": 90
+            },
             "name": "[Win] Build Explorer App",
 
             "type": "python", 
@@ -418,7 +502,7 @@
             "console": "internalConsole",
             "request": "launch",
             "preLaunchTask": "build-explorer",
-            "cwd": "${workspaceFolder}/demos/clients/dotNet/CodeProject.AI.Explorer/",
+            "cwd": "${workspaceFolder}/src/demos/clients/Net/CodeProject.AI.Explorer/",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -436,7 +520,7 @@
             "request": "launch",
             "preLaunchTask": "build-explorer",
             "windows": {
-                "program": "${workspaceFolder}/demos/clients/dotNet/CodeProject.AI.Explorer/bin/Debug/net7.0-windows/CodeProject.AI.Explorer.exe",
+                "program": "${workspaceFolder}/src/demos/clients/Net/CodeProject.AI.Explorer/bin/Debug/net8.0-windows/CodeProject.AI.Explorer.exe",
             },
             "args": [],
             "cwd": "${workspaceFolder}",
@@ -455,12 +539,12 @@
                 "hidden": false
             },
             "name": "Racoon detector",
-            "type": "python",
+            "type": "debugpy",
             "python": "${workspaceFolder}/runtimes/bin/windows/python38/venv/bin/python",
             "request": "launch",
             "program": "racoon_detect.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/demos/clients/Python/ObjectDetect",
+            "cwd": "${workspaceFolder}/src/demos/clients/Python/ObjectDetect",
             "justMyCode": false,
             "env": {
                 "DEBUG_IN_VSCODE": "True",
@@ -488,16 +572,16 @@
             },
 
             "name": "Python Simple Module",
-            "type": "python",
+            "type": "debugpy",
             "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
             "request": "launch",
             // "program": "detect.py",
             "program": "detect_adapter.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/demos/modules/PythonSimple",
+            "cwd": "${workspaceFolder}/src/demos/modules/PythonSimple",
             "justMyCode": false,
-            "args": [ "-i", "${workspaceFolder}\\demos\\modules\\PythonSimple\\test\\home-office.jpg",
-                      "-a", "${workspaceFolder}\\demos\\modules\\PythonSimple\\assets\\",
+            "args": [ "-i", "${workspaceFolder}\\src\\demos\\modules\\PythonSimple\\test\\home-office.jpg",
+                      "-a", "${workspaceFolder}\\src\\demos\\modules\\PythonSimple\\assets\\",
                       "-t", "0.6"
                     ],
             "env": {
@@ -524,12 +608,12 @@
             },
 
             "name": "Python Long Process Module",
-            "type": "python",
+            "type": "debugpy",
             "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
             "request": "launch",
             "program": "long_process_demo_adapter.py",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/demos/modules/PythonLongProcess",
+            "cwd": "${workspaceFolder}/src/demos/modules/PythonLongProcess",
             "justMyCode": false,
             "args": [  ],
             "env": {
@@ -560,13 +644,13 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-demo-net",
-            "program": "${workspaceFolder}/demos/modules/DotNetSimple/bin/Debug/net7.0/DotNetSimple",
+            "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net8.0/DotNetSimple",
             "linux": {
-                "program": "${workspaceFolder}/demos/modules/DotNetSimple/bin/Debug/net7.0/DotNetSimple.dll",
+                "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net8.0/DotNetSimple.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",
-            "cwd": "${workspaceFolder}/demos/modules/DotNetSimple", 
+            "cwd": "${workspaceFolder}/src/demos/modules/DotNetSimple", 
             "stopAtEntry": false,
             "console": "internalConsole",
             "requireExactSource": false,
@@ -588,13 +672,13 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-demo_module_dotnetlongprocess",
-            "program": "${workspaceFolder}/demos/modules/DotNetLongProcess/bin/Debug/net7.0/DotNetLongProcess",
+            "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/net8.0/DotNetLongProcess",
             "linux": {
-                "program": "${workspaceFolder}/demos/modules/DotNetLongProcess/bin/Debug/net7.0/DotNetLongProcess.dll",
+                "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/net8.0/DotNetLongProcess.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",
-            "cwd": "${workspaceFolder}/demos/modules/DotNetLongProcess", 
+            "cwd": "${workspaceFolder}/src/demos/modules/DotNetLongProcess", 
             "stopAtEntry": false,
             "console": "internalConsole",
             "requireExactSource": false,

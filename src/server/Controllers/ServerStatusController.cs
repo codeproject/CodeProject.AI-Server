@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.Server.Modules;
 using CodeProject.AI.SDK.API;
-using System;
+using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Server.Controllers
 {

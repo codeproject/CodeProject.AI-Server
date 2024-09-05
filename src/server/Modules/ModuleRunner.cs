@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CodeProject.AI.SDK;
+
 using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK.Modules;
+using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Mesh;
 
 using Microsoft.Extensions.Hosting;
@@ -134,6 +135,12 @@ namespace CodeProject.AI.Server.Modules
                 _logger.LogError("No Background AI Modules specified");
                 return;
             }
+
+            //TODO: when in Docker, check if the Container ID has changed and if so, re-install the modules
+            // This is require because the installation of modules can modify the container's environment and
+            // the modules may need to be re-installed to reflect the new environment.
+            if (SystemInfo.IsDocker)
+                await _moduleInstaller.RerunSetupIfContainerIdChanged().ConfigureAwait(false);
 
             _logger.LogTrace("Starting Background AI Modules");
 

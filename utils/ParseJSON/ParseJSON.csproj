@@ -30,7 +30,7 @@
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<Platform>AnyCPU</Platform>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<DeleteExistingFiles>true</DeleteExistingFiles>
 	</PropertyGroup>
@@ -51,6 +51,11 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
   </PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="System.Text.Json" Version="8.0.0" Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'" /> <!-- Mac Apple Silicon -->
+	<PackageReference Include="System.Text.Json" Version="8.0.4" Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'" />  <!-- Everything else -->
+  </ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\src\SDK\NET\NET.csproj" />

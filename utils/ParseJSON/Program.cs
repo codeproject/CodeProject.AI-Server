@@ -18,19 +18,21 @@ namespace CodeProject.AI.Utilities
         static void Main(string[] args)
         {
 #if TEST_INPUT
-            // string jsonPath = "$.Modules.ALPR-4\\.1.Platforms";     // A string from an array
+            string jsonPath   = "$.Modules.ObjectDetectionYOLOv8.InstallOptions.Platforms";     // A string from an array
             // string jsonPath = "$.Modules.ObjectDetectionYOLOv8.InstallOptions.DownloadableModels[0]";
-            string jsonPath = "$.Modules.#keys[0]";
-            string filePath = "test.json";
+            // string jsonPath = "$.Modules.#keys[0]";
+            string filePath   = "test.json";
+            bool   encodeBang = false;
 #else
-            if (args.Length < 1 || args.Length > 2)
+            if (args.Length < 1 || args.Length > 3)
             {
                 Usage();
                 return;
             }
 
-            string jsonPath = args[0];
-            string filePath = args.Length > 1 ? args[1] : string.Empty;
+            string jsonPath   = args[0];
+            string filePath   = args.Length > 1 ? args[1] : string.Empty;
+            bool   encodeBang = args.Length > 2 ? args[2] == "true" : false;
 #endif
             JsonObject? jsonObject = null;
 
@@ -58,10 +60,17 @@ namespace CodeProject.AI.Utilities
                 var extractedValue = JsonUtils.ExtractValue(jsonObject, jsonPath);
                 if (extractedValue is not null)
                 {
+                    string? value;
                     if (extractedValue is string[] valueArray)
-                        Console.WriteLine(string.Join(",", valueArray));
+                        value = string.Join(",", valueArray);
                     else
-                        Console.WriteLine(extractedValue?.ToString());
+                        value = extractedValue?.ToString();
+
+                    // Windows CMD has makes dealing with "!" hard. Here we switch to an alternative
+                    if (encodeBang && value is not null)
+                       value = value.Replace("!", "ǃ"); // U+0021 -> U+01c3. Or could use ‼
+
+                    Console.WriteLine(value);
                 }
             }
         }
@@ -69,13 +78,15 @@ namespace CodeProject.AI.Utilities
         static void Usage()
         {
 #if Windows
-            Console.WriteLine("Usage: echo '{ json content... }' | ParseJSON 'key'");
+            Console.WriteLine("Usage: echo '{ json content... }' | ParseJSON 'key' [encode bangs]");
             Console.WriteLine("       ParseJSON 'key' file.json");
             Console.WriteLine("eg echo { \"name\": \"value\" } | ParseJSON $.name");
+            Console.WriteLine("encode bangs is true or false, and if true, '!' chars (U+0021) are converted to 'ǃ' chars (U+01c3).");
 #else
-            Console.WriteLine("Usage: echo '{ json content... }' | dotnet ParseJSON.dll 'key'");
+            Console.WriteLine("Usage: echo '{ json content... }' | dotnet ParseJSON.dll 'key' [encode bangs]");
             Console.WriteLine("       dotnet ParseJSON.dll 'key' file.json");
             Console.WriteLine("eg echo { \\\"name\\\": \\\"value\\\" } | dotnet ParseJSON.dll $.name");
+            Console.WriteLine("encode bangs is true or false, and if true, '!' chars (U+0021) are converted to 'ǃ' chars (U+01c3).");
 #endif
         }
     }

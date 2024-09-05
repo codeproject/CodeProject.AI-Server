@@ -286,15 +286,14 @@ namespace CodeProject.AI.Server.Modules
             _moduleOptions.ModulesDirPath                   = Path.GetFullPath(ExpandOption(_moduleOptions.ModulesDirPath)!);
             _moduleOptions.PreInstalledModulesDirPath       = Path.GetFullPath(ExpandOption(_moduleOptions.PreInstalledModulesDirPath)!);
             _moduleOptions.DemoModulesDirPath               = Path.GetFullPath(ExpandOption(_moduleOptions.DemoModulesDirPath)!);
-            if (!string.IsNullOrWhiteSpace(_moduleOptions.ExternalModulesDirPath))
-                _moduleOptions.ExternalModulesDirPath       = Path.GetFullPath(ExpandOption(_moduleOptions.ExternalModulesDirPath)!);
+            _moduleOptions.ExternalModulesDirPath           = Path.GetFullPath(ExpandOption(_moduleOptions.ExternalModulesDirPath)!);
             _moduleOptions.DownloadedModulePackagesDirPath  = Path.GetFullPath(ExpandOption(_moduleOptions.DownloadedModulePackagesDirPath)!);
             _moduleOptions.DownloadedModelsPackagesDirPath  = Path.GetFullPath(ExpandOption(_moduleOptions.DownloadedModelsPackagesDirPath)!);
             _moduleOptions.ModuleInstallerScriptsDirPath    = Path.GetFullPath(ExpandOption(_moduleOptions.ModuleInstallerScriptsDirPath)!);
 
             _moduleOptions.ModuleListUrl                    = ExpandOption(_moduleOptions.ModuleListUrl);
             _moduleOptions.ModelListUrl                     = ExpandOption(_moduleOptions.ModelListUrl);
-            _moduleOptions.ModelStorageUrl                  = ExpandOption(_moduleOptions.ModelStorageUrl);
+            _moduleOptions.AssetStorageUrl                  = ExpandOption(_moduleOptions.AssetStorageUrl);
             _moduleOptions.PythonRelativeInterpreterPath    = ExpandOption(_moduleOptions.PythonRelativeInterpreterPath);
 
             // Correct the slashes
@@ -335,8 +334,7 @@ namespace CodeProject.AI.Server.Modules
             value = value.Replace(PreinstalledModulesDirPathMarker,  _moduleOptions.PreInstalledModulesDirPath);
             value = value.Replace(ModulesDirPathMarker,     _moduleOptions.ModulesDirPath);
             value = value.Replace(DemoModulesDirPathMarker, _moduleOptions.DemoModulesDirPath);
-            if (!string.IsNullOrWhiteSpace(_moduleOptions.ExternalModulesDirPath))
-                value = value.Replace(ExternalModulesDirPath, _moduleOptions.ExternalModulesDirPath);
+            value = value.Replace(ExternalModulesDirPath,   _moduleOptions.ExternalModulesDirPath);
             value = value.Replace(PlatformMarker,           SystemInfo.Platform.ToLower());
             value = value.Replace(OSMarker,                 SystemInfo.OperatingSystem.ToLower());
             value = value.Replace(PythonPathMarker,         _moduleOptions.PythonRelativeInterpreterPath);

@@ -16,7 +16,7 @@ version=$2
 # and OS.
 
 configuration="Release"
-target="net7.0"
+target="${dotNetTarget}"
 
 declare -a gpuTypes
 gpuTypes[0]="GPU_NONE"
