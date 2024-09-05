@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 namespace CodeProject.AI.SDK
 {
     /// <summary>
-    /// Represents an HTTP client to get requests and return responses to the CodeProject.AI server.
+    /// Represents an HTTP client for modules that gets requests and returns responses to the
+    /// CodeProject.AI server.
     /// </summary>
     public class BackendClient
     {

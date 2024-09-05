@@ -3,7 +3,7 @@ using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 
-namespace CodeProject.AI.SDK
+namespace CodeProject.AI.SDK.Modules
 {
     /// <summary>
     /// Holds information on a given release of a module.
@@ -249,7 +249,12 @@ namespace CodeProject.AI.SDK
 
             bool available = true;  // Let's be optimistic
 
+            // If we don't know the current server version we're outta luck
             if (string.IsNullOrWhiteSpace(currentServerVersion))
+                available = false;
+
+            // If there are no actual module releases then again, SOL.
+            if ((module.InstallOptions?.ModuleReleases?.Length ?? 0) == 0)
                 available = false;
 
             string device = SystemInfo.EdgeDevice.Replace(" ", string.Empty);
@@ -258,26 +263,24 @@ namespace CodeProject.AI.SDK
             if (available)
             {
                 bool versionOK = false;
-                if (module.InstallOptions?.ModuleReleases?.Any() ?? false)
+
+                foreach (ModuleRelease release in module.InstallOptions!.ModuleReleases)
                 {
-                    foreach (ModuleRelease release in module.InstallOptions.ModuleReleases)
+                    if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)
+                        continue;
+
+                    string? minServerVersion = release.ServerVersionRange[0];
+                    string? maxServerVersion = release.ServerVersionRange[1];
+
+                    if (string.IsNullOrEmpty(minServerVersion)) minServerVersion = "0.0";
+                    if (string.IsNullOrEmpty(maxServerVersion)) maxServerVersion = currentServerVersion;
+
+                    if (release.ModuleVersion == module.Version &&
+                        VersionInfo.Compare(minServerVersion, currentServerVersion) <= 0 &&
+                        VersionInfo.Compare(maxServerVersion, currentServerVersion) >= 0)
                     {
-                        if (release.ServerVersionRange is null || release.ServerVersionRange.Length < 2)
-                            continue;
-
-                        string? minServerVersion = release.ServerVersionRange[0];
-                        string? maxServerVersion = release.ServerVersionRange[1];
-
-                        if (string.IsNullOrEmpty(minServerVersion)) minServerVersion = "0.0";
-                        if (string.IsNullOrEmpty(maxServerVersion)) maxServerVersion = currentServerVersion;
-
-                        if (release.ModuleVersion == module.Version &&
-                            VersionInfo.Compare(minServerVersion, currentServerVersion) <= 0 &&
-                            VersionInfo.Compare(maxServerVersion, currentServerVersion) >= 0)
-                        {
-                            versionOK = true;
-                            break;
-                        }
+                        versionOK = true;
+                        break;
                     }
                 }
 

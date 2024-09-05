@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Pipes;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -19,11 +20,9 @@ using Microsoft.Extensions.Options;
 using CodeProject.AI.Server.Backend;
 using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Modules;
 using CodeProject.AI.Server.Mesh;
-using System.IO.Pipes;
 
 namespace CodeProject.AI.Server.Controllers
 {

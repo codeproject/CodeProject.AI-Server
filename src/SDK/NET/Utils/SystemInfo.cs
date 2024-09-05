@@ -5,10 +5,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 using Hardware.Info;
-using CodeProject.AI.SDK.Utils;
 
 #pragma warning disable CA1416 // Validate platform compatibility
-namespace CodeProject.AI.SDK.Common
+namespace CodeProject.AI.SDK.Utils
 {
     /// <summary>
     /// Represents the properties of all CPUs combined
@@ -676,6 +675,9 @@ namespace CodeProject.AI.SDK.Common
                 if (IsLinux)
                     return $"{_osName} {_osVersion}";
 
+                if (IsMacOS)
+                    return $"{_osName} {_osVersion}";
+
                 // See https://github.com/getsentry/sentry-dotnet/issues/1484. 
                 // C'mon guys: technically the version may be 10.x, but stick to the branding that
                 // the rest of the world understands.
@@ -1320,14 +1322,14 @@ namespace CodeProject.AI.SDK.Common
 
             try
             {
-                string gpuName              = string.Empty;
-                string driverVersion        = string.Empty;
-                string computeCapability    = string.Empty;
-                string cudaVersion          = string.Empty;
-                string cudaVersionInstalled = string.Empty;
-                ulong  memoryFreeMiB        = 0;
-                ulong  totalMemoryMiB       = 0;
-                int    gpuUtilPercent       = 0;
+                string gpuName               = string.Empty;
+                string driverVersion         = string.Empty;
+                string computeCapability     = string.Empty;
+                string cudaVersionCapability = string.Empty;
+                string cudaVersionInstalled  = string.Empty;
+                ulong  memoryFreeMiB         = 0;
+                ulong  totalMemoryMiB        = 0;
+                int    gpuUtilPercent        = 0;
 
                 // Example call and response
                 // nvidia-smi --query-gpu=count,name,driver_version,memory.total,memory.free,utilization.gpu,compute_cap --format=csv,noheader
@@ -1349,9 +1351,9 @@ namespace CodeProject.AI.SDK.Common
                 {
                     gpuName       = results["gpuname"];
                     driverVersion = results["driver"];
-                    ulong.TryParse(results["memfree"], out memoryFreeMiB);
+                    ulong.TryParse(results["memfree"],  out memoryFreeMiB);
                     ulong.TryParse(results["memtotal"], out totalMemoryMiB);
-                    int.TryParse(results["gpuUtil"], out gpuUtilPercent);
+                    int.TryParse(results["gpuUtil"],    out gpuUtilPercent);
                 }
 
                 ulong memoryUsedMiB = totalMemoryMiB - memoryFreeMiB;
@@ -1373,7 +1375,7 @@ namespace CodeProject.AI.SDK.Common
                 pattern = @"Driver Version:\s+(?<driver>[\d.]+)\s*CUDA Version:\s+(?<cuda>[\d.]+)";
                 results = await GetProcessInfoAsync("nvidia-smi", "", pattern).ConfigureAwait(false);
                 if ((results?.Count ?? 0) > 0)
-                    cudaVersion = cudaVersionInstalled = results!["cuda"];
+                    cudaVersionCapability = cudaVersionInstalled = results!["cuda"];
 
                 // Get actual installed CUDA info. Form is:
                 //  nvcc: NVIDIA (R) Cuda compiler driver
@@ -1393,8 +1395,8 @@ namespace CodeProject.AI.SDK.Common
                 {
                     Name                  = gpuName,
                     DriverVersion         = driverVersion,
-                    CudaVersionCapability = cudaVersion,
-                    CudaVersionInstalled  = cudaVersion,
+                    CudaVersionCapability = cudaVersionCapability,
+                    CudaVersionInstalled  = cudaVersionInstalled,
                     CuDNNVersionInstalled = _cuDnnVersion,
                     Utilization           = gpuUtilPercent,
                     MemoryUsed            = memoryUsedMiB * 1024 * 1024,
@@ -1711,12 +1713,12 @@ namespace CodeProject.AI.SDK.Common
                 var results = await GetProcessInfoAsync("/bin/bash", $"-c \"{command}\"", null)
                                                                                 .ConfigureAwait(false);
                 if (results is not null)
-                    _osName = results["output"];  // eg. "Big Sur"
+                    _osName = results["output"]?.Trim();  // eg. "Big Sur"
 
                 results = await GetProcessInfoAsync("/bin/bash", "-c \"sw_vers -productVersion\"", null)
                                                                                 .ConfigureAwait(false);
                 if (results is not null)
-                    _osVersion = results["output"];    // eg."11.1" for macOS Big Sur
+                    _osVersion = results["output"]?.Trim();    // eg."11.1" for macOS Big Sur
             }
         }
 

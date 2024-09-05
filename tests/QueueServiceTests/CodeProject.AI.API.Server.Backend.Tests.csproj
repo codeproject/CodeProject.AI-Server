@@ -9,7 +9,7 @@
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
 		<Platforms>AnyCPU;ARM64</Platforms>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 	</PropertyGroup>
 
 	<ItemGroup>

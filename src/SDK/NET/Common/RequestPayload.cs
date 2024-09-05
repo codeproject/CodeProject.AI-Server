@@ -1,58 +1,7 @@
 ﻿using System.Diagnostics;
-using System.Text.Json.Serialization;
-
-using CodeProject.AI.SDK.Utils;
-
-using SkiaSharp;
 
 namespace CodeProject.AI.SDK
 {
-#pragma warning disable IDE1006 // Naming Styles
-
-    /// <summary>
-    /// Base class for queued requests for the backend. The naming here is for legacy backwards 
-    /// compatibility, and should probably be updated to something sensible.
-    /// </summary>
-    /// <remarks>We should rename reqtype to command and just have BackendRequest. We don't need
-    /// this base class.</remarks>
-    public class BackendRequestBase
-    {
-        /// <summary>
-        /// Gets the request unique id.  Used to return the response to the correct caller.
-        /// </summary>
-        [JsonInclude]
-        public string reqid { get; private set; } = Guid.NewGuid().ToString();
-
-        /// <summary>
-        /// Gets or sets the request type.
-        /// </summary>
-        [JsonInclude]
-        public string? reqtype { get; protected set; }
-    }
-
-    /// <summary>
-    /// Request with payload.
-    /// </summary>
-    public class BackendRequest : BackendRequestBase
-    {
-        /// <summary>
-        /// Gets or sets the payload.
-        /// </summary>
-        [JsonInclude]
-        public RequestPayload payload { get; protected set; }
-
-        /// <summary>
-        /// Instantiates a new instance of the <cref="BackendRequest" /> class.
-        /// TODO: Normalise the input. Currently reqtype == payload.command. One or the other, please.
-        /// </summary>
-        /// <param name="payload">The request payload</param>
-        public BackendRequest(RequestPayload payload)
-        {
-            this.reqtype = payload.command ?? string.Empty;
-            this.payload = payload;
-        }
-    }
-
     public class RequestPayload
     {
         /// <summary>
@@ -223,6 +172,36 @@ namespace CodeProject.AI.SDK
         }
 
         /// <summary>
+        /// Adds a file stream to the payload
+        /// </summary>
+        /// <param name="stream">The stream to the file to add</param>
+        /// <param name="filePath">The path to the file to add</param>
+        /// <remarks>Could be used with a FormFile from a form post,</remarks>
+        public void AddFile(Stream stream, string filePath)
+        {
+            // NOTE: Path.GetExtension and Path.GetFileName works with file paths and urls.
+            try
+            {
+                using BinaryReader reader = new BinaryReader(stream);
+                var formFile = new RequestFormFile()
+                {
+                    name        = "image",
+                    filename    = Path.GetFileName(filePath),
+                    contentType = "image/" + Path.GetExtension(filePath).Substring(1),
+                    data        = reader.ReadBytes((int)stream.Length)
+                };
+
+                var allFiles = files as List<RequestFormFile> ?? new List<RequestFormFile>();
+                allFiles.Add(formFile);
+
+                files = allFiles;
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Error adding file: " + e.Message);
+            }
+        }
+        /// <summary>
         /// Gets a File from the payload by name.
         /// </summary>
         /// <param name="name">The name of the file.</param>
@@ -240,38 +219,6 @@ namespace CodeProject.AI.SDK
         public RequestFormFile? GetFile(int index)
         {
             return files?.ElementAtOrDefault(index);
-        }
-    }
-
-    public class RequestFormFile
-    {
-        /// <summary>
-        /// Gets or sets the form field name of the file being passed.
-        /// </summary>
-        public string? name { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the file being passed.
-        /// </summary>
-        public string? filename { get; set; }
-
-        /// <summary>
-        /// Gets or sets the content type of the file being passed.
-        /// </summary>
-        public string? contentType { get; set; }
-
-        /// <summary>
-        /// Gets or sets the actual file data being passed.
-        /// </summary>
-        public byte[]? data { get; set; }
-
-        /// <summary>
-        /// Converts the RequestFormFile to an Image.
-        /// </summary>
-        /// <returns>The image, or null if conversion fails.</returns>
-        public SKImage? AsImage()
-        {
-            return ImageUtils.GetImage(data);
         }
     }
 

@@ -17,11 +17,13 @@
             "cwd": "/app/server/",
             "stopAtEntry": false,
             "requireExactSource": false,
+            /*
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "pattern": "\\blistening on port: (\\d+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
+            */
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -62,11 +64,13 @@
             ],
             "cwd": "/app/server/",
             "stopAtEntry": false,
+            /*
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "pattern": "\\blistening on port: (\\d+)",
                 "uriFormat": "http://localhost:%s/swagger"
             },
+            */
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",

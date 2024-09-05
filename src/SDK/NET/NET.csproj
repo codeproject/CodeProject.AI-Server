@@ -5,27 +5,20 @@
 	<!-- Common properties -->
 	<PropertyGroup>
 		<Name>CodeProject.AI SDK</Name>
+		<Description>Support for creating CodeProject.AI Server Modules in .NET</Description>
 		<RootNamespace>CodeProject.AI.SDK</RootNamespace>
 		<AssemblyName>CodeProject.AI.Module.SDK</AssemblyName>
-		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<Platform>AnyCPU</Platform>
-		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<!--
+		<TargetFramework>netstandard2.1</TargetFramework>
+		-->
+		<TargetFramework>net8.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<Title>CodeProject.AI Module SDK</Title>
-		<Description>SDK for creating CodeProject.AI Server Modules in .NET</Description>
-		<PackageProjectUrl>https://www.codeproject.com/AI</PackageProjectUrl>
-		<Authors>CodeProject</Authors>
-		<Company />
-		<Copyright>CodeProject 2024</Copyright>
-		<RepositoryUrl>https://www.github.com/CodeProject/CodeProject.AI-Server</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<PackageTags>CodeProject.AI; AI;</PackageTags>
-		<Version>1.0.1</Version>
-		<PackageLicenseFile>license.md</PackageLicenseFile>
-		<PackageReadmeFile>readme.md</PackageReadmeFile>
 	</PropertyGroup>
+	
+	<Import Project="Auxiliary.info" />
 
 	<!-- Common Release properties -->
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
@@ -48,17 +41,20 @@
 
 	<ItemGroup>
 		<PackageReference Include="Hardware.Info" Version="100.0.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
 		<PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
 		<PackageReference Include="SkiaSharp" Version="2.88.6" />
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.6" />
 		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.6" />
-		<PackageReference Include="System.Management" Version="7.0.0" />
-		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="7.0.0" />
+		<PackageReference Include="System.Management" Version="8.0.0" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+
+		<PackageReference Include="System.Text.Json" Version="8.0.0" Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'" /> <!-- Mac Apple Silicon -->
+		<PackageReference Include="System.Text.Json" Version="8.0.4" Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'" />  <!-- Everything else -->
 	</ItemGroup>
 
 	<ItemGroup>

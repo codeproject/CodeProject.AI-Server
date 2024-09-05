@@ -25,8 +25,9 @@ REM all machines will necessarily have the version of .NET we need, so for Dev
 REM we ensure .NET is up to scratch, and for production, .NET is installed as 
 REM part of the Windows installer. The SetupDotNet function will check for .NET 
 REM and do nothing if it finds a suitable version already installed.
+call "%utilsScript%" SetupDotNet !serverDotNetVersion! aspnetcore
 if /i "!executionEnvironment!" == "Development" (
-    call "%utilsScript%" SetupDotNet 7.0.405 SDK
+    call "%utilsScript%" SetupDotNet !serverDotNetVersion! SDK
 )
 
 
@@ -37,17 +38,6 @@ REM if /i "%hasCUDA%"=="true" if /i "%cuda_version%" == "" (
 REM    call ../install_CUDnn.bat
 REM )
 
-
-REM Utilities ------------------------------------------------------------------
-
-if /i "!useJq!" == "false" (
-    dotnet build "!sdkPath!\Utilities\ParseJSON" /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >NUL
-    if exist "!sdkPath!\Utilities\ParseJSON\bin\Release\net7.0\" (
-        pushd "!sdkPath!\Utilities\ParseJSON\bin\Release\net7.0\"
-        move * ..\..\..\ >NUL
-        popd
-    )
-)
 
 REM TODO: Check .NET installed correctly
 REM set moduleInstallErrors=...

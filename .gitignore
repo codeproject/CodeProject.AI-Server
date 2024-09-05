@@ -210,6 +210,7 @@ _pkginfo.txt
 *.appx
 *.appxbundle
 *.appxupload
+*.msixbundle
 
 # Visual Studio cache files
 # files ending in .cache can be ignored
@@ -353,9 +354,11 @@ wget-log*
 # Module packages --------------------------------------------------------------
 
 # Generated exe packages
-/src/modules/*/*-[0-9]*.[0-9]*.[0-9]*.zip
+/modules/*/*-[0-9]*.[0-9]*.[0-9]*.zip
+
 
 # Debug debris -----------------------------------------------------------------
 
 /SDK
 /debug
+object-detect.exe

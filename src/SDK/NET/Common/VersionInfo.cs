@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace CodeProject.AI.SDK.API
+namespace CodeProject.AI.SDK.Common
 {
     /// <summary>
     /// The current version of the server.

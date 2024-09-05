@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Json;
-using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Common;
 
-namespace CodeProject.AI.API
+namespace CodeProject.AI.SDK.API
 {
     /// <summary>
     /// Contains the data to be sent as part of a request to the server
@@ -105,9 +105,9 @@ namespace CodeProject.AI.API
         /// Initializes a new instance of the ApiClient class.
         /// </summary>
         /// <param name="port">The oort for the HTTP calls</param>
-        public ApiClient(int port)
+        public ApiClient(int port = 0)
         {
-            Port = port;
+            Port = port <= 0 ? Constants.DefaultPort : port;
         }
 
         /// <summary>

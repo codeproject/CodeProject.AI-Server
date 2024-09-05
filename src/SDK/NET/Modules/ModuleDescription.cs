@@ -1,9 +1,9 @@
 ﻿using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
-using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Common;
 
-namespace CodeProject.AI.SDK
+namespace CodeProject.AI.SDK.Modules
 {
     /// <summary>
     /// Describes the installation status of a module
@@ -181,16 +181,9 @@ namespace CodeProject.AI.SDK
             module.CheckVersionAgainstModuleReleases();
             SetLatestCompatibleVersion(module, currentServerVersion);
 
-            // The module.IsCompatible() method is not used here because it doesn't check the
-            // LatestCompatibleRelease property. However, if there is a LatestCompatibleRelease,
-            // then the module *is* compatible.
-            module.Status = module.LatestCompatibleRelease is not null 
-                            ? ModuleStatusType.Available : ModuleStatusType.NotAvailable;
-
             // Set the status of all entries based on availability on this platform
-            //module.Status = string.IsNullOrWhiteSpace(module?.LatestCompatibleRelease?.ModuleVersion) 
-            //              || !module.IsCompatible(currentServerVersion)
-            //              ? ModuleStatusType.NotAvailable : ModuleStatusType.Available;
+            module.Status = module.IsCompatible(currentServerVersion)
+                          ? ModuleStatusType.Available : ModuleStatusType.NotAvailable;
         }
 
         private static void SetLatestCompatibleVersion(ModuleDescription module, 

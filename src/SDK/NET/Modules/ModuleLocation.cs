@@ -1,4 +1,4 @@
-﻿namespace CodeProject.AI.SDK
+﻿namespace CodeProject.AI.SDK.Modules
 {
     /// <summary>
     /// Where a given module lives
