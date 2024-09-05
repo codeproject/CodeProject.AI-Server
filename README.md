@@ -1,4 +1,11 @@
-[![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://open.vscode.dev/codeproject/CodeProject.AI-Server/) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/license-SSPL-green)](https://www.mongodb.com/licensing/server-side-public-license) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+[![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://open.vscode.dev/codeproject/CodeProject.AI-Server/) [![made-with-dotnet](https://img.shields.io/badge/Made%20with-net8.0-blue)](https://dotnet.microsoft.com/) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/License-SSPL-green)](https://www.mongodb.com/licensing/server-side-public-license) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+<!--
+&nbsp; &nbsp;
+
+[![NVIDIA](https://img.shields.io/badge/NVIDIA-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://nvidia.com)
+[![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-A22846?style=for-the-badge&logo=Raspberry%20Pi&logoColor=white)](https://raspberrypi.com)
+[![Apple Silicon](https://img.shields.io/badge/apple%20silicon-333333?style=for-the-badge&logo=apple&logoColor=white)](https://apple.com)
+-->
 
 # CodeProject.AI Server
 
@@ -16,7 +23,7 @@ transfer, and is easy to use.
 
 | <img src="https://www.codeproject.com/ai/docs/img/windows.svg" title="Windows" style="width:64px">  | <img src="https://www.codeproject.com/ai/docs/img/macos.svg" title="macOS" style="width:72px">  | <img src="https://www.codeproject.com/ai/docs/img/apple-silicon.svg" title="Apple Silicon" style="width:64px"> | <img src="https://www.codeproject.com/ai/docs/img/Ubuntu.svg" title="Ubuntu" style="width:64px">  | <img src="https://www.codeproject.com/ai/docs/img/RaspberryPi64.svg" title="Raspberry Pi arm64" style="width:64px"> | <img src="https://www.codeproject.com/ai/docs/img/docker.svg" title="Docker" style="width:64px">  |  <img src="https://www.codeproject.com/ai/docs/img/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="https://www.codeproject.com/ai/docs/img/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
 | :------: |  :---: | :---------: | :-----: | :----: | :----: | :--------------------: | :-------------------: |
-| Windows  | macOS  | macOS arm64 |  Ubuntu | Raspberry&nbsp;Pi arm64 |  Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
+| Windows  | macOS  | macOS arm64 |  Ubuntu / Debian | Raspberry&nbsp;Pi arm64 |  Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
 
 </div>
 
@@ -88,19 +95,18 @@ CodeProject.AI includes
 
 ## What can it do?
 
-It can detect stuff!
+It can run any AI module your imagination and patience can create. Current modules include
 
-CodeProject.AI can currently
-
-- Detect objects in images, including using custom models
-- Detect faces in images
-- Detect the type of scene represented in an image
-- Recognise faces that have been registered with the service
+- Generative AI: LLMs for text generation, Text-to-image, and multi-modal LLMs (eg "tell me what's in this picture")
+- Object Detection in images, including using custom models
+- Faces detection and recognition images
+- Scene recognition represented in an image
 - Remove a background from an image
 - Blur a background from an image
 - Enhance the resolution of an image
 - Pull out the most important sentences in text to generate a text summary
 - Prove sentiment analysis on text
+- Sound Classification
 
 We will be constantly expanding the feature list.
 
@@ -114,9 +120,9 @@ We will be constantly expanding the feature list.
 
 #### Supported Development Environments
 
-This current release works in Visual Studio 2019+ on Windows 10+, and Visual Studio Code on Windows 10+. Ubuntu and macOS (both Intel and Apple Silicon). 
+This current release works best with Visual Studio Code on Windows 10+. Ubuntu, Debian and macOS (both Intel and Apple Silicon). Visual Studio 2019+ support is included for Windows 10+.
 
-The current release supports CPU on each platform, as well as nVidia CUDA GPUs on Windows. Future releases will expand GPU support to Docker and other cards.
+The current release provides support for CPU on each platform, DirectML on Windows, CUDA on Windows and Linux, support for Apple Silicon GPUs, RockChip NPUs and Coral.AI TPUs. Support depends on the module itself.
 
 
 ## How to Guides
