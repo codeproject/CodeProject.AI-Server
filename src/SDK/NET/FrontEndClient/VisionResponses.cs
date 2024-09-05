@@ -1,4 +1,6 @@
-﻿namespace CodeProject.AI.SDK.API
+﻿using CodeProject.AI.SDK.API;
+
+namespace CodeProject.AI.SDK.Server
 {
     /// <summary>
     /// The Response for a Face Detection Request.

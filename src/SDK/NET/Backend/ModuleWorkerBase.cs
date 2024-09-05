@@ -3,7 +3,6 @@ using System.Dynamic;
 using System.Net.Http.Json;
 
 using CodeProject.AI.SDK.API;
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 
 using Microsoft.Extensions.Configuration;
@@ -103,6 +102,23 @@ namespace CodeProject.AI.SDK
 
             string currentModuleDirPath = GetModuleDirectoryPath();
             string currentDirName       = new DirectoryInfo(currentModuleDirPath).Name;
+
+            // TODO: We could load the settings directly from the modulesettings files rather than rely 
+            //       rely environment variables:
+            /*
+            // Load up the module's settings and start the module
+            var config = new ConfigurationBuilder();
+            config.AddModuleSettingsConfigFiles(moduleDirPath, false);
+            IConfiguration configuration = config.Build();
+
+            // Bind the values in the configuration to a ModuleConfig object
+            string moduleId = [get module id from config]
+            var moduleConfig = new ModuleConfig();
+            configuration.Bind($"Modules:{moduleId}", moduleConfig);
+
+            // Complete the ModuleConfig's setup. 
+            if (moduleConfig.Initialise(moduleId, moduleDirPath, ModuleLocation.Internal))
+            */
 
             _moduleId        = configuration.GetValue<string?>("CPAI_MODULE_ID", null)        ?? currentDirName;
             ModuleName       = configuration.GetValue<string?>("CPAI_MODULE_NAME", null)      ?? _moduleId;

@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace CodeProject.AI.SDK
+namespace CodeProject.AI.SDK.Modules
 {
     /// <summary>
     /// Represents a model that can be downloaded to a module's folder for use by the module

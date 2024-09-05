@@ -33,7 +33,7 @@ if [ "$os" = "linux" ]; then
         if [ "$?" != 0 ]; then
 
             # output a warning message if no admin rights and instruct user on manual steps
-            install_instructions="cd ${sdkScriptsDirPath}${newline}sudo bash ../setup.sh"
+            install_instructions="cd ${sdkPath}${newline}sudo bash ../setup.sh"
             checkForAdminAndWarn "$install_instructions"
 
             if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
@@ -76,11 +76,11 @@ else
 
         if [ $"$architecture" = 'arm64' ]; then
             arch -x86_64 /usr/local/bin/brew list fontconfig >/dev/null 2>/dev/null || \
-                        arch -x86_64 /usr/local/bin/brew install fontconfig  >/dev/null 2>/dev/null &
+                arch -x86_64 /usr/local/bin/brew install fontconfig  >/dev/null 2>/dev/null &
             spin $!
             # brew install mono-libgdiplus  >/dev/null 2>/dev/null &
             arch -x86_64 /usr/local/bin/brew list libomp >/dev/null 2>/dev/null || \
-                        arch -x86_64 /usr/local/bin/brew install libomp >/dev/null 2>/dev/null &
+                arch -x86_64 /usr/local/bin/brew install libomp >/dev/null 2>/dev/null &
             spin $!
         else
             brew list fontconfig  >/dev/null 2>/dev/null || brew install fontconfig  >/dev/null 2>/dev/null &
@@ -111,9 +111,10 @@ fi
 # Setup .NET for the server, the SDK Utilities, and any .NET modules that may 
 # need it
 if [ "$executionEnvironment" = "Development" ]; then
-    setupDotNet 7.0 "sdk"
+    setupDotNet "$serverDotNetVersion" "aspnetcore"
+    setupDotNet "$serverDotNetVersion" "sdk"
 else
-    setupDotNet 7.0 "aspnetcore"
+    setupDotNet "$serverDotNetVersion" "aspnetcore"
 fi
 
 if [ $? -ne 0 ]; then
@@ -139,14 +140,5 @@ if [ "${edgeDevice}" = "Jetson" ]; then
 fi
 
 
-# Utilities --------------------------------------------------------------------
-
-if [ "${useJq}" = false ]; then
-    dotnet build "${sdkPath}/Utilities/ParseJSON" /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release > /dev/null 2>&1
-    pushd "${sdkPath}/Utilities/ParseJSON/bin/Release/net7.0/" >/dev/null
-    mv ./* ../../../
-    popd >/dev/null
-fi
-
 # TODO: Check .NET installed correctly
-# module_install_errors=...
+# moduleInstallErrors=...

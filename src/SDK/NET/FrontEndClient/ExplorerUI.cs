@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace CodeProject.AI.SDK.API
+namespace CodeProject.AI.SDK.Server
 {
     /// <summary>
     /// Represents an option in a dropdown menu in the dashboard

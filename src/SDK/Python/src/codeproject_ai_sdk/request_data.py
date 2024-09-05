@@ -15,7 +15,7 @@ try:
     import cv2 as cv
     import numpy as np
 except ImportError:
-    print("Unable to load OpenCV or numpy modules. Only using PIL.")
+    print("Info: Using PIL for image manipulation (Either OpenCV or numpy not available for this module)")
 
 class RequestData:
     """
