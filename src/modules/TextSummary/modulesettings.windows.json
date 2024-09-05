@@ -1,9 +1,0 @@
-{
-  "Modules": {
-    "TextSummary": {
-      "LaunchSettings": {
-        "Runtime": "python3.7"
-      }
-    }
-  }
-}

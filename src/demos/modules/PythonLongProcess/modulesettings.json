@@ -8,7 +8,7 @@
       "PublishingInfo" : {
         "Description": "A demo of a long process in Python",
         "IconURL": null,
-        "Category": "Demo Module",
+        "Category": "Demo Modules",
         "Stack": "Python",
         "License": "MIT",
         "LicenseUrl": "",

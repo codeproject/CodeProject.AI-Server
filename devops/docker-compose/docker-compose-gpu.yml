@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  CodeProjectAI:
+    image: codeproject/ai-server:gpu
+    container_name: codeproject-ai-server-gpu
+    hostname: codeproject-ai-server
+    # working_dir: /app
+    restart: unless-stopped
+    ports:
+      - "32168:32168/tcp"
+      - "32168:32168/udp"
+    environment:
+      - TZ=America/Toronto
+    volumes:
+      - '/opt/codeproject/ai:/app/modules'                            # Linux
+#     - '/Library/Application Support/CodeProject/AI/docker/modules:/app/modules' # macOS
+#     - 'C:\ProgramData\CodeProject\AI\docker\modules:/app/modules'   # Windows
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+# If you wish to use named volumes, then under CodeProjectAI.volumes, add GPU specific
+# volumes (note the _gpu in the names). This ensures that if you switch to a CPU container
+# then the modules (and the installed libraries) will be safely separated.
+#
+#    volumes:
+#      - codeproject_ai_data_gpu:/etc/codeproject/ai
+#      - codeproject_ai_modules_gpu:/app/modules
+#
+# And at the root level add a volumes section with the corresponding volumes:
+# 
+#volumes:
+#  codeproject_ai_data_gpu:
+#  codeproject_ai_modules_gpu:

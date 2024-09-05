@@ -21,7 +21,7 @@ namespace CodeProject.AI.Server
         /// <summary>
         /// The URL of the location of the models that can be downloaded.
         /// </summary>
-        public string? ModelStorageUrl { get; set; }
+        public string? AssetStorageUrl { get; set; }
 
         /// <summary>
         /// Gets or sets the timeout for installing a module

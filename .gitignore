@@ -30,6 +30,7 @@ bld/
 
 # Visual Studio cache/options directory
 .vs/
+
 # Uncomment if you have tasks that create the project's static files in wwwroot
 #wwwroot/
 
@@ -302,79 +303,36 @@ MigrationBackup/
 /demos/clients/Python/detected
 /demos/clients/Python/Vision/detected
 
-
-# Installers -------------------------------------------------------------------
-
-/Installers/macOS/application
-/Installers/macOS/build/
-/Installers/macOS/target
-/Installers/macOS/*.pkg
-/Installers/macOS/CodeProject.AI-Server_*_macOS_*.zip
-
-/Installers/Ubuntu/build/
-/Installers/Ubuntu/installer/
-/Installers/Ubuntu/*.deb
-/Installers/Ubuntu/codeproject.ai-server_*_Ubuntu_*.zip
-
-/Installers/Windows/Inno Setup/Output
-/Installers/Windows/Inno Setup/assets/dotnet-hosting-*.exe
-/Installers/Windows/WIX Toolset/CodeProjectAI.Server.Installer/ServerInstallFiles.wxs
-
-
 # Downloads --------------------------------------------------------------------
 
 # Linux utilities
 wget-log*
 
 # keep the folder structure but don't git commit the cached downloads
-!/src/downloads
-/src/downloads/*
+!/downloads
+/downloads/*
 
-!/src/downloads/modules
-/src/downloads/modules/*
-!/src/downloads/modules/readme.txt
+!/downloads/modules
+/downloads/modules/*
+!/downloads/modules/readme.txt
 
-!/src/downloads/models
-/src/downloads/models/*
-!/src/downloads/models/models.json
+!/downloads/models
+/downloads/models/*
+!/downloads/models/models.json
 
+/runtimes
 
 # Downloaded assets and libraries for modules
-/src/modules/ALPR/paddleocr
-/src/modules/ALPR-RKNN/paddleocr
-/src/modules/BackgroundRemover/models
-/src/modules/Cartooniser/weights
-/src/modules/FaceProcessing/assets
-/src/modules/FaceProcessing/datastore/
-/src/modules/LlamaChat/models/
-/src/modules/ObjectDetectionCoral/assets
-src/modules/ObjectDetectionCoral/edgetpu_runtime
-src/modules/ObjectDetectionYoloRKNN/assets
-src/modules/ObjectDetectionYoloRKNN/custom-models
-/src/modules/ObjectDetectionYOLOv5Net/assets/
-/src/modules/ObjectDetectionYOLOv5Net/custom-models
-/src/modules/ObjectDetectionYOLOv5Net/LocalNugets
-/src/modules/ObjectDetectionYOLOv5-3.1/custom-models
-/src/modules/ObjectDetectionYOLOv5-3.1/assets
-/src/modules/ObjectDetectionYOLOv5-6.2/assets
-/src/modules/ObjectDetectionYOLOv5-6.2/custom-models
-/src/modules/ObjectDetectionYOLOv8/assets
-/src/modules/ObjectDetectionYOLOv8/custom-models
-/src/modules/OCR/paddleocr
-/src/modules/SceneClassifier/assets
-/src/modules/SoundClassifierTF/data/
-/src/modules/Text2Image/assets
-/src/modules/TrainingObjectDetectionYOLOv5/assets
-/src/modules/TrainingObjectDetectionYOLOv5/datasets
-/src/modules/TrainingObjectDetectionYOLOv5/fiftyone
-/src/modules/TrainingObjectDetectionYOLOv5/training
-/src/modules/TrainingObjectDetectionYOLOv5/train
-/src/modules/TrainingObjectDetectionYOLOv5/zoo
+/modules/ObjectDetectionYOLOv5Net/assets/
+/modules/ObjectDetectionYOLOv5Net/custom-models
+/modules/ObjectDetectionYOLOv5Net/LocalNugets
+/modules/ObjectDetectionYOLOv5-6.2/assets
+/modules/ObjectDetectionYOLOv5-6.2/custom-models
 
-src/demos/modules/DotNetLongProcess/assets/
-src/demos/modules/DotNetSimple/assets/
-src/demos/modules/PythonLongProcess/assets
-src/demos/modules/PythonSimple/assets
+/src/demos/modules/DotNetLongProcess/assets/
+/src/demos/modules/DotNetSimple/assets/
+/src/demos/modules/PythonLongProcess/assets
+/src/demos/modules/PythonSimple/assets
 
 # Config files -----------------------------------------------------------------
 
@@ -382,15 +340,15 @@ src/demos/modules/PythonSimple/assets
 /src/server/installconfig.json
 
 
-# SDK --------------------------------------------------------------------------
+# Utils --------------------------------------------------------------------------
 
 # The compiled form of the ParseJSON utility. We move the compiled files to its base dir it for convenience
-/src/SDK/Utilities/ParseJSON/ParseJSON
-/src/SDK/Utilities/ParseJSON/ParseJSON.exe
-/src/SDK/Utilities/ParseJSON/ParseJSON.deps.json
-/src/SDK/Utilities/ParseJSON/ParseJSON.dll
-/src/SDK/Utilities/ParseJSON/ParseJSON.runtimeconfig.json
-/src/SDK/Utilities/ParseJSON/ParseJSON.xml
+/utils/ParseJSON/ParseJSON
+/utils/ParseJSON/ParseJSON.exe
+/utils/ParseJSON/ParseJSON.deps.json
+/utils/ParseJSON/ParseJSON.runtimeconfig.json
+/utils/ParseJSON/ParseJSON.xml
+/utils/ParseJSON/*.dll
 
 # Module packages --------------------------------------------------------------
 
@@ -398,5 +356,6 @@ src/demos/modules/PythonSimple/assets
 /src/modules/*/*-[0-9]*.[0-9]*.[0-9]*.zip
 
 # Debug debris -----------------------------------------------------------------
-/src/modules/ALPR/plate.png
-/src/modules/ALPR-RKNN/plate.png
+
+/SDK
+/debug

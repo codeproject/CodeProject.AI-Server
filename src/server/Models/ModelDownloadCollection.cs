@@ -2,8 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using CodeProject.AI.SDK;
+
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Modules;
 
 namespace CodeProject.AI.Server.Models
 {

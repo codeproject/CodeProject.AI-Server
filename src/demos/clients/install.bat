@@ -2,13 +2,13 @@
 ::
 ::                           CodeProject.AI Demos
 ::
-:: This script is only called from ..\..\setup.bat
+:: This script is only called from ..\..\..\setup.bat
 ::
 :: For help with install scripts, notes on variables and methods available, tips,
 :: and explanations, see /src/modules/install_script_help.md
 
 @if "%1" NEQ "install" (
-    echo This script is only called from ..\src\setup.bat
+    echo This script is only called from ..\..\..\setup.bat
     @pause
     @goto:eof
 )
@@ -37,12 +37,12 @@ set virtualEnvDirPath=!pythonDirPath!\venv
 REM The path to the python intepreter for this venv
 set venvPythonCmdPath=!virtualEnvDirPath!\Scripts\python.exe
 
-REM The location where python packages will be installed for this venvvenv
+REM The location where python packages will be installed for this venv
 set packagesDirPath=%virtualEnvDirPath%\Lib\site-packages
 
 REM ============================================================================
 
 
 :: the Python Demo is in <root>\src\demos\clients\Python
-call "%sdkScriptsDirPath%\utils.bat" SetupPython
-call "%sdkScriptsDirPath%\utils.bat" InstallRequiredPythonPackages "%moduleDirPath%\Python"
+call "%utilsScript%" SetupPython
+call "%utilsScript%" InstallRequiredPythonPackages "%moduleDirPath%\Python"

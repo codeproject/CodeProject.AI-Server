@@ -1,0 +1,14 @@
+{
+  "Modules": {
+
+    "ObjectDetectionYOLOv5-6.2": {
+      "LaunchSettings": {
+        "Runtime": "python3.9"
+      },
+      "EnvironmentVariables": {
+        // fallback to cpu if an operation missing
+        "PYTORCH_ENABLE_MPS_FALLBACK": "1"
+      }
+    }
+  }
+}

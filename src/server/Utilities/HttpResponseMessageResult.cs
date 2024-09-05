@@ -67,7 +67,7 @@ namespace CodeProject.AI.Server.Utilities
 
                 foreach (KeyValuePair<string, IEnumerable<string>> header in responseHeaders)
                 {
-                    response.Headers.Add(header.Key, new StringValues(header.Value.ToArray()));
+                    response.Headers[header.Key] = new StringValues(header.Value.ToArray());
                 }
 
                 if (_responseMessage.Content != null)
@@ -81,7 +81,7 @@ namespace CodeProject.AI.Server.Utilities
 
                     foreach (KeyValuePair<string, IEnumerable<string>> header in contentHeaders)
                     {
-                        response.Headers.Add(header.Key, new StringValues(header.Value.ToArray()));
+                        response.Headers[header.Key] = new StringValues(header.Value.ToArray());
                     }
 
                     await _responseMessage.Content.CopyToAsync(response.Body);

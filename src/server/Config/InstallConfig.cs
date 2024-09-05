@@ -19,5 +19,10 @@ namespace CodeProject.AI.Server
         /// Gets or sets the Version.
         /// </summary>
         public string Version { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the DockerContainerId.
+        /// </summary>
+        public string DockerContainerId { get; set; } = string.Empty;
     }
 }

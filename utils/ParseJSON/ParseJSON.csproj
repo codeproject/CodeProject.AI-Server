@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Set defines: Windows, Linux, macOS and/or Arm64. This is needed in some files! -->
+	<Import Project="../../src/SDK/NET/Common.targets" />
+
+	<!-- Meta data -->
+	<PropertyGroup>
+		<Name>ParseJSON</Name>
+		<Product>CodeProject ParseJSON</Product>
+		<Description>A simple JSON parsing app for use in scripts.</Description>
+		<Company>CodeProject</Company>
+		<Authors>CodeProject</Authors>
+		<Version>1.0.0</Version>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<DefineConstants Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">Windows</DefineConstants>
+		<DefineConstants Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">Linux</DefineConstants>
+		<DefineConstants Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">OSX</DefineConstants>
+	</PropertyGroup>
+
+	<!-- Build properties -->
+	<PropertyGroup>
+    	<OutputType>Exe</OutputType>
+		<RootNamespace>CodeProject.AI.Utilities</RootNamespace>
+		<AssemblyName>ParseJSON</AssemblyName>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<Platform>AnyCPU</Platform>
+		<TargetFramework>net8.0</TargetFramework>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<DeleteExistingFiles>true</DeleteExistingFiles>
+	</PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<SelfContained>false</SelfContained>
+		<!--<PublishSingleFile>true</PublishSingleFile>-->
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+  </PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="System.Text.Json" Version="8.0.0" Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'" /> <!-- Mac Apple Silicon -->
+	<PackageReference Include="System.Text.Json" Version="8.0.4" Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'" />  <!-- Everything else -->
+  </ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\src\SDK\NET\NET.csproj" />
+	</ItemGroup>
+
+</Project>

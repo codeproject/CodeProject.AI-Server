@@ -26,7 +26,7 @@ REM we ensure .NET is up to scratch, and for production, .NET is installed as
 REM part of the Windows installer. The SetupDotNet function will check for .NET 
 REM and do nothing if it finds a suitable version already installed.
 if /i "!executionEnvironment!" == "Development" (
-    call "%sdkScriptsDirPath%\utils.bat" SetupDotNet 7.0.405 SDK
+    call "%utilsScript%" SetupDotNet 7.0.405 SDK
 )
 
 

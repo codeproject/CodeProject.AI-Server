@@ -7,7 +7,7 @@
 
       "PublishingInfo" : {
         "Description": "Provides a template for a .NET module that runs a long process.",
-        "Category": "Demo Module",
+        "Category": "Demo Modules",
         "Stack": "C#",
         "License": "MIT",
         "LicenseUrl": "https://opensource.org/licenses/MIT",
@@ -42,7 +42,7 @@
       "InstallOptions" : {
         "Platforms": [ "all" ],     // The platforms this module can and cannot be installed on
         "ModuleReleases": [         // Which server version is compatible with each version of this module.
-          { "ModuleVersion": "1.0.0", "ServerVersionRange": [ "2.6.1", ""     ], "ReleaseDate": "2023-02-14", "ReleaseNotes": "Initial Release", "Importance": "Major" }
+          { "ModuleVersion": "1.0.0", "ServerVersionRange": [ "2.8.0", ""     ], "ReleaseDate": "2023-02-14", "ReleaseNotes": "Initial Release", "Importance": "Major" }
         ]
       },
 

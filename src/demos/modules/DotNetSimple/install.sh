@@ -26,7 +26,7 @@ if [ "${executionEnvironment}" = "Production" ] || [ "${launchedBy}" = "server" 
 else
     pushd "$moduleDirPath" >/dev/null
     writeLine "Building project..." "$color_info"
-    dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/net7.0" >/dev/null
+    dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/${dotNetTarget}" >/dev/null
     popd >/dev/null
 fi
 
@@ -45,4 +45,4 @@ if [ "$os" = "macos" ]; then
 fi
 
 # TODO: Check assets created and has files
-# module_install_errors=...
+# moduleInstallErrors=...

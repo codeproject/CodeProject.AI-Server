@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  CodeProjectAI:
+    image: codeproject/ai-server
+    container_name: codeproject-ai-server-cpu
+    hostname: codeproject-ai-server
+    # working_dir: /app
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "32168:32168/tcp"
+      - "32168:32168/udp"
+    environment:
+      - TZ=America/Toronto
+    volumes:
+      - '/dev/bus/usb:/dev/bus/usb'                                   # Enable Coral USB
+      - codeproject_ai_data_cpu:/etc/codeproject/ai
+      - codeproject_ai_modules_cpu:/app/modules
+
+#     - '/opt/codeproject/ai:/app/modules'                            # Linux
+#     - '/Library/Application Support/CodeProject/AI/docker/modules:/app/modules' # macOS
+#     - 'C:\ProgramData\CodeProject\AI\docker\modules:/app/modules'   # Windows
+
+# To pass command line (say, to not have a module auto-start)
+#  command:
+#     - --Modules:BackgroundRemover:LaunchSettings:AutoStart=False
+#
+# If you wish to use named volumes, then under CodeProjectAI.volumes, add: 
+#
+#    volumes:
+#      - codeproject_ai_data:/etc/codeproject/ai
+#      - codeproject_ai_modules:/app/modules
+#
+# And at the root level add a volumes section with the corresponding volumes:
+# 
+volumes:
+ codeproject_ai_data_cpu:
+ codeproject_ai_modules_cpu:

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using CodeProject.AI.SDK.Common;
-using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Server
 {

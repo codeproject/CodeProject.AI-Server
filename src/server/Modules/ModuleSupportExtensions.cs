@@ -7,11 +7,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Models;
 using CodeProject.AI.Server.Utilities;
+using CodeProject.AI.SDK.Modules;
 
 namespace CodeProject.AI.Server.Modules
 {

@@ -93,7 +93,7 @@ function getProcessingMetadataHtml(data) {
     if (data.processedBy)
         html += `<tr><td>Processed on</td><td>${data.processedBy}</td></tr>`;
     if (data.analysisRoundTripMs)
-        html += `<tr><td>Analysis round trip</td><td>${data.analysisRoundTripMs} ms</td></tr>`;
+        html += `<tr><td>API call round trip</td><td>${data.analysisRoundTripMs} ms</td></tr>`;
     if (data.processMs)
         html += `<tr><td>Processing</td><td>${data.processMs} ms</td></tr>`;
     if (data.inferenceMs)

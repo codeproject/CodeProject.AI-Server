@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# =============================================================================
+# ==============================================================================
 #
 # CodeProject.AI Server 
 # 
@@ -8,22 +8,38 @@
 # 
 # This script can be called in 2 ways:
 #
-#   1. From within the /src directory in order to setup the Development
-#      environment.
-#   2. From within an analysis module directory to setup just that module.
+#   1. From within the /src (or /app, or root directory of the installation) in
+#      order to setup the full system, including serer, SDKs, demos and modules.
+#      This method is typically used for setting up the Developmnent environment.
 #
-# If called from within /src, then all analysis modules (in modules/ and
-# modules/ dirs) will be setup in turn, as well as the main SDK and demos.
+#   2. From within a module's directory (or demo or server folder) to setup just
+#      that module, demo or the server
 #
-# If this script is called from within a module's dir then we assume we're in 
-# the /src/modules/my_module directory (or modules/my_module in Production) for
-# the module "my_module". This script would typically be called via
+# If this script is called from within the folder containing this script (that
+# is, the script is called as `bash setup.sh` and not from outside the script's
+# folder using `bash ../../setup.sh`) then all modules (internal, external, and
+# demo) will be setup in turn, as well as the main SDK, server and demos clients.
+#
+# If this script is called from within a module's dir then this script will work
+# out if it's being called from /modules/my_module, 
+# ../../CodeProject.AI-Modules/my_module, /src/demos/modules/my_demo (we ignore
+# pre-installed modules). This script would typically be called via
 #
 #    bash ../../setup.sh
 #
-# This script will look for a install.sh script in the directory from whence
-# it was called, and execute that script. The install.sh script is responsible
-# for everything needed to ensure the module is ready to run.
+# This script will look for a module's `install.sh` install script in the
+# directory from whence it was called, and execute that script. The install.sh
+# script is responsible for everything needed to ensure the module is ready to
+# run. Note that the server and SDK also have their own install.sh scripts.
+#
+# Parameters:
+#
+#    --no-color          - Do not use color when outputting text. 
+#    --selftest-only     - Only perform self-test calls on modules. No setup.
+#    --no-selftest       - Do not perform self-test calls on modules after setup
+#    --modules-only      - Only install modules, not server, SDK or demos
+#    --server-only       - Only install the server, not modules, SDK or demos
+#    --verbosity option  - 'option' is quiet, info or loud.
 # 
 # Notes for Windows (WSL) users:
 #
@@ -31,22 +47,28 @@
 #    run: sed -i 's/\r$//' setup.sh
 # 2. If you get the error '#!/bin/bash - no such file or directory' then this
 #    file is broken. Run head -1 setup.sh | od -c
-#    You should see: 0000000   #  !  /   b   i   n   /   b   a   s   h  \n
-#    But if you see: 0000000 357 273 277   #   !   /   b   i   n   /   b   a   s   h  \n
+#
+#      You should see: 0000000   #  !  /   b   i   n   /   b   a   s   h  \n
+#      But if you see: 0000000 357 273 277   #   !   /   b   i   n   /   b   a   s   h  \n
+#
 #    Then run: sed -i '1s/^\xEF\xBB\xBF//' setup.sh
 #    This will correct the file. And also kill the #. You'll have to add it back
-# 3. To actually run this file: bash setup.sh. In Linux/macOS,
-#    obviously.
+# 3. To actually run this file: bash setup.sh. In Linux/macOS, obviously.
 #
-# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
+# ==============================================================================
 
 # clear
 
-# verbosity can be: quiet | info | loud
+# verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 verbosity="quiet"
 
-# Show output in wild, crazy colours
+# The .NET version to use for the server. NOTE: Only major version matters unless we use manual
+# install scripts, in which case we need to specify version. Choose version that works for SDK and
+# runtime, since the versions of these are not in sync (currently RT is 8.0.5, SDK is 8.0.3)
+serverDotNetVersion=8.0.3
+dotNetTarget="net8.0"
+
+# Show output in wild, crazy colours. Use --no-color to not use colour
 useColor=true
 
 # Width of lines
@@ -61,24 +83,28 @@ allowSharedPythonInstallsForModules=true
 # scripts run by the server this may result in a timeout or hang.
 attemptSudoWithoutAdminRights=true
 
+# If you wish to allow external modules
+installExternalModules=true
 
-# Debug flags for downloads and installs
+# Setup only the server, nothing else. Use --server-only
+setupServerOnly=false
 
-# IF you wish to allow external modules
-installExternalModules=false
+# If true, only install modules, not server, SDKs, or demos. Use --modules-only
+setupModulesOnly=false
 
-# Perform *only* the post install self tests
+# Perform *only* the post install self tests. Use --selftest-only
 selfTestOnly=false
 
-# Perform self-tests unless this is false
+# Perform self-tests unless this is false. Use --no-selftest
 noSelfTest=false
 
 # If files are already present, then don't overwrite if this is false
 forceOverwrite=false
 
 # If bandwidth is extremely limited, or you are actually offline, set this as
-# true to force all downloads to be retrieved from cached downloads. If the 
-# cached download doesn't exist the install will fail.
+# true to force all downloads to be retrieved from cached downloads (which it 
+# does anyway, so moot point really). If the cached download doesn't exist the
+# install will fail.
 offlineInstall=false
 
 # For speeding up debugging
@@ -109,8 +135,9 @@ popd > /dev/null
 # This setup script always lives in the app root
 appRootDirPath="${setupScriptDirPath}"
 
-# The location of large packages that need to be downloaded (eg an AWS S3 bucket name)
-storageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/'
+# The location of large packages that need to be downloaded (eg an AWS S3 bucket
+# name). This will be overwritten using the value from appsettings.json
+assetStorageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/'
 
 # The name of the source directory (in development)
 srcDirName='src'
@@ -136,18 +163,8 @@ externalModulesDir="CodeProject.AI-Modules"
 # not currently used, but here for future-proofing
 modelsDir="models"
 
-
 # The location of directories relative to the root of the solution directory
 sdkPath="${appRootDirPath}/SDK"
-sdkScriptsDirPath="${sdkPath}/Scripts"
-
-runtimesDirPath="${appRootDirPath}/${runtimesDir}"
-
-modulesDirPath="${appRootDirPath}/${modulesDir}"
-preInstalledModulesDirPath="${appRootDirPath}/${preInstalledModulesDir}"
-externalModulesDirPath="${appRootDirPath}/../${externalModulesDir}"
-downloadDirPath="${appRootDirPath}/${downloadDir}"
-modelsDirPath="${appRootDirPath}/${modelsDir}"
 
 # Who launched this script? user or server?
 launchedBy="user"
@@ -162,10 +179,7 @@ launchedBy="user"
 # Override some values via parameters :::::::::::::::::::::::::::::::::::::::::
 
 while [[ $# -gt 0 ]]; do
-    # echo "There are $# parameters"
     param=$(echo $1 | tr '[:upper:]' '[:lower:]')
-    # echo "Parm is $1 -> ${param}"
-
     if [ "$param" = "--launcher" ]; then
         shift
         if [[ $# -gt 0 ]]; then
@@ -173,8 +187,11 @@ while [[ $# -gt 0 ]]; do
             if [ "$param_value" = "server" ]; then launchedBy="server"; fi
         fi
     fi    
-    if [ "$param" = "--no-color" ]; then useColor=false; fi
-    if [ "$param" = "--selftest-only" ]; then selfTestOnly=true; fi
+    if [ "$param" = "--no-color" ];      then useColor=false;        fi
+    if [ "$param" = "--selftest-only" ]; then selfTestOnly=true;     fi
+    if [ "$param" = "--no-selftest" ];   then noSelfTest=true;       fi
+    if [ "$param" = "--modules-only" ];  then setupModulesOnly=true; fi
+    if [ "$param" = "--server-only" ];   then setupServerOnly=true;  fi
     if [ "$param" = "--verbosity" ]; then
         shift
         if [[ $# -gt 0 ]]; then
@@ -211,7 +228,7 @@ if [ "$launchedBy" = "server" ]; then attemptSudoWithoutAdminRights=false; fi
 # scripts won't simply fail. For Docker and macOS we create a no-op proxy. For
 # others, we install the Real Deal
 if ! command -v sudo &> /dev/null; then
-    if [ "$inDocker" = true ] || [ "$os" = "macos" ]; then 
+    if [ "$inDocker" = true ] || [[ $OSTYPE == 'darwin'* ]]; then 
         cat > "/usr/sbin/sudo" <<EOF
 #!/bin/sh
 \${@}
@@ -247,23 +264,15 @@ setupMode='SetupModule'
 currentDirName=$(basename "$(pwd)")     # Get current dir name (not full path)
 currentDirName=${currentDirName:-/} # correct for the case where pwd=/
 
-# when executionEnvironment = "Development" this may be the case
-if [ "$currentDirName" = "$srcDirName" ]; then 
-    setupMode='SetupEverything'
-    # HACK: We're one folder deeper than we need to be for referencing externalModulesDir
-    externalModulesDirPath="${appRootDirPath}/../../${externalModulesDir}"
-fi
+# Are we in /src? When executionEnvironment = "Development" this may be the case
+if [ "$currentDirName" = "$srcDirName" ]; then setupMode='SetupEverything'; fi
 
-# Let's see if we're in the "app" folder (ie Docker)
-if [ "$currentDirName" = "$appDirName" ]; then 
-    setupMode='SetupEverything'
-    # HACK: We're one folder deeper than we need to be for referencing externalModulesDir
-    externalModulesDirPath="${appRootDirPath}/../../${externalModulesDir}"
-fi
+# Are we in /app? (ie Docker)
+if [ "$currentDirName" = "$appDirName" ]; then setupMode='SetupEverything'; fi
 
 # Finally, test if this script is being run from within the directory holding
 # this script, meaning the root folder. It's not /src since we tested that, so
-# being in the root folder that isn't src/, isn't app/, means we're in the root
+# being in the root folder that isn't /src and isn't /app means we're in the root
 # folder of a native install
 if [ "$(pwd)" = "$appRootDirPath" ]; then setupMode='SetupEverything'; fi
 
@@ -286,6 +295,16 @@ pushd "$setupScriptDirPath" >/dev/null
 if [ "$executionEnvironment" = 'Development' ]; then cd ..; fi
 rootDirPath="$(pwd)"
 popd >/dev/null
+
+runtimesDirPath="${rootDirPath}/${runtimesDir}"
+modulesDirPath="${rootDirPath}/${modulesDir}"
+preInstalledModulesDirPath="${rootDirPath}/${preInstalledModulesDir}"
+externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
+modelsDirPath="${rootDirPath}/${modelsDir}"
+downloadDirPath="${rootDirPath}/${downloadDir}"
+utilsScriptsDirPath="${appRootDirPath}/scripts"
+installScriptsDirPath="${rootDirPath}/devops/install"
+utilsScript="${utilsScriptsDirPath}/utils.sh"
 
 # Check if we're in a SSH session. If so it means we need to avoid anything GUI
 inSSH=false
@@ -325,10 +344,26 @@ function setupPythonPaths () {
     packagesDirPath="${virtualEnvDirPath}/lib/python${pythonVersion}/site-packages/"
 }
 
+function saveState () {
+    stateCurrentDir="$(pwd)"
+    stateVerbosity="$verbosity"
+    stateOneStepPIP="$oneStepPIP"
+}
+
+function restoreState () {
+    cd "$stateCurrentDir" >/dev/null
+    verbosity="$stateVerbosity"
+    oneStepPIP="$stateOneStepPIP"
+}
+
 function doModuleInstall () {
 
     moduleId="$1"
     moduleDirPath="$2"
+    moduleType="$3"
+
+    # Set the error message value for this module install operation
+    moduleInstallErrors=""
 
     # Get the module name, version, runtime location and python version from the
     # modulesettings.
@@ -387,6 +422,8 @@ function doModuleInstall () {
         return
     fi
 
+    saveState
+
     if [ "${runtimeLocation}" = "" ]; then runtimeLocation="Local"; fi
 
     if [ "${allowSharedPythonInstallsForModules}" = false ]; then
@@ -428,19 +465,23 @@ function doModuleInstall () {
     setupPythonPaths "${runtimeLocation}" "$pythonVersion"
 
     if [ "$verbosity" != "quiet" ]; then
-        writeLine "moduleName        = $moduleName"        $color_info
-        writeLine "moduleId          = $moduleId"          $color_info
-        writeLine "moduleVersion     = $moduleVersion"     $color_info
-        writeLine "runtime           = $runtime"           $color_info
-        writeLine "runtimeLocation   = $runtimeLocation"   $color_info
-        writeLine "installGPU        = $installGPU"        $color_info
-        writeLine "pythonVersion     = $pythonVersion"     $color_info
-        writeLine "virtualEnvDirPath = $virtualEnvDirPath" $color_info
-        writeLine "venvPythonCmdPath = $venvPythonCmdPath" $color_info
-        writeLine "packagesDirPath   = $packagesDirPath"   $color_info
+        writeLine 
+        writeLine "Variable Dump" "White" "Blue" $lineWidth
+        writeLine 
+        writeLine "moduleName          = $moduleName"          $color_info
+        writeLine "moduleId            = $moduleId"            $color_info
+        writeLine "moduleVersion       = $moduleVersion"       $color_info
+        writeLine "runtime             = $runtime"             $color_info
+        writeLine "runtimeLocation     = $runtimeLocation"     $color_info
+        writeLine "installGPU          = $installGPU"          $color_info
+        writeLine "pythonVersion       = $pythonVersion"       $color_info
+        writeLine "virtualEnvDirPath   = $virtualEnvDirPath"   $color_info
+        writeLine "venvPythonCmdPath   = $venvPythonCmdPath"   $color_info
+        writeLine "packagesDirPath     = $packagesDirPath"     $color_info
+        writeLine "moduleStartFilePath = $moduleStartFilePath" $color_info
     fi
 
-    module_install_errors=""
+    writeLine "${moduleType} module install" "$color_mute"
 
     if [ -f "${moduleDirPath}/install.sh" ]; then
        
@@ -450,22 +491,19 @@ function doModuleInstall () {
         if [ "${pythonVersion}" != "" ] && [ "$selfTestOnly" = false ]; then
             writeLine "Installing Python ${pythonVersion}"
             setupPython 
-            if [ $? -gt 0 ]; then
-                module_install_errors="Unable to install Python ${pythonVersion}"
-            fi
+            if [ $? -gt 0 ]; then moduleInstallErrors="Unable to install Python ${pythonVersion}"; fi
+            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - ${moduleInstallErrors}\n"; fi
         fi
 
         # Install the module, but only if there were no issues installing python
         # (or a python install wasn't needed)
-        if [ "${module_install_errors}" = "" ] && [ "$selfTestOnly" = false ]; then
+        if [ "${moduleInstallErrors}" = "" ] && [ "$selfTestOnly" = false ]; then
 
-            currentDir="$(pwd)"
             correctLineEndings "${moduleDirPath}/install.sh"
             source "${moduleDirPath}/install.sh" "install"
-            # if [ $? -gt 0 ] && [ "${module_install_errors}" = "" ]; then
-            #    module_install_errors="${moduleName} failed to install"
-            # fi
-            cd "$currentDir" >/dev/null
+            if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="failed to install"; fi
+
+            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
         fi
 
         # If a python version has been specified then we'll automatically look 
@@ -473,7 +511,7 @@ function doModuleInstall () {
         # the requirements file for the SDK since it'll be assumed the Python SDK
         # will come into play.
         if [ "$selfTestOnly" = false ]; then
-            if [ "$module_install_errors" = "" ]; then
+            if [ "$moduleInstallErrors" = "" ]; then
 
                 if [ "${pythonVersion}" != "" ]; then
                     writeLine "Installing Python packages for ${moduleName}"
@@ -482,40 +520,37 @@ function doModuleInstall () {
                     if [ "$installGPU" = "true" ]; then writeLine "If available" $color_success; else writeLine "No" $color_warn; fi
 
                     installRequiredPythonPackages 
-                    if [ $? -gt 0 ]; then 
-                        module_install_errors="Unable to install Python packages for ${moduleName}"; 
-                    fi
+                    if [ $? -gt 0 ]; then moduleInstallErrors="Unable to install Python packages";  fi
+                    if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
 
-                    writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
-                    installRequiredPythonPackages "${sdkPath}/Python"
-                    if [ $? -gt 0 ]; then 
-                        module_install_errors="Unable to install Python packages for CodeProject SDK"; 
-                    fi
+                    # With the move to having modules include our SDK PyPi, we no longer need this.
+                    # writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
+                    # installRequiredPythonPackages "${sdkPath}/Python"
+                    # if [ $? -gt 0 ]; then  moduleInstallErrors="Unable to install Python packages for CodeProject SDK"; fi
+                    # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
                 fi
 
                 downloadModels
             else
-                writeLine "Skipping PIP installs and model downloads due to install error (${module_install_errors})" $color_warn
+                writeLine "Skipping PIP installs and model downloads due to install error (${moduleInstallErrors})" $color_warn
             fi
         fi
 
         # And finally, the post install script if one was provided
-        if [ "$module_install_errors" = "" ] && [ -f "${moduleDirPath}/post_install.sh" ]; then
+        if [ "$moduleInstallErrors" = "" ] && [ -f "${moduleDirPath}/post_install.sh" ]; then
             if [ "$selfTestOnly" = false ]; then
                 writeLine "Executing post-install script for ${moduleName}"
 
-                currentDir="$(pwd)"
                 correctLineEndings "${moduleDirPath}/post_install.sh"
                 source "${moduleDirPath}/post_install.sh" "post-install"
-                if [ $? -gt 0 ]; then
-                    module_install_errors="Error running post-install script"
-                fi
-                cd "$currentDir" >/dev/null
+                if [ $? -gt 0 ]; then moduleInstallErrors="Error running post-install script"; fi
+
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
             fi
         fi
 
         # Perform a self-test
-        if [ "${noSelfTest}" = false ] && [ "${module_install_errors}" = "" ]; then
+        if [ "${noSelfTest}" = false ] && [ "${moduleInstallErrors}" = "" ]; then
 
             pushd "${moduleDirPath}" >/dev/null
             if [ "${verbosity}" = "quiet" ]; then
@@ -546,7 +581,7 @@ function doModuleInstall () {
 
                 exePath="./"
                 # if [ "${executionEnvironment}" = "Development" ]; then
-                #     exePath="./bin/Debug/net7.0/"
+                #     exePath="./bin/Debug/${dotNetTarget}/"
                 # fi
                 exePath="${exePath}${moduleStartFilePath//\\//}"
 
@@ -570,6 +605,7 @@ function doModuleInstall () {
                     writeLine "No self-test available" $color_warn
                 fi
             else
+                moduleInstallErrors="Self-test failed"
                 writeLine "Self-test failed" $color_error
             fi
 
@@ -585,15 +621,17 @@ function doModuleInstall () {
         writeLine "No install.sh present in ${moduleDirPath}" $color_warn
     fi
 
+    restoreState
+
     if [ "$os" = "macos" ]; then 
         diff=$(echo $(($SECONDS-$moduleSetupStarttime)) | awk '{print int($1/60)"min "int($1%60)"s"}')
         writeLine "Module setup time $diff"
     else
-        writeLine "Module setup time $(date -u -d "0 $SECONDS seconds - $moduleSetupStarttime seconds" +"%H:%M:%S")" "!color_info!"
+        writeLine "Module setup time $(date -u -d "0 $SECONDS seconds - $moduleSetupStarttime seconds" +"%H:%M:%S")" "$color_info"
     fi
 
     # return result
-    # echo "${module_install_errors}"
+    echo "${moduleInstallErrors}"
 }
 
 # import the utilities :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -604,9 +642,11 @@ function correctLineEndings () {
 
     local filePath="$1"
 
-    # Force correct BOM and CRLF issues in the script. Just in case
+    # Force correct BOM and CRLF issues in the script. Just in case. We don't
+    # use the $os var here because it may not have been set yet
     if [[ $OSTYPE == 'darwin'* ]]; then           # macOS.
         darwinVersion=$(echo "$OSTYPE" | cut -d '.' -f 1)
+        darwinVersion="${darwinVersion:6}"
         if [[ ${darwinVersion} -ge 13 ]]; then    # Sonoma 14.3 is 'darwin23.2.1' -> '23'
             sed -i'.bak' -e '1s/^\xEF\xBB\xBF//' "${filePath}" > /dev/null 2>&1 # remove BOM
             sed -i'.bak' -e 's/\r$//' "${filePath}"            > /dev/null 2>&1 # CRLF to LF
@@ -619,8 +659,8 @@ function correctLineEndings () {
 }
 
 # $os, $platform and $architecture, edgeDevice and $systemName will be set by this script
-correctLineEndings "${sdkScriptsDirPath}/utils.sh"
-source "${sdkScriptsDirPath}/utils.sh"
+correctLineEndings "$utilsScript"
+source "$utilsScript"
 
 # Create directories for persisted application data
 if [ "$os" = "macos" ]; then 
@@ -712,27 +752,8 @@ diskSpace="$(df -Pk / | awk 'NR==2 {print $4}')000"
 formattedFreeSpace=$(bytesToHumanReadableKilo $diskSpace)
 diskSpace="$(df -Pk / | awk 'NR==2 {print $2}')000"
 formattedTotalSpace=$(bytesToHumanReadableKilo $diskSpace)
-writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${systemName}" $color_mute
+writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${systemName} (${os} ${os_name} ${architecture} - ${platform})" $color_mute
 
-
-if [ "$verbosity" != "quiet" ]; then 
-    writeLine 
-    writeLine "os, name, arch         = ${os} ${os_name} ${architecture}" $color_mute
-    writeLine "systemName, platform   = ${systemName}, ${platform}"       $color_mute
-    writeLine "edgeDevice             = ${edgeDevice}"                    $color_mute
-    writeLine "SSH                    = ${inSSH}"                         $color_mute
-    writeLine "setupMode              = ${setupMode}"                     $color_mute
-    writeLine "executionEnvironment   = ${executionEnvironment}"          $color_mute
-    writeLine "rootDirPath            = ${rootDirPath}"                   $color_mute
-    writeLine "appRootDirPath         = ${appRootDirPath}"                $color_mute
-    writeLine "setupScriptDirPath     = ${setupScriptDirPath}"            $color_mute
-    writeLine "sdkScriptsDirPath      = ${sdkScriptsDirPath}"             $color_mute
-    writeLine "runtimesDirPath        = ${runtimesDirPath}"               $color_mute
-    writeLine "modulesDirPath         = ${modulesDirPath}"                $color_mute
-    writeLine "externalModulesDirPath = ${externalModulesDirPath}"        $color_mute
-    writeLine "downloadDirPath        = ${downloadDirPath}"               $color_mute
-    writeLine 
-fi
 
 # =============================================================================
 # House keeping
@@ -763,6 +784,32 @@ writeLine
 writeLine "General CodeProject.AI setup" "White" "DarkGreen" $lineWidth
 writeLine
 
+if [ "${useJq}" = false ]; then
+    
+    write "Building ParseJSON..."
+    pushd ${rootDirPath}/utils/ParseJSON >/dev/null
+    if [ "$verbosity" = "quiet" ]; then 
+        dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release >/dev/null
+    else
+        dotnet build /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary -c Release
+    fi
+    if [ -d "./bin/Release/${dotNetTarget}/" ]; then 
+        mv "./bin/Release/${dotNetTarget}/" . >/dev/null
+    fi
+
+    if [ -f ParseJSON.dll ]; then
+        writeLine "Success." "$color_success"
+    else
+        writeLine "Failed. Exiting setup" "$color_error"
+    fi
+
+    popd >/dev/null
+fi
+
+# Get assets endpoint
+serverStorageUrl=$(getValueFromJsonFile "${appRootDirPath}/server/appsettings.json" ".ModuleOptions.AssetStorageUrl")
+if [ "$serverStorageUrl" != "" ]; then assetStorageUrl="$serverStorageUrl"; fi
+
 # Create some directories (run under a subshell, all with sudo)
 
 CreateWriteableDir "${runtimesDirPath}"   "runtimes"
@@ -773,6 +820,27 @@ CreateWriteableDir "${commonDataDirPath}" "persisted data"
 
 writeLine
 
+# Output settings
+
+if [ "$verbosity" != "quiet" ]; then 
+    writeLine 
+    writeLine "os, name, arch         = ${os} ${os_name} ${architecture}" $color_mute
+    writeLine "systemName, platform   = ${systemName}, ${platform}"       $color_mute
+    writeLine "edgeDevice             = ${edgeDevice}"                    $color_mute
+    writeLine "SSH                    = ${inSSH}"                         $color_mute
+    writeLine "setupMode              = ${setupMode}"                     $color_mute
+    writeLine "executionEnvironment   = ${executionEnvironment}"          $color_mute
+    writeLine "rootDirPath            = ${rootDirPath}"                   $color_mute
+    writeLine "appRootDirPath         = ${appRootDirPath}"                $color_mute
+    writeLine "setupScriptDirPath     = ${setupScriptDirPath}"            $color_mute
+    writeLine "utilsScriptsDirPath    = ${utilsScriptsDirPath}"           $color_mute
+    writeLine "runtimesDirPath        = ${runtimesDirPath}"               $color_mute
+    writeLine "modulesDirPath         = ${modulesDirPath}"                $color_mute
+    writeLine "externalModulesDirPath = ${externalModulesDirPath}"        $color_mute
+    writeLine "downloadDirPath        = ${downloadDirPath}"               $color_mute
+    writeLine "assetStorageUrl        = ${assetStorageUrl}"               $color_mute
+    writeLine 
+fi
 
 # =============================================================================
 # Report on GPU ability
@@ -820,10 +888,11 @@ else
                 cuda_comparison=$(versionCompare $cuda_version "11.8")
                 if [ "$cuda_comparison" = "-1" ]; then
                     writeLine "Upgrading WSL's CUDA install to 11.8" $color_info
-                    currentDir="$(pwd)"
-                    correctLineEndings "${sdkScriptsDirPath}/install_cuDNN.sh"
-                    source "${sdkScriptsDirPath}/install_cuDNN.sh" 11.8
-                    cd "$currentDir" >/dev/null
+
+                    saveState
+                    correctLineEndings "${installScriptsDirPath}/install_cuDNN.sh"
+                    source "${installScriptsDirPath}/install_cuDNN.sh" 11.8
+                    restoreState
                 fi
             fi
         fi
@@ -881,13 +950,14 @@ if [ "$hasMPS" = true ]; then writeLine "Yes" $color_success; else writeLine "No
 
 # And off we go...
 
-success=true
+setupErrors=""
+moduleInstallErrors=""
 
 if [ "$setupMode" = 'SetupEverything' ]; then 
 
     # Start with the CodeProject.AI SDK and Server
 
-    if [ "$selfTestOnly" = false ]; then
+    if [ "$selfTestOnly" = false ] && [ "$setupModulesOnly" = false ]; then
 
         setupSSL
     
@@ -895,209 +965,213 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         writeLine "Processing CodeProject.AI SDK" "White" "DarkGreen" $lineWidth
         writeLine
 
-        currentDir="$(pwd)"
         moduleDirName="SDK"
         moduleDirPath="${appRootDirPath}/${moduleDirName}"
-        
+        moduleInstallErrors=""
+
+        # Note that the SDK install will setup .NET since the SDK relies on it
+
+        saveState
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
-        if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi
-        cd "$currentDir" >/dev/null
+        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="CodeProject.AI SDK install failed"; fi
+        restoreState
+
+        if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [SDK] ${moduleInstallErrors}\n"; fi
 
 
         writeLine
         writeLine "Processing CodeProject.AI Server" "White" "DarkGreen" $lineWidth
         writeLine
 
-        currentDir="$(pwd)"
         moduleDirName="server"
         moduleDirPath="${appRootDirPath}/${moduleDirName}"
+        moduleInstallErrors=""
 
+        saveState
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
-        if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi
-        cd "$currentDir" >/dev/null
+        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="CodeProject.AI Server install failed"; fi
+        restoreState
+
+        if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Server] ${moduleInstallErrors}\n"; fi
     fi
 
-    # Walk through the modules directory and call the setup script in each dir
+    # Walk through the modules directory and call the setup script in each dir,
+    # as well as setting up the demos
 
-    writeLine
-    writeLine "Processing Included CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
-    writeLine
+    if [ "$setupServerOnly" = false ]; then
 
-    if [ -d "$modulesDirPath" ]; then
-        for d in "${modulesDirPath}/"*/ ; do  # Note the " placement here
+        writeLine
+        writeLine "Processing Included CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
+        writeLine
 
+        for d in "${modulesDirPath}/"*/ ; do
             moduleDirName=$(basename "$d")
             moduleDirPath="${modulesDirPath}/${moduleDirName}"
             moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-            currentDir="$(pwd)"
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
-            cd "$currentDir" >/dev/null
+            doModuleInstall "${moduleId}" "${moduleDirPath}" "Internal"
 
-            if [ "${module_install_errors}" != "" ]; then
-                success=false
-                writeLine "Install failed: ${module_install_errors}" "$color_error"
-            fi
+            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
         done
-    fi
 
-    if [ "$installExternalModules" == "true" ]; then
-        # Walk through the modules directoorym for modules that live in the external 
-        # folder. For isntance modules that are in extenal Git repos / projects
+        if [ "$installExternalModules" == "true" ]; then
+            # Walk through the modules directoorym for modules that live in the external 
+            # folder. For isntance modules that are in extenal Git repos / projects
+            writeLine
+            writeLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
+            writeLine
+
+            if [ -d "$externalModulesDirPath" ]; then
+                for d in "${externalModulesDirPath}/"*/ ; do
+                    moduleDirName=$(basename "$d")
+                    moduleDirPath="${externalModulesDirPath}/${moduleDirName}"
+                    moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
+                    doModuleInstall "${moduleId}" "${moduleDirPath}" "External"
+                    if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                done
+            else
+                writeLine "No external modules found" "$color_mute"
+            fi
+        fi
 
         writeLine
-        writeLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
-        writeLine
+        writeLine "Module setup Complete" $color_success
 
-        if [ -d "$externalModulesDirPath" ]; then
-            for d in "${externalModulesDirPath}/"*/ ; do  # Note the " placement here
+        # Install Demo clients
+        if [ "$selfTestOnly" = false ] && [ "$setupModulesOnly" = false ]; then
+            if [ "$executionEnvironment" = "Development" ]; then
+                writeLine
+                writeLine "Processing demo clients" "White" "Blue" $lineWidth
+                writeLine
+
+                moduleDirName="clients"
+                moduleDirPath="${rootDirPath}/src/demos/${moduleDirName}"
+                moduleInstallErrors=""
+                
+                saveState
+                correctLineEndings "${moduleDirPath}/install.sh"
+                source "${moduleDirPath}/install.sh" "install"
+                if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="failed to install"; fi   
+                restoreState
+
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Demo clients] ${moduleInstallErrors}\n"; fi
+            fi
+        fi
+
+        # Install Demo Modules
+        if [ "$executionEnvironment" = "Development" ]; then
+            writeLine
+            writeLine "Processing demo modules" "White" "Blue" $lineWidth
+            writeLine
+
+            oldModulesDirPath="${modulesDirPath}"
+            modulesDirPath="${rootDirPath}/src/demos/modules/"
+            for d in ${modulesDirPath}/*/ ; do
                 moduleDirName=$(basename "$d")
-                moduleDirPath="${externalModulesDirPath}/${moduleDirName}"
+                moduleDirPath="${modulesDirPath}/${moduleDirName}"
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
-                writeLine "External module install" "$color_info"
-                currentDir="$(pwd)"
-                doModuleInstall "${moduleId}" "${moduleDirPath}"
-                cd "$currentDir" >/dev/null
-
-                if [ "${module_install_errors}" != "" ]; then
-                    success=false
-                    writeLine "Install failed: ${module_install_errors}" "$color_error"
-                fi
+                doModuleInstall "${moduleId}" "${moduleDirPath}" "Demo"
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
             done
-        else
-            writeLine "No external modules found" "$color_mute"
+            modulesDirPath="${oldModulesDirPath}"
         fi
     fi
 
-    writeLine
-    writeLine "Module setup Complete" $color_success
-    writeLine
-
-    # Setup Demos
-    if [ "$selfTestOnly" = false ] && [ "$executionEnvironment" = "Development" ]; then
-
-        writeLine
-        writeLine "Processing demo clients" "White" "Blue" $lineWidth
-        writeLine
-
-        moduleDirName="clients"
-        moduleDirPath="${rootDirPath}/src/demos/${moduleDirName}"
-
-        currentDir="$(pwd)"
-        correctLineEndings "${moduleDirPath}/install.sh"
-        source "${moduleDirPath}/install.sh" "install"
-        # Ignoring this
-        # if [ $? -gt 0 ] || [ "${module_install_errors}" != "" ]; then success=false; fi   
-        cd "$currentDir" >/dev/null
-
-        writeLine "done" $color_success
-    fi
-
-    if [ "$executionEnvironment" = "Development" ]; then
-        writeLine
-        writeLine "Processing demo modules" "White" "Blue" $lineWidth
-        writeLine
-
-        oldModulesDirPath="${modulesDirPath}"
-        modulesDirPath="${rootDirPath}/src/demos/modules/"
-        for d in ${modulesDirPath}/*/ ; do
-            moduleDirName=$(basename "$d")
-            moduleDirPath="${modulesDirPath}/${moduleDirName}"
-            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
-
-            currentDir="$(pwd)"
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
-            cd "$currentDir" >/dev/null
-
-            if [ "${module_install_errors}" != "" ]; then
-                success=false
-                writeLine "Install failed: ${module_install_errors}" "$color_error"
-            fi
-        done
-        modulesDirPath="${oldModulesDirPath}"
-
-        writeLine "done" $color_success
-    fi
 else
 
-    # Install an individual module
+    if [ "$setupServerOnly" = false ]; then
 
-    moduleDirPath=$(pwd)
-    if [ "${moduleDirPath: -1}" = "/" ]; then
-        moduleDirPath="${moduleDirPath:0:${#moduleDirPath}-1}"
-    fi
-    moduleDirName=$(basename "${moduleDirPath}")
+        # Install an individual module
 
-    if [ "$moduleDirName" = "server" ]; then        # Not a module. The server
-        if [ "$selfTestOnly" = false ]; then
-            moduleDirPath="${appRootDirPath}/${moduleDirName}"
-            
-            currentDir="$(pwd)"
-            correctLineEndings "${moduleDirPath}/install.sh"
-            source "${moduleDirPath}/install.sh" "install"
-            cd "$currentDir" >/dev/null
+        moduleDirPath=$(pwd)
+        if [ "${moduleDirPath: -1}" = "/" ]; then
+            moduleDirPath="${moduleDirPath:0:${#moduleDirPath}-1}"
         fi
-    elif [ "$moduleDirName" = "clients" ]; then     # Not a module. The demo clients
-        if [ "$selfTestOnly" = false ]; then
-            moduleDirPath="${rootDirPath}/src/demos/${moduleDirName}"
-            
-            currentDir="$(pwd)"
-            correctLineEndings "${moduleDirPath}/install.sh"
-            source "${moduleDirPath}/install.sh" "install"
-            cd "$currentDir" >/dev/null
+        moduleDirName=$(basename "${moduleDirPath}")
+
+        if [ "$moduleDirName" = "server" ]; then        # Not a module. The server
+            if [ "$setupModulesOnly" = false ] && [ "$selfTestOnly" = false ]; then
+                moduleDirPath="${appRootDirPath}/${moduleDirName}"
+                moduleInstallErrors=""
+                
+                saveState
+                correctLineEndings "${moduleDirPath}/install.sh"
+                source "${moduleDirPath}/install.sh" "install"
+                restoreState
+
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Server] ${moduleInstallErrors}\n"; fi
+            fi
+        elif [ "$moduleDirName" = "clients" ]; then     # Not a module. The demo clients
+            if [ "$setupModulesOnly" = false ] && [ "$selfTestOnly" = false ]; then
+                moduleDirPath="${rootDirPath}/src/demos/${moduleDirName}"
+                moduleInstallErrors=""
+                
+                saveState
+                correctLineEndings "${moduleDirPath}/install.sh"
+                source "${moduleDirPath}/install.sh" "install"
+                restoreState
+
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Demo clients] ${moduleInstallErrors}\n"; fi
+            fi
+        else
+
+            # No need to check "$selfTestOnly" here because this check is done in
+            # doModuleInstall. We need to run doModuleInstall to have the selftest
+            # called
+
+            pushd ".." >/dev/null
+            parentPath=$(pwd)
+            pushd ".." >/dev/null
+            parentParentPath=$(pwd)
+            popd >/dev/null
+            popd >/dev/null
+            parentDirName=$(basename "$parentPath")
+            parentParentDirName=$(basename "$parentParentPath")
+
+            # echo "$parentDirName"
+            # echo "$parentParentDirName"
+
+            if [ "$parentParentDirName" = "demos" ]; then                   # demo module
+
+                oldModulesDirPath="$modulesDirPath"
+        
+                modulesDirPath="${rootDirPath}/src/demos/modules/"
+                moduleDirPath="${modulesDirPath}/${moduleDirName}"
+                moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
+                doModuleInstall "${moduleId}" "${moduleDirPath}" "Demo"
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                
+                modulesDirPath="$oldModulesDirPath"
+
+            elif [ "$parentDirName" = "$externalModulesDir" ]; then         # External module
+
+                moduleDirPath=$(pwd)
+                moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
+                doModuleInstall "${moduleId}" "${moduleDirPath}" "External"
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+
+            else                                                            # Internal module
+
+                moduleDirPath="${modulesDirPath}/${moduleDirName}"
+                moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
+
+                doModuleInstall "${moduleId}" "${moduleDirPath}" "Internal"
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+
+            fi
         fi
-    else
 
-        # No need to check "$selfTestOnly" here because this check is done in
-        # doModuleInstall. We need to run doModuleInstall to have the selftest
-        # called
-
-        pushd ".." >/dev/null
-        parentPath=$(pwd)
-        pushd ".." >/dev/null
-        parentParentPath=$(pwd)
-        popd >/dev/null
-        popd >/dev/null
-        parentDirName=$(basename "$parentPath")
-        parentParentDirName=$(basename "$parentParentPath")
-
-        # echo "$parentDirName"
-        # echo "$parentParentDirName"
-
-        if [ "$parentParentDirName" = "demos" ]; then                   # demo module
-            writeLine "Demo module install" "$color_info"
-
-            oldModulesDirPath="$modulesDirPath"
-    
-            modulesDirPath="${rootDirPath}/src/demos/modules/"
-            moduleDirPath="${modulesDirPath}/${moduleDirName}"
-            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
-
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
-            
-            modulesDirPath="$oldModulesDirPath"
-        elif [ "$parentDirName" = "$externalModulesDir" ]; then   # External module
-            writeLine "External module install" "$color_info"
-            moduleDirPath=$(pwd)
-            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
-
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
-        else                                                            # Internal module
-            moduleDirPath="${modulesDirPath}/${moduleDirName}"
-            moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
-
-            doModuleInstall "${moduleId}" "${moduleDirPath}"
+        if [ "${moduleInstallErrors}" != "" ]; then
+            success=false
+            writeLine "Install failed: ${moduleInstallErrors}" "$color_error"
         fi
     fi
-
-    if [ "${module_install_errors}" != "" ]; then
-        success=false
-        writeLine "Install failed: ${module_install_errors}" "$color_error"
-    fi
-
 fi
 
 # =============================================================================
@@ -1111,27 +1185,34 @@ if [ "$os" = "macos" ]; then
     diff=$(echo $(($SECONDS-$mainSetupStarttime)) | awk '{print int($1/60)"min "int($1%60)"s"}')
     writeLine "Total setup time $diff"
 else
-    writeLine "Total setup time $(date -u -d "0 $SECONDS seconds - $mainSetupStarttime seconds" +"%H:%M:%S")" "!color_info!"
+    writeLine "Total setup time $(date -u -d "0 $SECONDS seconds - $mainSetupStarttime seconds" +"%H:%M:%S")" "$color_info"
 fi
 
-if [ "${success}" != true ]; then
+if [ "$setupErrors" = "" ]; then
+    quit 0
+else
+    writeLine
+    writeLine "SETUP FAILED:" "$color_warn"
+    # writeLine "$setupErrors" "$color_error"
+    printf "$setupErrors"
+    
     quit 1
 fi
 
-quit 0
 
 
 # The return codes
-# 1 - General error
-# 2 - failed to install required runtime
-# 3 - required runtime missing, needs installing
-# 4 - required tool missing, needs installing
-# 5 - unable to create Python virtual environment
-# 6 - unable to download required asset
-# 7 - unable to expand compressed archive
-# 8 - unable to create file or directory
-# 9 - required parameter not supplied
+# 1  - General error
+# 2  - failed to install required runtime
+# 3  - required runtime missing, needs installing
+# 4  - required tool missing, needs installing
+# 5  - unable to create Python virtual environment
+# 6  - unable to download required asset
+# 7  - unable to expand compressed archive
+# 8  - unable to create file or directory
+# 9  - required parameter not supplied
 # 10 - failed to install required tool
 # 11 - unable to copy file or directory
 # 12 - parameter value invalid
+# 13 - unable to install Python packages
 # 100 - impossible code path executed

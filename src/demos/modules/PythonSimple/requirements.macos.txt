@@ -1,6 +1,10 @@
 #! Python3.8
 
+numpy<2                         # Installing NumPy, a package for scientific computing
+
 # Specific version because we have a patch
 ultralytics==8.1.2              # Installing Ultralytics package for object detection in images
+
+CodeProject-AI-SDK          # Installing the CodeProject.AI SDK
 
 # last line empty.

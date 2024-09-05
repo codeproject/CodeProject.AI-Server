@@ -327,6 +327,61 @@ namespace CodeProject.AI.SDK
             _cancellationTokenSource.Cancel();
         }
 
+        private ExpandoObject ProcessModuleCommands(BackendRequest request)
+        {
+            ExpandoObject response;
+            ModuleResponse moduleResponse = Process(request);
+            if (!_doNotLogCommands.Contains(request.reqtype))
+                UpdateStatistics(moduleResponse);
+
+            if (moduleResponse.LongProcessMethod is not null)
+            {
+                if (_longRunningTask is not null && !_longRunningTask.IsCompleted)
+                {
+                    response = new
+                    {
+                        Success = false,
+                        CommandId = _longRunningCommandId,
+                        Error = "A long running command is already in progress"
+                    }.ToExpando();
+                }
+                else
+                {
+                    // We have a previous long running process that is now done, but we
+                    // have not stored (nor returned) the result. We can read the result
+                    // now, but we have to start a new process, so...???
+                    // if (_longRunningTask is not null && _longRunningTask.IsCompleted &&
+                    //     _lastLongRunningLastOutput is null)
+                    //    _lastLongRunningLastOutput = ...
+
+                    // Store request Id as the command Id for later, reset the last result
+                    string? commandId = request.reqid;
+
+                    _longRunningCommandId = commandId;
+                    _lastLongRunningOutput = null;
+                    _longRunningTask = null;
+
+                    // Start the long running process
+                    Console.WriteLine("Starting long process with command ID " + commandId);
+
+                    _longProcessCancellationTokenSource = new CancellationTokenSource();
+                    CancellationToken cancellationToken = _longProcessCancellationTokenSource.Token;
+                    _longRunningTask = moduleResponse.LongProcessMethod(request, cancellationToken);
+
+                    response = new
+                    {
+                        Success = true,
+                        CommandId = commandId,
+                        Message = "Command is running in the background",
+                        CommandStatus = "running"
+                    }.ToExpando();
+                }
+            }
+            else
+                response = moduleResponse.ToExpando();
+            return response;
+        }
+
         /// <summary>
         /// Processes a command sent to a module.
         /// </summary>

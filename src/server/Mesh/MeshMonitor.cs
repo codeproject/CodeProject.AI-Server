@@ -13,10 +13,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.SDK.API;
-using CodeProject.AI.API;
 
 namespace CodeProject.AI.Server.Mesh
 {
