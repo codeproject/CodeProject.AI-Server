@@ -92,8 +92,7 @@ namespace CodeProject.AI.Server
 
             // GetProcessStatus a directory for the given platform that allows modules to store persisted data
             string programDataDir     = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-            string applicationDataDir = programDataDir + "/" + companyName + "/" + productCat;
-            applicationDataDir = applicationDataDir.Replace('/', Path.DirectorySeparatorChar);
+            string applicationDataDir = $"{programDataDir}\\{companyName}\\{productCat}".Replace('\\', Path.DirectorySeparatorChar);
 
             // .NET's suggestion for macOS and Linux aren't great. Let's do something different.
             if (SystemInfo.IsMacOS)
