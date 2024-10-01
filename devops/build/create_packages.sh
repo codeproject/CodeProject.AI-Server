@@ -35,9 +35,8 @@ dotNetTarget="net8.0"
 
 # Basic locations
 
-# The name of the dir, within the current directory, where install assets will
-# be downloaded
-downloadDir='downloads'
+# The name of the dir, within the root directory, where packages will be stored
+packageDir='downloads/modules/packages'
 
 # The name of the source directory (in development)
 srcDirName='src'
@@ -167,8 +166,8 @@ function doModulePackage () {
             popd >/dev/null
             
             # Move package into modules download cache       
-            # echo Moving ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip to ${downloadDirPath}/${modulesDir}/
-            mv -f ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip ${downloadDirPath}/${modulesDir}/  >/dev/null
+            # echo Moving ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip to ${packageDirPath}/
+            mv -f ${packageModuleDirPath}/${packageModuleId}-${packageVersion}.zip ${packageDirPath}/  >/dev/null
 
             if [ $? -ne 0 ]; then
                 writeLine "Error" "Red"
@@ -185,7 +184,9 @@ function doModulePackage () {
 # The location of directories relative to the root of the solution directory
 modulesDirPath="${rootDirPath}//${modulesDir}"
 externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
-downloadDirPath="${rootDirPath}/${downloadDir}"
+packageDirPath="${rootDirPath}/${packageDir}"
+
+if [ ! -d "${packageDirPath}" ]; then mkdir -p "${packageDirPath}"; fi
 
 # Let's go
 
