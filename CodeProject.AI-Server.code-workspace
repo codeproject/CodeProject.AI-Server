@@ -29,6 +29,10 @@
 			"path": "../CodeProject.AI-Modules/CodeProject.AI-LlamaChat"
 		},
 		{
+			"name": "Multi-modal LLM",
+			"path": "../CodeProject.AI-Modules/CodeProject.AI-MultiModeLLM"
+		},
+		{
 			"name": "Object Detection (Coral)",
 			"path": "../CodeProject.AI-Modules/CodeProject.AI-ObjectDetectionCoral"
 		},
