@@ -572,13 +572,10 @@ namespace CodeProject.AI.Server.Controllers
                     queryParams.Add(new KeyValuePair<string, string?[]>(param.Key, param.Value.ToArray()));
             }
 
-            // REVIEW: [Chris] This is where we would need to handle a JSON request body. We would
-            //         need to read the request body and parse it as JSON. We would then need to
-            //         use the JSON object to populate the payload.
-
-            // The HasFormContentType check should be sufficient and checks for multipart/form-data,
-            // and application/x-www-form-urlencoded. There should be no need to use a try/catch
-            // here either, but the GetFileData() method might throw if the moon is in the wrong phase.
+            // We first check if the request is in JSON form. The HasFormContentType check should be
+            // sufficient since it checks for multipart/form-data and application/x-www-form-urlencoded.
+            // There should be no need to use a try/catch here either, but the GetFileData() method
+            // might throw if the moon is in the wrong phase.
             if (Request.HasJsonContentType() && Request.ContentLength > 0)
             {
                 var payload = await Request.ReadFromJsonAsync<RequestPayload>() ?? new RequestPayload();
