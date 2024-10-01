@@ -206,7 +206,7 @@ function cleanFiles() {
     popd >/dev/null
 }
 
-clear
+# clear
 
 # Output usage =================================================================
 
@@ -217,15 +217,15 @@ if [ "$1" = "" ]; then
     writeLine  
     writeLine  ' where option is one of:'
     writeLine  
-    writeLine  '  assets        - removes assets to force re-copy of downloads'
-    writeLine  '  build         - cleans build output (bin / obj)'
-    writeLine  '  data          - removes user data stored by modules'
-    writeLine  '  downloads     - removes downloads to force re-download'
-    writeLine  '  install       - removes current OS installation stuff (PIPs, downloads etc)'
-    writeLine  '  install-all   - removes installation stuff for all platforms'
-    writeLine  '  libraries     - removes installed libraries (PIPs), current OS'
-    writeLine  '  libraries-all - removes installed libraries (PIPs), all OSs'
-    writeLine  '  all           - removes build and installation stuff for all platforms'
+    writeLine  '  assets         - removes assets to force re-copy of downloads'
+    writeLine  '  build          - cleans build output (bin / obj)'
+    writeLine  '  data           - removes user data stored by modules'
+    writeLine  '  download-cache - removes downloads to force re-download'
+    writeLine  '  install        - removes current OS installation stuff (PIPs, downloads etc)'
+    writeLine  '  install-all    - removes installation stuff for all platforms'
+    writeLine  '  libraries      - removes installed libraries (PIPs), current OS'
+    writeLine  '  libraries-all  - removes installed libraries (PIPs), all OSs'
+    writeLine  '  all            - removes build and installation stuff for all platforms'
     
     if [ "$os" = "macos" ]; then
         writeLine
@@ -399,17 +399,17 @@ if [ "$cleanDownloadCache" = true ]; then
     writeLine "Cleaning download cache" "White" "Blue" $lineWidth
     writeLine 
 
+    # remove non module or model folders
     for path in ${rootDir}/downloads/* ; do
         if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/modules" ] && [ "$path" != "${rootDir}/downloads/models" ]; then
             removeDir "${path}"
         fi
     done
 
-    for path in ${rootDir}/downloads/modules/* ; do
-        if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/modules/readme.txt" ]; then
-            removeFile "${path}"
-        fi
-    done
+    # clean out module folders
+    removeDir "${rootDir}/downloads/modules/"
+
+    # clean out models files
     for path in ${rootDir}/downloads/models/* ; do
         if [ -d "$path" ] && [ "$path" != "${rootDir}/downloads/models/models.json" ]; then
             removeFile "${path}"

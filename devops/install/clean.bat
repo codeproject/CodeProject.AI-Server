@@ -209,15 +209,14 @@ if /i "%cleanDownloadCache%" == "true" (
     call "!utilsScript!" WriteLine "Cleaning Downloads" "White" "Blue" !lineWidth!
     call "!utilsScript!" WriteLine 
 
-    rem delete downloads for each module
+    REM remove non module or model folders
     FOR /d %%a IN ("%rootDir%\downloads\*") DO (
         IF /i NOT "%%~nxa"=="modules" IF /i NOT "%%~nxa"=="models" call :RemoveDir "%%a"
-    )
-    rem delete module packages downloads 
-    FOR %%a IN ("%rootDir%\downloads\modules\*") DO (
-        IF /i NOT "%%~nxa"=="readme.txt" call :RemoveFile "%%a"
-    )
-    rem delete model packages downloads 
+
+    REM clean out module folders
+    call :RemoveFile "%rootDir%\downloads\modules\"
+
+    REM clean out models files
     FOR %%a IN ("%rootDir%\downloads\models\*") DO (
         IF /i NOT "%%~nxa"=="models.json" call :RemoveFile "%%a"
     )
