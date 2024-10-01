@@ -1008,7 +1008,7 @@ namespace CodeProject.AI.Server.Modules
                                             Downloads      = 0
                                         }).ToList();
 
-                // Add renamed modules, but with their names, but only server revisions v2.4+
+                // Add renamed modules, using their new (current) names, but listing only server revisions v2.4+
                 foreach (var pair in corrections)
                 {
                     ModuleConfig? module = modules.Values.Where(m => m.ModuleId == pair.NewModuleId).FirstOrDefault();
@@ -1059,7 +1059,7 @@ namespace CodeProject.AI.Server.Modules
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string configJson = JsonSerializer.Serialize(moduleList, options);
 
-                configJson += "\n/*\n\n" + CreateModulesListingHtml(modules, versionInfo) + "\n*/";
+                configJson += "\n/*\n\n" + CreateModulesListingMarkdown(modules, versionInfo) + "\n*/";
 
                 await File.WriteAllTextAsync(path, configJson).ConfigureAwait(false);
 
@@ -1073,7 +1073,7 @@ namespace CodeProject.AI.Server.Modules
         }
 
         /// <summary>
-        /// Creates markdown representing the file modules available.
+        /// Creates HTML representing the file modules available.
         /// </summary>
         /// <param name="modules">This set of module configs</param>
         /// <param name="versionInfo">The version info for the current server</param>
@@ -1142,7 +1142,69 @@ namespace CodeProject.AI.Server.Modules
             return list.ToString();
         }
 
-        private static string PlatformList(string[] platforms)
+        /// <summary>
+        /// Creates Markdown representing the file modules available.
+        /// </summary>
+        /// <param name="modules">This set of module configs</param>
+        /// <param name="versionInfo">The version info for the current server</param>
+        /// <returns>A string</returns>
+        private static string CreateModulesListingMarkdown(ModuleCollection modules,
+                                                           VersionInfo versionInfo)
+        {
+            var moduleList = modules.Values.Where(m => m.InstallOptions!.ModuleLocation == ModuleLocation.Internal ||
+                                                        m.InstallOptions!.ModuleLocation == ModuleLocation.External)
+                                           .OrderBy(m => m.PublishingInfo!.Category)
+                                           .ThenBy(m => m.Name);
+
+            StringBuilder list;
+            if (versionInfo is not null)
+                list = new StringBuilder($"Supporting CodeProject.AI Server {versionInfo.Version}.\n");
+            else
+                list = new StringBuilder();
+                
+            string? currentCategory = string.Empty;
+            foreach (var module in moduleList)
+            {
+                if (currentCategory != module.PublishingInfo!.Category)
+                {
+                    if (list.Length > 0)
+                        list.AppendLine("\n");
+
+                    list.AppendLine($"### {module.PublishingInfo!.Category}");
+                    list.AppendLine();
+                    currentCategory = module.PublishingInfo!.Category;
+                }
+
+                list.AppendLine($" - **{module.Name}**<br>");
+                list.AppendLine($"   {module.PublishingInfo.Description}<br>");
+
+                list.Append($"   v{module.Version} &nbsp; ");
+                list.Append($"{PlatformList(module.InstallOptions!.Platforms, false)} &nbsp; ");
+                list.AppendLine($"{module.PublishingInfo.Stack}<br>");
+
+                string author  = string.IsNullOrWhiteSpace(module.PublishingInfo.Author)
+                               ? "Anonymous Legend" : module.PublishingInfo.Author;
+                string basedOn = string.IsNullOrWhiteSpace(module.PublishingInfo.BasedOn)
+                               ? "this project" : module.PublishingInfo.BasedOn;
+
+                // list.AppendLine();
+                if (!string.IsNullOrWhiteSpace(module.PublishingInfo.Homepage))
+                    list.Append($"   Project by [{author}]({module.PublishingInfo.Homepage})"); 
+                else
+                    list.Append($"   By {author}");            
+                if (!string.IsNullOrWhiteSpace(module.PublishingInfo.BasedOnUrl))
+                    list.Append($", based on [{basedOn}]({module.PublishingInfo.BasedOnUrl})."); 
+                else if (!string.IsNullOrWhiteSpace(module.PublishingInfo.BasedOn))
+                    list.Append($", based on {module.PublishingInfo.BasedOn}."); 
+
+                list.AppendLine();
+                list.AppendLine("<br>");
+            }
+
+            return list.ToString();
+        }
+
+        private static string PlatformList(string[] platforms, bool html = true)
         {
             var realNames = platforms.Select(p => {
                 string suffix = string.Empty;
@@ -1156,10 +1218,26 @@ namespace CodeProject.AI.Server.Modules
                 return suffix + string.Concat(char.ToUpper(p[0]), p[1..]);
             });
 
-            var removes = string.Join(" ", realNames.Where(p => p.StartsWith('!'))
+            string removes, keeps;
+            if (html)
+            {
+                removes = string.Join(" ", realNames.Where(p => p.StartsWith('!'))
                                                     .Select(p => $"<span class='t'>{p[1..]}</span>"));
-            var keeps   = string.Join(" ", realNames.Where(p => !p.StartsWith('!'))
+                keeps   = string.Join(" ", realNames.Where(p => !p.StartsWith('!'))
                                                     .Select(p => $"<span class='t'>{p}</span>"));
+            }
+            else
+            {
+                removes = string.Join(" ", realNames.Where(p => p.StartsWith('!'))
+                                                    .Select(p => $"{p[1..]}, "));
+                keeps   = string.Join(" ", realNames.Where(p => !p.StartsWith('!'))
+                                                    .Select(p => $"{p}, "));
+                
+                if (removes.EndsWith(", ")) removes = removes[..^2];
+                if (keeps.EndsWith(", "))   keeps   = keeps[..^2];
+
+                if (keeps == "All") keeps = "All Platforms";
+            }
 
             string platformString = keeps;
             if (!string.IsNullOrEmpty(removes))
