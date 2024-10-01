@@ -138,18 +138,14 @@ appRootDirPath="${setupScriptDirPath}"
 # The location of large packages that need to be downloaded (eg an AWS S3 bucket
 # name). This will be overwritten using the value from appsettings.json
 # assetStorageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/'
-# assetStorageUrl='https://codeproject-ai-bunny.b-cdn.net/server/assets/'
-assetStorageUrl='https://www.codeproject.com/ai/download/server/assets/'
+assetStorageUrl='https://codeproject-ai-bunny.b-cdn.net/server/assets/'
+# assetStorageUrl='https://www.codeproject.com/ai/download/server/assets/'
 
 # The name of the source directory (in development)
 srcDirName='src'
 
 # The name of the app directory (in docker)
 appDirName='app'
-
-# The name of the dir, within the current directory, where install assets will
-# be downloaded
-downloadDir='downloads'
 
 # The name of the dir holding the runtimes
 runtimesDir='runtimes'
@@ -160,6 +156,14 @@ runtimesDir='runtimes'
 modulesDir="modules"
 preInstalledModulesDir="preinstalled-modules"
 externalModulesDir="CodeProject.AI-Modules"
+
+# The name of the dir, relative to the root directory, containing the folder
+# where downloaded assets will be cached
+downloadDir='downloads'
+
+# Name of the install assets folder. Downloads in <root>/downloads/modules/assets
+# Module packages will be stored in <root>/downloads/modules/packages
+assetsDir='assets'
 
 # The name of the dir holding downloaded models for the modules. NOTE: this is 
 # not currently used, but here for future-proofing
@@ -304,6 +308,7 @@ preInstalledModulesDirPath="${rootDirPath}/${preInstalledModulesDir}"
 externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
 modelsDirPath="${rootDirPath}/${modelsDir}"
 downloadDirPath="${rootDirPath}/${downloadDir}"
+downloadModuleAssetsDirPath="${downloadDirPath}/${modulesDir}/${assetsDir}"
 utilsScriptsDirPath="${appRootDirPath}/scripts"
 installScriptsDirPath="${rootDirPath}/devops/install"
 utilsScript="${utilsScriptsDirPath}/utils.sh"
@@ -814,11 +819,12 @@ if [ "$serverStorageUrl" != "" ]; then assetStorageUrl="$serverStorageUrl"; fi
 
 # Create some directories (run under a subshell, all with sudo)
 
-CreateWriteableDir "${runtimesDirPath}"   "runtimes"
-CreateWriteableDir "${downloadDirPath}"   "downloads"
-CreateWriteableDir "${modulesDirPath}"    "modules download"
-CreateWriteableDir "${modelsDirPath}"     "models download"
-CreateWriteableDir "${commonDataDirPath}" "persisted data"
+CreateWriteableDir "${runtimesDirPath}"               "runtimes"
+CreateWriteableDir "${downloadDirPath}"               "general downloads"
+CreateWriteableDir "${downloadModuleAssetsDirPath}"   "module asset downloads"
+CreateWriteableDir "${modulesDirPath}"                "modules"
+CreateWriteableDir "${modelsDirPath}"                 "models"
+CreateWriteableDir "${commonDataDirPath}"             "persisted data"
 
 writeLine
 
@@ -826,21 +832,22 @@ writeLine
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "os, name, arch         = ${os} ${os_name} ${architecture}" $color_mute
-    writeLine "systemName, platform   = ${systemName}, ${platform}"       $color_mute
-    writeLine "edgeDevice             = ${edgeDevice}"                    $color_mute
-    writeLine "SSH                    = ${inSSH}"                         $color_mute
-    writeLine "setupMode              = ${setupMode}"                     $color_mute
-    writeLine "executionEnvironment   = ${executionEnvironment}"          $color_mute
-    writeLine "rootDirPath            = ${rootDirPath}"                   $color_mute
-    writeLine "appRootDirPath         = ${appRootDirPath}"                $color_mute
-    writeLine "setupScriptDirPath     = ${setupScriptDirPath}"            $color_mute
-    writeLine "utilsScriptsDirPath    = ${utilsScriptsDirPath}"           $color_mute
-    writeLine "runtimesDirPath        = ${runtimesDirPath}"               $color_mute
-    writeLine "modulesDirPath         = ${modulesDirPath}"                $color_mute
-    writeLine "externalModulesDirPath = ${externalModulesDirPath}"        $color_mute
-    writeLine "downloadDirPath        = ${downloadDirPath}"               $color_mute
-    writeLine "assetStorageUrl        = ${assetStorageUrl}"               $color_mute
+    writeLine "os, name, arch              = ${os} ${os_name} ${architecture}" $color_mute
+    writeLine "systemName, platform        = ${systemName}, ${platform}"       $color_mute
+    writeLine "edgeDevice                  = ${edgeDevice}"                    $color_mute
+    writeLine "SSH                         = ${inSSH}"                         $color_mute
+    writeLine "setupMode                   = ${setupMode}"                     $color_mute
+    writeLine "executionEnvironment        = ${executionEnvironment}"          $color_mute
+    writeLine "rootDirPath                 = ${rootDirPath}"                   $color_mute
+    writeLine "appRootDirPath              = ${appRootDirPath}"                $color_mute
+    writeLine "setupScriptDirPath          = ${setupScriptDirPath}"            $color_mute
+    writeLine "utilsScriptsDirPath         = ${utilsScriptsDirPath}"           $color_mute
+    writeLine "runtimesDirPath             = ${runtimesDirPath}"               $color_mute
+    writeLine "modulesDirPath              = ${modulesDirPath}"                $color_mute
+    writeLine "externalModulesDirPath      = ${externalModulesDirPath}"        $color_mute
+    writeLine "downloadDirPath             = ${downloadDirPath}"               $color_mute
+    writeLine "downloadModuleAssetsDirPath = ${downloadModuleAssetsDirPath}"   $color_mute
+    writeLine "assetStorageUrl             = ${assetStorageUrl}"               $color_mute
     writeLine 
 fi
 

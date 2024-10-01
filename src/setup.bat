@@ -121,18 +121,14 @@ set appRootDirPath=!setupScriptDirPath!
 :: The location of large packages that need to be downloaded (eg an AWS S3 bucket
 :: name). This will be overwritten using the value from appsettings.json
 REM set assetStorageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/
-REM set assetStorageUrl=https://codeproject-ai-bunny.b-cdn.net/server/assets/
-set assetStorageUrl=https://www.codeproject.com/ai/download/server/assets/
+set assetStorageUrl=https://codeproject-ai-bunny.b-cdn.net/server/assets/
+REM set assetStorageUrl=https://www.codeproject.com/ai/download/server/assets/
 
 :: The name of the source directory (in development)
 set srcDirName=src
 
 :: The name of the app directory (in docker)
 set appDirName=app
-
-:: The name of the dir, within the current directory, where install assets will
-:: be downloaded
-set downloadDir=downloads
 
 :: The name of the dir holding the installed runtimes
 set runtimesDir=runtimes
@@ -141,6 +137,14 @@ set runtimesDir=runtimes
 set modulesDir=modules
 set preInstalledModulesDir=preinstalled-modules
 set externalModulesDir=CodeProject.AI-Modules
+
+:: The name of the dir, relative to the root directory, containing the folder
+:: where downloaded assets will be cached
+set downloadDir=downloads
+
+:: Name of the install assets folder. Downloads in <root>/downloads/modules/assets
+:: Module packages will be stored in <root>/downloads/modules/packages
+set assetsDir=assets
 
 :: The name of the dir holding downloaded models for the modules. NOTE: this is 
 :: not currently used, but here for future-proofing
@@ -257,6 +261,7 @@ set preInstalledModulesDirPath=!rootDirPath!\!preInstalledModulesDir!
 set externalModulesDirPath=!rootDirPath!\..\!externalModulesDir!
 set modelsDirPath=!rootDirPath!\!modelsDir!
 set downloadDirPath=!rootDirPath!\!downloadDir!
+set downloadModuleAssetsDirPath=!downloadDirPath!\!modulesDir!\!assetsDir!
 set utilsScriptsDirPath=!appRootDirPath!\scripts
 set installScriptsDirPath=!rootDirPath!\devops\install
 set utilsScript=!utilsScriptsDirPath!\utils.bat
@@ -367,7 +372,7 @@ if "!jsonFileValue!" NEQ "" set assetStorageUrl=!jsonFileValue!
 call "!utilsScript!" Write "Creating Directories..."
 if not exist "!runtimesDirPath!\" mkdir "!runtimesDirPath!"
 if not exist "!downloadDirPath!\" mkdir "!downloadDirPath!"
-if not exist "!downloadDirPath!\!modulesDir!\" mkdir "!downloadDirPath!\!modulesDir!\"
+if not exist "!downloadModuleAssetsDirPath!\" mkdir "!downloadModuleAssetsDirPath!\"
 if not exist "!downloadDirPath!\!modelsDir!\" mkdir "!downloadDirPath!\!modelsDir!\"
 
 call "!utilsScript!" WriteLine "done" "Green"
@@ -376,21 +381,22 @@ call "!utilsScript!" WriteLine ""
 :: Output settings
 if /i "%verbosity%" neq "quiet" (
     call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "os, name, arch         = !os! !os_name! !architecture!" !color_mute!
-    call "!utilsScript!" WriteLine "systemName, platform   = !systemName!, !platform!"      !color_mute!
-    call "!utilsScript!" WriteLine "edgeDevice             = !edgeDevice!"                  !color_mute!
-    call "!utilsScript!" WriteLine "setupMode              = !setupMode!"                   !color_mute!
-    call "!utilsScript!" WriteLine "executionEnvironment   = !executionEnvironment!"        !color_mute!
-    call "!utilsScript!" WriteLine "rootDirPath            = !rootDirPath!"                 !color_mute!
-    call "!utilsScript!" WriteLine "appRootDirPath         = !appRootDirPath!"              !color_mute!
-    call "!utilsScript!" WriteLine "setupScriptDirPath     = !setupScriptDirPath!"          !color_mute!
-    call "!utilsScript!" WriteLine "utilsScriptsDirPath    = !utilsScriptsDirPath!"         !color_mute!
-    call "!utilsScript!" WriteLine "runtimesDirPath        = !runtimesDirPath!"             !color_mute!
-    call "!utilsScript!" WriteLine "modulesDirPath         = !modulesDirPath!"              !color_mute!
-    call "!utilsScript!" WriteLine "externalModulesDirPath = !externalModulesDirPath!"      !color_mute!
-    call "!utilsScript!" WriteLine "modelsDirPath          = !modelsDirPath!"               !color_mute!
-    call "!utilsScript!" WriteLine "downloadDirPath        = !downloadDirPath!"             !color_mute!
-    call "!utilsScript!" WriteLine "assetStorageUrl        = !assetStorageUrl!"             !color_mute!
+    call "!utilsScript!" WriteLine "os, name, arch              = !os! !os_name! !architecture!" !color_mute!
+    call "!utilsScript!" WriteLine "systemName, platform        = !systemName!, !platform!"      !color_mute!
+    call "!utilsScript!" WriteLine "edgeDevice                  = !edgeDevice!"                  !color_mute!
+    call "!utilsScript!" WriteLine "setupMode                   = !setupMode!"                   !color_mute!
+    call "!utilsScript!" WriteLine "executionEnvironment        = !executionEnvironment!"        !color_mute!
+    call "!utilsScript!" WriteLine "rootDirPath                 = !rootDirPath!"                 !color_mute!
+    call "!utilsScript!" WriteLine "appRootDirPath              = !appRootDirPath!"              !color_mute!
+    call "!utilsScript!" WriteLine "setupScriptDirPath          = !setupScriptDirPath!"          !color_mute!
+    call "!utilsScript!" WriteLine "utilsScriptsDirPath         = !utilsScriptsDirPath!"         !color_mute!
+    call "!utilsScript!" WriteLine "runtimesDirPath             = !runtimesDirPath!"             !color_mute!
+    call "!utilsScript!" WriteLine "modulesDirPath              = !modulesDirPath!"              !color_mute!
+    call "!utilsScript!" WriteLine "externalModulesDirPath      = !externalModulesDirPath!"      !color_mute!
+    call "!utilsScript!" WriteLine "modelsDirPath               = !modelsDirPath!"               !color_mute!
+    call "!utilsScript!" WriteLine "downloadDirPath             = !downloadDirPath!"             !color_mute!
+    call "!utilsScript!" WriteLine "downloadModuleAssetsDirPath = !downloadModuleAssetsDirPath!" !color_mute!
+    call "!utilsScript!" WriteLine "assetStorageUrl             = !assetStorageUrl!"             !color_mute!
     call "!utilsScript!" WriteLine
 )
 

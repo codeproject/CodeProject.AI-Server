@@ -312,8 +312,8 @@ shift & goto :%~1
     REM  - downloadDirPath is the path where downloads are stored (typically src/downloads)
     if /i "%forceOverwrite%" == "true" (
         REM Force Re-download, then force re-copy of downloads to install dir
-        if exist "!downloadDirPath!\!modulesDir!\!moduleDirName!\!fileToGet!" (
-            del /s %rmdirFlags% "!downloadDirPath!\!modulesDir!\!moduleDirName!\!fileToGet!"
+        if exist "!downloadModuleAssetsDirPath!\!moduleDirName!\!fileToGet!" (
+            del /s %rmdirFlags% "!downloadModuleAssetsDirPath!\!moduleDirName!\!fileToGet!"
         )
         if exist "!moduleDirPath!\!moduleAssetsDirName!" rmdir /s %rmdirFlags% "!moduleDirPath!\!moduleAssetsDirName!"
     )
@@ -322,28 +322,28 @@ shift & goto :%~1
 
     REM Params are: S3 storage bucket | fileToGet     | zip lives in...      | zip expanded to moduleDir/... | message
     REM eg                   "S3_bucket/folder"  "rembg-models.zip" \downloads\myModuleDir"          "assets"            "Downloading models..."
-    call :DownloadAndExtract "!assetStorageUrl!!folder!" "!fileToGet!" "!downloadDirPath!\!modulesDir!\!moduleDirName!" "!moduleAssetsDirName!" "!message!"
+    call :DownloadAndExtract "!assetStorageUrl!!folder!" "!fileToGet!" "!downloadModuleAssetsDirPath!\!moduleDirName!" "!moduleAssetsDirName!" "!message!"
 
     REM Copy downloadDirPath\modules\moduleDirName\moduleAssetsDirName folder to modulesDirPath\moduleDirName\
-    if exist "!downloadDirPath!\!modulesDir!\!moduleDirName!\!moduleAssetsDirName!" (
+    if exist "!downloadModuleAssetsDirPath!\!moduleDirName!\!moduleAssetsDirName!" (
 
         REM if /i "%verbosity%" neq "quiet" ( ... )
 
         call :Write "Copying contents of !fileToGet! to !moduleAssetsDirName!..."
 
-        REM move "!downloadDirPath!\!modulesDir!\!moduleDirName!\!moduleAssetsDirName!" !moduleDirPath!
+        REM move "!downloadModuleAssetsDirPath!\!moduleDirName!\!moduleAssetsDirName!" !moduleDirPath!
         REM if errorlevel 1 (
         REM     call :WriteLine "Failed" !color_error!
         REM ) else (
         REM     call :WriteLine "done" !color_success!
         REM )
 
-        robocopy /E "!downloadDirPath!\!modulesDir!\!moduleDirName!\!moduleAssetsDirName! " ^
+        robocopy /E "!downloadModuleAssetsDirPath!\!moduleDirName!\!moduleAssetsDirName! " ^
                     "!moduleDirPath!\!moduleAssetsDirName! " !roboCopyFlags! /MOVE >NUL
         if errorlevel 16 (
             call :WriteLine "Failed" !color_error!
         else if errorlevel 8 (
-            call :WriteLine "Some files not copied" !color_warn!
+            call :WriteLine "Some files inot copied" !color_warn!
         ) else (
             call :WriteLine "done" !color_success!
         )

@@ -2058,30 +2058,30 @@ function getFromServer () {
     if [ "${forceOverwrite}" = true ]; then
         # if [ $verbosity -ne "quiet" ]; then echo "Forcing overwrite"; fi
 
-        rm -rf "${downloadDirPath}/${modulesDir}/${moduleDirName}/${fileToGet}"
+        rm -rf "${downloadModuleAssetsDirPath}/${moduleDirName}/${fileToGet}"
         rm -rf "${moduleDirPath}/${moduleAssetsDirName}"
     fi
 
     # Download !$assetStorageUrl$folder$fileToGet to $downloadDirPath and extract into $downloadDirPath/${modulesDir}/$moduleDirName/$moduleAssetsDirName
     # Params are: S3 storage bucket | fileToGet     | zip lives in...      | zip expanded to moduleDir/... | message
     # eg               "S3_bucket/folder"    "rembg-models.zip"    /downloads/myModuleDir/"        "assets"             "Downloading models..."
-    downloadAndExtract "${assetStorageUrl}${folder}" "$fileToGet" "${downloadDirPath}/${modulesDir}/${moduleDirName}" "${moduleAssetsDirName}" "${message}"
+    downloadAndExtract "${assetStorageUrl}${folder}" "$fileToGet" "${downloadModuleAssetsDirPath}/${moduleDirName}" "${moduleAssetsDirName}" "${message}"
 
     # Copy downloadDirPath/modules/moduleDirName/moduleAssetsDirName folder to modules/moduleDirName/moduleAssetsDirName
-    if [ -d "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}" ]; then
+    if [ -d "${downloadModuleAssetsDirPath}/${moduleDirName}/${moduleAssetsDirName}" ]; then
 
         if [ ! -d "${moduleDirPath}/${moduleAssetsDirName}" ]; then
             mkdir -p "${moduleDirPath}/${moduleAssetsDirName}"
         fi;
 
         # pushd then cp to stop "cannot stat" error
-        pushd "${downloadDirPath}/${modulesDir}/${moduleDirName}" >/dev/null
+        pushd "${downloadModuleAssetsDirPath}/${moduleDirName}" >/dev/null
 
         write "Moving contents of ${fileToGet} to ${moduleAssetsDirName}..."
-        # mv -f "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}/*" "${moduleDirPath}/${moduleAssetsDirName}/"
-        # rsync --remove-source-files "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}/"
-        move_recursive "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}"
-        rm -rf "${downloadDirPath}/${modulesDir}/${moduleDirName}/${moduleAssetsDirName}"
+        # mv -f "${downloadModuleAssetsDirPath}/${moduleDirName}/${moduleAssetsDirName}/*" "${moduleDirPath}/${moduleAssetsDirName}/"
+        # rsync --remove-source-files "${downloadModuleAssetsDirPath}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}/"
+        move_recursive "${downloadModuleAssetsDirPath}/${moduleDirName}/${moduleAssetsDirName}" "${moduleDirPath}/${moduleAssetsDirName}"
+        rm -rf "${downloadModuleAssetsDirPath}/${moduleDirName}/${moduleAssetsDirName}"
 
         if [ "$?" != "0" ]; then
             writeLine "Failed." $color_error
