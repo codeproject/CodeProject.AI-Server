@@ -256,7 +256,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/demos/clients/Net/CodeProject.AI.Explorer",
+                "${workspaceFolder}/src/demos/clients/Net/AiExplorer",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
