@@ -5,7 +5,7 @@
 
 	<PropertyGroup>
 		<RootNamespace>CodeProject.AI.Explorer</RootNamespace>
-		<AssemblyName>CodeProject.AI.Explorer</AssemblyName>
+		<AssemblyName>AiExplorer</AssemblyName>
 		<OutputType>WinExe</OutputType>
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>

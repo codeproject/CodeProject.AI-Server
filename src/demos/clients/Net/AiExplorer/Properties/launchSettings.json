@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "CodeProject.AI.Explorer": {
+    "AiExplorer": {
       "commandName": "Project",
       "commandLineArgs": "--MODE=high"
     }

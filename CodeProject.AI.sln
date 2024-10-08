@@ -181,7 +181,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetSimple", "src\demos\m
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonSimple", "src\demos\modules\PythonSimple\PythonSimple.pyproj", "{6AE28B59-221B-4E3D-A66C-E255B26DAC92}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeProject.AI.Explorer", "src\demos\clients\Net\CodeProject.AI.Explorer\CodeProject.AI.Explorer.csproj", "{1DB03AEC-8318-4F36-9A4B-FCC5BE00A029}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AiExplorer", "src\demos\clients\Net\AiExplorer\AiExplorer.csproj", "{1DB03AEC-8318-4F36-9A4B-FCC5BE00A029}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Face", "src\demos\clients\Python\Face\Face.pyproj", "{C2500118-FD99-49EF-B726-3E2A3B30A717}"
 EndProject

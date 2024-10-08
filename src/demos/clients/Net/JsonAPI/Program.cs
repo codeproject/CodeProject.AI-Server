@@ -3,13 +3,18 @@
 using System.Net.Http.Headers;
 using System.Text;
 
-var filename = ".\\images\\study-group.jpg";
+// A demonstration of sending a request to CodeProject.AI Server as JSON instead
+// of FormData.
+
+string filename = "./images/study-group.jpg";
 using var httpClient = new HttpClient()
 {
     BaseAddress = new Uri("http://localhost:32168/v1/"),
-    Timeout = TimeSpan.FromMinutes(5),
+    Timeout     = TimeSpan.FromSeconds(30),
 };
 httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+
 string result;
 
 // Image detection
@@ -20,7 +25,7 @@ result = await SendPayload("vision/detection", detectPayload);
 Console.WriteLine(result);
 
 // Sentiment Analysis
-Console.WriteLine($"Sending {filename} to 'vision/detection'");
+Console.WriteLine($"Sending {filename} to 'text/sentiment'");
 var sentimentPayload = new RequestPayload();
 string textValue = "This movie was the worst thing since 'Green Lantern'.";
 Console.WriteLine($"\nSending '{textValue}' to 'text/sentiment'.");
@@ -31,6 +36,13 @@ Console.WriteLine(result);
 Console.WriteLine("Press ENTER to exit.");
 Console.ReadLine();
 
+/// <summary>
+/// Sends a JSON payload to CodeProject.AI Server and returns the result as a
+/// JSON string.
+/// </summary>
+/// <param name="url">The URL of the AI server endpoint</param>
+/// <param name="payload">The request payload</param>
+/// <returns>The result as a JSON string</returns>
 async Task<string> SendPayload( string url, RequestPayload payload)
 {
     string json = System.Text.Json.JsonSerializer.Serialize(payload);
@@ -41,4 +53,3 @@ async Task<string> SendPayload( string url, RequestPayload payload)
     var result = await response.Content.ReadAsStringAsync();
     return result;
 }
-
