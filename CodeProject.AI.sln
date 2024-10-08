@@ -251,8 +251,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "utils", "utils", "{B2D0FCB2
 		devops\utils\stop_all.sh = devops\utils\stop_all.sh
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LlamaChatConsole", "src\demos\clients\Net\LlamaChatConsole\LlamaChatConsole.csproj", "{484D0804-BB60-4F8E-99B5-5779B10631D8}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Go", "Go", "{1E0E93ED-1CBF-4D0D-AFD9-A91ECDB3BBF2}"
 	ProjectSection(SolutionItems) = preProject
 		src\demos\clients\Go\object-detect.go = src\demos\clients\Go\object-detect.go
@@ -325,7 +323,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "httpFiles", "httpFiles", "{
 		jsonPayload.http = jsonPayload.http
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CpaiJsonApiCall", "src\demos\clients\Net\CpaiJsonApiCall\CpaiJsonApiCall.csproj", "{7BFCEBCA-0677-4122-B474-B08D958F7FC7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonApi", "src\demos\clients\Net\JsonApi\JsonApi.csproj", "{7BFCEBCA-0677-4122-B474-B08D958F7FC7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
