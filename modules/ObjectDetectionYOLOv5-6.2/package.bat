@@ -1,5 +1,5 @@
 @Echo off
-REM Module Packaging script. To be called from create_packages.bat
+REM Module Packaging script. To be called from ..\..\devops\build\create_packages.bat
 
 set moduleId=%~1
 set version=%~2

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Module Packaging script. To be called from create_packages.sh
+# Module Packaging script. To be called by: bash ../../devops/build/create_packages.sh
 
 # The executable for this module is downloaded from S3. There are multiple forms
 # of the executable, corresponding to different hardware, and the appropriate
