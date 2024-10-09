@@ -250,13 +250,27 @@
         },   
 
         {
-            "label": "build-explorer",      // Builds ONLY the Windows Forms .NET demo explorer (windows only)
+            "label": "build-ai-explorer",      // Builds ONLY the Windows Forms .NET demo explorer (windows only)
             "type": "process",
             "group": "build",
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/src/demos/clients/Net/CodeProject.AI.Explorer",
+                "${workspaceFolder}/src/demos/clients/Net/AiExplorer",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },   
+
+        {
+            "label": "build-json-client",      // Builds ONLY the Windows Forms .NET demo explorer (windows only)
+            "type": "process",
+            "group": "build",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/demos/clients/Net/JsonApi",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -293,7 +307,7 @@
             "label": "start-explorer",        // Starts the Explorer Windows form app. No building or launching of API server done.
             "group": "none",
             // Windows form apps only work in Windows
-            "command": "${workspaceFolder}/src/demos/clients/Net/CodeProject.AI.Explorer/bin/Debug/net8.0-windows/win-x64/",
+            "command": "${workspaceFolder}/src/demos/clients/Net/AiExplorer/bin/Debug/net8.0-windows/win-x64/",
             "args": [],
             "type": "process"
         },

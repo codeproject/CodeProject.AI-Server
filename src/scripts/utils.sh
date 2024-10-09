@@ -718,12 +718,21 @@ function setupDotNet () {
             return 6 # unable to download required asset
         fi
 
+        if [ "$architecture" = 'arm64' ]; then
+            dotnet_path="/opt/dotnet"
+        elif [ "$os" = "linux" ]; then
+            dotnet_path="/usr/lib/dotnet/"
+        else
+            # dotnet_path="/usr/lib/dotnet/"
+            # dotnet_path="~/.dotnet/"
+            dotnet_path="/usr/local/share/dotnet/"
+        fi
+
         # output a warning message if no admin rights and instruct user on manual steps
         if [ "$architecture" = 'arm64' ]; then
-            # installs in /opt/dotnet
             install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
         else
-            install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install.sh' --install-dir '/usr/lib/dotnet/' --channel $requestedNetMajorMinorVersion --runtime $requestedType"
+            install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install.sh' --install-dir '${dotnet_path}' --channel $requestedNetMajorMinorVersion --runtime $requestedType"
         fi
         checkForAdminAndWarn "$install_instructions"
 
@@ -752,21 +761,21 @@ function setupDotNet () {
                         fi               
                     else
                         if [ $verbosity = "quiet" ]; then
-                            sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "/usr/lib/dotnet/" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
+                            sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "$dotnet_path" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
                         elif [ $verbosity = "loud" ]; then
-                            sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "/usr/lib/dotnet/" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--verbose"
+                            sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "$dotnet_path" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--verbose"
                         else
-                            sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "/usr/lib/dotnet/" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
+                            sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "$dotnet_path" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
                         fi
                     fi
                 fi
             else
                 if [ $verbosity = "quiet" ]; then
-                    sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "/usr/lib/dotnet/" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
+                    sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "${dotnet_path}" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
                 elif [ $verbosity = "loud" ]; then
-                    sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "/usr/lib/dotnet/" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--verbose"
+                    sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "${dotnet_path}" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--verbose"
                 else
-                    sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "/usr/lib/dotnet/" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
+                    sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "${dotnet_path}" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType"
                 fi
             fi
         fi
@@ -795,17 +804,24 @@ function setupDotNet () {
         if [ "$os" == "macos" ]; then
             # The install script is for CI/CD and doesn't actually register .NET. So add 
             # link and env variable
-            export DOTNET_ROOT=~/.dotnet
+            export DOTNET_ROOT=${dotnet_path}
             export PATH=${DOTNET_ROOT}${PATH:+:${PATH}}
 
             if [ ! -e /usr/local/bin/dotnet ]; then
-                ln -fs ~/.dotnet/dotnet /usr/local/bin/dotnet
+                ln -fs "${dotnet_path}dotnet" "/usr/local/bin/dotnet"
             fi
 
-            if grep -q 'export DOTNET_ROOT=' ~/.bashrc; then
-                echo 'export DOTNET_ROOT=~/.dotnet'                >> ~/.bashrc
-                echo "export PATH=${DOTNET_ROOT}${PATH:+:${PATH}}" >> ~/.bashrc
-            fi
+            # if [ -f ~/.bashrc ]; then
+                if [ ! -f ~/.bashrc ] || [ $(grep -q 'export DOTNET_ROOT=' ~/.bashrc) ]; then
+                    sudo echo "export DOTNET_ROOT=${dotnet_path}"           >> ~/.bashrc
+                    sudo echo "export PATH=${dotnet_path}${PATH:+:${PATH}}" >> ~/.bashrc
+                fi
+            # elif [ -f ~/.bash_profile ]; then
+            #     if grep -q 'export DOTNET_ROOT=' ~/.bash_profile; then
+            #         echo 'export DOTNET_ROOT=${dotnet_path}'           >> ~/.bash_profile
+            #         echo "export PATH=${dotnet_path}${PATH:+:${PATH}}" >> ~/.bash_profile
+            #     fi
+            # fi
         fi
     fi
 

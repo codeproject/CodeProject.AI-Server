@@ -490,6 +490,7 @@
             }
         },
 
+        /*
         {
             "presentation": {
                 "group": "9 Demo clients",
@@ -502,7 +503,31 @@
             "console": "internalConsole",
             "request": "launch",
             "preLaunchTask": "build-explorer",
-            "cwd": "${workspaceFolder}/src/demos/clients/Net/CodeProject.AI.Explorer/",
+            "cwd": "${workspaceFolder}/src/demos/clients/Net/AiExplorer/",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "RUNNING_IN_VSCODE": "true",
+                "DOTNET_NOLOGO": "true"
+            }
+        },
+        */
+
+        {
+            "presentation": {
+                "group": "9 Demo clients",
+                // "order": 90
+            },
+            "name": "[Win] AI Explorer Demo",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-ai-explorer",
+            "windows": {
+                "program": "${workspaceFolder}/src/demos/clients/Net/AiExplorer/bin/Debug/net8.0-windows/AiExplorer.exe",
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "RUNNING_IN_VSCODE": "true",
@@ -515,15 +540,19 @@
                 "group": "9 Demo clients",
                 // "order": 90
             },
-            "name": "[Win] Run Explorer App",
+            "name": "JSON client Demo",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-explorer",
-            "windows": {
-                "program": "${workspaceFolder}/src/demos/clients/Net/CodeProject.AI.Explorer/bin/Debug/net8.0-windows/CodeProject.AI.Explorer.exe",
+            "preLaunchTask": "build-json-client",
+            "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/net8.0/JsonAPI",
+            "linux": {
+                "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/net8.0/JsonAPI.dll",
+            },
+            "osx": {
+                "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/net8.0/JsonAPI.dll",
             },
             "args": [],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/",
             "stopAtEntry": false,
             "console": "internalConsole",
             "env": {
