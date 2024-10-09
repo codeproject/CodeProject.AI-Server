@@ -268,7 +268,7 @@ exec 3>&1
 # dev environment.
 setupMode='SetupModule'
 currentDirName=$(basename "$(pwd)")     # Get current dir name (not full path)
-currentDirName=${currentDirName:-/} # correct for the case where pwd=/
+currentDirName=${currentDirName:-/}     # correct for the case where pwd=/
 
 # Are we in /src? When executionEnvironment = "Development" this may be the case
 if [ "$currentDirName" = "$srcDirName" ]; then setupMode='SetupEverything'; fi
