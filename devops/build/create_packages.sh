@@ -259,7 +259,7 @@ success='true'
 
 if [ "${singleModule}" == true ]; then
 
-    packageModuleDirPath=$(pwd))
+    packageModuleDirPath=$(pwd)
     packageModuleDirName="$(basename $(pwd))"
     packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
 
