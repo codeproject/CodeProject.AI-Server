@@ -61,7 +61,7 @@ externalModulesDir="CodeProject.AI-Modules"
 serverDir="CodeProject.AI-Server"
 
 # Location of the utils script in the main CodeProject.AI server repo
-utilsScriptGitHubUrl='https://raw.githubusercontent.com/codeproject/CodeProject.AI-Server/refs/heads/main/src/scripts/utils.sh'
+utilsScriptGitHubUrl='https://raw.githubusercontent.com/codeproject/CodeProject.AI-Server/refs/heads/main/src/scripts'
 
 # Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
 
@@ -114,10 +114,6 @@ popd >/dev/null
 sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
 utilsScriptsDirPath="${rootDirPath}/src/scripts"
 
-if [ "${githubAction}" == true ]; then
-    utilsScriptsDirPath="${utilsScriptGitHubUrl}"
-fi
-
 # Standard output may be used as a return value in the functions. Expose stream
 # 3 so we can do 'echo "Hello, World!" >&3' within these functions for debugging
 # without interfering with return values.
@@ -144,12 +140,14 @@ function correctLineEndings () {
     fi
 }
 
-if [ "${githubAction}" != true ]; then
+if [ "${githubAction}" == true ]; then
+    curl -sL ${utilsScriptGitHubUrl}/utils.sh -o utils.sh
+    source utils.sh
+    rm utils.sh
+else
     correctLineEndings ${utilsScriptsDirPath}/utils.sh
+    source ${utilsScriptsDirPath}/utils.sh
 fi
-
-# "platform" will be set by this script
-source ${utilsScriptsDirPath}/utils.sh
 
 # Helper method ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -259,7 +257,7 @@ success='true'
 
 if [ "${singleModule}" == true ]; then
 
-    packageModuleDirPath=$(pwd))
+    packageModuleDirPath=$(pwd)
     packageModuleDirName="$(basename $(pwd))"
     packageModuleId=$(getModuleIdFromModuleSettings "${packageModuleDirPath}/modulesettings.json")
 

@@ -1,5 +1,5 @@
 @Echo off
-REM Module Packaging script. To be called from create_packages.bat
+REM Module Packaging script. To be called from ..\..\devops\build\create_packages.bat
 
 REM The executable for this module is downloaded from S3. There are multiple forms
 REM of the executable, corresponding to different hardware, and the appropriate
