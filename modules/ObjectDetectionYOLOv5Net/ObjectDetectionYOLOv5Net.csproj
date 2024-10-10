@@ -87,14 +87,14 @@
         <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.3" Condition="'$(GpuType)'=='CPU'" />
         <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.16.3" Condition="'$(GpuType)'=='CUDA'" />
         <PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.13.1-dev-20221026-1209-861125ccb" Condition="'$(GpuType)'=='OpenVINO'" />
-        <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.18.1" Condition="'$(GpuType)'=='DirectML'" />
+        <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.19.2" Condition="'$(GpuType)'=='DirectML'" />
         <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.3" Condition="'$(GpuType)'=='MPS'" />
 
         <!-- https://github.com/microsoft/onnxruntime/issues/12677#issuecomment-1443802719 -->
-        <PackageReference Include="Microsoft.AI.DirectML" Version="1.15.0" Condition="'$(GpuType)'=='DirectML'" />
+        <PackageReference Include="Microsoft.AI.DirectML" Version="1.15.2" Condition="'$(GpuType)'=='DirectML'" />
 
-        <PackageReference Include="SkiaSharp" Version="2.88.6" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+        <PackageReference Include="SkiaSharp" Version="2.88.8" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     </ItemGroup>
 
     <!-- Output the settings based on what we've determined above -->
