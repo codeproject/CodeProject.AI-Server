@@ -1,0 +1,12 @@
+name: Demonstration of Manually Triggering on a Branch
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  run-on-dev:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Branch Name
+        run: echo "Running on branch: ${{ github.ref_name }}"
