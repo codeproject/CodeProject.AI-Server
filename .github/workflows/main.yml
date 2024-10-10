@@ -9,4 +9,5 @@ jobs:
 
     steps:
       - name: Print Branch Name
-        run: echo "Running on branch: ${{ github.ref_name }}"
+        run: |
+          echo "Running on branch: ${GITHUB_REF##*/}"
