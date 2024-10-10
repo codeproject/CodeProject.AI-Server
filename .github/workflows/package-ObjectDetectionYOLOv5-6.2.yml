@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create module package file
         id: create_package 
@@ -24,7 +24,7 @@ jobs:
           echo "package_file=$package_file" >> $GITHUB_OUTPUT
 
       - name: Upload ZIP as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.create_package.outputs.package_file }}
           path: ${{ steps.create_package.outputs.package_file }}
