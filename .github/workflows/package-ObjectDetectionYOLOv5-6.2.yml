@@ -20,6 +20,7 @@ jobs:
         run: |
           cd modules/ObjectDetectionYOLOv5-6.2
           package_file=$(curl -sL https://raw.githubusercontent.com/codeproject/CodeProject.AI-Server/refs/heads/main/devops/build/create_packages.sh --no-color --github-action | bash)
+          echo "package_file=$package_file"
           echo "package_file=$package_file" >> $GITHUB_OUTPUT
 
       - name: Upload ZIP as artifact
