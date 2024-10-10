@@ -5,7 +5,7 @@ on:
   #   branches:
   #     - main
   workflow_dispatch:  # Allows manual run
-    inputs: {}  # You can define inputs if needed
+    inputs: {}        # No inputs at this point
 
 jobs:
   package_and_upload:
