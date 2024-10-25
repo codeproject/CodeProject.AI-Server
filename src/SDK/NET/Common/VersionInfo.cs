@@ -3,6 +3,22 @@
 namespace CodeProject.AI.SDK.Common
 {
     /// <summary>
+    /// Maps to the server's version.json file
+    /// </summary>
+    public class VersionFileContents
+    {
+        public class VersionSectionWrap
+        {
+            /// <summary>
+            /// The Version info
+            /// </summary>
+            public VersionInfo? VersionInfo { get; set; } = null;
+        }
+
+        public VersionSectionWrap? VersionSection { get; set; } = null;
+    }
+
+    /// <summary>
     /// The current version of the server.
     /// </summary>
     public class VersionInfo

@@ -105,7 +105,20 @@ namespace CodeProject.AI.Server
                     {
                         PropertyNameCaseInsensitive = true
                     };
+
+                    // We have two formats we need to deal with: first was the JSON returned by the
+                    // previous CodeProject webservice. This was purely a VersionInfo JSON object.
+                    // The second is the JSON from the server's version.json file itself, which 
+                    // contains a VersionInfo object inside a VersionSection object
+                    //
                     version = JsonSerializer.Deserialize<VersionInfo>(data, options);
+                    if (version is null || version.Major == 0)
+                    {
+                        var versionFileContents = JsonSerializer.Deserialize<VersionFileContents>(data, options);
+                        if (versionFileContents?.VersionSection?.VersionInfo is not null)
+                            version = versionFileContents?.VersionSection?.VersionInfo;
+                    }
+
                     if (version is not null)
                     {
                         // A small adjustment. The version info contains the file *name* not a file

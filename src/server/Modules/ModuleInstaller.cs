@@ -269,7 +269,7 @@ namespace CodeProject.AI.Server.Modules
 #if DEBUG
             TimeSpan checkInterval = TimeSpan.FromSeconds(15);
 #else
-            TimeSpan checkInterval = TimeSpan.FromMinutes(5);
+            TimeSpan checkInterval = TimeSpan.FromHours(24);
 #endif
             List<ModuleDescription>? downloadableModuleList = null;
 
