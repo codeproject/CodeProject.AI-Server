@@ -76,7 +76,13 @@ namespace CodeProject.AI.Modules.DotNetSimple
         protected override void Initialize()
         {
             var modelPath = GetStandardModelPath();
-            _predictor = YoloV8Predictor.Create(modelPath);
+            try
+            {
+                _predictor = YoloV8Predictor.Create(modelPath);
+            }
+            catch
+            {
+            }
 
             InferenceDevice  = "CPU";
             InferenceLibrary = string.Empty;
@@ -92,15 +98,17 @@ namespace CodeProject.AI.Modules.DotNetSimple
         /// <returns>The response.</returns>
         protected override ModuleResponse Process(BackendRequest request)
         {
-            ModuleResponse response;
+            if (_predictor is null)
+                return new ModuleErrorResponse("No predictor created. Was setup run? Is the ONNX model in /assets?.");
 
             RequestPayload payload = request.payload;
-            if (payload == null)
+            if (payload is null)
                 return new ModuleErrorResponse("No payload supplied for object detection.");
 
             if (string.IsNullOrEmpty(payload.command))
                 return new ModuleErrorResponse("No command supplied for object detection.");
 
+            ModuleResponse response;
             if (payload.command.EqualsIgnoreCase("detect") == true)               // Perform 'standard' object detection
             {
                 var file = payload.files?.FirstOrDefault();

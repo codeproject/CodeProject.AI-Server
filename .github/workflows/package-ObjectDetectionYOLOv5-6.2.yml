@@ -13,17 +13,18 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create module package file
         id: create_package 
         run: |
           cd modules/ObjectDetectionYOLOv5-6.2
-          package_file=$(curl -sL https://raw.githubusercontent.com/codeproject/CodeProject.AI-Server/refs/heads/main/devops/build/create_packages.sh --no-color --github-action | bash)
+          package_file=$(curl -sL https://raw.githubusercontent.com/codeproject/CodeProject.AI-Server/refs/heads/main/devops/build/create_packages.sh | bash -s -- --no-color --github-action)
+          echo "package_file=$package_file"
           echo "package_file=$package_file" >> $GITHUB_OUTPUT
 
       - name: Upload ZIP as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.create_package.outputs.package_file }}
           path: ${{ steps.create_package.outputs.package_file }}
