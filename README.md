@@ -9,19 +9,19 @@
 
 # CodeProject.AI Server
 
- [**Download the latest version**](https://www.codeproject.com/ai/latest.aspx)
+ [**Download the latest version**](https://codeproject.github.io/codeproject.ai/latest.html)
 
 A standalone, self-hosted, fast, free and Open Source Artificial Intelligence microserver for any 
 platform, any language. It can be installed locally, required no off-device or out of network data
 transfer, and is easy to use.
 
-![Object detection](https://www.codeproject.com/ai/docs/img/DetectThings.png)
+![Object detection](https://codeproject.github.io/codeproject.ai/img/DetectThings.png)
 
 # Supported Platforms
 
 <div style="width:75%;min-width:700px;margin:30px auto">
 
-| <img src="https://www.codeproject.com/ai/docs/img/windows.svg" title="Windows" style="width:64px">  | <img src="https://www.codeproject.com/ai/docs/img/macos.svg" title="macOS" style="width:72px">  | <img src="https://www.codeproject.com/ai/docs/img/apple-silicon.svg" title="Apple Silicon" style="width:64px"> | <img src="https://www.codeproject.com/ai/docs/img/Ubuntu.svg" title="Ubuntu" style="width:64px">  | <img src="https://www.codeproject.com/ai/docs/img/RaspberryPi64.svg" title="Raspberry Pi arm64" style="width:64px"> | <img src="https://www.codeproject.com/ai/docs/img/docker.svg" title="Docker" style="width:64px">  |  <img src="https://www.codeproject.com/ai/docs/img/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="https://www.codeproject.com/ai/docs/img/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
+| <img src="https://codeproject.github.io/codeproject.ai/img/windows.svg" title="Windows" style="width:64px">  | <img src="https://codeproject.github.io/codeproject.ai/img/macos.svg" title="macOS" style="width:72px">  | <img src="https://codeproject.github.io/codeproject.ai/img/apple-silicon.svg" title="Apple Silicon" style="width:64px"> | <img src="https://codeproject.github.io/codeproject.ai/img/Ubuntu.svg" title="Ubuntu" style="width:64px">  | <img src="https://codeproject.github.io/codeproject.ai/img/RaspberryPi64.svg" title="Raspberry Pi arm64" style="width:64px"> | <img src="https://codeproject.github.io/codeproject.ai/img/docker.svg" title="Docker" style="width:64px">  |  <img src="https://codeproject.github.io/codeproject.ai/img/VisualStudio.svg" title="Visual Studio" style="width:64px">         |         <img src="https://codeproject.github.io/codeproject.ai/img/VisualStudioCode.svg" title="Visual Studio Code" style="width:64px">        |
 | :------: |  :---: | :---------: | :-----: | :----: | :----: | :--------------------: | :-------------------: |
 | Windows  | macOS  | macOS arm64 |  Ubuntu / Debian | Raspberry&nbsp;Pi arm64 |  Docker | Visual Studio<br>2019+ | Visual Studio<br>Code |
 
@@ -40,7 +40,7 @@ transfer, and is easy to use.
 
 ### 1: Running and playing with the features
 
-1. [**Download the latest version**](https://www.codeproject.com/ai/latest.aspx), install, and launch the shortcut to the server's dashboard on your desktop.
+1. [**Download the latest version**](https://codeproject.github.io/codeproject.ai/latest.html), install, and launch the shortcut to the server's dashboard on your desktop.
 2. On the dashboard, top and centre, is a link to the CodeProject.AI Explorer. Open that and play!
 
 ### 2: Running and debugging the code
@@ -127,8 +127,8 @@ The current release provides support for CPU on each platform, DirectML on Windo
 
 ## How to Guides
 
- - [Installing CodeProject.AI on your machine](https://www.codeproject.com/ai/docs/why/install_on_windows.html). For those who have CodeProject.AI integrated with Home Assist or Blue Iris
- - [Setting up the development environment](https://www.codeproject.com/ai/docs/devguide/install_dev.html) (spoiler: it's easy!)
- - [Running in Docker](https://www.codeproject.com/ai/docs/why/running_in_docker.html)
- - Setup or install issues? See [Common Errors](https://www.codeproject.com/ai/docs/devguide/common_errors.html)
+ - [Installing CodeProject.AI on your machine](https://codeproject.github.io/codeproject.ai/why/install_on_windows.html). For those who have CodeProject.AI integrated with Home Assist or Blue Iris
+ - [Setting up the development environment](https://codeproject.github.io/codeproject.ai/devguide/install_dev.html) (spoiler: it's easy!)
+ - [Running in Docker](https://codeproject.github.io/codeproject.ai/why/running_in_docker.html)
+ - Setup or install issues? See [Common Errors](https://codeproject.github.io/codeproject.ai/devguide/common_errors.html)
 

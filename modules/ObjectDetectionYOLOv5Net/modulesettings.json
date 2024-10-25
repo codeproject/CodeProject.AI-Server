@@ -12,7 +12,7 @@
         "License": "MIT",
         "LicenseUrl": "https://opensource.org/licenses/MIT",
         "Author": "Matthew Dennis",
-        "Homepage": "https://codeproject.com/ai",
+        "Homepage": "https://codeproject.github.io/codeproject.ai",
         "BasedOn": "yolov5-net",
         "BasedOnUrl": "https://github.com/techwingslab/yolov5-net"
       },
