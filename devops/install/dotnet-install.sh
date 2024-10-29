@@ -926,7 +926,11 @@ get_user_install_path() {
     if [ ! -z "${DOTNET_INSTALL_DIR:-}" ]; then
         echo "$DOTNET_INSTALL_DIR"
     else
-        echo "$HOME/.dotnet"
+        if [ "$normalized_os" == "osx" ]; then
+            echo "/usr/local/share/dotnet"
+        else
+            echo "$HOME/.dotnet"
+        fi
     fi
     return 0
 }

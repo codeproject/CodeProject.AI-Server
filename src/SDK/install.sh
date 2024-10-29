@@ -111,8 +111,8 @@ fi
 # Setup .NET for the server, the SDK Utilities, and any .NET modules that may 
 # need it
 if [ "$executionEnvironment" = "Development" ]; then
-    setupDotNet "$serverDotNetVersion" "aspnetcore"
     setupDotNet "$serverDotNetVersion" "sdk"
+    setupDotNet "$serverDotNetVersion" "aspnetcore"
 else
     setupDotNet "$serverDotNetVersion" "aspnetcore"
 fi
