@@ -24,6 +24,11 @@ namespace CodeProject.AI.Server
         public string? AssetStorageUrl { get; set; }
 
         /// <summary>
+        /// The URL of the location of the module installation packages that can be downloaded.
+        /// </summary>
+        public string? ModuleStorageUrl { get; set; }
+
+        /// <summary>
         /// Gets or sets the timeout for installing a module
         /// </summary>
         public TimeSpan ModuleInstallTimeout { get; set; }

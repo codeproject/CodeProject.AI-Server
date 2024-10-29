@@ -169,10 +169,12 @@ namespace CodeProject.AI.SDK.Modules
         /// <param name="module">This module that requires initialisation</param>
         /// <param name="currentServerVersion">The current version of the server</param>
         /// <param name="moduleDirPath">The path to the folder containing this module</param>
+        /// <param name="moduleStorageUrl">The base URL for downloading module install packages</param>
         /// <param name="moduleLocation">The location of this module</param>
         /// <returns>True on success; false otherwise</returns>
         public static void Initialise(this ModuleDescription module, string currentServerVersion, 
-                                      string moduleDirPath, ModuleLocation moduleLocation)
+                                      string moduleDirPath, string moduleStorageUrl,
+                                      ModuleLocation moduleLocation)
         {           
             module.ModuleDirPath    = moduleDirPath;
             module.WorkingDirectory = module.ModuleDirPath; // This once was allowed to be different to moduleDirPath
@@ -180,6 +182,14 @@ namespace CodeProject.AI.SDK.Modules
             // Find the most recent version of this module that's compatible with the current server
             module.CheckVersionAgainstModuleReleases();
             SetLatestCompatibleVersion(module, currentServerVersion);
+
+            // When we downloaded this list from CodeProject the download URL was set. When we get
+            // this list from a modules.json file (eg off github) then the download Url isn't set
+            if (string.IsNullOrWhiteSpace(module.DownloadUrl))
+            {
+                // TODO: Generalise this in a utility method
+                module.DownloadUrl = $"{moduleStorageUrl}{module.ModuleId}-{module.Version}.zip"; 
+            }
 
             // Set the status of all entries based on availability on this platform
             module.Status = module.IsCompatible(currentServerVersion)

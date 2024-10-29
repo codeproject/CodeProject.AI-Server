@@ -220,11 +220,14 @@ namespace CodeProject.AI.Server.Modules
         /// from the ModuleConfig.
         /// </summary>
         /// <param name="module">A ModuleConfig object</param>
+        /// <param name="moduleStorageUrl">The location of the module download
+        ///  packages</param>
         /// <param name="isInstalled">Is this module currently installed?</param>
         /// <param name="serverVersion">The version of the current server, or null to ignore
         /// version checks</param>
         /// <returns>A ModuleDescription object</returns>
         public static ModuleDescription ModuleDescriptionFromModuleConfig(ModuleConfig module,
+                                                                          string moduleStorageUrl,
                                                                           bool isInstalled,
                                                                           string serverVersion)
         {
@@ -240,7 +243,8 @@ namespace CodeProject.AI.Server.Modules
 
             // Set initial properties. Most importantly it sets the status. 
             moduleDescription.Initialise(serverVersion, module.ModuleDirPath,
-                                 module.InstallOptions!.ModuleLocation);
+                                         moduleStorageUrl,
+                                         module.InstallOptions!.ModuleLocation);
 
             // if a module is installed then that beats any other status
             if (isInstalled)
@@ -269,7 +273,7 @@ namespace CodeProject.AI.Server.Modules
 #if DEBUG
             TimeSpan checkInterval = TimeSpan.FromSeconds(15);
 #else
-            TimeSpan checkInterval = TimeSpan.FromMinutes(5);
+            TimeSpan checkInterval = TimeSpan.FromHours(24);
 #endif
             List<ModuleDescription>? downloadableModuleList = null;
 
@@ -323,6 +327,7 @@ namespace CodeProject.AI.Server.Modules
                                                  + Path.DirectorySeparatorChar
                                                  + downloadableModule.ModuleId;
                             downloadableModule.Initialise(currentServerVersion, moduleDirPath,
+                                                          _moduleOptions.ModuleStorageUrl!,
                                                           ModuleLocation.Internal);
                         }
 
@@ -467,6 +472,7 @@ namespace CodeProject.AI.Server.Modules
             // "module.InstallOptions?.PreInstalled" is the setting for the currently installed 
             // module, not the module that can be downloaded.
             // GIVEN ALL THAT: who cares. We can totally uninstall / reinstall something pre-installed.
+
             // if (module is not null && module.InstallOptions?.PreInstalled == true)
             //    return (false, $"Module description for '{moduleId}' is invalid. A 'pre-installed' module can't be downloaded");
 
@@ -484,6 +490,7 @@ namespace CodeProject.AI.Server.Modules
             // Download and unpack the module's installation package FOR THE REQUESTED VERSION
             // string moduleDirName = _moduleSettings.GetModuleDirPath(moduleDownload);
             // string moduleDirName = moduleDownload.ModuleDirPath;
+            // TODO: Generalise this in a utility method
             string downloadDirPath = _moduleSettings.DownloadedModulePackagesDirPath 
                                    + Path.DirectorySeparatorChar + moduleId + "-" + version + ".zip";
 
@@ -843,7 +850,9 @@ namespace CodeProject.AI.Server.Modules
             // to the download list so at least we can provide updates on it disappearing.
             if (moduleDownload is null)
             {
-                moduleDownload = ModuleDescriptionFromModuleConfig(module, true,
+                moduleDownload = ModuleDescriptionFromModuleConfig(module,
+                                                                   _moduleOptions.ModuleStorageUrl!,
+                                                                   true,
                                                                    _versionConfig.VersionInfo!.Version);
                 moduleDownload.IsDownloadable = false;
             }

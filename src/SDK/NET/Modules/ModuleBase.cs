@@ -327,7 +327,6 @@ namespace CodeProject.AI.SDK.Modules
                 available = platformOK;
             }
 
-            // Final check: is the module specifically excluded from the current platform?
             return available;
         }
     }
