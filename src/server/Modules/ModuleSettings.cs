@@ -295,6 +295,7 @@ namespace CodeProject.AI.Server.Modules
             _moduleOptions.ModuleListUrl                    = ExpandOption(_moduleOptions.ModuleListUrl);
             _moduleOptions.ModelListUrl                     = ExpandOption(_moduleOptions.ModelListUrl);
             _moduleOptions.AssetStorageUrl                  = ExpandOption(_moduleOptions.AssetStorageUrl);
+            _moduleOptions.ModuleStorageUrl                 = ExpandOption(_moduleOptions.ModuleStorageUrl);
             _moduleOptions.PythonRelativeInterpreterPath    = ExpandOption(_moduleOptions.PythonRelativeInterpreterPath);
 
             // Correct the slashes

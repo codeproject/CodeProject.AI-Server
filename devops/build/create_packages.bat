@@ -62,7 +62,7 @@ set rootDirPath=%cd%
 popd
 set sdkPath=%rootDirPath%\%srcDir%\%sdkDir%
 set utilsScriptsDirPath=%rootDirPath%\%srcDir%\scripts
-set utilsScript=!utilsScriptsDirPath!\utils.bat
+set utilsScript=%utilsScriptsDirPath%\utils.bat
 
 :: Override some values via parameters ::::::::::::::::::::::::::::::::::::::::
 
@@ -103,7 +103,6 @@ set modulesDirPath=!rootDirPath!\!modulesDir!
 set externalModulesDirPath=!rootDirPath!\..\!externalModulesDir!
 set packageDirPath=!rootDirPath!\!packageDir!
 
-if [ ! -d "${packageDirPath}" ]; then mkdir -p "${packageDirPath}"; fi
 if not exist "!packageDirPath!" mkdir "!packageDirPath!"
 
 

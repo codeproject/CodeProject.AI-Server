@@ -82,10 +82,9 @@ namespace CodeProject.AI.Server
 
                     // Handy to allow the checkee to return emergency info if the current installed
                     // version has issues. IMPORTANT: no personal information can be sent here. This
-                    //  is purely things like OS / GPU.
+                    // is purely information such as server version, current OS / GPU.
                     string currentVersion = VersionConfig.VersionInfo?.Version ?? string.Empty;
-                    _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);
-                    
+                    _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);                    
                     var sysProperties = SystemInfo.Summary;
                     var systemInfoJson = JsonSerializer.Serialize(sysProperties);
                     _client.DefaultRequestHeaders.Add("X-CPAI-Server-SystemInfo", systemInfoJson);
@@ -105,7 +104,20 @@ namespace CodeProject.AI.Server
                     {
                         PropertyNameCaseInsensitive = true
                     };
+
+                    // We have two formats we need to deal with: first was the JSON returned by the
+                    // previous CodeProject webservice. This was purely a VersionInfo JSON object.
+                    // The second is the JSON from the server's version.json file itself, which 
+                    // contains a VersionInfo object inside a VersionSection object
+                    //
                     version = JsonSerializer.Deserialize<VersionInfo>(data, options);
+                    if (version is null || version.Major == 0)
+                    {
+                        var versionFileContents = JsonSerializer.Deserialize<VersionFileContents>(data, options);
+                        if (versionFileContents?.VersionSection?.VersionInfo is not null)
+                            version = versionFileContents?.VersionSection?.VersionInfo;
+                    }
+
                     if (version is not null)
                     {
                         // A small adjustment. The version info contains the file *name* not a file

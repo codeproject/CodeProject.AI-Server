@@ -43,7 +43,7 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 	<!-- Package properties -->
 	<PropertyGroup>
 		<PackageLicenseExpression>SSPL-1.0</PackageLicenseExpression>
-		<PackageProjectUrl>https://www.codeproject.com/ai</PackageProjectUrl>
+		<PackageProjectUrl>https://codeproject.github.io/codeproject.ai</PackageProjectUrl>
 		<PackageIcon>codeproject125x125.png</PackageIcon>
 	</PropertyGroup>
 

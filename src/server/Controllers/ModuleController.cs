@@ -130,8 +130,9 @@ namespace CodeProject.AI.Server.Controllers
             string currentServerVersion = _versionConfig.VersionInfo!.Version;
 
             var modules = _installedModules?.Values?
-                            .Select(module => ModuleInstaller.ModuleDescriptionFromModuleConfig(module, true, 
-                                                                                                currentServerVersion))
+                            .Select(module => ModuleInstaller.ModuleDescriptionFromModuleConfig(module,
+                                                                                                _moduleOptions.ModuleStorageUrl!,
+                                                                                                true, currentServerVersion))
                             .ToList() ?? new List<ModuleDescription>();
 
             // Mark those modules that can't be downloaded
@@ -241,7 +242,9 @@ namespace CodeProject.AI.Server.Controllers
 
                 if (installedModuleDesc is null)
                 {
-                    var description = ModuleInstaller.ModuleDescriptionFromModuleConfig(module, true,
+                    var description = ModuleInstaller.ModuleDescriptionFromModuleConfig(module,
+                                                                                        _moduleOptions.ModuleStorageUrl!,
+                                                                                        true,
                                                                                         currentServerVersion);
                     description.IsDownloadable = false;  
                     installableModules.Add(description);
