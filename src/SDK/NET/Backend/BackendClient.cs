@@ -19,8 +19,9 @@ namespace CodeProject.AI.SDK
 
         private record  LoggingData(string message, string category, LogLevel logLevel, string label);
 
-        private static HttpClient? _httpGetRequestClient;
-        private static HttpClient? _httpSendResponseClient;
+        private static HttpClient? _httpGetRequestClient;   // For querying server's request queue
+        private static HttpClient? _httpSendResponseClient; // For sending response to request to server
+
         private Channel<LoggingData> _loggingQueue = Channel.CreateBounded<LoggingData>(1024);
 
         private int _errorPauseSecs = 0;
