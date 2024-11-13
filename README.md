@@ -127,8 +127,8 @@ The current release provides support for CPU on each platform, DirectML on Windo
 
 ## How to Guides
 
- - [Installing CodeProject.AI on your machine](https://codeproject.github.io/codeproject.ai/why/install_on_windows.html). For those who have CodeProject.AI integrated with Home Assist or Blue Iris
+ - [Installing CodeProject.AI on your machine](https://codeproject.github.io/codeproject.ai/install/install_on_windows.html). For those who have CodeProject.AI integrated with Home Assist or Blue Iris
  - [Setting up the development environment](https://codeproject.github.io/codeproject.ai/devguide/install_dev.html) (spoiler: it's easy!)
- - [Running in Docker](https://codeproject.github.io/codeproject.ai/why/running_in_docker.html)
- - Setup or install issues? See [Common Errors](https://codeproject.github.io/codeproject.ai/devguide/common_errors.html)
+ - [Running in Docker](https://codeproject.github.io/codeproject.ai/faq/docker.html)
+ - Setup or install issues? See [Common Errors](https://codeproject.github.io/codeproject.ai/faq/windows-installer.html#errors-regarding-a-module-not-starting-a-package-not-found-something-failing-or-shutting-down)
 
