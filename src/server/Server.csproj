@@ -22,13 +22,10 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 	<PropertyGroup>
 		<RootNamespace>CodeProject.AI.Server</RootNamespace>
 		<AssemblyName>CodeProject.AI.Server</AssemblyName>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>enable</Nullable>
 		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<Platform>AnyCPU</Platform>
-		<TargetFramework>net8.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
 		<DeleteExistingFiles>true</DeleteExistingFiles>

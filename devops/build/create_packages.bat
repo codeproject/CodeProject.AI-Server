@@ -32,7 +32,7 @@ set createExternalModulePackages=true
 
 ::set debug_json_parse=true
 
-set dotNetTarget=net8.0
+set dotNetTarget=net9.0
 
 
 :: Basic locations
@@ -97,6 +97,8 @@ set utilsScript=%utilsScriptsDirPath%\utils.bat
     shift
 :end_param_loop
 
+:: Load vars in .env. This may update things like dotNetTarget
+for /f "tokens=1,2 delims==" %%a in (!rootDirPath!\.env) do set %%a=%%b
 
 :: The location of directories relative to the root of the solution directory
 set modulesDirPath=!rootDirPath!\!modulesDir!

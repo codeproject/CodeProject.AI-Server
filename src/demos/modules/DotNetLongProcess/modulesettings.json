@@ -3,7 +3,7 @@
 
     "DotNetLongProcess": {
       "Name": ".NET Long Process Demo",
-      "Version": "1.0.0",
+      "Version": "1.1.0",
 
       "PublishingInfo" : {
         "Description": "Provides a template for a .NET module that runs a long process.",
@@ -42,7 +42,8 @@
       "InstallOptions" : {
         "Platforms": [ "all" ],     // The platforms this module can and cannot be installed on
         "ModuleReleases": [         // Which server version is compatible with each version of this module.
-          { "ModuleVersion": "1.0.0", "ServerVersionRange": [ "2.8.0", ""     ], "ReleaseDate": "2023-02-14", "ReleaseNotes": "Initial Release", "Importance": "Major" }
+          { "ModuleVersion": "1.0.0", "ServerVersionRange": [ "2.8.0", "2.9.0"  ], "ReleaseDate": "2023-02-14", "ReleaseNotes": "Initial Release", "Importance": "Major" },
+          { "ModuleVersion": "1.1.0", "ServerVersionRange": [ "2.9.1", ""       ], "ReleaseDate": "2024-11-17", "ReleaseNotes": "Updated to .NET 9" }
         ]
       },
 

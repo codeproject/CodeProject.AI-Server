@@ -19,8 +19,11 @@
 	provided RuntimeIdentifier, rather than reality.
 	-->
 
-	<!-- Common defines -->
+	<!-- Common defines. Override these in individual csproj files if needed -->
 	<PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+	    <ImplicitUsings>disable</ImplicitUsings>
+    	<Nullable>enable</Nullable>
 		<ShowRuntimeSettings>true</ShowRuntimeSettings>
 	</PropertyGroup>
 

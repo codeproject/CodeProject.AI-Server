@@ -111,10 +111,10 @@ fi
 # Setup .NET for the server, the SDK Utilities, and any .NET modules that may 
 # need it
 if [ "$executionEnvironment" = "Development" ]; then
-    setupDotNet "$serverDotNetVersion" "sdk"
-    setupDotNet "$serverDotNetVersion" "aspnetcore"
+    setupDotNet "$dotNetRuntimeVersion" "aspnetcore"
+    setupDotNet "$dotNetSDKVersion" "sdk"
 else
-    setupDotNet "$serverDotNetVersion" "aspnetcore"
+    setupDotNet "$dotNetRuntimeVersion" "aspnetcore"
 fi
 
 if [ $? -ne 0 ]; then

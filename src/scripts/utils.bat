@@ -606,18 +606,18 @@ shift & goto :%~1
 
     set mustInstall=false
     if /i "!haveRequested!" == "true" (
-        call :WriteLine  "All good. Found .NET !requestedNetMajorVersion!" !color_success!
+        call :WriteLine  "All good. Found .NET !requestedType! !requestedNetMajorVersion!" !color_success!
     ) else if !comparison! EQU 0 (
-        call :WriteLine  "All good. .NET is !currentDotNetVersion!" !color_success!
+        call :WriteLine  "All good. .NET !requestedType! is !currentDotNetVersion!" !color_success!
     ) else if !comparison! LSS 0 (
-        call :WriteLine  "Upgrading: .NET is !currentDotNetVersion!" !color_warn!
+        call :WriteLine  "Upgrading: .NET !requestedType! is !currentDotNetVersion!" !color_warn!
         set mustInstall=true
     ) else (
         if /i "!requestedType!" == "SDK" (
-            call :WriteLine  "Installing .NET !requestedNetMajorVersion!" !color_warn!
+            call :WriteLine  "Installing .NET !requestedType! !requestedNetMajorVersion!" !color_warn!
             set mustInstall=true
         ) else (
-            call :WriteLine  "All good. .NET is !currentDotNetVersion!" !color_success!
+            call :WriteLine  "All good. .NET !requestedType! is !currentDotNetVersion!" !color_success!
         )
     )
 

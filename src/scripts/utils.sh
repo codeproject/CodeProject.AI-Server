@@ -589,11 +589,17 @@ function getDotNetVersion() {
         do
             if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
                 dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
-                current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
+                # echo "GET: Found .NET runtime $dotnet_version" >&3
 
-                if (( $current_comparison > $comparison )); then
+                current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
+                # echo "GET: current compare ${comparison}, new compare ${current_comparison}" >&3
+
+                if (( $current_comparison >= $comparison )); then
                     highestDotNetVersion="$dotnet_version"
                     comparison=$current_comparison
+                    # echo "GET: Found new highest .NET runtime $highestDotNetVersion" >&3
+                # else
+                #    echo "GET: Found $dotnet_version runtime, which is not higher than $highestDotNetVersion" >&3
                 fi
             fi
         done <<< "$(dotnet --list-runtimes)"
@@ -629,7 +635,7 @@ function setupDotNet () {
 
     write "Checking for .NET ${requestedNetVersion}..."
 
-    currentDotNetVersion="(None)"
+    highestDotNetVersion="(None)"
     comparison=-1
     haveRequested=false
 
@@ -645,13 +651,18 @@ function setupDotNet () {
                 dotnet_version=$(echo "$line}" | cut -d ' ' -f 1)
                 dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
 
+                # echo "SET: Found .NET SDK $dotnet_version" >&3
+
                 # Let's only compare major versions
                 # current_comparison=$(versionCompare $dotnet_version $requestedNetVersion)
                 current_comparison=$(versionCompare $dotnet_major_version $requestedNetMajorVersion)
 
                 if (( $current_comparison >= $comparison )); then
-                    currentDotNetVersion="$dotnet_version"
+                    highestDotNetVersion="$dotnet_version"
                     comparison=$current_comparison
+                #     echo "SET: Found new highest .NET SDK $highestDotNetVersion" >&3
+                # else
+                #     echo "SET: Found $dotnet_version SDK, which is not higher than $requestedNetMajorVersion" >&3
                 fi
 
                 # We found the one we're after
@@ -675,14 +686,20 @@ function setupDotNet () {
 
                     dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
                     dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
+                    # echo "SET: Found .NET runtime $dotnet_version" >&3
 
                     # Let's only compare major versions
                     # current_comparison=$(versionCompare $dotnet_version $requestedNetVersion)
                     current_comparison=$(versionCompare $dotnet_major_version $requestedNetMajorVersion)
+                    # echo "SET: current compare ${comparison}, new compare ${current_comparison}" >&3
 
                     if (( $current_comparison >= $comparison )); then
-                        currentDotNetVersion="$dotnet_version"
+                        highestDotNetVersion="$dotnet_version"
                         comparison=$current_comparison
+
+                    #     echo "SET: Found new highest .NET runtime $highestDotNetVersion" >&3
+                    # else
+                    #     echo "SET: Found $dotnet_version runtime, which is not higher than $requestedNetMajorVersion" >&3
                     fi
 
                     # We found the one we're after
@@ -696,18 +713,18 @@ function setupDotNet () {
 
     mustInstall="false"
     if [ "$haveRequested" == true ]; then
-        writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+        writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
     elif (( $comparison == 0 )); then
-        writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+        writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
     elif (( $comparison == -1 )); then 
-        writeLine "Upgrading: .NET is ${currentDotNetVersion}. Upgrading to ${requestedNetVersion}" $color_warn
+        writeLine "Upgrading: .NET ${requestedType} is ${highestDotNetVersion}. Upgrading to ${requestedNetVersion}" $color_warn
         mustInstall=true
-    else # (( $comparison == 1 )), meaning currentDotNetVersion > requestedNetVersion
+    else # (( $comparison == 1 )), meaning highestDotNetVersion > requestedNetVersion
         if [ "$requestedType" = "sdk" ]; then
-            writeLine "Installing .NET ${requestedNetVersion}" $color_warn
+            writeLine "Installing .NET ${requestedType} ${requestedNetVersion}" $color_warn
             mustInstall=true
         else
-            writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+            writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
         fi
     fi 
 
@@ -722,8 +739,7 @@ function setupDotNet () {
             dotnet_path="/opt/dotnet"
         elif [ "$os" = "linux" ]; then
             dotnet_path="/usr/lib/dotnet/"
-        else
-            # dotnet_path="/usr/lib/dotnet/"
+        else # macOS x64
             # dotnet_path="~/.dotnet/"
             dotnet_path="/usr/local/share/dotnet/"
         fi
