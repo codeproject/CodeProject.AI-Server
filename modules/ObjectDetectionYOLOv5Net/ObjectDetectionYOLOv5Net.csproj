@@ -9,8 +9,6 @@
         <RootNamespace>CodeProject.AI.Modules.ObjectDetection.YOLOv5</RootNamespace>
         <AssemblyName>ObjectDetectionYOLOv5Net</AssemblyName>
         <Version>1.4</Version>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>disable</ImplicitUsings>
         <UserSecretsId>dotnet-CodeProject.AI.Yolo-384BE45C-AAED-42BA-9DDB-EF37356B630F</UserSecretsId>
         <ApplicationIcon>favicon.ico</ApplicationIcon>
         <!--<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>-->
@@ -18,7 +16,6 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
         <BaseOutputPath></BaseOutputPath>
-        <TargetFramework>net8.0</TargetFramework>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
         <!-- Doesn't appear to actually do what's on the label
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -161,7 +158,7 @@
 
     <!--
     <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)'== 'Release'">
-      <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net8.0&#xD;&#xA;cd $(ProjectDir)" />
+      <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net9.0&#xD;&#xA;cd $(ProjectDir)" />
     </Target>
     -->
 

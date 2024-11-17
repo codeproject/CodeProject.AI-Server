@@ -696,18 +696,18 @@ function setupDotNet () {
 
     mustInstall="false"
     if [ "$haveRequested" == true ]; then
-        writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+        writeLine "All good. .NET ${requestedType} is ${currentDotNetVersion}" $color_success
     elif (( $comparison == 0 )); then
-        writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+        writeLine "All good. .NET ${requestedType} is ${currentDotNetVersion}" $color_success
     elif (( $comparison == -1 )); then 
-        writeLine "Upgrading: .NET is ${currentDotNetVersion}. Upgrading to ${requestedNetVersion}" $color_warn
+        writeLine "Upgrading: .NET ${requestedType} is ${currentDotNetVersion}. Upgrading to ${requestedNetVersion}" $color_warn
         mustInstall=true
     else # (( $comparison == 1 )), meaning currentDotNetVersion > requestedNetVersion
         if [ "$requestedType" = "sdk" ]; then
-            writeLine "Installing .NET ${requestedNetVersion}" $color_warn
+            writeLine "Installing .NET ${requestedType} ${requestedNetVersion}" $color_warn
             mustInstall=true
         else
-            writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+            writeLine "All good. .NET ${requestedType} is ${currentDotNetVersion}" $color_success
         fi
     fi 
 

@@ -62,11 +62,12 @@
 # verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 verbosity="quiet"
 
-# The .NET version to use for the server. NOTE: Only major version matters unless we use manual
-# install scripts, in which case we need to specify version. Choose version that works for SDK and
-# runtime, since the versions of these are not in sync (currently RT is 8.0.5, SDK is 8.0.3)
-serverDotNetVersion=8.0.3
-dotNetTarget="net8.0"
+# The .NET version to install. NOTE: Only major version matters unless we use manual install
+# scripts, in which case we need to specify version. Choose version that works for all platforms
+# since the versions of these are not in always in sync
+dotNetTarget=net9.0
+dotNetRuntimeVersion=9.0.0
+dotNetSDKVersion=9.0.100
 
 # Show output in wild, crazy colours. Use --no-color to not use colour
 useColor=true
@@ -170,7 +171,7 @@ assetsDir='assets'
 modelsDir="models"
 
 # The location of directories relative to the root of the solution directory
-sdkPath="${appRootDirPath}/SDK"
+sdkPath="${rootDirPath}/SDK"
 
 # Who launched this script? user or server?
 launchedBy="user"
@@ -218,6 +219,7 @@ done
 
 # Pre-setup :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+# Check for docker
 inDocker=false
 if [ "$DOTNET_RUNNING_IN_CONTAINER" = "true" ]; then inDocker=true; fi
 
@@ -312,6 +314,10 @@ downloadModuleAssetsDirPath="${downloadDirPath}/${modulesDir}/${assetsDir}"
 utilsScriptsDirPath="${appRootDirPath}/scripts"
 installScriptsDirPath="${rootDirPath}/devops/install"
 utilsScript="${utilsScriptsDirPath}/utils.sh"
+
+# Load vars in .env. This may update things like dotNetTarget
+cat "${rootDirPath}/.env" | xargs
+quit 0
 
 # Check if we're in a SSH session. If so it means we need to avoid anything GUI
 inSSH=false

@@ -34,7 +34,7 @@ createExternalModulePackages=true
 githubAction=false
 
 # The current .NET version 
-dotNetTarget="net8.0"
+dotNetTarget="net9.0"
 
 # Whether we're creating packages for all modules, or just a single module
 singleModule=false
@@ -63,6 +63,30 @@ serverDir="CodeProject.AI-Server"
 # Location of the utils script in the main CodeProject.AI server repo
 utilsScriptGitHubUrl='https://raw.githubusercontent.com/codeproject/CodeProject.AI-Server/refs/heads/main/src/scripts'
 
+
+# The path to the directory containing this script
+thisScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+# We're assuming this script lives in /devops/build, but this script could be
+# called directly from a module's folder if we're just creating a single package
+if [ "$(basename $(cd .. ; pwd))" == "modules" ]; then
+    # In a /modules/<moduleID> folder
+    singleModule=true
+    pushd "${thisScriptDirPath}/../.." >/dev/null
+elif [ "$(basename $(cd .. ; pwd))" == "${externalModulesDir}" ]; then
+    # In /CodeProject.AI-Modules/<moduleID> folder
+    singleModule=true
+    pushd "${thisScriptDirPath}/../../${serverDir}" >/dev/null
+else
+    # Hopefully in the /devops/build folder
+    pushd "${thisScriptDirPath}/../.." >/dev/null
+fi
+rootDirPath="$(pwd)"
+popd >/dev/null
+sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
+utilsScriptsDirPath="${rootDirPath}/src/scripts"
+
+
 # Override some values via parameters ::::::::::::::::::::::::::::::::::::::::::
 
 while [[ $# -gt 0 ]]; do
@@ -89,30 +113,8 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-
-# The path to the directory containing this script
-#thisScriptDirPath=$(dirname "$0")
-thisScriptDirPath="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-
-# We're assuming this script lives in /devops/build, but this script could be
-# called directly from a module's folder if we're just creating a single package
-
-if [ "$(basename $(cd .. ; pwd))" == "modules" ]; then
-    # In a /modules/<moduleID> folder
-    singleModule=true
-    pushd "${thisScriptDirPath}/../.." >/dev/null
-elif [ "$(basename $(cd .. ; pwd))" == "${externalModulesDir}" ]; then
-    # In /CodeProject.AI-Modules/<moduleID> folder
-    singleModule=true
-    pushd "${thisScriptDirPath}/../../%{serverDir}" >/dev/null
-else
-    # Hopefully in the /devops/build folder
-    pushd "${thisScriptDirPath}/../.." >/dev/null
-fi
-rootDirPath="$(pwd)"
-popd >/dev/null
-sdkPath="${rootDirPath}/${srcDirName}/${sdkDir}"
-utilsScriptsDirPath="${rootDirPath}/src/scripts"
+# Load vars in .env. This may update things like dotNetTarget
+cat "${rootDirPath}/.env" | xargs
 
 # Standard output may be used as a return value in the functions. Expose stream
 # 3 so we can do 'echo "Hello, World!" >&3' within these functions for debugging

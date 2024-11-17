@@ -3,12 +3,12 @@
     "versionInfo": {
       "Major": 2,
       "Minor": 9,
-      "Patch": 0,
+      "Patch": 1,
       "Build": 0,
       "PreRelease": "",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.9.0.zip",
-      "ReleaseNotes": ".NET 8 support, JSON server requests supported, installer improvements for server, Docker and modules, project home moved."
+      "File": "CodeProject.AI-Server-win-x64-2.9.1.zip",
+      "ReleaseNotes": "Updated to .NET 9."
     }
   }
 }

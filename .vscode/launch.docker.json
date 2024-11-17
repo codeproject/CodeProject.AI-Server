@@ -100,7 +100,6 @@
             "cwd": "/app/modules/ALPR",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168"
             }
@@ -120,7 +119,6 @@
             "cwd": "/app/modules/Cartooniser",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168",
                 "WEIGHTS_FOLDER": "/app/modules/Cartooniser/weights"
@@ -141,7 +139,6 @@
             "cwd": "/app/preinstalled-modules/FaceProcessing/",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168"
             }
@@ -185,7 +182,6 @@
             "cwd": "/app/modules/ObjectDetectionCoral",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168",
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
@@ -207,7 +203,6 @@
             "cwd": "/app/preinstalled-modules/ObjectDetectionYOLOv5-6.2",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168",
                 "CPAI_MODULE_QUEUENAME": "objectdetection_queue"
@@ -228,7 +223,6 @@
             "cwd": "/app/modules/ObjectDetectionYOLOv5-3.1",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168"
             }
@@ -248,7 +242,6 @@
             "cwd": "/app/modules/OCR",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168"
             }
@@ -290,7 +283,6 @@
             "cwd": "/app/modules/SceneClassifier",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168"
             }
@@ -310,7 +302,6 @@
             "cwd": "/app/modules/SuperResolution",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168"
             }
@@ -354,7 +345,6 @@
             "cwd": "/app/modules/TextSummary",
             "justMyCode": false,
             "env": {
-                "DEBUG_IN_VSCODE": "True",
                 "RUNNING_IN_VSCODE": "True",
                 "CPAI_PORT": "32168",
                 

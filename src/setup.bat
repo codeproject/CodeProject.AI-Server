@@ -52,11 +52,12 @@ chcp 65001 >NUL
 :: verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 set verbosity=quiet
 
-:: The .NET version to use for the server. NOTE: Only major version matters unless we use manual
-:: install scripts, in which case we need to specify version. Choose version that works for SDK and
-:: runtime, since the versions of these are not in sync (currently RT is 8.0.5, SDK is 8.0.3)
-set serverDotNetVersion=8.0.3
-set dotNetTarget=net8.0
+:: The .NET version to install. NOTE: Only major version matters unless we use manual install
+:: scripts, in which case we need to specify version. Choose version that works for all platforms
+:: since the versions of these are not in always in sync
+set dotNetTarget=net9.0
+set dotNetRuntimeVersion=9.0.0
+set dotNetSDKVersion=9.0.100
 
 :: Show output in wild, crazy colours. Use --no-color to not use colour
 set useColor=true
@@ -265,6 +266,9 @@ set downloadModuleAssetsDirPath=!downloadDirPath!\!modulesDir!\!assetsDir!
 set utilsScriptsDirPath=!appRootDirPath!\scripts
 set installScriptsDirPath=!rootDirPath!\devops\install
 set utilsScript=!utilsScriptsDirPath!\utils.bat
+
+:: Load vars in .env. This may update things like dotNetTarget
+for /f "tokens=1,2 delims==" %%a in (!rootDirPath!\.env) do set %%a=%%b
 
 :: Helper vars for OS, Platform (see note below), and system name. systemName is
 :: a no-op here because nothing exciting happens on Windows. In the corresponding
@@ -578,9 +582,9 @@ if /i "!setupMode!" == "SetupEverything" (
         REM Quick sanity check to ensure .NET is in place. .NET install is done
         REM in the SDK setup, but we do it here too since it's a null-op if it's
         REM in place already, and the SDK setup may not always be called.
-        call "%utilsScript%" SetupDotNet !serverDotNetVersion! aspnetcore
+        call "%utilsScript%" SetupDotNet !dotNetRuntimeVersion! aspnetcore
         if /i "!executionEnvironment!" == "Development" (
-            call "%utilsScript%" SetupDotNet !serverDotNetVersion! SDK
+            call "%utilsScript%" SetupDotNet !dotNetSDKVersion! SDK
         )
             
         REM Install an individual module

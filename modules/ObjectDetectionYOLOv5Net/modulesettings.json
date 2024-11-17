@@ -3,7 +3,7 @@
 
     "ObjectDetectionYOLOv5Net": {
       "Name": "Object Detection (YOLOv5 .NET)",
-      "Version": "1.11.0",
+      "Version": "1.12.0",
 
       "PublishingInfo" : {
         "Description": "Provides Object Detection using YOLOv5 ONNX models with DirectML. This module is best for those on Windows and Linux without CUDA enabled GPUs", 
@@ -69,7 +69,8 @@
           { "ModuleVersion": "1.10.0", "ServerVersionRange": [ "2.6.1", "2.6.2"  ], "ReleaseDate": "2024-04-01", "ReleaseNotes": "Updated for server 2.6" },
           { "ModuleVersion": "1.10.1", "ServerVersionRange": [ "2.6.3", "2.7.0"  ], "ReleaseDate": "2024-04-05", "ReleaseNotes": "Corrected reported Inference device" },
           { "ModuleVersion": "1.10.2", "ServerVersionRange": [ "2.6.5", "2.7.0"  ], "ReleaseDate": "2024-02-26", "ReleaseNotes": "Corrections for backwards compatibility for 2.6.5" },
-          { "ModuleVersion": "1.11.0", "ServerVersionRange": [ "2.8.0", ""       ], "ReleaseDate": "2024-08-02", "ReleaseNotes": "Updated for server 2.8" }
+          { "ModuleVersion": "1.11.0", "ServerVersionRange": [ "2.8.0", "2.9.0"  ], "ReleaseDate": "2024-08-02", "ReleaseNotes": "Updated for server 2.8" },
+          { "ModuleVersion": "1.12.0", "ServerVersionRange": [ "2.9.1", ""       ], "ReleaseDate": "2024-11-17", "ReleaseNotes": "Updated to .NET 9" }
           ]
       },
 

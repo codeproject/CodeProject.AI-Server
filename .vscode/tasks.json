@@ -26,51 +26,7 @@
             }
         },
 
-        /*
-        {
-            "label": "build-all-arm64",         // Builds all projects 
-            "group": "build",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-server",
-                "build-modules-arm64",
-                "build-tests"
-            ],
-            "windows": {
-                "dependsOn": [
-                    "build-server",
-                    "build-modules-arm64",
-                    "build-explorer",
-                    "build-tests"
-                ]
-            }
-        },
-
-        {
-            "label": "build-modules", 
-            "group": "build",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-yolo-net",
-                "build-portraitfilter",
-                "build-sentimentanalysis",
-                "build-demo_module_dotnetlongprocess"
-            ]
-        },
-
-        {
-            "label": "build-modules-arm64", 
-            "group": "build",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-yolo-net"
-                // "build-portraitfilter",
-                // "build-sentimentanalysis",
-            ]
-        },
-        */
-
-        // Build individual projects ==================================================================================
+        // Build individual projects ===============================================================
 
         {
             "label": "build-server",    // Builds ONLY the API server, and not any backend analsysis or explorer apps
@@ -291,26 +247,7 @@
             "problemMatcher": "$msCompile"
         },   
 
-        // Launch apps ================================================================================================
-
-        {
-            "label": "launch-server-win",       // Builds all projects then launches the front end API server
-            "group": "none",
-            "command": "${workspaceFolder}/src/server/bin/Debug/net8.0/CodeProject.AI.Server.exe",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "build-all-win"
-            ]
-        },
-
-        {
-            "label": "start-explorer",        // Starts the Explorer Windows form app. No building or launching of API server done.
-            "group": "none",
-            // Windows form apps only work in Windows
-            "command": "${workspaceFolder}/src/demos/clients/Net/AiExplorer/bin/Debug/net8.0-windows/win-x64/",
-            "args": [],
-            "type": "process"
-        },
+        // Launch apps =============================================================================
 
         {
             "label": "stop-all",     // Builds and Launches the AI server for Linux
@@ -325,7 +262,7 @@
             }
         },
 
-        // Misc ===================================================================================================
+        // Misc ====================================================================================
 
         {
             "label": "publish",

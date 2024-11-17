@@ -256,7 +256,7 @@ namespace CodeProject.AI.Server
             // Start from this assembly. We'll work our way up
             string rootPath = AppContext.BaseDirectory;
 
-            // The server (this program) is under /src/server/bin/Debug/net8.0 while debugging, or
+            // The server (this program) is under /src/server/bin/Debug/netX.0 while debugging, or
             // maybe under Release, but when deployed it's simply under /server. 
             // ASSUMPTION: There is no folder called "server" between /server and this assembly.
             // ASSUMPTION: This application was not installed in a folder named 'src'.
