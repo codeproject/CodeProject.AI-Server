@@ -82,10 +82,9 @@ namespace CodeProject.AI.Server
 
                     // Handy to allow the checkee to return emergency info if the current installed
                     // version has issues. IMPORTANT: no personal information can be sent here. This
-                    //  is purely things like OS / GPU.
+                    // is purely information such as server version, current OS / GPU.
                     string currentVersion = VersionConfig.VersionInfo?.Version ?? string.Empty;
-                    _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);
-                    
+                    _client.DefaultRequestHeaders.Add("X-CPAI-Server-Version", currentVersion);                    
                     var sysProperties = SystemInfo.Summary;
                     var systemInfoJson = JsonSerializer.Serialize(sysProperties);
                     _client.DefaultRequestHeaders.Add("X-CPAI-Server-SystemInfo", systemInfoJson);
