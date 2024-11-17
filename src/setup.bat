@@ -689,6 +689,10 @@ goto:eof
 
 :SetupJSONParser
 
+    if /i "!executionEnvironment!" == "Development" (
+        call "%utilsScript%" SetupDotNet !dotNetSDKVersion! SDK
+    )
+
     pushd !rootDirPath!\utils\ParseJSON
     if not exist ParseJSON.exe (
         call "!utilsScript!" Write "Building ParseJSON..."

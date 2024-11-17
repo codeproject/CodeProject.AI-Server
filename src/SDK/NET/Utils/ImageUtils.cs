@@ -1,3 +1,4 @@
+using System.IO;
 using SkiaSharp;
 
 namespace CodeProject.AI.SDK.Utils

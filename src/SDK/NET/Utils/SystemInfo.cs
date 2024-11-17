@@ -5,6 +5,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 using Hardware.Info;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System;
+using System.Linq;
+using System.IO;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 namespace CodeProject.AI.SDK.Utils

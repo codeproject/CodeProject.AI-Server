@@ -3,6 +3,8 @@
 using CodeProject.AI.SDK.Modules;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Server;
+using System.Collections.Generic;
+using System;
 
 namespace CodeProject.AI.SDK.API
 {
