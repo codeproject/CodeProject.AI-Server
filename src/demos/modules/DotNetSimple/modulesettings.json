@@ -12,7 +12,7 @@
         "License": "MIT",
         "LicenseUrl": "https://opensource.org/licenses/MIT",
         "Author": "Chris Maunder",
-        "Homepage": "https://codeproject.com/ai",
+        "Homepage": "https://codeproject.github.io/codeproject.ai",
         "BasedOn":     "Yolov8.Net",
         "BasedOnUrl":  "https://github.com/sstainba/Yolov8.Net"
       },
