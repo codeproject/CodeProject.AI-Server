@@ -316,8 +316,21 @@ installScriptsDirPath="${rootDirPath}/devops/install"
 utilsScript="${utilsScriptsDirPath}/utils.sh"
 
 # Load vars in .env. This may update things like dotNetTarget
-cat "${rootDirPath}/.env" | xargs
-quit 0
+if [ -f ${rootDirPath}/.env ]; then
+    # Export each line from the .env file
+    while IFS='=' read -r key value; do
+        # Ignore lines starting with `#` (comments) and empty lines
+        if [[ ! "$key" =~ ^# ]] && [[ -n "$key" ]]; then
+            # Trim any surrounding whitespace
+            key=$(echo $key | xargs)
+            value=$(echo $value | xargs)
+            export "$key=$value"
+        fi
+    done < ${rootDirPath}/.env
+else
+    echo "${rootDirPath}/.env file not found"
+    # exit 1
+fi
 
 # Check if we're in a SSH session. If so it means we need to avoid anything GUI
 inSSH=false
