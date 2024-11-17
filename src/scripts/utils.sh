@@ -823,6 +823,10 @@ function setupDotNet () {
             export DOTNET_ROOT=${dotnet_path}
             export PATH=${DOTNET_ROOT}${PATH:+:${PATH}}
 
+            if [ -e /usr/local/bin/dotnet ]; then
+                rm /usr/local/bin/dotnet
+            fi
+
             if [ ! -e /usr/local/bin/dotnet ]; then
                 ln -fs "${dotnet_path}dotnet" "/usr/local/bin/dotnet"
             fi

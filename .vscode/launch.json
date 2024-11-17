@@ -13,10 +13,7 @@
             "request": "launch",
             "preLaunchTask": "build-server",
             // "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server",
-            "windows": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
-            },
+            "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
                 "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
             },
@@ -85,10 +82,7 @@
             "request": "launch",
             "preLaunchTask": "build-all",
             // "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server",
-            "windows": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
-            },
+            "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
                 "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
             },
@@ -144,10 +138,7 @@
             "name": "Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server",
-            "windows": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
-            },
+            "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
                 "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
             },
@@ -197,10 +188,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-server",
-            "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server",
-            "windows": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.exe",
-            },
+            "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.exe",
             "linux": {
                 "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
             },
@@ -242,10 +230,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-yolo-net",
-            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/${env:dotNetTarget}/ObjectDetectionYOLOv5Net",
-            "windows": {
-                "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/9.0/ObjectDetectionYOLOv5Net",
-            },
+            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/9.0/ObjectDetectionYOLOv5Net",
             "linux": {
                 "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/${env:dotNetTarget}/ObjectDetectionYOLOv5Net.dll",
             },
@@ -347,10 +332,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-parsejson",
-            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/${env:dotNetTarget}/ParseJSON",
-            "windows": {
-                "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/9.0/ParseJSON",
-            },
+            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/9.0/ParseJSON",
             "linux": {
                 "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/${env:dotNetTarget}/ParseJSON.dll",
             },
@@ -494,9 +476,6 @@
             "linux": {
                 "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/${env:dotNetTarget}/JsonAPI.dll",
             },
-            "osx": {
-                "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/${env:dotNetTarget}/JsonAPI.dll",
-            },
             "args": [],
             "cwd": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/",
             "stopAtEntry": false,
@@ -615,10 +594,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-demo-net",
-            "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/${env:dotNetTarget}/DotNetSimple",
-            "windows": {
-                "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple",
-            },
+            "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple",
             "linux": {
                 "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/${env:dotNetTarget}/DotNetSimple.dll",
             },
@@ -645,10 +621,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-demo_module_dotnetlongprocess",
-            "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/${env:dotNetTarget}/DotNetLongProcess",
-            "windows": {
-                "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/net9.0/DotNetLongProcess",
-            },
+            "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/net9.0/DotNetLongProcess",
             "linux": {
                 "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/${env:dotNetTarget}/DotNetLongProcess.dll",
             },
