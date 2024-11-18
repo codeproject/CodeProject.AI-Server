@@ -15,7 +15,10 @@
             // "postDebugTask": "stop-all",
             "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                // This is what you get from trusting ChatGPT
+                // "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.dll",
+
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
@@ -84,7 +87,7 @@
             // "postDebugTask": "stop-all",
             "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
@@ -140,7 +143,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
@@ -190,12 +193,12 @@
             "preLaunchTask": "build-server",
             "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.exe",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.dll",
             },
             "args": [
                 "--ModuleOptions:LaunchModules=false"
             ],
-            "cwd": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/",
+            "cwd": "${workspaceFolder}/src/server/bin/Debug/net9.0/",
             "stopAtEntry": false,
             /*
             "serverReadyAction": {
@@ -232,7 +235,7 @@
             "preLaunchTask": "build-yolo-net",
             "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/9.0/ObjectDetectionYOLOv5Net",
             "linux": {
-                "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/${env:dotNetTarget}/ObjectDetectionYOLOv5Net.dll",
+                "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net9.0/ObjectDetectionYOLOv5Net.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",
@@ -334,7 +337,7 @@
             "preLaunchTask": "build-parsejson",
             "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/9.0/ParseJSON",
             "linux": {
-                "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/${env:dotNetTarget}/ParseJSON.dll",
+                "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net9.0/ParseJSON.dll",
             },
             "args": [ "$.Modules.ALPR.Platforms", "test.json" ],
             "cwd": "${workspaceFolder}/utils/ParseJSON/",
@@ -474,7 +477,7 @@
             "preLaunchTask": "build-json-client",
             "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/net9.0/JsonAPI",
             "linux": {
-                "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/${env:dotNetTarget}/JsonAPI.dll",
+                "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/net9.0/JsonAPI.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/",
@@ -596,7 +599,7 @@
             "preLaunchTask": "build-demo-net",
             "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple",
             "linux": {
-                "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/${env:dotNetTarget}/DotNetSimple.dll",
+                "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",
@@ -623,7 +626,7 @@
             "preLaunchTask": "build-demo_module_dotnetlongprocess",
             "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/net9.0/DotNetLongProcess",
             "linux": {
-                "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/${env:dotNetTarget}/DotNetLongProcess.dll",
+                "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/net9.0/DotNetLongProcess.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",

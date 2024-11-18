@@ -979,7 +979,9 @@ copy_files_or_dirs_from_list() {
             if [ "$osname" = "linux-musl" ]; then
                 printf -- "-u";
             else
-                printf -- "-n";
+                # cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+                # printf -- "-n";
+                printf -- "--update=none";
             fi
         fi)
 

@@ -1696,16 +1696,33 @@ namespace CodeProject.AI.SDK.Utils
 
             if (IsLinux)
             {
-                // Output is in the form:
                 var results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $NAME\"", null)
-                                                                                .ConfigureAwait(false);
+                                                                             .ConfigureAwait(false);
                 if (results is not null)
                     _osName = results["output"]?.Trim(); // eg "ubuntu", "debian"
 
-                results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $VERSION_ID\"", null)
-                                                                                .ConfigureAwait(false);
+                // VERSION is in form "24.10 (Oracular Oriole)"
+                var pattern = @"(?<version>\d+\.\d+) \((?<name>[a-z\s]+)\)";
+                var options = RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
+                results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $VERSION\"",
+                                                    pattern, options).ConfigureAwait(false);
                 if (results is not null)
-                    _osVersion = results["output"]?.Trim();    // eg. "22.04" for Ubuntu 22.04, "12" for Debian 12
+                {
+                    _osVersion   = results["version"]?.Trim();    // eg. "22.04" for Ubuntu 22.04, "12" for Debian 12
+                    string? name = results["name"]?.Trim();       // eg. "Oracular Oriole" for Ubuntu 24.10
+                    if (!string.IsNullOrWhiteSpace(name))
+                        _osName += " (" + name + ")";
+                }
+
+                // Just in case above failed
+                if (string.IsNullOrWhiteSpace(_osVersion))
+                {
+                    // VERSION_ID is in form "24.10"
+                    results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $VERSION_ID\"", null)
+                                                                             .ConfigureAwait(false);
+                    if (results is not null)
+                        _osVersion = results["output"]?.Trim();    // eg. "22.04" for Ubuntu 22.04, "12" for Debian 12
+                }
             }
             else if (IsWindows)
             {
