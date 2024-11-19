@@ -426,7 +426,7 @@ if /i "!hasCUDA!" == "true" (
 
     REM CUDA Toolkit != CUDA drivers. We need the files and CUDA_PATH to be in place
     if exist "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v*" set hasCUDAToolkit=true
-    if "%CUDA_PATH%" == "" set hasCUDAToolkit=false
+    if "%CUDA_PATH%" == "" ( set "hasCUDAToolkit=false" ) else ( set "hasCUDAToolkit=true" )
 
     call "!utilsScript!" GetCuDNNVersion
     if "!cuDNN_version!" == "" (
