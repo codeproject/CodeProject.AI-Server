@@ -417,16 +417,22 @@ REM Test for CUDA drivers
 call "!utilsScript!" Write "CUDA Present..."
 
 set hasCUDA=false
+set hasCUDAToolkit=false
 
 call "!utilsScript!" GetCudaVersion
 if "!cuda_version!" neq "" set hasCUDA=true
 
 if /i "!hasCUDA!" == "true" (
+
+    REM CUDA Toolkit != CUDA drivers. We need the files and CUDA_PATH to be in place
+    if exist "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v*" set hasCUDAToolkit=true
+    if "%CUDA_PATH%" == "" ( set "hasCUDAToolkit=false" ) else ( set "hasCUDAToolkit=true" )
+
     call "!utilsScript!" GetCuDNNVersion
     if "!cuDNN_version!" == "" (
-        call "!utilsScript!" WriteLine "Yes (CUDA !cuda_version!, No cuDNN found)" !color_success!
+        call "!utilsScript!" WriteLine "Yes (CUDA !cuda_version!, No cuDNN found, CUDA Toolkit: !hasCUDAToolkit!)" !color_success!
     ) else (
-        call "!utilsScript!" WriteLine "Yes (CUDA !cuda_version!, cuDNN !cuDNN_version!)" !color_success!
+        call "!utilsScript!" WriteLine "Yes (CUDA !cuda_version!, cuDNN !cuDNN_version!, CUDA Toolkit: !hasCUDAToolkit!)" !color_success!
     )
 ) else (
     call "!utilsScript!" WriteLine "No" !color_warn!
