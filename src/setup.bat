@@ -1075,6 +1075,8 @@ REM Saves the state of the installation environment
     set stateCurrentDir=%cd%
     set stateVerbosity=!verbosity!
     set stateOneStepPIP=!oneStepPIP!
+    set stateHasCUDA=!hasCUDA!
+    set stateInstallGPU=!installGPU!
 
     exit /b
 
@@ -1084,5 +1086,7 @@ REM Restores the state of the installation environment
     cd "!stateCurrentDir!"
     set verbosity=!stateVerbosity!
     set oneStepPIP=!stateOneStepPIP!
+    set hasCUDA=!stateHasCUDA!
+    set installGPU=!stateInstallGPU!
 
     exit /b

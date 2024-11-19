@@ -904,7 +904,7 @@ shift & goto :%~1
     if "!requirementsFilename!" == "" (
 
         REM Unless installGPU is false, we are installing CUDA equipped packages 
-        REM even if EnableGPU = false in the modulesettings files. This allows
+        REM even if installGPU = false in the modulesettings files. This allows
         REM  you to toggle CUDA support at runtime, rather than install time.
         if /i "!installGPU!" == "true" (
             if /i "!hasCUDA!" == "true" (
@@ -1414,7 +1414,10 @@ shift & goto :%~1
                 if /i "!prevPart!" == "cuDNN" (
                     if /i "!part:~0,1!" == "v" (
                         set "cuDNN_version=!part:~1!"
-                        REM @echo cuDNN version = !cuDNN_version!
+
+                        for /f "tokens=1 delims=." %%c in ("!cuDNN_version!") do ( set cuDNN_major_version=%%c )
+
+                        REM @echo cuDNN version = !cuDNN_version! / !cuDNN_major_version!
                         exit /b
                     ) else (
                         set prevPart=!part!
