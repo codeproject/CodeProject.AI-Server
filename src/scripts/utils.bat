@@ -644,26 +644,40 @@ shift & goto :%~1
                 if errorlevel 1 (
                     call :Write "Installing WinGet..." %color_info%
 
-                    set "archType=x64"
-                    if /i "!architecture!" == "arm64" set "archType=arm64"
+                    set DoWingetInstall=true
+                    if "!DoWingetInstall!" == "true" (
+                        set "archType=x64"
+                        if /i "!architecture!" == "arm64" set "archType=arm64"
 
-                    REM https://learn.microsoft.com/en-us/windows/package-manager/winget/#install-winget-on-windows-sandbox
-                    powershell -command ^
-                        $progressPreference = 'silentlyContinue'; ^
-                        Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle; ^
-                        Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.!archType!.14.00.Desktop.appx -OutFile Microsoft.VCLibs.!archType!.14.00.Desktop.appx; ^
-                        Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.!archType!.appx -OutFile Microsoft.UI.Xaml.2.8.!archType!.appx; ^
-                        Add-AppxPackage Microsoft.VCLibs.!archType!.14.00.Desktop.appx; ^
-                        Add-AppxPackage Microsoft.UI.Xaml.2.8.!archType!.appx; ^
-                        Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle;
+                        REM https://learn.microsoft.com/en-us/windows/package-manager/winget/#install-winget-on-windows-sandbox
+                        if /i "%verbosity%" == "quiet" (
+                            set progressType=silentlyContinue
+                        ) else (
+                            set progressType=Continue
+                        )
+                        powershell -command $progressPreference = '!progressType!'; ^
+                            Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle; ^
+                            Add-AppxPackage Microsoft.VCLibs.!archType!.14.00.Desktop.appx;
 
-                    call :WriteLine "Done." %color_info%
+                        powershell -command $progressPreference = '!progressType!'; ^
+                            Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.!archType!.14.00.Desktop.appx -OutFile Microsoft.VCLibs.!archType!.14.00.Desktop.appx; ^
+                            Add-AppxPackage Microsoft.UI.Xaml.2.8.!archType!.appx;
 
-                    call :Write "Cleaning up..." %color_info%
-                    del Microsoft.VCLibs.!archType!.14.00.Desktop.appx
-                    del Microsoft.UI.Xaml.2.8.!archType!.appx
-                    del Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
-                    call :WriteLine "Done." %color_info%
+                        powershell -command $progressPreference = '!progressType!'; ^
+                            Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.!archType!.appx -OutFile Microsoft.UI.Xaml.2.8.!archType!.appx; ^
+                            Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle;
+
+                        call :WriteLine "Done." %color_info%
+
+                        call :Write "Cleaning up..." %color_info%
+                        del Microsoft.VCLibs.140.00.UWPDesktop.appx
+                        del Microsoft.VCLibs.!archType!.14.00.Desktop.appx
+                        del Microsoft.UI.Xaml.2.8.!archType!.appx
+                        del Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+                        call :WriteLine "Done." %color_info%
+                    ) else (
+                        powershell -command "Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+                    )
                 )
 
                 if /i "!requestedType!" == "SDK" (
@@ -671,6 +685,12 @@ shift & goto :%~1
                 ) else (
                     winget install Microsoft.DotNet.AspNetCore.!requestedNetMajorVersion!
                 )
+
+                call :WriteLine ""
+                call :WriteLine "** You may need to restart this terminal (or VS Code if you're " %color_error%
+                call :WriteLine "   in VS Code) and rerun setup.bat for the rest of this setup "  %color_error%
+                call :WriteLine "   script to work." %color_error%
+                call :WriteLine ""
             )
         )
     )
