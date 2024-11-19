@@ -10,7 +10,7 @@
 #
 #   1. From within the /src (or /app, or root directory of the installation) in
 #      order to setup the full system, including serer, SDKs, demos and modules.
-#      This method is typically used for setting up the Developmnent environment.
+#      This method is typically used for setting up the Development environment.
 #
 #   2. From within a module's directory (or demo or server folder) to setup just
 #      that module, demo or the server
@@ -260,7 +260,7 @@ fi
 
 # Standard output may be used as a return value in the functions. Expose stream
 # 3 so we can do 'echo "Hello, World!" >&3' within these functions for debugging
-# wihtout interfering with return values.
+# without interfering with return values.
 exec 3>&1
 
 # Execution environment, setup mode and Paths ::::::::::::::::::::::::::::::::
@@ -363,7 +363,7 @@ function setupPythonPaths () {
     fi
     virtualEnvDirPath="${pythonDirPath}/venv"
 
-    # The path to the python intepreter for this venv
+    # The path to the python interpreter for this venv
     venvPythonCmdPath="${virtualEnvDirPath}/bin/python${pythonVersion}"
 
     # The location where python packages will be installed for this venv
@@ -740,7 +740,7 @@ fi
 # oneStep means we install python packages using pip -r requirements.txt rather
 # than installing module by module. one-step allows the dependency manager to
 # make some better calls, but also means the entire install can fail on a single
-# bad (and potentially unnneeded) module. Turning one-step off means you get a
+# bad (and potentially unneeded) module. Turning one-step off means you get a
 # more granular set of error messages should things go wrong, and a nicer UX.
 if [ "$inDocker" = true ]; then 
     oneStepPIP=false
@@ -964,8 +964,8 @@ elif [ "$os" = "linux" ]; then
         write ") " $color_primary
     fi
     if [ -x "$(command -v rocminfo)" ]; then
-        amdinfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
-        if [[ ${amdinfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm=true; fi
+        amdInfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
+        if [[ ${amdInfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm=true; fi
     fi
 fi
 if [ "$hasROCm" = true ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
@@ -1045,8 +1045,8 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         done
 
         if [ "$installExternalModules" == "true" ]; then
-            # Walk through the modules directoorym for modules that live in the external 
-            # folder. For isntance modules that are in extenal Git repos / projects
+            # Walk through the modules directory for modules that live in the external 
+            # folder. For instance modules that are in external Git repos / projects
             writeLine
             writeLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
             writeLine

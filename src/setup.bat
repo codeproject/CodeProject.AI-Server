@@ -8,7 +8,7 @@
 ::
 ::  1. From within the \src (or the root directory of the installation) in
 ::     order to setup the full system, including serer, SDKs, demos and modules.
-::     This method is typically used for setting up the Developmnent environment.
+::     This method is typically used for setting up the Development environment.
 ::
 ::  2. From within a module's directory (or demo or server folder) to setup just
 ::     that module, demo or the server
@@ -44,7 +44,7 @@
 @echo off
 REM cls
 
-setlocal enabledelayedexpansion
+SetLocal EnableDelayedExpansion
 
 REM Set CodePage UTF-8 for our emojis
 chcp 65001 >NUL
@@ -100,9 +100,9 @@ set skipPipInstall=false
 :: Further: one-step means if you re-run the installer, the entire req file is
 :: always re-processed, whereas if oneStep is false, each package is checked for
 :: existence before running pip, speeding re-installs dramatically.
-:: Finally: one-step is an awful user experience. Everyghing hangs for minutes.
+:: Finally: one-step is an awful user experience. Everything hangs for minutes.
 :: Setting it to false provides far better (but maybe slower) feedback mechanism.
-:: FOR PIP INCOMPATIBILITY ISSUES: Set this to true and verbisity to loud to get
+:: FOR PIP INCOMPATIBILITY ISSUES: Set this to true and verbosity to loud to get
 :: excellent debug feedback from pip.
 set oneStepPIP=false
 
@@ -292,7 +292,7 @@ set architecture=%PROCESSOR_ARCHITECTURE%
 
 :: A NOTE ON PLATFORM.
 :: We use the full "x86_64" for architecture, but follow the common convention
-:: of abbreviating this to "x64" when used in conjuntion with OS. So windows-x64
+:: of abbreviating this to "x64" when used in conjunction with OS. So windows-x64
 :: rather than windows-x86_64. To simplify further, if the platform value doesn't
 :: have a suffix then it's assumed to be -x64. This may change in the future.
 if /i "!architecture!" == "arm64" (
@@ -325,18 +325,18 @@ set mainSetupStarttime=%time%
 REM Commented: WMIC not always available
 :: REM Report disk space available
 :: for /f "tokens=1,2 delims== " %%a in ('wmic logicaldisk where "DeviceID='%cd:~0,2%'" get FreeSpace^,Size^,VolumeName /format:list') do (
-::     if "%%a"=="FreeSpace"  set freespacebytes=%%b
+::     if "%%a"=="FreeSpace"  set freeSpaceBytes=%%b
 ::     if "%%a"=="Size"       set totalspacebytes=%%b
-::     if "%%a"=="VolumeName" set volumename=%%b
+::     if "%%a"=="VolumeName" set volumeName=%%b
 :: )
 :: REM Anything over 2Gb kills this
-:: REM set /a freeSpaceGb=!freespacebytes! / 1073741824
-:: REM set /a freeSpaceGbfraction=!freespacebytes! %% 1073741824 * 10 / 1073741824
-:: set /a freeSpaceGb=!freespacebytes:~0,-4! / 1048576
-:: set /a freeSpaceGbfraction=!freespacebytes:~0,-4! %% 1048576 * 10 / 1048576
+:: REM set /a freeSpaceGb=!freeSpaceBytes! / 1073741824
+:: REM set /a freeSpaceGbFraction=!freeSpaceBytes! %% 1073741824 * 10 / 1073741824
+:: set /a freeSpaceGb=!freeSpaceBytes:~0,-4! / 1048576
+:: set /a freeSpaceGbFraction=!freeSpaceBytes:~0,-4! %% 1048576 * 10 / 1048576
 :: set /a totalSpaceGb=!totalspacebytes:~0,-4! / 1048576
 
-for /f "tokens=6*" %%A in ('vol') do set volumename=%%A
+for /f "tokens=6*" %%A in ('vol') do set volumeName=%%A
 set driveRoot=%CD:~0,3%
 for /f "usebackq" %%A in (`powershell -NoProfile -Command "(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -eq '!driveRoot!' }).Free + (Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -eq '!driveRoot!' }).Used"`) do (
     set totalspacebytes=%%A
@@ -345,16 +345,16 @@ REM chop off last 3 digits (divide by 1000) then divide by 1024^2 to get Gb. Thi
 REM is to avoid numerical overflow but results in bad maths.
 set /a totalSpaceGb=!totalspacebytes:~0,-3! / 1048576
 
-for /f "tokens=3" %%A in ('dir !driveRoot!') do set freespacebytes=%%A
-set freespacebytes=!freespacebytes:,=!
-set /a freeSpaceGb=!freespacebytes:~0,-3! / 1048576
-set /a freeSpaceGbfraction=!freespacebytes:~0,-3! %% 1048576 * 10 / 1048576
+for /f "tokens=3" %%A in ('dir !driveRoot!') do set freeSpaceBytes=%%A
+set freeSpaceBytes=!freeSpaceBytes:,=!
+set /a freeSpaceGb=!freeSpaceBytes:~0,-3! / 1048576
+set /a freeSpaceGbFraction=!freeSpaceBytes:~0,-3! %% 1048576 * 10 / 1048576
 
-if "!volumename!" == "" set volumename=(No label)
+if "!volumeName!" == "" set volumeName=(No label)
 
 
-REM call "!utilsScript!" WriteLine "!freespacebytes! of !totalspacebytes! available on !VolumeName! (!os_name! !architecture! - !platform!)" !color_mute!
-call "!utilsScript!" WriteLine "!freeSpaceGb!.!freeSpaceGbfraction!Gb of !totalSpaceGb!Gb available on !VolumeName! (!os_name! !architecture! - !platform!)" !color_mute!
+REM call "!utilsScript!" WriteLine "!freeSpaceBytes! of !totalspacebytes! available on !VolumeName! (!os_name! !architecture! - !platform!)" !color_mute!
+call "!utilsScript!" WriteLine "!freeSpaceGb!.!freeSpaceGbFraction!Gb of !totalSpaceGb!Gb available on !VolumeName! (!os_name! !architecture! - !platform!)" !color_mute!
 
 
 :: Ensure directories are created and download required assets.
@@ -362,6 +362,8 @@ call "!utilsScript!" WriteLine "!freeSpaceGb!.!freeSpaceGbfraction!Gb of !totalS
 call "!utilsScript!" WriteLine
 call "!utilsScript!" WriteLine "General CodeProject.AI setup" "White" "Blue" !lineWidth!
 call "!utilsScript!" WriteLine
+
+call "!utilsScript!" EnsureVCRedistInstalled
 
 :: Before we start, ensure we can read the JSON config files        
 call :SetupJSONParser
@@ -742,10 +744,10 @@ goto:eof
     )
     set virtualEnvDirPath=!pythonDirPath!\venv
 
-    REM The path to the python intepreter for this venv
+    REM The path to the python interpreter for this venv
     set venvPythonCmdPath=!virtualEnvDirPath!\Scripts\python.exe
 
-    REM The location where python packages will be installed for this venvvenv
+    REM The location where python packages will be installed for this venv
     set packagesDirPath=%virtualEnvDirPath%\Lib\site-packages
 
     exit /b

@@ -127,13 +127,13 @@ shift & goto :%~1
 
 
 :: Sets the currentColor global for the given foreground/background colors
-:: currentColor must be output to the terminal before outputing text in
+:: currentColor must be output to the terminal before outputting text in
 :: order to generate a colored output.
 ::
 :: string foreground color name. Optional if no background provided.
 ::        Defaults to "White"
 :: string background color name.  Optional. Defaults to Black.
-:: string intense. Optional. If "true" then the insensity is turned up
+:: string intense. Optional. If "true" then the intensity is turned up
 :setColor
 
     REM If you want to get a little fancy then you can also try
@@ -343,7 +343,7 @@ shift & goto :%~1
         if errorlevel 16 (
             call :WriteLine "Failed" !color_error!
         else if errorlevel 8 (
-            call :WriteLine "Some files inot copied" !color_warn!
+            call :WriteLine "Some files not copied" !color_warn!
         ) else (
             call :WriteLine "done" !color_success!
         )
@@ -369,7 +369,7 @@ shift & goto :%~1
     SetLocal EnableDelayedExpansion
 
     REM Param 1: The URL where the download can be found.
-    REM eg "https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/models/"
+    REM eg "https://mycdn.com/server/models/"
     set assetStorageUrl=%1
     set assetStorageUrl=!assetStorageUrl:"=!
 
@@ -382,7 +382,8 @@ shift & goto :%~1
     set downloadToDir=!downloadToDir:"=!
 
     REM Param 4: The name of the folder within the downloads directory where 
-    REM          the contents should be extracted. eg. assets 
+    REM          the contents should be extracted. eg. assets. 
+    REM    NOTE: If this param is empty then no extraction will happen
     set dirToExtract=%4
     set dirToExtract=!dirToExtract:"=!
 
@@ -393,22 +394,25 @@ shift & goto :%~1
     if "!message!" == "" set message=Downloading !fileToGet!...
 
     if /i "%verbosity%" neq "quiet" (
-        call :WriteLine "Downloading !fileToGet! from !assetStorageUrl! to !downloadToDir!\!dirToExtract!" "!color_info!"
+        call :WriteLine "Downloading !fileToGet! from !assetStorageUrl! to !downloadToDir!" "!color_info!"
     )
 
     call :Write "!message!" "!color_primary!"
 
-    set extension=!fileToGet:~-3!
-    if /i "!extension!" NEQ ".gz" (
-        set extension=!fileToGet:~-4!
-        if /i "!extension!" NEQ ".zip" (
-            call :WriteLine "Unknown and unsupported file type for file !fileToGet!" "!color_error!"
-            exit /b    REM no point in carrying on
+    REM If we're to extract this file then ensure it's an extractable file
+    if "!dirToExtract!" neq "" (
+        set extension=!fileToGet:~-3!
+        if /i "!extension!" NEQ ".gz" (
+            set extension=!fileToGet:~-4!
+            if /i "!extension!" NEQ ".zip" (
+                call :WriteLine "Unknown and unsupported file type for file !fileToGet!" "!color_error!"
+                exit /b    REM no point in carrying on
+            )
         )
     )
 
     if /i "%verbosity%" neq "quiet" (
-        call :WriteLine "Checking '!downloadToDir!\!fileToGet!'" "!color_info!"
+        call :WriteLine "Checking..." "!color_info!"
     )
     
     if exist "!downloadToDir!\!fileToGet!" (
@@ -425,7 +429,7 @@ shift & goto :%~1
         REM Be careful with the quotes so we can handle paths with spaces
         powershell -command "Start-BitsTransfer -Source '!assetStorageUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!\!fileToGet!'"
 
-        REM If these fail, it could be becuase of hanging transfers
+        REM If these fail, it could be because of hanging transfers
         if errorlevel 1 (
             powershell -Command "Get-BitsTransfer | Remove-BitsTransfer"
             powershell -command "Start-BitsTransfer -Source '!assetStorageUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!\!fileToGet!'"
@@ -453,17 +457,18 @@ shift & goto :%~1
         call :WriteLine "Heading to !downloadToDir!" "!color_info!"
     )
 
-    pushd "!downloadToDir!"
-    if not exist "!downloadToDir!\!dirToExtract!" mkdir "!downloadToDir!\!dirToExtract!"
+    REM Extract the file if we've been given an extraction folder name
+    if "!dirToExtract!" neq "" (
+        pushd "!downloadToDir!"
+        if not exist "!downloadToDir!\!dirToExtract!" mkdir "!downloadToDir!\!dirToExtract!"
 
-    call :ExtractToDirectory "!fileToGet!" "!dirToExtract!"
-
-    if errorlevel 1 (
+        call :ExtractToDirectory "!fileToGet!" "!dirToExtract!"
+        if errorlevel 1 (
+            popd
+            exit /b 1
+        )
         popd
-        exit /b 1
     )
-
-    popd
 
     call :WriteLine "done." "!color_success!"
 
@@ -516,6 +521,101 @@ shift & goto :%~1
         del /s /f /q "!archiveName!" >NUL 2>&1
     )
  
+    exit /b
+
+:EnsureVCRedistInstalled
+    SetLocal EnableDelayedExpansion
+
+    set url_x64=https://aka.ms/vs/17/release/
+    set file_x64=vc_redist.x64.exe
+
+    call :Write "Checking for VC++ Redist..." %color_info%
+    reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\17.0\VC\Runtimes\x64" >nul 2>&1
+    if %errorlevel% equ 0 (
+        call :WriteLine "v17 Present." %color_success%
+        exit /b
+    )
+    reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\16.0\VC\Runtimes\x64" >nul 2>&1
+    if %errorlevel% equ 0 (
+        call :WriteLine "v16 Present." %color_success%
+        exit /b
+    )
+    reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\15.0\VC\Runtimes\x64" >nul 2>&1
+    if %errorlevel% equ 0 (
+        call :WriteLine "v15 Present." %color_success%
+        exit /b
+    )
+    reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" >nul 2>&1
+    if %errorlevel% equ 0 (
+        call :WriteLine "v14 Present." %color_success%
+        exit /b
+    )
+
+    REM params: "https://cdn.com/assets"  "file.zip" "\downloads\myModuleDir"  "extract_dir" "Downloading files..."
+    REM Empty "extract_dir" means file will not be unzipped (since it's not a zip)
+    call :DownloadAndExtract "!url_x64!" "!file_x64!" "!downloadDirPath!\!platform!" "" "Downloading VC++ Redist files..."
+
+    if exist "!downloadDirPath!\!platform!\!file_x64!" (
+        call :Write "Installing VC++ Redist..." %color_info%
+        if /i "%verbosity%" == "quiet" (
+            "!downloadDirPath!\!platform!\!file_x64!" /quiet /norestart
+        ) else (
+            "!downloadDirPath!\!platform!\!file_x64!" /norestart
+        )
+        call :WriteLine "Done." %color_info%
+
+        REM -- Cleanup: Delete the installer files after installation
+        REM del /f /q "!downloadDirPath!\!platform!\!file_x64!"
+    ) else (
+        call :WriteLine "Unable to download VC redist installer" !color_error!
+    )
+
+    exit /b
+
+
+:EnsureWinGetInstalled
+    SetLocal EnableDelayedExpansion
+
+    where winget >NUL 2>NUL
+    if errorlevel 1 (
+        call :Write "Installing WinGet..." %color_info%
+
+        set DoWingetInstall=true
+
+        if "!DoWingetInstall!" == "true" (
+            set "archType=x64"
+            if /i "!architecture!" == "arm64" set "archType=arm64"
+
+            REM https://learn.microsoft.com/en-us/windows/package-manager/winget/#install-winget-on-windows-sandbox
+            if /i "%verbosity%" == "quiet" (
+                set progressType=silentlyContinue
+            ) else (
+                set progressType=Continue
+            )
+            powershell -command $progressPreference = '!progressType!'; ^
+                Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle; ^
+                Add-AppxPackage Microsoft.VCLibs.!archType!.14.00.Desktop.appx;
+
+            powershell -command $progressPreference = '!progressType!'; ^
+                Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.!archType!.14.00.Desktop.appx -OutFile Microsoft.VCLibs.!archType!.14.00.Desktop.appx; ^
+                Add-AppxPackage Microsoft.UI.Xaml.2.8.!archType!.appx;
+
+            powershell -command $progressPreference = '!progressType!'; ^
+                Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.!archType!.appx -OutFile Microsoft.UI.Xaml.2.8.!archType!.appx; ^
+                Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle;
+
+            call :WriteLine "Done." %color_info%
+
+            call :Write "Cleaning up..." %color_info%
+            del Microsoft.VCLibs.!archType!.14.00.Desktop.appx
+            del Microsoft.UI.Xaml.2.8.!archType!.appx
+            del Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+            call :WriteLine "Done." %color_info%
+        ) else (
+            powershell -command "Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+        )
+    )
+
     exit /b
 
 
@@ -640,45 +740,7 @@ shift & goto :%~1
                 )
             ) else (
 
-                where winget >NUL 2>NUL
-                if errorlevel 1 (
-                    call :Write "Installing WinGet..." %color_info%
-
-                    set DoWingetInstall=true
-                    if "!DoWingetInstall!" == "true" (
-                        set "archType=x64"
-                        if /i "!architecture!" == "arm64" set "archType=arm64"
-
-                        REM https://learn.microsoft.com/en-us/windows/package-manager/winget/#install-winget-on-windows-sandbox
-                        if /i "%verbosity%" == "quiet" (
-                            set progressType=silentlyContinue
-                        ) else (
-                            set progressType=Continue
-                        )
-                        powershell -command $progressPreference = '!progressType!'; ^
-                            Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle; ^
-                            Add-AppxPackage Microsoft.VCLibs.!archType!.14.00.Desktop.appx;
-
-                        powershell -command $progressPreference = '!progressType!'; ^
-                            Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.!archType!.14.00.Desktop.appx -OutFile Microsoft.VCLibs.!archType!.14.00.Desktop.appx; ^
-                            Add-AppxPackage Microsoft.UI.Xaml.2.8.!archType!.appx;
-
-                        powershell -command $progressPreference = '!progressType!'; ^
-                            Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.!archType!.appx -OutFile Microsoft.UI.Xaml.2.8.!archType!.appx; ^
-                            Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle;
-
-                        call :WriteLine "Done." %color_info%
-
-                        call :Write "Cleaning up..." %color_info%
-                        del Microsoft.VCLibs.140.00.UWPDesktop.appx
-                        del Microsoft.VCLibs.!archType!.14.00.Desktop.appx
-                        del Microsoft.UI.Xaml.2.8.!archType!.appx
-                        del Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
-                        call :WriteLine "Done." %color_info%
-                    ) else (
-                        powershell -command "Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
-                    )
-                )
+                call :EnsureWinGetInstalled
 
                 if /i "!requestedType!" == "SDK" (
                     winget install Microsoft.DotNet.SDK.!requestedNetMajorVersion!
@@ -720,7 +782,7 @@ shift & goto :%~1
     REM The path to the folder containing the base python installation
     set pythonRuntimeInstallPath=!runtimesDirPath!\bin\!os!\!pythonName!
 
-    REM For debugging, or correcting, we can force redownloads. Be careful though.
+    REM For debugging, or correcting, we can force re-downloads. Be careful though.
     if /i "%forceOverwrite%" == "true" (
 
         REM Force Re-download
@@ -731,7 +793,7 @@ shift & goto :%~1
 
         REM Force overwrite of python installation
         call :WriteLine "Cleaning Python directory to force re-install of Python" "!color_info!"
-        call :WriteLine "This will mean any previous PIP installs wwill be lost." "!color_warn!"
+        call :WriteLine "This will mean any previous PIP installs will be lost." "!color_warn!"
         if exist "!pythonRuntimeInstallPath!" rmdir /s %rmdirFlags% "!pythonRuntimeInstallPath!"
     )
 
@@ -802,7 +864,7 @@ shift & goto :%~1
     set searchDir=%~1
 
     if /i "%verbosity%" neq "quiet" (
-        call :WriteLine "Searching for a suitable requirements.txts file in !searchDir!" "!color_info!"
+        call :WriteLine "Searching for a suitable requirements.txt file in !searchDir!" "!color_info!"
     )
 
     REM This is getting complicated. The order of priority for the requirements file is:
@@ -1296,7 +1358,7 @@ shift & goto :%~1
 
 :GetCudaVersion
 
-    rem setlocal enabledelayedexpansion
+    REM SetLocal EnableDelayedExpansion
 
     :: Use nvcc to find the CUDA version
     where nvcc >nul 2>&1
@@ -1381,7 +1443,7 @@ shift & goto :%~1
     )
 
     REM Module settings files are loaded in this order. Each file will overwrite (but not delete)
-    REM settings of the previous file. Becuase of this, we're going to search the files in REVERSE
+    REM settings of the previous file. Because of this, we're going to search the files in REVERSE
     REM order until we find the first value based on the most specific to least specific file.
     REM   modulesettings.json
     REM   modulesettings.development.json 
@@ -1448,9 +1510,9 @@ shift & goto :%~1
 
 
 REM Gets a value from the modulesettings.json file (any JSON file, really) based
-REM purely on the name of the propery. THIS METHOD DOES NOT TAKE INTO ACCOUNT THE
+REM purely on the name of the property. THIS METHOD DOES NOT TAKE INTO ACCOUNT THE
 REM DEPTH OF A PROPERTY. If the property is at the root level or 10 levels down,
-REM it's all the same. The extraction is done purely by grep/sed, so is very niaive. 
+REM it's all the same. The extraction is done purely by grep/sed, so is very naive. 
 :GetValueFromModuleSettings  jsonFilePath moduleId property returnValue
     set "moduleSettingValue="
     SetLocal EnableDelayedExpansion
@@ -1579,7 +1641,7 @@ REM it's all the same. The extraction is done purely by grep/sed, so is very nia
 
     exit /b
 
-REM Gets the moduleID from a modulesettings.json file.  See above function for commentss
+REM Gets the moduleID from a modulesettings.json file.  See above function for comments
 :GetModuleIdFromModuleSettingsFile  jsonFilePath returnValue
     set "moduleSettingValue="
     SetLocal EnableDelayedExpansion
@@ -1765,7 +1827,7 @@ REM Gets the moduleID from a modulesettings.json file.  See above function for c
 
 REM Strips single line comments from a file and stores the cleaned contents in a new file
 :StripJSONComments
-    setlocal enabledelayedexpansion
+    SetLocal EnableDelayedExpansion
 
     set inputFilePath=%~1
     set cleanFilePath=%~2
@@ -1904,7 +1966,7 @@ REM Call this, then test: if "%online%" == "true" echo 'online'
         REM echo VERSION IS '%%a'
         set version=%%a
     )
-    endlocal & set VCredistVersion=%version:v=%
+    EndLocal & set VCredistVersion=%version:v=%
 
     exit /b
 
@@ -1913,7 +1975,7 @@ REM Get Windows Version
 :: Get the OS Name and version information
 :getWindowsOSName OSName
 
-    REM setlocal enabledelayedexpansion
+    REM SetLocal EnableDelayedExpansion
 
     REM Get the OS version information
     for /f "tokens=4-6 delims=. " %%i in ('ver') do (
@@ -1965,7 +2027,7 @@ REM Thanks to https://stackoverflow.com/a/15809139/1128209
 :: Nodes are normally strictly numeric, without a 0 prefix. A letter suffix
 :: is treated as a separate node
 ::
-    setlocal enableDelayedExpansion
+    SetLocal EnableDelayedExpansion
 
     set "v1=%~1"
     set "v2=%~2"
@@ -2021,7 +2083,7 @@ REM Thanks to https://stackoverflow.com/a/15809139/1128209
 
 :timeSince startTime duration
 
-    setlocal enableDelayedExpansion
+    SetLocal EnableDelayedExpansion
 
     set "startTime=%~1"
 
