@@ -39,12 +39,18 @@ REM Settings
 
 set dryRun=false
 
-set cuDNNLocation=https://developer.nvidia.com/rdp/cudnn-download
-set cuDNNArchiveDownloadUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/libraries/
+:: The location of large packages that need to be downloaded (eg an AWS S3 bucket
+:: name). This will be overwritten using the value from appsettings.json
+REM set assetStorageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/
+set assetStorageUrl=https://codeproject-ai-bunny.b-cdn.net/server/assets/
+REM set assetStorageUrl=https://www.codeproject.com/ai/download/server/assets/
 
-set CUDA10_cuDNN_version=8.4.1.50
-set CUDA11_cuDNN_version=8.9.4.25
-set CUDA12_cuDNN_version=8.9.7.29
+set cuDNNLocation=https://developer.nvidia.com/rdp/cudnn-download
+set cuDNNArchiveDownloadUrl=!assetStorageUrl!libraries/
+
+set CUDA10_cuDNN_version=8.7.0.84
+set CUDA11_cuDNN_version=8.9.7.29
+set CUDA12_cuDNN_version=9.5.1
 
 set zLibLocation=http://www.winimage.com/zLibDll/
 set zLibArchiveName=zlib123dllx64
@@ -84,9 +90,23 @@ if "!cuda_major_version!" == "10" (
     set cuda_version=12
     set cuDNN_version=!CUDA12_cuDNN_version!
 )
-set cuDNNArchiveFilename=cudnn-windows-x86_64-!cuDNN_version!_cuda!cuda_version!-archive.zip
-set cuDNNPattern=cudnn-windows-x86_64-*_cuda!cuda_version!-archive.zip
-set "cuDNNRegex=cudnn-windows-x86_64-([0-9]*).([0-9]*).([0-9]*).([0-9]*)_cuda!cuda_version!-archive.zip"
+
+if "!cuda_major_version!" == "12" (
+    set cuDNNInstallerFilename=cudnn_!cuDNN_version!_windows.exe
+    set cuDNNPattern=cudnn_*_windows.exe
+    set "cuDNNRegex=cudnn-([0-9]*).([0-9]*).([0-9]*)_windows.exe"
+) else (
+    set cuDNNArchiveFilename=cudnn-windows-x86_64-!cuDNN_version!_cuda!cuda_version!-archive.zip
+    set cuDNNPattern=cudnn-windows-x86_64-*_cuda!cuda_version!-archive.zip
+    set "cuDNNRegex=cudnn-windows-x86_64-([0-9]*).([0-9]*).([0-9]*).([0-9]*)_cuda!cuda_version!-archive.zip"
+)
+
+REM Check
+
+if exist "C:\Program Files\NVIDIA\CUDNN\v*.*" (
+    echo cuDNN is installed.
+    goto:eof
+)
 
 
 REM Install
@@ -105,124 +125,163 @@ set zLibInstalled=false
 :: but before we start lets ensure we attempt to have at least one version present.
 
 echo Searching for existing cuDNN installers !cuDNNPattern!
-IF not exist "!cuDNNPattern!" (
+If not exist "!cuDNNPattern!" (
     echo No cuDNN archive found. Downloading !cuDNNArchiveFilename!...
-    powershell -command "Start-BitsTransfer -Source '!cuDNNArchiveDownloadUrl!!cuDNNArchiveFilename!' -Destination '!cuDNNArchiveFilename!'"
-)
-
-IF exist "!cuDNNPattern!" (
-    for /F "usebackq delims=" %%f in (`dir /B /A-D /O-N !cuDNNPattern!`) do (
-
-        REM We have a cuDNN archive. Get the archive name with and without extension
-        set cuDNNInstallerFilename=%%~nxf
-        set cuDNNInstallerNameNoExt=%%~nf
-
-        echo Found !cuDNNInstallerFilename!
-
-        REM Get the version. Filename is similar to cudnn-windows-x86_64-8.5.0.96_cuda11-archive.zip,
-        REM where the version here is 8.5.0.96. We only need major/minor.
-
-        for /f "delims=" %%i in ('
-            powershell -c "'!cuDNNInstallerFilename!' -replace '!cuDNNRegex!','$1.$2'"
-        ') do set version=%%i
-
-        if "!version!" == "" (
-            echo No installer available.
-            goto:eof
-        )
-        echo Found cuDNN installer for version !version!. Expanding...
-
-        REM Expand the archive
-
-        rem echo Expanding...
-    
-        set tarExists=true
-        tar -xf "!cuDNNInstallerFilename!" > nul 2>nul
-        if "%errorlevel%" == "9009" set tarExists=false
-
-        if "!tarExists!" == "false" (
-            powershell -command "Expand-Archive -Path '!cuDNNInstallerFilename!' -DestinationPath '!cuDNNInstallerNameNoExt!' -Force"
-        )
-
-        REM Move the directories into C:\Program Files\NVIDIA\CUDNN\v<version>
-
-        echo Installing cuDNN files...
-
-        if not exist "C:\Program Files\NVIDIA" mkdir "C:\Program Files\NVIDIA" > NUL
-        if not exist "C:\Program Files\NVIDIA\CUDNN" mkdir "C:\Program Files\NVIDIA\CUDNN" > NUL
-        if not exist "C:\Program Files\NVIDIA\CUDNN\v!version!\" mkdir "C:\Program Files\NVIDIA\CUDNN\v!version!\" > NUL
-
-        robocopy /e "!cuDNNInstallerNameNoExt! " "C:\Program Files\NVIDIA\CUDNN\v!version! " /MOVE /NC /NS /NJS /NJH > NUL
-
-        set cuDNNInstalled=true
-
-
-        echo Installing ZLib
-
-        REM Next step is to grab ZLib and intall that. We'll place it next to the cuDNN files in 
-        REM C:\Program Files\NVIDIA\CUDNN\v<version>\zLib
-
-        if not exist "!zLibArchiveName!.zip" (
-            powershell -command "Start-BitsTransfer -Source '!zLibLocation!!zLibArchiveName!.zip' -Destination '!zLibArchiveName!.zip'"
-        )
-
-        if exist "!zLibArchiveName!.zip" (
-            echo Expanding ZLib...
-            if "!tarExists!" == "true" (
-                if not exist "!zLibArchiveName!" mkdir "!zLibArchiveName!" > NUL
-                copy !zLibArchiveName!.zip !zLibArchiveName!\ > NUL
-                pushd !zLibArchiveName! > NUL
-                tar -xf "!zLibArchiveName!.zip" > nul 2>nul
-                del !zLibArchiveName!.zip > NUL
-                popd > NUL
-            ) else (
-                powershell -command "Expand-Archive -Path '!zLibArchiveName!.zip' -DestinationPath '!zLibArchiveName!' -Force"
-            )
-
-            echo Installing ZLib...
-            if not exist "C:\Program Files\NVIDIA\CUDNN\v!version!\zlib" mkdir "C:\Program Files\NVIDIA\CUDNN\v!version!\zlib"
-            robocopy /e "!zLibArchiveName! " "C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\ " /MOVE /NC /NS /NJS /NJH > NUL
-
-            set zLibInstalled=true
-        )
-
-        if /i "!dryRun!" == "false" ( 
-            REM We need to set the PATH variable. Some caveats:
-            REM 1. When you set the PATH variable, %PATH% will not reflect the update you just made, so
-            REM    doing "PATH = PATH + change1" followed by "PATH = PATH + change2" results in just Change2 
-            REM    being added. So: do all the changes in one fell swoop.
-            REM 2. We can't use setx /M PATH "%PATH%;C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\dll_x64"
-            REM    because setx truncates the path to 1024 characters. In 2022. Insanity.
-            REM 3. Only update the path if we need to. Check for existance before modifying!
-
-            echo Updating PATH environment variable...
-
-            set newPath=!PATH!
-
-            REM Add ZLib path if it hasn't already been added
-            if "!zLibInstalled!" == "true" ( 
-                if /i "!PATH:C:\Program Files\NVIDIA\CUDNN\v!version!\zlib=!" == "!PATH!" (
-                    set newPath=!newPath!;C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\dll_x64
-                )
-            )
-            REM Add cuDNN path if it hasn't already been added
-            if /i "!PATH:C:\Program Files\NVIDIA\CUDNN\v!version!\bin=!" == "!PATH!" (
-                set newPath=!newPath!;C:\Program Files\NVIDIA\CUDNN\v!version!\bin
-            )
-
-            if /i "!newPath" NEQ "!PATH!" (
-                rem echo New Path is !newPath!
-                powershell -command "[Environment]::SetEnvironmentVariable('PATH', '!newPath!','Machine');
-            )
-        )
-
-        echo done.
-
-        REM Only process the first archive we find
-        call :InstallChecks
+    if "!cuda_major_version!" == "12" (
+        powershell -command "Start-BitsTransfer -Source '!cuDNNArchiveDownloadUrl!!cuDNNInstallerFilename!' -Destination '!cuDNNInstallerFilename!'"
+    ) else (
+        powershell -command "Start-BitsTransfer -Source '!cuDNNArchiveDownloadUrl!!cuDNNArchiveFilename!' -Destination '!cuDNNArchiveFilename!'"
     )
 )
 
+if "!cuda_major_version!" == "12" (
+    If exist "!cuDNNPattern!" (
+        for /F "usebackq delims=" %%f in (`dir /B /A-D /O-N !cuDNNPattern!`) do (
+
+            REM We have a cuDNN archive. Get the archive name with and without extension
+            set cuDNNInstallerFilename=%%~nxf
+            echo Found !cuDNNInstallerFilename!
+
+            REM Get the version. Filename is similar to cudnn-9.5.1_windows.exe
+            REM where the version here is 9.5.1. We only need major/minor.
+
+            for /f "delims=" %%i in ('
+                powershell -c "'!cuDNNInstallerFilename!' -replace '!cuDNNRegex!','$1.$2'"
+            ') do set version=%%i
+
+            if "!version!" == "" (
+                echo No installer available.
+                goto:eof
+            )
+            echo Found cuDNN installer for version !version!. Installing...
+
+            !cuDNNInstallerFilename!
+            
+            del !cuDNNInstallerFilename!
+            
+            set cuDNNInstalled=true
+
+            echo done.
+
+            REM Only process the first archive we find
+            call :InstallChecks
+        )
+    )
+
+) else (
+    IF exist "!cuDNNPattern!" (
+        for /F "usebackq delims=" %%f in (`dir /B /A-D /O-N !cuDNNPattern!`) do (
+
+            REM We have a cuDNN archive. Get the archive name with and without extension
+            set cuDNNInstallerFilename=%%~nxf
+            set cuDNNInstallerNameNoExt=%%~nf
+
+            echo Found !cuDNNInstallerFilename!
+
+            REM Get the version. Filename is similar to cudnn-windows-x86_64-8.5.0.96_cuda11-archive.zip,
+            REM where the version here is 8.5.0.96. We only need major/minor.
+
+            for /f "delims=" %%i in ('
+                powershell -c "'!cuDNNInstallerFilename!' -replace '!cuDNNRegex!','$1.$2'"
+            ') do set version=%%i
+
+            if "!version!" == "" (
+                echo No installer available.
+                goto:eof
+            )
+            echo Found cuDNN installer for version !version!. Expanding...
+
+            REM Expand the archive
+
+            rem echo Expanding...
+        
+            set tarExists=true
+            tar -xf "!cuDNNInstallerFilename!" > nul 2>nul
+            if "%errorlevel%" == "9009" set tarExists=false
+
+            if "!tarExists!" == "false" (
+                powershell -command "Expand-Archive -Path '!cuDNNInstallerFilename!' -DestinationPath '!cuDNNInstallerNameNoExt!' -Force"
+            )
+
+            REM Move the directories into C:\Program Files\NVIDIA\CUDNN\v<version>
+
+            echo Installing cuDNN files...
+
+            if not exist "C:\Program Files\NVIDIA" mkdir "C:\Program Files\NVIDIA" > NUL
+            if not exist "C:\Program Files\NVIDIA\CUDNN" mkdir "C:\Program Files\NVIDIA\CUDNN" > NUL
+            if not exist "C:\Program Files\NVIDIA\CUDNN\v!version!\" mkdir "C:\Program Files\NVIDIA\CUDNN\v!version!\" > NUL
+
+            robocopy /e "!cuDNNInstallerNameNoExt! " "C:\Program Files\NVIDIA\CUDNN\v!version! " /MOVE /NC /NS /NJS /NJH > NUL
+
+            set cuDNNInstalled=true
+
+
+            echo Installing ZLib
+
+            REM Next step is to grab ZLib and install that. We'll place it next to the cuDNN files in 
+            REM C:\Program Files\NVIDIA\CUDNN\v<version>\zLib
+
+            if not exist "!zLibArchiveName!.zip" (
+                powershell -command "Start-BitsTransfer -Source '!zLibLocation!!zLibArchiveName!.zip' -Destination '!zLibArchiveName!.zip'"
+            )
+
+            if exist "!zLibArchiveName!.zip" (
+                echo Expanding ZLib...
+                if "!tarExists!" == "true" (
+                    if not exist "!zLibArchiveName!" mkdir "!zLibArchiveName!" > NUL
+                    copy !zLibArchiveName!.zip !zLibArchiveName!\ > NUL
+                    pushd !zLibArchiveName! > NUL
+                    tar -xf "!zLibArchiveName!.zip" > nul 2>nul
+                    del !zLibArchiveName!.zip > NUL
+                    popd > NUL
+                ) else (
+                    powershell -command "Expand-Archive -Path '!zLibArchiveName!.zip' -DestinationPath '!zLibArchiveName!' -Force"
+                )
+
+                echo Installing ZLib...
+                if not exist "C:\Program Files\NVIDIA\CUDNN\v!version!\zlib" mkdir "C:\Program Files\NVIDIA\CUDNN\v!version!\zlib"
+                robocopy /e "!zLibArchiveName! " "C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\ " /MOVE /NC /NS /NJS /NJH > NUL
+
+                set zLibInstalled=true
+            )
+
+            if /i "!dryRun!" == "false" ( 
+                REM We need to set the PATH variable. Some caveats:
+                REM 1. When you set the PATH variable, %PATH% will not reflect the update you just made, so
+                REM    doing "PATH = PATH + change1" followed by "PATH = PATH + change2" results in just Change2 
+                REM    being added. So: do all the changes in one fell swoop.
+                REM 2. We can't use setx /M PATH "%PATH%;C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\dll_x64"
+                REM    because setx truncates the path to 1024 characters. In 2022. Insanity.
+                REM 3. Only update the path if we need to. Check for existance before modifying!
+
+                echo Updating PATH environment variable...
+
+                set newPath=!PATH!
+
+                REM Add ZLib path if it hasn't already been added
+                if "!zLibInstalled!" == "true" ( 
+                    if /i "!PATH:C:\Program Files\NVIDIA\CUDNN\v!version!\zlib=!" == "!PATH!" (
+                        set newPath=!newPath!;C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\dll_x64
+                    )
+                )
+                REM Add cuDNN path if it hasn't already been added
+                if /i "!PATH:C:\Program Files\NVIDIA\CUDNN\v!version!\bin=!" == "!PATH!" (
+                    set newPath=!newPath!;C:\Program Files\NVIDIA\CUDNN\v!version!\bin
+                )
+
+                if /i "!newPath" NEQ "!PATH!" (
+                    rem echo New Path is !newPath!
+                    powershell -command "[Environment]::SetEnvironmentVariable('PATH', '!newPath!','Machine');
+                )
+            )
+
+            echo done.
+
+            REM Only process the first archive we find
+            call :InstallChecks
+        )
+    )
+)
 
 goto:eof
 
