@@ -755,6 +755,7 @@ function setupDotNet () {
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
             if [ "$os" = "linux" ]; then
 
+                # Disabled this due to it not proving reliable
                 if [ "$os_name" = "debian-SKIP" ]; then
 
                     wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
@@ -767,7 +768,29 @@ function setupDotNet () {
                         sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
                     fi
 
+                # .NET 9 is almost good to go
+                elif [ "$os_name" == "ubuntu" ] && [ "$requestedNetMajorVersion" == "9" ]; then
+
+                    # TODO: Change this to a " >= 24.10"
+                    if [ "$os_vers" == "24.10" ]; then 
+                        if [ "$requestedType" = "sdk" ]; then
+                            sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
+                        else
+                            sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
+                        fi
+                    else
+                        # .NET 9 is still not fully released. But we know a guy who knows a guy...
+                        # TODO: This also works for NET 6 & 7, Ubuntu 24.04, and .NET 9,  Ubuntu 22.04 & 24.04
+                        sudo add-apt-repository ppa:dotnet/backports -y
+                        sudo apt install "dotnet${requestedNetMajorVersion}" -y
+                    fi
+
+                # For everyone else, use The Script
                 else
+
+                    # Needed if we're installing .NET without an installer to help us
+                    installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
+
                     if [ "$architecture" = 'arm64' ]; then
                         # installs in /opt/dotnet
                         if [ $verbosity = "quiet" ]; then
@@ -785,7 +808,13 @@ function setupDotNet () {
                         fi
                     fi
                 fi
+
             else
+                # macOS
+                
+                # Needed if we're installing .NET without an installer to help us
+                # installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
+
                 if [ $verbosity = "quiet" ]; then
                     sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "${dotnet_path}" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
                 elif [ $verbosity = "loud" ]; then
@@ -856,7 +885,7 @@ function setupDotNet () {
             echo "sudo rm /etc/apt/sources.list.d/microsoft-prod.list"
             echo "sudo apt-get update"
             echo "# Install .NET SDK"
-            echo "sudo apt-get install dotnet-sdk-${requestedNetVersion}"
+            echo "sudo apt-get install dotnet-sdk-${requestedNetMajorMinorVersion}"
         else
             writeLine ".NET was not installed correctly. You may need to install .NET manually"       $color_error
             writeLine "See https://learn.microsoft.com/en-us/dotnet/core/install/macos for downloads" $color_error

@@ -11,6 +11,6 @@ torchvision==0.14.0+cu117       # Installing TorchVision, for working with compu
 # Specific version because we have a patch
 ultralytics==8.1.2              # Installing Ultralytics package for object detection in images
 
-CodeProject-AI-SDK          # Installing the CodeProject.AI SDK
+CodeProject-AI-SDK              # Installing the CodeProject.AI SDK
 
 # last line empty.

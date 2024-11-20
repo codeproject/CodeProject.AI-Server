@@ -329,6 +329,14 @@ get_machine_architecture() {
             echo "loongarch64"
             return 0
             ;;
+        riscv64)
+            echo "riscv64"
+            return 0
+            ;;
+        powerpc|ppc)
+            echo "ppc"
+            return 0
+            ;;
         esac
     fi
 
@@ -417,11 +425,17 @@ get_normalized_architecture_for_specific_sdk_version() {
 # args:
 # version or channel - $1
 is_arm64_supported() {
-    #any channel or version that starts with the specified versions
-    case "$1" in
-        ( "1"* | "2"* | "3"*  | "4"* | "5"*) 
-            echo false
-            return 0
+    # Extract the major version by splitting on the dot
+    major_version="${1%%.*}"
+
+    # Check if the major version is a valid number and less than 6
+    case "$major_version" in
+        [0-9]*)  
+            if [ "$major_version" -lt 6 ]; then
+                echo false
+                return 0
+            fi
+            ;;
     esac
 
     echo true
@@ -571,12 +585,10 @@ is_dotnet_package_installed() {
     local dotnet_package_path="$(combine_paths "$(combine_paths "$install_root" "$relative_path_to_package")" "$specific_version")"
     say_verbose "is_dotnet_package_installed: dotnet_package_path=$dotnet_package_path"
 
-    if [ ! -d "$dotnet_package_path" ]; then
-        # say_err "$dotnet_package_path does not exist"
-        return 1
-    else
-        # say_err "$dotnet_package_path exists"
+    if [ -d "$dotnet_package_path" ]; then
         return 0
+    else
+        return 1
     fi
 }
 
@@ -963,6 +975,39 @@ get_absolute_path() {
 }
 
 # args:
+# override - $1 (boolean, true or false)
+get_cp_options() {
+    eval $invocation
+
+    local override="$1"
+    local override_switch=""
+
+    if [ "$override" = false ]; then
+        # cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
+        # override_switch="-n"
+        override_switch="--update=none"
+
+        # create temporary files to check if 'cp -u' is supported
+        tmp_dir="$(mktemp -d)"
+        tmp_file="$tmp_dir/testfile"
+        tmp_file2="$tmp_dir/testfile2"
+
+        touch "$tmp_file"
+
+        # use -u instead of -n if it's available
+        if cp -u "$tmp_file" "$tmp_file2" 2>/dev/null; then
+            override_switch="-u"
+        fi
+
+        # clean up
+        rm -f "$tmp_file" "$tmp_file2"
+        rm -rf "$tmp_dir"
+    fi
+
+    echo "$override_switch"
+}
+
+# args:
 # input_files - stdin
 # root_path - $1
 # out_path - $2
@@ -973,17 +1018,7 @@ copy_files_or_dirs_from_list() {
     local root_path="$(remove_trailing_slash "$1")"
     local out_path="$(remove_trailing_slash "$2")"
     local override="$3"
-    local osname="$(get_current_os_name)"
-    local override_switch=$(
-        if [ "$override" = false ]; then
-            if [ "$osname" = "linux-musl" ]; then
-                printf -- "-u";
-            else
-                # cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
-                # printf -- "-n";
-                printf -- "--update=none";
-            fi
-        fi)
+    local override_switch="$(get_cp_options "$override")"
 
     cat | uniq | while read -r file_path; do
         local path="$(remove_beginning_slash "${file_path#$root_path}")"
@@ -1036,8 +1071,7 @@ extract_dotnet_package() {
 
     say "extract_dotnet_package: zip_path=$zip_path, temp_out_path=$temp_out_path, out_path=$out_path"
 
-    if [ ! -d "$temp_out_path" ]; then mkdir "$temp_out_path"; fi
-    
+
     local failed=false
     if [ "$quiet" != true ]; then
         tar -xzf "$zip_path" -C "$temp_out_path" > /dev/null || failed=true
@@ -1051,7 +1085,7 @@ extract_dotnet_package() {
     
     validate_remote_local_file_sizes "$zip_path" "$remote_file_size"
     
-    # rm -rf "$temp_out_path"
+    rm -rf "$temp_out_path"
     if [ -z ${keep_zip+x} ]; then
         rm -f "$zip_path" && say_verbose "Temporary archive file $zip_path was removed"
     fi
@@ -1767,7 +1801,7 @@ do
             zip_path="$1"
             ;;
         -?|--?|-h|--help|-[Hh]elp)
-            script_name="$(basename "$0")"
+            script_name="dotnet-install.sh"
             echo ".NET Tools Installer"
             echo "Usage:"
             echo "       # Install a .NET SDK of a given Quality from a given Channel"

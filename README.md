@@ -120,7 +120,7 @@ We will be constantly expanding the feature list.
 
 #### Supported Development Environments
 
-This current release works best with Visual Studio Code on Windows 10+. Ubuntu, Debian and macOS (both Intel and Apple Silicon). Visual Studio 2019+ support is included for Windows 10+.
+This current release works best with Visual Studio Code on Windows 10+. Ubuntu 22.04+, Debian and macOS (both Intel and Apple Silicon). Visual Studio 2019+ support is included for Windows 10+.
 
 The current release provides support for CPU on each platform, DirectML on Windows, CUDA on Windows and Linux, support for Apple Silicon GPUs, RockChip NPUs and Coral.AI TPUs. Support depends on the module itself.
 
