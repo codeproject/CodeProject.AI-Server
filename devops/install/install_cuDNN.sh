@@ -37,13 +37,17 @@
 #   sudo apt-get update -y
 #   sudo apt-get -y install cuda-X.Y
 
+if [ "$1" == "" ]; then
+    echo "Please provide the CUDA version for which to install cuDNN"
+    exit
+fi
 
 # cuda_version=$1
 # Get major.minor CUDA version
 cuda_version=$(cut -d '.' -f 1,2 <<< "$1")
 
 # This script is intended to be called from setup.sh, which includes architecture
-# and os vars as well as writeline methods. If we don't find them, do quick checks
+# and os vars as well as writeLine methods. If we don't find them, do quick checks
 
 if [[ $(type -t writeLine) != function ]]; then
 
@@ -97,7 +101,7 @@ writeLine "Setting up CUDA ${cuda_version} and cuDNN" $color_info
 # ==============================================================================
 # GET SETTINGS
 
-cuda_GPGpublicKey=""
+cuda_GPGpublicKey="3bf863cc"
 
 case "$cuda_version" in
   "12.2") cuda_version_full="12.2.1";  cuda_GPGpublicKey="3bf863cc" ;;
