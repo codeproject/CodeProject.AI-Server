@@ -433,6 +433,15 @@ if /i "!hasCUDA!" == "true" (
         call "!utilsScript!" WriteLine "Yes (CUDA !cuda_version!, No cuDNN found, CUDA Toolkit: !hasCUDAToolkit!)" !color_success!
     ) else (
         call "!utilsScript!" WriteLine "Yes (CUDA !cuda_version!, cuDNN !cuDNN_version!, CUDA Toolkit: !hasCUDAToolkit!)" !color_success!
+
+        REM cuDNN install is a bag of loose parts.
+        REM cuDNN is C:\Program Files\NVIDIA\CUDNN\v9.5\bin\12.6
+        if /i "!PATH:C:\Program Files\NVIDIA\CUDNN\v!cuDNN_version!\bin\!cuda_version!=!" == "!PATH!" (
+            call "!utilsScript!" WriteLine "Updating path to include cuDNN" !color_info!
+            set PATH=!PATH!;C:\Program Files\NVIDIA\CUDNN\v!cuDNN_version!\bin\!cuda_version!\
+            REM setx PATH !PATH!;C:\Program Files\NVIDIA\CUDNN\v!cuDNN_version!\bin\!cuda_version!\
+            REM powershell -command "[Environment]::SetEnvironmentVariable('PATH', '!PATH!', 'Machine');
+        )
     )
 ) else (
     call "!utilsScript!" WriteLine "No" !color_warn!
