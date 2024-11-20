@@ -252,7 +252,7 @@ if "!cuda_major_version!" == "12" (
                 REM    being added. So: do all the changes in one fell swoop.
                 REM 2. We can't use setx /M PATH "%PATH%;C:\Program Files\NVIDIA\CUDNN\v!version!\zlib\dll_x64"
                 REM    because setx truncates the path to 1024 characters. In 2022. Insanity.
-                REM 3. Only update the path if we need to. Check for existance before modifying!
+                REM 3. Only update the path if we need to. Check for existence before modifying!
 
                 echo Updating PATH environment variable...
 
