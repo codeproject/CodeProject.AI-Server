@@ -104,23 +104,23 @@ writeLine "Setting up CUDA ${cuda_version} and cuDNN" $color_info
 cuda_GPGpublicKey="3bf863cc"
 
 case "$cuda_version" in
-  "12.6") cuda_version_full="12.6.1";  cuda_GPGpublicKey="3bf863cc" ;;
-  "12.5") cuda_version_full="12.5.1";  cuda_GPGpublicKey="3bf863cc" ;;
-  "12.5") cuda_version_full="12.4.1";  cuda_GPGpublicKey="3bf863cc" ;;
-  "12.3") cuda_version_full="12.3.2";  cuda_GPGpublicKey="3bf863cc" ;;
-  "12.2") cuda_version_full="12.2.2";  cuda_GPGpublicKey="3bf863cc" ;;
-  "12.1") cuda_version_full="12.1.1";  cuda_GPGpublicKey="3bf863cc" ;;
-  "12.0") cuda_version_full="12.0.1";  cuda_GPGpublicKey="3bf863cc" ;;
-  "11.8") cuda_version_full="11.8.0";  cuda_GPGpublicKey="3bf863cc" ;;
-  "11.7") cuda_version_full="11.7.1";  cuda_GPGpublicKey="3bf863cc" ;;
-  "11.6") cuda_version_full="11.6.2";  cuda_GPGpublicKey="3bf863cc" ;;
-  "11.5") cuda_version_full="11.5.2";  cuda_GPGpublicKey="3bf863cc" ;;
-  "11.4") cuda_version_full="11.4.4";  cuda_GPGpublicKey="7fa2af80" ;;
-  "11.3") cuda_version_full="11.3.1";  cuda_GPGpublicKey="7fa2af80" ;;
-  "11.2") cuda_version_full="11.2.2";  cuda_GPGpublicKey="7fa2af80" ;;
-  "11.1") cuda_version_full="11.1.1";  cuda_GPGpublicKey="7fa2af80" ;;
-  "11.0") cuda_version_full="11.0.1";  cuda_GPGpublicKey="7fa2af80" ;;
-  "10.2") cuda_version_full="10.2.89"; cuda_GPGpublicKey="7fa2af80" ;;
+  "12.6") cuda_version_full="12.6.1";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "12.5") cuda_version_full="12.5.1";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "12.5") cuda_version_full="12.4.1";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "12.3") cuda_version_full="12.3.2";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "12.2") cuda_version_full="12.2.2";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "12.1") cuda_version_full="12.1.1";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "12.0") cuda_version_full="12.0.1";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "11.8") cuda_version_full="11.8.0";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "11.7") cuda_version_full="11.7.1";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "11.6") cuda_version_full="11.6.2";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "11.5") cuda_version_full="11.5.2";  cuda_GPGpublicKey="3bf863cc" cudnn_version="8.9.5.*" ;;
+  "11.4") cuda_version_full="11.4.4";  cuda_GPGpublicKey="7fa2af80" cudnn_version="8.9.5.*" ;;
+  "11.3") cuda_version_full="11.3.1";  cuda_GPGpublicKey="7fa2af80" cudnn_version="8.9.5.*" ;;
+  "11.2") cuda_version_full="11.2.2";  cuda_GPGpublicKey="7fa2af80" cudnn_version="8.9.5.*" ;;
+  "11.1") cuda_version_full="11.1.1";  cuda_GPGpublicKey="7fa2af80" cudnn_version="8.9.5.*" ;;
+  "11.0") cuda_version_full="11.0.1";  cuda_GPGpublicKey="7fa2af80" cudnn_version="8.9.5.*" ;;
+  "10.2") cuda_version_full="10.2.89"; cuda_GPGpublicKey="7fa2af80" cudnn_version="8.9.5.*" ;;
   *) cuda_version_full="${cuda_version}.0" ;;
 esac
 

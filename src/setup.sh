@@ -883,21 +883,37 @@ writeLine
 hasCUDA=false
 
 cuDNN_version=""
+cuda_major_version=""
+cuda_major_minor=""
+
 if [ "$os" = "macos" ]; then 
     cuda_version=""
 elif [ "${edgeDevice}" = "Jetson" ]; then
     hasCUDA=true
     cuda_version=$(getCudaVersion)
+    cuda_major_version=${cuda_version%%.*}
+    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
     cuDNN_version=$(getcuDNNVersion)
+    
 elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then
     cuda_version=""
 else 
     cuda_version=$(getCudaVersion)
+    cuda_major_version=${cuda_version%%.*}
+    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
 
     if [ "$cuda_version" != "" ]; then
 
         hasCUDA=true
         cuDNN_version=$(getcuDNNVersion)
+
+        if [ "$cuDNN_version" == "" ]; then
+            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+            sudo dpkg -i cuda-keyring_1.1-1_all.deb
+            rm cuda-keyring_1.1-1_all.deb
+            sudo apt-get update
+            sudo apt-get -y install "cudnn-cuda-$cuda_major_version"
+        fi
 
         # disable this
         if [ "${systemName}" = "WSL-but-we're-ignoring-this-for-now" ]; then # we're disabling this on purpose

@@ -1754,9 +1754,6 @@ function installRequiredPythonPackages () {
         if [ "$installGPU" = "true" ]; then
 
             if [ "$cuda_version" != "" ]; then
-
-                cuda_major_version=${cuda_version%%.*}
-                cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
                 
                 if [ "${verbosity}" != "quiet" ]; then
                     writeLine "CUDA version is $cuda_version (${cuda_major_minor} / ${cuda_major_version})" $color_info
@@ -2331,6 +2328,9 @@ function getCudaVersion () {
 
         fi
     fi
+
+    cuda_major_version=${cuda_version%%.*}
+    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
 
     echo $cuda_version
 }
