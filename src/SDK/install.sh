@@ -61,7 +61,8 @@ if [ "$os" = "linux" ]; then
 
     # - Needed for opencv-python (TODO: review these and move into module installers that actually use OpenCV)
     packages="ffmpeg libsm6 libxext6"
-    # - So we can query glxinfo for GPU info (mesa) and install modules (the rest)
+    # - So we can query glxinfo for GPU info (mesa) and install modules (the rest).
+    # NOTE: The general setup.sh file should have already installed curl and wget
     packages="${packages} mesa-utils curl rsync unzip wget"
     installAptPackages "${packages}"
 

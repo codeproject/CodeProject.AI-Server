@@ -900,6 +900,7 @@ elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] |
 else 
     cuda_version=$(getCudaVersion)
     cuda_major_version=${cuda_version%%.*}
+    cuda_minor_version=${cuda_version#*.}
     cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
 
     if [ "$cuda_version" != "" ]; then
@@ -907,12 +908,25 @@ else
         hasCUDA=true
         cuDNN_version=$(getcuDNNVersion)
 
-        if [ "$cuDNN_version" == "" ]; then
+        installKeyring=false
+        if [ "$cuDNN_version" == "" ] || [ ! -x "$(command -v nvcc)" ]; then
             wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
             sudo dpkg -i cuda-keyring_1.1-1_all.deb
             rm cuda-keyring_1.1-1_all.deb
+        fi
+
+        if [ "$cuDNN_version" == "" ]; then
+            # cuDNN
+            # https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local
             sudo apt-get update
             sudo apt-get -y install "cudnn-cuda-$cuda_major_version"
+        fi
+
+        if [ ! -x "$(command -v nvcc)" ]; then
+            # CUDA toolkit
+            # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
+            sudo apt-get update
+            sudo apt-get -y install cuda-toolkit-${cuda_major_version}-${cuda_minor_version}
         fi
 
         # disable this

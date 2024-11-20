@@ -2330,6 +2330,7 @@ function getCudaVersion () {
     fi
 
     cuda_major_version=${cuda_version%%.*}
+    cuda_minor_version=${cuda_version#*.}
     cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
 
     echo $cuda_version
