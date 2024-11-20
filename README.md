@@ -1,4 +1,4 @@
-[![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://open.vscode.dev/codeproject/CodeProject.AI-Server/) [![made-with-dotnet](https://img.shields.io/badge/Made%20with-net8.0-blue)](https://dotnet.microsoft.com/) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/License-SSPL-green)](https://www.mongodb.com/licensing/server-side-public-license) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+[![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://open.vscode.dev/codeproject/CodeProject.AI-Server/) [![made-with-dotnet](https://img.shields.io/badge/Made%20with-net9.0-blue)](https://dotnet.microsoft.com/) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-orange)](https://www.python.org/) [![GitHub license](https://img.shields.io/badge/License-SSPL-green)](https://www.mongodb.com/licensing/server-side-public-license) [![Open Source Love svg2](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 <!--
 &nbsp; &nbsp;
 
@@ -120,7 +120,7 @@ We will be constantly expanding the feature list.
 
 #### Supported Development Environments
 
-This current release works best with Visual Studio Code on Windows 10+. Ubuntu, Debian and macOS (both Intel and Apple Silicon). Visual Studio 2019+ support is included for Windows 10+.
+This current release works best with Visual Studio Code on Windows 10+. Ubuntu 22.04+, Debian and macOS (both Intel and Apple Silicon). Visual Studio 2019+ support is included for Windows 10+.
 
 The current release provides support for CPU on each platform, DirectML on Windows, CUDA on Windows and Linux, support for Apple Silicon GPUs, RockChip NPUs and Coral.AI TPUs. Support depends on the module itself.
 

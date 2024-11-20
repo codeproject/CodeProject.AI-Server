@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	
 	<!-- 
-	This file deinfes the following constants if they are applicable to the current system
+	This file defines the following constants if they are applicable to the current system
 	
 		Windows
 		Linux
@@ -19,8 +19,11 @@
 	provided RuntimeIdentifier, rather than reality.
 	-->
 
-	<!-- Common defines -->
+	<!-- Common defines. Override these in individual csproj files if needed -->
 	<PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+	    <ImplicitUsings>disable</ImplicitUsings>
+    	<Nullable>enable</Nullable>
 		<ShowRuntimeSettings>true</ShowRuntimeSettings>
 	</PropertyGroup>
 

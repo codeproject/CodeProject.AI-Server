@@ -171,7 +171,7 @@ this image in the image results pane
 */
 function previewImage(fileChooser) {
 
-    if (fileChooser.files)
+    if (fileChooser.files.length)
         showPreviewImage(fileChooser.files[0]);
 }
 
@@ -232,9 +232,6 @@ function showResultsImage(imageToSet, width, height) {
 
         if (width) imgElm.style.width  = width + "px";
         if (height) imgElm.style.height = height + "px";
-    }
-    else {
-        alert('Please select a valid image file.');
     }
 }
 

@@ -3,7 +3,7 @@
 
     "DotNetLongProcess": {
       "LaunchSettings": {
-        "FilePath": "bin/Debug/net8.0/DotNetLongProcess.exe"
+        "FilePath": "bin/Debug/net9.0/DotNetLongProcess.exe"
       }
     }
   }

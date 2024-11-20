@@ -589,11 +589,17 @@ function getDotNetVersion() {
         do
             if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
                 dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
-                current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
+                # echo "GET: Found .NET runtime $dotnet_version" >&3
 
-                if (( $current_comparison > $comparison )); then
+                current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
+                # echo "GET: current compare ${comparison}, new compare ${current_comparison}" >&3
+
+                if (( $current_comparison >= $comparison )); then
                     highestDotNetVersion="$dotnet_version"
                     comparison=$current_comparison
+                    # echo "GET: Found new highest .NET runtime $highestDotNetVersion" >&3
+                # else
+                #    echo "GET: Found $dotnet_version runtime, which is not higher than $highestDotNetVersion" >&3
                 fi
             fi
         done <<< "$(dotnet --list-runtimes)"
@@ -629,7 +635,7 @@ function setupDotNet () {
 
     write "Checking for .NET ${requestedNetVersion}..."
 
-    currentDotNetVersion="(None)"
+    highestDotNetVersion="(None)"
     comparison=-1
     haveRequested=false
 
@@ -645,13 +651,18 @@ function setupDotNet () {
                 dotnet_version=$(echo "$line}" | cut -d ' ' -f 1)
                 dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
 
+                # echo "SET: Found .NET SDK $dotnet_version" >&3
+
                 # Let's only compare major versions
                 # current_comparison=$(versionCompare $dotnet_version $requestedNetVersion)
                 current_comparison=$(versionCompare $dotnet_major_version $requestedNetMajorVersion)
 
                 if (( $current_comparison >= $comparison )); then
-                    currentDotNetVersion="$dotnet_version"
+                    highestDotNetVersion="$dotnet_version"
                     comparison=$current_comparison
+                #     echo "SET: Found new highest .NET SDK $highestDotNetVersion" >&3
+                # else
+                #     echo "SET: Found $dotnet_version SDK, which is not higher than $requestedNetMajorVersion" >&3
                 fi
 
                 # We found the one we're after
@@ -675,14 +686,20 @@ function setupDotNet () {
 
                     dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
                     dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
+                    # echo "SET: Found .NET runtime $dotnet_version" >&3
 
                     # Let's only compare major versions
                     # current_comparison=$(versionCompare $dotnet_version $requestedNetVersion)
                     current_comparison=$(versionCompare $dotnet_major_version $requestedNetMajorVersion)
+                    # echo "SET: current compare ${comparison}, new compare ${current_comparison}" >&3
 
                     if (( $current_comparison >= $comparison )); then
-                        currentDotNetVersion="$dotnet_version"
+                        highestDotNetVersion="$dotnet_version"
                         comparison=$current_comparison
+
+                    #     echo "SET: Found new highest .NET runtime $highestDotNetVersion" >&3
+                    # else
+                    #     echo "SET: Found $dotnet_version runtime, which is not higher than $requestedNetMajorVersion" >&3
                     fi
 
                     # We found the one we're after
@@ -696,18 +713,18 @@ function setupDotNet () {
 
     mustInstall="false"
     if [ "$haveRequested" == true ]; then
-        writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+        writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
     elif (( $comparison == 0 )); then
-        writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+        writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
     elif (( $comparison == -1 )); then 
-        writeLine "Upgrading: .NET is ${currentDotNetVersion}. Upgrading to ${requestedNetVersion}" $color_warn
+        writeLine "Upgrading: .NET ${requestedType} is ${highestDotNetVersion}. Upgrading to ${requestedNetVersion}" $color_warn
         mustInstall=true
-    else # (( $comparison == 1 )), meaning currentDotNetVersion > requestedNetVersion
+    else # (( $comparison == 1 )), meaning highestDotNetVersion > requestedNetVersion
         if [ "$requestedType" = "sdk" ]; then
-            writeLine "Installing .NET ${requestedNetVersion}" $color_warn
+            writeLine "Installing .NET ${requestedType} ${requestedNetVersion}" $color_warn
             mustInstall=true
         else
-            writeLine "All good. .NET is ${currentDotNetVersion}" $color_success
+            writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
         fi
     fi 
 
@@ -722,8 +739,7 @@ function setupDotNet () {
             dotnet_path="/opt/dotnet"
         elif [ "$os" = "linux" ]; then
             dotnet_path="/usr/lib/dotnet/"
-        else
-            # dotnet_path="/usr/lib/dotnet/"
+        else # macOS x64
             # dotnet_path="~/.dotnet/"
             dotnet_path="/usr/local/share/dotnet/"
         fi
@@ -739,6 +755,7 @@ function setupDotNet () {
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
             if [ "$os" = "linux" ]; then
 
+                # Disabled this due to it not proving reliable
                 if [ "$os_name" = "debian-SKIP" ]; then
 
                     wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
@@ -751,7 +768,29 @@ function setupDotNet () {
                         sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
                     fi
 
+                # .NET 9 is almost good to go
+                elif [ "$os_name" == "ubuntu" ] && [ "$requestedNetMajorVersion" == "9" ]; then
+
+                    # TODO: Change this to a " >= 24.10"
+                    if [ "$os_vers" == "24.10" ]; then 
+                        if [ "$requestedType" = "sdk" ]; then
+                            sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
+                        else
+                            sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
+                        fi
+                    else
+                        # .NET 9 is still not fully released. But we know a guy who knows a guy...
+                        # TODO: This also works for NET 6 & 7, Ubuntu 24.04, and .NET 9,  Ubuntu 22.04 & 24.04
+                        sudo add-apt-repository ppa:dotnet/backports -y
+                        sudo apt install "dotnet${requestedNetMajorVersion}" -y
+                    fi
+
+                # For everyone else, use The Script
                 else
+
+                    # Needed if we're installing .NET without an installer to help us
+                    installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
+
                     if [ "$architecture" = 'arm64' ]; then
                         # installs in /opt/dotnet
                         if [ $verbosity = "quiet" ]; then
@@ -769,7 +808,13 @@ function setupDotNet () {
                         fi
                     fi
                 fi
+
             else
+                # macOS
+                
+                # Needed if we're installing .NET without an installer to help us
+                # installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
+
                 if [ $verbosity = "quiet" ]; then
                     sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "${dotnet_path}" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
                 elif [ $verbosity = "loud" ]; then
@@ -807,6 +852,10 @@ function setupDotNet () {
             export DOTNET_ROOT=${dotnet_path}
             export PATH=${DOTNET_ROOT}${PATH:+:${PATH}}
 
+            if [ -e /usr/local/bin/dotnet ]; then
+                rm /usr/local/bin/dotnet
+            fi
+
             if [ ! -e /usr/local/bin/dotnet ]; then
                 ln -fs "${dotnet_path}dotnet" "/usr/local/bin/dotnet"
             fi
@@ -836,7 +885,7 @@ function setupDotNet () {
             echo "sudo rm /etc/apt/sources.list.d/microsoft-prod.list"
             echo "sudo apt-get update"
             echo "# Install .NET SDK"
-            echo "sudo apt-get install dotnet-sdk-${requestedNetVersion}"
+            echo "sudo apt-get install dotnet-sdk-${requestedNetMajorMinorVersion}"
         else
             writeLine ".NET was not installed correctly. You may need to install .NET manually"       $color_error
             writeLine "See https://learn.microsoft.com/en-us/dotnet/core/install/macos for downloads" $color_error
@@ -1705,9 +1754,6 @@ function installRequiredPythonPackages () {
         if [ "$installGPU" = "true" ]; then
 
             if [ "$cuda_version" != "" ]; then
-
-                cuda_major_version=${cuda_version%%.*}
-                cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
                 
                 if [ "${verbosity}" != "quiet" ]; then
                     writeLine "CUDA version is $cuda_version (${cuda_major_minor} / ${cuda_major_version})" $color_info
@@ -2282,6 +2328,10 @@ function getCudaVersion () {
 
         fi
     fi
+
+    cuda_major_version=${cuda_version%%.*}
+    cuda_minor_version=${cuda_version#*.}
+    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
 
     echo $cuda_version
 }

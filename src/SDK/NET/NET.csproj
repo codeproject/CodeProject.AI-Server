@@ -8,13 +8,7 @@
 		<Description>Support for creating CodeProject.AI Server Modules in .NET</Description>
 		<RootNamespace>CodeProject.AI.SDK</RootNamespace>
 		<AssemblyName>CodeProject.AI.Module.SDK</AssemblyName>
-		<Nullable>enable</Nullable>
 		<Platform>AnyCPU</Platform>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<!--
-		<TargetFramework>netstandard2.1</TargetFramework>
-		-->
-		<TargetFramework>net8.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 	

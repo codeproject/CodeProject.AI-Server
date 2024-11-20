@@ -3,7 +3,7 @@
 
     "ObjectDetectionYOLOv5Net": {
       "LaunchSettings": {
-        "FilePath": "bin\\Debug\\net8.0\\ObjectDetectionYOLOv5Net.dll"
+        "FilePath": "bin\\Debug\\net9.0\\ObjectDetectionYOLOv5Net.dll"
       }
     }
   }

@@ -6,10 +6,9 @@
 	<!-- Common properties -->
 	<PropertyGroup>
 		<Name>API Server Tests</Name>
-		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
 		<Platforms>AnyCPU;ARM64</Platforms>
-		<TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
 	</PropertyGroup>
 
 	<ItemGroup>

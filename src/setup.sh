@@ -10,7 +10,7 @@
 #
 #   1. From within the /src (or /app, or root directory of the installation) in
 #      order to setup the full system, including serer, SDKs, demos and modules.
-#      This method is typically used for setting up the Developmnent environment.
+#      This method is typically used for setting up the Development environment.
 #
 #   2. From within a module's directory (or demo or server folder) to setup just
 #      that module, demo or the server
@@ -62,11 +62,12 @@
 # verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 verbosity="quiet"
 
-# The .NET version to use for the server. NOTE: Only major version matters unless we use manual
-# install scripts, in which case we need to specify version. Choose version that works for SDK and
-# runtime, since the versions of these are not in sync (currently RT is 8.0.5, SDK is 8.0.3)
-serverDotNetVersion=8.0.3
-dotNetTarget="net8.0"
+# The .NET version to install. NOTE: Only major version matters unless we use manual install
+# scripts, in which case we need to specify version. Choose version that works for all platforms
+# since the versions of these are not in always in sync
+dotNetTarget=net9.0
+dotNetRuntimeVersion=9.0.0
+dotNetSDKVersion=9.0.100
 
 # Show output in wild, crazy colours. Use --no-color to not use colour
 useColor=true
@@ -170,7 +171,7 @@ assetsDir='assets'
 modelsDir="models"
 
 # The location of directories relative to the root of the solution directory
-sdkPath="${appRootDirPath}/SDK"
+sdkPath="${rootDirPath}/SDK"
 
 # Who launched this script? user or server?
 launchedBy="user"
@@ -218,6 +219,7 @@ done
 
 # Pre-setup :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+# Check for docker
 inDocker=false
 if [ "$DOTNET_RUNNING_IN_CONTAINER" = "true" ]; then inDocker=true; fi
 
@@ -258,7 +260,7 @@ fi
 
 # Standard output may be used as a return value in the functions. Expose stream
 # 3 so we can do 'echo "Hello, World!" >&3' within these functions for debugging
-# wihtout interfering with return values.
+# without interfering with return values.
 exec 3>&1
 
 # Execution environment, setup mode and Paths ::::::::::::::::::::::::::::::::
@@ -313,6 +315,23 @@ utilsScriptsDirPath="${appRootDirPath}/scripts"
 installScriptsDirPath="${rootDirPath}/devops/install"
 utilsScript="${utilsScriptsDirPath}/utils.sh"
 
+# Load vars in .env. This may update things like dotNetTarget
+if [ -f ${rootDirPath}/.env ]; then
+    # Export each line from the .env file
+    while IFS='=' read -r key value; do
+        # Ignore lines starting with `#` (comments) and empty lines
+        if [[ ! "$key" =~ ^# ]] && [[ -n "$key" ]]; then
+            # Trim any surrounding whitespace
+            key=$(echo $key | xargs)
+            value=$(echo $value | xargs)
+            export "$key=$value"
+        fi
+    done < ${rootDirPath}/.env
+else
+    echo "${rootDirPath}/.env file not found"
+    # exit 1
+fi
+
 # Check if we're in a SSH session. If so it means we need to avoid anything GUI
 inSSH=false
 if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
@@ -344,7 +363,7 @@ function setupPythonPaths () {
     fi
     virtualEnvDirPath="${pythonDirPath}/venv"
 
-    # The path to the python intepreter for this venv
+    # The path to the python interpreter for this venv
     venvPythonCmdPath="${virtualEnvDirPath}/bin/python${pythonVersion}"
 
     # The location where python packages will be installed for this venv
@@ -721,7 +740,7 @@ fi
 # oneStep means we install python packages using pip -r requirements.txt rather
 # than installing module by module. one-step allows the dependency manager to
 # make some better calls, but also means the entire install can fail on a single
-# bad (and potentially unnneeded) module. Turning one-step off means you get a
+# bad (and potentially unneeded) module. Turning one-step off means you get a
 # more granular set of error messages should things go wrong, and a nicer UX.
 if [ "$inDocker" = true ]; then 
     oneStepPIP=false
@@ -864,21 +883,51 @@ writeLine
 hasCUDA=false
 
 cuDNN_version=""
+cuda_major_version=""
+cuda_major_minor=""
+
 if [ "$os" = "macos" ]; then 
     cuda_version=""
 elif [ "${edgeDevice}" = "Jetson" ]; then
     hasCUDA=true
     cuda_version=$(getCudaVersion)
+    cuda_major_version=${cuda_version%%.*}
+    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
     cuDNN_version=$(getcuDNNVersion)
+    
 elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then
     cuda_version=""
 else 
     cuda_version=$(getCudaVersion)
+    cuda_major_version=${cuda_version%%.*}
+    cuda_minor_version=${cuda_version#*.}
+    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
 
     if [ "$cuda_version" != "" ]; then
 
         hasCUDA=true
         cuDNN_version=$(getcuDNNVersion)
+
+        installKeyring=false
+        if [ "$cuDNN_version" == "" ] || [ ! -x "$(command -v nvcc)" ]; then
+            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+            sudo dpkg -i cuda-keyring_1.1-1_all.deb
+            rm cuda-keyring_1.1-1_all.deb
+        fi
+
+        if [ "$cuDNN_version" == "" ]; then
+            # cuDNN
+            # https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local
+            sudo apt-get update
+            sudo apt-get -y install "cudnn-cuda-$cuda_major_version"
+        fi
+
+        if [ ! -x "$(command -v nvcc)" ]; then
+            # CUDA toolkit
+            # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
+            sudo apt-get update
+            sudo apt-get -y install cuda-toolkit-${cuda_major_version}-${cuda_minor_version}
+        fi
 
         # disable this
         if [ "${systemName}" = "WSL-but-we're-ignoring-this-for-now" ]; then # we're disabling this on purpose
@@ -945,8 +994,8 @@ elif [ "$os" = "linux" ]; then
         write ") " $color_primary
     fi
     if [ -x "$(command -v rocminfo)" ]; then
-        amdinfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
-        if [[ ${amdinfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm=true; fi
+        amdInfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
+        if [[ ${amdInfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm=true; fi
     fi
 fi
 if [ "$hasROCm" = true ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
@@ -1026,8 +1075,8 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         done
 
         if [ "$installExternalModules" == "true" ]; then
-            # Walk through the modules directoorym for modules that live in the external 
-            # folder. For isntance modules that are in extenal Git repos / projects
+            # Walk through the modules directory for modules that live in the external 
+            # folder. For instance modules that are in external Git repos / projects
             writeLine
             writeLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
             writeLine

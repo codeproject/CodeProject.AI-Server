@@ -11,10 +11,7 @@
 		<Version>1.0</Version>
 		<Authors>CodeProject</Authors>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>disable</ImplicitUsings>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
-		<TargetFramework>net8.0</TargetFramework>
 		<!-- <Platform>AnyCPU</Platform> - this is set below -->
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
@@ -138,7 +135,7 @@
 
 	<!--
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)'== 'Release'">
-	  <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net8.0&#xD;&#xA;cd $(ProjectDir)" />
+	  <Exec Command="echo building ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip&#xD;&#xA;cd $(ProjectDir)bin\$(Configuration)&#xD;&#xA;tar -c -z -f ObjectDetectionYOLOv5Net-$(GpuType)-$(Version).zip .\net9.0&#xD;&#xA;cd $(ProjectDir)" />
 	</Target>
 	-->
 

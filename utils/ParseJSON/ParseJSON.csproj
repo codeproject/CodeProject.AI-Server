@@ -24,13 +24,10 @@
     	<OutputType>Exe</OutputType>
 		<RootNamespace>CodeProject.AI.Utilities</RootNamespace>
 		<AssemblyName>ParseJSON</AssemblyName>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>enable</Nullable>
 		<UserSecretsId>14515168-17dd-49db-9023-0749bb408a37</UserSecretsId>
 		<ApplicationIcon>favicon.ico</ApplicationIcon>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<Platform>AnyCPU</Platform>
-		<TargetFramework>net8.0</TargetFramework>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<DeleteExistingFiles>true</DeleteExistingFiles>
 	</PropertyGroup>

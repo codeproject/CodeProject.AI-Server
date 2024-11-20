@@ -1,4 +1,6 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Linq;
+using System.Text.Json.Serialization;
 using CodeProject.AI.SDK.API;
 using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;

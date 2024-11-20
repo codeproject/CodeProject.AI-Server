@@ -1,9 +1,13 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Channels;
-
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace CodeProject.AI.SDK
@@ -19,8 +23,9 @@ namespace CodeProject.AI.SDK
 
         private record  LoggingData(string message, string category, LogLevel logLevel, string label);
 
-        private static HttpClient? _httpGetRequestClient;
-        private static HttpClient? _httpSendResponseClient;
+        private static HttpClient? _httpGetRequestClient;   // For querying server's request queue
+        private static HttpClient? _httpSendResponseClient; // For sending response to request to server
+
         private Channel<LoggingData> _loggingQueue = Channel.CreateBounded<LoggingData>(1024);
 
         private int _errorPauseSecs = 0;
