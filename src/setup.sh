@@ -480,7 +480,7 @@ function doModuleInstall () {
             pythonVersion="${major}.${minor}"
         fi
 
-        if [ "$pythonVersion" == "" ]; then pythonVersion="3.9"; fi
+        if [ "$pythonVersion" = "" ]; then pythonVersion="3.9"; fi
         # echo "Current Python = $pythonVersion"
 
     elif [ "${runtime:0:6}" = "python" ]; then
@@ -909,13 +909,13 @@ else
         cuDNN_version=$(getcuDNNVersion)
 
         installKeyring=false
-        if [ "$cuDNN_version" == "" ] || [ ! -x "$(command -v nvcc)" ]; then
+        if [ "$cuDNN_version" = "" ] || [ ! -x "$(command -v nvcc)" ]; then
             wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
             sudo dpkg -i cuda-keyring_1.1-1_all.deb
             rm cuda-keyring_1.1-1_all.deb
         fi
 
-        if [ "$cuDNN_version" == "" ]; then
+        if [ "$cuDNN_version" = "" ]; then
             # cuDNN
             # https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local
             sudo apt-get update
@@ -1032,7 +1032,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         saveState
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
-        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="CodeProject.AI SDK install failed"; fi
+        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="CodeProject.AI SDK install failed"; fi
         restoreState
 
         if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [SDK] ${moduleInstallErrors}\n"; fi
@@ -1049,7 +1049,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         saveState
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
-        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="CodeProject.AI Server install failed"; fi
+        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="CodeProject.AI Server install failed"; fi
         restoreState
 
         if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Server] ${moduleInstallErrors}\n"; fi
@@ -1074,7 +1074,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
             if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
         done
 
-        if [ "$installExternalModules" == "true" ]; then
+        if [ "$installExternalModules" = "true" ]; then
             # Walk through the modules directory for modules that live in the external 
             # folder. For instance modules that are in external Git repos / projects
             writeLine
@@ -1112,7 +1112,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
                 saveState
                 correctLineEndings "${moduleDirPath}/install.sh"
                 source "${moduleDirPath}/install.sh" "install"
-                if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="failed to install"; fi   
+                if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="failed to install"; fi   
                 restoreState
 
                 if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Demo clients] ${moduleInstallErrors}\n"; fi

@@ -135,7 +135,7 @@ fi
 echo -e "${bold}Creating Main Directory${reset}"
 
 if [[ -d /opt/dotnet ]]; then
-    echo "/opt/dotnet already  exists on your filesystem."
+    echo "/opt/dotnet already exists on your filesystem."
 else
     echo "Creating Main Directory"
     mkdir /opt/dotnet

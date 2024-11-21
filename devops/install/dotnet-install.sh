@@ -939,7 +939,11 @@ get_user_install_path() {
         echo "$DOTNET_INSTALL_DIR"
     else
         if [ "$normalized_os" == "osx" ]; then
-            echo "/usr/local/share/dotnet"
+            # if [ "$(get_machine_architecture)" = "arm64" ]; then
+            #    echo "/opt/dotnet"
+            # else
+                echo "/usr/local/share/dotnet"
+            # fi
         else
             echo "$HOME/.dotnet"
         fi
