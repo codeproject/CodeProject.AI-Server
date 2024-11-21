@@ -29,14 +29,14 @@ function quit () {
 }
 
 # Returns a color code for the given foreground/background colors
-# This code is echoed to the terminal before outputing text in
+# This code is echoed to the terminal before outputting text in
 # order to generate a colored output.
 #
 # string foreground color name. Optional if no background provided.
 #        Defaults to "Default" which uses the system default
 # string background color name.  Optional. Defaults to "Default"
 #        which is the system default
-# string intense. Optional. If "true" then the insensity is turned up
+# string intense. Optional. If "true" then the intensity is turned up
 # returns a string
 function Color () {
 
@@ -566,7 +566,7 @@ function getDotNetVersion() {
         # IFS=$'\n' # set the Internal Field Separator as end of line
         # while read -r line
         # do
-        #     dotnet_version=$(echo "$line}" | cut -d ' ' -f 1)
+        #     dotnet_version=$(echo "${line}" | cut -d ' ' -f 1)
         #     current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
         # 
         #     if (( $current_comparison > $comparison )); then
@@ -588,7 +588,7 @@ function getDotNetVersion() {
         while read -r line
         do
             if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
-                dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
+                dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
                 # echo "GET: Found .NET runtime $dotnet_version" >&3
 
                 current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
@@ -633,7 +633,7 @@ function setupDotNet () {
     
     if [ "$requestedType" = "" ]; then requestedType="aspnetcore"; fi
 
-    write "Checking for .NET ${requestedNetVersion}..."
+    write "Checking for .NET ${requestedNetVersion} ${requestedType}..."
 
     highestDotNetVersion="(None)"
     comparison=-1
@@ -648,8 +648,10 @@ function setupDotNet () {
             IFS=$'\n' # set the Internal Field Separator as end of line
             while read -r line
             do
-                dotnet_version=$(echo "$line}" | cut -d ' ' -f 1)
-                dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
+                # echo "SET: Read line $line" >&3
+
+                dotnet_version=$(echo "${line}" | cut -d ' ' -f 1)
+                dotnet_major_version=$(echo "${dotnet_version}" | cut -d '.' -f 1)
 
                 # echo "SET: Found .NET SDK $dotnet_version" >&3
 
@@ -684,8 +686,8 @@ function setupDotNet () {
             do
                 if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
 
-                    dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
-                    dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
+                    dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
+                    dotnet_major_version=$(echo "${dotnet_version}" | cut -d '.' -f 1)
                     # echo "SET: Found .NET runtime $dotnet_version" >&3
 
                     # Let's only compare major versions

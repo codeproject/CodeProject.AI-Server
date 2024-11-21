@@ -417,7 +417,7 @@ function doModuleInstall () {
     if [ "$moduleName" = "" ]; then moduleName="$moduleId"; fi
 
     # writeLine
-    writeLine "Processing module ${moduleId} ${moduleVersion}" "White" "Blue" $lineWidth
+    writeLine "Processing module ${moduleId} ${moduleVersion} (${moduleType})" "White" "Blue" $lineWidth
     writeLine
 
     # Convert brackets, quotes, commas and newlines to spaces
@@ -507,7 +507,7 @@ function doModuleInstall () {
         writeLine "moduleStartFilePath = $moduleStartFilePath" $color_info
     fi
 
-    writeLine "${moduleType} module install" "$color_mute"
+    # writeLine "${moduleType} module install" "$color_mute"
 
     if [ -f "${moduleDirPath}/install.sh" ]; then
        
