@@ -984,9 +984,12 @@ get_cp_options() {
 
     if [ "$override" = false ]; then
         # cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
-        # override_switch="-n"
-        override_switch="--update=none"
-
+        if [ "$normalized_os" == "osx" ]; then
+            override_switch="-n"
+        else
+            override_switch="--update=none"
+        fi;
+        
         # create temporary files to check if 'cp -u' is supported
         tmp_dir="$(mktemp -d)"
         tmp_file="$tmp_dir/testfile"
