@@ -91,7 +91,8 @@
         <PackageReference Include="Microsoft.AI.DirectML" Version="1.15.2" Condition="'$(GpuType)'=='DirectML'" />
 
         <PackageReference Include="SkiaSharp" Version="2.88.8" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+        <PackageReference Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'" Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+        <PackageReference Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'" Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     </ItemGroup>
 
     <!-- Output the settings based on what we've determined above -->
