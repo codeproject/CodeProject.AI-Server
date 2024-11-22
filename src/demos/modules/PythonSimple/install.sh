@@ -2,9 +2,9 @@
 
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
-#                            Object Detection (YOLOv8)
+#                            Python Simple Demo
 #
-# This script is called from the ObjectDetectionYOLOv8 directory using: 
+# This script is called from the /demos/modules/PythonSimple directory using: 
 #
 #    bash ../../../setup.sh
 #

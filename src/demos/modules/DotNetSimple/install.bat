@@ -1,6 +1,6 @@
 :: Installation script :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::
-::                           .NET YOLO Object Detection
+::                           .NET Simple Demo
 ::
 :: This script is only called from ..\..\..\setup.bat 
 ::
@@ -13,7 +13,10 @@
     @goto:eof
 ) 
 if /i "!executionEnvironment!" == "Production" (
-    call "!utilsScript!" WriteLine "No custom setup steps for this module." "!color_info!"
+    REM Often we just pull down the pre-compiled binaries from the CDN when in
+    REM production. This saves having to install the .NET SDK. This is a demo so
+    REM do nothing here.
+    call "!utilsScript!" WriteLine "Production install not supported" "!color_info!"
 ) else (
     :: If we're in dev-setup mode we'll build the module now so the self-test will work
     pushd "!moduleDirPath!"

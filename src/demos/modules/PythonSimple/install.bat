@@ -1,6 +1,6 @@
 :: Installation script :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::
-::                           Object Detection (YOLOv8)
+::                           Python Simple Demo
 ::
 :: This script is only called from ..\..\..\setup.bat 
 ::
