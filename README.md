@@ -132,3 +132,16 @@ The current release provides support for CPU on each platform, DirectML on Windo
  - [Running in Docker](https://codeproject.github.io/codeproject.ai/why/running_in_docker.html)
  - Setup or install issues? See [Common Errors](https://codeproject.github.io/codeproject.ai/devguide/common_errors.html)
 
+I'll add this to the docs:
+
+## Latest Version changes: 2.9
+
+- Updated to .NET 9
+- Support for Ubuntu 24.10
+- Improved CUDA 12 support
+- Improvements to CUDA support in Windows and Linux
+- Further Windows arm64 fixes
+- Further macOS arm64 fixes
+- General dev environment setup fixes
+- Fixes for Windows installer when wget is missing
+
