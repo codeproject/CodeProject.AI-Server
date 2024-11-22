@@ -291,10 +291,21 @@ function CreateWriteableDir () {
         else
             mkdir -p "${path}" >/dev/null 2>/dev/null
         fi
-        if [ $? -eq 0 ]; then 
+        dir_error=$?
+
+        if [ $dir_error = 1 ]; then 
+            if [ "${verbosity}" = "loud" ]; then
+                sudo mkdir -p "${path}"
+            else
+                sudo mkdir -p "${path}" >/dev/null 2>/dev/null
+            fi
+            dir_error=$?
+        fi 
+
+        if [ $dir_error = 0 ]; then 
             writeLine "done" $color_success
         else
-            writeLine "Needs admin permission to create folder" $color_error
+            writeLine "Needs admin permission to create folder (error $dir_error)" $color_error
             displayMacOSDirCreatePermissionError
         fi
     fi
@@ -304,10 +315,11 @@ function CreateWriteableDir () {
         if [ "$isAdmin" = true ]; then
             write "Setting permissions on ${desc} folder..." $color_primary 
             sudo chmod a+w "${path}" >/dev/null 2>/dev/null
-            if [ $? -eq 0 ]; then 
+            dir_error=$?
+            if [ $dir_error = 0 ]; then 
                 writeLine "done" $color_success
             else
-                writeLine "Needs admin permission to set folder permissions" $color_error
+                writeLine "Needs admin permission to set folder permissions (error $dir_error)" $color_error
             fi
         fi
     fi
@@ -2723,6 +2735,47 @@ function bytesToHumanReadableKilo() {
 function getDisplaySize () {
     # See https://linuxcommand.org/lc3_adv_tput.php some great tips around this
     echo "Rows=$(tput lines) Cols=$(tput cols)"
+}
+
+haveDisplayedMacOSDirCreatePermissionError=false
+function displayMacOSDirCreatePermissionError () {
+
+    if [[ $OSTYPE == 'darwin'* ]] && [ "$haveDisplayedMacOSDirCreatePermissionError" = false ]; then
+
+        haveDisplayedMacOSDirCreatePermissionError=true
+
+        writeLine ''
+        writeLine ''
+        writeLine 'We may be able to suggest something:'  $color_info
+
+        # if [ "$os_name" = "Sonoma" ]; then   # macOS 14 / Kernal 23
+        if (( os_vers >= 13 )); then
+            # Note that  will appear as the Apple symbol on macOS, but probably not on Windows or Linux
+            writeLine '1. Pull down the  Apple menu and choose "System Settings"'
+            writeLine '2. Choose “Privacy & Security"'
+            writeLine '3. Scroll down to “Full Disk Access” and click the right arrow >'
+            writeLine '4. Click the [+] plus button, and in the popup, navigate to the'
+            writeLine '   /Applications/Utilities/ folder and choose "Terminal"'
+            writeLine '5. Relaunch Terminal. The “Operation not permitted” error messages should'
+            writeLine '   be gone'
+        else
+            writeLine '1. Pull down the  Apple menu and choose "System Preferences"'
+            writeLine '2. Choose “Security & Privacy” control panel'
+            writeLine '3. Now select the “Privacy” tab, then from the left-side menu select'
+            writeLine '   “Full Disk Access”'
+            writeLine '4. Click the lock icon in the lower left corner of the preference '
+            writeLine '   panel and authenticate with an admin level login'
+            writeLine '5. Now click the [+] plus button so we can full disk access to Terminal'
+            writeLine "6. Navigate to the /Applications/Utilities/ folder and choose 'Terminal'"
+            writeLine '   to grant Terminal Full Disk Access privileges'
+            writeLine '7. Relaunch Terminal, the “Operation not permitted” error messages should'
+            writeLine '   be gone'
+        fi
+        
+        writeLine ''
+    fi
+
+    # quit 8 # unable to create file or directory
 }
 
 function needRosettaAndiBrew () {
