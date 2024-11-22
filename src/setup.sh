@@ -518,7 +518,7 @@ function doModuleInstall () {
             writeLine "Installing Python ${pythonVersion}"
             setupPython 
             if [ $? -gt 0 ]; then moduleInstallErrors="Unable to install Python ${pythonVersion}"; fi
-            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - ${moduleInstallErrors}\n"; fi
+            # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - ${moduleInstallErrors}\n"; fi
         fi
 
         # Install the module, but only if there were no issues installing python
@@ -529,7 +529,7 @@ function doModuleInstall () {
             source "${moduleDirPath}/install.sh" "install"
             if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="failed to install"; fi
 
-            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
+            # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
         fi
 
         # If a python version has been specified then we'll automatically look 
@@ -547,7 +547,7 @@ function doModuleInstall () {
 
                     installRequiredPythonPackages 
                     if [ $? -gt 0 ]; then moduleInstallErrors="Unable to install Python packages";  fi
-                    if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
+                    # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
 
                     # With the move to having modules include our SDK PyPi, we no longer need this.
                     # writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
@@ -571,7 +571,7 @@ function doModuleInstall () {
                 source "${moduleDirPath}/post_install.sh" "post-install"
                 if [ $? -gt 0 ]; then moduleInstallErrors="Error running post-install script"; fi
 
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
+                # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
             fi
         fi
 
@@ -657,7 +657,7 @@ function doModuleInstall () {
     fi
 
     # return result
-    echo "${moduleInstallErrors}"
+    # echo "${moduleInstallErrors}"
 }
 
 # import the utilities :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -704,7 +704,7 @@ if [[ $(wget -h 2>&1 | grep -E 'waitretry|connect-timeout') ]]; then
 fi
 
 # pipFlags='--quiet --quiet' - not actually supported, even though docs say it is
-pipFlags=''
+pipFlags='-q -q -q'
 copyFlags='/NFL /NDL /NJH /NJS /nc /ns  >/dev/null'
 unzipFlags='-o -qq'
 tarFlags='-xf'
@@ -1071,7 +1071,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
 
             doModuleInstall "${moduleId}" "${moduleDirPath}" "Internal"
 
-            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Int: ${moduleId} @ $moduleDirPath] ${moduleInstallErrors}\n"; fi
         done
 
         if [ "$installExternalModules" = "true" ]; then
@@ -1088,7 +1088,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
                     moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                     doModuleInstall "${moduleId}" "${moduleDirPath}" "External"
-                    if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                    if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Ext: ${moduleId} @ $moduleDirPath] ${moduleInstallErrors}\n"; fi
                 done
             else
                 writeLine "No external modules found" "$color_mute"
@@ -1133,7 +1133,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                 doModuleInstall "${moduleId}" "${moduleDirPath}" "Demo"
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Demo: ${moduleId} @ $moduleDirPath] ${moduleInstallErrors}\n"; fi
             done
             modulesDirPath="${oldModulesDirPath}"
         fi
@@ -1202,7 +1202,7 @@ else
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                 doModuleInstall "${moduleId}" "${moduleDirPath}" "Demo"
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Demo: ${moduleId}] ${moduleInstallErrors}\n"; fi
                 
                 modulesDirPath="$oldModulesDirPath"
 
@@ -1212,7 +1212,7 @@ else
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                 doModuleInstall "${moduleId}" "${moduleDirPath}" "External"
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Ext: ${moduleId}] ${moduleInstallErrors}\n"; fi
 
             else                                                            # Internal module
 
@@ -1220,7 +1220,7 @@ else
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                 doModuleInstall "${moduleId}" "${moduleDirPath}" "Internal"
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Int: ${moduleId}] ${moduleInstallErrors}\n"; fi
 
             fi
         fi
