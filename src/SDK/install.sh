@@ -75,7 +75,7 @@ else
             write "Installing System.Drawing support "
         fi
 
-        if [ $"$architecture" = 'arm64' ]; then
+        if [ "$architecture" = 'arm64' ]; then
             arch -x86_64 /usr/local/bin/brew list fontconfig >/dev/null 2>/dev/null || \
                 arch -x86_64 /usr/local/bin/brew install fontconfig  >/dev/null 2>/dev/null &
             spin $!
@@ -95,7 +95,7 @@ else
     else
         writeLine "Installing System.Drawing support "
 
-        if [ $"$architecture" = 'arm64' ]; then
+        if [ "$architecture" = 'arm64' ]; then
             arch -x86_64 /usr/local/bin/brew list fontconfig || arch -x86_64 /usr/local/bin/brew install fontconfig
             arch -x86_64 /usr/local/bin/brew list libomp     || arch -x86_64 /usr/local/bin/brew install libomp
         else

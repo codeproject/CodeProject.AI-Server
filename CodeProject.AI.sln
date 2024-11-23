@@ -316,7 +316,7 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TextSummary", "..\CodeProje
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TrainingObjectDetectionYOLOv5", "..\CodeProject.AI-Modules\CodeProject.AI-TrainingObjectDetectionYOLOv5\TrainingObjectDetectionYOLOv5.pyproj", "{2DFDA382-189B-45D1-94D5-3004D1AEB73C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonApi", "src\demos\clients\Net\JsonApi\JsonApi.csproj", "{7BFCEBCA-0677-4122-B474-B08D958F7FC7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonAPI", "src\demos\clients\Net\JsonAPI\JsonAPI.csproj", "{7BFCEBCA-0677-4122-B474-B08D958F7FC7}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonLongProcess", "src\demos\modules\PythonLongProcess\PythonLongProcess.pyproj", "{D56CA115-830A-4007-BB9B-BF0FC72DA9B1}"
 EndProject

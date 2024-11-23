@@ -41,6 +41,7 @@
         "deserialising",
         "deskew",
         "Dgram",
+        "distutils",
         "downloadables",
         "downsampling",
         "dtype",

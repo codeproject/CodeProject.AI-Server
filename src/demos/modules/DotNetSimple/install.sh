@@ -2,9 +2,9 @@
 
 # Development mode setup script ::::::::::::::::::::::::::::::::::::::::::::::
 #
-#                            .NET YOLO Object Detection
+#                            .NET Simple Demo
 #
-# This script is called from the ObjectDetectionYOLOv5Net directory using: 
+# This script is called from the DotNetSimple directory using: 
 #
 #    bash ../../../setup.sh
 #
@@ -20,13 +20,23 @@ if [ "$1" != "install" ]; then
 fi
 
 # Pull down the correct .NET executable for this module
-if [ "${executionEnvironment}" = "Production" ] || [ "${launchedBy}" = "server" ]; then
-    imageName="${moduleId}-${moduleVersion}.zip"
-    getFromServer "binaries/" "${imageName}" "bin" "Downloading ${imageName}..."
+if [ "${executionEnvironment}" = "Production" ]; then
+    # Often we just pull down the pre-compiled binaries from the CDN when in
+    # production. This saves having to install the .NET SDK. This is a demo so
+    # do nothing here.
+
+    # imageName="${moduleId}-${moduleVersion}.zip"
+    # getFromServer "binaries/" "${imageName}" "bin" "Downloading ${imageName}..."
+
+    writeLine "Production install not supported." "$color_info"
 else
     pushd "$moduleDirPath" >/dev/null
     writeLine "Building project..." "$color_info"
-    dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/${dotNetTarget}" >/dev/null
+    if [ $verbosity = "quiet" ]; then
+        dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/${dotNetTarget}" >/dev/null
+    else
+        dotnet build -c Debug -o "${moduleDirPath}/bin/Debug/${dotNetTarget}"
+    fi
     popd >/dev/null
 fi
 

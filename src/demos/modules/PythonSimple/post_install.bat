@@ -1,6 +1,6 @@
 :: Post-Installation script ::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::
-::                       Object Detection (YOLOv8)
+::                       Python Simple
 ::
 :: The setup.bat file will find this post_install.bat file and execute it.
 ::

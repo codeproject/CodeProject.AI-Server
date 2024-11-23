@@ -19,8 +19,12 @@ if [ "$1" != "install" ]; then
     exit 1 
 fi
 
+installBinaries=false
+if [ "$executionEnvironment" = "Production" ]; then installBinaries=true; fi
+if [ "$launchedBy" = "server" ]; then installBinaries=true; fi
+
 # Pull down the correct .NET image of ObjectDetectionYOLOv5Net based on this OS / GPU combo
-if [ "${executionEnvironment}" = "Production" ] || [ "${launchedBy}" = "server" ]; then
+if [ "${installBinaries}" = true ]; then
     imageName="ObjectDetectionYOLOv5Net-CPU-${moduleVersion}.zip"
     if [ "${installGPU}" = "true" ] && [ "${os}" != "macos" ]; then
         # Having issues with the OpenVINO version on linux

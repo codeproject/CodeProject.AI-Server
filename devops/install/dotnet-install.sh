@@ -939,7 +939,11 @@ get_user_install_path() {
         echo "$DOTNET_INSTALL_DIR"
     else
         if [ "$normalized_os" == "osx" ]; then
-            echo "/usr/local/share/dotnet"
+            # if [ "$(get_machine_architecture)" = "arm64" ]; then
+            #    echo "/opt/dotnet"
+            # else
+                echo "/usr/local/share/dotnet"
+            # fi
         else
             echo "$HOME/.dotnet"
         fi
@@ -984,9 +988,12 @@ get_cp_options() {
 
     if [ "$override" = false ]; then
         # cp: warning: behavior of -n is non-portable and may change in future; use --update=none instead
-        # override_switch="-n"
-        override_switch="--update=none"
-
+        if [ "$normalized_os" == "osx" ]; then
+            override_switch="-n"
+        else
+            override_switch="--update=none"
+        fi;
+        
         # create temporary files to check if 'cp -u' is supported
         tmp_dir="$(mktemp -d)"
         tmp_file="$tmp_dir/testfile"

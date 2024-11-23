@@ -141,7 +141,7 @@
           "Method": "POST",
           "Command": "custom",
           "MeshEnabled": false,
-          "Description": "Detects objects based on YOLO PyTorch models. Models are stored as .pt files in the /ObjectDetectionYOLOv8/assets directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's .pt file",
+          "Description": "Detects objects based on YOLO PyTorch models. Models are stored as .pt files in the /PythonSimple/assets directory, and to make a call to a specific model use /vision/custom/model-name, where 'model-name' is the name of the model's .pt file",
           "Inputs": [
             {
               "Name": "image",

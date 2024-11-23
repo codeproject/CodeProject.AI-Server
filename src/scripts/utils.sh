@@ -29,14 +29,14 @@ function quit () {
 }
 
 # Returns a color code for the given foreground/background colors
-# This code is echoed to the terminal before outputing text in
+# This code is echoed to the terminal before outputting text in
 # order to generate a colored output.
 #
 # string foreground color name. Optional if no background provided.
 #        Defaults to "Default" which uses the system default
 # string background color name.  Optional. Defaults to "Default"
 #        which is the system default
-# string intense. Optional. If "true" then the insensity is turned up
+# string intense. Optional. If "true" then the intensity is turned up
 # returns a string
 function Color () {
 
@@ -291,10 +291,21 @@ function CreateWriteableDir () {
         else
             mkdir -p "${path}" >/dev/null 2>/dev/null
         fi
-        if [ $? -eq 0 ]; then 
+        dir_error=$?
+
+        if [ $dir_error = 1 ]; then 
+            if [ "${verbosity}" = "loud" ]; then
+                sudo mkdir -p "${path}"
+            else
+                sudo mkdir -p "${path}" >/dev/null 2>/dev/null
+            fi
+            dir_error=$?
+        fi 
+
+        if [ $dir_error = 0 ]; then 
             writeLine "done" $color_success
         else
-            writeLine "Needs admin permission to create folder" $color_error
+            writeLine "Needs admin permission to create folder (error $dir_error)" $color_error
             displayMacOSDirCreatePermissionError
         fi
     fi
@@ -304,10 +315,11 @@ function CreateWriteableDir () {
         if [ "$isAdmin" = true ]; then
             write "Setting permissions on ${desc} folder..." $color_primary 
             sudo chmod a+w "${path}" >/dev/null 2>/dev/null
-            if [ $? -eq 0 ]; then 
+            dir_error=$?
+            if [ $dir_error = 0 ]; then 
                 writeLine "done" $color_success
             else
-                writeLine "Needs admin permission to set folder permissions" $color_error
+                writeLine "Needs admin permission to set folder permissions (error $dir_error)" $color_error
             fi
         fi
     fi
@@ -347,7 +359,7 @@ function checkForAdminRights () {
     fi
 
     if [ "$isAdmin" = false ] && [ "$requestPassword" = true ]; then
-        if [ "$os" == "macos" ]; then
+        if [ "$os" = "macos" ]; then
             # THIS DOES NOT WORK
             # This shows the password prompt, but the admin rights starts and ends with the "whoami"
             # call. Once that call finishes, admin rights no longer apply.
@@ -409,7 +421,7 @@ function checkForTool () {
 
             # Ensure Brew is installed. NOTE: macOS has curl built in, so no worries
             # about recursion if calling checkForTool "curl"
-            if [ $"$architecture" = 'arm64' ]; then
+            if [ "$architecture" = 'arm64' ]; then
                 if [ ! -f /usr/local/bin/brew ]; then
 
                     checkForAdminAndWarn "arch -x86_64 /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)'"
@@ -504,7 +516,7 @@ function checkForTool () {
 }
 
 function setupSSL() {
-    if [ "$os" = "linux" ] && [ "$architecture" == "x86_64" ]; then
+    if [ "$os" = "linux" ] && [ "$architecture" = "x86_64" ]; then
 
         if [ ! -f /usr/lib/x86_64-linux-gnu/libssl.so.1.1 ] || [ ! -e /usr/lib/libcrypto.so.1.1 ]; then
 
@@ -566,7 +578,7 @@ function getDotNetVersion() {
         # IFS=$'\n' # set the Internal Field Separator as end of line
         # while read -r line
         # do
-        #     dotnet_version=$(echo "$line}" | cut -d ' ' -f 1)
+        #     dotnet_version=$(echo "${line}" | cut -d ' ' -f 1)
         #     current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
         # 
         #     if (( $current_comparison > $comparison )); then
@@ -587,8 +599,8 @@ function getDotNetVersion() {
         IFS=$'\n' # set the Internal Field Separator as end of line
         while read -r line
         do
-            if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
-                dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
+            if [[ $line == *'Microsoft.NETCore.App '* ]]; then
+                dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
                 # echo "GET: Found .NET runtime $dotnet_version" >&3
 
                 current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
@@ -619,6 +631,32 @@ function getMajorDotNetVersion() {
     echo "$dotnet_major_version"
 }
 
+function setDotNetLocation () {
+
+    local profile_location=$1
+    local dotnet_path=$2
+
+    if [ -f $location ]; then
+
+        if grep -q "export DOTNET_ROOT=${profile_location}"; then
+            write "Already added link to $profile_location"
+        else
+            write "Adding Link to $location"
+            echo 'export DOTNET_ROOT=${dotnet_path}' >> $profile_location
+            export DOTNET_ROOT=${dotnet_path}
+        fi
+
+        if [[ $PATH == *"${dotnet_path}"* ]]; then
+            write "PATH contains location of .NET"
+        else
+            write "Adding location of .NET to PATH"
+            echo "export PATH=${dotnet_path}${PATH:+:${PATH}}" >> $profile_location
+            export PATH=${dotnet_path}${PATH:+:${PATH}}
+        fi
+    fi
+}
+
+
 function setupDotNet () {
 
     # only major/minor versions accepted (eg 7.0)
@@ -633,7 +671,7 @@ function setupDotNet () {
     
     if [ "$requestedType" = "" ]; then requestedType="aspnetcore"; fi
 
-    write "Checking for .NET ${requestedNetVersion}..."
+    write "Checking for .NET ${requestedNetVersion} ${requestedType}..."
 
     highestDotNetVersion="(None)"
     comparison=-1
@@ -648,8 +686,10 @@ function setupDotNet () {
             IFS=$'\n' # set the Internal Field Separator as end of line
             while read -r line
             do
-                dotnet_version=$(echo "$line}" | cut -d ' ' -f 1)
-                dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
+                # echo "SET: Read line $line" >&3
+
+                dotnet_version=$(echo "${line}" | cut -d ' ' -f 1)
+                dotnet_major_version=$(echo "${dotnet_version}" | cut -d '.' -f 1)
 
                 # echo "SET: Found .NET SDK $dotnet_version" >&3
 
@@ -682,10 +722,10 @@ function setupDotNet () {
             IFS=$'\n' # set the Internal Field Separator as end of line
             while read -r line
             do
-                if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
+                if [[ $line == *'Microsoft.NETCore.App '* ]]; then
 
-                    dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
-                    dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
+                    dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
+                    dotnet_major_version=$(echo "${dotnet_version}" | cut -d '.' -f 1)
                     # echo "SET: Found .NET runtime $dotnet_version" >&3
 
                     # Let's only compare major versions
@@ -712,7 +752,7 @@ function setupDotNet () {
     fi
 
     mustInstall="false"
-    if [ "$haveRequested" == true ]; then
+    if [ "$haveRequested" = true ]; then
         writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
     elif (( $comparison == 0 )); then
         writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
@@ -735,18 +775,25 @@ function setupDotNet () {
             return 6 # unable to download required asset
         fi
 
-        if [ "$architecture" = 'arm64' ]; then
-            dotnet_path="/opt/dotnet"
-        elif [ "$os" = "linux" ]; then
-            dotnet_path="/usr/lib/dotnet/"
+        if [ "$os" = "linux" ]; then
+            dotnet_basepath="/usr/lib/"
         else # macOS x64
-            # dotnet_path="~/.dotnet/"
-            dotnet_path="/usr/local/share/dotnet/"
+            # dotnet_basepath="~/."
+            # if [ "$architecture" = 'arm64' ]; then
+            #     dotnet_basepath="/opt/"
+            # else
+                dotnet_basepath="/usr/local/share/"
+            # fi
         fi
+        dotnet_path="${dotnet_basepath}/dotnet/"
 
+        useCustomDotNetInstallScript=false
+        # No longer using the arm64 custom script: standard install script seems good enough now.
         # output a warning message if no admin rights and instruct user on manual steps
-        if [ "$architecture" = 'arm64' ]; then
-            install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
+        # if [ "$architecture" = 'arm64' ]; then useCustomDotNetInstallScript=true; fi
+        
+        if [ "$useCustomDotNetInstallScript" = true ]; then
+           install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
         else
             install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install.sh' --install-dir '${dotnet_path}' --channel $requestedNetMajorMinorVersion --runtime $requestedType"
         fi
@@ -755,8 +802,8 @@ function setupDotNet () {
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
             if [ "$os" = "linux" ]; then
 
-                # Disabled this due to it not proving reliable
-                if [ "$os_name" = "debian-SKIP" ]; then
+                # Potentially not reliable. Only blessed by MS for Debian >= 12
+                if [ "$os_name" = "debian" ] && [ ! "$os_vers" < "12" ]; then
 
                     wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
                     sudo dpkg -i packages-microsoft-prod.deb >/dev/null
@@ -768,11 +815,11 @@ function setupDotNet () {
                         sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
                     fi
 
-                # .NET 9 is almost good to go
-                elif [ "$os_name" == "ubuntu" ] && [ "$requestedNetMajorVersion" == "9" ]; then
+                # .NET 9 seems to settle down the "we do/we don't" that MS is doing with .NET 6,7 and 8. 
+                elif [ "$requestedNetMajorVersion" = "9" ]; then   # ... && [ "$os_name" = "ubuntu" ]
 
                     # TODO: Change this to a " >= 24.10"
-                    if [ "$os_vers" == "24.10" ]; then 
+                    if [ "$os_name" = "ubuntu" ] && [ "$os_vers" = "24.10" ]; then 
                         if [ "$requestedType" = "sdk" ]; then
                             sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
                         else
@@ -791,7 +838,7 @@ function setupDotNet () {
                     # Needed if we're installing .NET without an installer to help us
                     installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
 
-                    if [ "$architecture" = 'arm64' ]; then
+                    if [ "$useCustomDotNetInstallScript" = true ]; then
                         # installs in /opt/dotnet
                         if [ $verbosity = "quiet" ]; then
                             sudo bash "${installScriptsDirPath}/dotnet-install-arm.sh" "${requestedNetMajorVersion}.0" "$requestedType" "quiet"
@@ -812,7 +859,7 @@ function setupDotNet () {
             else
                 # macOS
                 
-                # Needed if we're installing .NET without an installer to help us
+                # (Maybe) needed if we're installing .NET without an installer to help us
                 # installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
 
                 if [ $verbosity = "quiet" ]; then
@@ -829,48 +876,22 @@ function setupDotNet () {
         #    return 2 # failed to install required runtime
         #fi
 
-        if [ "$os" = "linux" ] && [ "$architecture" != "arm64" ]; then
-
-            # Add link
-            # ln -s /opt/dotnet/dotnet /usr/local/bin
-            
-            # if [ "$os_name" = "debian" ]; then
-            #    sudo ln ~/.dotnet/dotnet /usr/bin
-            #fi
-
-            # make link permanent
-            if grep -q 'export DOTNET_ROOT=' ~/.bashrc;  then
-                echo 'Already added link to .bashrc'
-            else
-                echo 'export DOTNET_ROOT=/usr/bin/' >> ~/.bashrc
-            fi
+        # The install script is for CI/CD and doesn't actually register .NET. So add 
+        # link and env variables
+        writeLine "Link Binaries to /usr/local/bin..."
+        if [ -e /usr/local/bin/dotnet ]; then
+            rm /usr/local/bin/dotnet
         fi
+        ln -s ${dotnet_path}dotnet /usr/local/bin
 
-        if [ "$os" == "macos" ]; then
-            # The install script is for CI/CD and doesn't actually register .NET. So add 
-            # link and env variable
-            export DOTNET_ROOT=${dotnet_path}
-            export PATH=${DOTNET_ROOT}${PATH:+:${PATH}}
-
-            if [ -e /usr/local/bin/dotnet ]; then
-                rm /usr/local/bin/dotnet
-            fi
-
-            if [ ! -e /usr/local/bin/dotnet ]; then
-                ln -fs "${dotnet_path}dotnet" "/usr/local/bin/dotnet"
-            fi
-
-            # if [ -f ~/.bashrc ]; then
-                if [ ! -f ~/.bashrc ] || [ $(grep -q 'export DOTNET_ROOT=' ~/.bashrc) ]; then
-                    sudo echo "export DOTNET_ROOT=${dotnet_path}"           >> ~/.bashrc
-                    sudo echo "export PATH=${dotnet_path}${PATH:+:${PATH}}" >> ~/.bashrc
-                fi
-            # elif [ -f ~/.bash_profile ]; then
-            #     if grep -q 'export DOTNET_ROOT=' ~/.bash_profile; then
-            #         echo 'export DOTNET_ROOT=${dotnet_path}'           >> ~/.bash_profile
-            #         echo "export PATH=${dotnet_path}${PATH:+:${PATH}}" >> ~/.bash_profile
-            #     fi
-            # fi
+        if [ -f " /home/pi/.bashrc" ]; then
+            setDotNetLocation " /home/pi/.bashrc" "${dotnet_path}"
+        elif [ -f " ~/.bashrc" ]; then 
+            setDotNetLocation " ~/.bashrc" "${dotnet_path}"
+        elif [ -f " ~/.bash_profile" ]; then
+            setDotNetLocation " ~/.bash_profile" "${dotnet_path}"
+        elif [ -f " ~/.zshrc" ]; then
+            setDotNetLocation " ~/.zshrc" "${dotnet_path}"
         fi
     fi
 
@@ -1096,7 +1117,7 @@ function setupPython () {
              [ "$os_name" = "debian" ]; then
 
             # ensure gcc is installed
-            if [ "$os_name" == "debian" ]; then 
+            if [ "$os_name" = "debian" ]; then 
                 # gcc and make
                 installAptPackages "build-essential make"
                 # to build python on Debian
@@ -1207,7 +1228,7 @@ function setupPython () {
                 # Build and install Python
                 cd Python-${pythonPatchVersion}
 
-                if [ "$os_name" == "debian" ]; then 
+                if [ "$os_name" = "debian" ]; then 
                     # Native debian is giving us troubles. The instructions should be optimised down
                     # to just what's needed, but for now we'll just throw everything at the problem
                     # until we find a solution to the "SSLError("Can't connect to HTTPS URL because 
@@ -2353,7 +2374,7 @@ function getValueFromModuleSettingsFile () {
     local moduleId=$2
     local property=$3
 
-    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" = "true" ]; then
        echo "Searching for '${property}' in a suitable modulesettings.json file in ${moduleDirPath}" >&3
     fi
 
@@ -2410,7 +2431,7 @@ function getValueFromModuleSettingsFile () {
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.json"; fi
     fi
 
-    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" = "true" ]; then
        if [ "${moduleSettingValue}" = "" ]; then
            echo "Cannot find ${moduleId}.${property} in modulesettings in ${moduleDirPath}" >&3
        else
@@ -2463,7 +2484,7 @@ function getValueFromModuleSettings () {
         key=$".Modules.${moduleId}.${property}"
     fi
 
-    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" = "true" ]; then
         echo jsonFile is $json_file >&3
         echo parse_mode is $parse_mode >&3
     fi
@@ -2525,9 +2546,9 @@ function getValueFromModuleSettings () {
     fi
 
     # Really?? 
-    if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
+    if [ "$jsonValue" = "null" ]; then jsonValue=""; fi
 
-    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" = "true" ]; then
         echo "${key} = $jsonValue" >&3;
     fi
     
@@ -2568,7 +2589,7 @@ function getModuleIdFromModuleSettings () {
     fi
 
     # Really?? A literal "null"?
-    if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
+    if [ "$jsonValue" = "null" ]; then jsonValue=""; fi
 
     # debug
     # if [ "$verbosity" = "loud" ]; then echo "${key} = $jsonValue" >&3; fi
@@ -2614,7 +2635,7 @@ function getValueFromJsonFile () {
     fi
 
     # Really?? A literal "null"?
-    if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
+    if [ "$jsonValue" = "null" ]; then jsonValue=""; fi
 
     # debug
     # if [ "$verbosity" = "loud" ]; then echo "${key} = $jsonValue" >&3; fi
@@ -2727,7 +2748,8 @@ function displayMacOSDirCreatePermissionError () {
         writeLine ''
         writeLine 'We may be able to suggest something:'  $color_info
 
-        if [ "$os_name" = "Sonoma" ]; then   # macOS 14 / Kernal 23
+        # if [ "$os_name" = "Sonoma" ]; then   # macOS 14 / Kernal 23
+        if (( os_vers >= 13 )); then
             # Note that  will appear as the Apple symbol on macOS, but probably not on Windows or Linux
             writeLine '1. Pull down the  Apple menu and choose "System Settings"'
             writeLine '2. Choose “Privacy & Security"'
