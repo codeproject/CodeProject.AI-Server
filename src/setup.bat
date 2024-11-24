@@ -268,8 +268,9 @@ set installScriptsDirPath=!rootDirPath!\devops\install
 set utilsScript=!utilsScriptsDirPath!\utils.bat
 
 :: Load vars in .env. This may update things like dotNetTarget
-for /f "tokens=1,2 delims==" %%a in (!rootDirPath!\.env) do set %%a=%%b
-
+if exist "!rootDirPath!\.env" (
+	for /f "tokens=1,2 delims==" %%a in ("!rootDirPath!\.env") do set %%a=%%b
+)
 :: Helper vars for OS, Platform (see note below), and system name. systemName is
 :: a no-op here because nothing exciting happens on Windows. In the corresponding
 :: .sh setup files, systemName can be docker, Raspberry Pi, WSL - all sorts of fun
