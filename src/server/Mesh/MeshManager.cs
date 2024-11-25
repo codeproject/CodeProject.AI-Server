@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 
 using CodeProject.AI.Server.Modules;
-using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 
 /* -------------------------------------------------------------------------------------------------
@@ -31,11 +30,11 @@ namespace CodeProject.AI.Server.Mesh
     /// </summary>
     public class MeshManager
     {
-        private readonly MeshMonitor                  _meshMonitor;
-        private readonly IOptionsMonitor<MeshOptions> _meshOptions;
-        private readonly ServerSettingsJsonWriter     _optionsJsonWriter;
-        private readonly ModuleProcessServices        _processServices;
-        private readonly Task                         _updateRouteMetricsTask;
+        private readonly MeshMonitor<MeshServerBroadcastData> _meshMonitor;
+        private readonly IOptionsMonitor<MeshOptions>         _meshOptions;
+        private readonly ServerSettingsJsonWriter             _optionsJsonWriter;
+        private readonly ModuleProcessServices                _processServices;
+        private readonly Task                                 _updateRouteMetricsTask;
         private readonly ConcurrentDictionary<string, RouteMetricsCollection> _routeMetrics = 
             new(StringComparer.OrdinalIgnoreCase);
 
@@ -68,10 +67,10 @@ namespace CodeProject.AI.Server.Mesh
         /// <param name="monitoredMeshOptions">The Mesh Options Monitor</param>
         /// <param name="optionsJsonWriter">Writes the Mesh JSON file.</param>
         /// <param name="processServices">The process services.</param>
-        public MeshManager(MeshMonitor meshMonitor,
-                           IOptionsMonitor<MeshOptions> monitoredMeshOptions,
-                           ServerSettingsJsonWriter optionsJsonWriter,
-                           ModuleProcessServices processServices)
+        public MeshManager(MeshMonitor<MeshServerBroadcastData> meshMonitor,
+                          IOptionsMonitor<MeshOptions> monitoredMeshOptions,
+                          ServerSettingsJsonWriter optionsJsonWriter,
+                          ModuleProcessServices processServices)
         {
             _meshMonitor       = meshMonitor;
             _meshOptions       = monitoredMeshOptions;

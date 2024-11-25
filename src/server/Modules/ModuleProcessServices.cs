@@ -15,6 +15,8 @@ using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Backend;
 using CodeProject.AI.Server.Models;
 using CodeProject.AI.SDK.Modules;
+using CodeProject.AI.SDK.Backend;
+using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.Server.Modules
 {

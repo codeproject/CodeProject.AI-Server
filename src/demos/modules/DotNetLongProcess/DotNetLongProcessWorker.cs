@@ -69,7 +69,7 @@ namespace CodeProject.AI.Modules.DotNetLongProcess
 
             // Get some values from environment variables
             _modelSize = config.GetValue("MODEL_SIZE", "Medium") ?? "Medium";
-            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(moduleDirPath!, "assets")) ?? "assets";
+            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(ModuleDirPath!, "assets")) ?? "assets";
         }
 
         protected override void Initialize()
@@ -217,7 +217,7 @@ namespace CodeProject.AI.Modules.DotNetLongProcess
             // Setup the request and add some test data
             RequestPayload payload = new RequestPayload("command");
             payload.SetValue("minconfidence", "0.4");
-            payload.AddFile(Path.Combine(moduleDirPath!, "test/home-office.jpg"));
+            payload.AddFile(Path.Combine(ModuleDirPath!, "test/home-office.jpg"));
 
             var request = new BackendRequest(payload);
 

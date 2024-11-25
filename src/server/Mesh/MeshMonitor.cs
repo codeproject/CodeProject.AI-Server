@@ -15,6 +15,8 @@ using Microsoft.Extensions.Options;
 
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.Server.Modules;
+using CodeProject.AI.SDK.Modules;
 
 namespace CodeProject.AI.Server.Mesh
 {
@@ -42,8 +44,7 @@ namespace CodeProject.AI.Server.Mesh
     /// status class and custom status builder.</para>
     /// </remarks>
     /// <typeparam name="TStatus">The Type of the status data included in the HEARTBEAT message.</typeparam>
-    public class BaseMeshMonitor<TStatus>
-        where TStatus: MeshServerBroadcastData, new()
+    public class MeshMonitor<TStatus> where TStatus: MeshServerBroadcastData, new()
     {
         private const string HeartBeatId           = "HEARTBEAT";
         private const string GoodByeId             = "GOODBYE";
@@ -52,10 +53,14 @@ namespace CodeProject.AI.Server.Mesh
         private const char   Separator             = '|';
         private const string HostnameEnvVar        = "COMPUTERNAME";
 
+        private readonly JsonSerializerOptions _jsonSerializerOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        // Network clients
         private UdpClient? _udpClient = null;
-        
         private ApiClient? _pingClient = null;
-        private readonly List<KnownMeshServerPingStatus> _knownServers = new();
 
         // An address of this machine that is connected to the internet. It may not be the only
         // address, though
@@ -64,19 +69,23 @@ namespace CodeProject.AI.Server.Mesh
         // All addresses found on this machine.
         private readonly List<IPAddress> _localIPAddresses = new();
 
-        // dependencies
-        private readonly IOptionsMonitor<MeshOptions> _monitoredMeshOptions;
         private MeshOptions _oldMeshOptions;
-        private readonly IMeshServerBroadcastBuilder<TStatus> _statusBuilder;
-        private readonly ILogger<BaseMeshMonitor<TStatus>> _logger;
 
+        // dependencies
+        private readonly IOptionsMonitor<MeshOptions>      _monitoredMeshOptions;
+        private readonly ModuleProcessServices             _processServices;
+        private readonly ILogger<MeshMonitor<TStatus>> _logger;
+
+        // Currently running modules
+        private readonly ModuleCollection             _modules;
+
+        // Mesh servers we already know about
+        private readonly List<KnownMeshServerPingStatus> _knownServers = new();
+
+        // Mesh servers we've discovered
         private readonly ConcurrentDictionary<string, MeshServerRoutingEntry> _discoveredServers = new();
 
-        private readonly JsonSerializerOptions _jsonSerializerOptions = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
+        // Process state
         private CancellationTokenSource? _cancellationTokenSource;
         private Task? _listenerTask;
         private Task? _pingServersTask;
@@ -129,7 +138,7 @@ namespace CodeProject.AI.Server.Mesh
         /// <summary>
         /// Gets the current mesh status
         /// </summary>
-        public TStatus MeshStatus => _statusBuilder.Build(this);
+        public MeshServerBroadcastData MeshStatus => GetMeshServerBroadcastData();
 
         /// <summary>
         /// Gets the IPAddress of the local machine that we know is active.
@@ -152,13 +161,15 @@ namespace CodeProject.AI.Server.Mesh
         /// <summary>
         /// Creates a new instance of the BaseMeshMonitor class.
         /// </summary>
-        public BaseMeshMonitor(IOptionsMonitor<MeshOptions> meshConfig,
-                               IMeshServerBroadcastBuilder<TStatus> statusBuilder,
-                               ILogger<BaseMeshMonitor<TStatus>> logger)
+        public MeshMonitor(IOptionsMonitor<MeshOptions> meshConfig,
+                               IOptions<ModuleCollection> modules,
+                               ModuleProcessServices processServices,
+                               ILogger<MeshMonitor<TStatus>> logger)
         {
             _monitoredMeshOptions = meshConfig;
-            _statusBuilder        = statusBuilder;
             _logger               = logger!;
+            _modules              = modules.Value;
+            _processServices      = processServices;
             _oldMeshOptions       = meshConfig.CurrentValue;
 
             // Get the local address using a UDP socket. This is a better way to get the local
@@ -204,6 +215,74 @@ namespace CodeProject.AI.Server.Mesh
             // Start the service if it is enabled.
             if (IsEnabled)
                 StartMonitoring();
+        }
+
+        /// <summary>
+        /// Build the current node's broadcast package for mesh availability announcements
+        /// </summary>
+        /// <returns>A <see cref="MeshServerBroadcastData"/> object</returns>
+        /// <remarks>
+        /// REVIEW: This has now served it's purpose and is to be moved as a simple function into
+        ///         MeshMonitor
+        ///</remarks>
+        public MeshServerBroadcastData GetMeshServerBroadcastData()
+        {
+            // Get the running modules
+            IOrderedEnumerable<string?> runningModulesIds = _processServices
+                                                               .ListProcessStatuses()
+                                                               .Where(p => p.Status == ProcessStatusType.Started)
+                                                               .Select(p => p.ModuleId)
+                                                               .Distinct()
+                                                               .OrderBy(m => m);
+            IEnumerable<ModuleConfig> runningModules = _modules.Values
+                                                               .Where(m => runningModulesIds.Contains(m.ModuleId));
+
+            // Get their routes
+            List<string> enabledRoutes;
+            enabledRoutes     = runningModules
+                                .SelectMany(m => m.RouteMaps.Where(r => r.MeshEnabled ?? true)
+                                                            .Select(r => r.Route))
+                                .Distinct()
+                                .OrderBy(s => s)
+                                .ToList();
+
+            // Hostnames of known servers in the mesh
+            var knownHostnames = DiscoveredServers.Values
+                                                  .Where(s => !s.Status.Hostname.EqualsIgnoreCase(LocalHostname))
+                                                  .Select(s => s.Status.Hostname);
+
+            // Description and platform
+            string systemDescription = $"{SystemInfo.SystemName} ({SystemInfo.OSAndArchitecture})";
+            if (SystemInfo.GPU is not null)
+            {
+                if (SystemInfo.GPU.HardwareVendor == "Apple" || 
+                    SystemInfo.GPU.HardwareVendor == "NVIDIA" ||
+                    SystemInfo.GPU.HardwareVendor == "Intel")
+                {
+                    systemDescription += " " + (SystemInfo.GPU.Name ?? "GPU");
+                }
+            }
+
+            string platform = SystemInfo.Platform;
+            if (SystemInfo.IsDocker)
+                platform = "Docker";
+
+            // For other settings
+            MeshOptions meshOptions = _monitoredMeshOptions.CurrentValue;
+
+            // Now build.
+            return new MeshServerBroadcastData
+            {
+                Hostname                = SystemInfo.MachineName,
+                SystemDescription       = systemDescription,
+                Platform                = platform,
+                EnabledRoutes           = enabledRoutes,
+                KnownHostnames          = knownHostnames,
+                IsBroadcasting          = meshOptions.EnableStatusBroadcast,
+                IsMonitoring            = meshOptions.EnableStatusMonitoring,
+                AcceptForwardedRequests = meshOptions.AcceptForwardedRequests,
+                AllowRequestForwarding  = meshOptions.AllowRequestForwarding
+            };
         }
 
         /// <summary>

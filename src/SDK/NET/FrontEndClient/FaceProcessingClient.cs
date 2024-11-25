@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CodeProject.AI.SDK.API;
 
-namespace CodeProject.AI.SDK.Server
+namespace CodeProject.AI.SDK.Client
 {
     /// <summary>
     /// This is an example of a .NET client to call CodeProject.AI API Server.

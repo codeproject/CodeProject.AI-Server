@@ -19,8 +19,7 @@ namespace CodeProject.AI.Server.Mesh
         {
             services.Configure<MeshOptions>(configuration.GetSection(nameof(MeshOptions)));
 
-            services.AddSingleton<MeshMonitor>();
-            services.AddSingleton<MeshServerBroadcastBuilder>();
+            services.AddSingleton<MeshMonitor<MeshServerBroadcastData>>();
             services.AddSingleton<MeshManager>();
             services.AddSingleton<ServerSettingsJsonWriter>();
 

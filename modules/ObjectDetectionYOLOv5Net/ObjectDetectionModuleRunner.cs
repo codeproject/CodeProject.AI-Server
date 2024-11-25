@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 
@@ -9,12 +10,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Backend;
+using CodeProject.AI.SDK.Client;
+using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
 
 using Yolov5Net.Scorer;
-using System.Dynamic;
 
 #pragma warning disable CS0162 // unreachable code
 
@@ -27,7 +29,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
     /// While intended for development and tests, this also demonstrates how a backend service can
     /// be created with the .NET Core framework.
     /// </summary>
-    public class ObjectDetectionWorker : ModuleWorkerBase
+    public class ObjectDetectionModuleRunner : ModuleRunnerBase
     {
         private const bool ShowTrace = false;
 
@@ -49,20 +51,20 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         /// <param name="logger">The Logger.</param>
         /// <param name="config">The app configuration values.</param>
         /// <param name="hostApplicationLifetime">The applicationLifetime object</param>
-        public ObjectDetectionWorker(ILogger<ObjectDetector> logger, IConfiguration config,
+        public ObjectDetectionModuleRunner(ILogger<ObjectDetector> logger, IConfiguration config,
                                      IHostApplicationLifetime hostApplicationLifetime)
             : base(logger, config, hostApplicationLifetime)
         {
             _logger = logger;
 
             _mode      = config.GetValue("MODEL_SIZE", "Medium") ?? "Medium";
-            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(moduleDirPath!, "assets")) ?? "assets";
-            _customDir = config.GetValue("CUSTOM_MODELS_DIR", Path.Combine(moduleDirPath!, "custom-models")) ?? "custom-models";
+            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(ModuleDirPath!, "assets")) ?? "assets";
+            _customDir = config.GetValue("CUSTOM_MODELS_DIR", Path.Combine(ModuleDirPath!, "custom-models")) ?? "custom-models";
 
-            if (!_modelDir.EndsWith("/") || !_modelDir.EndsWith("\\"))
+            if (!_modelDir.EndsWith('/') || !_modelDir.EndsWith('\\'))
                 _modelDir += "/";
 
-            if (!_customDir.EndsWith("/") || !_customDir.EndsWith("\\"))
+            if (!_customDir.EndsWith('/') || !_customDir.EndsWith('\\'))
                 _customDir += "/";
 
             _modelDir  = Text.FixSlashes(_modelDir);
@@ -234,7 +236,7 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
         {
             RequestPayload payload = new RequestPayload("detect");
             payload.SetValue("minconfidence", "0.4");
-            payload.AddFile(Path.Combine(moduleDirPath!, "test/home-office.jpg"));
+            payload.AddFile(Path.Combine(ModuleDirPath!, "test/home-office.jpg"));
 
             var request = new BackendRequest(payload);
             ModuleResponse response = Process(request);

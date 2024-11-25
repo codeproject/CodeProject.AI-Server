@@ -13,11 +13,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Client;
 using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK.Modules;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Models;
-using CodeProject.AI.SDK.Server;
-using CodeProject.AI.SDK.Modules;
 
 namespace CodeProject.AI.Server.Modules
 {
@@ -271,7 +271,7 @@ namespace CodeProject.AI.Server.Modules
                     return null;
 
                 // Allow the module path to wrap.
-                // var path = moduleDirPath.Replace("\\", "\\<wbr>");
+                // var path = ModuleDirPath.Replace("\\", "\\<wbr>");
                 // path = path.Replace("/", "/<wbr>");
 
                 // or not...

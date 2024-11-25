@@ -52,7 +52,7 @@ namespace CodeProject.AI.Server.Modules
         /// </summary>
         public ModuleProcessServices ProcessService { get; }
 
-        private readonly MeshMonitor _meshMonitor;
+        private readonly MeshMonitor<MeshServerBroadcastData> _meshMonitor;
 
         /// <summary>
         /// Gets a reference to the ModuleSettings object.
@@ -83,7 +83,7 @@ namespace CodeProject.AI.Server.Modules
                             ModuleSettings moduleSettings,
                             ModuleInstaller moduleInstaller,
                             ModuleProcessServices processService, 
-                            MeshMonitor meshMonitor,
+                            MeshMonitor<MeshServerBroadcastData> meshMonitor,
                             ILogger<ModuleRunner> logger)
         {
             _versionConfig    = versionOptions.Value;

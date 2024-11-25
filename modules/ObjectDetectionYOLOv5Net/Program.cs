@@ -8,12 +8,12 @@ namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5
     {
         static async Task Main(string[]? args)
         {
-            ObjectDetectionWorker.ProcessArguments(args);
+            ObjectDetectionModuleRunner.ProcessArguments(args);
 
             IHost host = Host.CreateDefaultBuilder(args)
                              .ConfigureServices(services =>
                               {
-                                  services.AddHostedService<ObjectDetectionWorker>();
+                                  services.AddHostedService<ObjectDetectionModuleRunner>();
                               })
                               .Build();
 

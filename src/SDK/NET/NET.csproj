@@ -54,12 +54,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Hardware.Info" Version="101.0.0" />
-		<PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
-		<PackageReference Include="SkiaSharp" Version="2.88.8" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
+		<PackageReference Include="Hardware.Info"                  Version="101.0.0" />
+		<PackageReference Include="Microsoft.VisualBasic"          Version="10.3.0" />
+		<PackageReference Include="SkiaSharp"                      Version="2.88.8" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux"   Version="2.88.8" />
 		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.8" />
-		<PackageReference Include="System.Management" Version="8.0.0" />
+		<PackageReference Include="System.Management"              Version="8.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

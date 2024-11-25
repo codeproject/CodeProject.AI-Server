@@ -163,7 +163,7 @@ namespace CodeProject.AI.SDK.Modules
         /// ModuleDescription objects are typically created by deserialising a JSON file so we don't
         /// get a chance at create time to supply supplementary information or adjust values that
         /// may not have been set (eg moduleId). Specifically, this function will set the status and
-        /// the moduleDirPath / WorkingDirectory, as well as setting the latest compatible version
+        /// the ModuleDirPath / WorkingDirectory, as well as setting the latest compatible version
         /// from the module's ModuleRelease list. But this could change without notice.
         /// </summary>
         /// <param name="module">This module that requires initialisation</param>

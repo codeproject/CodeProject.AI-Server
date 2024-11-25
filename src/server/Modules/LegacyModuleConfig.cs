@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
+using CodeProject.AI.SDK.Client;
 using CodeProject.AI.SDK.Modules;
-using CodeProject.AI.SDK.Server;
 
 namespace CodeProject.AI.Server.Modules
 {

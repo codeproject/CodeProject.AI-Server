@@ -65,7 +65,7 @@ namespace CodeProject.AI.Modules.DotNetSimple
             _logger = logger;
 
             _modelSize = config.GetValue("MODEL_SIZE", "Medium") ?? "Medium";
-            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(moduleDirPath!, "assets")) ?? "assets";
+            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(ModuleDirPath!, "assets")) ?? "assets";
 
             if (!_modelDir.EndsWith("/") || !_modelDir.EndsWith("\\"))
                 _modelDir += "/";
@@ -209,7 +209,7 @@ namespace CodeProject.AI.Modules.DotNetSimple
         {
             RequestPayload payload = new RequestPayload("detect");
             payload.SetValue("minconfidence", "0.4");
-            payload.AddFile(Path.Combine(moduleDirPath!, "test/home-office.jpg"));
+            payload.AddFile(Path.Combine(ModuleDirPath!, "test/home-office.jpg"));
 
             var request = new BackendRequest(payload);
 

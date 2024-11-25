@@ -80,10 +80,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CodeProject.AI.Module.SDK" Version="1.0.1" />
+        <!-- <PackageReference Include="CodeProject.AI.Module.SDK" Version="1.1.0" /> -->
+		    <ProjectReference Include="..\..\src\SDK\NET\NET.csproj" />
 
         <PackageReference Include="Microsoft.ML.OnnxRuntime"          Version="1.16.3" Condition="'$(GpuType)'=='CPU'" />
-		<PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu"          Version="1.19.2" Condition="'$(GpuType)'=='CUDA'" />
+        <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu"      Version="1.19.2" Condition="'$(GpuType)'=='CUDA'" />
         <PackageReference Include="Microsoft.ML.OnnxRuntime.OpenVino" Version="1.13.1-dev-20221026-1209-861125ccb" Condition="'$(GpuType)'=='OpenVINO'" />
         <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.19.2" Condition="'$(GpuType)'=='DirectML'" />
         <PackageReference Include="Microsoft.ML.OnnxRuntime"          Version="1.16.3" Condition="'$(GpuType)'=='MPS'" />
