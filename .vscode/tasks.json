@@ -96,7 +96,8 @@
                 "build",
                 "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "/consoleloggerparameters:NoSummary",
+                "--configuration", "Debug"
             ],
             "problemMatcher": "$msCompile"
         },   

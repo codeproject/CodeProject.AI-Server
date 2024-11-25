@@ -233,7 +233,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-yolo-net",
-            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/9.0/ObjectDetectionYOLOv5Net",
+            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net9.0/ObjectDetectionYOLOv5Net.exe",
             "linux": {
                 "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net9.0/ObjectDetectionYOLOv5Net.dll",
             },
@@ -335,7 +335,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-parsejson",
-            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/9.0/ParseJSON",
+            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net9.0/ParseJSON",
             "linux": {
                 "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net9.0/ParseJSON.dll",
             },
