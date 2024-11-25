@@ -645,7 +645,8 @@ namespace CodeProject.AI.SDK.Backend
             string moduleDirPath = AppContext.BaseDirectory;
             DirectoryInfo? info  = new DirectoryInfo(moduleDirPath);
 
-            if (SystemInfo.IsDevelopmentCode)
+            // If we're in /bin/[Debug|Release]/netx.0
+            if (SystemInfo.IsDevelopmentCode)   
             {
                 while (info != null)
                 {
@@ -657,7 +658,7 @@ namespace CodeProject.AI.SDK.Backend
                     }
                 }
             }
-            else
+            else // are we in /bin?
             {
                 if (info?.Name.ToLower() == "bin")
                     info = info.Parent;
