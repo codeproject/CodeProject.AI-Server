@@ -62,9 +62,10 @@
 # verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 verbosity="quiet"
 
-# The .NET version to install. NOTE: Only major version matters unless we use manual install
-# scripts, in which case we need to specify version. Choose version that works for all platforms
-# since the versions of these are not in always in sync
+# The .NET version to install. NOTE: Only major version matters unless we use 
+# manual install scripts, in which case we need to specify the version. Choose a
+# version that works for all platforms since the SDK and runtime versions are
+# generally not the same (usually differences in the minor or patch version)
 dotNetTarget=net9.0
 dotNetRuntimeVersion=9.0.0
 dotNetSDKVersion=9.0.100
@@ -169,9 +170,6 @@ assetsDir='assets'
 # The name of the dir holding downloaded models for the modules. NOTE: this is 
 # not currently used, but here for future-proofing
 modelsDir="models"
-
-# The location of directories relative to the root of the solution directory
-sdkPath="${rootDirPath}/SDK"
 
 # Who launched this script? user or server?
 launchedBy="user"
@@ -311,6 +309,7 @@ externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
 modelsDirPath="${rootDirPath}/${modelsDir}"
 downloadDirPath="${rootDirPath}/${downloadDir}"
 downloadModuleAssetsDirPath="${downloadDirPath}/${modulesDir}/${assetsDir}"
+sdkPath="${appRootDirPath}/SDK"
 utilsScriptsDirPath="${appRootDirPath}/scripts"
 installScriptsDirPath="${rootDirPath}/devops/install"
 utilsScript="${utilsScriptsDirPath}/utils.sh"
@@ -357,9 +356,9 @@ function setupPythonPaths () {
     # The path to the python installation, either local or shared. The
     # virtual environment will live in here
     if [ "${runtimeLocation}" = "Local" ]; then
-        pythonDirPath="${moduleDirPath}/bin/${os}/${pythonName}"
+        pythonDirPath="${moduleDirPath}/bin/${platform_dir}/${pythonName}"
     else
-        pythonDirPath="${runtimesDirPath}/bin/${os}/${pythonName}"
+        pythonDirPath="${runtimesDirPath}/bin/${platform_dir}/${pythonName}"
     fi
     virtualEnvDirPath="${pythonDirPath}/venv"
 

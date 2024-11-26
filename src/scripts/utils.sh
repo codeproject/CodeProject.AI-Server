@@ -1190,8 +1190,8 @@ function setupPython () {
 
             # Download
             cd "${downloadDirPath}"
-            mkdir --parents "${os}/Lib" >/dev/null
-            cd "${os}/Lib"
+            mkdir --parents "${platform_dir}/lib" >/dev/null
+            cd "${os}/lib"
 
             if [ ! -f "openssl-1.1.1c.tar.gz" ]; then
                 curl $curlFlags --remote-name https://www.openssl.org/source/openssl-1.1.1c.tar.gz
@@ -2836,7 +2836,7 @@ if [[ $OSTYPE == 'darwin'* ]]; then
     os="macos"
     os_name=$(awk '/SOFTWARE LICENSE AGREEMENT FOR macOS/' '/System/Library/CoreServices/Setup Assistant.app/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf' | awk -F 'macOS ' '{print $NF}' | awk '{print substr($0, 0, length($0)-1)}') # eg "Big Sur"
     os_vers=$(sw_vers -productVersion) # eg "11.1" for macOS Big Sur
-
+    platform_dir=$platform # or platform_dir="${platform// /}""; platform_dir="${platform_dir,,}" - no space, lowercase
     systemName=$os
     edgeDevice=''
 
@@ -2845,8 +2845,9 @@ else
     os='linux'
     edgeDevice=''
     platform='linux'
-    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu", "debian12"
+    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu", "debian"
     os_vers=$(. /etc/os-release;echo $VERSION_ID) # eg "22.04" for Ubuntu 22.04, "12" for Debian 12
+    platform_dir=$os_name # or $platform 
 
     if [ "$architecture" = 'arm64' ]; then platform='linux-arm64'; fi
 

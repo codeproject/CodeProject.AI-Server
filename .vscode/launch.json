@@ -259,12 +259,13 @@
             },
             "name": "Object Detect YOLOv5 6.2",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -501,7 +502,8 @@
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python.exe"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -528,12 +530,13 @@
 
             "name": "Python Simple Module",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -563,12 +566,13 @@
 
             "name": "Python Long Process Module",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
