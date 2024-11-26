@@ -794,7 +794,11 @@ writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${system
 # Install tools that we know are available via apt-get or brew
 if [ "$os" = "linux" ]; then 
     checkForTool curl
-    checkForTool pstree
+    if [ "${os_name}" = "Debian" ]; then
+        checkForTool psmisc
+    else
+        checkForTool pstree
+    fi
     checkForTool xz-utils
 fi
 checkForTool wget
@@ -910,23 +914,32 @@ else
 
         installKeyring=false
         if [ "$cuDNN_version" = "" ] || [ ! -x "$(command -v nvcc)" ]; then
-            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
-            sudo dpkg -i cuda-keyring_1.1-1_all.deb
+            writeLine "Installing NVIDIA keyring" $color_info
+            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb > /dev/null 2>&1 &
+            spin $!
+            sudo dpkg -i cuda-keyring_1.1-1_all.deb >/dev/null &
+            spin $!
             rm cuda-keyring_1.1-1_all.deb
         fi
 
         if [ "$cuDNN_version" = "" ]; then
+            writeLine "Installing cuDNN" $color_info
             # cuDNN
             # https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local
-            sudo apt-get update
-            sudo apt-get -y install "cudnn-cuda-$cuda_major_version"
+            sudo apt-get update >/dev/null 2>&1 &
+            spin $!
+            sudo apt-get install "cudnn-cuda-$cuda_major_version" -y >/dev/null 2>&1 &
+            spin $!
         fi
 
         if [ ! -x "$(command -v nvcc)" ]; then
             # CUDA toolkit
             # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
-            sudo apt-get update
-            sudo apt-get -y install cuda-toolkit-${cuda_major_version}-${cuda_minor_version}
+            writeLine "Installing CUDA toolkit" $color_info
+            sudo apt-get update > /dev/null 2>&1 &
+            spin $!
+            sudo apt-get install cuda-toolkit-${cuda_major_version}-${cuda_minor_version} -y >/dev/null 2>&1 &
+            spin $!
         fi
 
         # disable this

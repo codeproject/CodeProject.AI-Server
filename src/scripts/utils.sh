@@ -596,26 +596,29 @@ function getDotNetVersion() {
 
         comparison=-1
 
-        IFS=$'\n' # set the Internal Field Separator as end of line
-        while read -r line
-        do
-            if [[ $line == *'Microsoft.NETCore.App '* ]]; then
-                dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
-                # echo "GET: Found .NET runtime $dotnet_version" >&3
+        if command -v dotnet >/dev/null 2>/dev/null; then
 
-                current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
-                # echo "GET: current compare ${comparison}, new compare ${current_comparison}" >&3
+            IFS=$'\n' # set the Internal Field Separator as end of line
+            while read -r line
+            do
+                if [[ $line == *'Microsoft.NETCore.App '* ]]; then
+                    dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
+                    # echo "GET: Found .NET runtime $dotnet_version" >&3
 
-                if (( $current_comparison >= $comparison )); then
-                    highestDotNetVersion="$dotnet_version"
-                    comparison=$current_comparison
-                    # echo "GET: Found new highest .NET runtime $highestDotNetVersion" >&3
-                # else
-                #    echo "GET: Found $dotnet_version runtime, which is not higher than $highestDotNetVersion" >&3
+                    current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
+                    # echo "GET: current compare ${comparison}, new compare ${current_comparison}" >&3
+
+                    if (( $current_comparison >= $comparison )); then
+                        highestDotNetVersion="$dotnet_version"
+                        comparison=$current_comparison
+                        # echo "GET: Found new highest .NET runtime $highestDotNetVersion" >&3
+                    # else
+                    #    echo "GET: Found $dotnet_version runtime, which is not higher than $highestDotNetVersion" >&3
+                    fi
                 fi
-            fi
-        done <<< "$(dotnet --list-runtimes)"
-        unset IFS
+            done <<< "$(dotnet --list-runtimes)"
+            unset IFS
+        fi
     fi
 
     if [ "$highestDotNetVersion" = "0" ]; then highestDotNetVersion=""; fi
@@ -803,11 +806,17 @@ function setupDotNet () {
             if [ "$os" = "linux" ]; then
 
                 # Potentially not reliable. Only blessed by MS for Debian >= 12
-                if [ "$os_name" = "debian" ] && [ ! "$os_vers" < "12" ]; then
+                if [ "$os_name" = "debian" ] && [ ! "$os_vers" -lt "12" ]; then
 
-                    wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
-                    sudo dpkg -i packages-microsoft-prod.deb >/dev/null
-                    rm packages-microsoft-prod.deb >/dev/null
+                    if [ $verbosity = "quiet" ]; then
+                        wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
+                        sudo dpkg -i packages-microsoft-prod.deb >/dev/null
+                        rm packages-microsoft-prod.deb >/dev/null
+                    else
+                        wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+                        sudo dpkg -i packages-microsoft-prod.deb
+                        rm packages-microsoft-prod.deb
+                    fi
 
                     if [ "$requestedType" = "sdk" ]; then
                         sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
@@ -882,7 +891,7 @@ function setupDotNet () {
         if [ -e /usr/local/bin/dotnet ]; then
             rm /usr/local/bin/dotnet
         fi
-        ln -s ${dotnet_path}dotnet /usr/local/bin
+        sudo ln -s ${dotnet_path}dotnet /usr/local/bin
 
         if [ -f " /home/pi/.bashrc" ]; then
             setDotNetLocation " /home/pi/.bashrc" "${dotnet_path}"
@@ -1110,7 +1119,7 @@ function setupPython () {
 
             writeLine "done" $color_success
 
-        # macOS: With my M1 chip and Rosetta I make installing Python a real PITA.
+        # macOS: With my M1 chip and Rosetta, I make installing Python a real PITA.
         # Raspberry Pi: Hold my beer 
         elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
              [ "${edgeDevice}" = "Radxa ROCK"   ] || [ "${edgeDevice}" = "Jetson"    ] || \
@@ -1140,7 +1149,7 @@ function setupPython () {
                 fi
             fi
 
-            pushd "${appRootDirPath}" > /dev/null
+            pushd "${rootDirPath}" > /dev/null
 
             # Update at your leisure. 
             # See https://www.python.org/ftp/python/ for a complete list.
@@ -1180,7 +1189,7 @@ function setupPython () {
             # https://www.aliengen.com/blog/install-python-3-7-on-a-raspberry-pi-with-raspbian-8
 
             # Download
-            cd $downloadDir 
+            cd "${downloadDirPath}"
             mkdir --parents "${os}/Lib" >/dev/null
             cd "${os}/Lib"
 
@@ -1233,7 +1242,7 @@ function setupPython () {
                     # to just what's needed, but for now we'll just throw everything at the problem
                     # until we find a solution to the "SSLError("Can't connect to HTTPS URL because 
                     # the SSL module is not available.")' issue
-                    sudo apt-get install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev
+                    sudo apt-get install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev -y
                     sudo ./configure --enable-optimizations 
                     make
                     sudo make install
@@ -1276,13 +1285,8 @@ function setupPython () {
         # For Linux we'll use apt-get the deadsnakes PPA to get the old version
         # of python. Deadsnakes? Old python? Get it? Get it?! And who said 
         # developers have no sense of humour.
-        else
-
-            # https://askubuntu.com/a/1481830
-            # if [ "$os_name" = "debian" ]; then
-            #     This allows adding the deadsnakes PPA, but this ppa doesn't support debian
-            #     sudo apt-get install python3-launchpadlib -y
-            # fi
+        # NOTE: ppa is an Ubuntu thing only. https://askubuntu.com/a/1481830
+        else # if [ "$os_name" = "ubuntu" ]; then
 
             if [ "${verbosity}" = "loud" ]; then
             
