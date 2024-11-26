@@ -131,6 +131,8 @@ detach vdisk
 exit
 ```
 
+For Debian, the name will be similar to `%LOCALAPPDATA%\Packages\TheDebianProject.DebianGNULinux_76v4gfsz19hv4\LocalState\ext4.vhdx`.
+
 Your WSL virtual hard drive should be smaller and the space that was used 
 reclaimed by Windows.
 
