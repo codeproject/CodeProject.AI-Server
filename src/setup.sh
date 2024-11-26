@@ -323,7 +323,10 @@ if [ -f ${rootDirPath}/.env ]; then
             # Trim any surrounding whitespace
             key=$(echo $key | xargs)
             value=$(echo $value | xargs)
-            export "$key=$value"
+            if [ "$key" != "" ]; then
+                # echo ".env: key=$key, value=$value"
+                export "$key=$value"
+            fi
         fi
     done < ${rootDirPath}/.env
 else
