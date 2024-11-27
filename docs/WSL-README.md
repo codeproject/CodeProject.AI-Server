@@ -90,7 +90,7 @@ Windows.
 ### To free up space
 
 To free up space you can use the clean.bat/clean.sh scripts under
-/src/SDK/Utilities.
+/devops\install.
 
 For Windows
 ```cmd 
