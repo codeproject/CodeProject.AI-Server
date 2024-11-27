@@ -888,6 +888,9 @@ writeLine
 
 hasCUDA=false
 
+# =====================================================================
+# MOVE ALL OF THIS INTO utils.sh
+
 cuDNN_version=""
 cuda_major_version=""
 cuda_major_minor=""
@@ -938,6 +941,12 @@ else
             # CUDA toolkit
             # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
             writeLine "Installing CUDA toolkit" $color_info
+
+            if [ "${os_name}" = "Debian" ]; then
+                deb http://deb.debian.org/debian $os_code_name main contrib non-free
+                deb-src http://deb.debian.org/debian $os_code_name main contrib non-free
+            fi
+
             sudo apt-get update > /dev/null 2>&1 &
             spin $!
             sudo apt-get install cuda-toolkit-${cuda_major_version}-${cuda_minor_version} -y >/dev/null 2>&1 &
