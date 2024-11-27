@@ -278,6 +278,7 @@ if exist "!rootDirPath!\.env" (
 
 set os=windows
 set os_name=Windows
+set os_code_name=Windows
 set platform=windows
 set systemName=Windows
 
