@@ -109,7 +109,8 @@ cleaned.
 To actually realise the freed up space in WSL you will need to compact the VHD
 in which your WSL instance resides.
 
-In a Windows terminal:
+You can use the `/devops/utils/compact_wsl_disks.ps1` script to achieve this. Or
+to do it old school, in a Windows terminal:
 
 ```cmd 
 wsl --shutdown

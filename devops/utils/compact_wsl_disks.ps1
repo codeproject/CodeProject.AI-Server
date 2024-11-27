@@ -6,33 +6,50 @@
 # 2. You have Hyper-V management tools:
 #    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All -NoRestart
 
+# Check if the script is running with administrator privileges
+$IsAdmin = [bool]([System.Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid))
 
-# Define the base folder path using the LOCALAPPDATA environment variable
-$baseFolderPath = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Packages"
+if (-not $IsAdmin) {
+    # Relaunch the script with administrator privileges
+    $argList = "$($myinvocation.MyCommand.Path)"  # Get the script path
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File $argList" -Verb RunAs
+    exit
+}
 
-# Search for all VHDX files matching the pattern
-$vdiskFiles = Get-ChildItem -Path $baseFolderPath -Recurse -Filter "ext4.vhdx"
-
+# Shutdown WSL
 Write-Host "Shutting down WSL..."
 wsl --shutdown
 Start-Sleep -Seconds 5  # Wait a few seconds to ensure WSL is fully shut down
 Write-Host "WSL shut down successfully."
 
-# Loop through each VHDX file found
+# Search for all VHDX files under LOCALAPPDATA\...\Packages\...
+$baseFolderPath = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Packages"
+$vdiskFiles = Get-ChildItem -Path $baseFolderPath -Recurse -Filter "ext4.vhdx"
+
+# Loop through each VHDX file
 foreach ($vdisk in $vdiskFiles) {
-    Write-Host "Processing VHD/VHDX: $($vdisk.FullName)"
 
-    # Mount the VHD/VHDX file
-    Mount-VHD -Path $vdisk.FullName -PassThru | Out-Null
-    Write-Host "VHD mounted: $($vdisk.Name)"
+    $diskName = $vdisk.Name
+    if ($vdisk.FullName -like "*Ubuntu*") {
+        $diskName = "Ubuntu VHDX"
+    } elseif ($vdisk.FullName -like "*Debian*") {
+        $diskName = "Debian VHDX"
+    }
 
-    # Compact the VHD/VHDX file to reclaim unused space
-    Optimize-VHD -Path $vdisk.FullName -Mode Full
-    Write-Host "VHD compacted: $($vdisk.Name)"
-
-    # Dismount the VHD
-    Dismount-VHD -Path $vdisk.FullName
-    Write-Host "VHD dismounted: $($vdisk.Name)"
+    Write-Host "Found ${diskName} at $($vdisk.FullName)"
+    
+    # Ask the user if they want to compact this VHD/VHDX
+    $userInput = Read-Host "Do you want to compact this disk? (Y/N)"
+    
+    if ($userInput -match "^[Yy]$") {
+        # Compact the VHD/VHDX file to reclaim unused space
+        Optimize-VHD -Path $vdisk.FullName -Mode Full
+        Write-Host "VHD compacted: $($vdisk.Name)"
+    } 
+    # else
+    # {
+    #    Write-Host "Skipping VHD/VHDX: $($vdisk.Name)"
+    }
 }
 
 Write-Host "VHD/VHDX compression complete."
