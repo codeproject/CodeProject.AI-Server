@@ -33,6 +33,7 @@ if [ "${installBinaries}" = true ]; then
             imageName="ObjectDetectionYOLOv5Net-CUDA-${moduleVersion}.zip"
         fi
     fi
+    writeLine "Pulling pre-build binary ${imageName}..." "$color_info"
     getFromServer "binaries/" "${imageName}" "bin" "Downloading ${imageName}..."
 else
     pushd "$moduleDirPath" >/dev/null
