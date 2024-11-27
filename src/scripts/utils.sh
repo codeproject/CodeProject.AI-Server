@@ -559,6 +559,132 @@ function setupSSL() {
     fi
 }
 
+
+function CheckAndSetupCUDA () {
+
+    hasCUDA=false
+    cuDNN_version=""
+    cuda_major_version=""
+    cuda_major_minor=""
+
+    if [ "$os" = "macos" ]; then 
+        cuda_version=""
+    elif [ "${edgeDevice}" = "Jetson" ]; then
+        hasCUDA=true
+        cuda_version=$(getCudaVersion)
+        cuda_major_version=${cuda_version%%.*}
+        cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
+        cuDNN_version=$(getcuDNNVersion)
+        
+    elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then
+        cuda_version=""
+    else 
+        cuda_version=$(getCudaVersion)
+        cuda_major_version=${cuda_version%%.*}
+        cuda_minor_version=${cuda_version#*.}
+        cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
+
+        if [ "$cuda_version" != "" ]; then
+
+            hasCUDA=true
+            cuDNN_version=$(getcuDNNVersion)
+
+            installKeyring=false
+            if [ "$cuDNN_version" = "" ] || [ ! -x "$(command -v nvcc)" ]; then
+                writeLine "Installing NVIDIA keyring" $color_info
+                wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb > /dev/null 2>&1 &
+                spin $!
+                sudo dpkg -i cuda-keyring_1.1-1_all.deb >/dev/null &
+                spin $!
+                rm cuda-keyring_1.1-1_all.deb
+            fi
+
+            if [ "$cuDNN_version" = "" ]; then
+                writeLine "Installing cuDNN" $color_info
+                # cuDNN
+                # https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local
+                sudo apt-get update >/dev/null 2>&1 &
+                spin $!
+                sudo apt-get install "cudnn-cuda-$cuda_major_version" -y >/dev/null 2>&1 &
+                spin $!
+            fi
+
+            if [ ! -x "$(command -v nvcc)" ]; then
+                # CUDA toolkit
+                # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
+                writeLine "Installing CUDA toolkit" $color_info
+
+                if [ "${os_name}" = "debian" ]; then
+                 
+                    # Backup existing sources.list
+                    # echo "Backing up /etc/apt/sources.list to /etc/apt/sources.list.bak..."
+                    # sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+
+                    main_repo="deb http://deb.debian.org/debian $os_code_name main"
+                    if grep -qF "$main_repo contrib non-free" /etc/apt/sources.list; then
+                        echo "Found '$main_repo'. Replacing it with '$main_repo contrib non-free'..."
+                        sudo sed -i "s|^$main_repo|$main_repo contrib non-free|" /etc/apt/sources.list
+                    else
+                        echo "'$main_repo' not found. Adding '$main_repo contrib non-free' to sources.list..."
+                        echo "$main_repo contrib non-free" | sudo tee -a /etc/apt/sources.list > /dev/null
+                    fi
+
+                    src_repo="deb-src http://deb.debian.org/debian $os_code_name main"
+                    if grep -qF "$src_repo contrib non-free" /etc/apt/sources.list; then
+                        echo "Found '$src_repo'. Replacing it with '$src_repo contrib non-free'..."
+                        sudo sed -i "s|^$src_repo|$updated_repo contrib non-free|" /etc/apt/sources.list
+                    else
+                        echo "'$src_repo' not found. Adding '$src_repo contrib non-free' to sources.list..."
+                        echo "$src_repo contrib non-free" | sudo tee -a /etc/apt/sources.list > /dev/null
+                    fi
+                fi
+
+                sudo apt-get update > /dev/null 2>&1 &
+                spin $!
+                writeLine "Installing cuda kit" $color_info
+                sudo apt-get install cuda-toolkit-${cuda_major_version}-${cuda_minor_version} -y >/dev/null 2>&1 &
+                spin $!
+            fi
+
+            # disable this
+            if [ "${systemName}" = "WSL-but-we're-ignoring-this-for-now" ]; then # we're disabling this on purpose
+                checkForAdminRights
+                if [ "$isAdmin" = false ]; then
+                    writeLine "insufficient permission to install CUDA toolkit. Rerun under sudo" $color_error
+                else
+                    # https://stackoverflow.com/a/66486390
+                    cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
+                    chmod a+x /usr/bin/nvidia-smi > /dev/null 2>&1
+            
+                    # Out of the box, WSL might come with CUDA 11.5, and no toolkit, 
+                    # meaning we rely on nvidia-smi for version info, which is wrong.
+                    # We also should be thinking about CUDA 11.8 as a minimum, so let's
+                    # upgrade.
+                    cuda_comparison=$(versionCompare $cuda_version "11.8")
+                    if [ "$cuda_comparison" = "-1" ]; then
+                        writeLine "Upgrading WSL's CUDA install to 11.8" $color_info
+
+                        saveState
+                        correctLineEndings "${installScriptsDirPath}/install_cuDNN.sh"
+                        source "${installScriptsDirPath}/install_cuDNN.sh" 11.8
+                        restoreState
+                    fi
+                fi
+            fi
+
+            # We may have nvidia-smi, but not nvcc (eg in WSL). Fix this.
+            if [ -x "$(command -v nvidia-smi)" ] && [ ! -x "$(command -v nvcc)" ]; then
+
+                installAptPackages "nvidia-cuda-toolkit"
+
+                # The initial version we got would have been from nvidia-smi, which
+                # is wrong. Redo.
+                cuda_version=$(getCudaVersion)
+            fi
+        fi
+    fi
+}
+
 function getDotNetVersion() {
 
     local requestedType=$1
