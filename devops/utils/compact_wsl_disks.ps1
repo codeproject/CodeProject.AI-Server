@@ -49,7 +49,7 @@ foreach ($vdisk in $vdiskFiles) {
     # else
     # {
     #    Write-Host "Skipping VHD/VHDX: $($vdisk.Name)"
-    }
+    # }
 }
 
 Write-Host "VHD/VHDX compression complete."
