@@ -180,14 +180,14 @@ namespace CodeProject.AI.Server.Modules
 
             // If it is a Python3X command then replace our marker in the default python path to
             // match the requested interpreter location in order to build the 
-            // "/runtimes/bin/linux/python38/venv/bin/python3" path.
+            // "/runtimes/bin/ubuntu/python38/venv/bin/python3" path.
             if (runtime.StartsWith("python"))
             {
                 // HACK: In Docker, Python installations for modules can be local for downloaded
                 // modules, or shared for pre-installed modules. For preinstalled modules hardcoded
                 // into the Docker image, the python runtimes and package are installs at the
                 // system level, and not in a virtual environment. This means Python command is in
-                // the format of "python3.N" rather than "/runtimes/bin/linux/python3N/venv/bin/python3"
+                // the format of "python3.N" rather than "/runtimes/bin/ubuntu/python3N/venv/bin/python3"
                 // ie. Python runtime location is 'System'.
                 if (SystemInfo.IsDocker)
                 {
