@@ -794,20 +794,21 @@ writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${system
 # fi
 
 # Install tools that we know are available via apt-get or brew
-if [ "$os" = "linux" ]; then 
-    checkForTool curl
-    if [ "${os_name}" = "debian" ]; then
-        checkForTool psmisc
-    else
-        checkForTool pstree
+if [ "$selfTestOnly" = false ]; then
+    if [ "$os" = "linux" ]; then 
+        checkForTool curl
+        if [ "${os_name}" = "debian" ]; then
+            checkForTool psmisc
+        else
+            checkForTool pstree
+        fi
+        checkForTool xz-utils
     fi
-    checkForTool xz-utils
+    checkForTool wget
+    checkForTool unzip
+    if [ "${useJq}" = true ]; then checkForTool jq; fi
+    writeLine ""
 fi
-checkForTool wget
-checkForTool unzip
-if [ "${useJq}" = true ]; then checkForTool jq; fi
-writeLine ""
-
 
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # 1. Ensure directories are created and download required assets
@@ -885,7 +886,9 @@ writeLine "GPU support" "White" "DarkGreen" $lineWidth
 writeLine
 
 # Test for CUDA 
-CheckAndSetupCUDA
+if [ "$selfTestOnly" = false ]; then
+    CheckAndSetupCUDA
+fi
 
 write "CUDA (NVIDIA) Present: "
 if [ "$hasCUDA" = true ]; then 
