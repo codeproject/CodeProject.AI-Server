@@ -1620,7 +1620,9 @@ function setupPython () {
 
     echo $pyVersion | grep "${pythonVersion}" >/dev/null
     if [ $? -ne 0 ]; then
-        errorNoPython
+        writeLine 'Not found' $color_error
+        # errorNoPython
+        return 1
     fi 
     writeLine 'All good' $color_success
 
