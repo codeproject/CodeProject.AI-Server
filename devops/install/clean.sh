@@ -11,6 +11,9 @@ useColor=true
 doDebug=false
 lineWidth=70
 
+ bash ../utils/stop_all.sh
+
+
 # List of modules we'll look after =======================++====================
 
 dotNetModules=( "ObjectDetectionYOLOv5Net"  )
@@ -368,11 +371,6 @@ if [ "$cleanBuild" = true ]; then
         removeDir "${rootDir}/src/demos/modules/${dirName}/obj/"
         rm "${rootDir}/src/demos/modules/${dirName}/${dirName}-*"
     done
-
-    cleanSubDirs "${rootDir}/Installers/Windows" "bin/Debug/"
-    cleanSubDirs "${rootDir}/Installers/Windows" "bin/Release/"
-    cleanSubDirs "${rootDir}/Installers/Windows" "obj/Debug/"
-    cleanSubDirs "${rootDir}/Installers/Windows" "obj/Release/"
 
     removeDir "${rootDir}/utils/ParseJSON/bin"
     removeDir "${rootDir}/utils/ParseJSON/obj"
