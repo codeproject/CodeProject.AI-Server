@@ -1284,15 +1284,17 @@ function setupPython () {
                 "3.1")  pythonPatchVersion="3.1.5";;
                 "3.2")  pythonPatchVersion="3.2.6";;
                 "3.3")  pythonPatchVersion="3.3.7";;
-                "3.4")  pythonPatchVersion="3.4.19";; 
+                "3.4")  pythonPatchVersion="3.4.10";; 
                 "3.5")  pythonPatchVersion="3.5.10";;
                 "3.6")  pythonPatchVersion="3.6.15";;
                 "3.7")  pythonPatchVersion="3.7.17";;
-                "3.8")  pythonPatchVersion="3.8.18";;
-                "3.9")  pythonPatchVersion="3.9.18";; 
-                "3.10") pythonPatchVersion="3.10.13";; 
-                "3.11") pythonPatchVersion="3.11.5";; 
-                "3.12") pythonPatchVersion="3.12.0";; 
+                "3.8")  pythonPatchVersion="3.8.20";;
+                "3.9")  pythonPatchVersion="3.9.20";; 
+                "3.10") pythonPatchVersion="3.10.15";; 
+                "3.11") pythonPatchVersion="3.11.10";; 
+                "3.12") pythonPatchVersion="3.12.7";; 
+                "3.13") pythonPatchVersion="3.13.0";; 
+                "3.14") pythonPatchVersion="3.14.0";; 
                 *)      pythonPatchVersion="${pythonVersion}.0"
             esac
 
