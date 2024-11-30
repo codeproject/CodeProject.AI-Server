@@ -417,7 +417,7 @@
             "program": "object-detect.exe",
             "args": [ "run" ],
             "cwd": "${workspaceFolder}/src/demos/clients/Rust/object-detect/target/debug",
-            "preLaunchTask": "build-deno-rust",
+            "preLaunchTask": "build-demo-rust",
             "stopOnEntry": false,
             "env": {
             },
@@ -600,7 +600,7 @@
             "name": ".NET Simple Module",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-demo-net",
+            "preLaunchTask": "demo_module_dotnetsimple",
             "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple",
             "linux": {
                 "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple.dll",

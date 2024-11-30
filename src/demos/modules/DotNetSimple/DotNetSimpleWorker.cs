@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
@@ -10,13 +9,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Backend;
+using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK.Client;
 using CodeProject.AI.SDK.Utils;
 
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
+
 using Yolov8Net;
 
 namespace CodeProject.AI.Modules.DotNetSimple
@@ -38,7 +40,7 @@ namespace CodeProject.AI.Modules.DotNetSimple
     /// While intended for development and tests, this also demonstrates how a backend service can
     /// be created with the .NET Core framework.
     /// </summary>
-    public class DotNetSimpleWorker : ModuleWorkerBase
+    public class DotNetSimpleWorker : ModuleRunnerBase
     {
         private readonly ILogger<DotNetSimpleWorker> _logger;
         private readonly string _modelSize;

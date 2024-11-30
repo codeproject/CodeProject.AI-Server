@@ -48,7 +48,7 @@
 
 	<ItemGroup>
 		<!-- Common packages required on all GPU types -->
-		<PackageReference Include="CodeProject.AI.Module.SDK" Version="1.0.1" />
+		<PackageReference Include="CodeProject.AI.Module.SDK" Version="1.1.0" />
 
 		<PackageReference Include="Yolov8.Net" Version="2.0.0" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
