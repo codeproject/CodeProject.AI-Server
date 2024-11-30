@@ -3,11 +3,11 @@
     "versionInfo": {
       "Major": 2,
       "Minor": 9,
-      "Patch": 3,
+      "Patch": 4,
       "Build": 0,
       "PreRelease": "",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.9.3.zip",
+      "File": "CodeProject.AI-Server-win-x64-2.9.4.zip",
       "ReleaseNotes": "Updated to .NET 9, Improvements to installers, updates to .NET SDK."
     }
   }
