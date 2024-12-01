@@ -2007,6 +2007,9 @@ REM Get Windows Version
         if !ver_build! GEQ 22000 (
             set "windows_version=Windows 11"
             set "os_code_name=Sun Valley"
+            for /f "tokens=2,*" %%A in ('reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion" /v DisplayVersion 2^>nul ^| find "DisplayVersion"') do (
+                set os_code_name=%%B
+            )
         ) else (
             set "windows_version=Windows 10"
             set "os_code_name=Redstone"

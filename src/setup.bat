@@ -352,6 +352,7 @@ set freeSpaceBytes=!freeSpaceBytes:,=!
 set /a freeSpaceGb=!freeSpaceBytes:~0,-3! / 1048576
 set /a freeSpaceGbFraction=!freeSpaceBytes:~0,-3! %% 1048576 * 10 / 1048576
 
+if "!volumeName!" == "no" set volumeName=(No label)
 if "!volumeName!" == "" set volumeName=(No label)
 
 
@@ -389,7 +390,7 @@ call "!utilsScript!" WriteLine ""
 :: Output settings
 if /i "%verbosity%" neq "quiet" (
     call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "os, name, arch              = !os! !os_name! !architecture!" !color_mute!
+    call "!utilsScript!" WriteLine "os, name, arch              = !os! !os_name! (!os_code_name!) !architecture!" !color_mute!
     call "!utilsScript!" WriteLine "systemName, platform        = !systemName!, !platform!"      !color_mute!
     call "!utilsScript!" WriteLine "edgeDevice                  = !edgeDevice!"                  !color_mute!
     call "!utilsScript!" WriteLine "setupMode                   = !setupMode!"                   !color_mute!

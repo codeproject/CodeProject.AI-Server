@@ -697,7 +697,7 @@ namespace CodeProject.AI.SDK.Utils
                     description = $"{OperatingSystem} ({OperatingSystemName} {OperatingSystemVersion}";
 
                 if (!OperatingSystemCodeName.StartsWith(OperatingSystem))
-                    description += $" \"{OperatingSystemCodeName}\"";
+                    description += $" {OperatingSystemCodeName}";
 
                 description += ")";
 
@@ -1743,6 +1743,19 @@ namespace CodeProject.AI.SDK.Utils
                     {
                         _osVersion  = "11";
                         _osCodeName = "Sun Valley";
+
+                        string command = "reg";
+                        string args    = "query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v DisplayVersion";
+                        string pattern = "DisplayVersion    REG_SZ    (?<version>[A-Z\\d]+)";
+                        var    options = RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
+
+                        var results = await GetProcessInfoAsync(command, args, pattern, options).ConfigureAwait(false);
+                        if (results is not null)
+                        {
+                            string? version = results["version"]?.Trim();       // eg. "23H2"
+                            if (!string.IsNullOrWhiteSpace(version))
+                                _osCodeName = version;
+                        }
                     }
                     else
                     {
