@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace CodeProject.AI.SDK
+namespace CodeProject.AI.SDK.Common
 {
     public class RequestPayload
     {

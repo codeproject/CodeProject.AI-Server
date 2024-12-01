@@ -62,9 +62,10 @@
 # verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 verbosity="quiet"
 
-# The .NET version to install. NOTE: Only major version matters unless we use manual install
-# scripts, in which case we need to specify version. Choose version that works for all platforms
-# since the versions of these are not in always in sync
+# The .NET version to install. NOTE: Only major version matters unless we use 
+# manual install scripts, in which case we need to specify the version. Choose a
+# version that works for all platforms since the SDK and runtime versions are
+# generally not the same (usually differences in the minor or patch version)
 dotNetTarget=net9.0
 dotNetRuntimeVersion=9.0.0
 dotNetSDKVersion=9.0.100
@@ -169,9 +170,6 @@ assetsDir='assets'
 # The name of the dir holding downloaded models for the modules. NOTE: this is 
 # not currently used, but here for future-proofing
 modelsDir="models"
-
-# The location of directories relative to the root of the solution directory
-sdkPath="${rootDirPath}/SDK"
 
 # Who launched this script? user or server?
 launchedBy="user"
@@ -311,6 +309,7 @@ externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
 modelsDirPath="${rootDirPath}/${modelsDir}"
 downloadDirPath="${rootDirPath}/${downloadDir}"
 downloadModuleAssetsDirPath="${downloadDirPath}/${modulesDir}/${assetsDir}"
+sdkPath="${appRootDirPath}/SDK"
 utilsScriptsDirPath="${appRootDirPath}/scripts"
 installScriptsDirPath="${rootDirPath}/devops/install"
 utilsScript="${utilsScriptsDirPath}/utils.sh"
@@ -324,7 +323,10 @@ if [ -f ${rootDirPath}/.env ]; then
             # Trim any surrounding whitespace
             key=$(echo $key | xargs)
             value=$(echo $value | xargs)
-            export "$key=$value"
+            if [ "$key" != "" ]; then
+                # echo ".env: key=$key, value=$value"
+                export "$key=$value"
+            fi
         fi
     done < ${rootDirPath}/.env
 else
@@ -357,9 +359,9 @@ function setupPythonPaths () {
     # The path to the python installation, either local or shared. The
     # virtual environment will live in here
     if [ "${runtimeLocation}" = "Local" ]; then
-        pythonDirPath="${moduleDirPath}/bin/${os}/${pythonName}"
+        pythonDirPath="${moduleDirPath}/bin/${platform_dir}/${pythonName}"
     else
-        pythonDirPath="${runtimesDirPath}/bin/${os}/${pythonName}"
+        pythonDirPath="${runtimesDirPath}/bin/${platform_dir}/${pythonName}"
     fi
     virtualEnvDirPath="${pythonDirPath}/venv"
 
@@ -792,16 +794,21 @@ writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${system
 # fi
 
 # Install tools that we know are available via apt-get or brew
-if [ "$os" = "linux" ]; then 
-    checkForTool curl
-    checkForTool pstree
-    checkForTool xz-utils
+if [ "$selfTestOnly" = false ]; then
+    if [ "$os" = "linux" ]; then 
+        checkForTool curl
+        if [ "${os_name}" = "debian" ]; then
+            checkForTool psmisc
+        else
+            checkForTool pstree
+        fi
+        checkForTool xz-utils
+    fi
+    checkForTool wget
+    checkForTool unzip
+    if [ "${useJq}" = true ]; then checkForTool jq; fi
+    writeLine ""
 fi
-checkForTool wget
-checkForTool unzip
-if [ "${useJq}" = true ]; then checkForTool jq; fi
-writeLine ""
-
 
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # 1. Ensure directories are created and download required assets
@@ -851,7 +858,7 @@ writeLine
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "os, name, arch              = ${os} ${os_name} ${architecture}" $color_mute
+    writeLine "os, name, arch              = ${os} ${os_name} (${os_code_name}) ${architecture}" $color_mute
     writeLine "systemName, platform        = ${systemName}, ${platform}"       $color_mute
     writeLine "edgeDevice                  = ${edgeDevice}"                    $color_mute
     writeLine "SSH                         = ${inSSH}"                         $color_mute
@@ -879,92 +886,8 @@ writeLine "GPU support" "White" "DarkGreen" $lineWidth
 writeLine
 
 # Test for CUDA 
-
-hasCUDA=false
-
-cuDNN_version=""
-cuda_major_version=""
-cuda_major_minor=""
-
-if [ "$os" = "macos" ]; then 
-    cuda_version=""
-elif [ "${edgeDevice}" = "Jetson" ]; then
-    hasCUDA=true
-    cuda_version=$(getCudaVersion)
-    cuda_major_version=${cuda_version%%.*}
-    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
-    cuDNN_version=$(getcuDNNVersion)
-    
-elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then
-    cuda_version=""
-else 
-    cuda_version=$(getCudaVersion)
-    cuda_major_version=${cuda_version%%.*}
-    cuda_minor_version=${cuda_version#*.}
-    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
-
-    if [ "$cuda_version" != "" ]; then
-
-        hasCUDA=true
-        cuDNN_version=$(getcuDNNVersion)
-
-        installKeyring=false
-        if [ "$cuDNN_version" = "" ] || [ ! -x "$(command -v nvcc)" ]; then
-            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
-            sudo dpkg -i cuda-keyring_1.1-1_all.deb
-            rm cuda-keyring_1.1-1_all.deb
-        fi
-
-        if [ "$cuDNN_version" = "" ]; then
-            # cuDNN
-            # https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local
-            sudo apt-get update
-            sudo apt-get -y install "cudnn-cuda-$cuda_major_version"
-        fi
-
-        if [ ! -x "$(command -v nvcc)" ]; then
-            # CUDA toolkit
-            # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
-            sudo apt-get update
-            sudo apt-get -y install cuda-toolkit-${cuda_major_version}-${cuda_minor_version}
-        fi
-
-        # disable this
-        if [ "${systemName}" = "WSL-but-we're-ignoring-this-for-now" ]; then # we're disabling this on purpose
-            checkForAdminRights
-            if [ "$isAdmin" = false ]; then
-                writeLine "insufficient permission to install CUDA toolkit. Rerun under sudo" $color_error
-            else
-                # https://stackoverflow.com/a/66486390
-                cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
-                chmod a+x /usr/bin/nvidia-smi > /dev/null 2>&1
-        
-                # Out of the box, WSL might come with CUDA 11.5, and no toolkit, 
-                # meaning we rely on nvidia-smi for version info, which is wrong.
-                # We also should be thinking about CUDA 11.8 as a minimum, so let's
-                # upgrade.
-                cuda_comparison=$(versionCompare $cuda_version "11.8")
-                if [ "$cuda_comparison" = "-1" ]; then
-                    writeLine "Upgrading WSL's CUDA install to 11.8" $color_info
-
-                    saveState
-                    correctLineEndings "${installScriptsDirPath}/install_cuDNN.sh"
-                    source "${installScriptsDirPath}/install_cuDNN.sh" 11.8
-                    restoreState
-                fi
-            fi
-        fi
-
-        # We may have nvidia-smi, but not nvcc (eg in WSL). Fix this.
-        if [ -x "$(command -v nvidia-smi)" ] && [ ! -x "$(command -v nvcc)" ]; then
-
-            installAptPackages "nvidia-cuda-toolkit"
-
-            # The initial version we got would have been from nvidia-smi, which
-            # is wrong. Redo.
-            cuda_version=$(getCudaVersion)
-        fi
-    fi
+if [ "$selfTestOnly" = false ]; then
+    CheckAndSetupCUDA
 fi
 
 write "CUDA (NVIDIA) Present: "

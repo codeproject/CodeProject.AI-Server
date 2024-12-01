@@ -69,7 +69,7 @@ if [ "$os" = "linux" ]; then
 else
     if [ "${verbosity}" = "quiet" ]; then
 
-        if [ "$os_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
+        if [ "$os_code_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
             writeLine "** Installing System.Drawing support. On macOS 11 this could take a looong time" "$color_warn"
         else
             write "Installing System.Drawing support "

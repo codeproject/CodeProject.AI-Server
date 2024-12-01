@@ -79,9 +79,7 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 
 	<ItemGroup>
 	  <ProjectReference Include="..\SDK\NET\NET.csproj" />
-	<!--
-		<PackageReference Include="CodeProject.AI.Module.SDK" Version="1.0.1" />
-	-->
+	  <!-- PackageReference Include="CodeProject.AI.Module.SDK" Version="1.1.0" /> -->
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'">   <!-- Mac Apple Silicon -->
@@ -103,7 +101,7 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 	<ItemGroup>
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
 		<!--
-		Removing for now: This causes errors when building multiplatform:
+		Removing for now: This causes errors when building multi-platform:
 		https://github.com/domaindrivendev/Swashbuckle.WebApi/issues/1358
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		-->

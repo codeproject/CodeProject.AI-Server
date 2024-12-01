@@ -1,6 +1,6 @@
 ﻿using CodeProject.AI.SDK.API;
 
-namespace CodeProject.AI.SDK.Server
+namespace CodeProject.AI.SDK.Client
 {
     /// <summary>
     /// The Response for a Text Summary request.

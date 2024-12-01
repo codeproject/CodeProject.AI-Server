@@ -9,8 +9,9 @@ using Microsoft.ML.OnnxRuntime;
 using SkiaSharp;
 using Yolov5Net.Scorer;
 using Yolov5Net.Scorer.Models;
-using CodeProject.AI.SDK;
+
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Client;
 using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.Modules.ObjectDetection.YOLOv5

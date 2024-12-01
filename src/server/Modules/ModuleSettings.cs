@@ -25,6 +25,7 @@ namespace CodeProject.AI.Server.Modules
         const string CurrentModuleDirPathMarker       = "%CURRENT_MODULE_PATH%";
         const string PlatformMarker                   = "%PLATFORM%";
         const string OSMarker                         = "%OS%";  
+        const string OSNameMarker                     = "%OS_NAME%";
         const string DataDirMarker                    = "%DATA_DIR%";
         const string PythonPathMarker                 = "%PYTHON_PATH%";
         const string PythonNameMarker                 = "%PYTHON_NAME%";
@@ -180,14 +181,14 @@ namespace CodeProject.AI.Server.Modules
 
             // If it is a Python3X command then replace our marker in the default python path to
             // match the requested interpreter location in order to build the 
-            // "/runtimes/bin/linux/python38/venv/bin/python3" path.
+            // "/runtimes/bin/ubuntu/python38/venv/bin/python3" path.
             if (runtime.StartsWith("python"))
             {
                 // HACK: In Docker, Python installations for modules can be local for downloaded
                 // modules, or shared for pre-installed modules. For preinstalled modules hardcoded
                 // into the Docker image, the python runtimes and package are installs at the
                 // system level, and not in a virtual environment. This means Python command is in
-                // the format of "python3.N" rather than "/runtimes/bin/linux/python3N/venv/bin/python3"
+                // the format of "python3.N" rather than "/runtimes/bin/ubuntu/python3N/venv/bin/python3"
                 // ie. Python runtime location is 'System'.
                 if (SystemInfo.IsDocker)
                 {
@@ -340,6 +341,7 @@ namespace CodeProject.AI.Server.Modules
                 value = value.Replace(ExternalModulesDirPath,   _moduleOptions.ExternalModulesDirPath);
             value = value.Replace(PlatformMarker,           SystemInfo.Platform.ToLower());
             value = value.Replace(OSMarker,                 SystemInfo.OperatingSystem.ToLower());
+            value = value.Replace(OSNameMarker,             SystemInfo.OperatingSystemName.ToLower());
             value = value.Replace(PythonPathMarker,         _moduleOptions.PythonRelativeInterpreterPath);
             value = value.Replace(DataDirMarker,            _appDataDirectory);
             // Do this last in case other markers contains this marker

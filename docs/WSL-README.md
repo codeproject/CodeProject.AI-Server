@@ -90,7 +90,7 @@ Windows.
 ### To free up space
 
 To free up space you can use the clean.bat/clean.sh scripts under
-/src/SDK/Utilities.
+/devops\install.
 
 For Windows
 ```cmd 
@@ -109,7 +109,8 @@ cleaned.
 To actually realise the freed up space in WSL you will need to compact the VHD
 in which your WSL instance resides.
 
-In a Windows terminal:
+You can use the `/devops/utils/compact_wsl_disks.ps1` script to achieve this. Or
+to do it old school, in a Windows terminal:
 
 ```cmd 
 wsl --shutdown
@@ -130,6 +131,8 @@ compact vdisk
 detach vdisk
 exit
 ```
+
+For Debian, the name will be similar to `%LOCALAPPDATA%\Packages\TheDebianProject.DebianGNULinux_76v4gfsz19hv4\LocalState\ext4.vhdx`.
 
 Your WSL virtual hard drive should be smaller and the space that was used 
 reclaimed by Windows.

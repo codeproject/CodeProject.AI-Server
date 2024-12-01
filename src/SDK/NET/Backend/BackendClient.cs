@@ -10,7 +10,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace CodeProject.AI.SDK
+namespace CodeProject.AI.SDK.Backend
 {
     /// <summary>
     /// Represents an HTTP client for modules that gets requests and returns responses to the

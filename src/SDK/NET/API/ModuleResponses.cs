@@ -2,6 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using CodeProject.AI.SDK.Backend;
+
 namespace CodeProject.AI.SDK.API
 {
     public delegate Task<ModuleResponse> LongProcessMethod(BackendRequest request,

@@ -11,6 +11,9 @@ useColor=true
 doDebug=false
 lineWidth=70
 
+ bash ../utils/stop_all.sh
+
+
 # List of modules we'll look after =======================++====================
 
 dotNetModules=( "ObjectDetectionYOLOv5Net"  )
@@ -369,11 +372,6 @@ if [ "$cleanBuild" = true ]; then
         rm "${rootDir}/src/demos/modules/${dirName}/${dirName}-*"
     done
 
-    cleanSubDirs "${rootDir}/Installers/Windows" "bin/Debug/"
-    cleanSubDirs "${rootDir}/Installers/Windows" "bin/Release/"
-    cleanSubDirs "${rootDir}/Installers/Windows" "obj/Debug/"
-    cleanSubDirs "${rootDir}/Installers/Windows" "obj/Release/"
-
     removeDir "${rootDir}/utils/ParseJSON/bin"
     removeDir "${rootDir}/utils/ParseJSON/obj"
     rm "${rootDir}/utils/ParseJSON/ParseJSON.deps.json"
@@ -424,20 +422,20 @@ if [ "$cleanInstallCurrentOS" = true ]; then
     writeLine 
 
     # Clean shared python venvs
-    removeDir "${rootDir}/runtimes/bin/${os}/"
+    removeDir "${rootDir}/runtimes/bin/${platform_dir}/"
 
     # Clean module python venvs
     for dirName in "${pythonModules[@]}"
     do
-        removeDir "${rootDir}/modules/${dirName}/bin/${os}/"
+        removeDir "${rootDir}/modules/${dirName}/bin/${platform_dir}/"
     done
     for dirName in "${pythonExternalModules[@]}"
     do
-        removeDir "${externalModulesDir}/${dirName}/bin/${os}/"
+        removeDir "${externalModulesDir}/${dirName}/bin/${platform_dir}/"
     done
     for dirName in "${pythonDemoModules[@]}"
     do
-        removeDir "${rootDir}/src/demos/modules/${dirName}/bin/${os}/"
+        removeDir "${rootDir}/src/demos/modules/${dirName}/bin/${platform_dir}/"
     done
 fi
 
@@ -472,20 +470,20 @@ if [ "$cleanLibraries" = true ]; then
     writeLine 
 
     # Clean shared python venvs
-    delPattern "${rootDir}/runtimes/bin/${os}/python*/venv/lib/python*/site-packages/*"
+    delPattern "${rootDir}/runtimes/bin/${platform_dir}/python*/venv/lib/python*/site-packages/*"
 
     # Clean module python venvs
     for dirName in "${pythonModules[@]}"
     do
-        delPattern "${rootDir}/modules/${dirName}/bin/${os}/python*/venv/lib/python*/site-packages/*"
+        delPattern "${rootDir}/modules/${dirName}/bin/${platform_dir}/python*/venv/lib/python*/site-packages/*"
     done
     for dirName in "${pythonExternalModules[@]}"
     do
-        delPattern "${externalModulesDir}/${dirName}/bin/${os}/python*/venv/lib/python*/site-packages/*"
+        delPattern "${externalModulesDir}/${dirName}/bin/${platform_dir}/python*/venv/lib/python*/site-packages/*"
     done
     for dirName in "${pythonDemoModules[@]}"
     do
-        delPattern "${rootDir}/src/demos/modules/${dirName}/bin/${os}/python*/venv/lib/python*/site-packages/*"
+        delPattern "${rootDir}/src/demos/modules/${dirName}/bin/${platform_dir}/python*/venv/lib/python*/site-packages/*"
     done
 fi
 

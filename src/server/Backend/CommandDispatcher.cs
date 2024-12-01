@@ -1,7 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.AI.SDK;
+using CodeProject.AI.SDK.Backend;
+using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.Server.Backend
 {

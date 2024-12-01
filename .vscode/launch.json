@@ -233,7 +233,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-yolo-net",
-            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/9.0/ObjectDetectionYOLOv5Net",
+            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net9.0/ObjectDetectionYOLOv5Net.exe",
             "linux": {
                 "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net9.0/ObjectDetectionYOLOv5Net.dll",
             },
@@ -259,12 +259,13 @@
             },
             "name": "Object Detect YOLOv5 6.2",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -335,7 +336,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-parsejson",
-            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/9.0/ParseJSON",
+            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net9.0/ParseJSON",
             "linux": {
                 "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net9.0/ParseJSON.dll",
             },
@@ -416,7 +417,7 @@
             "program": "object-detect.exe",
             "args": [ "run" ],
             "cwd": "${workspaceFolder}/src/demos/clients/Rust/object-detect/target/debug",
-            "preLaunchTask": "build-deno-rust",
+            "preLaunchTask": "build-demo-rust",
             "stopOnEntry": false,
             "env": {
             },
@@ -501,7 +502,8 @@
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python.exe"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -528,12 +530,13 @@
 
             "name": "Python Simple Module",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -563,12 +566,13 @@
 
             "name": "Python Long Process Module",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -596,7 +600,7 @@
             "name": ".NET Simple Module",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-demo-net",
+            "preLaunchTask": "demo_module_dotnetsimple",
             "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple",
             "linux": {
                 "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple.dll",

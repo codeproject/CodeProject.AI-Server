@@ -559,6 +559,132 @@ function setupSSL() {
     fi
 }
 
+
+function CheckAndSetupCUDA () {
+
+    hasCUDA=false
+    cuDNN_version=""
+    cuda_major_version=""
+    cuda_major_minor=""
+
+    if [ "$os" = "macos" ]; then 
+        cuda_version=""
+    elif [ "${edgeDevice}" = "Jetson" ]; then
+        hasCUDA=true
+        cuda_version=$(getCudaVersion)
+        cuda_major_version=${cuda_version%%.*}
+        cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
+        cuDNN_version=$(getcuDNNVersion)
+        
+    elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then
+        cuda_version=""
+    else 
+        cuda_version=$(getCudaVersion)
+        cuda_major_version=${cuda_version%%.*}
+        cuda_minor_version=${cuda_version#*.}
+        cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
+
+        if [ "$cuda_version" != "" ]; then
+
+            hasCUDA=true
+            cuDNN_version=$(getcuDNNVersion)
+
+            installKeyring=false
+            if [ "$cuDNN_version" = "" ] || [ ! -x "$(command -v nvcc)" ]; then
+                writeLine "Installing NVIDIA keyring" $color_info
+                wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb > /dev/null 2>&1 &
+                spin $!
+                sudo dpkg -i cuda-keyring_1.1-1_all.deb >/dev/null &
+                spin $!
+                rm cuda-keyring_1.1-1_all.deb
+            fi
+
+            if [ "$cuDNN_version" = "" ]; then
+                writeLine "Installing cuDNN" $color_info
+                # cuDNN
+                # https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local
+                sudo apt-get update >/dev/null 2>&1 &
+                spin $!
+                sudo apt-get install "cudnn-cuda-$cuda_major_version" -y >/dev/null 2>&1 &
+                spin $!
+            fi
+
+            if [ ! -x "$(command -v nvcc)" ]; then
+                # CUDA toolkit
+                # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
+                writeLine "Installing CUDA toolkit" $color_info
+
+                if [ "${os_name}" = "debian" ]; then
+                 
+                    # Backup existing sources.list
+                    # echo "Backing up /etc/apt/sources.list to /etc/apt/sources.list.bak..."
+                    # sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+
+                    main_repo="deb http://deb.debian.org/debian $os_code_name main"
+                    if grep -qF "$main_repo contrib non-free" /etc/apt/sources.list; then
+                        echo "Found '$main_repo'. Replacing it with '$main_repo contrib non-free'..."
+                        sudo sed -i "s|^$main_repo|$main_repo contrib non-free|" /etc/apt/sources.list
+                    else
+                        echo "'$main_repo' not found. Adding '$main_repo contrib non-free' to sources.list..."
+                        echo "$main_repo contrib non-free" | sudo tee -a /etc/apt/sources.list > /dev/null
+                    fi
+
+                    src_repo="deb-src http://deb.debian.org/debian $os_code_name main"
+                    if grep -qF "$src_repo contrib non-free" /etc/apt/sources.list; then
+                        echo "Found '$src_repo'. Replacing it with '$src_repo contrib non-free'..."
+                        sudo sed -i "s|^$src_repo|$updated_repo contrib non-free|" /etc/apt/sources.list
+                    else
+                        echo "'$src_repo' not found. Adding '$src_repo contrib non-free' to sources.list..."
+                        echo "$src_repo contrib non-free" | sudo tee -a /etc/apt/sources.list > /dev/null
+                    fi
+                fi
+
+                sudo apt-get update > /dev/null 2>&1 &
+                spin $!
+                writeLine "Installing cuda kit" $color_info
+                sudo apt-get install cuda-toolkit-${cuda_major_version}-${cuda_minor_version} -y >/dev/null 2>&1 &
+                spin $!
+            fi
+
+            # disable this
+            if [ "${systemName}" = "WSL-but-we're-ignoring-this-for-now" ]; then # we're disabling this on purpose
+                checkForAdminRights
+                if [ "$isAdmin" = false ]; then
+                    writeLine "insufficient permission to install CUDA toolkit. Rerun under sudo" $color_error
+                else
+                    # https://stackoverflow.com/a/66486390
+                    cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
+                    chmod a+x /usr/bin/nvidia-smi > /dev/null 2>&1
+            
+                    # Out of the box, WSL might come with CUDA 11.5, and no toolkit, 
+                    # meaning we rely on nvidia-smi for version info, which is wrong.
+                    # We also should be thinking about CUDA 11.8 as a minimum, so let's
+                    # upgrade.
+                    cuda_comparison=$(versionCompare $cuda_version "11.8")
+                    if [ "$cuda_comparison" = "-1" ]; then
+                        writeLine "Upgrading WSL's CUDA install to 11.8" $color_info
+
+                        saveState
+                        correctLineEndings "${installScriptsDirPath}/install_cuDNN.sh"
+                        source "${installScriptsDirPath}/install_cuDNN.sh" 11.8
+                        restoreState
+                    fi
+                fi
+            fi
+
+            # We may have nvidia-smi, but not nvcc (eg in WSL). Fix this.
+            if [ -x "$(command -v nvidia-smi)" ] && [ ! -x "$(command -v nvcc)" ]; then
+
+                installAptPackages "nvidia-cuda-toolkit"
+
+                # The initial version we got would have been from nvidia-smi, which
+                # is wrong. Redo.
+                cuda_version=$(getCudaVersion)
+            fi
+        fi
+    fi
+}
+
 function getDotNetVersion() {
 
     local requestedType=$1
@@ -596,26 +722,29 @@ function getDotNetVersion() {
 
         comparison=-1
 
-        IFS=$'\n' # set the Internal Field Separator as end of line
-        while read -r line
-        do
-            if [[ $line == *'Microsoft.NETCore.App '* ]]; then
-                dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
-                # echo "GET: Found .NET runtime $dotnet_version" >&3
+        if command -v dotnet >/dev/null 2>/dev/null; then
 
-                current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
-                # echo "GET: current compare ${comparison}, new compare ${current_comparison}" >&3
+            IFS=$'\n' # set the Internal Field Separator as end of line
+            while read -r line
+            do
+                if [[ $line == *'Microsoft.NETCore.App '* ]]; then
+                    dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
+                    # echo "GET: Found .NET runtime $dotnet_version" >&3
 
-                if (( $current_comparison >= $comparison )); then
-                    highestDotNetVersion="$dotnet_version"
-                    comparison=$current_comparison
-                    # echo "GET: Found new highest .NET runtime $highestDotNetVersion" >&3
-                # else
-                #    echo "GET: Found $dotnet_version runtime, which is not higher than $highestDotNetVersion" >&3
+                    current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
+                    # echo "GET: current compare ${comparison}, new compare ${current_comparison}" >&3
+
+                    if (( $current_comparison >= $comparison )); then
+                        highestDotNetVersion="$dotnet_version"
+                        comparison=$current_comparison
+                        # echo "GET: Found new highest .NET runtime $highestDotNetVersion" >&3
+                    # else
+                    #    echo "GET: Found $dotnet_version runtime, which is not higher than $highestDotNetVersion" >&3
+                    fi
                 fi
-            fi
-        done <<< "$(dotnet --list-runtimes)"
-        unset IFS
+            done <<< "$(dotnet --list-runtimes)"
+            unset IFS
+        fi
     fi
 
     if [ "$highestDotNetVersion" = "0" ]; then highestDotNetVersion=""; fi
@@ -803,11 +932,17 @@ function setupDotNet () {
             if [ "$os" = "linux" ]; then
 
                 # Potentially not reliable. Only blessed by MS for Debian >= 12
-                if [ "$os_name" = "debian" ] && [ ! "$os_vers" < "12" ]; then
+                if [ "$os_name" = "debian" ] && [ ! "$os_vers" -lt "12" ]; then
 
-                    wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
-                    sudo dpkg -i packages-microsoft-prod.deb >/dev/null
-                    rm packages-microsoft-prod.deb >/dev/null
+                    if [ $verbosity = "quiet" ]; then
+                        wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
+                        sudo dpkg -i packages-microsoft-prod.deb >/dev/null
+                        rm packages-microsoft-prod.deb >/dev/null
+                    else
+                        wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+                        sudo dpkg -i packages-microsoft-prod.deb
+                        rm packages-microsoft-prod.deb
+                    fi
 
                     if [ "$requestedType" = "sdk" ]; then
                         sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
@@ -882,7 +1017,7 @@ function setupDotNet () {
         if [ -e /usr/local/bin/dotnet ]; then
             rm /usr/local/bin/dotnet
         fi
-        ln -s ${dotnet_path}dotnet /usr/local/bin
+        sudo ln -s ${dotnet_path}dotnet /usr/local/bin
 
         if [ -f " /home/pi/.bashrc" ]; then
             setDotNetLocation " /home/pi/.bashrc" "${dotnet_path}"
@@ -1110,7 +1245,7 @@ function setupPython () {
 
             writeLine "done" $color_success
 
-        # macOS: With my M1 chip and Rosetta I make installing Python a real PITA.
+        # macOS: With my M1 chip and Rosetta, I make installing Python a real PITA.
         # Raspberry Pi: Hold my beer 
         elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
              [ "${edgeDevice}" = "Radxa ROCK"   ] || [ "${edgeDevice}" = "Jetson"    ] || \
@@ -1140,7 +1275,7 @@ function setupPython () {
                 fi
             fi
 
-            pushd "${appRootDirPath}" > /dev/null
+            pushd "${rootDirPath}" > /dev/null
 
             # Update at your leisure. 
             # See https://www.python.org/ftp/python/ for a complete list.
@@ -1149,15 +1284,17 @@ function setupPython () {
                 "3.1")  pythonPatchVersion="3.1.5";;
                 "3.2")  pythonPatchVersion="3.2.6";;
                 "3.3")  pythonPatchVersion="3.3.7";;
-                "3.4")  pythonPatchVersion="3.4.19";; 
+                "3.4")  pythonPatchVersion="3.4.10";; 
                 "3.5")  pythonPatchVersion="3.5.10";;
                 "3.6")  pythonPatchVersion="3.6.15";;
                 "3.7")  pythonPatchVersion="3.7.17";;
-                "3.8")  pythonPatchVersion="3.8.18";;
-                "3.9")  pythonPatchVersion="3.9.18";; 
-                "3.10") pythonPatchVersion="3.10.13";; 
-                "3.11") pythonPatchVersion="3.11.5";; 
-                "3.12") pythonPatchVersion="3.12.0";; 
+                "3.8")  pythonPatchVersion="3.8.20";;
+                "3.9")  pythonPatchVersion="3.9.20";; 
+                "3.10") pythonPatchVersion="3.10.15";; 
+                "3.11") pythonPatchVersion="3.11.10";; 
+                "3.12") pythonPatchVersion="3.12.7";; 
+                "3.13") pythonPatchVersion="3.13.0";; 
+                "3.14") pythonPatchVersion="3.14.0";; 
                 *)      pythonPatchVersion="${pythonVersion}.0"
             esac
 
@@ -1180,9 +1317,9 @@ function setupPython () {
             # https://www.aliengen.com/blog/install-python-3-7-on-a-raspberry-pi-with-raspbian-8
 
             # Download
-            cd $downloadDir 
-            mkdir --parents "${os}/Lib" >/dev/null
-            cd "${os}/Lib"
+            cd "${downloadDirPath}"
+            mkdir --parents "${platform_dir}/lib" >/dev/null
+            cd "${os}/lib"
 
             if [ ! -f "openssl-1.1.1c.tar.gz" ]; then
                 curl $curlFlags --remote-name https://www.openssl.org/source/openssl-1.1.1c.tar.gz
@@ -1233,7 +1370,7 @@ function setupPython () {
                     # to just what's needed, but for now we'll just throw everything at the problem
                     # until we find a solution to the "SSLError("Can't connect to HTTPS URL because 
                     # the SSL module is not available.")' issue
-                    sudo apt-get install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev
+                    sudo apt-get install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev -y
                     sudo ./configure --enable-optimizations 
                     make
                     sudo make install
@@ -1276,13 +1413,8 @@ function setupPython () {
         # For Linux we'll use apt-get the deadsnakes PPA to get the old version
         # of python. Deadsnakes? Old python? Get it? Get it?! And who said 
         # developers have no sense of humour.
-        else
-
-            # https://askubuntu.com/a/1481830
-            # if [ "$os_name" = "debian" ]; then
-            #     This allows adding the deadsnakes PPA, but this ppa doesn't support debian
-            #     sudo apt-get install python3-launchpadlib -y
-            # fi
+        # NOTE: ppa is an Ubuntu thing only. https://askubuntu.com/a/1481830
+        else # if [ "$os_name" = "ubuntu" ]; then
 
             if [ "${verbosity}" = "loud" ]; then
             
@@ -1490,7 +1622,9 @@ function setupPython () {
 
     echo $pyVersion | grep "${pythonVersion}" >/dev/null
     if [ $? -ne 0 ]; then
-        errorNoPython
+        writeLine 'Not found' $color_error
+        # errorNoPython
+        return 1
     fi 
     writeLine 'All good' $color_success
 
@@ -2830,9 +2964,10 @@ fi
 if [[ $OSTYPE == 'darwin'* ]]; then
     platform='macos'
     os="macos"
-    os_name=$(awk '/SOFTWARE LICENSE AGREEMENT FOR macOS/' '/System/Library/CoreServices/Setup Assistant.app/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf' | awk -F 'macOS ' '{print $NF}' | awk '{print substr($0, 0, length($0)-1)}') # eg "Big Sur"
+    os_name="macos"
+    os_code_name=$(awk '/SOFTWARE LICENSE AGREEMENT FOR macOS/' '/System/Library/CoreServices/Setup Assistant.app/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf' | awk -F 'macOS ' '{print $NF}' | awk '{print substr($0, 0, length($0)-1)}') # eg "Big Sur"
     os_vers=$(sw_vers -productVersion) # eg "11.1" for macOS Big Sur
-
+    platform_dir=$platform # or platform_dir="${platform// /}""; platform_dir="${platform_dir,,}" - no space, lowercase
     systemName=$os
     edgeDevice=''
 
@@ -2841,8 +2976,10 @@ else
     os='linux'
     edgeDevice=''
     platform='linux'
-    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu", "debian12"
+    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu", "debian"
     os_vers=$(. /etc/os-release;echo $VERSION_ID) # eg "22.04" for Ubuntu 22.04, "12" for Debian 12
+    os_code_name=$(. /etc/os-release;echo $VERSION_CODENAME) # eg "jammy" for Ubuntu 22.04, "bookworm" for Debian 12
+    platform_dir=$os_name # or $platform 
 
     if [ "$architecture" = 'arm64' ]; then platform='linux-arm64'; fi
 

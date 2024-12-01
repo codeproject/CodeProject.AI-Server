@@ -2,7 +2,7 @@
 
 using SkiaSharp;
 
-namespace CodeProject.AI.SDK
+namespace CodeProject.AI.SDK.Common
 {
     public class RequestFormFile
     {

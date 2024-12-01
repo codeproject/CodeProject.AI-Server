@@ -1991,22 +1991,32 @@ REM Get Windows Version
     if "!ver_major!"=="6" (
         if "!ver_minor!"=="1" (
             set "windows_version=Windows 7"
+            set "os_code_name=Windows 7"
         ) else if "!ver_minor!"=="2" (
             set "windows_version=Windows 8"
+            set "os_code_name=Windows 8"
         ) else if "!ver_minor!"=="3" (
             set "windows_version=Windows 8.1"
+            set "os_code_name=Windows 8"
         ) else (
             set "windows_version=Windows 6.x (Unknown Version)"
+            set "os_code_name=Windows"
         )
     ) else if "!ver_major!"=="10" (
         REM Check if it's Windows 10 or Windows 11
         if !ver_build! GEQ 22000 (
             set "windows_version=Windows 11"
+            set "os_code_name=Sun Valley"
+            for /f "tokens=2,*" %%A in ('reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion" /v DisplayVersion 2^>nul ^| find "DisplayVersion"') do (
+                set os_code_name=%%B
+            )
         ) else (
             set "windows_version=Windows 10"
+            set "os_code_name=Redstone"
         )
     ) else (
         set "windows_version=Other Windows version"
+        set "os_code_name=Windows"
     )
 
     REM Set return param value

@@ -268,8 +268,9 @@ set installScriptsDirPath=!rootDirPath!\devops\install
 set utilsScript=!utilsScriptsDirPath!\utils.bat
 
 :: Load vars in .env. This may update things like dotNetTarget
-for /f "tokens=1,2 delims==" %%a in (!rootDirPath!\.env) do set %%a=%%b
-
+if exist "!rootDirPath!\.env" (
+	for /f "tokens=1,2 delims==" %%a in ("!rootDirPath!\.env") do set %%a=%%b
+)
 :: Helper vars for OS, Platform (see note below), and system name. systemName is
 :: a no-op here because nothing exciting happens on Windows. In the corresponding
 :: .sh setup files, systemName can be docker, Raspberry Pi, WSL - all sorts of fun
@@ -277,6 +278,7 @@ for /f "tokens=1,2 delims==" %%a in (!rootDirPath!\.env) do set %%a=%%b
 
 set os=windows
 set os_name=Windows
+set os_code_name=Windows
 set platform=windows
 set systemName=Windows
 
@@ -350,6 +352,7 @@ set freeSpaceBytes=!freeSpaceBytes:,=!
 set /a freeSpaceGb=!freeSpaceBytes:~0,-3! / 1048576
 set /a freeSpaceGbFraction=!freeSpaceBytes:~0,-3! %% 1048576 * 10 / 1048576
 
+if "!volumeName!" == "no" set volumeName=(No label)
 if "!volumeName!" == "" set volumeName=(No label)
 
 
@@ -387,7 +390,7 @@ call "!utilsScript!" WriteLine ""
 :: Output settings
 if /i "%verbosity%" neq "quiet" (
     call "!utilsScript!" WriteLine 
-    call "!utilsScript!" WriteLine "os, name, arch              = !os! !os_name! !architecture!" !color_mute!
+    call "!utilsScript!" WriteLine "os, name, arch              = !os! !os_name! (!os_code_name!) !architecture!" !color_mute!
     call "!utilsScript!" WriteLine "systemName, platform        = !systemName!, !platform!"      !color_mute!
     call "!utilsScript!" WriteLine "edgeDevice                  = !edgeDevice!"                  !color_mute!
     call "!utilsScript!" WriteLine "setupMode                   = !setupMode!"                   !color_mute!
