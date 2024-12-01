@@ -25,6 +25,7 @@ namespace CodeProject.AI.Server.Modules
         const string CurrentModuleDirPathMarker       = "%CURRENT_MODULE_PATH%";
         const string PlatformMarker                   = "%PLATFORM%";
         const string OSMarker                         = "%OS%";  
+        const string OSNameMarker                     = "%OS_NAME%";
         const string DataDirMarker                    = "%DATA_DIR%";
         const string PythonPathMarker                 = "%PYTHON_PATH%";
         const string PythonNameMarker                 = "%PYTHON_NAME%";
@@ -340,6 +341,7 @@ namespace CodeProject.AI.Server.Modules
                 value = value.Replace(ExternalModulesDirPath,   _moduleOptions.ExternalModulesDirPath);
             value = value.Replace(PlatformMarker,           SystemInfo.Platform.ToLower());
             value = value.Replace(OSMarker,                 SystemInfo.OperatingSystem.ToLower());
+            value = value.Replace(OSNameMarker,             SystemInfo.OperatingSystemName.ToLower());
             value = value.Replace(PythonPathMarker,         _moduleOptions.PythonRelativeInterpreterPath);
             value = value.Replace(DataDirMarker,            _appDataDirectory);
             // Do this last in case other markers contains this marker
