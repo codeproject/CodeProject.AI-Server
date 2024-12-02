@@ -2528,13 +2528,15 @@ function getValueFromModuleSettingsFile () {
 
     settings_file_used=""
 
-    if [ "$edgeDevice" != "" ] && [ "$dev_specifier" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${edgeDevice}.${dev_specifier}.json" "${moduleId}" "${property}")
-        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${edgeDevice}.${dev_specifier}.json"; fi
+    # NOTE: edgeDevice would be "Raspberry Pi" (or blank if non-edge) and platform would be "raspberrypi"
+
+    if [ "$platform" != "" ] && [ "$dev_specifier" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${platform}.${dev_specifier}.json" "${moduleId}" "${property}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${platform}.${dev_specifier}.json"; fi
     fi
-    if [ "$edgeDevice" != "" ]; then
-        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${edgeDevice}.json" "${moduleId}" "${property}")
-        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${edgeDevice}.json"; fi
+    if [ "$platform" != "" ]; then
+        moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${platform}.json" "${moduleId}" "${property}")
+        if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.${platform}.json"; fi
     fi
     if [ "${moduleSettingValue}" = "" ] && [ "$dev_specifier" != "" ]; then
         moduleSettingValue=$(getValueFromModuleSettings "${moduleDirPath}/modulesettings.${os}.${architecture}.${dev_specifier}.json" "${moduleId}" "${property}")
