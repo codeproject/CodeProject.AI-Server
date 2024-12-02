@@ -915,13 +915,8 @@ function setupDotNet () {
             # fi
         fi
         dotnet_path="${dotnet_basepath}/dotnet/"
-
-        useCustomDotNetInstallScript=false
-        # No longer using the arm64 custom script: standard install script seems good enough now.
-        # output a warning message if no admin rights and instruct user on manual steps
-        # if [ "$architecture" = 'arm64' ]; then useCustomDotNetInstallScript=true; fi
-        
-        if [ "$useCustomDotNetInstallScript" = true ]; then
+      
+        if [ "$architecture" = 'arm64' ]; then
            install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
         else
             install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install.sh' --install-dir '${dotnet_path}' --channel $requestedNetMajorMinorVersion --runtime $requestedType"
@@ -932,7 +927,7 @@ function setupDotNet () {
             if [ "$os" = "linux" ]; then
 
                 # Potentially not reliable. Only blessed by MS for Debian >= 12
-                if [ "$os_name" = "debian" ] && [ ! "$os_vers" -lt "12" ]; then
+                if [ "$os_name" = "debian" ] && [ "$os_vers" -gt "11" ]; then
 
                     if [ $verbosity = "quiet" ]; then
                         wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
@@ -950,20 +945,21 @@ function setupDotNet () {
                         sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
                     fi
 
-                # .NET 9 seems to settle down the "we do/we don't" that MS is doing with .NET 6,7 and 8. 
-                elif [ "$requestedNetMajorVersion" = "9" ]; then   # ... && [ "$os_name" = "ubuntu" ]
+                # Inclusion in std Ubuntu repos is a bit of a mess:
+                # .NET 9 is in std 24.10 repo. For 22.04 and 24.04 use backports
+                # .NET 6 & 7, Ubuntu 24.04 use backports
+                # Everything else use the script
+                elif [ "$os_name" = "ubuntu" ] && [ "$requestedNetMajorVersion" = "9" ]; then
 
-                    # TODO: Change this to a " >= 24.10"
-                    if [ "$os_name" = "ubuntu" ] && [ "$os_vers" = "24.10" ]; then 
+                    if [ "$os_vers" = "24.10" ]; then 
                         if [ "$requestedType" = "sdk" ]; then
                             sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
                         else
                             sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
                         fi
                     else
-                        # .NET 9 is still not fully released. But we know a guy who knows a guy...
-                        # TODO: This also works for NET 6 & 7, Ubuntu 24.04, and .NET 9,  Ubuntu 22.04 & 24.04
                         sudo add-apt-repository ppa:dotnet/backports -y
+                        # This installs the SDK and the runtimes
                         sudo apt install "dotnet${requestedNetMajorVersion}" -y
                     fi
 
@@ -973,7 +969,7 @@ function setupDotNet () {
                     # Needed if we're installing .NET without an installer to help us
                     installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
 
-                    if [ "$useCustomDotNetInstallScript" = true ]; then
+                    if [ "$architecture" = 'arm64' ] && [ "$os_name" != "ubuntu" ]; then
                         # installs in /opt/dotnet
                         if [ $verbosity = "quiet" ]; then
                             sudo bash "${installScriptsDirPath}/dotnet-install-arm.sh" "${requestedNetMajorVersion}.0" "$requestedType" "quiet"
