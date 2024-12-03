@@ -83,19 +83,19 @@ https://learn.microsoft.com/en-us/visualstudio/msbuild/property-functions?view=v
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'">   <!-- Mac Apple Silicon -->
-		<PackageReference Include="System.Diagnostics.PerformanceCounter"		 Version="8.0.0" />
-		<PackageReference Include="System.Text.Json"							 Version="8.0.0" /> 
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd"		 Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging"				 Version="8.0.0" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter"        Version="9.0.0" />
+		<PackageReference Include="System.Text.Json"                             Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd"         Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging"                 Version="9.0.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'">      <!-- Everything else -->
-		<PackageReference Include="System.Diagnostics.PerformanceCounter"		 Version="8.0.1" />
-		<PackageReference Include="System.Text.Json"							 Version="8.0.5" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd"		 Version="8.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Logging"				 Version="8.0.1" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter"        Version="9.0.0" />
+		<PackageReference Include="System.Text.Json"                             Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd"         Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging"                 Version="9.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

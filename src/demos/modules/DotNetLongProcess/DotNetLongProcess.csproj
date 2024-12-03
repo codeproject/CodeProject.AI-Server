@@ -57,11 +57,11 @@
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'"> <!-- Mac Apple Silicon -->
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'"> <!-- NOT Mac Apple Silicon -->
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

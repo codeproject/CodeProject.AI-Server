@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<Import Project="../../../SDK/NET/Common.targets" />
+	<Import Project="../../../../SDK/NET/Common.targets" />
 
   	<PropertyGroup>
     	<TargetFramework>net9.0</TargetFramework>

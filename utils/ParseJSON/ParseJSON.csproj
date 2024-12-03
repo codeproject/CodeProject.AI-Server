@@ -50,8 +50,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<PackageReference Include="System.Text.Json" Version="8.0.0" Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'" /> <!-- Mac Apple Silicon -->
-	<PackageReference Include="System.Text.Json" Version="8.0.5" Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'" />  <!-- Everything else -->
+	<PackageReference Include="System.Text.Json" Version="9.0.0" Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'" /> <!-- Mac Apple Silicon -->
+	<PackageReference Include="System.Text.Json" Version="9.0.0" Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'" />  <!-- Everything else -->
   </ItemGroup>
 
 	<ItemGroup>
