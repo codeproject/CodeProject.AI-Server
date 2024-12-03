@@ -2012,7 +2012,9 @@ function installRequiredPythonPackages () {
         currentOption=''
 
         IFS=$'\n' # set the Internal Field Separator as end of line
-        cat "${requirementsPath}" | while read -r line
+
+        # "|| [ -n "$line" ]" is for last line: https://stackoverflow.com/a/12919766
+        cat "${requirementsPath}" | while read -r line || [ -n "$line" ]
         do
 
             line="$(echo $line | tr -d '\r\n')"    # trim newlines / CRs
