@@ -1,4 +1,8 @@
-﻿using System.Net.Http.Json;
+﻿using System;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using CodeProject.AI.SDK.Common;
 
 namespace CodeProject.AI.SDK.API

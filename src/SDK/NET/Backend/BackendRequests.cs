@@ -1,6 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
-namespace CodeProject.AI.SDK
+using CodeProject.AI.SDK.Common;
+
+namespace CodeProject.AI.SDK.Backend
 {
 #pragma warning disable IDE1006 // Naming Styles
 

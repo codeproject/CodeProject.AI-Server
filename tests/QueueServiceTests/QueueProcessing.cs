@@ -4,12 +4,12 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using CodeProject.AI.SDK;
-using CodeProject.AI.SDK.API;
-using CodeProject.AI.Server.Backend;
-
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+
+using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Backend;
+using CodeProject.AI.Server.Backend;
 
 using Xunit;
 

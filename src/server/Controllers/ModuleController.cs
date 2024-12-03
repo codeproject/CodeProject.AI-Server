@@ -4,16 +4,16 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-using CodeProject.AI.SDK.API;
-using CodeProject.AI.SDK.Modules;
-using CodeProject.AI.SDK.Server;
-using CodeProject.AI.Server.Models;
-using CodeProject.AI.Server.Modules;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Client;
+using CodeProject.AI.SDK.Modules;
+using CodeProject.AI.Server.Models;
+using CodeProject.AI.Server.Modules;
 
 namespace CodeProject.AI.Server.Controllers
 {

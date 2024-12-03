@@ -33,22 +33,33 @@
 		<DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Hardware.Info" Version="101.0.0" />
+	<ItemGroup Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'">   <!-- Mac Apple Silicon -->
+		<PackageReference Include="System.Diagnostics.PerformanceCounter"     Version="8.0.0" />
+		<PackageReference Include="System.Text.Json"                          Version="8.0.0" /> 
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging"              Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console"      Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'">      <!-- Everything else -->
+		<PackageReference Include="System.Diagnostics.PerformanceCounter"     Version="8.0.1" />
+		<PackageReference Include="System.Text.Json"                          Version="8.0.5" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging"              Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
-		<PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
-		<PackageReference Include="SkiaSharp" Version="2.88.8" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
-		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.8" />
-		<PackageReference Include="System.Management" Version="8.0.0" />
-		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console"      Version="8.0.1" />
+	</ItemGroup>
 
-		<PackageReference Include="System.Text.Json" Version="8.0.0" Condition="'$(IsOsx)'=='true' And '$(IsArm64)'=='true'" /> <!-- Mac Apple Silicon -->
-		<PackageReference Include="System.Text.Json" Version="8.0.5" Condition="'$(IsOsx)'!='true' Or '$(IsArm64)'!='true'" />  <!-- Everything else -->
+	<ItemGroup>
+		<PackageReference Include="Hardware.Info"                  Version="101.0.0" />
+		<PackageReference Include="Microsoft.VisualBasic"          Version="10.3.0" />
+		<PackageReference Include="SkiaSharp"                      Version="2.88.8" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux"   Version="2.88.8" />
+		<PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="2.88.8" />
+		<PackageReference Include="System.Management"              Version="8.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

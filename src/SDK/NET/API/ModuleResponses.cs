@@ -1,4 +1,8 @@
 ﻿using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
+
+using CodeProject.AI.SDK.Backend;
 
 namespace CodeProject.AI.SDK.API
 {

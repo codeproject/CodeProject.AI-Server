@@ -13,11 +13,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Client;
 using CodeProject.AI.SDK.Common;
+using CodeProject.AI.SDK.Modules;
 using CodeProject.AI.SDK.Utils;
 using CodeProject.AI.Server.Models;
-using CodeProject.AI.SDK.Server;
-using CodeProject.AI.SDK.Modules;
 
 namespace CodeProject.AI.Server.Modules
 {
@@ -271,7 +271,7 @@ namespace CodeProject.AI.Server.Modules
                     return null;
 
                 // Allow the module path to wrap.
-                // var path = moduleDirPath.Replace("\\", "\\<wbr>");
+                // var path = ModuleDirPath.Replace("\\", "\\<wbr>");
                 // path = path.Replace("/", "/<wbr>");
 
                 // or not...
@@ -985,10 +985,11 @@ namespace CodeProject.AI.Server.Modules
                     Directory.CreateDirectory(dir);
 
                 var corrections = new dynamic [] {
-                    new { OldModuleId = "ObjectDetectionNet",  NewModuleId = "ObjectDetectionYOLOv5Net"      },
-                    new { OldModuleId = "ObjectDetectionYolo", NewModuleId = "ObjectDetectionYOLOv5-6.2"     },
-                    new { OldModuleId = "Yolov5-3.1",          NewModuleId = "ObjectDetectionYOLOv5-3.1"     },
-                    new { OldModuleId = "TrainingYoloV5",      NewModuleId = "TrainingObjectDetectionYOLOv5" }
+                    // No longer including renamed versions
+                    // new { OldModuleId = "ObjectDetectionNet",  NewModuleId = "ObjectDetectionYOLOv5Net"      },
+                    // new { OldModuleId = "ObjectDetectionYolo", NewModuleId = "ObjectDetectionYOLOv5-6.2"     },
+                    // new { OldModuleId = "Yolov5-3.1",          NewModuleId = "ObjectDetectionYOLOv5-3.1"     },
+                    // new { OldModuleId = "TrainingYoloV5",      NewModuleId = "TrainingObjectDetectionYOLOv5" }
                 };
 
                 var moduleList = modules.Values
@@ -1008,54 +1009,57 @@ namespace CodeProject.AI.Server.Modules
                                             Downloads      = 0
                                         }).ToList();
 
-                // Add renamed modules, using their new (current) names, but listing only server revisions v2.4+
-                foreach (var pair in corrections)
+                if (corrections.Length > 0)
                 {
-                    ModuleConfig? module = modules.Values.Where(m => m.ModuleId == pair.NewModuleId).FirstOrDefault();
-                    if (module is not null)
+                    // Add renamed modules, using their new (current) names, but listing only server revisions v2.4+
+                    foreach (var pair in corrections)
                     {
-                        ModuleRelease[] post24Releases = module.InstallOptions!.ModuleReleases
-                                                               .Where(r => string.IsNullOrWhiteSpace(r.ServerVersionRange?[0]) ||
-                                                                           VersionInfo.Compare(r.ServerVersionRange[0], "2.4") >= 0)
-                                                               .ToArray();
-                        moduleList.Add(new {
-                            ModuleId       = module.ModuleId,
-                            Name           = module.Name,
-                            Version        = module.Version,
-                            PublishingInfo = module.PublishingInfo,
-                            InstallOptions = new {
-                                Platforms      = module.InstallOptions.Platforms,
-                                ModuleReleases = post24Releases
-                            },
-                            Downloads      = 0
-                        });
+                        ModuleConfig? module = modules.Values.Where(m => m.ModuleId == pair.NewModuleId).FirstOrDefault();
+                        if (module is not null)
+                        {
+                            ModuleRelease[] post24Releases = module.InstallOptions!.ModuleReleases
+                                                                .Where(r => string.IsNullOrWhiteSpace(r.ServerVersionRange?[0]) ||
+                                                                            VersionInfo.Compare(r.ServerVersionRange[0], "2.4") >= 0)
+                                                                .ToArray();
+                            moduleList.Add(new {
+                                ModuleId       = module.ModuleId,
+                                Name           = module.Name,
+                                Version        = module.Version,
+                                PublishingInfo = module.PublishingInfo,
+                                InstallOptions = new {
+                                    Platforms      = module.InstallOptions.Platforms,
+                                    ModuleReleases = post24Releases
+                                },
+                                Downloads      = 0
+                            });
+                        }
+                    }
+
+                    // Add renamed modules, but with their old names, and only up to server v2.4
+                    foreach (var pair in corrections)
+                    {
+                        ModuleConfig? module = modules.Values.Where(m => m.ModuleId == pair.NewModuleId).FirstOrDefault();
+                        if (module is not null)
+                        {
+                            ModuleRelease[] pre24Releases = module.InstallOptions!.ModuleReleases
+                                                                .Where(r => string.IsNullOrWhiteSpace(r.ServerVersionRange?[0]) ||
+                                                                            VersionInfo.Compare(r.ServerVersionRange[0], "2.4") < 0)
+                                                                .ToArray();
+                            moduleList.Add(new {
+                                ModuleId       = (string?)pair.OldModuleId,
+                                Name           = module.Name,
+                                Version        = module.Version,
+                                PublishingInfo = module.PublishingInfo,
+                                InstallOptions = new {
+                                    Platforms      = module.InstallOptions.Platforms,
+                                    ModuleReleases = pre24Releases
+                                },
+                                Downloads      = 0
+                            });
+                        }
                     }
                 }
-
-                // Add renamed modules, but with their old names, and only up to server v2.4
-                foreach (var pair in corrections)
-                {
-                    ModuleConfig? module = modules.Values.Where(m => m.ModuleId == pair.NewModuleId).FirstOrDefault();
-                    if (module is not null)
-                    {
-                        ModuleRelease[] pre24Releases = module.InstallOptions!.ModuleReleases
-                                                              .Where(r => string.IsNullOrWhiteSpace(r.ServerVersionRange?[0]) ||
-                                                                          VersionInfo.Compare(r.ServerVersionRange[0], "2.4") < 0)
-                                                              .ToArray();
-                        moduleList.Add(new {
-                            ModuleId       = (string?)pair.OldModuleId,
-                            Name           = module.Name,
-                            Version        = module.Version,
-                            PublishingInfo = module.PublishingInfo,
-                            InstallOptions = new {
-                                Platforms      = module.InstallOptions.Platforms,
-                                ModuleReleases = pre24Releases
-                            },
-                            Downloads      = 0
-                        });
-                    }
-                }
-
+                
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string configJson = JsonSerializer.Serialize(moduleList, options);
 

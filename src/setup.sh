@@ -10,7 +10,7 @@
 #
 #   1. From within the /src (or /app, or root directory of the installation) in
 #      order to setup the full system, including serer, SDKs, demos and modules.
-#      This method is typically used for setting up the Developmnent environment.
+#      This method is typically used for setting up the Development environment.
 #
 #   2. From within a module's directory (or demo or server folder) to setup just
 #      that module, demo or the server
@@ -62,9 +62,10 @@
 # verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 verbosity="quiet"
 
-# The .NET version to install. NOTE: Only major version matters unless we use manual install
-# scripts, in which case we need to specify version. Choose version that works for all platforms
-# since the versions of these are not in always in sync
+# The .NET version to install. NOTE: Only major version matters unless we use 
+# manual install scripts, in which case we need to specify the version. Choose a
+# version that works for all platforms since the SDK and runtime versions are
+# generally not the same (usually differences in the minor or patch version)
 dotNetTarget=net9.0
 dotNetRuntimeVersion=9.0.0
 dotNetSDKVersion=9.0.100
@@ -170,9 +171,6 @@ assetsDir='assets'
 # not currently used, but here for future-proofing
 modelsDir="models"
 
-# The location of directories relative to the root of the solution directory
-sdkPath="${rootDirPath}/SDK"
-
 # Who launched this script? user or server?
 launchedBy="user"
 
@@ -260,7 +258,7 @@ fi
 
 # Standard output may be used as a return value in the functions. Expose stream
 # 3 so we can do 'echo "Hello, World!" >&3' within these functions for debugging
-# wihtout interfering with return values.
+# without interfering with return values.
 exec 3>&1
 
 # Execution environment, setup mode and Paths ::::::::::::::::::::::::::::::::
@@ -311,6 +309,7 @@ externalModulesDirPath="${rootDirPath}/../${externalModulesDir}"
 modelsDirPath="${rootDirPath}/${modelsDir}"
 downloadDirPath="${rootDirPath}/${downloadDir}"
 downloadModuleAssetsDirPath="${downloadDirPath}/${modulesDir}/${assetsDir}"
+sdkPath="${appRootDirPath}/SDK"
 utilsScriptsDirPath="${appRootDirPath}/scripts"
 installScriptsDirPath="${rootDirPath}/devops/install"
 utilsScript="${utilsScriptsDirPath}/utils.sh"
@@ -324,7 +323,10 @@ if [ -f ${rootDirPath}/.env ]; then
             # Trim any surrounding whitespace
             key=$(echo $key | xargs)
             value=$(echo $value | xargs)
-            export "$key=$value"
+            if [ "$key" != "" ]; then
+                # echo ".env: key=$key, value=$value"
+                export "$key=$value"
+            fi
         fi
     done < ${rootDirPath}/.env
 else
@@ -357,13 +359,13 @@ function setupPythonPaths () {
     # The path to the python installation, either local or shared. The
     # virtual environment will live in here
     if [ "${runtimeLocation}" = "Local" ]; then
-        pythonDirPath="${moduleDirPath}/bin/${os}/${pythonName}"
+        pythonDirPath="${moduleDirPath}/bin/${platform_dir}/${pythonName}"
     else
-        pythonDirPath="${runtimesDirPath}/bin/${os}/${pythonName}"
+        pythonDirPath="${runtimesDirPath}/bin/${platform_dir}/${pythonName}"
     fi
     virtualEnvDirPath="${pythonDirPath}/venv"
 
-    # The path to the python intepreter for this venv
+    # The path to the python interpreter for this venv
     venvPythonCmdPath="${virtualEnvDirPath}/bin/python${pythonVersion}"
 
     # The location where python packages will be installed for this venv
@@ -417,7 +419,7 @@ function doModuleInstall () {
     if [ "$moduleName" = "" ]; then moduleName="$moduleId"; fi
 
     # writeLine
-    writeLine "Processing module ${moduleId} ${moduleVersion}" "White" "Blue" $lineWidth
+    writeLine "Processing module ${moduleId} ${moduleVersion} (${moduleType})" "White" "Blue" $lineWidth
     writeLine
 
     # Convert brackets, quotes, commas and newlines to spaces
@@ -480,7 +482,7 @@ function doModuleInstall () {
             pythonVersion="${major}.${minor}"
         fi
 
-        if [ "$pythonVersion" == "" ]; then pythonVersion="3.9"; fi
+        if [ "$pythonVersion" = "" ]; then pythonVersion="3.9"; fi
         # echo "Current Python = $pythonVersion"
 
     elif [ "${runtime:0:6}" = "python" ]; then
@@ -507,7 +509,7 @@ function doModuleInstall () {
         writeLine "moduleStartFilePath = $moduleStartFilePath" $color_info
     fi
 
-    writeLine "${moduleType} module install" "$color_mute"
+    # writeLine "${moduleType} module install" "$color_mute"
 
     if [ -f "${moduleDirPath}/install.sh" ]; then
        
@@ -518,7 +520,7 @@ function doModuleInstall () {
             writeLine "Installing Python ${pythonVersion}"
             setupPython 
             if [ $? -gt 0 ]; then moduleInstallErrors="Unable to install Python ${pythonVersion}"; fi
-            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - ${moduleInstallErrors}\n"; fi
+            # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - ${moduleInstallErrors}\n"; fi
         fi
 
         # Install the module, but only if there were no issues installing python
@@ -529,7 +531,7 @@ function doModuleInstall () {
             source "${moduleDirPath}/install.sh" "install"
             if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="failed to install"; fi
 
-            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
+            # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
         fi
 
         # If a python version has been specified then we'll automatically look 
@@ -547,7 +549,7 @@ function doModuleInstall () {
 
                     installRequiredPythonPackages 
                     if [ $? -gt 0 ]; then moduleInstallErrors="Unable to install Python packages";  fi
-                    if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
+                    # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
 
                     # With the move to having modules include our SDK PyPi, we no longer need this.
                     # writeLine "Installing Python packages for the CodeProject.AI Server SDK" 
@@ -571,7 +573,7 @@ function doModuleInstall () {
                 source "${moduleDirPath}/post_install.sh" "post-install"
                 if [ $? -gt 0 ]; then moduleInstallErrors="Error running post-install script"; fi
 
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
+                # if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleName}] ${moduleInstallErrors}\n"; fi
             fi
         fi
 
@@ -657,7 +659,7 @@ function doModuleInstall () {
     fi
 
     # return result
-    echo "${moduleInstallErrors}"
+    # echo "${moduleInstallErrors}"
 }
 
 # import the utilities :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -704,7 +706,7 @@ if [[ $(wget -h 2>&1 | grep -E 'waitretry|connect-timeout') ]]; then
 fi
 
 # pipFlags='--quiet --quiet' - not actually supported, even though docs say it is
-pipFlags=''
+pipFlags='-q -q -q'
 copyFlags='/NFL /NDL /NJH /NJS /nc /ns  >/dev/null'
 unzipFlags='-o -qq'
 tarFlags='-xf'
@@ -740,7 +742,7 @@ fi
 # oneStep means we install python packages using pip -r requirements.txt rather
 # than installing module by module. one-step allows the dependency manager to
 # make some better calls, but also means the entire install can fail on a single
-# bad (and potentially unnneeded) module. Turning one-step off means you get a
+# bad (and potentially unneeded) module. Turning one-step off means you get a
 # more granular set of error messages should things go wrong, and a nicer UX.
 if [ "$inDocker" = true ]; then 
     oneStepPIP=false
@@ -792,16 +794,21 @@ writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${system
 # fi
 
 # Install tools that we know are available via apt-get or brew
-if [ "$os" = "linux" ]; then 
-    checkForTool curl
-    checkForTool pstree
-    checkForTool xz-utils
+if [ "$selfTestOnly" = false ]; then
+    if [ "$os" = "linux" ]; then 
+        checkForTool curl
+        if [ "${os_name}" = "debian" ]; then
+            checkForTool psmisc
+        else
+            checkForTool pstree
+        fi
+        checkForTool xz-utils
+    fi
+    checkForTool wget
+    checkForTool unzip
+    if [ "${useJq}" = true ]; then checkForTool jq; fi
+    writeLine ""
 fi
-checkForTool wget
-checkForTool unzip
-if [ "${useJq}" = true ]; then checkForTool jq; fi
-writeLine ""
-
 
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # 1. Ensure directories are created and download required assets
@@ -851,7 +858,7 @@ writeLine
 
 if [ "$verbosity" != "quiet" ]; then 
     writeLine 
-    writeLine "os, name, arch              = ${os} ${os_name} ${architecture}" $color_mute
+    writeLine "os, name, arch              = ${os} ${os_name} (${os_code_name}) ${architecture}" $color_mute
     writeLine "systemName, platform        = ${systemName}, ${platform}"       $color_mute
     writeLine "edgeDevice                  = ${edgeDevice}"                    $color_mute
     writeLine "SSH                         = ${inSSH}"                         $color_mute
@@ -879,62 +886,8 @@ writeLine "GPU support" "White" "DarkGreen" $lineWidth
 writeLine
 
 # Test for CUDA 
-
-hasCUDA=false
-
-cuDNN_version=""
-if [ "$os" = "macos" ]; then 
-    cuda_version=""
-elif [ "${edgeDevice}" = "Jetson" ]; then
-    hasCUDA=true
-    cuda_version=$(getCudaVersion)
-    cuDNN_version=$(getcuDNNVersion)
-elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then
-    cuda_version=""
-else 
-    cuda_version=$(getCudaVersion)
-
-    if [ "$cuda_version" != "" ]; then
-
-        hasCUDA=true
-        cuDNN_version=$(getcuDNNVersion)
-
-        # disable this
-        if [ "${systemName}" = "WSL-but-we're-ignoring-this-for-now" ]; then # we're disabling this on purpose
-            checkForAdminRights
-            if [ "$isAdmin" = false ]; then
-                writeLine "insufficient permission to install CUDA toolkit. Rerun under sudo" $color_error
-            else
-                # https://stackoverflow.com/a/66486390
-                cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
-                chmod a+x /usr/bin/nvidia-smi > /dev/null 2>&1
-        
-                # Out of the box, WSL might come with CUDA 11.5, and no toolkit, 
-                # meaning we rely on nvidia-smi for version info, which is wrong.
-                # We also should be thinking about CUDA 11.8 as a minimum, so let's
-                # upgrade.
-                cuda_comparison=$(versionCompare $cuda_version "11.8")
-                if [ "$cuda_comparison" = "-1" ]; then
-                    writeLine "Upgrading WSL's CUDA install to 11.8" $color_info
-
-                    saveState
-                    correctLineEndings "${installScriptsDirPath}/install_cuDNN.sh"
-                    source "${installScriptsDirPath}/install_cuDNN.sh" 11.8
-                    restoreState
-                fi
-            fi
-        fi
-
-        # We may have nvidia-smi, but not nvcc (eg in WSL). Fix this.
-        if [ -x "$(command -v nvidia-smi)" ] && [ ! -x "$(command -v nvcc)" ]; then
-
-            installAptPackages "nvidia-cuda-toolkit"
-
-            # The initial version we got would have been from nvidia-smi, which
-            # is wrong. Redo.
-            cuda_version=$(getCudaVersion)
-        fi
-    fi
+if [ "$selfTestOnly" = false ]; then
+    CheckAndSetupCUDA
 fi
 
 write "CUDA (NVIDIA) Present: "
@@ -964,8 +917,8 @@ elif [ "$os" = "linux" ]; then
         write ") " $color_primary
     fi
     if [ -x "$(command -v rocminfo)" ]; then
-        amdinfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
-        if [[ ${amdinfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm=true; fi
+        amdInfo=$(rocminfo | grep -i -E 'AMD ROCm System Management Interface') > /dev/null 2>&1
+        if [[ ${amdInfo} == *'AMD ROCm System Management Interface'* ]]; then hasROCm=true; fi
     fi
 fi
 if [ "$hasROCm" = true ]; then writeLine "Yes" $color_success; else writeLine "No" $color_warn; fi
@@ -1002,7 +955,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         saveState
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
-        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="CodeProject.AI SDK install failed"; fi
+        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="CodeProject.AI SDK install failed"; fi
         restoreState
 
         if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [SDK] ${moduleInstallErrors}\n"; fi
@@ -1019,7 +972,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
         saveState
         correctLineEndings "${moduleDirPath}/install.sh"
         source "${moduleDirPath}/install.sh" "install"
-        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="CodeProject.AI Server install failed"; fi
+        if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="CodeProject.AI Server install failed"; fi
         restoreState
 
         if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Server] ${moduleInstallErrors}\n"; fi
@@ -1041,12 +994,12 @@ if [ "$setupMode" = 'SetupEverything' ]; then
 
             doModuleInstall "${moduleId}" "${moduleDirPath}" "Internal"
 
-            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+            if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Int: ${moduleId} @ $moduleDirPath] ${moduleInstallErrors}\n"; fi
         done
 
-        if [ "$installExternalModules" == "true" ]; then
-            # Walk through the modules directoorym for modules that live in the external 
-            # folder. For isntance modules that are in extenal Git repos / projects
+        if [ "$installExternalModules" = "true" ]; then
+            # Walk through the modules directory for modules that live in the external 
+            # folder. For instance modules that are in external Git repos / projects
             writeLine
             writeLine "Processing External CodeProject.AI Server Modules" "White" "DarkGreen" $lineWidth
             writeLine
@@ -1058,7 +1011,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
                     moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                     doModuleInstall "${moduleId}" "${moduleDirPath}" "External"
-                    if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                    if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Ext: ${moduleId} @ $moduleDirPath] ${moduleInstallErrors}\n"; fi
                 done
             else
                 writeLine "No external modules found" "$color_mute"
@@ -1082,7 +1035,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
                 saveState
                 correctLineEndings "${moduleDirPath}/install.sh"
                 source "${moduleDirPath}/install.sh" "install"
-                if [ $? -gt 0 ] && [ "${moduleInstallErrors}" == "" ]; then moduleInstallErrors="failed to install"; fi   
+                if [ $? -gt 0 ] && [ "${moduleInstallErrors}" = "" ]; then moduleInstallErrors="failed to install"; fi   
                 restoreState
 
                 if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Demo clients] ${moduleInstallErrors}\n"; fi
@@ -1103,7 +1056,7 @@ if [ "$setupMode" = 'SetupEverything' ]; then
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                 doModuleInstall "${moduleId}" "${moduleDirPath}" "Demo"
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Demo: ${moduleId} @ $moduleDirPath] ${moduleInstallErrors}\n"; fi
             done
             modulesDirPath="${oldModulesDirPath}"
         fi
@@ -1172,7 +1125,7 @@ else
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                 doModuleInstall "${moduleId}" "${moduleDirPath}" "Demo"
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Demo: ${moduleId}] ${moduleInstallErrors}\n"; fi
                 
                 modulesDirPath="$oldModulesDirPath"
 
@@ -1182,7 +1135,7 @@ else
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                 doModuleInstall "${moduleId}" "${moduleDirPath}" "External"
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Ext: ${moduleId}] ${moduleInstallErrors}\n"; fi
 
             else                                                            # Internal module
 
@@ -1190,7 +1143,7 @@ else
                 moduleId=$(getModuleIdFromModuleSettings "${moduleDirPath}/modulesettings.json")
 
                 doModuleInstall "${moduleId}" "${moduleDirPath}" "Internal"
-                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [${moduleId}] ${moduleInstallErrors}\n"; fi
+                if [ "${moduleInstallErrors}" != "" ]; then setupErrors="${setupErrors}\n - [Int: ${moduleId}] ${moduleInstallErrors}\n"; fi
 
             fi
         fi

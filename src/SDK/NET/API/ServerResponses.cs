@@ -1,8 +1,10 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.Net;
 
 using CodeProject.AI.SDK.Modules;
+using CodeProject.AI.SDK.Client;
 using CodeProject.AI.SDK.Common;
-using CodeProject.AI.SDK.Server;
 
 namespace CodeProject.AI.SDK.API
 {

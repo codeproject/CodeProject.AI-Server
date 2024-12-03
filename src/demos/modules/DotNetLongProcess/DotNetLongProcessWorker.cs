@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Backend;
+using CodeProject.AI.SDK.Common;
 using CodeProject.AI.SDK.Utils;
-
-using SkiaSharp;
-using System.Threading;
 
 namespace CodeProject.AI.Modules.DotNetLongProcess
 {
@@ -43,7 +39,7 @@ namespace CodeProject.AI.Modules.DotNetLongProcess
     /// While intended for development and tests, this also demonstrates how a backend service can
     /// be created with the .NET Core framework.
     /// </summary>
-    public class DotNetLongProcessWorker : ModuleWorkerBase
+    public class DotNetLongProcessWorker : ModuleRunnerBase
     {
         private const int _maxSteps = 10;
 
@@ -69,7 +65,7 @@ namespace CodeProject.AI.Modules.DotNetLongProcess
 
             // Get some values from environment variables
             _modelSize = config.GetValue("MODEL_SIZE", "Medium") ?? "Medium";
-            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(moduleDirPath!, "assets")) ?? "assets";
+            _modelDir  = config.GetValue("MODELS_DIR", Path.Combine(ModuleDirPath!, "assets")) ?? "assets";
         }
 
         protected override void Initialize()
@@ -217,7 +213,7 @@ namespace CodeProject.AI.Modules.DotNetLongProcess
             // Setup the request and add some test data
             RequestPayload payload = new RequestPayload("command");
             payload.SetValue("minconfidence", "0.4");
-            payload.AddFile(Path.Combine(moduleDirPath!, "test/home-office.jpg"));
+            payload.AddFile(Path.Combine(ModuleDirPath!, "test/home-office.jpg"));
 
             var request = new BackendRequest(payload);
 

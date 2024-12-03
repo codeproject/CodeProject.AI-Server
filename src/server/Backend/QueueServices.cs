@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using CodeProject.AI.SDK;
 using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Backend;
 
 namespace CodeProject.AI.Server.Backend
 {

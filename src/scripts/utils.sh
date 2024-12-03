@@ -29,14 +29,14 @@ function quit () {
 }
 
 # Returns a color code for the given foreground/background colors
-# This code is echoed to the terminal before outputing text in
+# This code is echoed to the terminal before outputting text in
 # order to generate a colored output.
 #
 # string foreground color name. Optional if no background provided.
 #        Defaults to "Default" which uses the system default
 # string background color name.  Optional. Defaults to "Default"
 #        which is the system default
-# string intense. Optional. If "true" then the insensity is turned up
+# string intense. Optional. If "true" then the intensity is turned up
 # returns a string
 function Color () {
 
@@ -291,10 +291,21 @@ function CreateWriteableDir () {
         else
             mkdir -p "${path}" >/dev/null 2>/dev/null
         fi
-        if [ $? -eq 0 ]; then 
+        dir_error=$?
+
+        if [ $dir_error = 1 ]; then 
+            if [ "${verbosity}" = "loud" ]; then
+                sudo mkdir -p "${path}"
+            else
+                sudo mkdir -p "${path}" >/dev/null 2>/dev/null
+            fi
+            dir_error=$?
+        fi 
+
+        if [ $dir_error = 0 ]; then 
             writeLine "done" $color_success
         else
-            writeLine "Needs admin permission to create folder" $color_error
+            writeLine "Needs admin permission to create folder (error $dir_error)" $color_error
             displayMacOSDirCreatePermissionError
         fi
     fi
@@ -304,10 +315,11 @@ function CreateWriteableDir () {
         if [ "$isAdmin" = true ]; then
             write "Setting permissions on ${desc} folder..." $color_primary 
             sudo chmod a+w "${path}" >/dev/null 2>/dev/null
-            if [ $? -eq 0 ]; then 
+            dir_error=$?
+            if [ $dir_error = 0 ]; then 
                 writeLine "done" $color_success
             else
-                writeLine "Needs admin permission to set folder permissions" $color_error
+                writeLine "Needs admin permission to set folder permissions (error $dir_error)" $color_error
             fi
         fi
     fi
@@ -347,7 +359,7 @@ function checkForAdminRights () {
     fi
 
     if [ "$isAdmin" = false ] && [ "$requestPassword" = true ]; then
-        if [ "$os" == "macos" ]; then
+        if [ "$os" = "macos" ]; then
             # THIS DOES NOT WORK
             # This shows the password prompt, but the admin rights starts and ends with the "whoami"
             # call. Once that call finishes, admin rights no longer apply.
@@ -409,7 +421,7 @@ function checkForTool () {
 
             # Ensure Brew is installed. NOTE: macOS has curl built in, so no worries
             # about recursion if calling checkForTool "curl"
-            if [ $"$architecture" = 'arm64' ]; then
+            if [ "$architecture" = 'arm64' ]; then
                 if [ ! -f /usr/local/bin/brew ]; then
 
                     checkForAdminAndWarn "arch -x86_64 /bin/bash -c '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)'"
@@ -504,7 +516,7 @@ function checkForTool () {
 }
 
 function setupSSL() {
-    if [ "$os" = "linux" ] && [ "$architecture" == "x86_64" ]; then
+    if [ "$os" = "linux" ] && [ "$architecture" = "x86_64" ]; then
 
         if [ ! -f /usr/lib/x86_64-linux-gnu/libssl.so.1.1 ] || [ ! -e /usr/lib/libcrypto.so.1.1 ]; then
 
@@ -547,6 +559,132 @@ function setupSSL() {
     fi
 }
 
+
+function CheckAndSetupCUDA () {
+
+    hasCUDA=false
+    cuDNN_version=""
+    cuda_major_version=""
+    cuda_major_minor=""
+
+    if [ "$os" = "macos" ]; then 
+        cuda_version=""
+    elif [ "${edgeDevice}" = "Jetson" ]; then
+        hasCUDA=true
+        cuda_version=$(getCudaVersion)
+        cuda_major_version=${cuda_version%%.*}
+        cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
+        cuDNN_version=$(getcuDNNVersion)
+        
+    elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || [ "${edgeDevice}" = "Radxa ROCK" ]; then
+        cuda_version=""
+    else 
+        cuda_version=$(getCudaVersion)
+        cuda_major_version=${cuda_version%%.*}
+        cuda_minor_version=${cuda_version#*.}
+        cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
+
+        if [ "$cuda_version" != "" ]; then
+
+            hasCUDA=true
+            cuDNN_version=$(getcuDNNVersion)
+
+            installKeyring=false
+            if [ "$cuDNN_version" = "" ] || [ ! -x "$(command -v nvcc)" ]; then
+                writeLine "Installing NVIDIA keyring" $color_info
+                wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb > /dev/null 2>&1 &
+                spin $!
+                sudo dpkg -i cuda-keyring_1.1-1_all.deb >/dev/null &
+                spin $!
+                rm cuda-keyring_1.1-1_all.deb
+            fi
+
+            if [ "$cuDNN_version" = "" ]; then
+                writeLine "Installing cuDNN" $color_info
+                # cuDNN
+                # https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local
+                sudo apt-get update >/dev/null 2>&1 &
+                spin $!
+                sudo apt-get install "cudnn-cuda-$cuda_major_version" -y >/dev/null 2>&1 &
+                spin $!
+            fi
+
+            if [ ! -x "$(command -v nvcc)" ]; then
+                # CUDA toolkit
+                # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network
+                writeLine "Installing CUDA toolkit" $color_info
+
+                if [ "${os_name}" = "debian" ]; then
+                 
+                    # Backup existing sources.list
+                    # echo "Backing up /etc/apt/sources.list to /etc/apt/sources.list.bak..."
+                    # sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+
+                    main_repo="deb http://deb.debian.org/debian $os_code_name main"
+                    if grep -qF "$main_repo contrib non-free" /etc/apt/sources.list; then
+                        echo "Found '$main_repo'. Replacing it with '$main_repo contrib non-free'..."
+                        sudo sed -i "s|^$main_repo|$main_repo contrib non-free|" /etc/apt/sources.list
+                    else
+                        echo "'$main_repo' not found. Adding '$main_repo contrib non-free' to sources.list..."
+                        echo "$main_repo contrib non-free" | sudo tee -a /etc/apt/sources.list > /dev/null
+                    fi
+
+                    src_repo="deb-src http://deb.debian.org/debian $os_code_name main"
+                    if grep -qF "$src_repo contrib non-free" /etc/apt/sources.list; then
+                        echo "Found '$src_repo'. Replacing it with '$src_repo contrib non-free'..."
+                        sudo sed -i "s|^$src_repo|$updated_repo contrib non-free|" /etc/apt/sources.list
+                    else
+                        echo "'$src_repo' not found. Adding '$src_repo contrib non-free' to sources.list..."
+                        echo "$src_repo contrib non-free" | sudo tee -a /etc/apt/sources.list > /dev/null
+                    fi
+                fi
+
+                sudo apt-get update > /dev/null 2>&1 &
+                spin $!
+                writeLine "Installing cuda kit" $color_info
+                sudo apt-get install cuda-toolkit-${cuda_major_version}-${cuda_minor_version} -y >/dev/null 2>&1 &
+                spin $!
+            fi
+
+            # disable this
+            if [ "${systemName}" = "WSL-but-we're-ignoring-this-for-now" ]; then # we're disabling this on purpose
+                checkForAdminRights
+                if [ "$isAdmin" = false ]; then
+                    writeLine "insufficient permission to install CUDA toolkit. Rerun under sudo" $color_error
+                else
+                    # https://stackoverflow.com/a/66486390
+                    cp /usr/lib/wsl/lib/nvidia-smi /usr/bin/nvidia-smi > /dev/null 2>&1
+                    chmod a+x /usr/bin/nvidia-smi > /dev/null 2>&1
+            
+                    # Out of the box, WSL might come with CUDA 11.5, and no toolkit, 
+                    # meaning we rely on nvidia-smi for version info, which is wrong.
+                    # We also should be thinking about CUDA 11.8 as a minimum, so let's
+                    # upgrade.
+                    cuda_comparison=$(versionCompare $cuda_version "11.8")
+                    if [ "$cuda_comparison" = "-1" ]; then
+                        writeLine "Upgrading WSL's CUDA install to 11.8" $color_info
+
+                        saveState
+                        correctLineEndings "${installScriptsDirPath}/install_cuDNN.sh"
+                        source "${installScriptsDirPath}/install_cuDNN.sh" 11.8
+                        restoreState
+                    fi
+                fi
+            fi
+
+            # We may have nvidia-smi, but not nvcc (eg in WSL). Fix this.
+            if [ -x "$(command -v nvidia-smi)" ] && [ ! -x "$(command -v nvcc)" ]; then
+
+                installAptPackages "nvidia-cuda-toolkit"
+
+                # The initial version we got would have been from nvidia-smi, which
+                # is wrong. Redo.
+                cuda_version=$(getCudaVersion)
+            fi
+        fi
+    fi
+}
+
 function getDotNetVersion() {
 
     local requestedType=$1
@@ -566,7 +704,7 @@ function getDotNetVersion() {
         # IFS=$'\n' # set the Internal Field Separator as end of line
         # while read -r line
         # do
-        #     dotnet_version=$(echo "$line}" | cut -d ' ' -f 1)
+        #     dotnet_version=$(echo "${line}" | cut -d ' ' -f 1)
         #     current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
         # 
         #     if (( $current_comparison > $comparison )); then
@@ -584,26 +722,29 @@ function getDotNetVersion() {
 
         comparison=-1
 
-        IFS=$'\n' # set the Internal Field Separator as end of line
-        while read -r line
-        do
-            if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
-                dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
-                # echo "GET: Found .NET runtime $dotnet_version" >&3
+        if command -v dotnet >/dev/null 2>/dev/null; then
 
-                current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
-                # echo "GET: current compare ${comparison}, new compare ${current_comparison}" >&3
+            IFS=$'\n' # set the Internal Field Separator as end of line
+            while read -r line
+            do
+                if [[ $line == *'Microsoft.NETCore.App '* ]]; then
+                    dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
+                    # echo "GET: Found .NET runtime $dotnet_version" >&3
 
-                if (( $current_comparison >= $comparison )); then
-                    highestDotNetVersion="$dotnet_version"
-                    comparison=$current_comparison
-                    # echo "GET: Found new highest .NET runtime $highestDotNetVersion" >&3
-                # else
-                #    echo "GET: Found $dotnet_version runtime, which is not higher than $highestDotNetVersion" >&3
+                    current_comparison=$(versionCompare $dotnet_version $highestDotNetVersion)
+                    # echo "GET: current compare ${comparison}, new compare ${current_comparison}" >&3
+
+                    if (( $current_comparison >= $comparison )); then
+                        highestDotNetVersion="$dotnet_version"
+                        comparison=$current_comparison
+                        # echo "GET: Found new highest .NET runtime $highestDotNetVersion" >&3
+                    # else
+                    #    echo "GET: Found $dotnet_version runtime, which is not higher than $highestDotNetVersion" >&3
+                    fi
                 fi
-            fi
-        done <<< "$(dotnet --list-runtimes)"
-        unset IFS
+            done <<< "$(dotnet --list-runtimes)"
+            unset IFS
+        fi
     fi
 
     if [ "$highestDotNetVersion" = "0" ]; then highestDotNetVersion=""; fi
@@ -619,6 +760,32 @@ function getMajorDotNetVersion() {
     echo "$dotnet_major_version"
 }
 
+function setDotNetLocation () {
+
+    local profile_location=$1
+    local dotnet_path=$2
+
+    if [ -f $location ]; then
+
+        if grep -q "export DOTNET_ROOT=${profile_location}"; then
+            write "Already added link to $profile_location"
+        else
+            write "Adding Link to $location"
+            echo 'export DOTNET_ROOT=${dotnet_path}' >> $profile_location
+            export DOTNET_ROOT=${dotnet_path}
+        fi
+
+        if [[ $PATH == *"${dotnet_path}"* ]]; then
+            write "PATH contains location of .NET"
+        else
+            write "Adding location of .NET to PATH"
+            echo "export PATH=${dotnet_path}${PATH:+:${PATH}}" >> $profile_location
+            export PATH=${dotnet_path}${PATH:+:${PATH}}
+        fi
+    fi
+}
+
+
 function setupDotNet () {
 
     # only major/minor versions accepted (eg 7.0)
@@ -633,7 +800,7 @@ function setupDotNet () {
     
     if [ "$requestedType" = "" ]; then requestedType="aspnetcore"; fi
 
-    write "Checking for .NET ${requestedNetVersion}..."
+    write "Checking for .NET ${requestedNetVersion} ${requestedType}..."
 
     highestDotNetVersion="(None)"
     comparison=-1
@@ -648,8 +815,10 @@ function setupDotNet () {
             IFS=$'\n' # set the Internal Field Separator as end of line
             while read -r line
             do
-                dotnet_version=$(echo "$line}" | cut -d ' ' -f 1)
-                dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
+                # echo "SET: Read line $line" >&3
+
+                dotnet_version=$(echo "${line}" | cut -d ' ' -f 1)
+                dotnet_major_version=$(echo "${dotnet_version}" | cut -d '.' -f 1)
 
                 # echo "SET: Found .NET SDK $dotnet_version" >&3
 
@@ -682,10 +851,10 @@ function setupDotNet () {
             IFS=$'\n' # set the Internal Field Separator as end of line
             while read -r line
             do
-                if [[ ${line} == *'Microsoft.NETCore.App '* ]]; then
+                if [[ $line == *'Microsoft.NETCore.App '* ]]; then
 
-                    dotnet_version=$(echo "$line}" | cut -d ' ' -f 2)
-                    dotnet_major_version=$(echo "$dotnet_version}" | cut -d '.' -f 1)
+                    dotnet_version=$(echo "${line}" | cut -d ' ' -f 2)
+                    dotnet_major_version=$(echo "${dotnet_version}" | cut -d '.' -f 1)
                     # echo "SET: Found .NET runtime $dotnet_version" >&3
 
                     # Let's only compare major versions
@@ -712,7 +881,7 @@ function setupDotNet () {
     fi
 
     mustInstall="false"
-    if [ "$haveRequested" == true ]; then
+    if [ "$haveRequested" = true ]; then
         writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
     elif (( $comparison == 0 )); then
         writeLine "All good. .NET ${requestedType} is ${highestDotNetVersion}" $color_success
@@ -735,18 +904,25 @@ function setupDotNet () {
             return 6 # unable to download required asset
         fi
 
-        if [ "$architecture" = 'arm64' ]; then
-            dotnet_path="/opt/dotnet"
-        elif [ "$os" = "linux" ]; then
-            dotnet_path="/usr/lib/dotnet/"
+        if [ "$os" = "linux" ]; then
+            dotnet_basepath="/usr/lib/"
         else # macOS x64
-            # dotnet_path="~/.dotnet/"
-            dotnet_path="/usr/local/share/dotnet/"
+            # dotnet_basepath="~/."
+            # if [ "$architecture" = 'arm64' ]; then
+            #     dotnet_basepath="/opt/"
+            # else
+                dotnet_basepath="/usr/local/share/"
+            # fi
         fi
+        dotnet_path="${dotnet_basepath}/dotnet/"
 
+        useCustomDotNetInstallScript=false
+        # No longer using the arm64 custom script: standard install script seems good enough now.
         # output a warning message if no admin rights and instruct user on manual steps
-        if [ "$architecture" = 'arm64' ]; then
-            install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
+        # if [ "$architecture" = 'arm64' ]; then useCustomDotNetInstallScript=true; fi
+        
+        if [ "$useCustomDotNetInstallScript" = true ]; then
+           install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install-arm.sh' $requestedNetMajorMinorVersion $requestedType"
         else
             install_instructions="sudo bash '${installScriptsDirPath}/dotnet-install.sh' --install-dir '${dotnet_path}' --channel $requestedNetMajorMinorVersion --runtime $requestedType"
         fi
@@ -755,11 +931,18 @@ function setupDotNet () {
         if [ "$isAdmin" = true ] || [ "$attemptSudoWithoutAdminRights" = true ]; then
             if [ "$os" = "linux" ]; then
 
-                if [ "$os_name" = "debian-SKIP" ]; then
+                # Potentially not reliable. Only blessed by MS for Debian >= 12
+                if [ "$os_name" = "debian" ] && [ ! "$os_vers" -lt "12" ]; then
 
-                    wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
-                    sudo dpkg -i packages-microsoft-prod.deb >/dev/null
-                    rm packages-microsoft-prod.deb >/dev/null
+                    if [ $verbosity = "quiet" ]; then
+                        wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb >/dev/null
+                        sudo dpkg -i packages-microsoft-prod.deb >/dev/null
+                        rm packages-microsoft-prod.deb >/dev/null
+                    else
+                        wget https://packages.microsoft.com/config/debian/${os_vers}/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+                        sudo dpkg -i packages-microsoft-prod.deb
+                        rm packages-microsoft-prod.deb
+                    fi
 
                     if [ "$requestedType" = "sdk" ]; then
                         sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
@@ -767,8 +950,30 @@ function setupDotNet () {
                         sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
                     fi
 
+                # .NET 9 seems to settle down the "we do/we don't" that MS is doing with .NET 6,7 and 8. 
+                elif [ "$requestedNetMajorVersion" = "9" ]; then   # ... && [ "$os_name" = "ubuntu" ]
+
+                    # TODO: Change this to a " >= 24.10"
+                    if [ "$os_name" = "ubuntu" ] && [ "$os_vers" = "24.10" ]; then 
+                        if [ "$requestedType" = "sdk" ]; then
+                            sudo apt-get update && sudo apt-get install -y dotnet-sdk-$requestedNetMajorMinorVersion >/dev/null
+                        else
+                            sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-$requestedNetMajorMinorVersion >/dev/null
+                        fi
+                    else
+                        # .NET 9 is still not fully released. But we know a guy who knows a guy...
+                        # TODO: This also works for NET 6 & 7, Ubuntu 24.04, and .NET 9,  Ubuntu 22.04 & 24.04
+                        sudo add-apt-repository ppa:dotnet/backports -y
+                        sudo apt install "dotnet${requestedNetMajorVersion}" -y
+                    fi
+
+                # For everyone else, use The Script
                 else
-                    if [ "$architecture" = 'arm64' ]; then
+
+                    # Needed if we're installing .NET without an installer to help us
+                    installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
+
+                    if [ "$useCustomDotNetInstallScript" = true ]; then
                         # installs in /opt/dotnet
                         if [ $verbosity = "quiet" ]; then
                             sudo bash "${installScriptsDirPath}/dotnet-install-arm.sh" "${requestedNetMajorVersion}.0" "$requestedType" "quiet"
@@ -785,7 +990,13 @@ function setupDotNet () {
                         fi
                     fi
                 fi
+
             else
+                # macOS
+                
+                # (Maybe) needed if we're installing .NET without an installer to help us
+                # installAptPackages "ca-certificates libc6 libgcc-s1 libicu74 liblttng-ust1 libssl3 libstdc++6 libunwind8 zlib1g"
+
                 if [ $verbosity = "quiet" ]; then
                     sudo bash "${installScriptsDirPath}/dotnet-install.sh" --install-dir "${dotnet_path}" --channel "$requestedNetMajorMinorVersion" --runtime "$requestedType" "--quiet"
                 elif [ $verbosity = "loud" ]; then
@@ -800,44 +1011,22 @@ function setupDotNet () {
         #    return 2 # failed to install required runtime
         #fi
 
-        if [ "$os" = "linux" ] && [ "$architecture" != "arm64" ]; then
-
-            # Add link
-            # ln -s /opt/dotnet/dotnet /usr/local/bin
-            
-            # if [ "$os_name" = "debian" ]; then
-            #    sudo ln ~/.dotnet/dotnet /usr/bin
-            #fi
-
-            # make link permanent
-            if grep -q 'export DOTNET_ROOT=' ~/.bashrc;  then
-                echo 'Already added link to .bashrc'
-            else
-                echo 'export DOTNET_ROOT=/usr/bin/' >> ~/.bashrc
-            fi
+        # The install script is for CI/CD and doesn't actually register .NET. So add 
+        # link and env variables
+        writeLine "Link Binaries to /usr/local/bin..."
+        if [ -e /usr/local/bin/dotnet ]; then
+            rm /usr/local/bin/dotnet
         fi
+        sudo ln -s ${dotnet_path}dotnet /usr/local/bin
 
-        if [ "$os" == "macos" ]; then
-            # The install script is for CI/CD and doesn't actually register .NET. So add 
-            # link and env variable
-            export DOTNET_ROOT=${dotnet_path}
-            export PATH=${DOTNET_ROOT}${PATH:+:${PATH}}
-
-            if [ ! -e /usr/local/bin/dotnet ]; then
-                ln -fs "${dotnet_path}dotnet" "/usr/local/bin/dotnet"
-            fi
-
-            # if [ -f ~/.bashrc ]; then
-                if [ ! -f ~/.bashrc ] || [ $(grep -q 'export DOTNET_ROOT=' ~/.bashrc) ]; then
-                    sudo echo "export DOTNET_ROOT=${dotnet_path}"           >> ~/.bashrc
-                    sudo echo "export PATH=${dotnet_path}${PATH:+:${PATH}}" >> ~/.bashrc
-                fi
-            # elif [ -f ~/.bash_profile ]; then
-            #     if grep -q 'export DOTNET_ROOT=' ~/.bash_profile; then
-            #         echo 'export DOTNET_ROOT=${dotnet_path}'           >> ~/.bash_profile
-            #         echo "export PATH=${dotnet_path}${PATH:+:${PATH}}" >> ~/.bash_profile
-            #     fi
-            # fi
+        if [ -f " /home/pi/.bashrc" ]; then
+            setDotNetLocation " /home/pi/.bashrc" "${dotnet_path}"
+        elif [ -f " ~/.bashrc" ]; then 
+            setDotNetLocation " ~/.bashrc" "${dotnet_path}"
+        elif [ -f " ~/.bash_profile" ]; then
+            setDotNetLocation " ~/.bash_profile" "${dotnet_path}"
+        elif [ -f " ~/.zshrc" ]; then
+            setDotNetLocation " ~/.zshrc" "${dotnet_path}"
         fi
     fi
 
@@ -852,7 +1041,7 @@ function setupDotNet () {
             echo "sudo rm /etc/apt/sources.list.d/microsoft-prod.list"
             echo "sudo apt-get update"
             echo "# Install .NET SDK"
-            echo "sudo apt-get install dotnet-sdk-${requestedNetVersion}"
+            echo "sudo apt-get install dotnet-sdk-${requestedNetMajorMinorVersion}"
         else
             writeLine ".NET was not installed correctly. You may need to install .NET manually"       $color_error
             writeLine "See https://learn.microsoft.com/en-us/dotnet/core/install/macos for downloads" $color_error
@@ -1056,14 +1245,14 @@ function setupPython () {
 
             writeLine "done" $color_success
 
-        # macOS: With my M1 chip and Rosetta I make installing Python a real PITA.
+        # macOS: With my M1 chip and Rosetta, I make installing Python a real PITA.
         # Raspberry Pi: Hold my beer 
         elif [ "${edgeDevice}" = "Raspberry Pi" ] || [ "${edgeDevice}" = "Orange Pi" ] || \
              [ "${edgeDevice}" = "Radxa ROCK"   ] || [ "${edgeDevice}" = "Jetson"    ] || \
              [ "$os_name" = "debian" ]; then
 
             # ensure gcc is installed
-            if [ "$os_name" == "debian" ]; then 
+            if [ "$os_name" = "debian" ]; then 
                 # gcc and make
                 installAptPackages "build-essential make"
                 # to build python on Debian
@@ -1086,7 +1275,7 @@ function setupPython () {
                 fi
             fi
 
-            pushd "${appRootDirPath}" > /dev/null
+            pushd "${rootDirPath}" > /dev/null
 
             # Update at your leisure. 
             # See https://www.python.org/ftp/python/ for a complete list.
@@ -1095,15 +1284,17 @@ function setupPython () {
                 "3.1")  pythonPatchVersion="3.1.5";;
                 "3.2")  pythonPatchVersion="3.2.6";;
                 "3.3")  pythonPatchVersion="3.3.7";;
-                "3.4")  pythonPatchVersion="3.4.19";; 
+                "3.4")  pythonPatchVersion="3.4.10";; 
                 "3.5")  pythonPatchVersion="3.5.10";;
                 "3.6")  pythonPatchVersion="3.6.15";;
                 "3.7")  pythonPatchVersion="3.7.17";;
-                "3.8")  pythonPatchVersion="3.8.18";;
-                "3.9")  pythonPatchVersion="3.9.18";; 
-                "3.10") pythonPatchVersion="3.10.13";; 
-                "3.11") pythonPatchVersion="3.11.5";; 
-                "3.12") pythonPatchVersion="3.12.0";; 
+                "3.8")  pythonPatchVersion="3.8.20";;
+                "3.9")  pythonPatchVersion="3.9.20";; 
+                "3.10") pythonPatchVersion="3.10.15";; 
+                "3.11") pythonPatchVersion="3.11.10";; 
+                "3.12") pythonPatchVersion="3.12.7";; 
+                "3.13") pythonPatchVersion="3.13.0";; 
+                "3.14") pythonPatchVersion="3.14.0";; 
                 *)      pythonPatchVersion="${pythonVersion}.0"
             esac
 
@@ -1126,9 +1317,9 @@ function setupPython () {
             # https://www.aliengen.com/blog/install-python-3-7-on-a-raspberry-pi-with-raspbian-8
 
             # Download
-            cd $downloadDir 
-            mkdir --parents "${os}/Lib" >/dev/null
-            cd "${os}/Lib"
+            cd "${downloadDirPath}"
+            mkdir --parents "${platform_dir}/lib" >/dev/null
+            cd "${os}/lib"
 
             if [ ! -f "openssl-1.1.1c.tar.gz" ]; then
                 curl $curlFlags --remote-name https://www.openssl.org/source/openssl-1.1.1c.tar.gz
@@ -1174,12 +1365,12 @@ function setupPython () {
                 # Build and install Python
                 cd Python-${pythonPatchVersion}
 
-                if [ "$os_name" == "debian" ]; then 
+                if [ "$os_name" = "debian" ]; then 
                     # Native debian is giving us troubles. The instructions should be optimised down
                     # to just what's needed, but for now we'll just throw everything at the problem
                     # until we find a solution to the "SSLError("Can't connect to HTTPS URL because 
                     # the SSL module is not available.")' issue
-                    sudo apt-get install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev
+                    sudo apt-get install libssl-dev libncurses5-dev libsqlite3-dev libreadline-dev libtk8.6 libgdm-dev libdb4o-cil-dev libpcap-dev -y
                     sudo ./configure --enable-optimizations 
                     make
                     sudo make install
@@ -1222,13 +1413,8 @@ function setupPython () {
         # For Linux we'll use apt-get the deadsnakes PPA to get the old version
         # of python. Deadsnakes? Old python? Get it? Get it?! And who said 
         # developers have no sense of humour.
-        else
-
-            # https://askubuntu.com/a/1481830
-            # if [ "$os_name" = "debian" ]; then
-            #     This allows adding the deadsnakes PPA, but this ppa doesn't support debian
-            #     sudo apt-get install python3-launchpadlib -y
-            # fi
+        # NOTE: ppa is an Ubuntu thing only. https://askubuntu.com/a/1481830
+        else # if [ "$os_name" = "ubuntu" ]; then
 
             if [ "${verbosity}" = "loud" ]; then
             
@@ -1436,7 +1622,9 @@ function setupPython () {
 
     echo $pyVersion | grep "${pythonVersion}" >/dev/null
     if [ $? -ne 0 ]; then
-        errorNoPython
+        writeLine 'Not found' $color_error
+        # errorNoPython
+        return 1
     fi 
     writeLine 'All good' $color_success
 
@@ -1721,9 +1909,6 @@ function installRequiredPythonPackages () {
         if [ "$installGPU" = "true" ]; then
 
             if [ "$cuda_version" != "" ]; then
-
-                cuda_major_version=${cuda_version%%.*}
-                cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
                 
                 if [ "${verbosity}" != "quiet" ]; then
                     writeLine "CUDA version is $cuda_version (${cuda_major_minor} / ${cuda_major_version})" $color_info
@@ -2299,6 +2484,10 @@ function getCudaVersion () {
         fi
     fi
 
+    cuda_major_version=${cuda_version%%.*}
+    cuda_minor_version=${cuda_version#*.}
+    cuda_major_minor=$(echo "$cuda_version" | sed 's/\./_/g')
+
     echo $cuda_version
 }
 
@@ -2319,7 +2508,7 @@ function getValueFromModuleSettingsFile () {
     local moduleId=$2
     local property=$3
 
-    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" = "true" ]; then
        echo "Searching for '${property}' in a suitable modulesettings.json file in ${moduleDirPath}" >&3
     fi
 
@@ -2376,7 +2565,7 @@ function getValueFromModuleSettingsFile () {
         if [ "${moduleSettingValue}" != "" ]; then settings_file_used="modulesettings.json"; fi
     fi
 
-    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" = "true" ]; then
        if [ "${moduleSettingValue}" = "" ]; then
            echo "Cannot find ${moduleId}.${property} in modulesettings in ${moduleDirPath}" >&3
        else
@@ -2429,7 +2618,7 @@ function getValueFromModuleSettings () {
         key=$".Modules.${moduleId}.${property}"
     fi
 
-    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" = "true" ]; then
         echo jsonFile is $json_file >&3
         echo parse_mode is $parse_mode >&3
     fi
@@ -2491,9 +2680,9 @@ function getValueFromModuleSettings () {
     fi
 
     # Really?? 
-    if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
+    if [ "$jsonValue" = "null" ]; then jsonValue=""; fi
 
-    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" == "true" ]; then
+    if [ "$verbosity" = "loud" ] && [ "$debug_json_parse" = "true" ]; then
         echo "${key} = $jsonValue" >&3;
     fi
     
@@ -2534,7 +2723,7 @@ function getModuleIdFromModuleSettings () {
     fi
 
     # Really?? A literal "null"?
-    if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
+    if [ "$jsonValue" = "null" ]; then jsonValue=""; fi
 
     # debug
     # if [ "$verbosity" = "loud" ]; then echo "${key} = $jsonValue" >&3; fi
@@ -2580,7 +2769,7 @@ function getValueFromJsonFile () {
     fi
 
     # Really?? A literal "null"?
-    if [ "$jsonValue" == "null" ]; then jsonValue=""; fi
+    if [ "$jsonValue" = "null" ]; then jsonValue=""; fi
 
     # debug
     # if [ "$verbosity" = "loud" ]; then echo "${key} = $jsonValue" >&3; fi
@@ -2693,7 +2882,8 @@ function displayMacOSDirCreatePermissionError () {
         writeLine ''
         writeLine 'We may be able to suggest something:'  $color_info
 
-        if [ "$os_name" = "Sonoma" ]; then   # macOS 14 / Kernal 23
+        # if [ "$os_name" = "Sonoma" ]; then   # macOS 14 / Kernal 23
+        if (( os_vers >= 13 )); then
             # Note that  will appear as the Apple symbol on macOS, but probably not on Windows or Linux
             writeLine '1. Pull down the  Apple menu and choose "System Settings"'
             writeLine '2. Choose “Privacy & Security"'
@@ -2774,9 +2964,10 @@ fi
 if [[ $OSTYPE == 'darwin'* ]]; then
     platform='macos'
     os="macos"
-    os_name=$(awk '/SOFTWARE LICENSE AGREEMENT FOR macOS/' '/System/Library/CoreServices/Setup Assistant.app/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf' | awk -F 'macOS ' '{print $NF}' | awk '{print substr($0, 0, length($0)-1)}') # eg "Big Sur"
+    os_name="macos"
+    os_code_name=$(awk '/SOFTWARE LICENSE AGREEMENT FOR macOS/' '/System/Library/CoreServices/Setup Assistant.app/Contents/Resources/en.lproj/OSXSoftwareLicense.rtf' | awk -F 'macOS ' '{print $NF}' | awk '{print substr($0, 0, length($0)-1)}') # eg "Big Sur"
     os_vers=$(sw_vers -productVersion) # eg "11.1" for macOS Big Sur
-
+    platform_dir=$platform # or platform_dir="${platform// /}""; platform_dir="${platform_dir,,}" - no space, lowercase
     systemName=$os
     edgeDevice=''
 
@@ -2785,8 +2976,10 @@ else
     os='linux'
     edgeDevice=''
     platform='linux'
-    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu", "debian12"
+    os_name=$(. /etc/os-release;echo $ID) # eg "ubuntu", "debian"
     os_vers=$(. /etc/os-release;echo $VERSION_ID) # eg "22.04" for Ubuntu 22.04, "12" for Debian 12
+    os_code_name=$(. /etc/os-release;echo $VERSION_CODENAME) # eg "jammy" for Ubuntu 22.04, "bookworm" for Debian 12
+    platform_dir=$os_name # or $platform 
 
     if [ "$architecture" = 'arm64' ]; then platform='linux-arm64'; fi
 

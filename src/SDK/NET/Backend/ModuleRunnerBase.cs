@@ -1,26 +1,33 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Json;
-
-using CodeProject.AI.SDK.API;
-using CodeProject.AI.SDK.Utils;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace CodeProject.AI.SDK
+using CodeProject.AI.SDK.API;
+using CodeProject.AI.SDK.Utils;
+
+namespace CodeProject.AI.SDK.Backend
 {
     /// <summary>
     /// The base class from which a module should be derived.
     /// </summary>
-    public abstract class ModuleWorkerBase : BackgroundService
+    public abstract class ModuleRunnerBase : BackgroundService
     {
-        private readonly string[] _doNotLogCommands = { 
+        private readonly string[] _doNotLogCommands = [ 
             "list-custom", 
             "get_module_status", "status", "get_status", // status is deprecated alias
             "get_command_status"
-        };
+        ];
 
         private readonly TimeSpan      _status_delay = TimeSpan.FromSeconds(2);
 
@@ -55,7 +62,7 @@ namespace CodeProject.AI.SDK
         /// <summary>
         /// Gets or sets the path to this Module
         /// </summary>
-        public string? moduleDirPath { get; set; }
+        public string? ModuleDirPath { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether or not this module supports GPU acceleration
@@ -89,13 +96,13 @@ namespace CodeProject.AI.SDK
         /// <param name="logger">The Logger.</param>
         /// <param name="configuration">The app configuration values.</param>
         /// <param name="hostApplicationLifetime">The applicationLifetime object</param>
-        public ModuleWorkerBase(ILogger logger, IConfiguration configuration,
+        public ModuleRunnerBase(ILogger logger, IConfiguration configuration,
                                 IHostApplicationLifetime hostApplicationLifetime)
         {
             // _logger      = logger;
 
             using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
-            _logger = factory.CreateLogger<ModuleWorkerBase>();
+            _logger = factory.CreateLogger<ModuleRunnerBase>();
 
             _cancelled   = false;
             _appLifetime = hostApplicationLifetime;
@@ -106,23 +113,29 @@ namespace CodeProject.AI.SDK
             // TODO: We could load the settings directly from the modulesettings files rather than rely 
             //       rely environment variables:
             /*
-            // Load up the module's settings and start the module
-            var config = new ConfigurationBuilder();
-            config.AddModuleSettingsConfigFiles(moduleDirPath, false);
-            IConfiguration configuration = config.Build();
+            // Load up the modulesettings.*.json files
+            var configBuilder = new IConfigurationBuilder();
+            configBuilder.AddModuleSettingsConfigFiles(ModuleDirPath, false);
+            IConfiguration config = configBuilder.Build();
 
             // Bind the values in the configuration to a ModuleConfig object
-            string moduleId = [get module id from config]
             var moduleConfig = new ModuleConfig();
-            configuration.Bind($"Modules:{moduleId}", moduleConfig);
+            try
+            {
+                config.Bind($"Modules:{moduleId}", moduleConfig);
+            }
+            catch (Exception)
+            {
+                moduleConfig = null;
+            }
 
             // Complete the ModuleConfig's setup. 
-            if (moduleConfig.Initialise(moduleId, moduleDirPath, ModuleLocation.Internal))
+            if (moduleConfig.Initialise(moduleId, ModuleDirPath, ModuleLocation.Internal))
             */
 
             _moduleId        = configuration.GetValue<string?>("CPAI_MODULE_ID", null)        ?? currentDirName;
             ModuleName       = configuration.GetValue<string?>("CPAI_MODULE_NAME", null)      ?? _moduleId;
-            moduleDirPath    = configuration.GetValue<string?>("CPAI_MODULE_PATH", null)      ?? currentModuleDirPath;
+            ModuleDirPath    = configuration.GetValue<string?>("CPAI_MODULE_PATH", null)      ?? currentModuleDirPath;
             _queueName       = configuration.GetValue<string?>("CPAI_MODULE_QUEUENAME", null) ?? _moduleId.ToLower() + "_queue";
 
             int port         = configuration.GetValue<int>("CPAI_PORT", 32168);
@@ -632,9 +645,8 @@ namespace CodeProject.AI.SDK
             string moduleDirPath = AppContext.BaseDirectory;
             DirectoryInfo? info  = new DirectoryInfo(moduleDirPath);
 
-            // HACK: If we're running this server from the build output dir in dev environment
-            // then the root path will be wrong.
-            if (SystemInfo.IsDevelopmentCode)
+            // If we're in /bin/[Debug|Release]/netx.0
+            if (SystemInfo.IsDevelopmentCode)   
             {
                 while (info != null)
                 {
@@ -645,6 +657,11 @@ namespace CodeProject.AI.SDK
                         break;
                     }
                 }
+            }
+            else // are we in /bin?
+            {
+                if (info?.Name.ToLower() == "bin")
+                    info = info.Parent;
             }
 
             if (info != null)

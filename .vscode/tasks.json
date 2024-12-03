@@ -26,6 +26,19 @@
             }
         },
 
+        {
+            "label": "build-modules", 
+            "group": "build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-yolo-net",
+                "build-portraitfilter",
+                "build-sentimentanalysis",
+                "build-demo_module_dotnetlongprocess",
+                "demo_module_dotnetsimple"
+            ]
+        },
+
         // Build individual projects ===============================================================
 
         {
@@ -96,7 +109,8 @@
                 "build",
                 "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "/consoleloggerparameters:NoSummary",
+                "--configuration", "Debug"
             ],
             "problemMatcher": "$msCompile"
         },   
@@ -116,7 +130,7 @@
         },   
 
         {
-            "label": "build-demo-net",      // Builds ONLY the demo .NET analysis module
+            "label": "demo_module_dotnetsimple",      // Builds ONLY the demo .NET analysis module
             "type": "process",
             "group": "build",
             "command": "dotnet",
@@ -154,7 +168,7 @@
         },
 
         {
-            "label": "build-deno-rust",
+            "label": "build-demo-rust",
             "type": "shell",
             "command": "cd \"${workspaceFolder}\\src\\demos\\clients\\Rust\\object-detect\" & cargo build",
             "group": {
@@ -166,7 +180,7 @@
         },
 
         {
-            "label": "run-deno-rust",
+            "label": "run-demo-rust",
             "type": "shell",
             "command": "cd \"${workspaceFolder}\\src\\demos\\clients\\Rust\\object-detect\" & cargo run",
             "group": {
@@ -184,7 +198,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/../CodeProject.AI-Modules/PortraitFilter",
+                "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-PortraitFilter",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -198,7 +212,7 @@
             "command": "dotnet",
             "args": [
                 "build",
-                "${workspaceFolder}/../CodeProject.AI-Modules/SentimentAnalysis",
+                "${workspaceFolder}/../CodeProject.AI-Modules/CodeProject.AI-SentimentAnalysis",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

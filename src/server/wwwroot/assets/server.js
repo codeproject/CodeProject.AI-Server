@@ -204,6 +204,31 @@ const copyToClipboard = (elmId) => {
          });
 }
 
+// Returns -1 if version1 < version2, 0 if equal, +1 if version1 > version2
+function compareVersion(version1, version2) {
+  // Split the version numbers by '.' and convert them into arrays of integers
+  const v1 = version1.split('.').map(num => parseInt(num, 10));
+  const v2 = version2.split('.').map(num => parseInt(num, 10));
+
+  // Find the length of the longer version to compare all parts
+  const length = Math.max(v1.length, v2.length);
+
+  // Compare each part of the version numbers
+  for (let i = 0; i < length; i++) {
+    const part1 = v1[i] || 0; // Default to 0 if part is missing
+    const part2 = v2[i] || 0; // Default to 0 if part is missing
+
+    // If part1 is greater than part2, version1 is greater
+    if (part1 > part2) return 1;
+
+    // If part2 is greater than part1, version2 is greater
+    if (part1 < part2) return -1;
+  }
+
+  // If all parts are equal, the versions are the same
+  return 0;
+}
+
 // API operations ==============================================================
 
 /**

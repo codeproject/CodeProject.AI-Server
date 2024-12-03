@@ -1,6 +1,6 @@
 :: Installation script :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::
-::                           .NET YOLO Object Detection
+::                           .NET Simple Demo
 ::
 :: This script is only called from ..\..\..\setup.bat 
 ::
@@ -12,20 +12,20 @@
     @pause
     @goto:eof
 ) 
-
-set installBinaries=false
-if /i "!executionEnvironment!" == "Production" set installBinaries=true
-if /i "!launchedBy!" == "server" set installBinaries=true
-
-:: Pull down the .NET executable of this module 
-if /i "!installBinaries!" == "true" (
-    set imageName=!moduleId!-!moduleVersion!.zip
-    call "%utilsScript%" GetFromServer "binaries/" "!imageName!" "bin" "Downloading !imageName!..."
+if /i "!executionEnvironment!" == "Production" (
+    REM Often we just pull down the pre-compiled binaries from the CDN when in
+    REM production. This saves having to install the .NET SDK. This is a demo so
+    REM do nothing here.
+    call "!utilsScript!" WriteLine "Production install not supported" "!color_info!"
 ) else (
     :: If we're in dev-setup mode we'll build the module now so the self-test will work
     pushd "!moduleDirPath!"
     call "!utilsScript!" WriteLine "Building project..." "!color_info!"
-    dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/!dotNetTarget!" >NUL
+    if /i "%verbosity%" neq "quiet" (
+        dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/!dotNetTarget!"
+    ) else (
+        dotnet build -c Debug -o "!moduleDirPath!/bin/Debug/!dotNetTarget!" >NUL
+    )
     popd
 )
 

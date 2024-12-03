@@ -5,6 +5,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 using Hardware.Info;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System;
+using System.Linq;
+using System.IO;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 namespace CodeProject.AI.SDK.Utils
@@ -246,6 +251,8 @@ namespace CodeProject.AI.SDK.Utils
         private static string?       _dockerContainerId;
         private static string?       _osVersion;
         private static string?       _osName;
+        private static string?       _osFlavour;
+        private static string?       _osCodeName;
         private static bool          _isSSH;
         private static Runtimes      _runtimes = new Runtimes();
 
@@ -611,31 +618,6 @@ namespace CodeProject.AI.SDK.Utils
         }
 
         /// <summary>
-        /// Gets the current Operating System name.
-        /// </summary>
-        public static string OperatingSystem
-        {
-            get
-            {
-                // RuntimeInformation.GetOSPlatform() or RuntimeInformation.OSPlatform would have
-                // been too easy.
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    return "Windows";
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    return "macOS";
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    return "Linux";
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
-                    return "FreeBSD";
-
-                return "Windows"; // Gotta be something...
-            }
-        }
-
-        /// <summary>
         /// Gets a value indicating whether the current OS is Windows
         /// </summary>
         public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -661,32 +643,65 @@ namespace CodeProject.AI.SDK.Utils
         public static bool IsDocker => ExecutionEnvironment == ExecutionEnvironment.Docker;
 
         /// <summary>
+        /// Gets the Operating System type. Specifically: Windows, Linux, macOS or FreeBSD.
+        /// </summary>
+        public static string OperatingSystem
+        {
+            get
+            {
+                // RuntimeInformation.GetOSPlatform() or RuntimeInformation.OSPlatform would have
+                // been too easy.
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    return "Windows";
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    return "macOS";
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    return "Linux";
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+                    return "FreeBSD";
+
+                return "Windows"; // Gotta be something...
+            }
+        }
+
+        /// <summary>
+        /// Gets the actual name of the current Operating System name. eg Windows, Ubuntu, Debian.
+        /// </summary>
+        public static string OperatingSystemName
+        {
+            get { return _osFlavour ?? string.Empty; }
+        }
+
+        /// <summary>
+        /// Gets the current Operating System code name. eg Redstone, Jammy, Big Sur
+        /// </summary>
+        public static string OperatingSystemCodeName
+        {
+            get { return _osCodeName ?? string.Empty; }
+        }
+
+        /// <summary>
         /// Returns the Operating System description, with corrections for Windows 11
         /// </summary>
         public static string OperatingSystemDescription
         {
             get
             {
-                // WSL is Linux, so this isn't needed since the line below will handle it and do the
-                // same thing. However, it's here because we may want to report this differently.
-                if (IsWSL)
-                    return $"{_osName} {_osVersion}";
+                string description;
+                if (OperatingSystemName.StartsWith(OperatingSystem))
+                    description = $"{OperatingSystem} ({OperatingSystem} {OperatingSystemVersion}";
+                else
+                    description = $"{OperatingSystem} ({OperatingSystemName} {OperatingSystemVersion}";
 
-                if (IsLinux)
-                    return $"{_osName} {_osVersion}";
+                if (!OperatingSystemCodeName.StartsWith(OperatingSystem))
+                    description += $" {OperatingSystemCodeName}";
 
-                if (IsMacOS)
-                    return $"{_osName} {_osVersion}";
+                description += ")";
 
-                // See https://github.com/getsentry/sentry-dotnet/issues/1484. 
-                // C'mon guys: technically the version may be 10.x, but stick to the branding that
-                // the rest of the world understands.
-                if (IsWindows &&
-                    Environment.OSVersion.Version.Major >= 10 &&
-                    Environment.OSVersion.Version.Build >= 22000)
-                    return RuntimeInformation.OSDescription.Replace("Windows 10.", "Windows 11 version 10.");
-
-                return RuntimeInformation.OSDescription;
+                return description;
             }
         }
 
@@ -731,7 +746,7 @@ namespace CodeProject.AI.SDK.Utils
             
             await CheckForWslAsync().ConfigureAwait(false);
             await GetDockerContainerIdAsync().ConfigureAwait(false);
-            await CheckOSVersionNameAsync().ConfigureAwait(false);
+            await GetOsDetailsAsync().ConfigureAwait(false);
             await CheckForSshAsync().ConfigureAwait(false);
             await GetcuDNNVersionAsync().ConfigureAwait(false);
 
@@ -760,34 +775,34 @@ namespace CodeProject.AI.SDK.Utils
             else
                 info.AppendLine($"System:           {SystemName}");
 
-            info.AppendLine($"Operating System: {OperatingSystem} ({OperatingSystemDescription})");
+            info.AppendLine($"Operating System: {OperatingSystemDescription}");
 
             if (CPU is not null)
             {
-                var cpus = new StringBuilder();
+                var cpuList = new StringBuilder();
                 if (!string.IsNullOrEmpty(CPU[0].Name))
                 {
-                    cpus.Append(CPU[0].Name);
+                    cpuList.Append(CPU[0].Name);
                     if (!string.IsNullOrWhiteSpace(CPU[0].HardwareVendor))
-                        cpus.Append($" ({CPU[0].HardwareVendor})");
-                    cpus.Append("\n                  ");
+                        cpuList.Append($" ({CPU[0].HardwareVendor})");
+                    cpuList.Append("\n                  ");
                 }
 
-                cpus.Append(CPU.Count + " CPU");
+                cpuList.Append(CPU.Count + " CPU");
                 if (CPU.Count != 1)
-                    cpus.Append("s");
+                    cpuList.Append("s");
 
                 if (CPU[0].NumberOfCores > 0)
                 {
-                    cpus.Append($" x {CPU[0].NumberOfCores} core");
+                    cpuList.Append($" x {CPU[0].NumberOfCores} core");
                     if (CPU[0].NumberOfCores != 1)
-                        cpus.Append("s");
+                        cpuList.Append("s");
                 }
-                cpus.Append(".");
+                cpuList.Append(".");
                 if (CPU[0].LogicalProcessors > 0)
-                    cpus.Append($" {CPU[0].LogicalProcessors} logical processors");
+                    cpuList.Append($" {CPU[0].LogicalProcessors} logical processors");
 
-                info.AppendLine($"CPUs:             {cpus} ({Architecture})");
+                info.AppendLine($"CPUs:             {cpuList} ({Architecture})");
             }
 
             if (!string.IsNullOrWhiteSpace(gpuDesc))
@@ -1597,7 +1612,7 @@ namespace CodeProject.AI.SDK.Utils
 
         private static CpuCollection GetCpuInfo() 
         {
-            var cpus = new CpuCollection();
+            var cpuList = new CpuCollection();
             if (_hardwareInfo != null)
             {
                 foreach (var cpu in _hardwareInfo.CpuList)
@@ -1627,15 +1642,15 @@ namespace CodeProject.AI.SDK.Utils
                     else if (EdgeDevice == "Radxa ROCK")
                         cpuInfo.HardwareVendor = "Rockchip";
     
-                    cpus.Add(cpuInfo);
+                    cpuList.Add(cpuInfo);
                 }
             }
 
             // There's obviously at least 1.
-            if (cpus.Count == 0)
-                cpus.Add(new CpuInfo() { NumberOfCores = 1, LogicalProcessors = 1 });
+            if (cpuList.Count == 0)
+                cpuList.Add(new CpuInfo() { NumberOfCores = 1, LogicalProcessors = 1 });
 
-            return cpus;
+            return cpuList;
         }
 
         private async static Task CheckForWslAsync() 
@@ -1683,29 +1698,70 @@ namespace CodeProject.AI.SDK.Utils
             }
         }
 
-        private async static Task CheckOSVersionNameAsync()
+        private async static Task GetOsDetailsAsync()
         {
             // Default fallback
             _osName    = OperatingSystem;
+            _osFlavour = OperatingSystem;
             _osVersion = Environment.OSVersion.Version.Major.ToString();
 
             if (IsLinux)
             {
-                // Output is in the form:
                 var results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $NAME\"", null)
-                                                                                .ConfigureAwait(false);
+                                                                             .ConfigureAwait(false);
                 if (results is not null)
-                    _osName = results["output"]?.Trim(); // eg "ubuntu", "debian"
+                    _osFlavour = results["output"]?.Trim(); // eg "ubuntu", "debian"
 
+                // VERSION_ID is in form "24.10"
                 results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $VERSION_ID\"", null)
-                                                                                .ConfigureAwait(false);
+                                                                            .ConfigureAwait(false);
                 if (results is not null)
                     _osVersion = results["output"]?.Trim();    // eg. "22.04" for Ubuntu 22.04, "12" for Debian 12
+
+                // VERSION is in form "24.10 (Oracular Oriole)"
+                var pattern = @"\((?<name>[a-z\s]+)\)";
+                var options = RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
+                results = await GetProcessInfoAsync("/bin/bash", "-c \". /etc/os-release;echo $VERSION\"",
+                                                    pattern, options).ConfigureAwait(false);
+                if (results is not null)
+                {
+                    string? name = results["name"]?.Trim();       // eg. "Oracular Oriole" for Ubuntu 24.10
+                    if (!string.IsNullOrWhiteSpace(name))
+                        _osCodeName = name;
+                }
             }
             else if (IsWindows)
             {
-                if (Environment.OSVersion.Version.Major >= 10 && Environment.OSVersion.Version.Build >= 22000)
-                    _osVersion = "11";
+                _osCodeName = "Windows " + Environment.OSVersion.Version.Major;
+
+                if (Environment.OSVersion.Version.Major >= 10)
+                {
+                    // See https://github.com/getsentry/sentry-dotnet/issues/1484. 
+                    // C'mon guys: technically the version may be 10.x, but stick to the branding
+                    // that the rest of the world understands.
+                    if (Environment.OSVersion.Version.Build >= 22000)
+                    {
+                        _osVersion  = "11";
+                        _osCodeName = "Sun Valley";
+
+                        string command = "reg";
+                        string args    = "query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\" /v DisplayVersion";
+                        string pattern = "DisplayVersion    REG_SZ    (?<version>[A-Z\\d]+)";
+                        var    options = RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
+
+                        var results = await GetProcessInfoAsync(command, args, pattern, options).ConfigureAwait(false);
+                        if (results is not null)
+                        {
+                            string? version = results["version"]?.Trim();       // eg. "23H2"
+                            if (!string.IsNullOrWhiteSpace(version))
+                                _osCodeName = version;
+                        }
+                    }
+                    else
+                    {
+                        _osCodeName = "Redstone";
+                    }
+                }
             }
             else if (IsMacOS)
             {
@@ -1713,7 +1769,7 @@ namespace CodeProject.AI.SDK.Utils
                 var results = await GetProcessInfoAsync("/bin/bash", $"-c \"{command}\"", null)
                                                                                 .ConfigureAwait(false);
                 if (results is not null)
-                    _osName = results["output"]?.Trim();  // eg. "Big Sur"
+                    _osCodeName = results["output"]?.Trim();  // eg. "Big Sur"
 
                 results = await GetProcessInfoAsync("/bin/bash", "-c \"sw_vers -productVersion\"", null)
                                                                                 .ConfigureAwait(false);

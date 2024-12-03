@@ -1,4 +1,4 @@
-﻿namespace CodeProject.AI.SDK.Server
+﻿namespace CodeProject.AI.SDK.Client
 {
     public class BoundingBox
     {

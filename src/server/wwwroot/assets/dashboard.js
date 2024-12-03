@@ -841,15 +841,24 @@ async function getDownloadableModules() {
             let basedOn            = moduleInfo.publishingInfo.basedOn    || '';
             let basedOnUrl         = moduleInfo.publishingInfo.basedOnUrl || '';
 
-            let currentlyInstalled = moduleInfo.currentlyInstalled           || '';
+            let currentlyInstalled = moduleInfo.currentlyInstalled        || '';
             let latestVersion      = moduleInfo.latestCompatibleRelease?.moduleVersion || '';
             let latestReleased     = moduleInfo.latestCompatibleRelease?.releaseDate   || '';
             let importance         = moduleInfo.latestCompatibleRelease?.importance    || '';
             let updateAvailable    = moduleInfo.updateAvailable;
             let status             = moduleInfo.status;
 
+            // With the move from pre-chewed module listing to having to process the raw file, we
+            // need to be more careful about checking versions (the pre-chewed would take into 
+            // account server version)
+            updateAvailable = compareVersion(currentVersion, latestVersion) < 0;
+
             let downloadable = moduleInfo.isDownloadable? ''
                                 :  '<div title="This module is not downloadable" class="text-light me-2">Private</div>';
+
+            // Show what's available if nothing installed
+            if (!currentlyInstalled && latestVersion)
+                currentlyInstalled = `<span class="text-muted">${latestVersion}</span>`;
 
             let updateDesc      = '';
             if (updateAvailable && currentlyInstalled) {
@@ -984,7 +993,8 @@ async function getDownloadableModules() {
                     +     `<div class='me-auto'><b>${moduleName}</b></div>${downloadable}`
 
                     +     `<div class='me-3'>`
-                    +        `<button class='btn dropdown-toggle p-0 version' type='button' id='dropdownVersionHistory${i}' data-bs-toggle='dropdown'>${currentlyInstalled}</button>`
+                    +        `<button class='btn dropdown-toggle p-0 version' type='button' id='dropdownVersionHistory${i}'`
+                    +        ` style="vertical-align:unset" data-bs-toggle='dropdown'>${currentlyInstalled}</button>`
                     +        `<ul class='dropdown-menu' aria-labelledby="dropdownVersionHistory${i}"><li>`
                     +        `<div class='module-history small font-monospace p-2 overflow-auto'>${moduleHistory}</div>`
                     +        `</li></ul>`

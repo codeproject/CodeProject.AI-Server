@@ -13,9 +13,12 @@
             "request": "launch",
             "preLaunchTask": "build-server",
             // "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                // This is what you get from trusting ChatGPT
+                // "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.dll",
+
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
@@ -82,9 +85,9 @@
             "request": "launch",
             "preLaunchTask": "build-all",
             // "postDebugTask": "stop-all",
-            "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
@@ -138,9 +141,9 @@
             "name": "Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/server/",
@@ -188,14 +191,14 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-server",
-            "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.exe",
+            "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.exe",
             "linux": {
-                "program": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/CodeProject.AI.Server.dll",
+                "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/CodeProject.AI.Server.dll",
             },
             "args": [
                 "--ModuleOptions:LaunchModules=false"
             ],
-            "cwd": "${workspaceFolder}/src/server/bin/Debug/${env:dotNetTarget}/",
+            "cwd": "${workspaceFolder}/src/server/bin/Debug/net9.0/",
             "stopAtEntry": false,
             /*
             "serverReadyAction": {
@@ -230,9 +233,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-yolo-net",
-            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/${env:dotNetTarget}/ObjectDetectionYOLOv5Net",
+            "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net9.0/ObjectDetectionYOLOv5Net.exe",
             "linux": {
-                "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/${env:dotNetTarget}/ObjectDetectionYOLOv5Net.dll",
+                "program": "${workspaceFolder}/modules/ObjectDetectionYOLOv5Net/bin/Debug/net9.0/ObjectDetectionYOLOv5Net.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",
@@ -256,12 +259,13 @@
             },
             "name": "Object Detect YOLOv5 6.2",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python37/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -332,9 +336,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-parsejson",
-            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/${env:dotNetTarget}/ParseJSON",
+            "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net9.0/ParseJSON",
             "linux": {
-                "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/${env:dotNetTarget}/ParseJSON.dll",
+                "program": "${workspaceFolder}/utils/ParseJSON/bin/Debug/net9.0/ParseJSON.dll",
             },
             "args": [ "$.Modules.ALPR.Platforms", "test.json" ],
             "cwd": "${workspaceFolder}/utils/ParseJSON/",
@@ -413,7 +417,7 @@
             "program": "object-detect.exe",
             "args": [ "run" ],
             "cwd": "${workspaceFolder}/src/demos/clients/Rust/object-detect/target/debug",
-            "preLaunchTask": "build-deno-rust",
+            "preLaunchTask": "build-demo-rust",
             "stopOnEntry": false,
             "env": {
             },
@@ -451,7 +455,7 @@
             "request": "launch",
             "preLaunchTask": "build-ai-explorer",
             "windows": {
-                "program": "${workspaceFolder}/src/demos/clients/Net/AiExplorer/bin/Debug/${env:dotNetTarget}-windows/AiExplorer.exe",
+                "program": "${workspaceFolder}/src/demos/clients/Net/AiExplorer/bin/Debug/net9.0-windows/AiExplorer.exe",
             },
             "args": [],
             "cwd": "${workspaceFolder}",
@@ -472,12 +476,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-json-client",
-            "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/${env:dotNetTarget}/JsonAPI",
+            "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/net9.0/JsonAPI",
             "linux": {
-                "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/${env:dotNetTarget}/JsonAPI.dll",
-            },
-            "osx": {
-                "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/${env:dotNetTarget}/JsonAPI.dll",
+                "program": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/bin/Debug/net9.0/JsonAPI.dll",
             },
             "args": [],
             "cwd": "${workspaceFolder}/src/demos/clients/Net/JsonAPI/",
@@ -501,7 +502,8 @@
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python.exe"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -528,12 +530,13 @@
 
             "name": "Python Simple Module",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -563,12 +566,13 @@
 
             "name": "Python Long Process Module",
             "type": "debugpy",
-            "python": "${workspaceFolder}/runtimes/bin/linux/python39/venv/bin/python",
+            "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python",
             "windows": {
                 "python": "${workspaceFolder}/runtimes/bin/windows/python39/venv/Scripts/python"
             },
             "linux": {
-                "python": "${workspaceFolder}/runtimes/bin/linux/python38/venv/bin/python",
+                "python": "${workspaceFolder}/runtimes/bin/ubuntu/python38/venv/bin/python",
+                // "python": "${workspaceFolder}/runtimes/bin/debian/python38/venv/bin/python",
             },
             "osx": {
                 "python": "${workspaceFolder}/runtimes/bin/macos/python38/venv/bin/python",
@@ -596,10 +600,10 @@
             "name": ".NET Simple Module",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-demo-net",
-            "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/${env:dotNetTarget}/DotNetSimple",
+            "preLaunchTask": "demo_module_dotnetsimple",
+            "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple",
             "linux": {
-                "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/${env:dotNetTarget}/DotNetSimple.dll",
+                "program": "${workspaceFolder}/src/demos/modules/DotNetSimple/bin/Debug/net9.0/DotNetSimple.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",
@@ -624,9 +628,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build-demo_module_dotnetlongprocess",
-            "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/${env:dotNetTarget}/DotNetLongProcess",
+            "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/net9.0/DotNetLongProcess",
             "linux": {
-                "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/${env:dotNetTarget}/DotNetLongProcess.dll",
+                "program": "${workspaceFolder}/src/demos/modules/DotNetLongProcess/bin/Debug/net9.0/DotNetLongProcess.dll",
             },
             // "args": [ "--selftest" ],
             // "cwd": "${workspaceFolder}",

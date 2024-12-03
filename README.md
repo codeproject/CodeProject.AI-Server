@@ -120,7 +120,7 @@ We will be constantly expanding the feature list.
 
 #### Supported Development Environments
 
-This current release works best with Visual Studio Code on Windows 10+. Ubuntu, Debian and macOS (both Intel and Apple Silicon). Visual Studio 2019+ support is included for Windows 10+.
+This current release works best with Visual Studio Code on Windows 10+. Ubuntu 22.04+, Debian and macOS (both Intel and Apple Silicon). Visual Studio 2019+ support is included for Windows 10+.
 
 The current release provides support for CPU on each platform, DirectML on Windows, CUDA on Windows and Linux, support for Apple Silicon GPUs, RockChip NPUs and Coral.AI TPUs. Support depends on the module itself.
 
@@ -129,6 +129,19 @@ The current release provides support for CPU on each platform, DirectML on Windo
 
  - [Installing CodeProject.AI on your machine](https://codeproject.github.io/codeproject.ai/why/install_on_windows.html). For those who have CodeProject.AI integrated with Home Assist or Blue Iris
  - [Setting up the development environment](https://codeproject.github.io/codeproject.ai/devguide/install_dev.html) (spoiler: it's easy!)
- - [Running in Docker](https://codeproject.github.io/codeproject.ai/why/running_in_docker.html)
- - Setup or install issues? See [Common Errors](https://codeproject.github.io/codeproject.ai/devguide/common_errors.html)
+ - [Running in Docker](https://codeproject.github.io/codeproject.ai/install/running_in_docker.html)
+ - Setup or install issues? See the [FAQs](https://codeproject.github.io/codeproject.ai/faq/index.html)
+
+I'll add this to the docs:
+
+## Latest Version changes: 2.9
+
+- Updated to .NET 9
+- Support for Ubuntu 24.10
+- Improved CUDA 12 support
+- Improvements to CUDA support in Windows and Linux
+- Further Windows arm64 fixes
+- Further macOS arm64 fixes
+- General dev environment setup fixes
+- Fixes for Windows installer when wget is missing
 

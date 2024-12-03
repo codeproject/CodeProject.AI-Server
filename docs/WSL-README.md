@@ -90,7 +90,7 @@ Windows.
 ### To free up space
 
 To free up space you can use the clean.bat/clean.sh scripts under
-/src/SDK/Utilities.
+/devops\install.
 
 For Windows
 ```cmd 
@@ -109,7 +109,8 @@ cleaned.
 To actually realise the freed up space in WSL you will need to compact the VHD
 in which your WSL instance resides.
 
-In a Windows terminal:
+You can use the `/devops/utils/compact_wsl_disks.ps1` script to achieve this. Or
+to do it old school, in a Windows terminal:
 
 ```cmd 
 wsl --shutdown
@@ -131,5 +132,22 @@ detach vdisk
 exit
 ```
 
+For Debian, the name will be similar to `%LOCALAPPDATA%\Packages\TheDebianProject.DebianGNULinux_76v4gfsz19hv4\LocalState\ext4.vhdx`.
+
 Your WSL virtual hard drive should be smaller and the space that was used 
 reclaimed by Windows.
+
+## GPU Support under WSL
+
+Please read [NVIDIAs guide](https://docs.nvidia.com/cuda/wsl-user-guide/index.html#step-1-install-nvidia-driver-for-gpu-support). The main points are:
+
+1. **DO NOT install NVIDIA drivers within WSL**. The Windows drivers will work under WSL, so installing drivers *inside* WSL will overwrite the Windows drivers and lead to issues
+
+2. **DO install the NVIDIA toolkit separately in WSL**. Head to the [toolkit download page](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network) to find the correct instructions. For Windows 11 on CUDA 12.6, for example, the instructions are
+
+    ``` bash
+    wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-keyring_1.1-1_all.deb
+    sudo dpkg -i cuda-keyring_1.1-1_all.deb
+    sudo apt-get update
+    sudo apt-get -y install cuda-toolkit-12-6
+    ```

@@ -61,20 +61,21 @@ if [ "$os" = "linux" ]; then
 
     # - Needed for opencv-python (TODO: review these and move into module installers that actually use OpenCV)
     packages="ffmpeg libsm6 libxext6"
-    # - So we can query glxinfo for GPU info (mesa) and install modules (the rest)
+    # - So we can query glxinfo for GPU info (mesa) and install modules (the rest).
+    # NOTE: The general setup.sh file should have already installed curl and wget
     packages="${packages} mesa-utils curl rsync unzip wget"
     installAptPackages "${packages}"
 
 else
     if [ "${verbosity}" = "quiet" ]; then
 
-        if [ "$os_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
+        if [ "$os_code_name" = "Big Sur" ]; then   # macOS 11.x on Intel, kernal 20.x
             writeLine "** Installing System.Drawing support. On macOS 11 this could take a looong time" "$color_warn"
         else
             write "Installing System.Drawing support "
         fi
 
-        if [ $"$architecture" = 'arm64' ]; then
+        if [ "$architecture" = 'arm64' ]; then
             arch -x86_64 /usr/local/bin/brew list fontconfig >/dev/null 2>/dev/null || \
                 arch -x86_64 /usr/local/bin/brew install fontconfig  >/dev/null 2>/dev/null &
             spin $!
@@ -94,7 +95,7 @@ else
     else
         writeLine "Installing System.Drawing support "
 
-        if [ $"$architecture" = 'arm64' ]; then
+        if [ "$architecture" = 'arm64' ]; then
             arch -x86_64 /usr/local/bin/brew list fontconfig || arch -x86_64 /usr/local/bin/brew install fontconfig
             arch -x86_64 /usr/local/bin/brew list libomp     || arch -x86_64 /usr/local/bin/brew install libomp
         else

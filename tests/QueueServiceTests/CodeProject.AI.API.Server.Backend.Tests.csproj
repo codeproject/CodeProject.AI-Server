@@ -8,6 +8,7 @@
 		<Name>API Server Tests</Name>
 		<IsPackable>false</IsPackable>
 		<Platforms>AnyCPU;ARM64</Platforms>
+        <TargetFramework>net9.0</TargetFramework>
 	</PropertyGroup>
 
 	<ItemGroup>

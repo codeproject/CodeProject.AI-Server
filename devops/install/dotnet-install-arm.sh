@@ -5,7 +5,7 @@ bold="\e[1m"
 underline="\e[1;4m"
 reset="\e[0m"
 
-echo -e "${bold}.NET 7 Installer${reset}"
+echo -e "${bold}.NET 9 Installer${reset}"
 echo -e "${bold}Pete Codes / PJG Creations 2021${reset}"
 echo -e "${bold}CodeProject.AI edition${reset}"   # Drastically trimming output / SDK is optional
 
@@ -135,7 +135,7 @@ fi
 echo -e "${bold}Creating Main Directory${reset}"
 
 if [[ -d /opt/dotnet ]]; then
-    echo "/opt/dotnet already  exists on your filesystem."
+    echo "/opt/dotnet already exists on your filesystem."
 else
     echo "Creating Main Directory"
     mkdir /opt/dotnet
