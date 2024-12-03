@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using CodeProject.AI.SDK.API;
-using CodeProject.AI.SDK.Server;
+using CodeProject.AI.SDK.Client;
 using CodeProject.AI.SDK.Utils;
 
 using SkiaSharp.Views.Desktop;
