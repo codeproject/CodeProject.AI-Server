@@ -23,6 +23,9 @@ set useJq=false
 :: This saves time to allow for quick packaging of the easier, non-compiled modules
 set includeDotNet=true
 
+:: Sometimes we want to skip this one because it's long and painful
+set doODNet=true
+
 :: Width of lines
 set lineWidth=70
 
@@ -215,15 +218,34 @@ REM Creates a package for a module
 
     if exist "!packageModuleDirPath!\package.bat" (
 
+        set isDotNet=false
+
+        if /i "!packageModuleId!" == "ObjectDetectionYOLOv5Net" set isDotNet=true
+        if /i "!packageModuleId!" == "PortraitFilter"           set isDotNet=true
+        if /i "!packageModuleId!" == "SentimentAnalysis"        set isDotNet=true
+
         set doPackage=true
 
-        if "!includeDotNet!" == "false" if /i "!packageModuleId!" == "ObjectDetectionYOLOv5Net" set doPackage=false
-        if "!includeDotNet!" == "false" if /i "!packageModuleId!" == "PortraitFilter"           set doPackage=false
-        if "!includeDotNet!" == "false" if /i "!packageModuleId!" == "SentimentAnalysis"        set doPackage=false
+        if "!isDotNet!" == "true" (
+            if "!includeDotNet!" == "true" (
+                if "!doODNet!" == "false" if /i "!packageModuleId!" == "ObjectDetectionYOLOv5Net" (
+                    set doPackage=false
+                    call "!utilsScript!" WriteLine "Skipping Object Detection .NET module !packageModuleId!..." "Gray"
+                )                
+                if "!doPackage!" == "true" (
+                    echo. >NUL
+                    REM Modules' package.bat will do the building. No need to do it here.
+                    REM pushd !packageModuleDirPath!
+                    REM dotnet build -c Release
+                    REM popd
+                )
+            ) else (
+                set doPackage=false
+                call "!utilsScript!" WriteLine "Skipping packaging .NET module !packageModuleId!..." "Gray"
+            )
+        )
 
-        if "!doPackage!" == "false" (
-            call "!utilsScript!" WriteLine "Skipping packaging .NET module !packageModuleId!..." "Gray"
-        ) else (
+        if "!doPackage!" == "true" (
             REM Read the version from the modulesettings.json file and then pass this 
             REM version to the package.bat file.
             call "!utilsScript!" Write "Preparing !packageModuleId!..."
