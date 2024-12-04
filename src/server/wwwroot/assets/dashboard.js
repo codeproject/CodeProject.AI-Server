@@ -673,6 +673,7 @@ function addLogEntry(id, date, logLevel, label, entry, refreshDisplay = true) {
 
     // unicode gets messed up. TODO: Fix this!
     logText = logText.replace("âœ”ï¸", "✅");
+    logText = logText.replace("âœ…", "✅");
 
     const html = id
                ? `<div id='log${id}' class='${logLevel} ${label} ${className}'>${idText}${dateText}:${requestIdMarker}${logText}${logMessage}</div>`
@@ -1277,45 +1278,86 @@ function setModuleUpdateStatus(text, variant) {
 
 /**
  * Transform xterm colour escapes into HTML. 
+ * **CAVEAT** This assume there is ONE format code at the start, and ONE reset
+ *            code at the end of the string. This is what the setup scripts will
+ *            output.
  * @param text The input text
  * @returns The text with colour codes converted to HTML
  */
 function convertXtermToCss(text) {
     
-    // TODO: Process, rather than strip, background
-    text = text.replace(/\033\[(4|10)\dm/g, "");                    // strip background
-    text = text.replace(/\033\[0m/g, "</span>");                    // convert reset code
+    let spanCount = 0;
 
-    text = text.replace(/\033\[(((0|1);)?(3|9)\d)m/g, (match, p1, p2, p3) => { // convert foreground
+    // Process background
+    // text = text.replace(/\033\[(4|10)\dm/g, "");                  // strip background
+    text = text.replace(/\033\[((4|10)\dm)/g, (match, p1, p2, p3) => { // convert background
+        let code = p1;
+
+        spanCount++;
+
+        var textClass = "";
+        switch (code) {
+            case '49m':  textClass += 'bg-default';     break;
+            case '40m':  textClass += 'bg-black';       break;
+            case '41m':  textClass += 'bg-darkred';     break;
+            case '42m':  textClass += 'bg-darkgreen';   break;
+            case '43m':  textClass += 'bg-darkyellow';  break;
+            case '44m':  textClass += 'bg-darkblue';    break;
+            case '45m':  textClass += 'bg-darkmagenta'; break;
+            case '46m':  textClass += 'bg-darkCyan';    break;
+            case '47m':  textClass += 'bg-gray';        break;
+            case '100m': textClass += 'bg-darkgrey';    break; 
+            case '101m': textClass += 'bg-red';         break;
+            case '102m': textClass += 'bg-green';       break;
+            case '103m': textClass += 'bg-yellow';      break;
+            case '104m': textClass += 'bg-blue';        break;
+            case '105m': textClass += 'bg-magenta';     break;
+            case '106m': textClass += 'bg-cyan';        break;
+            case '107m': textClass += 'bg-white';       break;
+        }
+        
+        return `<span class='${textClass}'>`;
+    })
+
+    text = text.replace(/\033\[(((0|1);)?(3|9)\dm)/g, (match, p1, p2, p3) => { // convert foreground
         let code = p1;
         if (p2) code = code.substring(p2.length); // trim 'intensity' bit
 
-        let colour = null;
+        spanCount++;
+
+        var textClass = "";
         switch (code) {
-            case '39': colour = 'default';     break;
-            case '30': colour = 'black';       break;
-            case '31': colour = 'darkred';     break;
-            case '32': colour = 'darkgreen';   break;
-            case '33': colour = 'darkyellow';  break;
-            case '34': colour = 'darkblue';    break;
-            case '35': colour = 'darkmagenta'; break;
-            case '36': colour = 'darkCyan';    break;
-            case '37': colour = 'gray';        break;
-            case '90': colour = 'darkgrey';    break; 
-            case '91': colour = 'red';         break;
-            case '92': colour = 'green';       break;
-            case '93': colour = 'yellow';      break;
-            case '94': colour = 'blue';        break;
-            case '95': colour = 'magenta';     break;
-            case '96': colour = 'cyan';        break;
-            case '30': colour = 'white';       break;
+            case '39m': textClass += 'text-default';     break;
+            case '30m': textClass += 'text-black';       break;
+            case '31m': textClass += 'text-darkred';     break;
+            case '32m': textClass += 'text-darkgreen';   break;
+            case '33m': textClass += 'text-darkyellow';  break;
+            case '34m': textClass += 'text-darkblue';    break;
+            case '35m': textClass += 'text-darkmagenta'; break;
+            case '36m': textClass += 'text-darkCyan';    break;
+            case '37m': textClass += 'text-gray';        break;
+            case '90m': textClass += 'text-darkgrey';    break; 
+            case '91m': textClass += 'text-red';         break;
+            case '92m': textClass += 'text-green';       break;
+            case '93m': textClass += 'text-yellow';      break;
+            case '94m': textClass += 'text-blue';        break;
+            case '95m': textClass += 'text-magenta';     break;
+            case '96m': textClass += 'text-cyan';        break;
+            case '30m': textClass += 'text-white';       break;
         }
         
-        if (colour)
-            return `<span class='text-${colour}'>`;
-
-        return "<span>";
+        return `<span class='${textClass}'>`;
     })
+
+    // convert reset code
+    text = text.replace(/\033\[0m/g, (match, p1, p2, p3) => { // convert background
+        spanCount--;
+        return "</span>";
+    });
+
+    // cap off open span tags
+    for (let i = 0; i < spanCount; i++)
+        text += "</span>";
 
     return text;
 }
