@@ -823,7 +823,7 @@ REM Installs a module in the module's directory, and returns success
 
     if "!moduleName!" == "" set moduleName=!moduleId!
 
-    set announcement=Installing module !moduleName! !moduleVersion!
+    set announcement=Installing module !moduleName! !moduleVersion! (!moduleType!)
     call "!utilsScript!" WriteLine "!announcement!" "White" "Blue" !lineWidth!
     call "!utilsScript!" WriteLine
 
@@ -925,7 +925,7 @@ REM Installs a module in the module's directory, and returns success
         call "!utilsScript!" WriteLine "moduleStartFilePath = !moduleStartFilePath!" "!color_info!"
     )
 
-    call "!utilsScript!" WriteLine "!moduleType! module install" !color_mute!
+    REM call "!utilsScript!" WriteLine "!moduleType! module install" !color_mute!
 
     if exist "!moduleDirPath!\install.bat" (
 
