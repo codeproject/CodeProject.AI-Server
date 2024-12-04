@@ -24,7 +24,7 @@ set useJq=false
 set includeDotNet=true
 
 :: Sometimes we want to skip this one because it's long and painful
-set doODNet=true
+set includeObjectDetectionNet=true
 
 :: Width of lines
 set lineWidth=70
@@ -228,7 +228,7 @@ REM Creates a package for a module
 
         if "!isDotNet!" == "true" (
             if "!includeDotNet!" == "true" (
-                if "!doODNet!" == "false" if /i "!packageModuleId!" == "ObjectDetectionYOLOv5Net" (
+                if "!includeObjectDetectionNet!" == "false" if /i "!packageModuleId!" == "ObjectDetectionYOLOv5Net" (
                     set doPackage=false
                     call "!utilsScript!" WriteLine "Skipping Object Detection .NET module !packageModuleId!..." "Gray"
                 )                
