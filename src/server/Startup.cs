@@ -188,27 +188,37 @@ namespace CodeProject.AI.Server
                 _installConfig.Id = Guid.NewGuid();
             }
 
-            // if this is a new install or replacing a pre V2.1 version
-            // or there is an install file, then we need to install the initial modules.
-            if (string.IsNullOrEmpty(_installConfig.Version) ||
-                File.Exists(ModuleInstaller.InstallModulesFileName))
+            // If the 'installmodules.json' file exists then we need to install the modules listed
+            if (File.Exists(ModuleInstaller.InstallModulesFileName))
             {
-                _logger?.LogDebug($"Initial module install list exists (or no initial install version)");
+                _logger?.LogDebug($"Found a list of (initial) modules to install");
                 ModuleInstaller.QueueInitialModulesInstallation();
             }
 
+            // If there is no install config value, then no install happened. Run it. NOTE: in
+            // Docker, there will be no install config, but installs were done.
+            if (!SystemInfo.IsDocker && string.IsNullOrEmpty(_installConfig.Version))
+            {
+                _logger?.LogDebug($"No record of a previous module installation found. Running install");
+                ModuleInstaller.QueueInitialModulesInstallation();
+            }
+                
             _installConfig.Version = _versionConfig?.VersionInfo?.Version ?? string.Empty;
 
-            // If we are running in a Docker container and the container ID has changed,
-            // then we need to reinstall the modules.
-            if (SystemInfo.IsDocker && 
-                (string.IsNullOrEmpty(_installConfig.DockerContainerId) ||
-                _installConfig.DockerContainerId != SystemInfo.DockerContainerId))
+            // If we are running in a Docker container and the container ID has changed, then we
+            // need to reinstall the modules.
+            if (SystemInfo.IsDocker)
             {
-                _installConfig.DockerContainerId = SystemInfo.DockerContainerId;
-                ModuleInstaller.QueueReinstallModules();
+               if (string.IsNullOrEmpty(_installConfig.DockerContainerId))
+               {
+                    _installConfig.DockerContainerId = SystemInfo.DockerContainerId;
+               }
+               else if (_installConfig.DockerContainerId != SystemInfo.DockerContainerId)
+                {
+                    _installConfig.DockerContainerId = SystemInfo.DockerContainerId;
+                    ModuleInstaller.QueueReinstallModules();
+                }
             }
-
 
             var configValues      = new { install = _installConfig };
             string appDataDir     = Configuration["ApplicationDataDir"] 
