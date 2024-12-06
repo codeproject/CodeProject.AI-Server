@@ -3,7 +3,7 @@
 
     "ObjectDetectionYOLOv5Net": {
       "LaunchSettings": {
-        "FilePath": "bin\\ObjectDetectionYOLOv5Net.exe"
+        "FilePath": "bin/ObjectDetectionYOLOv5Net.exe"
       }
     }
   }

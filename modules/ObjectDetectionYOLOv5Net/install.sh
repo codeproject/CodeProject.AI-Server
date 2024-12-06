@@ -48,7 +48,7 @@ fi
 getFromServer "models/" "yolonet-models.zip"        "assets"        "Downloading YOLO ONNX models..."
 getFromServer "models/" "yolonet-custom-models.zip" "custom-models" "Downloading Custom YOLO ONNX models..."
 
-# Install ONNX runtime
+# Install ONNX runtime in macOS
 if [ "$os" = "macos" ]; then
     if [ "${verbosity}" = "quiet" ]; then
 
