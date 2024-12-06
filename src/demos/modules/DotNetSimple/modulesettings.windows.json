@@ -3,7 +3,7 @@
 
     "DotNetSimple": {
       "LaunchSettings": {
-        "FilePath": "bin\\DotNetSimple.exe"
+        "FilePath": "bin/DotNetSimple.exe"
       }
     }
   }
