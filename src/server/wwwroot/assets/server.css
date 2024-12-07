@@ -71,6 +71,26 @@ a {
 .logs .text-cyan        { color: #00cfcf; } 
 .logs .text-white       { color: white !important; }
 
+.logs .bg-default       { background-color: inherit;}
+.logs .bg-black         { background-color: black !important; }
+.logs .bg-darkred       { background-color: darkred; }
+.logs .bg-darkgreen     { background-color: #15a815; }
+.logs .bg-darkyellow    { background-color: #c7c700; }
+.logs .bg-darkblue      { background-color: darkblue; }
+.logs .bg-darkmagenta   { background-color: #c000c0; }
+.logs .bg-darkcyan      { background-color: darkcyan; }
+.logs .bg-darkgrey      { background-color: grey; }
+.logs .bg-grey          { background-color: lightgrey; }
+.logs .bg-white         { background-color: white; }
+.logs .bg-red           { background-color: red; }
+.logs .bg-green         { background-color: #00d300; }
+.logs .bg-yellow        { background-color: #eeee00; }
+.logs .bg-blue          { background-color: #0077ff; }
+.logs .bg-magenta       { background-color: magenta; }
+.logs .bg-cyan          { background-color: #00cfcf; } 
+.logs .bg-white         { background-color: white !important; }
+
+
 .dark-mode .logs .text-black       { color: white       !important; }
 .dark-mode .logs .text-darkred     { color: #c30000     !important; }
 .dark-mode .logs .text-darkblue    { color: blue        !important; }
@@ -78,6 +98,14 @@ a {
 .dark-mode .logs .text-cyan        { color: cyan        !important; } 
 .dark-mode .logs .text-white       { color: black       !important; }
 .dark-mode .logs .text-blue        { color: deepskyblue !important; }
+
+.dark-mode .logs .bg-black         { background-color: white       !important; }
+.dark-mode .logs .bg-darkred       { background-color: #c30000     !important; }
+.dark-mode .logs .bg-darkblue      { background-color: blue        !important; }
+.dark-mode .logs .bg-darkmagenta   { background-color: #e300e3     !important; }
+.dark-mode .logs .bg-cyan          { background-color: cyan        !important; } 
+.dark-mode .logs .bg-white         { background-color: black       !important; }
+.dark-mode .logs .bg-blue          { background-color: deepskyblue !important; }
 
 .dot { 
     height: 0.65em;

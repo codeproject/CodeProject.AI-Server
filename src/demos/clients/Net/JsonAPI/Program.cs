@@ -1,7 +1,11 @@
-﻿using CodeProject.AI.SDK;
-
+﻿
+using System;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
+
+using CodeProject.AI.SDK.Common;
 
 // A demonstration of sending a request to CodeProject.AI Server as JSON instead
 // of FormData.

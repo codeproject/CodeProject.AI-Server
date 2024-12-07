@@ -1,6 +1,7 @@
 using Xunit;
 using CodeProject.AI.SDK.Utils;
 using SkiaSharp;
+using System.IO;
 
 namespace CodeProject.AI.SDK.Utils.Tests
 {

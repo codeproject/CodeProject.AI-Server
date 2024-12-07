@@ -1,3 +1,5 @@
+using System.IO;
+
 using CodeProject.AI.SDK.Utils;
 
 namespace CodeProject.AI.SDK.Tests

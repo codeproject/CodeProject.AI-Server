@@ -1,8 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-  </PropertyGroup>
+	<Import Project="../../../../SDK/NET/Common.targets" />
+
+  	<PropertyGroup>
+    	<TargetFramework>net9.0</TargetFramework>
+	    <OutputType>Exe</OutputType>
+		<Platform>AnyCPU</Platform>
+	</PropertyGroup>
+
+	<!-- Common Release properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+	</PropertyGroup>
+
+	<!-- Common Debug properties -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<NoWarn>1701;1702;</NoWarn>
+		<DebugType>portable</DebugType>
+	</PropertyGroup>
 
   <ItemGroup>
     <None Remove="images\study-group.jpg" />
@@ -15,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\SDK\NET\NET.csproj" />
+    <ProjectReference Include="../../../../SDK/NET/NET.csproj" />
   </ItemGroup>
 
 </Project>
