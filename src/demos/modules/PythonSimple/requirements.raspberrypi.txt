@@ -1,0 +1,33 @@
+#! Python3.8
+
+# Based on the answer for pleas to Ultralytics to not include the full bloated NVIDIA libraries
+# when no GPU present: https://github.com/ultralytics/ultralytics/issues/749#issuecomment-1806360075
+
+opencv-python-headless==4.8.1.78    # Installing OpenCV (headless), the Open source Computer Vision library
+numpy==1.26.0                       # Installing NumPy, a package for scientific computing
+matplotlib>=3.3.0                   # Installing Matplotlib, the Python plotting package
+opencv-python>=4.6.0                # Installing OpenCV, the Open source Computer Vision library
+pillow>=7.1.2                       # Installing Pillow, a Python Image Library
+pyyaml>=5.3.1                       # Installing PyYAML, a library for reading configuration files
+requests>=2.23.0                    # Installing Requests, the HTTP library
+scipy>=1.4.1                        # Installing SciPy, a library for mathematics, science, and engineering
+tqdm>=4.64.0                        # Installing TDQM, the Fast, Extensible Progress Meter
+pandas>=1.1.4                       # Installing Pandas, a data analysis / data manipulation tool
+psutil                              # Installing psutil, a tool to check system utilization
+dill                                # Installing dill, for serializing and de-serializing Python objects
+py-cpuinfo                          # Installing py-cpuinfo to allow us to query CPU info
+
+#Install torch and torchvision CPU only versions
+-f https://download.pytorch.org/whl/cpu/torch_stable.html
+torch==1.8.0                        # Installing PyTorch, for Tensor computation and Deep neural networks
+-f https://download.pytorch.org/whl/cpu/torch_stable.html
+torchvision==0.9.1                  # Installing TorchVision, for Computer Vision based AI
+
+# Explicitly install ultralytics without optional dependencies (like CUDA).
+--no-deps
+ultralytics==8.1.2                  # Installing Ultralytics package for object detection in images
+
+
+CodeProject-AI-SDK                  # Installing the CodeProject.AI SDK
+
+# last line empty.
