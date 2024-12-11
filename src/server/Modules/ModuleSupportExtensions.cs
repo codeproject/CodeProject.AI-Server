@@ -109,7 +109,8 @@ namespace CodeProject.AI.Server.Modules
                                    ? "development" : string.Empty;
             string os              = SystemInfo.OperatingSystem.ToLower();
             string architecture    = SystemInfo.Architecture.ToLower();
-            string deviceSpecifier = SystemInfo.EdgeDevice.ToLower();
+            string deviceSpecifier = string.IsNullOrWhiteSpace(SystemInfo.EdgeDevice)
+                                   ? string.Empty : SystemInfo.Platform.ToLower();
 
             // Module settings files are loaded in this order. Each file will overwrite (but not
             // delete) settings of the previous file.
