@@ -1011,7 +1011,7 @@ function setupDotNet () {
         # link and env variables
         writeLine "Link Binaries to /usr/local/bin..."
         if [ -e /usr/local/bin/dotnet ]; then
-            rm /usr/local/bin/dotnet
+            sudo rm /usr/local/bin/dotnet
         fi
         sudo ln -s ${dotnet_path}dotnet /usr/local/bin
 
