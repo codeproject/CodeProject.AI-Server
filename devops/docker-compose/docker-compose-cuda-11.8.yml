@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   CodeProjectAI:
-    image: codeproject/ai-server:cuda11_7
+    image: codeproject/ai-server:cuda11_8
     container_name: "codeproject-ai-server-cuda"
     restart: unless-stopped
     ports:
@@ -10,9 +10,11 @@ services:
       - "32168:32168/udp"
     environment:
       - TZ=America/Toronto
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all      
     volumes:
-      - codeproject_ai_data_cuda11_7:/etc/codeproject/ai
-      - codeproject_ai_modules_cuda11_7:/app/modules
+      - codeproject_ai_data_cuda11_8:/etc/codeproject/ai
+      - codeproject_ai_modules_cuda11_8:/app/modules
     deploy:
       resources:
         reservations:
@@ -21,5 +23,5 @@ services:
               count: 1
               capabilities: [gpu]
 volumes:
-  codeproject_ai_data_cuda11_7:
-  codeproject_ai_modules_cuda11_7:
+  codeproject_ai_data_cuda11_8:
+  codeproject_ai_modules_cuda11_8:
