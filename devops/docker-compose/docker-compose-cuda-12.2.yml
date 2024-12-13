@@ -10,6 +10,8 @@ services:
       - "32168:32168/udp"
     environment:
       - TZ=America/Toronto
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all      
     volumes:
       - codeproject_ai_data_cuda12_2:/etc/codeproject/ai
       - codeproject_ai_modules_cuda12_2:/app/modules
