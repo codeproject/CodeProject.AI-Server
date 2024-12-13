@@ -803,6 +803,7 @@ if [ "$selfTestOnly" = false ]; then
             checkForTool pstree
         fi
         checkForTool xz-utils
+        checkForTool patch
     fi
     checkForTool wget
     checkForTool unzip
