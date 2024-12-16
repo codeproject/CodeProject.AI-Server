@@ -1,12 +1,13 @@
 
-const serverWarmupSec          = 5;       // Let server warm up, then re-make a status call  
-const pingFrequencySec         = 5;       // seconds
-const updateStatusFreqSec      = 5;       // seconds
-const customModelUpdateFreqSec = 60;      // seconds
-const updateModuleUiFreqSec    = 10;      // seconds
+const serverWarmupSec                  = 5;       // Let server warm up, then re-make a status call  
+const pingFrequencySec                 = 5;       // seconds
+const updateStatusFreqSec              = 5;       // seconds
+const updateDownloadableModulesFreqSec = 7200;    // seconds
+const customModelUpdateFreqSec         = 60;      // seconds
+const updateModuleUiFreqSec            = 10;      // seconds
 
-const serviceTimeoutSec        = 30;      // seconds
-const lostConnectionSec        = 30;      // consider connection down after 15s no contact
+const serviceTimeoutSec                = 30;      // seconds
+const lostConnectionSec                = 30;      // consider connection down after 15s no contact
 
 let apiServiceProtocol = window.location.protocol;
 if (!apiServiceProtocol || apiServiceProtocol === "file:")

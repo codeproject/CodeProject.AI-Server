@@ -41,7 +41,7 @@
         setInterval(getLogs, logFrequencyMs);
         setInterval(getModulesStatuses, updateStatusFreqSec * 1000);
         setInterval(getSystemStatus, updateStatusFreqSec * 1000);
-        setInterval(getDownloadableModules, updateStatusFreqSec * 1000);
+        setInterval(getDownloadableModules, updateDownloadableModulesFreqSec * 1000);
         setInterval(getMeshStatus, updateStatusFreqSec * 1000);
         setInterval(checkForUpdates, checkUpdateFrequencySec * 1000);
 
