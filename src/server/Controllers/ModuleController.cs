@@ -345,6 +345,26 @@ namespace CodeProject.AI.Server.Controllers
             (bool success, string error) = await downloadTask.ConfigureAwait(false);
             
             return success? new ServerResponse() : new ServerErrorResponse(error);
+
+            /*
+            _ = Task.Run(async () =>
+            {
+                var downloadTask = _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version,
+                                                                                  noCache, verbosity);
+                (bool success, string error) = await downloadTask.ConfigureAwait(false);
+
+                // Log success or error for tracking purposes
+                if (!success)
+                {
+                    // Replace this with appropriate logging
+                    Console.WriteLine($"Module installation failed: {error}");
+                }
+            });
+
+            await Task.Delay(0); // Just tow quieten the compiler error checking.
+
+            return new ServerResponse(); // Success = true. code = 200. 
+            */
         }
 
         /// <summary>

@@ -59,12 +59,23 @@ namespace CodeProject.AI.SDK.API
     /// </summary>
     public class ServerDataResponse<T> : ServerResponse
     {
+        /// <summary>
+        /// Gets or sets the data returned by the module response
+        /// </summary>
         public T? Data { get; set; }
     }
 
     public class VersionResponse : ServerResponse
     {
+        /// <summary>
+        /// Gets or sets a human readable message related to the current downloadable version of the
+        /// server 
+        /// </summary>
         public string? Message { get; set; }
+
+        /// <summary>
+        /// Gets or sets version information of the current downloadable server version
+        /// </summary>
         public VersionInfo? Version { get; set; }
     }
 
@@ -98,12 +109,18 @@ namespace CodeProject.AI.SDK.API
         /// </summary>
         public string? Error { get; set; }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public ServerErrorResponse()
         {
             Success = false;
             Code    = HttpStatusCode.InternalServerError;
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public ServerErrorResponse(string? error, HttpStatusCode code = HttpStatusCode.InternalServerError)
         {
             Success = false;
