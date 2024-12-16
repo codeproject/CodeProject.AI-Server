@@ -1,7 +1,7 @@
 #! Python3.7
 
 opencv-python-headless==4.8.1.78    # Installing OpenCV (headless), the Open source Computer Vision library
-numpy==1.26.0                       # Installing NumPy, a package for scientific computing
+numpy==1.23                         # Installing NumPy, a package for scientific computing
 matplotlib>=3.3.0                   # Installing Matplotlib, the Python plotting package
 opencv-python>=4.6.0                # Installing OpenCV, the Open source Computer Vision library
 pillow>=7.1.2                       # Installing Pillow, a Python Image Library
@@ -31,7 +31,7 @@ torchvision==0.9.0+cpu              # Installing TorchVision, for Computer Visio
 # torchvision==0.14.0+cpu           # Installing TorchVision, for Computer Vision based AI
 
 # Explicitly install ultralytics without optional dependencies (like CUDA).
---no-deps
+# --no-deps - not supported by pip when oneStep=true
 yolov5==6.2.3                       # Installing Ultralytics YoloV5 package for object detection in images
 
 # CoreMLTools                       # Installing CoreMLTools, for working with .mlmodel format models

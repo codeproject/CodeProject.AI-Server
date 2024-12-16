@@ -4,7 +4,7 @@
 # when no GPU present: https://github.com/ultralytics/ultralytics/issues/749#issuecomment-1806360075
 
 opencv-python-headless==4.8.1.78    # Installing OpenCV (headless), the Open source Computer Vision library
-numpy==1.26.0                       # Installing NumPy, a package for scientific computing
+numpy==1.23                         # Installing NumPy, a package for scientific computing
 matplotlib>=3.3.0                   # Installing Matplotlib, the Python plotting package
 opencv-python>=4.6.0                # Installing OpenCV, the Open source Computer Vision library
 pillow>=7.1.2                       # Installing Pillow, a Python Image Library
