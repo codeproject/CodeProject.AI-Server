@@ -105,7 +105,7 @@ a {
 .dark-mode .logs .bg-darkmagenta   { background-color: #e300e3     !important; }
 .dark-mode .logs .bg-cyan          { background-color: cyan        !important; } 
 .dark-mode .logs .bg-white         { background-color: black       !important; }
-.dark-mode .logs .bg-blue          { background-color: deepskyblue !important; }
+.dark-mode .logs .bg-blue          { background-color: #3498db     !important; }
 
 .dot { 
     height: 0.65em;

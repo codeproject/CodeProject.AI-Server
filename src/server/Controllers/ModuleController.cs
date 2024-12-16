@@ -340,13 +340,16 @@ namespace CodeProject.AI.Server.Controllers
                                                              [FromQuery] bool noCache = false, 
                                                              [FromQuery] LogVerbosity verbosity = LogVerbosity.Quiet)
         {
-            var downloadTask = _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version,
-                                                                              noCache, verbosity);
-            (bool success, string error) = await downloadTask.ConfigureAwait(false);
+            /*
+            var installTask = _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version,
+                                                                             noCache, verbosity);
+            (bool success, string error) = await installTask.ConfigureAwait(false);
             
             return success? new ServerResponse() : new ServerErrorResponse(error);
+            */
 
-            /*
+            // Run the install as a separate task so the call to the controller can return
+            // immediately instead of timing out.
             _ = Task.Run(async () =>
             {
                 var downloadTask = _moduleInstaller.DownloadAndInstallModuleAsync(moduleId, version,
@@ -361,10 +364,10 @@ namespace CodeProject.AI.Server.Controllers
                 }
             });
 
-            await Task.Delay(0); // Just tow quieten the compiler error checking.
+            await Task.Delay(0); // Just to quieten the compiler error checking.
 
             return new ServerResponse(); // Success = true. code = 200. 
-            */
+            
         }
 
         /// <summary>

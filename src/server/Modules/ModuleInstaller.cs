@@ -736,11 +736,11 @@ namespace CodeProject.AI.Server.Modules
                 {
                     // If the setup script is in "setup everything" mode it will setup the server
                     // and SDK. We only need it to setup modules, so use the --modules-only flag
-                    command = $"\"{_moduleSettings.ModuleInstallerScriptPath}\" --modules-only --verbosity {verbosity}  --launcher server";
+                    command = $"\"{_moduleSettings.ModuleInstallerScriptPath}\" --modules-only --verbosity {verbosity} --launcher server";
                 }
                 else
                 {
-                    command = $"\"{_moduleSettings.ModuleInstallerScriptPath}\" --verbosity {verbosity}  --launcher server";
+                    command = $"\"{_moduleSettings.ModuleInstallerScriptPath}\" --verbosity {verbosity} --launcher server";
                 }
 
                 procStartInfo = new ProcessStartInfo("bash", command);

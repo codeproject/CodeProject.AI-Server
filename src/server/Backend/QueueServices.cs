@@ -252,8 +252,8 @@ namespace CodeProject.AI.Server.Backend
                 using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token, timeoutToken);
                 var theToken                            = linkedCancellationTokenSource.Token;
 
-                // NOTE FOR VS CODE users: In debug, you may want to uncheck "All Exceptions" under the
-                // breakpoints section (the bottom section) of the Run and Debug tab.
+                // NOTE FOR VS CODE users: In debug, you may want to uncheck "All Exceptions" under
+                // the breakpoints section (the bottom section) of the Run and Debug tab.
 
                 if (token.IsCancellationRequested || timeoutToken.IsCancellationRequested)
                     return null;
