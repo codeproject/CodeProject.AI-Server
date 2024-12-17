@@ -1251,7 +1251,7 @@ class ModuleRunner:
             # print(check_requirements(requirements_filepath, False))
             pass
 
-    def get_requirements_filepath(self) -> str:
+    def get_requirements_filepath(self) -> "str|None":
         """
         Gets the requirements.*.txt file for the given system and hardware, ensuring
         that this file actually exists
@@ -1279,7 +1279,7 @@ class ModuleRunner:
         # then GPU, then CPU. With a query at each step for OS and architecture.
 
         filename = ""
-        os       = self.system_info.os.lower()
+        os_name  = self.system_info.os.lower()
         arch     = self.system_info.cpu_arch.lower()
 
         if self.system_info.system == 'Raspberry Pi':
@@ -1297,39 +1297,39 @@ class ModuleRunner:
 
         if not filename and self.enable_GPU:
             # TODO: Change this to system_info.hasCudaGpu, and add system_info.CudaVersion (major, minor)
-            # prop so we can do requirements.os.architecture.cuda.cuda_version.txt and
-            # requirements.os.architecture.cuda.cuda_major.txt
+            # prop so we can do requirements.os_name.architecture.cuda.cuda_version.txt and
+            # requirements.os_name.architecture.cuda.cuda_major.txt
 
             if self.system_info.hasTorchCuda:
                 # TODO: Get the specific CUDA version and then add tests for .cudaMajor, .cudaMajor_Minor
-                if os.path.exists(os.path.join(self.module_path, f"requirements.{os}.{arch}.cuda.txt")):
-                    filename = f"requirements.{os}.{arch}.cuda.txt"
-                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os}.cuda.txt")):
-                    filename = f"requirements.{os}.cuda.txt"
+                if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.cuda.txt")):
+                    filename = f"requirements.{os_name}.{arch}.cuda.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.cuda.txt")):
+                    filename = f"requirements.{os_name}.cuda.txt"
                 elif os.path.exists(os.path.join(self.module_path, f"requirements.cuda.txt")):
                     filename = f"requirements.cuda.txt"
 
             if self.system_info.hasTorchROCm:
-                if os.path.exists(os.path.join(self.module_path, f"requirements.{os}.{arch}.rocm.txt")):
-                    filename = f"requirements.{os}.{arch}.rocm.txt"
-                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os}.rocm.txt")):
-                    filename = f"requirements.{os}.rocm.txt"
+                if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.rocm.txt")):
+                    filename = f"requirements.{os_name}.{arch}.rocm.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.rocm.txt")):
+                    filename = f"requirements.{os_name}.rocm.txt"
                 elif os.path.exists(os.path.join(self.module_path, f"requirements.rocm.txt")):
                     filename = f"requirements.rocm.txt"
 
             if not filename:
-                if os.path.exists(os.path.join(self.module_path, f"requirements.{os}.{arch}.gpu.txt")):
-                    filename = f"requirements.{os}.{arch}.gpu.txt"
-                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os}.gpu.txt")):
-                    filename = f"requirements.{os}.gpu.txt"
+                if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.gpu.txt")):
+                    filename = f"requirements.{os_name}.{arch}.gpu.txt"
+                elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.gpu.txt")):
+                    filename = f"requirements.{os_name}.gpu.txt"
                 elif os.path.exists(os.path.join(self.module_path, f"requirements.gpu.txt")):
                     filename = f"requirements.gpu.txt"
 
         if not filename:
-            if os.path.exists(os.path.join(self.module_path, f"requirements.{os}.{arch}.txt")):
-                filename = f"requirements.{os}.{arch}.txt"
-            elif os.path.exists(os.path.join(self.module_path, f"requirements.{os}.txt")):
-                filename = f"requirements.{os}.txt"
+            if os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.{arch}.txt")):
+                filename = f"requirements.{os_name}.{arch}.txt"
+            elif os.path.exists(os.path.join(self.module_path, f"requirements.{os_name}.txt")):
+                filename = f"requirements.{os_name}.txt"
             elif os.path.exists(os.path.join(self.module_path, f"requirements.txt")):
                 filename = f"requirements.txt"
 
