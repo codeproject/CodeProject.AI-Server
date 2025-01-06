@@ -793,6 +793,12 @@ writeLine "${formattedFreeSpace} of ${formattedTotalSpace} available on ${system
 #     Read this awesome article https://blog.djnavarro.net/posts/2022-09-04_sudo-askpass/
 # fi
 
+# Prep perl in case we're on an old system which can't handle en_US.UTF-8 (the default).
+# At the moment we only use perl in prepping json for jq
+if [ "$parse_mode" = "jq" ]; then
+    if [[ -n "$(perl -e exit)" ]]; then LANG=C; fi
+fi
+
 # Install tools that we know are available via apt-get or brew
 if [ "$selfTestOnly" = false ]; then
     if [ "$os" = "linux" ]; then 
