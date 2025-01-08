@@ -86,10 +86,6 @@
 		}
 	],
 	"settings": {
-		"csharp.debug.logging.moduleLoad": false,
-		"cSpell.words": [
-			"paddlepaddle",
-			"utilitisation"
-		]
+		"csharp.debug.logging.moduleLoad": false
 	}
 }

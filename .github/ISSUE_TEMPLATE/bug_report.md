@@ -9,11 +9,18 @@ assignees: ''
 
 **Area of Concern**
 - [ ] Server
-- [ ] Behaviour of one or more Modules [provide name(s), e.g. ObjectDetectionYolo]
 - [ ] Installer
-- [ ] Runtime [e.g. Python3.7, .NET]
-- [ ] Module packages [e.g. PyTorch)
+- [ ] Server Dashboard or Explorer
+- [ ] Installation issue of one or more Modules. **Please post the issue on the module's Issue list directly**
+- [ ] Behaviour of one or more Modules **Please post the issue on the module's Issue list directly**
 - [ ] Something else
+
+**Server Info**
+- Version (eg CodeProject.AI 2.9.7)
+- Operating System & architecture (eg macOS arm64, Debian x64)
+- System RAM (eg 16Gb)
+- Video card (eg NVIDIA RTX 3060 12Gb, Apple Silicon, Intel integrated GPU)
+- Using Docker?
 
 **Describe the bug**
 A clear and concise description of what the bug is.
@@ -23,13 +30,6 @@ A clear and concise description of what you expected to happen.
 
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
-
-**Your System (please complete the following information):**
- - CodeProject.AI Server version: {e.g. 2.3.1]
- - OS: [e.g. Ubuntu 20.04]
- - System RAM [e.g. 16Gb]
- - GPU (if available) [e.g. GeForce RTX 3060]
- - GPU RAM (if available)  [e.g. 4Gb]
 
 **Additional context**
 Add any other context about the problem here.

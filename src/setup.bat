@@ -38,6 +38,7 @@
 ::    --modules-only      - Only install modules, not server, SDK or demos
 ::    --server-only       - Only install the server, not modules, SDK or demos
 ::    --verbosity option  - 'option' is quiet, info or loud.
+::    --download-timeout value - 'value' is the timeout value in seconds.
 ::
 :: =============================================================================
 
@@ -51,6 +52,9 @@ chcp 65001 >NUL
 
 :: verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 set verbosity=quiet
+
+:: download timeout in seconds
+set downloadTimeout=900
 
 :: The .NET version to install. NOTE: Only major version matters unless we use manual install
 :: scripts, in which case we need to specify version. Choose version that works for all platforms
@@ -179,6 +183,13 @@ set launchedBy=user
         shift
         goto :param_loop
     )
+    if "%~1"=="--download-timeout" (
+        set "downloadTimeout=%~2"
+        shift
+        shift
+        goto :param_loop
+    )
+
     if "%~1"=="--selftest-only" (
         set selfTestOnly=true
         shift

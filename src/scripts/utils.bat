@@ -427,18 +427,18 @@ shift & goto :%~1
         if not exist "!downloadToDir!" mkdir "!downloadToDir!"
 
         REM Be careful with the quotes so we can handle paths with spaces
-        powershell -command "Start-BitsTransfer -Source '!assetStorageUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!\!fileToGet!'"
+        powershell -command "Start-BitsTransfer -Source '!assetStorageUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!\!fileToGet!' -MaxDownloadTime !downloadTimeout!"
 
         REM If these fail, it could be because of hanging transfers
         if errorlevel 1 (
             powershell -Command "Get-BitsTransfer | Remove-BitsTransfer"
-            powershell -command "Start-BitsTransfer -Source '!assetStorageUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!\!fileToGet!'"
+            powershell -command "Start-BitsTransfer -Source '!assetStorageUrl!!fileToGet!' -Description !fileToGet! -Destination '!downloadToDir!\!fileToGet!' -MaxDownloadTime !downloadTimeout!"
         )
 
         REM if that doesn't work, fallback to a slower safer method
         if errorlevel 1 (
             call :WriteLine "BITS transfer failed. Trying Powershell...." "!color_warn!"
-            powershell -Command "Invoke-WebRequest '!assetStorageUrl!!fileToGet!' -OutFile '!downloadToDir!\!fileToGet!'"
+            powershell -Command "Invoke-WebRequest '!assetStorageUrl!!fileToGet!' -OutFile '!downloadToDir!\!fileToGet!' -TimeoutSec !downloadTimeout!"
             if errorlevel 1 (
                 call :WriteLine "Download failed. Sorry." "!color_error!"
                 exit /b 1
