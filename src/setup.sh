@@ -40,6 +40,7 @@
 #    --modules-only      - Only install modules, not server, SDK or demos
 #    --server-only       - Only install the server, not modules, SDK or demos
 #    --verbosity option  - 'option' is quiet, info or loud.
+#    --download-timeout value - 'value' is the timeout value in seconds.
 # 
 # Notes for Windows (WSL) users:
 #
@@ -61,6 +62,9 @@
 
 # verbosity can be: quiet | info | loud. Use --verbosity quiet|info|loud
 verbosity="quiet"
+
+# download timeout (for wget) in seconds
+downloadTimeout=900
 
 # The .NET version to install. NOTE: Only major version matters unless we use 
 # manual install scripts, in which case we need to specify the version. Choose a
@@ -210,6 +214,15 @@ while [[ $# -gt 0 ]]; do
             fi
         else
             echo "Verbosity does not match the expected values quiet|info|loud"
+        fi
+    fi
+    if [ "$param" = "--download-timeout" ]; then
+        shift
+        if [[ $# -gt 0 ]]; then
+            downloadTimeout=$1
+            echo "Setting download timeout to ${downloadTimeout}"
+        else
+            echo "No downloadTimeout value provided"
         fi
     fi
     shift
@@ -699,7 +712,7 @@ fi
 
 # Set Flags
 
-wgetFlags='--no-check-certificate --tries 5'
+wgetFlags="--no-check-certificate --tries 5 --timeout ${downloadTimeout}"
 wgetFlags="${wgetFlags} --progress=bar:force:noscroll"
 if [[ $(wget -h 2>&1 | grep -E 'waitretry|connect-timeout') ]]; then
     wgetFlags="${wgetFlags} --waitretry 2 --connect-timeout 15"
