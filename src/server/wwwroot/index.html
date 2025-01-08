@@ -30,6 +30,7 @@
 
         let urlElm = document.getElementById('serviceUrl');
         urlElm.value = apiServiceUrl;
+		serviceTimeoutSecTxt.value = serviceTimeoutSec;
 
         setServerStatus("Searching", "light", "Searching for Server");
 
@@ -159,16 +160,17 @@
                     <a href="https://codeproject.github.io/codeproject.ai/" target="_blank">Docs</a>
                 </div>
                 <div class="mx-3" title="Got a question or suggestion?">
-                    <a href="https://www.codeproject.com/Feature/CodeProjectAI-Discussions.aspx"
-                       target="_blank">Forums</a>
+                    <a href="https://github.com/codeproject/CodeProject.AI-Server/discussions"
+                       target="_blank">Discussions</a>
                 </div>
                 <div title="Grab the source code">
-                    <a href="https://www.codeproject.com/Articles/5322557/CodeProject-AI-Server-AI-the-easy-way">The Code</a>
+                    <a href="https://github.com/codeproject/CodeProject.AI-Server">The Code</a>
                 </div>
                 <div class="ms-3 bg-info rounded-3" title="Explore the capabilities of your installed CodeProject.AI server">
                     <a id="explorer-launcher" class="p-1" href="explorer.html"
                        target="_blank">CodeProject.AI Explorer</a>
                 </div>
+
 				<div id="hostname" class="fw-bold ms-auto"></div>
                 <div id="communication" class="mt-0 signal">
                     <svg fill="#00f900" width="16px" height="16px" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 14a1.99 1.99 0 0 0-1.981 2c0 1.104.887 2 1.981 2s1.98-.896 1.98-2c0-1.105-.886-2-1.98-2zm-4.2-2.242l1.4 1.414a3.933 3.933 0 0 1 5.601 0l1.399-1.414a5.898 5.898 0 0 0-8.4 0zM3 8.928l1.4 1.414a7.864 7.864 0 0 1 11.199 0L17 8.928a9.831 9.831 0 0 0-14 0zM.199 6.1l1.4 1.414a11.797 11.797 0 0 1 16.801 0L19.8 6.1a13.763 13.763 0 0 0-19.601 0z"></path></g></svg>						
@@ -234,9 +236,12 @@
                         <div class="card-body sub-panel">
                             <div class="d-flex justify-content-between flex-nowrap">
                                 <div>Service Url</div>
-                                <div>
-                                    <input type="text" id="serviceUrl" class="ms-2" style="width:13rem;font-size:90%;" />
-                                </div>
+                                <div><input type="text" id="serviceUrl" class="ms-2" style="width:13rem;font-size:90%;" /></div>
+
+            					<div class="text-end ms-3 me-1">Timeout</div>
+			            		<div><input class="" type="number" id="serviceTimeoutSecTxt" style="width:4.5rem;font-size: 90%;"/></div>
+					            <div class="mx-1">sec</div>
+
                                 <div class="ms-auto" id="gpuMemUsed"></div>
                             </div>
 
