@@ -23,10 +23,12 @@ E-2. Extract the modules from step D-3 (CodeProject.AI-ObjectDetectionYOLOv8-mai
 I-1. Install Microsoft .Net (dotnet-sdk-*version*-win-x64.exe) from step D-1  
 I-2. Right click and Run As Administrator the CodeProject AI Server Installer from extracted folder in step E-1 (CodeProject.AI-Server_*version*_win_x64.exe)  
      **Important: Untick all modules as these will timeout and you will likely need to uninstall and start again**  
+       
 I-3. Once the server has installed. Copy the extracted modules to C:\Program Files\CodeProject\AI\modules,   
      - CodeProject.AI-ObjectDetectionYOLOv8-main &  
      - CodeProject.AI-FaceProcessing-main  
      Now going to C:\Program Files\CodeProject\AI\modules\CodeProject.AI-ObjectDetectionYOLOv8-main folder, you should see many files. If you see another folder called odeProject.AI-ObjectDetectionYOLOv8-main then you need to copy this up a level.  
+       
 I-4. Open an elevated command prompt (click start, type cmd, right click, Run as administrator) and navigate into the module directory (_cd C:\Program Files\CodeProject\AI\modules\CodeProject.AI-ObjectDetectionYOLOv8-main_)  
 I-5. Now enter "..\..\setup" to install the module and wait for it to finish.  
 I-6. Now install any other modules, e.g. in the same elevated command prompt window, enter "_cd C:\Program Files\CodeProject\AI\modules\CodeProject.AI-FaceProcessing-main_" then again run _..\..\setup_ and wait for it to complete.  
