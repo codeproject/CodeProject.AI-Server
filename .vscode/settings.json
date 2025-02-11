@@ -143,5 +143,8 @@
         "xyxy",
         "YOLO",
         "yolov5"
+    ],
+    "githubPullRequests.ignoredPullRequestBranches": [
+        "main"
     ]
 }
