@@ -743,9 +743,9 @@ shift & goto :%~1
                 call :EnsureWinGetInstalled
 
                 if /i "!requestedType!" == "SDK" (
-                    winget install Microsoft.DotNet.SDK.!requestedNetMajorVersion!
+                    winget install Microsoft.DotNet.SDK.!requestedNetMajorVersion! --accept-package-agreements --accept-source-agreements
                 ) else (
-                    winget install Microsoft.DotNet.AspNetCore.!requestedNetMajorVersion!
+                    winget install Microsoft.DotNet.AspNetCore.!requestedNetMajorVersion! --accept-package-agreements --accept-source-agreements
                 )
 
                 call :WriteLine ""
