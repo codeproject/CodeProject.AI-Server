@@ -1221,7 +1221,7 @@ function setupPython () {
 
                 # Download "${assetStorageUrl}runtimes/" "python3.7.12-osx64.tar.gz" \
                 #          "${platform}/${pythonName}" "Downloading Python interpreter..."
-                # cp -R "${downloadDirPath}/${platform}/${pythonName}" "${runtimesDirPath}/bin/${platform}"
+                # cp -R "${downloadDirPath}/${platform_dir}/${pythonName}" "${runtimesDirPath}/bin/${platform}"
 
                 if [ "${verbosity}" = "quiet" ]; then
                     brew install python@${pythonVersion}  >/dev/null 2>/dev/null &
@@ -1315,7 +1315,7 @@ function setupPython () {
             # Download
             cd "${downloadDirPath}"
             mkdir --parents "${platform_dir}/lib" >/dev/null
-            cd "${os}/lib"
+            cd "${platform_dir}/lib"
 
             if [ ! -f "openssl-1.1.1c.tar.gz" ]; then
                 curl $curlFlags --remote-name https://www.openssl.org/source/openssl-1.1.1c.tar.gz
@@ -2971,8 +2971,13 @@ if [[ $OSTYPE == 'darwin'* ]]; then
     systemName=$os
     edgeDevice=''
 
-    if [ "$architecture" = 'arm64' ]; then platform='macos-arm64'; fi
+    if [ "$architecture" = 'arm64' ]; then 
+        platform='macos-arm64'
+        platform_dir="macos-arm64"
+    fi
+
 else
+
     os='linux'
     edgeDevice=''
     platform='linux'
@@ -2981,7 +2986,10 @@ else
     os_code_name=$(. /etc/os-release;echo $VERSION_CODENAME) # eg "jammy" for Ubuntu 22.04, "bookworm" for Debian 12
     platform_dir=$os_name # or $platform 
 
-    if [ "$architecture" = 'arm64' ]; then platform='linux-arm64'; fi
+    if [ "$architecture" = 'arm64' ]; then 
+        platform='linux-arm64'
+        platform_dir="${os_name}-arm64"
+    fi
 
     modelInfo=""
     if [ -f "/sys/firmware/devicetree/base/model" ]; then

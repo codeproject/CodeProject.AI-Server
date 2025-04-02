@@ -553,19 +553,19 @@ shift & goto :%~1
 
     REM params: "https://cdn.com/assets"  "file.zip" "\downloads\myModuleDir"  "extract_dir" "Downloading files..."
     REM Empty "extract_dir" means file will not be unzipped (since it's not a zip)
-    call :DownloadAndExtract "!url_x64!" "!file_x64!" "!downloadDirPath!\!platform!" "" "Downloading VC++ Redist files..."
+    call :DownloadAndExtract "!url_x64!" "!file_x64!" "!downloadDirPath!\!platform_dir!" "" "Downloading VC++ Redist files..."
 
-    if exist "!downloadDirPath!\!platform!\!file_x64!" (
+    if exist "!downloadDirPath!\!platform_dir!\!file_x64!" (
         call :Write "Installing VC++ Redist..." %color_info%
         if /i "%verbosity%" == "quiet" (
-            "!downloadDirPath!\!platform!\!file_x64!" /quiet /norestart
+            "!downloadDirPath!\!platform_dir!\!file_x64!" /quiet /norestart
         ) else (
-            "!downloadDirPath!\!platform!\!file_x64!" /norestart
+            "!downloadDirPath!\!platform_dir!\!file_x64!" /norestart
         )
         call :WriteLine "Done." %color_info%
 
         REM -- Cleanup: Delete the installer files after installation
-        REM del /f /q "!downloadDirPath!\!platform!\!file_x64!"
+        REM del /f /q "!downloadDirPath!\!platform_dir!\!file_x64!"
     ) else (
         call :WriteLine "Unable to download VC redist installer" !color_error!
     )
@@ -780,15 +780,15 @@ shift & goto :%~1
     REM doesn't exist)
 
     REM The path to the folder containing the base python installation
-    set pythonRuntimeInstallPath=!runtimesDirPath!\bin\!os!\!pythonName!
+    set pythonRuntimeInstallPath=!runtimesDirPath!\bin\!platform_dir!\!pythonName!
 
     REM For debugging, or correcting, we can force re-downloads. Be careful though.
     if /i "%forceOverwrite%" == "true" (
 
         REM Force Re-download
         call :WriteLine "Cleaning download directory to force re-download of Python" "!color_info!"
-        if exist "!downloadDirPath!\!platform!\!pythonName!" (
-            rmdir /s "%rmdirFlags% "!downloadDirPath!\!platform!\!pythonName!"
+        if exist "!downloadDirPath!\!platform_dir!\!pythonName!" (
+            rmdir /s "%rmdirFlags% "!downloadDirPath!\!platform_dir!\!pythonName!"
         )
 
         REM Force overwrite of python installation
@@ -810,7 +810,7 @@ shift & goto :%~1
     if exist "!basePythonCmdPath!" (
         call :WriteLine "Python !pythonVersion! is already installed" "!color_success!"
     ) else (
-        set pythonDownloadDir=!downloadDirPath!\!platform!\
+        set pythonDownloadDir=!downloadDirPath!\!platform_dir!\
         if not exist "!pythonDownloadDir!"             mkdir "!pythonDownloadDir!"
         if not exist "!pythonDownloadDir!!pythonName!" mkdir "!pythonDownloadDir!!pythonName!"
 
@@ -818,15 +818,15 @@ shift & goto :%~1
 
             REM if not exist "!pythonRuntimeInstallPath!"       mkdir "!pythonRuntimeInstallPath!"
             if not exist "!runtimesDirPath!\bin"                   mkdir "!runtimesDirPath!\bin"
-            if not exist "!runtimesDirPath!\bin\!os!"              mkdir "!runtimesDirPath!\bin\!os!"
-            if not exist "!runtimesDirPath!\bin\!os!\!pythonName!" mkdir "!runtimesDirPath!\bin\!os!\!pythonName!"
+            if not exist "!runtimesDirPath!\bin\!platform_dir!"              mkdir "!runtimesDirPath!\bin\!platform_dir!"
+            if not exist "!runtimesDirPath!\bin\!platform_dir!\!pythonName!" mkdir "!runtimesDirPath!\bin\!platform_dir!\!pythonName!"
         )
 
         REM Params are:      S3 storage bucket |    fileToGet    | downloadToDir | dirToExtract | message
         call :DownloadAndExtract "!assetStorageUrl!runtimes/" "!pythonName!.zip" "!pythonDownloadDir!"  "!pythonName!" "Downloading Python !pythonVersion! interpreter..."
 
-        if exist "!downloadDirPath!\!platform!\!pythonName!" (
-            robocopy /e "!downloadDirPath!\!platform!\!pythonName! " "!pythonRuntimeInstallPath! " /XF "!pythonName!.zip" !roboCopyFlags! >NUL
+        if exist "!downloadDirPath!\!platform_dir!\!pythonName!" (
+            robocopy /e "!downloadDirPath!\!platform_dir!\!pythonName! " "!pythonRuntimeInstallPath! " /XF "!pythonName!.zip" !roboCopyFlags! >NUL
         ) else (
             REM if /i "%verbosity%" neq "quiet" (
                 call :WriteLine "Failed to download and extract !pythonName!.zip" "!color_error!"

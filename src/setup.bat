@@ -291,6 +291,7 @@ set os=windows
 set os_name=Windows
 set os_code_name=Windows
 set platform=windows
+set platform_dir=windows
 set systemName=Windows
 
 :: Get the full OS name
@@ -311,6 +312,7 @@ set architecture=%PROCESSOR_ARCHITECTURE%
 if /i "!architecture!" == "arm64" (
     set architecture=arm64
     set platform=windows-arm64
+    set platform_dir=windows-arm64
 )
 :: Hack for AMD
 if /i "!architecture!" == "amd64" set architecture=x86_64
@@ -767,9 +769,9 @@ goto:eof
     REM The path to the python installation, either local or shared. The
     REM virtual environment will live in here
     if /i "!runtimeLocation!" == "Local" (
-        set pythonDirPath=!moduleDirPath!\bin\!os!\!pythonName!
+        set pythonDirPath=!moduleDirPath!\bin\!platform_dir!\!pythonName!
     ) else (
-        set pythonDirPath=!runtimesDirPath!\bin\!os!\!pythonName!
+        set pythonDirPath=!runtimesDirPath!\bin\!platform_dir!\!pythonName!
     )
     set virtualEnvDirPath=!pythonDirPath!\venv
 
