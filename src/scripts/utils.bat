@@ -495,8 +495,24 @@ shift & goto :%~1
 
     REM Try tar first. If that doesn't work, fall back to powershell (slow)
     set tarSuccessful=true
-    tar -xf "!archiveName!" --directory "!dirToExtract!" 
-   
+
+    if /i "%verbosity%" == "quiet" (
+        tar -xf "!archiveName!" --directory "!dirToExtract!" >NUL 2>&1
+    ) else (
+        tar -xf "!archiveName!" --directory "!dirToExtract!"
+    )
+
+    REM set exFAT=false
+    REM for /f "delims=" %%i in ('tar -xf "!archiveName!" --directory "!dirToExtract!" 2^>^&1') do (
+    REM     echo %%i | findstr /i "Can't restore time" > nul
+    REM     if !errorlevel! equ 0 (
+    REM         set exFAT=true
+    REM         goto :doneFATcheck
+    REM     )
+    REM )
+    REM :doneFATcheck
+    REM call :Write "exFAT = !exFAT!" "!color_info!"
+
     REM error 9009 means "command not found"
     if errorlevel 9009 set tarSuccessful=false
     if errorlevel 1 set tarSuccessful=false
