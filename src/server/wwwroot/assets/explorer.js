@@ -43,6 +43,20 @@ function initVideoDemo() {
     }
 }
 
+// Function to enable/disable model selection based on selected mode
+function toggleModelSelection() {
+    const alprSelected = document.getElementById('benchmarkModeALPR').checked;
+    const modelDropdown = document.getElementById('benchmarkModel');
+    
+    if (alprSelected) {
+        // Disable the model dropdown when ALPR is selected
+        modelDropdown.disabled = true;
+    } else {
+        // Enable the model dropdown when Object Detection is selected
+        modelDropdown.disabled = false;
+    }
+}
+
 // Display server and module statuses ==========================================
 
 /**
@@ -889,6 +903,9 @@ async function setBenchmarkCustomList() {
         customModelList.splice(1, 0, { name: "No inference: round-trip speed test only", value: "round-trip"});
 
         setModelList("benchmarkModel", customModelList);
+        
+        // Initialize model selection state after setting the list
+        toggleModelSelection();
     }
 }
 
@@ -1139,11 +1156,18 @@ const maxBenchmarkRequests = 50;
 let totalBenchmarkRequests = 0;
 
 async function onBenchmark(fileChooser, model_name, parallelism) {
-
     clearImagePreview();
 
     let images = null;
-    let route = model_name ? ('custom/' + model_name) : 'detection';
+    let mode = document.querySelector('input[name="benchmarkMode"]:checked').value;
+    
+    // Ignore model_name when ALPR is selected
+    let route;
+    if (mode === "alpr") {
+        route = "alpr";
+    } else {
+        route = model_name ? ('custom/' + model_name) : mode;
+    }
 
     if (benchmarkModel.value == "round-trip") {
         route = "custom/list";
@@ -1154,22 +1178,30 @@ async function onBenchmark(fileChooser, model_name, parallelism) {
             return;
         }
 
-        previewImage(fileChooser.files[0]);
+        previewImage(fileChooser);
+        
         images = [fileChooser.files[0]];
     }
 
-    // Warm up
+    totalBenchmarkRequests = 0;
+    setResultsHtml("Starting benchmark test using " + mode + " route");
+
+    // Perform warmup requests
     for (let i = 0; i < warmupCount; i++) {
-		let data = await submitRequest('vision', route, images);
-        if (data)
-            setResultsHtml("Warm up " + i);
+        try {
+            await submitRequest('vision', route, images);
+        }
+        catch (error) {
+            console.log("Warmup request failed: " + error);
+        }
     }
 
-	// Benchmark
     let startMilliseconds = performance.now();
-    totalBenchmarkRequests = 0;
-	for (let i = 0; i < parallelism; i++)
+    
+    // Start actual benchmark
+    for (let i = 0; i < parallelism; i++) {
         sendBenchmarkRequest(route, images, startMilliseconds);
+    }
 }
 
 function sendBenchmarkRequest(route, images, startMilliseconds) {

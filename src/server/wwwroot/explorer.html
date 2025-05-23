@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -14,10 +14,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
 
     <link id="bootstrapCss" rel="stylesheet" type="text/css" href="assets/bootstrap-dark.min.css">
-    <link rel="stylesheet" type="text/css" href="assets/server.css?v=2.9.3">
+    <link rel="stylesheet" type="text/css" href="assets/server.css?v=2.9.4">
 
-    <script type="text/javascript" src="assets/server.js?v=2.9.3"></script>
-    <script type="text/javascript" src="assets/explorer.js?v=2.9.3"></script>
+    <script type="text/javascript" src="assets/server.js?v=2.9.4"></script>
+    <script type="text/javascript" src="assets/explorer.js?v=2.9.4"></script>
 
 	<!-- Will only be effective if you're connected to the internet -->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,6 +56,9 @@
 		setInterval(setBenchmarkCustomList, customModelUpdateFreqSec * 1000);
 		
 		initVideoDemo();
+        
+        // Initial state of model selection based on default radio selection
+        toggleModelSelection();
 	});
 	</script>
 
@@ -248,6 +251,17 @@
 											<label class="col-form-label col-2">Image</label>
 											<input class="col form-control btn-light" id="benchmarkInput"
 												   type="file" style="width:17rem" onchange="return previewImage(this)" />
+										</div>
+										<div class="form-group d-flex mt-2">
+                                            <label class="col-form-label col-2">Mode</label>
+                                            <div class="form-check form-check-inline mt-2">
+                                                <input class="form-check-input" type="radio" name="benchmarkMode" id="benchmarkModeDetection" value="detection" checked onchange="toggleModelSelection()">
+                                                <label class="form-check-label" for="benchmarkModeDetection">Object Detection</label>
+                                            </div>
+                                            <div class="form-check form-check-inline mt-2">
+                                                <input class="form-check-input" type="radio" name="benchmarkMode" id="benchmarkModeALPR" value="alpr" onchange="toggleModelSelection()">
+                                                <label class="form-check-label" for="benchmarkModeALPR">License Plate Recognition</label>
+                                            </div>
 										</div>
 										<div class="form-group d-flex justify-content-end mt-2">
 											<label class="col-form-label col-2">Model</label>
