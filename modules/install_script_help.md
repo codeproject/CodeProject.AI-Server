@@ -30,12 +30,12 @@ Raspberry Pi, or just plain Windows), and the environment (eg Docker, WSL, or na
 uses Python then the version of python given by the `runtime` setting will be installed and a virtual
 environment setup.
 
-3. If no errors ocurred, the module's `install` script will be run
+3. If no errors occurred, the module's `install` script will be run
 
-4. If no errors ocurred, and if the module uses Python and has an appropriate requirements.txt file,
+4. If no errors occurred, and if the module uses Python and has an appropriate requirements.txt file,
 the packages in the requirements.txt file will be installed.
 
-5. If no errors ocurred, and if the module has a `post_install.sh` / `postinstall.bat` file then this
+5. If no errors occurred, and if the module has a `post_install.sh` / `postinstall.bat` file then this
 script will be run
 
 ## Module Requirements file
@@ -115,11 +115,11 @@ As an example, `requirements.linux.arm64.cuda11_7.txt` would be a requirements f
 | `write`     | text [foreground [background]] (eg write "Hi" "green")
 | `writeLine` | text [foreground [background]]
 | `installAptPackages` | "list of packages to install"<br>Installs a list of apt packages. <br>eg `installAptPackages "libjpeg-dev zlib1g-dev libpython3-dev"` |
-| `installPythonPackagesByName` | *`PIP module names, separated by space` or `Wheel file path`, `Module name`*<br>- `PIP module name` - the name of the Python module to install, eg 'torch'<br> - `Wheel file path` - instead of a module name you can supply a wheel file path for installation<br> - `Module description` - (optional) the name or description of the module being installed<br>eg `installPythonPackagesByName "torch"`<br>`installPythonPackagesByName "my-torch-wheel.whl" "torch"`<br> - `PIP options` - (optional) Any otions you wish to pass to PIP (eg --index-url)|
+| `installPythonPackagesByName` | *`PIP module names, separated by space` or `Wheel file path`, `Module name`*<br>- `PIP module name` - the name of the Python module to install, eg 'torch'<br> - `Wheel file path` - instead of a module name you can supply a wheel file path for installation<br> - `Module description` - (optional) the name or description of the module being installed<br>eg `installPythonPackagesByName "torch"`<br>`installPythonPackagesByName "my-torch-wheel.whl" "torch"`<br> - `PIP options` - (optional) Any options you wish to pass to PIP (eg --index-url)|
 |  `downloadAndExtract` | *assetStorageUrl filename downloadDirPath dirNameToSave message*<br>`assetStorageUrl` - Url that holds the compressed archive to Download<br>`filename` - Name of the compressed archive to be downloaded<br> `downloadDirPath` - path to where the downloaded compressed archive should be downloaded<br>`dirNameToSave` - name of directory, relative to downloadDirPath, where contents of archive will be extracted and saved<br>`message` - Message to display during download |
-|  `Download`  | *assetStorageUrl downloadDirPath filename moduleDirName message*<br> - `assetStorageUrl` Url that holds the compressed archive to Download<<br> - `downloadDirPath` Path to where the downloaded compressed archive should be downloade<br> - `filename`      name of the compressed archive to be downloaded<br> - `dirNameToSave` name of directory, relative to downloadDirPath, where contents of archive will be extracted and saved<br> - `message` Message to display during download |
+|  `Download`  | *assetStorageUrl downloadDirPath filename moduleDirName message*<br> - `assetStorageUrl` Url that holds the compressed archive to Download<<br> - `downloadDirPath` Path to where the downloaded compressed archive should be downloaded<br> - `filename`      name of the compressed archive to be downloaded<br> - `dirNameToSave` name of directory, relative to downloadDirPath, where contents of archive will be extracted and saved<br> - `message` Message to display during download |
 |||
-|  `getFromServer` | *folder filename moduleAssetDir message*<br>`folder` - name of the folder in the S3 bucket where the file lives<br>`filename` - Name of the compressed archive to be downloaded<br>`moduleAssetDir`- Name of folder in module's directory where archive will be extracted<br>`message` - Message to display during download <br><br>Tnis method will pull an archive from the current CodeProject cloud storage. This storage is read-only and subject to change.|
+|  `getFromServer` | *folder filename moduleAssetDir message*<br>`folder` - name of the folder in the S3 bucket where the file lives<br>`filename` - Name of the compressed archive to be downloaded<br>`moduleAssetDir`- Name of folder in module's directory where archive will be extracted<br>`message` - Message to display during download <br><br>This method will pull an archive from the current CodeProject cloud storage. This storage is read-only and subject to change.|
 |||
 | `setupPython` | (Never called directly) Installs the version of python given in `pythonVersion` and sets up a virtual environment in the location set by `runtimeLocation` |
 | `installRequiredPythonPackages` | (Never called directly) Installs the python packages included in the appropriate requirements.txt file in the current module into the current virtual environment for this module<br>`requirements-file-directory` - an optional parameter specifying the directory containing the requirements.txt file |
