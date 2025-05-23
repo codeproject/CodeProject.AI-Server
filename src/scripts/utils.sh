@@ -1595,11 +1595,19 @@ function setupPython () {
             writeLine "Install path is ${pythonDirPath}"
         fi
 
+        realDir=$(realpath "${pythonDirPath}" 2>/dev/null)
+        mountPoint=$(df --output=target "${realDir}" | tail -n 1)
+        fileSystemType=$(findmnt -n -o FSTYPE -T "${realDir}")
+
+        writeLine "File system is ${fileSystemType}" $color_info
+        venvFlag=""
+        if [ $fileSystemType = "exfat" ]; then venvFlag="--copies"; fi
+
         if [ $verbosity = "quiet" ]; then
-            "$basePythonCmdPath" -m venv "${virtualEnvDirPath}" >/dev/null &
+            "$basePythonCmdPath" -m venv ${venvFlag} "${virtualEnvDirPath}" >/dev/null &
             spin $! # process ID of the python install call
         else            
-            "$basePythonCmdPath" -m venv "${virtualEnvDirPath}"
+            "$basePythonCmdPath" -m venv ${venvFlag} "${virtualEnvDirPath}"
         fi
 
         if [ ! -d "${virtualEnvDirPath}" ]; then
