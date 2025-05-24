@@ -107,12 +107,12 @@ function setServerStatus(text, variant, tooltip) {
     if (variant)
         serverStatusElm.innerHTML = `<span class='text-white p-1 bg-${variant}' title='${tooltip}'>${text}</span>`;
     else
-        serverStatusElm.innerHTML = `<span class='text-white p-1' title='${tooltip}'>${text}</span>`;
+        serverStatusElm.innerHTML = `<span class='p-1' title='${tooltip}'>${text}</span>`;
 }
 
 function setServerHostname(text,) {
     const hostnameElm = document.getElementById("hostname");
-    if (hostnameElm) hostnameElm.innerHTML = "<span class='text-white hostname-label'>" + text + "</span>";
+    if (hostnameElm) hostnameElm.innerHTML = "<span class='hostname-label'>" + text + "</span>";
 }
 
 function showCommunication(active) {
@@ -132,7 +132,7 @@ function setModuleUpdateStatus(text, variant) {
     if (variant)
         moduleUpdateStatusElm.innerHTML = "<span class='p-1 text-" + variant + "'>" + text + "</span>";
     else
-        moduleUpdateStatusElm.innerHTML = "<span class='text-white p-1'>" + text + "</span>";
+        moduleUpdateStatusElm.innerHTML = "<span class='p-1'>" + text + "</span>";
 }
 
 

@@ -1271,7 +1271,7 @@ function setModuleUpdateStatus(text, variant) {
     if (variant)
         document.getElementById("moduleUpdateStatus").innerHTML = "<span class='p-1 text-" + variant + "'>" + text + "</span>";
     else
-        document.getElementById("moduleUpdateStatus").innerHTML = "<span class='text-white p-1'>" + text + "</span>";
+        document.getElementById("moduleUpdateStatus").innerHTML = "<span class='p-1'>" + text + "</span>";
 }
 
 // Utilities ==================================================================
