@@ -44,7 +44,7 @@ namespace CodeProject.AI.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ServerResponse> ListDownloadableModels()
         {
-            // Download models.json file from CodeProject.com
+            // Download models.json file from asset server
             ModelDownloadCollection downloadables = await _modelDownloader.GetDownloadableModelsAsync()
                                                                           .ConfigureAwait(false);
             // return list of models by moduleId

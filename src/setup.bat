@@ -127,7 +127,6 @@ set appRootDirPath=!setupScriptDirPath!
 :: name). This will be overwritten using the value from appsettings.json
 REM set assetStorageUrl=https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/
 set assetStorageUrl=https://codeproject-ai-bunny.b-cdn.net/server/assets/
-REM set assetStorageUrl=https://www.codeproject.com/ai/download/server/assets/
 
 :: The name of the source directory (in development)
 set srcDirName=src

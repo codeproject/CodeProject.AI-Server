@@ -145,7 +145,6 @@ appRootDirPath="${setupScriptDirPath}"
 # name). This will be overwritten using the value from appsettings.json
 # assetStorageUrl='https://codeproject-ai.s3.ca-central-1.amazonaws.com/server/assets/'
 assetStorageUrl='https://codeproject-ai-bunny.b-cdn.net/server/assets/'
-# assetStorageUrl='https://www.codeproject.com/ai/download/server/assets/'
 
 # The name of the source directory (in development)
 srcDirName='src'

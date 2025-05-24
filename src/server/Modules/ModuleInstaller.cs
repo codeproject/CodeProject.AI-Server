@@ -213,8 +213,8 @@ namespace CodeProject.AI.Server.Modules
         /// Creates a ModuleDescription object (a description of a downloadable module) from a
         /// ModuleConfig object (a module's settings file). We have this method is in order to
         /// backfill our list of ModuleDescription we get from the list modules service from
-        /// CodeProject.com. A module may have been removed from that list, or never added (if
-        /// a module was side-loaded privately). In order to manage (in this case, uninstall)
+        /// the hosting server. A module may have been removed from that list, or never added
+        /// (if a module was side-loaded privately). In order to manage (in this case, uninstall)
         /// such a module it will need to appear on a list of modules. We have the module's
         /// ModuleConfig (it's installed and maybe even running!) so build a ModuleDescription
         /// from the ModuleConfig.
