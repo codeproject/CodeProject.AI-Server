@@ -7,7 +7,7 @@
       "Build": 0,
       "PreRelease": "",
       "SecurityUpdate": false,
-      "File": "CodeProject.AI-Server-win-x64-2.9.6.zip",
+      "File": "CodeProject.AI-Server-win-x64-2.9.8.zip",
       "ReleaseNotes": "Updated to .NET 9, Improvements to installers, updates to .NET SDK, better edge device support."
     }
   }
