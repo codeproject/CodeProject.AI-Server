@@ -145,7 +145,9 @@ function correctLineEndings () {
 
     # Force correct BOM and CRLF issues in the script. Just in case
     if [[ $OSTYPE == 'darwin'* ]]; then           # macOS
-         if [[ ${OSTYPE:6} -ge 13 ]]; then        # Monterry is 'darwin21' -> "21"
+         darwinOSver="${OSTYPE:6}"
+         darwinOSverMajor=$(echo "23.2.0" | cut -d '.' -f1)
+         if [[ ${darwinOSverMajor} -ge 13 ]]; then        # Monterry is 'darwin21' -> "21"
             sed -i'.bak' -e '1s/^\xEF\xBB\xBF//' "${filePath}" # remove BOM
             sed -i'.bak' -e 's/\r$//' "${filePath}"            # CRLF to LF
             rm "${filePath}.bak"                               # Clean up. macOS requires backups for sed
