@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using CodeProject.AI.SDK.API;
@@ -65,6 +66,7 @@ namespace CodeProject.AI.Server.Controllers
         private readonly TriggerTaskRunner _commandRunner;
         private readonly MeshManager _meshManager;
         private readonly ModuleProcessServices _moduleProcessService;
+        private readonly ILogger<ProxyController> _logger;
 
         private bool   _verbose = false;
 
@@ -79,13 +81,15 @@ namespace CodeProject.AI.Server.Controllers
         /// <param name="commandRunner">The command runner</param>
         /// <param name="meshManager">The mesh manager</param>
         /// <param name="moduleProcessService">The module process service</param>
+        /// <param name="logger">The logger</param>
         public ProxyController(CommandDispatcher dispatcher,
                                BackendRouteMap routeMap,
                                IOptions<ModuleCollection> ModuleCollectionOptions,
                                IOptions<TriggersConfig> triggersConfig,
                                TriggerTaskRunner commandRunner,
                                MeshManager meshManager,
-                               ModuleProcessServices moduleProcessService)
+                               ModuleProcessServices moduleProcessService,
+                               ILogger<ProxyController> logger)
         {
             _dispatcher           = dispatcher;
             _routeMap             = routeMap;
@@ -94,6 +98,7 @@ namespace CodeProject.AI.Server.Controllers
             _commandRunner        = commandRunner;
             _meshManager          = meshManager;
             _moduleProcessService = moduleProcessService;
+            _logger               = logger;
         }
 
         /// <summary>
@@ -386,11 +391,10 @@ namespace CodeProject.AI.Server.Controllers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in DispatchRemoteRequest ({server.Status.Hostname}): {ex}");
+                _logger.LogError(ex, "Error in DispatchRemoteRequest ({Hostname})", server.Status.Hostname);
 
-                // Bump the response to 30s to push this server out of contention. Maybe also add
-                // exception info to the message
-                error      = $"Exception when forwarding request to {server.Status.Hostname}";                
+                // Bump the response to 30s to push this server out of contention.
+                error      = $"Exception when forwarding request to {server.Status.Hostname}: {ex.Message}";
                 elapsedMs  = 30_000;
             }
             finally
@@ -521,6 +525,13 @@ namespace CodeProject.AI.Server.Controllers
         private async Task<HttpResponseMessage> ForwardAsync(MeshServerRoutingEntry server)
         {
             HttpRequest originalRequest = Request;
+
+            // The body may already have been read once by ASP.NET Core's own model-binding
+            // pipeline before this point. EnableBuffering() (see Startup.cs) makes the body
+            // seekable so we can safely rewind it here and forward the full original content.
+            if (originalRequest.Body.CanSeek)
+                originalRequest.Body.Position = 0;
+
             int? port         = originalRequest.Host.Port;
             string portString = port.HasValue ? $":{port}" : string.Empty;
             var queryString   = originalRequest.QueryString;
@@ -538,7 +549,10 @@ namespace CodeProject.AI.Server.Controllers
             };
 
             foreach (KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues> header in originalRequest.Headers)
-                newRequest.Headers.TryAddWithoutValidation(header.Key, header.Value.AsEnumerable());
+            {
+                if (!newRequest.Headers.TryAddWithoutValidation(header.Key, header.Value.AsEnumerable()))
+                    newRequest.Content!.Headers.TryAddWithoutValidation(header.Key, header.Value.AsEnumerable());
+            }
 
             newRequest.Headers.Add(CPAI_Forwarded_Header, "true");
 
