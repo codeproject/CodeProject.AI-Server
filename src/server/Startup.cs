@@ -11,6 +11,7 @@ using Microsoft.OpenApi.Models;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -136,6 +137,16 @@ namespace CodeProject.AI.Server
             _installConfig = installConfig.Value;
             _versionConfig = versionConfig.Value;
             _logger        = logger;
+
+            // Enable request body buffering globally, as early as possible, so any code
+            // downstream (in particular ProxyController's mesh-forwarding logic) can safely
+            // re-read/replay the request body even after ASP.NET Core's own model-binding
+            // infrastructure has already read from it once.
+            app.Use(async (context, next) =>
+            {
+                context.Request.EnableBuffering();
+                await next();
+            });
 
             if (env.IsDevelopment())
             {

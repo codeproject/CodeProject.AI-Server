@@ -546,7 +546,7 @@ function meshServerSummary(server, isLocal) {
         summary += `${indent}All Addresses:       ${server.allIPAddresses.join(", ")}\n`;
     summary += `${indent}Active:              ${activeStr(server.isActive)}\n`;
     summary += `${indent}Forwarding Requests: ${activeStr(server.status.allowRequestForwarding)}\n`;
-    summary += `${indent}Accepting Requests:  ${activeStr(server.status.allowRequestForwarding)}\n`;
+    summary += `${indent}Accepting Requests:  ${activeStr(server.status.acceptForwardedRequests)}\n`;
 
     // Routes (may be an empty list)
     let hideRoutes = document.getElementById("showMeshRoutes") &&

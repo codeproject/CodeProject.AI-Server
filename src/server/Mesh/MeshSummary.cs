@@ -36,7 +36,7 @@ namespace CodeProject.AI.Server.Mesh
                 }
                 summary.AppendLine($"{indent}Active:              {IsActive}");
                 summary.AppendLine($"{indent}Forwarding Requests: {Status.AllowRequestForwarding}");
-                summary.AppendLine($"{indent}Accepting Requests:  {Status.AllowRequestForwarding}");
+                summary.AppendLine($"{indent}Accepting Requests:  {Status.AcceptForwardedRequests}");
 
                 if (Status.KnownHostnames is not null)
                 {
