@@ -41,6 +41,16 @@ namespace CodeProject.AI.Server
         {
             [LogLevel.Information] = ConsoleColor.Green
         };
+
+        /// <summary>
+        /// The set of logging levels that are written to the log file on disk. This is
+        /// independent of LogLevels above (which gates both the dashboard's live entry list and
+        /// the file write) -- if this dictionary is non-empty, only levels present as keys here
+        /// are written to disk, while the dashboard continues to show everything permitted by
+        /// LogLevels. If this dictionary is empty (the default), file writing falls back to the
+        /// same set as LogLevels, preserving the original behaviour.
+        /// </summary>
+        public Dictionary<LogLevel, ConsoleColor> FileLogLevels { get; set; } = new();
     }
 
     /// <summary>
@@ -214,7 +224,7 @@ namespace CodeProject.AI.Server
                 category  = category,
                 label     = label,
                 exception = exception?.ToString() ?? string.Empty
-            });
+            }, logLevel);
         }
 
         /// <summary>
@@ -222,7 +232,10 @@ namespace CodeProject.AI.Server
         /// "writes to file".
         /// </summary>
         /// <param name="entry"></param>
-        private void StoreLogEntry(LogEntry entry)
+        /// <param name="logLevel">The log level of this entry, used to independently gate whether
+        /// it's written to the file (see FileLogLevels on ServerLoggerConfiguration) separately
+        /// from whether it's added to the in-memory list the dashboard reads from.</param>
+        private void StoreLogEntry(LogEntry entry, LogLevel logLevel)
         {
             // This used to be locked, but Lists are *so* fast that we're not going to be able to
             // cause lock contention. Even if we do, it's non critical. Just move on.
@@ -240,7 +253,17 @@ namespace CodeProject.AI.Server
             }
             catch { }
 
-            StoreInFile(entry);
+            _config ??= _getCurrentConfig();
+
+            // Empty FileLogLevels means "not configured" -- fall back to the same set as
+            // LogLevels, preserving the original (pre-patch) behaviour of writing everything
+            // that's shown live to the file as well.
+            bool writeToFile = _config.FileLogLevels.Count == 0
+                ? _config.LogLevels.ContainsKey(logLevel)
+                : _config.FileLogLevels.ContainsKey(logLevel);
+
+            if (writeToFile)
+                StoreInFile(entry);
         }
 
         private void StoreInFile(LogEntry logEntry)
